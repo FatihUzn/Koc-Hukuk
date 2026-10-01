@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>275</title>
+<meta name="description" content="YKS 2027 — günlük bloklar, deneme netleri, yanlış defteri ve 39 haftalık plan.">
+<meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F6F7" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="275">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // tema: erken uygula, yanıp sönme olmasın
+  try{var t=localStorage.getItem("tema");if(t)document.documentElement.setAttribute("data-theme",JSON.parse(t));}catch(e){}
+</script>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="side">
+    <div class="logo"><span class="mark"></span><b id="brand">275<em>gün</em></b></div>
+    <nav class="nav" id="nav" aria-label="Bölümler"></nav>
+    <div class="sidefoot">
+      <button class="ghostbtn theme" id="themeBtn" type="button" aria-label="Tema">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/></svg>
+        <span>Tema</span>
+      </button>
+      <button class="ghostbtn io" id="ioBtn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 11v2h10v-2"/></svg>
+        <span>Yedek al / yükle</span>
+      </button>
+      <div class="status" id="status">yerel kayıt</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="hero">
+      <div class="goal">
+        <p class="eyebrow">Hedef</p>
+        <h1>Koç Üniversitesi<span>Endüstri Mühendisliği — burslu · SAY</span></h1>
+        <p class="motto" id="motto" contenteditable="true" spellcheck="false" data-ph="Bu yılın kendi cümlesini buraya yaz…"></p>
+      </div>
+      <div class="count">
+        <div class="n tnum" id="cdDays">—</div>
+        <div class="l">gün kaldı</div>
+        <div class="s"><span id="cdClock">—</span> · 19 Haz 2027 · 10:15</div>
+      </div>
+      <div class="road">
+        <div class="roadends"><span>17 Eyl 2026</span><b id="roadNow"></b><span>19 Haz 2027</span></div>
+        <div class="roadbar" id="roadBar"></div>
+        <div class="roadlabels" id="roadLabels"></div>
+      </div>
+    </div>
+
+    <div class="facts">
+      <div class="fact"><div class="k">Faz</div><div class="v" id="fPhase">—</div></div>
+      <div class="fact"><div class="k">Hafta</div><div class="v" id="fWeek">—</div></div>
+      <div class="fact"><div class="k">Son TYT</div><div class="v" id="fTyt">—</div></div>
+      <div class="fact"><div class="k">Son AYT</div><div class="v" id="fAyt">—</div></div>
+      <div class="fact now"><div class="k">Şu an</div><div class="v" id="fNow">—</div></div>
+    </div>
+
+    <!-- BUGÜN -->
+    <section id="s-bugun">
+      <div class="head"><div><h2 id="todayTitle">Bugün</h2><p class="sub">Blokları tamamladıkça işaretle. Kalkış, yemek ve boşluk sayılmaz.</p></div></div>
+      <div class="card">
+        <div class="dayline">
+          <span class="pct tnum" id="dayPct">%0</span>
+          <div class="bar" id="dayBarWrap"><i id="dayBar"></i></div>
+          <span class="meta" id="dayCount">0/0 blok</span>
+          <span class="meta" id="streak">seri 0</span>
+        </div>
+        <div class="blocks" id="blocks"></div>
+      </div>
+      <p class="note"><b>40 saniye kuralı.</b> Matematikte bir soruya 40 saniyede başlayamıyorsan atla ve işaretle. Hız süresiz çözerek değil, kısıt altında çözerek gelir.</p>
+      <p class="note"><b>Hafta içi konu, hafta sonu deneme.</b> Cmt TYT · Paz AYT, ikisi de 10:15'te. <b>Perşembe hafif gün.</b> Dinleme: yürüyüş → 32. Gün / 49W / İngilizce podcast · spor → Storytel · akşam → Almanca.</p>
+    </section>
+
+    <!-- HAFTA -->
+    <section id="s-hafta" hidden>
+      <div class="head"><div><h2>Bu hafta</h2><p class="sub">Cumartesi TYT, Pazar AYT — gerçek sınav saatinde. Pazar akşamı kapalı.</p></div></div>
+      <div class="week" id="week"></div>
+    </section>
+
+    <!-- NETLER -->
+    <section id="s-netler" hidden>
+      <div class="head"><div><h2>Netler</h2><p class="sub">Ders bazlı doğru / yanlış / boş gir, net otomatik (D − Y/4). Toplam tutmuyorsa uyarır.</p></div></div>
+      <div class="card">
+        <div class="hd"><h3>Hedef merdiveni ve gerçekleşen</h3><span class="r">aynı ayda en yüksek deneme</span></div>
+        <div class="chartwrap" id="chartWrap">
+          <svg class="chart" id="chart" viewBox="0 0 760 420" role="img" aria-label="TYT ve AYT-SAY hedef merdiveni ve gerçekleşen netler"></svg>
+          <div class="tip" id="chartTip" hidden></div>
+        </div>
+        <div class="legend"><span><i class="ref"></i>Hedef merdiveni</span><span><i class="act"></i>Gerçekleşen net</span></div>
+      </div>
+      <div class="card">
+        <div class="hd"><h3>Deneme gir</h3></div>
+        <div class="in">
+          <div class="form">
+            <div class="f"><label for="dTarih">Tarih</label><input type="date" id="dTarih"></div>
+            <div class="f"><label for="dTur">Sınav</label><select id="dTur"><option value="TYT">TYT</option><option value="AYT">AYT-SAY</option></select></div>
+            <div class="f" style="flex:1;min-width:170px"><label for="dAd">Deneme adı</label><input type="text" id="dAd" placeholder="2024 YKS TYT"></div>
+            <div class="f"><label for="dSure">Süre tam mı</label><select id="dSure"><option value="evet">Evet</option><option value="hayir">Hayır</option></select></div>
+          </div>
+          <div class="dersgrid" id="dersGrid"></div>
+          <div class="tally">
+            <span><span class="lbl">Toplam net</span><br><span class="big tnum" id="dNet">0,00</span></span>
+            <span class="warn" id="dKontrol"></span>
+            <button class="btn" id="dKaydet" type="button" style="margin-left:auto">Kaydet</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="hd"><h3>Geçmiş denemeler</h3></div>
+        <div class="scroll"><table id="denemeTablo"><thead><tr>
+          <th>Tarih</th><th>Sınav</th><th>Ad</th><th class="n">D</th><th class="n">Y</th><th class="n">B</th><th class="n">Net</th><th class="n">Hedef</th><th class="n">Fark</th><th></th>
+        </tr></thead><tbody></tbody></table></div>
+        <div class="empty" id="denemeBos">Henüz deneme yok.</div>
+      </div>
+    </section>
+
+    <!-- DEFTER -->
+    <section id="s-defter" hidden>
+      <div class="head"><div><h2>Yanlış defteri</h2><p class="sub">Her yanlış ve boş için bir satır. Neden sütununu boş bırakma. Enter ile ekle.</p></div></div>
+      <div class="card"><div class="in">
+        <div class="form">
+          <div class="f"><label for="hSinav">Sınav</label><select id="hSinav"><option>TYT</option><option>AYT</option></select></div>
+          <div class="f" style="min-width:150px"><label for="hDers">Ders</label><select id="hDers"></select></div>
+          <div class="f" style="flex:1;min-width:190px"><label for="hKonu">Konu</label><select id="hKonu"></select></div>
+          <div class="f"><label for="hSoru">Soru</label><input type="number" id="hSoru" min="1" max="120" style="width:72px"></div>
+          <div class="f" style="min-width:180px"><label for="hNeden">Neden</label><select id="hNeden"></select></div>
+          <button class="btn" id="hEkle" type="button">Ekle</button>
+        </div>
+      </div></div>
+      <div class="card">
+        <div class="hd"><h3>En çok hata veren konular</h3><span class="r" id="hSayi">0 kayıt</span></div>
+        <div class="scroll"><table id="konuTablo"><thead><tr><th>Ders</th><th>Konu</th><th class="n">Hata</th><th class="n">Bilgi</th><th class="n">Dikkat</th><th class="n">Süre</th></tr></thead><tbody></tbody></table></div>
+        <div class="empty" id="konuBos">Defter boş. Bir deneme çöz, yanlışlarını gir — plan buradan diziliyor.</div>
+      </div>
+      <div class="card">
+        <div class="hd"><h3>Neden dağılımı</h3></div>
+        <div class="scroll"><table id="nedenTablo"><thead><tr><th>Neden</th><th class="n">Adet</th><th class="n">Pay</th></tr></thead><tbody></tbody></table></div>
+        <div class="empty" id="nedenBos">—</div>
+      </div>
+      <p class="note"><b>Okuma notu.</b> Bilgi eksiği yüksekse konu çalışılır. Dikkat ve işlem hatası yüksekse rutin sorunu vardır — kontrol alışkanlığı. Süre yetmediyse strateji ve soru seçimi.</p>
+    </section>
+
+    <!-- YIL -->
+    <section id="s-yil" hidden>
+      <div class="head"><div><h2>Yılın şekli</h2><p class="sub">Her kare bir hafta. Kırmızı çerçeve bulunduğun hafta.</p></div></div>
+      <div class="card"><div class="in">
+        <div class="strip" id="strip"></div>
+        <p class="note" id="stripNote" style="margin-top:12px"></p>
+      </div></div>
+      <div class="card"><div class="phases" id="phases"></div></div>
+      <div class="card">
+        <div class="hd"><h3>Net merdiveni</h3><span class="r">Şubat eşiği 110 / 72</span></div>
+        <div class="scroll"><table id="merdiven"><thead><tr><th>Ay</th><th class="n">TYT hedef</th><th class="n">TYT</th><th class="n">AYT hedef</th><th class="n">AYT</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <p class="note"><b>Deneme neti sınav neti değildir.</b> Gerçekte 3–5 net altta çıkar; merdivenin tepesi bu yüzden hedefin üstünde.</p>
+    </section>
+
+    <!-- PLAN -->
+    <section id="s-plan" hidden>
+      <div class="head"><div><h2>Kurallar ve protokoller</h2><p class="sub">Ayda bir okunacak şeyler.</p></div></div>
+      <div class="card" id="planCard"></div>
+    </section>
+
+  </main>
+</div>
+
+<input type="file" id="ioFile" accept="application/json" hidden>
+<script src="app.js"></script>
+<script>
+  if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }
+</script>
+</body>
+</html>

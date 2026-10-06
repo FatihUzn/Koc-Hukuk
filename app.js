@@ -7,23 +7,7 @@ var BASLANGIC = new Date(2026,8,17);
 var GUN_SINIRI = 4;
 var ARSIV_ORAN = 0.6;   // sayılan blokların bu kadarı bitmeden arşiv açılmaz (arsiv/kaynak/kilit.html ile aynı olmalı)
 
-var BLOKLAR = [
-  {id:"b1", s:"07:00", dk:30, ad:"Kalk · su · esneme", not:"Ekran yok", tur:"Yaşam", say:false},
-  {id:"b2", s:"07:30", dk:30, ad:"Kahvaltı", tur:"Yaşam", say:false},
-  {id:"b3", s:"08:00", dk:90, ad:"AYT Matematik", not:"En taze kafa, en değerli net", tur:"AYT", say:true},
-  {id:"b4", s:"09:45", dk:90, ad:"TYT Matematik", not:"Kronometreli · 20 soru / 25 dk", tur:"TYT", say:true},
-  {id:"b5", s:"11:30", dk:60, ad:"TYT Türkçe", not:"Paragraf, zamanlı", tur:"TYT", say:true},
-  {id:"b6", s:"12:30", dk:60, ad:"Öğle + yürüyüş", not:"Dinleme: 32. Gün · 49W · İngilizce podcast (dönüşümlü)", tur:"Genel kültür", say:false},
-  {id:"b7", s:"13:30", dk:90, ad:"AYT Fizik / Kimya / Biyoloji", not:"Dönüşümlü", tur:"AYT", say:true},
-  {id:"b8", s:"15:15", dk:60, ad:"TYT Fen / Sosyal", not:"Dönüşümlü", tur:"TYT", say:true},
-  {id:"b9", s:"16:15", dk:75, ad:"Spor", not:"Kardiyoda Storytel dinle · ağırlıkta müzik", tur:"Spor", say:true},
-  {id:"b10",s:"17:30", dk:60, ad:"Akşam yemeği + boşluk", tur:"Yaşam", say:false},
-  {id:"b11",s:"18:30", dk:60, ad:"Yanlış defteri", not:"Atlanmaz — yarının planı buradan çıkıyor", tur:"Defter", say:true},
-  {id:"b12",s:"19:45", dk:75, ad:"Hedefli konu kapatma", not:"Konuyu defter seçer, sen değil", tur:"Defter", say:true},
-  {id:"b14",s:"21:00", dk:60, ad:"Almanca", not:"25 dk kurs · 15 dk kelime · 20 dk dinleme", tur:"Dil", say:true},
-  {id:"b15",s:"22:00", dk:60, ad:"Serbest", not:"Boş kalsın. 39 haftalık koşuda bir saat boşluk pazarlık konusu değil.", tur:"Boşluk", say:false}
-];
-var SPOR_GUNLERI = [0,1,2,3,5,6];   // Paz, Pzt, Sal, Çar, Cum, Cmt — Perşembe dinlenme
+var BLOKLAR = Bloklar.haftaIci(1);   // tanımlar bloklar.js içinde
 
 var FAZLAR = [
   {no:1, ad:"Hız ve taban", bas:"2026-09-17", bit:"2026-11-30",
@@ -196,8 +180,46 @@ function suAnkiBlok(){
   }
   return {simdi:simdi, sonraki:sonraki, dk:dk};
 }
+var sonBlokId=null;
+function cizSimdi(r){
+  var k=$("simdi"); if(!k) return;
+  var ad=$("simdiAd"), et=$("simdiEt"), bar=$("simdiBar"), kal=$("simdiKalan"), son=$("simdiSonra");
+  if(r.simdi){
+    var bas=dkDan(r.simdi.s), sure=r.simdi.dk||1, gecen=r.dk-bas, kalan=bas+sure-r.dk;
+    et.textContent="Şu an"; ad.textContent=r.simdi.ad; $("simdiIs").textContent=r.simdi.is||"";
+    bar.style.width=Math.max(2,Math.min(100,Math.round(gecen*100/sure)))+"%";
+    kal.textContent=kalan+" dk kaldı"; son.textContent = r.sonraki ? ("Sırada "+r.sonraki.s+" · "+r.sonraki.ad) : "";
+    k.classList.remove("bos");
+  } else if(r.sonraki){
+    et.textContent="Sırada"; ad.textContent=r.sonraki.ad; $("simdiIs").textContent=r.sonraki.is||""; bar.style.width="0%";
+    var d=dkDan(r.sonraki.s)-r.dk; kal.textContent=r.sonraki.s+" · "+(d>=60?Math.floor(d/60)+" sa "+(d%60)+" dk":d+" dk")+" sonra"; son.textContent="";
+    k.classList.add("bos");
+  } else {
+    et.textContent="Bugün"; ad.textContent="Gün bitti"; $("simdiIs").textContent=""; bar.style.width="100%"; kal.textContent=""; son.textContent=""; k.classList.add("bos");
+  }
+  // blok değişince (uygulama açıkken) haber ver
+  var id=r.simdi?r.simdi.id:null;
+  if(sonBlokId!==null && id && id!==sonBlokId && yerelOku("zil",false) && window.Notification && Notification.permission==="granted"){
+    var baslik=r.simdi.ad, govde=r.simdi.s+" · "+r.simdi.dk+" dk";   // asıl iş bildirimde yazmaz
+    try{
+      if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function(g){ g.showNotification(baslik,{body:govde,icon:"icons/icon-192.png",tag:"blok"}); });
+      else new Notification(baslik,{body:govde});
+    }catch(e){}
+  }
+  sonBlokId = id || "";
+}
+function zilKur(){
+  var z=$("zil"); if(!z || !window.Notification) return;
+  function yaz(){ var acik=yerelOku("zil",false) && Notification.permission==="granted"; z.hidden=false; z.textContent = acik ? "Haber veriliyor ✓" : "Blok başlarken haber ver"; z.classList.toggle("acik",acik); }
+  z.addEventListener("click",function(){
+    if(yerelOku("zil",false) && Notification.permission==="granted"){ yerelYaz("zil",false); yaz(); return; }
+    Notification.requestPermission().then(function(p){ yerelYaz("zil",p==="granted"); yaz(); });
+  });
+  yaz();
+}
 function suAnYaz(){
   var r=suAnkiBlok(), e=$("fNow");
+  cizSimdi(r);
   if(r.simdi){
     var bit=dkDan(r.simdi.s)+r.simdi.dk, kalan=bit-r.dk;
     e.innerHTML = r.simdi.ad + " <em>· "+kalan+" dk kaldı</em>";
@@ -321,7 +343,7 @@ function cizSoz(pct){
   var l = pct===100 ? TAMAM : CUMLELER;
   var t = l[((gun+sozKay)%l.length+l.length)%l.length].replace(/256 gün/g, kalan+" gün");
   e.textContent=t;
-  var s=el("small",null, pct===100 ? "gün tamam" : "günün cümlesi · değiştirmek için dokun"); e.appendChild(s);
+  if(pct===100){ e.appendChild(el("small",null,"gün tamam")); }
 }
 
 /* ============ bugün ============ */
@@ -369,7 +391,7 @@ function cizBugun(){
     btn.appendChild(el("time",null,bl.s));
     var who=el("div","who");
     who.appendChild(el("b",null,bl.ad));
-    if(bl.not) who.appendChild(el("span",null,bl.not));
+    if(bl.is) who.appendChild(el("span",null,bl.is));
     btn.appendChild(who);
     var end=el("div","rowend");
     end.appendChild(el("span","tag"+((bl.tur==="TYT"||bl.tur==="AYT"||bl.tur==="Deneme")?" acc":""),bl.tur));
@@ -406,50 +428,9 @@ function cizBugun(){
   }
   var ca=$("cnt-arsiv"); if(ca){ ca.textContent = (yap>=gerek) ? "açık" : (gerek-yap)+" blok"; ca.className="cnt "+((yap>=gerek)?"acik":"kilit"); }
 }
-function almancaDk(dw){
-  // Faz 1: rutin oturana kadar 30 dk. Faz 2+: hafta içi 60, Perşembe/hafta sonu 90.
-  var f=fazBul(bugunTarih());
-  if(!f || f.no===1) return 30;
-  return (dw===4||dw===6||dw===0) ? 90 : 60;
-}
-function haftaIciBloklari(dw){
-  var l = BLOKLAR.map(function(b){
-    if(b.id==="b9" && SPOR_GUNLERI.indexOf(dw)<0)
-      return {id:"b9r", s:"16:15", dk:75, ad:"Dinlenme", not:"Perşembe — antrenman yok. Yürüyüş, uyku, hiçbir şey.", tur:"Rest", say:false};
-    if(b.id==="b14"){
-      var dk=almancaDk(dw), sa = (dw===4)?"19:45":"21:00";
-      return {id:"b14", s:sa, dk:dk, ad:"Almanca", not:(dk===30?"Faz 1: 30 dk — rutin oturana kadar":"25 dk kurs · 15 dk kelime · 20 dk dinleme"), tur:"Dil", say:true};
-    }
-    return b;
-  });
-  if(dw===4){
-    l = l.filter(function(b){ return b.id!=="b12" && b.id!=="b15"; });
-    l.push({id:"b15", s:"21:15", dk:0, ad:"Serbest", not:"Haftanın nefes günü. Erken bitir.", tur:"Boşluk", say:false});
-  }
-  return l;
-}
-function cumartesiBloklari(){
-  return [
-    {id:"c0", s:"08:30", dk:60, ad:"Kalk · kahvaltı · sınav rutini", not:"Sınav günü neyse o", tur:"Yaşam", say:false},
-    {id:"c1", s:"10:15", dk:165, ad:"TYT DENEMESİ", not:"Gerçek saat, gerçek süre, tek oturum", tur:"Deneme", say:true},
-    {id:"c1b",s:"13:00", dk:60, ad:"Yemek", tur:"Yaşam", say:false},
-    {id:"c2", s:"14:00", dk:120, ad:"Denemeyi çöz ve deftere gir", not:"Analiz edilmeyen deneme sayılmaz", tur:"Defter", say:true},
-    {id:"b9", s:"16:15", dk:75, ad:"Spor", not:"Storytel", tur:"Spor", say:true},
-    {id:"b14",s:"19:00", dk:almancaDk(6), ad:"Almanca", not:"Hafta sonu bloğu", tur:"Dil", say:true}
-  ];
-}
-function pazarBloklari(){
-  return [
-    {id:"c0", s:"08:30", dk:60, ad:"Kalk · kahvaltı · sınav rutini", tur:"Yaşam", say:false},
-    {id:"p1", s:"10:15", dk:180, ad:"AYT-SAY DENEMESİ", not:"Gerçek saat, gerçek süre, tek oturum", tur:"Deneme", say:true},
-    {id:"p1b",s:"13:15", dk:60, ad:"Yemek", tur:"Yaşam", say:false},
-    {id:"p2", s:"14:15", dk:120, ad:"Denemeyi çöz ve deftere gir", not:"Haftanın en değerli iki saati", tur:"Defter", say:true},
-    {id:"b9", s:"16:30", dk:75, ad:"Spor", not:"Storytel", tur:"Spor", say:true},
-    {id:"y1", s:"18:00", dk:30, ad:"Haftalık yazı", not:"300 kelime: bir konu + kendi itirazın", tur:"Yazı", say:true},
-    {id:"b14",s:"19:00", dk:almancaDk(0), ad:"Almanca", tur:"Dil", say:true},
-    {id:"p3", s:"21:00", dk:0, ad:"Kapalı", not:"Hafta bitti. Ders yok, defter yok.", tur:"Dinlenme", say:false}
-  ];
-}
+function haftaIciBloklari(dw){ return Bloklar.haftaIci(dw); }
+function cumartesiBloklari(){ return Bloklar.cumartesi(); }
+function pazarBloklari(){ return Bloklar.pazar(); }
 
 /* ============ hafta ============ */
 function cizHafta(){
@@ -1044,6 +1025,16 @@ function yedekKontrol(){
 $("yedekSimdi").addEventListener("click",function(){ yedekAl(); setTimeout(yedekKontrol,300); });
 function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); yedekKontrol(); }
 
+/* ============ giriş kodu (kasa.js) ============ */
+(function(){
+  var K=window.Kasa; if(!K || !$("kasaKart")) return;
+  function yaz(){ var v=K.var(); $("kasaDurum").textContent=v?"açık":"kapalı"; $("kasaBelirle").textContent=v?"Kodu değiştir":"Kod belirle"; $("kasaKaldir").hidden=!v; $("kasaSimdi").hidden=!v; }
+  $("kasaBelirle").addEventListener("click",function(){ K.belirle(yaz); });
+  $("kasaKaldir").addEventListener("click",function(){ K.kaldir(yaz); });
+  $("kasaSimdi").addEventListener("click",function(){ K.kilitle(); });
+  yaz();
+})();
+
 /* ============ eşitleme arayüzü (esitle.js) ============ */
 (function(){
   var E=window.Esitleme; if(!E || !$("esitleKart")) return;
@@ -1088,6 +1079,8 @@ ioKur();
 durumYaz();
 ciz();
 git(aktif);
-setInterval(function(){ cizMast(); cizBugun(); }, 60000);
+setInterval(function(){ cizMast(); cizBugun(); }, 30000);
+document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ cizMast(); cizBugun(); } });
+zilKur();
 var rsz; window.addEventListener("resize",function(){ clearTimeout(rsz); rsz=setTimeout(function(){ if(aktif==="netler") cizGrafik(); },180); });
 })();

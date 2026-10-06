@@ -52,6 +52,13 @@ Telefon ile bilgisayar arasında bloklar, netler, defter ve arşiv ilerlemesi e�
 2. `esitle.js` başındaki `SB_URL` ve `SB_ANAHTAR` satırlarını doldur (Project Settings → API).
 3. Sitede Plan → "Cihazlar arası eşitleme" → bir cihazda başlat, öbüründe anahtarı gir.
 
+## Bloklar, takvim, giriş kodu
+
+- `bloklar.js` günün bloklarını tutar: `ad` dışarıdan görünen ad, `is` uygulama içinde görünen asıl iş.
+  Blokları değiştirince `node araclar/takvim-uret.js` ile takvim dosyalarını yeniden üret.
+- `takvim.ics` (alarmlı) ve `takvim-sessiz.ics`: Plan → Takvim'den telefona eklenir.
+- `kasa.js` giriş kodu ekranı: Plan → Giriş kodu. Kod cihazda kalır.
+
 ## Gündem (`api/gundem.js`)
 
 Seçili kaynakların son başlıklarını tek listede gösterir; yalnızca Vercel'de çalışır.

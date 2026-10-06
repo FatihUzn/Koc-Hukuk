@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>275</title>
-<meta name="description" content="YKS 2027 — günlük bloklar, deneme netleri, yanlış defteri ve 39 haftalık plan.">
-<meta name="theme-color" content="#0f1020" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Günlük düzen.">
+<meta name="theme-color" content="#1a1d42" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f4f3fa" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,6 +15,8 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="robots" content="noindex, nofollow">
+<script>try{if(localStorage.getItem("kasa")&&sessionStorage.getItem("kasa_acik")!=="1")document.documentElement.classList.add("kasali")}catch(e){}</script>
+<style>html.kasali body>*:not(#kasa){visibility:hidden!important}</style>
 <link rel="stylesheet" href="styles.css">
 <script>
   // tema: erken uygula, yanıp sönme olmasın
@@ -73,6 +75,13 @@
     <!-- BUGÜN -->
     <section id="s-bugun">
       <div class="head"><div><h2 id="todayTitle">Bugün</h2><p class="sub">Blokları tamamladıkça işaretle. Kalkış, yemek ve boşluk sayılmaz.</p></div></div>
+      <div class="simdi" id="simdi">
+        <div class="sust"><span class="k" id="simdiEt">Şu an</span><button type="button" class="zil" id="zil" hidden>Blok başlarken haber ver</button></div>
+        <b id="simdiAd">—</b>
+        <p class="sis" id="simdiIs"></p>
+        <div class="sbar"><i id="simdiBar"></i></div>
+        <div class="salt"><span id="simdiKalan"></span><span id="simdiSonra"></span></div>
+      </div>
       <div class="card">
         <div class="dayline">
           <span class="pct tnum" id="dayPct">%0</span>
@@ -210,6 +219,20 @@
           <p class="dip">Pazar: tavuk ve pirinci toplu pişir<br>Haftada bir esnek öğün · ilk iki hafta sabah tartı</p>
         </div>
       </div>
+      <div class="card" id="takvimKart">
+        <div class="hd"><h3>Takvim</h3><span class="r">yalnızca blok adları</span></div>
+        <div class="in">
+          <p class="note" style="margin:0 0 12px">Blokları telefonun takvimine ekler. Takvimde "Odak I", "Spor" gibi adlar görünür; ne çalıştığın yazmaz. Önce Takvim uygulamasında "275" adında ayrı bir takvim aç ve oraya ekle; düzen değişirse o takvimi silip yeniden eklersin.</p>
+          <div class="iorow"><a class="btn sm" href="takvim.ics">Alarmlı ekle</a><a class="btn sm ghost" href="takvim-sessiz.ics">Alarmsız ekle</a></div>
+        </div>
+      </div>
+      <div class="card" id="kasaKart">
+        <div class="hd"><h3>Giriş kodu</h3><span class="r" id="kasaDurum">—</span></div>
+        <div class="in">
+          <p class="note" style="margin:0 0 12px">Uygulama açılırken ve bir dakikadan uzun arka planda kaldıktan sonra kod sorar. Kod bu cihazda kalır; her cihazda ayrı belirlenir. Unutursan tarayıcının site verisini silmen gerekir; kayıtların eşitlemeden geri gelir.</p>
+          <div class="iorow"><button class="btn sm" type="button" id="kasaBelirle">Kod belirle</button><button class="btn sm ghost" type="button" id="kasaKaldir">Kodu kaldır</button><button class="btn sm ghost" type="button" id="kasaSimdi">Şimdi kilitle</button></div>
+        </div>
+      </div>
       <div class="card" id="esitleKart">
         <div class="hd"><h3>Cihazlar arası eşitleme</h3><span class="r" id="esDurum">—</span></div>
         <div class="in">
@@ -231,6 +254,8 @@
 </div>
 
 <input type="file" id="ioFile" accept="application/json" hidden>
+<script src="kasa.js"></script>
+<script src="bloklar.js"></script>
 <script src="esitle.js"></script>
 <script src="app.js"></script>
 <script>

@@ -62,9 +62,12 @@ tam = f'''<!doctype html>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0f1020">
 <link rel="icon" href="../icons/favicon-64.png" type="image/png">
+<script>try{{if(localStorage.getItem("kasa")&&sessionStorage.getItem("kasa_acik")!=="1")document.documentElement.classList.add("kasali")}}catch(e){{}}</script>
+<style>html.kasali body>*:not(#kasa){{visibility:hidden!important}}</style>
 {stil_site}</head>
 <body>
 {govde}
+<script src="../kasa.js"></script>
 <script src="../esitle.js"></script>
 </body>
 </html>

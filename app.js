@@ -123,6 +123,10 @@ var IKON={
     btn.setAttribute("data-b",b.id);
     nav.appendChild(btn);
   });
+  var ab=el("button",null); ab.type="button"; ab.setAttribute("data-b","arsiv");
+  ab.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5c2-.8 3.8-.8 5.5.4 1.7-1.2 3.500-1.2 5.500-.4v9c-2-.8-3.800-.8-5.500.4-1.700-1.200-3.500-1.200-5.500-.4zM8 3.900v9"/></svg><span class="uzun">Arşiv</span><span class="kisa">Arşiv</span><em class="cnt" id="cnt-arsiv"></em>';
+  ab.addEventListener("click",function(){ location.href="arsiv/"; });
+  nav.appendChild(ab);
   var son=yerelOku("bolum","bugun");
   if(BOLUMLER.some(function(b){return b.id===son;})) aktif=son;
 })();
@@ -227,6 +231,87 @@ function sonDeneme(tur){
   return l[0]||null;
 }
 
+
+/* ============ günün cümlesi ============ */
+var CUMLELER = [
+ "Bugünün bloğu, yarının neti. Arada başka bir yol yok.",
+ "Motivasyon gelip geçer. Saat 08:00 bloğu her gün aynı yerde durur.",
+ "Zor olan soru değil, 40 saniyede bırakıp geçebilmek.",
+ "Dün ne yaptığın bitti. Bugün ilk bloğu işaretle, gerisi gelir.",
+ "Yanlış defteri doldukça sınav günü sürpriz azalır.",
+ "Kimse seni izlemiyor. Tam da bu yüzden bugün sayılır.",
+ "İyi gün beklenmez. Sıradan günde yapılan iş sınavı kazanır.",
+ "Bir deneme bir rakam verir. Analizi ise bir plan verir.",
+ "Hız, süresiz çözerek değil, saate bakarak çözerek gelir.",
+ "Bildiğini sanmak ile kâğıda dökebilmek arasındaki fark, nettir.",
+ "Bugün bir net. Yarın bir net. 256 gün uzun bir süre.",
+ "Yorgunluk bahane değil, veridir. Planı ona göre kur, bırakma.",
+ "En çok kaçtığın konu, en çok net bekleyen konudur.",
+ "Sıralama tek gün belli olur. O günün hazırlığı bugün yapılır.",
+ "Masaya oturmak işin yarısı. Telefonu öbür odaya koymak öbür yarısı.",
+ "Küçük ve her gün, büyük ve arada bir olanı her zaman geçer.",
+ "Kendine verdiğin sözü tut. Başkasına verdiğinden daha ağırdır.",
+ "Bir yanlışın sebebini yazmadıysan, onu sınavda tekrar yapacaksın.",
+ "Plan mükemmel olmak zorunda değil. Uygulanmak zorunda.",
+ "Bugün kolay geldiyse yeterince zor soru çözmedin.",
+ "Hedef uzak görünüyorsa önündeki 90 dakikaya bak.",
+ "Deneme kötü geçti diye rejim değişmez. Defter açılır, sebep yazılır.",
+ "Bir yıl uzun değil. Bir yılın içindeki boş günler uzun.",
+ "Çalışmak istemediğin gün çalıştığın saat, iki saat sayılır.",
+ "Soru seni yormuyorsa seni geliştirmiyor da.",
+ "Başlamak için hazır hissetmeyi bekleme. Başla, his arkadan gelir.",
+ "Rakibin başka biri değil. Dünkü netin.",
+ "Bugün bitirdiğin blok, haziranda sana geri dönecek.",
+ "Dikkatsizlik bir kader değil. Kontrol alışkanlığı olmayan bir rutin.",
+ "Önce işi yap. Nasıl hissettiğine sonra bakarsın.",
+ "Uyku çalınan saat değil, yarınki bloğun yakıtı.",
+ "Bir konuyu anlamak yetmez. Süre içinde çözebilmek gerekir.",
+ "Ertelediğin her blok, sınava yakın bir güne taşınıyor.",
+ "Seri bozulduysa yenisini bugün başlat. Yarın değil.",
+ "Net artmıyorsa çalışma değil, çalışma biçimi sorgulanır.",
+ "İyi bir gün, bütün blokların bittiği değil, hiçbirinden kaçmadığın gündür.",
+ "Sınavda yeni bir şey öğrenmeyeceksin. Bugün öğrendiğini hatırlayacaksın.",
+ "Boş bıraktığın soruyu da yaz. O da bir bilgidir.",
+ "Sabır beklemek değil. Aynı işi yüzüncü gün de aynı özenle yapmak.",
+ "Bu yılın senden istediği tek şey: her gün gelmen.",
+ "Zor soru çözülünce değil, yanlış yapılan soru anlaşılınca ilerlersin.",
+ "Kendini iyi hissetmek hedef değil. Hedef, haziranda hazır olmak.",
+ "Bir saatlik gerçek çalışma, üç saatlik masada oturmadan değerlidir.",
+ "Kolay olanı çok çözmek rahatlatır. Zor olanı az çözmek kazandırır.",
+ "Bugün yaptığını yarın kimse görmez. Haziranda herkes görür.",
+ "Takvim ilerliyor. Tek soru, seninle mi yoksa sensiz mi.",
+ "Karar bir kez verilir. Sonrası her sabah o kararı uygulamaktır.",
+ "Deneme neti ile sınav neti arasındaki fark, koşulu ciddiye almaktır.",
+ "Bir bloğu yarım bırakma. Kısaltabilirsin, ama bitir.",
+ "Hata tekrar ediyorsa konu değil, yöntem eksik.",
+ "Büyük hedefler küçük saatlerde kazanılır.",
+ "Kafan dağınıksa en kolay bloğu değil, ilk bloğu yap.",
+ "Bugünü atlatmak değil, bugünden bir şey almak için otur.",
+ "İlerlemeyi hissetmezsin. Ölçersin. Netleri gir.",
+ "Hiçbir gün mükemmel olmayacak. Yeterince iyi 256 gün yeter.",
+ "Çıtayı yüksek tut, günü küçük tut.",
+ "Bir yıl sonra bugünü hatırlamayacaksın. Sonucunu yaşayacaksın.",
+ "Vazgeçmek her gün mümkün. Bu yüzden devam etmek her gün bir karar.",
+ "Dinlenmek planın parçası. Kaçmak değil.",
+ "Şimdi başla. Beş dakika sonra zaten içindesin."
+];
+var TAMAM = [
+ "Gün tamam. Bugün borcun yok.",
+ "Bugünü kapattın. Yarın aynı saatte.",
+ "Bütün bloklar bitti. Bu, haziranda bir net demek.",
+ "Söz verdin, tuttun. Gerisi tekrar.",
+ "Bugün kendine yalan söylemedin. İyi uyu."
+];
+var sozKay=0;
+function cizSoz(pct){
+  var e=$("soz"); if(!e) return;
+  var b=bugunTarih(), gun=gunFark(BASLANGIC,b), kalan=Math.max(0,Math.ceil((SINAV-new Date())/86400000));
+  var l = pct===100 ? TAMAM : CUMLELER;
+  var t = l[((gun+sozKay)%l.length+l.length)%l.length].replace(/256 gün/g, kalan+" gün");
+  e.textContent=t;
+  var s=el("small",null, pct===100 ? "gün tamam" : "günün cümlesi · değiştirmek için dokun"); e.appendChild(s);
+}
+
 /* ============ bugün ============ */
 function gunVerisi(k){
   var ay=k.slice(0,7), g=k.slice(8);
@@ -298,6 +383,7 @@ function cizBugun(){
   $("dayCount").innerHTML = pct===100 ? '<b>Gün tamam.</b>' : (yap+"/"+say.length+" blok");
   $("streak").textContent="seri "+seriHesap();
   $("cnt-bugun").textContent="%"+pct;
+  cizSoz(pct);
   // arşiv kilidi bu özeti okur (arsiv/ — aynı adres, aynı localStorage)
   yerelYaz("bugun_ozet",{gun:k,yapilan:yap,toplam:say.length});
   var gerek=Math.ceil(say.length*ARSIV_ORAN), ad=$("arsivDurum"), al=$("arsivLink");
@@ -306,6 +392,7 @@ function cizBugun(){
     al.classList.toggle("acik",acik);
     ad.textContent = acik ? "açık →" : ("kilitli · "+(gerek-yap)+" blok daha");
   }
+  var ca=$("cnt-arsiv"); if(ca){ ca.textContent = (yap>=gerek) ? "açık" : (gerek-yap)+" blok"; ca.className="cnt "+((yap>=gerek)?"acik":"kilit"); }
 }
 function almancaDk(dw){
   // Faz 1: rutin oturana kadar 30 dk. Faz 2+: hafta içi 60, Perşembe/hafta sonu 90.
@@ -487,7 +574,7 @@ function cizGrafik(){
   var cFaint=cs.getPropertyValue("--t3").trim()||"#6E6E78";
   var cSurf=cs.getPropertyValue("--s1").trim()||"#111114";
   var cInk =cs.getPropertyValue("--t1").trim()||"#EDEDF0";
-  var MONO="Geist Mono, monospace", SANS="Geist, sans-serif";
+  var MONO="IBM Plex Mono, monospace", SANS="IBM Plex Sans, sans-serif";
 
   function mk(n,a){var e=document.createElementNS("http://www.w3.org/2000/svg",n); for(var k in a) e.setAttribute(k,a[k]); return e;}
   var n=MERDIVEN.length;
@@ -864,7 +951,37 @@ function cizPlan(){
 }
 
 /* ============ başlat ============ */
-function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); }
+
+/* ============ derinlik: üst kart fareyle eğilir ============ */
+(function(){
+  var h=$("hero"); if(!h) return;
+  var az=window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var fare=window.matchMedia && matchMedia("(hover:hover) and (pointer:fine)").matches;
+  if(az||!fare) return;
+  h.addEventListener("pointermove",function(e){
+    var r=h.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+    h.style.setProperty("--rx",(-y*4.5).toFixed(2)+"deg"); h.style.setProperty("--ry",(x*6).toFixed(2)+"deg");
+    h.style.setProperty("--mx",((x+.5)*100).toFixed(1)+"%"); h.style.setProperty("--my",((y+.5)*100).toFixed(1)+"%");
+  });
+  h.addEventListener("pointerleave",function(){ h.style.setProperty("--rx","0deg"); h.style.setProperty("--ry","0deg"); h.style.setProperty("--mx","78%"); h.style.setProperty("--my","0%"); });
+})();
+(function(){
+  var e=$("soz"); if(!e) return;
+  function sonraki(){ sozKay++; cizBugun(); }
+  e.addEventListener("click",sonraki);
+  e.addEventListener("keydown",function(ev){ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); sonraki(); } });
+})();
+/* ============ haftalık yedek hatırlatması ============ */
+function yedekKontrol(){
+  var u=$("yedekUyar"); if(!u) return;
+  var veri = S.denemeler.length || S.hatalar.length || Object.keys(S.gunler).length;
+  var sy=yerelOku("son_yedek",null), g = sy ? gunFark(new Date(sy), new Date()) : null;
+  var gerek = veri && (g===null || g>=7);
+  u.hidden = !gerek;
+  if(gerek) $("yedekMetin").textContent = g===null ? "Henüz hiç yedek almadın. Kayıt yalnızca bu tarayıcıda duruyor." : ("Son yedek "+g+" gün önce. Haftalık yedek zamanı.");
+}
+$("yedekSimdi").addEventListener("click",function(){ yedekAl(); setTimeout(yedekKontrol,300); });
+function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); yedekKontrol(); }
 
 yereldenYukle();
 $("dTarih").value=anahtar(bugunTarih());

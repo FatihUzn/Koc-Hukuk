@@ -1,7 +1,7 @@
 /* 275 — service worker. Kabuk önbellekte, çevrimdışı açılır.
    Değişiklik yayınlarken SURUM'u artır. */
-const SURUM = "275-v2";
-const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./manifest.webmanifest",
+const SURUM = "275-v3";
+const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./manifest.webmanifest","./fonts/fonts.css","./fonts/arsiv.css",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-64.png"];
 
 self.addEventListener("install", e => {

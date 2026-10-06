@@ -4,8 +4,8 @@
    Asıl koruma, cihazda üretilen eşitleme anahtarıdır: onu bilmeyen veriyi okuyamaz. */
 (function(){
 "use strict";
-var SB_URL = "";       // örn. https://abcdefgh.supabase.co
-var SB_ANAHTAR = "";   // sb_publishable_... ya da anon anahtar
+var SB_URL = "https://pqzjayxdrnpokyffyole.supabase.co";       // örn. https://abcdefgh.supabase.co
+var SB_ANAHTAR = "sb_publishable_ViJ3hRKsZVHcDpVVUA3BOw_ZOZbDMRD";   // sb_publishable_... ya da anon anahtar
 
 var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","bugun_ozet","dni-done","dni-last","dni-okuma","dni-istisna","gundem_okuma"];
 var K_ANAHTAR="esitle_anahtar", K_GOLGE="esitle_golge", K_SON="esitle_son";

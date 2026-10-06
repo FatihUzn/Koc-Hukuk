@@ -1,7 +1,7 @@
 /* 275 — service worker. Kabuk önbellekte, çevrimdışı açılır.
    Değişiklik yayınlarken SURUM'u artır. */
-const SURUM = "275-v1";
-const KABUK = ["./","./index.html","./styles.css","./app.js","./manifest.webmanifest",
+const SURUM = "275-v2";
+const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./manifest.webmanifest",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-64.png"];
 
 self.addEventListener("install", e => {
@@ -15,9 +15,9 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   // Google Fonts: ağdan, düşerse önbellek
   if (u.hostname.endsWith("gstatic.com") || u.hostname.endsWith("googleapis.com")) {
-    e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); return r; }).catch(() => caches.match(e.request)));
+    e.respondWith(fetch(e.request).then(r => { if (r.ok || r.type === "opaque") { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); } return r; }).catch(() => caches.match(e.request)));
     return;
   }
   // kabuk: önce ağ (güncel kalsın), düşerse önbellek
-  e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); return r; }).catch(() => caches.match(e.request).then(m => m || caches.match("./index.html"))));
+  e.respondWith(fetch(e.request).then(r => { if (r.ok || r.type === "opaque") { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); } return r; }).catch(() => caches.match(e.request).then(m => m || caches.match("./index.html"))));
 });

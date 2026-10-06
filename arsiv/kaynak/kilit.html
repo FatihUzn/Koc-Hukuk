@@ -1,0 +1,117 @@
+<!-- Günlük kilit ve okuma süresi. Ayarlar aşağıdaki KILIT nesnesinde. -->
+<style>
+.yks{font-family:var(--mono);font-size:12.5px;color:var(--muted);letter-spacing:.04em;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.yks b{color:var(--mint);font-weight:500}
+.yks .warnc{color:var(--amber)}
+.yks a{color:var(--lav);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+.gate{position:fixed;inset:0;z-index:60;background:rgba(11,12,26,.97);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.gate[hidden]{display:none}
+.gate .box{max-width:520px;width:100%;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:30px 28px}
+.gate .k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
+.gate h2{font-family:var(--display);font-style:italic;font-weight:400;font-size:30px;line-height:1.2;color:var(--strong);margin:10px 0 12px}
+.gate p{margin:0 0 14px;color:var(--fg);font-size:17px;line-height:1.7}
+.gate .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0 20px}
+.gate .bar i{display:block;height:100%;background:var(--mint);border-radius:99px}
+.gate .acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.gate .soft{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px 4px}
+</style>
+
+<div class="gate" id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gate-h">
+  <div class="box">
+    <div class="k" id="gate-k"></div>
+    <h2 id="gate-h"></h2>
+    <p id="gate-p"></p>
+    <div class="bar" id="gate-bar"><i></i></div>
+    <div class="acts">
+      <a class="btn" id="gate-go" href="../">275'e dön</a>
+      <button class="btn ghost" id="gate-more" type="button" hidden></button>
+      <button class="soft" id="gate-skip" type="button" hidden></button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ---- AYARLAR ---- */
+  var KILIT = {
+    oran: 0.6,       // 275'te o günün sayılan bloklarının en az bu kadarı işaretlenmeden arşiv açılmaz
+    gunlukDk: 45,    // günlük okuma süresi (dakika); dolunca uyarı çıkar
+    uzatmaDk: 10,    // "biraz daha" düğmesinin eklediği süre
+    gunSiniri: 4     // gün 04:00'te döner (275 ile aynı)
+  };
+  var SINAV = new Date(2027,5,19,10,15);
+
+  function oku(k,v){try{var x=localStorage.getItem(k);return x?JSON.parse(x):v}catch(e){return v}}
+  function yaz(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function pad(n){return n<10?'0'+n:''+n}
+  function bugun(){var d=new Date();if(d.getHours()<KILIT.gunSiniri)d.setDate(d.getDate()-1);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+
+  var gate=document.getElementById('gate'), yks=document.getElementById('yks');
+  var gk=document.getElementById('gate-k'), gh=document.getElementById('gate-h'), gp=document.getElementById('gate-p');
+  var gbar=document.getElementById('gate-bar'), ggo=document.getElementById('gate-go'), gmore=document.getElementById('gate-more'), gskip=document.getElementById('gate-skip');
+
+  /* 275 paneli aynı adreste mi? Panel her çizimde "bugun_ozet" yazar; yoksa (bilgisayarda dosyadan açılış, paylaşım sayfası) blok kilidi devre dışı kalır. */
+  function ozet(){
+    var o=oku('bugun_ozet',null); if(!o) return null;
+    if(o.gun!==bugun()) return {gun:bugun(),yapilan:0,toplam:o.toplam||9};
+    return o;
+  }
+  function istisnalar(){var l=oku('dni-istisna',[]);return Array.isArray(l)?l:[]}
+  function okuma(){var o=oku('dni-okuma',null);if(!o||o.gun!==bugun())o={gun:bugun(),sn:0,ek:0,uz:0};return o}
+
+  var durum=null; // 'blok' | 'sure' | null
+  function goster(tip){
+    var o=ozet(), r=okuma();
+    durum=tip;
+    if(tip==='blok'){
+      var gerek=Math.ceil(o.toplam*KILIT.oran), kalan=Math.max(0,gerek-o.yapilan);
+      var ay=bugun().slice(0,7), n=istisnalar().filter(function(g){return g.slice(0,7)===ay}).length;
+      gk.textContent='Arşiv bugün kilitli';
+      gh.textContent='Önce bugünün işi.';
+      gp.textContent='275\'te bugün '+o.yapilan+'/'+o.toplam+' blok işaretli. Arşiv '+gerek+' blokta açılır: '+kalan+' blok daha.';
+      gbar.hidden=false; gbar.firstElementChild.style.width=Math.min(100,Math.round(o.yapilan*100/gerek))+'%';
+      ggo.hidden=false; gmore.hidden=true;
+      gskip.hidden=false; gskip.textContent='Bugünlük istisna yap (bu ay '+n+' kez kullandın)';
+    } else {
+      gk.textContent='Günlük okuma süresi doldu';
+      gh.textContent='Bugünlük bu kadar.';
+      gp.textContent='Bugün arşivde '+Math.round(r.sn/60)+' dakika okudun. Kaldığın yer kayıtlı; yarın oradan devam edersin.'+(r.uz?' Bugün '+r.uz+' kez uzattın.':'');
+      gbar.hidden=true; ggo.hidden=!ozet();
+      gmore.hidden=false; gmore.textContent=KILIT.uzatmaDk+' dakika daha';
+      gskip.hidden=true;
+    }
+    gate.hidden=false; document.documentElement.style.overflow='hidden';
+  }
+  function kapat(){durum=null;gate.hidden=true;document.documentElement.style.overflow=''}
+
+  function kontrol(){
+    var o=ozet(), r=okuma();
+    if(o && o.toplam>0 && o.yapilan/o.toplam<KILIT.oran && istisnalar().indexOf(bugun())<0){goster('blok');return}
+    if(r.sn>=(KILIT.gunlukDk+r.ek)*60){goster('sure');return}
+    kapat();
+  }
+  function serit(){
+    if(!yks) return;
+    var gun=Math.max(0,Math.ceil((SINAV-new Date())/86400000)), r=okuma(), dk=Math.floor(r.sn/60), sinir=KILIT.gunlukDk+r.ek;
+    var h='<span>Sınava <b>'+gun+'</b> gün</span><span'+(dk>=sinir-5?' class="warnc"':'')+'>Bugün '+dk+'/'+sinir+' dk</span>';
+    if(ozet()) h+='<a href="../">275</a>';
+    yks.innerHTML=h;
+  }
+
+  gskip.addEventListener('click',function(){var l=istisnalar();if(l.indexOf(bugun())<0)l.push(bugun());yaz('dni-istisna',l.slice(-120));kontrol()});
+  gmore.addEventListener('click',function(){var r=okuma();r.ek+=KILIT.uzatmaDk;r.uz=(r.uz||0)+1;yaz('dni-okuma',r);kontrol();serit()});
+
+  /* süre: sayfa görünürken ve kilit kapalıyken sayar */
+  var son=Date.now();
+  setInterval(function(){
+    var simdi=Date.now(), fark=Math.round((simdi-son)/1000); son=simdi;
+    if(document.visibilityState!=='visible'||durum||fark<=0||fark>15){serit();return}
+    var r=okuma(); r.sn+=fark; yaz('dni-okuma',r);
+    serit(); if(r.sn>=(KILIT.gunlukDk+r.ek)*60) kontrol();
+  },5000);
+  document.addEventListener('visibilitychange',function(){son=Date.now();if(document.visibilityState==='visible'){kontrol();serit()}});
+  window.addEventListener('hashchange',kontrol);
+  window.addEventListener('storage',function(){kontrol();serit()});
+  kontrol(); serit();
+})();
+</script>

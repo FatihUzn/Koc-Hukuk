@@ -5,6 +5,7 @@
 var SINAV = new Date(2027,5,19,10,15);
 var BASLANGIC = new Date(2026,8,17);
 var GUN_SINIRI = 4;
+var ARSIV_ORAN = 0.6;   // sayılan blokların bu kadarı bitmeden arşiv açılmaz (arsiv/kaynak/kilit.html ile aynı olmalı)
 
 var BLOKLAR = [
   {id:"b1", s:"07:00", dk:30, ad:"Kalk · su · esneme", not:"Ekran yok", tur:"Yaşam", say:false},
@@ -297,6 +298,14 @@ function cizBugun(){
   $("dayCount").innerHTML = pct===100 ? '<b>Gün tamam.</b>' : (yap+"/"+say.length+" blok");
   $("streak").textContent="seri "+seriHesap();
   $("cnt-bugun").textContent="%"+pct;
+  // arşiv kilidi bu özeti okur (arsiv/ — aynı adres, aynı localStorage)
+  yerelYaz("bugun_ozet",{gun:k,yapilan:yap,toplam:say.length});
+  var gerek=Math.ceil(say.length*ARSIV_ORAN), ad=$("arsivDurum"), al=$("arsivLink");
+  if(ad&&al){
+    var acik = yap>=gerek;
+    al.classList.toggle("acik",acik);
+    ad.textContent = acik ? "açık →" : ("kilitli · "+(gerek-yap)+" blok daha");
+  }
 }
 function almancaDk(dw){
   // Faz 1: rutin oturana kadar 30 dk. Faz 2+: hafta içi 60, Perşembe/hafta sonu 90.

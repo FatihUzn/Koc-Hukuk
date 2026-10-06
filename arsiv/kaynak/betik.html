@@ -1,0 +1,171 @@
+<div class="defbox" id="defbox" hidden><div class="in"><b id="def-t"></b><span id="def-d"></span><button id="def-x" aria-label="Kapat">Kapat</button></div></div>
+<script>
+(function(){
+  var root=document.documentElement; root.classList.add('js');
+  var files=/*DOSYALAR*/{};
+  var names=/*BOLUMLER*/{};
+
+  /* ---- kelime açıklamaları: [ad, kök (düzenli ifade), açıklama] ---- */
+  var G=[
+   ['Ek gösterge','ek gösterge','Üst görevlerdeki memurların aylığına eklenen ikinci sayı. Emekli aylığını da yükselttiği için önemlidir.'],
+   ['Gösterge','gösterge','Memurun derece ve kademesine karşılık gelen sayı. Katsayıyla çarpılınca aylığın çekirdeği çıkar.'],
+   ['Katsayı','katsayı','Hükûmetin altı ayda bir belirlediği çarpan. Memura zam, bu sayının artırılmasıyla yapılır.'],
+   ['Taban aylık','taban aylı[kğ]','Derecesi ne olursa olsun her memura aynı tutarda ödenen aylık parçası.'],
+   ['Tazminat','tazminat','Burada: memurun mesleğine ve görevine göre aylığına eklenen ödeme. Gelir vergisine ve emekliliğe sayılmaz.'],
+   ['Damga vergisi','damga vergisi','Maaş bordrosu, sözleşme gibi belgeler üzerinden alınan küçük oranlı vergi. Maaşta binde 7,59.'],
+   ['Kadrolu','kadrolu','Kanunla kurulmuş sürekli bir memur kadrosunda çalışan; iş güvencesi en yüksek kamu görevlisi.','e'],
+   ['Sözleşmeli','sözleşmeli','Devletle belli süreli sözleşme yaparak çalışan kamu görevlisi.','e'],
+   ['Ödenek','ödene[kğ]','Bütçe kanununun bir kuruma belli bir iş için harcama izni verdiği tutar.'],
+   ['Sayıştay','sayıştay','Meclis adına bütün kamu kurumlarının hesaplarını denetleyen yüksek denetim kurumu.'],
+   ['Lojman','lojman','Devletin çalışanına görev süresince düşük kirayla ya da ücretsiz verdiği konut.'],
+   ['Cari açık','cari açı[kğ]','Bir ülkenin dış dünyadan kazandığı döviz ile dış dünyaya ödediği döviz arasındaki fark, ödediği fazlaysa. Mal ticareti, turizm ve faiz ödemeleri bunun içindedir.'],
+   ['Sıcak para','sıcak para','Yüksek faizden yararlanmak için kısa süreliğine gelen, bir sarsıntıda hızla çıkabilen yabancı para.'],
+   ['Risk primi','risk primi','Bir ülkenin borcunu ödeyememe ihtimaline karşı yatırımcının istediği ek faiz. Yükselirse ülke daha pahalıya borçlanır.'],
+   ['Kredi notu','kredi notu','Derecelendirme kuruluşlarının bir ülkenin ya da şirketin borcunu ödeme gücüne verdiği harf notu.'],
+   ['Dış ticaret açığı','dış ticaret açı[kğ]','İthalatın ihracattan fazla olan kısmı.'],
+   ['Doğrudan yatırım','doğrudan yatırım','Yabancının fabrika kurmak ya da şirket satın almak için getirdiği, kolay çıkamayan para.'],
+   ['Kur korumalı mevduat','kur korumalı mevduat','2021 sonunda getirilen hesap türü. Dolar faizden fazla artarsa aradaki farkı devlet öderdi. 2026\'da kapatıldı.'],
+   ['Sabit kur','sabit kur','Devletin, parasının yabancı para karşısındaki fiyatını ilan edip o fiyattan alıp satmayı üstlendiği düzen.'],
+   ['Dalgalı kur','dalgalı kur','Kurun piyasada alıcı ve satıcılar tarafından belirlendiği düzen. Türkiye\'de 2001\'den beri resmen geçerli.'],
+   ['Dezenflasyon','dezenflasyon','Enflasyonun düşmesi. Fiyatlar hâlâ artar, ama daha yavaş artar.'],
+   ['Çekirdek enflasyon','çekirdek enflasyon','Gıda ve enerji gibi fiyatı çok oynayan kalemler çıkarılarak hesaplanan enflasyon. Ana eğilimi gösterir.'],
+   ['Üretici fiyatları','üretici fiyat','Fabrikanın ve çiftçinin sattığı malın fiyatı. Buradaki artış birkaç ay sonra raftaki fiyata yansır.'],
+   ['Alım gücü','alım gücü','Elindeki parayla satın alabildiğin mal ve hizmet miktarı.'],
+   ['Katma değer vergisi','katma değer vergisi','Kısaca KDV. Satın alınan hemen her malın ve hizmetin fiyatına eklenen vergi. Genel oranı yüzde 20.'],
+   ['Özel tüketim vergisi','özel tüketim vergisi','Kısaca ÖTV. Akaryakıt, otomobil, sigara, alkol, telefon gibi belli mallardan ayrıca alınan yüksek oranlı vergi.'],
+   ['Dolaylı vergi','dolaylı vergi','Harcama yaparken fiyatın içinde ödenen vergi. Geliri ne olursa olsun herkes aynı tutarı öder.'],
+   ['Dolaysız vergi','dolaysız vergi','Doğrudan kazançtan ya da servetten alınan vergi: gelir vergisi, kurumlar vergisi.'],
+   ['Kurumlar vergisi','kurumlar vergisi','Şirketlerin kârı üzerinden ödediği vergi. Genel oranı yüzde 25.'],
+   ['Gelir vergisi','gelir vergisi','Kişilerin maaş, kira ve serbest kazançları üzerinden ödediği, kazanç arttıkça oranı yükselen vergi.'],
+   ['Brüt','brüt','Kesintiler yapılmadan önceki tutar. Karşıtı net: ele geçen tutar.','e'],
+   ['Beyanname','beyanname','Mükellefin kazancını ve borçlandığı vergiyi devlete bildirdiği belge.'],
+   ['Mükellef','mükellef','Vergi ödemekle yükümlü kişi ya da şirket.'],
+   ['Kayıt dışı','kayıt dışı','Resmî kayıtlara girmeyen, bu yüzden vergilendirilemeyen kazanç ya da çalışma.'],
+   ['İhale','ihale','Bir malı ya da işi, teklif toplayarak en uygun fiyatı verene satma ya da verme yöntemi.'],
+   ['Teşvik','teşvik','Devletin belli bir yatırımı ya da faaliyeti özendirmek için tanıdığı vergi indirimi ya da destek.'],
+   ['Uluslararası Para Fonu','uluslararası para fonu','Kısaca IMF. Döviz sıkıntısına düşen ülkelere, bir ekonomi programı uygulamaları şartıyla borç veren kuruluş.'],
+   ['İstikrar programı','istikrar program','Krizdeki bir ekonomide enflasyonu ve açıkları düşürmek için uygulanan önlemler bütünü: faiz artışı, harcama kesintisi, değer düşürme.'],
+   ['Değer düşürme','değer düşürme','Devletin, parasının yabancı para karşısındaki resmî fiyatını bir kararla indirmesi. Kitaplarda devalüasyon denir.'],
+   ['Karaborsa','karaborsa','Resmî fiyattan bulunamayan malın el altından, çok daha pahalıya satıldığı yasa dışı pazar.'],
+   ['Koalisyon','koalisyon','Tek başına çoğunluğu olmayan partilerin birlikte kurduğu hükûmet.'],
+   ['İmtiyaz','imtiyaz','Devletin bir kişiye ya da şirkete tanıdığı, başkalarının sahip olmadığı özel hak.'],
+   ['Repo','repo','Geri satın alma anlaşması. Banka tahvilini kısa süreliğine satıp karşılığında para alır, süre sonunda biraz daha pahalıya geri alır; aradaki fark faizdir.'],
+   ['Baz puan','baz puan','Yüzde birin yüzde biri. 100 baz puan, 1 puan demektir: faiz yüzde 38\'den 37\'ye inerse 100 baz puan inmiştir.'],
+   ['Gerçek faiz','gerçek faiz','Faizden enflasyon çıkarıldıktan sonra kalan. Kitaplarda reel faiz denir. Paranın alım gücünün artıp artmadığını gösterir.'],
+   ['Görünen faiz','görünen faiz','Bankanın söylediği, enflasyon düşülmemiş faiz. Kitaplarda nominal faiz denir.'],
+   ['Para Politikası Kurulu','para politikası kurulu','Merkez Bankası\'nda faiz kararını veren kurul. Başkan ve başkan yardımcılarından oluşur, yılda sekiz kez toplanır.'],
+   ['Fiyat istikrarı','fiyat istikrarı','Fiyatların yavaş ve öngörülebilir biçimde artması; düşük enflasyon.'],
+   ['Teminat','teminat','Borcun ödenmemesi hâlinde alacaklının el koyabileceği, borç karşılığı gösterilen mal ya da değer.'],
+   ['İpotek','ipotek','Bir evin ya da arsanın borca karşılık teminat gösterilmesi.'],
+   ['Kararname','kararname','Cumhurbaşkanı\'nın Meclis\'ten kanun çıkmadan, kendi imzasıyla yaptığı düzenleme.'],
+   ['İhracat','ihracat','Yurt dışına mal ya da hizmet satmak.'],
+   ['İthal','ithal','Yurt dışından satın alınan.'],
+   ['Beklenti','beklenti','İnsanların gelecekte ne olacağına dair tahmini. Enflasyon beklentisi, fiyatların ne kadar artacağına dair inançtır.'],
+   ['Koridor','koridor','Merkez Bankası\'nın gecelik borç verme (tavan) ve borç alma (taban) faizleri arasındaki aralık.'],
+   ['Kısa vadeli','kısa vadeli','Kısa süre içinde (genellikle bir yıldan az) geri ödenecek olan.'],
+   ['Mevduat sigortası','mevduat sigorta','Banka batarsa devletin ödemeyi garanti ettiği en yüksek tutar.'],
+   ['Mevduat','mevduat','Bankaya yatırılan para. Hukuken bankaya verilmiş bir borçtur; banka istendiğinde geri ödemeyi vaat eder.'],
+   ['Vadesiz hesap','vadesiz','İstediğin an çekebildiğin, faiz getirmeyen ya da çok az getiren banka hesabı.'],
+   ['Vadeli hesap','vadeli','Parayı belli bir süre (örneğin 32 gün) bankada bırakmayı kabul ettiğin, karşılığında faiz aldığın hesap.'],
+   ['Kredi','kredi','Bankanın sana verdiği borç. Belli bir sürede faiziyle geri ödersin.'],
+   ['Faiz','faiz','Borç alınan paranın kirası. Yüzde 40 faiz, 100 liralık borç için yılda 40 lira kira demektir.'],
+   ['Politika faizi','politika faizi','Merkez Bankası\'nın bankalara kısa süreli borç verirken uyguladığı faiz. Ülkedeki diğer faizlerin çıkış noktasıdır.'],
+   ['Enflasyon','enflasyon','Fiyatların genel olarak artması, yani paranın alım gücünün düşmesi. Yüzde 30 enflasyon, geçen yıl 100 liraya alınanın bu yıl 130 lira olması demektir.'],
+   ['Dolarizasyon','dolarizasyon','İnsanların kendi parası yerine yabancı parayla birikim yapması ya da fiyat biçmesi.'],
+   ['Rezerv','rezerv','Bir bankanın Merkez Bankası\'ndaki hesabında tuttuğu para ve kasasındaki nakit. Bankalar birbirine bununla ödeme yapar. Merkez Bankası için: kasasındaki döviz ve altın.'],
+   ['Zorunlu karşılık','zorunlu karşılı[kğ]','Bankaların, topladıkları mevduatın belli bir yüzdesini Merkez Bankası\'nda tutma zorunluluğu.'],
+   ['Sermaye','sermaye','Bankanın ya da şirketin sahiplerinin koyduğu para ve birikmiş kârlar. Zarar önce buradan düşülür.'],
+   ['Tahvil','tahvil','Devletin ya da bir şirketin borç alırken verdiği senet. Alan kişi belli bir süre sonra parasını faiziyle geri alır.'],
+   ['Hazine','Hazine','Devletin parasını yöneten kurum: vergiyi toplar, ödemeleri yapar, devlet adına borçlanır.','c'],
+   ['Bütçe açığı','bütçe açı[kğ]','Devletin bir yılda harcadığı paranın, topladığı paradan fazla olan kısmı.'],
+   ['Merkez Bankası','merkez bankası','Bir ülkenin parasını çıkaran ve faizini belirleyen kurum. Bankaların bankasıdır.'],
+   ['Banknot','banknot','Kâğıt para. Kelime anlamı "banka senedi"dir.'],
+   ['Sikke','sikke','Üzerine damga vurulmuş madenî para.'],
+   ['Hesap birimi','hesap birimi','Değerleri karşılaştırmaya yarayan ortak ölçü. Türkiye\'de fiyatların lira ile yazılması gibi.'],
+   ['İtibari para','itibari para','Altın gibi bir madene bağlı olmayan, değeri onu çıkaran devlete duyulan güvenden gelen para.'],
+   ['Altın standardı','altın standardı','Kâğıt paranın belli bir ağırlıkta altına çevrilebildiği eski para düzeni.'],
+   ['Veresiye','veresiye','Parası sonra ödenmek üzere yapılan alışveriş.'],
+   ['Makbuz','makbuz','Bir şeyin teslim alındığını gösteren yazılı belge.'],
+   ['Senet','sene[dt]','Bir borcu gösteren yazılı belge.'],
+   ['Mudi','mudi','Bankaya para yatırmış kişi.'],
+   ['Avans','avans','İleride kesilmek üzere önceden verilen para.'],
+   ['Kur','kur(?:u|un|a|da|dan|la|lar|ları)?','Bir ülke parasının başka bir ülke parası cinsinden fiyatı. Dolar kuru 48 ise bir dolar 48 liradır.','e'],
+   ['Katrilyon','katrilyon','Milyon kere milyar. 2005\'te liradan altı sıfır atılmadan önce devlet bütçesi bu birimle konuşulurdu.'],
+   ['Trilyon','trilyon','Bin milyar.'],
+   ['Para piyasası fonu','para piyasası fon','Parayı çok kısa süreli ve düşük riskli borç araçlarına yatıran yatırım fonu. Banka hesabına yakın sayılır.']
+  ];
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function wrapTerms(scope){
+    var used=[];
+    G.forEach(function(g,gi){
+      var o=g[3]||''; var re; try{re=new RegExp('(^|[^\\p{L}])('+g[1]+(o.indexOf('e')>-1?')(?![\\p{L}])':'[\\p{L}]*)'),(o.indexOf('c')>-1?'u':'iu'))}catch(e){return}
+      var ps=scope.querySelectorAll('p, li');
+      for(var i=0;i<ps.length;i++){
+        var el=ps[i]; if(el.closest('.fine,.side,details,.sum,.nav')) continue;
+        var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null), n;
+        while((n=w.nextNode())){
+          if(n.parentNode.closest('.term,a,button,summary')) continue;
+          var m=re.exec(n.nodeValue); if(!m) continue;
+          var start=m.index+m[1].length, word=m[2];
+          var after=n.splitText(start); after.nodeValue=after.nodeValue.slice(word.length);
+          var s=document.createElement('span'); s.className='term'; s.tabIndex=0; s.setAttribute('role','button');
+          s.dataset.gi=gi; s.textContent=word; after.parentNode.insertBefore(s,after);
+          used.push(gi); return;
+        }
+      }
+    });
+    return used;
+  }
+  function addWordList(ch,used){
+    if(!used.length||ch.querySelector('.words')) return;
+    var end=ch.querySelector('.end'); if(!end) return;
+    var h='<div class="eyebrow">Bu bölümdeki kelimeler</div><dl class="words">';
+    used.slice().sort(function(a,b){return G[a][0].localeCompare(G[b][0],'tr')}).forEach(function(gi){h+='<div><dt>'+esc(G[gi][0])+'</dt><dd>'+esc(G[gi][2])+'</dd></div>'});
+    var box=document.createElement('div'); box.innerHTML=h+'</dl>';
+    var nav=end.querySelector('.nav'); end.insertBefore(box,nav);
+  }
+  document.querySelectorAll('.chapter').forEach(function(ch){addWordList(ch,wrapTerms(ch))});
+  var pano=document.querySelector('.pano'); if(pano) wrapTerms(pano);
+
+  var box=document.getElementById('defbox');
+  function show(gi){document.getElementById('def-t').textContent=G[gi][0];document.getElementById('def-d').textContent=G[gi][2];box.hidden=false}
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('.term'); if(t){show(+t.dataset.gi);return}
+    if(e.target.id==='def-x'||!e.target.closest('#defbox')) box.hidden=true;
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape') box.hidden=true;
+    if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('term')){e.preventDefault();show(+e.target.dataset.gi)}
+  });
+
+  /* ---- okuma takibi ve yönlendirme ---- */
+  function get(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+  function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  var done=get('dni-done')||{};
+  function paint(){
+    document.querySelectorAll('.side a[data-ch]').forEach(function(a){a.classList.toggle('done',!!done[a.dataset.ch])});
+    document.querySelectorAll('button[data-done]').forEach(function(b){b.textContent=done[b.dataset.done]?'Okundu ✓':'Bu bölümü okudum'});
+    var last=get('dni-last'), r=document.getElementById('resume');
+    if(last&&names[last]){r.innerHTML='Kaldığın yer: <a href="#'+last+'">'+names[last]+'</a>';r.classList.add('on')}
+  }
+  function route(){
+    var h=(location.hash||'#ev').slice(1), m=h.match(/^([a-z]+)-(\d+)$/);
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+    var crumb=document.getElementById('crumb'); box.hidden=true;
+    if(m&&files[m[1]]&&document.getElementById('c-'+h)){
+      document.getElementById('v-'+m[1]).classList.add('on');
+      document.querySelectorAll('#v-'+m[1]+' .chapter').forEach(function(c){c.style.display=(c.id==='c-'+h)?'block':'none'});
+      document.querySelectorAll('.side a[data-ch]').forEach(function(a){a.classList.toggle('cur',a.dataset.ch===h)});
+      crumb.textContent=files[m[1]].title+' · Bölüm '+m[2];
+      set('dni-last',h);
+    } else if(h==='pano'){
+      document.getElementById('v-pano').classList.add('on'); crumb.textContent='Ekim 2026 panosu';
+    } else {
+      document.getElementById('v-ev').classList.add('on'); crumb.textContent='Kütüphane';
+    }
+    paint(); window.scrollTo(0,0);
+  }
+  document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done[k]=!done[k];set('dni-done',done);paint()});
+  window.addEventListener('hashchange',route); route();
+})();
+</script>

@@ -45,6 +45,17 @@ Arşive bölüm eklemek: `arsiv/kaynak/<dosya>/bolum-N.html` yaz, başlığını
 `arsiv/kaynak/dosyalar.json` içine ekle, `python arsiv/build.py` çalıştır.
 `arsiv/index.html` derlenmiş çıktıdır; elle düzenleme.
 
+## Gündem (`api/gundem.js`)
+
+Seçili kaynakların son başlıklarını tek listede gösterir; yalnızca Vercel'de çalışır.
+Kaynak eklemek/çıkarmak: `api/gundem.js` → `KAYNAKLAR`. Kilit ve günlük süre:
+`app.js` → `GUNDEM`. Hesap bağlantıları: `app.js` → `HESAPLAR`.
+
+## Arka plan fotoğrafı
+
+Depo köküne `arkaplan.jpg` adında bir fotoğraf koyarsan sayfanın arkasında soluk
+olarak görünür. Görünürlük: `styles.css` → `--foto` (0–1). Dosya yoksa bir şey olmaz.
+
 ## Şifre (isteğe bağlı)
 
 `middleware.js` Vercel'de çalışır. Vercel → Project → Settings → Environment

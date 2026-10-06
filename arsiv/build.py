@@ -49,6 +49,10 @@ betik = betik.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
 betik = betik.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
 govde.append(betik)
 stil, govde = oku("stil.html"), "".join(govde)
+# Site derlemesinde yazı tipleri depodan (../fonts); --tek kopyasında Google Fonts bağlantısı kalır.
+import re as _re
+stil_site = _re.sub(r'<link rel="preconnect"[^>]*>\n<link rel="stylesheet" href="https://fonts.googleapis.com[^>]*>\n', '<link rel="stylesheet" href="../fonts/arsiv.css">\n', stil)
+assert "../fonts/arsiv.css" in stil_site
 
 tam = f'''<!doctype html>
 <html lang="tr">
@@ -58,7 +62,7 @@ tam = f'''<!doctype html>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0f1020">
 <link rel="icon" href="../icons/favicon-64.png" type="image/png">
-{stil}</head>
+{stil_site}</head>
 <body>
 {govde}
 </body>

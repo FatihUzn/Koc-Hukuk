@@ -215,7 +215,7 @@ function zilKur(){
     }).catch(function(){ metin("Bildirimleri aç"); return null; });
   }
   z.addEventListener("click",function(){
-    if(!E || !E.anahtar()){ metin("Önce Plan'dan eşitlemeyi başlat"); return; }
+    if(!E || !E.anahtar()){ metin("Önce Plan → Eşitleme: anahtarı yapıştır"); return; }
     navigator.serviceWorker.ready.then(function(g){
       return g.pushManager.getSubscription().then(function(a){
         if(a && Notification.permission==="granted"){
@@ -1062,14 +1062,21 @@ function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); 
     var t = !d.kurulu ? "kurulmadı" : !a ? "kapalı" : d.hata ? "hata" : d.son ? ("son "+new Date(d.son).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})) : "bekliyor";
     $("esDurum").textContent=t;
     $("esAciklama").textContent = !d.kurulu ? "Eşitleme sunucusu henüz bağlanmadı (esitle.js içindeki adres ve anahtar boş)."
-      : !a ? "Bloklar, netler, defter ve arşiv ilerlemesi telefon ile bilgisayar arasında eşitlenir. Bir cihazda başlat, öbüründe anahtarı gir."
+      : !a ? "Bloklar, netler, defter ve arşiv ilerlemesi cihazlar arasında eşitlenir. Bir cihazda zaten başlattıysan burada BAŞLATMA: o cihazdaki bağlantıyı ya da anahtarı aşağıya yapıştırıp Bağlan'a bas."
       : d.hata ? ("Eşitlenemedi: "+d.hata) : "Bu anahtar verinin tek kilidi. Kimseyle paylaşma; öbür cihazına kendin aktar.";
   }
   window.addEventListener("esitleme-durum",ciz2);
   window.addEventListener("esitleme-geldi",function(){ yereldenYukle(); ciz(); });
   $("esBaslat").addEventListener("click",function(){ E.baslat().then(ciz2); });
   $("esBaglan").addEventListener("click",function(){ E.baglan($("esGir").value).then(function(ok){ if(ok===false) durumYaz("anahtar geçersiz"); $("esGir").value=""; ciz2(); }); });
-  $("esSimdi").addEventListener("click",function(){ E.esitle().then(ciz2); });
+  $("esSimdi").addEventListener("click",function(){
+    var b=$("esSimdi"); b.textContent="Eşitleniyor…";
+    E.esitle().then(function(ok){
+      ciz2(); var d=E.durum();
+      b.textContent = ok ? "Eşitlendi ✓" : (d.hata ? "Olmadı" : "Zaten sürüyor");
+      setTimeout(function(){ b.textContent="Şimdi eşitle"; },2500);
+    });
+  });
   $("esKopyala").addEventListener("click",function(){
     var u=location.origin+location.pathname+"#esitle="+E.anahtar(), b=$("esKopyala");
     function tamam(){ b.textContent="Kopyalandı — öbür cihazda aç"; setTimeout(function(){ b.textContent="Öbür cihaz için bağlantıyı kopyala"; },2500); }

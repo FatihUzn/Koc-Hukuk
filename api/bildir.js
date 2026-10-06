@@ -42,8 +42,40 @@ const SERT = [
   "Bugün atladığın şey, yarın iki katı ağır gelecek.",
   "Hedefin büyük. Günün küçük kalmasın.",
   "Su iç, omuzlarını indir, devam et.",
-  "Bir nefes al. Sonra kaldığın yerden."
+  "Bir nefes al. Sonra kaldığın yerden.",
+  "Bugün yapmadığını yarın yapacağına dair elinde tek bir kanıt var mı?",
+  "Beş yıl sonraki sen, şu anki sana teşekkür mü edecek, kızacak mı?",
+  "Herkes ister. Çok azı her gün gelir. Hangisisin?",
+  "Şu an kaçtığın şey, haziranda karşına çıkacak. O gün kaçacak yer yok.",
+  "Konfor seni bir yere götürmedi. Bunu zaten biliyorsun.",
+  "Kendine acımak da bir erteleme biçimi.",
+  "Bu kadarı yeter dediğin yerde herkes duruyor. Sen bir tık daha git.",
+  "Zamanın var gibi davranıyorsun. Takvime bak.",
+  "Hayal kurmak bedava. Bedelini masada ödersin.",
+  "Bugünü boş geçirirsen, bunu yalnızca sen bileceksin. Yeter de.",
+  "Şansa bırakılan şey, başkasına bırakılmıştır.",
+  "Dün iyi geçti diye bugün kendiliğinden geçmez.",
+  "Dağınıksan topla. Yorgunsan beş dakika. Sonra bahane yok.",
+  "Kim olmak istediğini biliyorsun. Şu an ona yakışanı yap.",
+  "Bir saat daha oyalanırsan, gün gitti demektir.",
+  "Kolay yolu seçenlerin hikâyesini kimse anlatmıyor.",
+  "Pişmanlık disiplinden pahalı. İkisinden biri mutlaka ödenir.",
+  "Şu an senden daha az imkânı olan biri, senden daha çok çalışıyor.",
+  "Başlamak zor. Bitirememiş olmak daha zor.",
+  "Gün içinde kaç kez sonra dedin? Sonra diye bir saat yok.",
+  "İçindeki ses mızmızlanıyor. Onu dinlemek zorunda değilsin.",
+  "Bugün kendine bir iyilik yap: yapman gerekeni yap.",
+  "Bu yılı sen seçtin. Hakkını ver.",
+  "Ertelediğin her şey bir yerde birikiyor. O yığın sana ait.",
+  "Kimse alkışlamayacak. Yine de yap.",
+  "Şu an bıraktığın yer, yarın başlayacağın yer. Onu ileri taşı.",
+  "Kendini ciddiye almazsan kimse almaz.",
+  "Gün bitmeden bir şeyi tam yap. Yarım on işten iyidir.",
+  "Aynaya bakınca gurur duyacağın bir gün olsun bu.",
+  "Ya bugün zor olur, ya haziran."
 ];
+const ARA_SAYI = 6;        // günde kaç ara mesaj
+const ARA_BOSLUK = 60;     // iki ara mesaj arası en az kaç dakika
 
 const p2 = (n) => String(n).padStart(2, "0");
 function simdiTR(ms) {
@@ -61,16 +93,16 @@ function secim(z, ozet) {
   const baslayan = bloklar.filter((b) => dkDan(b.s) === z.dilim);
   for (const b of baslayan) out.push({ title: b.ad, body: b.s + (b.dk ? " · " + b.dk + " dk" : ""), tag: "blok" });
 
-  // Günde üç ara mesaj: 09:00–21:30 arasında, her gün farklı ama o gün için sabit dilimlerde.
+  // Ara mesajlar: 09:00–21:30 arasında, her gün farklı ama o gün için sabit dilimlerde.
   const r = rasgele(z.gunNo), blokDilim = new Set(bloklar.map((b) => dkDan(b.s)));
   const ara = [];
   let deneme = 0;
-  while (ara.length < 3 && deneme++ < 60) {
+  while (ara.length < ARA_SAYI && deneme++ < 400) {
     const d = 540 + Math.floor(r() * 150) * 5;           // 09:00 + 0..745 dk
-    if (d <= 1290 && !blokDilim.has(d) && !ara.some((x) => Math.abs(x - d) < 90)) ara.push(d);
+    if (d <= 1290 && !blokDilim.has(d) && !ara.some((x) => Math.abs(x - d) < ARA_BOSLUK)) ara.push(d);
   }
   const sira = ara.indexOf(z.dilim);
-  if (sira >= 0) out.push({ title: "275", body: SERT[(z.gunNo * 3 + sira * 7) % SERT.length], tag: "soz" });
+  if (sira >= 0) out.push({ title: "275", body: SERT[(z.gunNo * ARA_SAYI + sira) % SERT.length], tag: "soz" });
 
   // Durum yoklaması: 12:45, 17:15, 21:45 — o saate kadar bitmiş olması gereken blok sayısına göre.
   if ([765, 1035, 1305].includes(z.dilim) && ozet && ozet.gun === z.gun && typeof ozet.yapilan === "number") {

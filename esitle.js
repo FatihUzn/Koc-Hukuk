@@ -84,7 +84,8 @@ function anahtarUret(){
 }
 function baslat(){ var a=anahtarUret(); yaz(K_ANAHTAR,a); yaz(K_GOLGE,{}); bildir(); return esitle().then(function(){ return a; }); }
 function baglan(a){
-  a=String(a||"").replace(/[^0-9a-f]/gi,"").toLowerCase();
+  a=String(a||""); var m=a.match(/esitle=([0-9a-f]{32,})/i); if(m) a=m[1];   // bağlantının tamamı yapıştırılmış olabilir
+  a=a.replace(/[^0-9a-f]/gi,"").toLowerCase();
   if(a.length<32) return Promise.resolve(false);
   yaz(K_ANAHTAR,a); yaz(K_GOLGE,{}); bildir(); return esitle();
 }

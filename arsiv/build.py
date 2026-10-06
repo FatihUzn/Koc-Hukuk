@@ -65,6 +65,7 @@ tam = f'''<!doctype html>
 {stil_site}</head>
 <body>
 {govde}
+<script src="../esitle.js"></script>
 </body>
 </html>
 '''

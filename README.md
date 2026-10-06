@@ -45,6 +45,13 @@ Arşive bölüm eklemek: `arsiv/kaynak/<dosya>/bolum-N.html` yaz, başlığını
 `arsiv/kaynak/dosyalar.json` içine ekle, `python arsiv/build.py` çalıştır.
 `arsiv/index.html` derlenmiş çıktıdır; elle düzenleme.
 
+## Eşitleme (`esitle.js`, `supabase/esitleme.sql`)
+
+Telefon ile bilgisayar arasında bloklar, netler, defter ve arşiv ilerlemesi eşitlenir.
+1. Supabase projesinde SQL Editor'e `supabase/esitleme.sql` içeriğini yapıştırıp çalıştır.
+2. `esitle.js` başındaki `SB_URL` ve `SB_ANAHTAR` satırlarını doldur (Project Settings → API).
+3. Sitede Plan → "Cihazlar arası eşitleme" → bir cihazda başlat, öbüründe anahtarı gir.
+
 ## Gündem (`api/gundem.js`)
 
 Seçili kaynakların son başlıklarını tek listede gösterir; yalnızca Vercel'de çalışır.

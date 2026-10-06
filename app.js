@@ -74,7 +74,16 @@ var BOLUMLER = [
   {id:"netler", ad:"Netler",        kisa:"Netler"},
   {id:"defter", ad:"Yanlış defteri",kisa:"Defter"},
   {id:"yil",    ad:"Yıl",           kisa:"Yıl"},
-  {id:"plan",   ad:"Plan",          kisa:"Plan"}
+  {id:"plan",   ad:"Plan ve yaşam", kisa:"Plan"},
+  {id:"gundem", ad:"Gündem",        kisa:"Gündem"}
+];
+
+/* Gündem ayarları: kilit açıkken o günün blokları ARSIV_ORAN kadar bitmeden açılmaz; günde en çok gunlukDk dakika. */
+var GUNDEM = { kilit:true, gunlukDk:15 };
+var HESAPLAR = [
+  {ad:"İbrahim Haskoloğlu · X", url:"https://x.com/haskologlu"},
+  {ad:"Telegram", url:"https://t.me/s/ibrahimhaskologlu"},
+  {ad:"YouTube", url:"https://www.youtube.com/ibrahimhaskologlu"}
 ];
 
 /* ============ yardımcılar ============ */
@@ -112,6 +121,7 @@ var IKON={
   netler:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 12.5l3.5-4 3 2.5 4.5-6"/></svg>',
   defter:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2.5h8v11H4zM6.5 5.5h3M6.5 8h3M6.5 10.5h2"/></svg>',
   yil:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="3" height="6"/><rect x="6.5" y="3" width="3" height="10"/><rect x="11" y="6.5" width="3" height="4.5"/></svg>',
+  gundem:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="11" height="10" rx="1.500"/><path d="M5 6h6M5 8.500h6M5 11h3.500"/></svg>',
   plan:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2 1.5"/></svg>'
 };
 (function(){
@@ -128,6 +138,7 @@ var IKON={
   ab.addEventListener("click",function(){ location.href="arsiv/"; });
   nav.appendChild(ab);
   var son=yerelOku("bolum","bugun");
+  try{ var qb=new URLSearchParams(location.search).get("b"); if(qb) son=qb; }catch(e){}
   if(BOLUMLER.some(function(b){return b.id===son;})) aktif=son;
 })();
 
@@ -139,6 +150,7 @@ function git(id){
     if(btn) btn.setAttribute("aria-current", b.id===id ? "true":"false");
   });
   if(id==="netler") cizGrafik();
+  if(id==="gundem") cizGundem();
   window.scrollTo(0,0);
 }
 
@@ -344,7 +356,7 @@ function cizBugun(){
   var gunler=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
   var aylar=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   var dw=b.getDay();
-  $("todayTitle").textContent = gunler[dw]+", "+b.getDate()+" "+aylar[b.getMonth()];
+  $("todayTitle").innerHTML = gunler[dw]+", <em>"+b.getDate()+" "+aylar[b.getMonth()]+"</em>";
 
   var wrap=$("blocks"); wrap.innerHTML="";
   var liste = haftaIciBloklari(dw);
@@ -574,7 +586,7 @@ function cizGrafik(){
   var cFaint=cs.getPropertyValue("--t3").trim()||"#6E6E78";
   var cSurf=cs.getPropertyValue("--s1").trim()||"#111114";
   var cInk =cs.getPropertyValue("--t1").trim()||"#EDEDF0";
-  var MONO="IBM Plex Mono, monospace", SANS="IBM Plex Sans, sans-serif";
+  var MONO="IBM Plex Mono, monospace", SANS="Inter, sans-serif";
 
   function mk(n,a){var e=document.createElementNS("http://www.w3.org/2000/svg",n); for(var k in a) e.setAttribute(k,a[k]); return e;}
   var n=MERDIVEN.length;
@@ -952,6 +964,55 @@ function cizPlan(){
 
 /* ============ başlat ============ */
 
+/* ============ gündem ============ */
+var gundemVeri=null, gundemZaman=0, gundemSon=Date.now();
+function gundemOkuma(){ var k=anahtar(bugunTarih()), o=yerelOku("gundem_okuma",null); if(!o||o.gun!==k) o={gun:k,sn:0}; return o; }
+function gundemDurum(){
+  var o=yerelOku("bugun_ozet",null), k=anahtar(bugunTarih());
+  var yap=(o&&o.gun===k)?o.yapilan:0, top=(o&&o.toplam)||9, gerek=Math.ceil(top*ARSIV_ORAN);
+  if(GUNDEM.kilit && yap<gerek) return {acik:false, neden:"Gündem "+gerek+" blokta açılır. Bugün "+yap+"/"+top+": "+(gerek-yap)+" blok daha."};
+  var r=gundemOkuma();
+  if(r.sn>=GUNDEM.gunlukDk*60) return {acik:false, neden:"Bugünlük gündem süren doldu ("+GUNDEM.gunlukDk+" dk). Yarın yine burada."};
+  return {acik:true, kalan:Math.max(0,GUNDEM.gunlukDk*60-r.sn)};
+}
+function saatFarki(iso){
+  var dk=Math.round((Date.now()-new Date(iso).getTime())/60000);
+  if(dk<1) return "şimdi"; if(dk<60) return dk+" dk"; if(dk<1440) return Math.round(dk/60)+" sa"; return Math.round(dk/1440)+" gün";
+}
+function cizGundem(zorla){
+  var liste=$("gundemListe"), alt=$("gundemAlt"), hs=$("hesaplar"); if(!liste) return;
+  hs.innerHTML=""; HESAPLAR.forEach(function(h){ var a=el("a","hesap",h.ad); a.href=h.url; a.target="_blank"; a.rel="noopener"; hs.appendChild(a); });
+  var d=gundemDurum();
+  hs.hidden=!d.acik; $("gundemYenile").hidden=!d.acik;
+  if(!d.acik){ liste.innerHTML=""; liste.appendChild(el("div","empty",d.neden)); alt.textContent="Kilitli."; return; }
+  alt.textContent="Bugün kalan süre: "+Math.ceil(d.kalan/60)+" dk";
+  if(gundemVeri && !zorla && Date.now()-gundemZaman<5*60000){ gundemYaz(); return; }
+  liste.innerHTML=""; liste.appendChild(el("div","empty","Yükleniyor…"));
+  fetch("api/gundem",{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+   .then(function(v){ gundemVeri=v; gundemZaman=Date.now(); if(aktif==="gundem") gundemYaz(); })
+   .catch(function(){ liste.innerHTML=""; liste.appendChild(el("div","empty","Gündem yüklenemedi. Yalnızca yayındaki sitede çalışır; bağlantını kontrol et.")); });
+}
+function gundemYaz(){
+  var liste=$("gundemListe"); liste.innerHTML="";
+  var v=gundemVeri||{ogeler:[],kaynaklar:[]};
+  if(!v.ogeler.length){ liste.appendChild(el("div","empty","Kaynaklardan öğe gelmedi.")); }
+  v.ogeler.slice(0,60).forEach(function(o){
+    var a=el("a","hbr"); a.href=o.link; a.target="_blank"; a.rel="noopener";
+    var ust=el("div","hu"); ust.appendChild(el("b",null,o.kaynak)); ust.appendChild(el("span",null,saatFarki(o.zaman)));
+    a.appendChild(ust); a.appendChild(el("p",null,o.metin)); liste.appendChild(a);
+  });
+  var bozuk=(v.kaynaklar||[]).filter(function(k){return !k.tamam;}).map(function(k){return k.ad;});
+  if(bozuk.length) liste.appendChild(el("div","empty","Okunamayan kaynak: "+bozuk.join(", ")));
+}
+setInterval(function(){
+  var simdi=Date.now(), fark=Math.round((simdi-gundemSon)/1000); gundemSon=simdi;
+  if(aktif!=="gundem" || document.visibilityState!=="visible" || fark<=0 || fark>15) return;
+  if(!gundemDurum().acik) return;
+  var r=gundemOkuma(); r.sn+=fark; yerelYaz("gundem_okuma",r);
+  var d=gundemDurum(); if(!d.acik) cizGundem(); else $("gundemAlt").textContent="Bugün kalan süre: "+Math.ceil(d.kalan/60)+" dk";
+},5000);
+$("gundemYenile").addEventListener("click",function(){ cizGundem(true); });
+
 /* ============ derinlik: üst kart fareyle eğilir ============ */
 (function(){
   var h=$("hero"); if(!h) return;
@@ -982,6 +1043,39 @@ function yedekKontrol(){
 }
 $("yedekSimdi").addEventListener("click",function(){ yedekAl(); setTimeout(yedekKontrol,300); });
 function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); yedekKontrol(); }
+
+/* ============ eşitleme arayüzü (esitle.js) ============ */
+(function(){
+  var E=window.Esitleme; if(!E || !$("esitleKart")) return;
+  function ciz2(){
+    var d=E.durum(), a=E.anahtar();
+    $("esKapali").hidden=!!a || !d.kurulu; $("esAcik").hidden=!a;
+    if(a) $("esAnahtar").value=a;
+    var t = !d.kurulu ? "kurulmadı" : !a ? "kapalı" : d.hata ? "hata" : d.son ? ("son "+new Date(d.son).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"})) : "bekliyor";
+    $("esDurum").textContent=t;
+    $("esAciklama").textContent = !d.kurulu ? "Eşitleme sunucusu henüz bağlanmadı (esitle.js içindeki adres ve anahtar boş)."
+      : !a ? "Bloklar, netler, defter ve arşiv ilerlemesi telefon ile bilgisayar arasında eşitlenir. Bir cihazda başlat, öbüründe anahtarı gir."
+      : d.hata ? ("Eşitlenemedi: "+d.hata) : "Bu anahtar verinin tek kilidi. Kimseyle paylaşma; öbür cihazına kendin aktar.";
+  }
+  window.addEventListener("esitleme-durum",ciz2);
+  window.addEventListener("esitleme-geldi",function(){ yereldenYukle(); ciz(); });
+  $("esBaslat").addEventListener("click",function(){ E.baslat().then(ciz2); });
+  $("esBaglan").addEventListener("click",function(){ E.baglan($("esGir").value).then(function(ok){ if(ok===false) durumYaz("anahtar geçersiz"); $("esGir").value=""; ciz2(); }); });
+  $("esSimdi").addEventListener("click",function(){ E.esitle().then(ciz2); });
+  $("esKopyala").addEventListener("click",function(){
+    var u=location.origin+location.pathname+"#esitle="+E.anahtar(), b=$("esKopyala");
+    function tamam(){ b.textContent="Kopyalandı — öbür cihazda aç"; setTimeout(function(){ b.textContent="Öbür cihaz için bağlantıyı kopyala"; },2500); }
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(tamam,function(){ $("esAnahtar").select(); });
+    else { $("esAnahtar").select(); }
+  });
+  var kesOnay=0;
+  $("esKes").addEventListener("click",function(){
+    var b=$("esKes");
+    if(Date.now()-kesOnay<4000){ E.kes(); b.textContent="Bağlantıyı kes"; kesOnay=0; ciz2(); return; }
+    kesOnay=Date.now(); b.textContent="Emin misin? Tekrar bas"; setTimeout(function(){ b.textContent="Bağlantıyı kes"; },4000);
+  });
+  ciz2();
+})();
 
 yereldenYukle();
 $("dTarih").value=anahtar(bugunTarih());

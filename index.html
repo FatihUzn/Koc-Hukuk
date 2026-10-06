@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>275</title>
 <meta name="description" content="YKS 2027 — günlük bloklar, deneme netleri, yanlış defteri ve 39 haftalık plan.">
-<meta name="theme-color" content="#080b1c" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f5f6fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1020" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f3fa" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="275">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preload" href="fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="styles.css">
 <script>
@@ -46,7 +46,7 @@
     <div class="hero" id="hero">
       <div class="goal">
         <p class="eyebrow">Hedef</p>
-        <h1>Koç Üniversitesi<span>Endüstri Mühendisliği — burslu · SAY</span></h1>
+        <h1>Koç <em>Üniversitesi</em><span>Endüstri Mühendisliği — burslu · SAY</span></h1>
         <p class="motto" id="motto" contenteditable="true" spellcheck="false" data-ph="Bu yılın kendi cümlesini buraya yaz…"></p>
         <p class="soz" id="soz" role="button" tabindex="0" title="Başka bir cümle için dokun"></p>
       </div>
@@ -89,13 +89,13 @@
 
     <!-- HAFTA -->
     <section id="s-hafta" hidden>
-      <div class="head"><div><h2>Bu hafta</h2><p class="sub">Cumartesi TYT, Pazar AYT — gerçek sınav saatinde. Pazar akşamı kapalı.</p></div></div>
+      <div class="head"><div><h2>Bu <em>hafta</em></h2><p class="sub">Cumartesi TYT, Pazar AYT — gerçek sınav saatinde. Pazar akşamı kapalı.</p></div></div>
       <div class="week" id="week"></div>
     </section>
 
     <!-- NETLER -->
     <section id="s-netler" hidden>
-      <div class="head"><div><h2>Netler</h2><p class="sub">Ders bazlı doğru / yanlış / boş gir, net otomatik (D − Y/4). Toplam tutmuyorsa uyarır.</p></div></div>
+      <div class="head"><div><h2>Deneme <em>netleri</em></h2><p class="sub">Ders bazlı doğru / yanlış / boş gir, net otomatik (D − Y/4). Toplam tutmuyorsa uyarır.</p></div></div>
       <div class="card">
         <div class="hd"><h3>Hedef merdiveni ve gerçekleşen</h3><span class="r">aynı ayda en yüksek deneme</span></div>
         <div class="chartwrap" id="chartWrap">
@@ -132,7 +132,7 @@
 
     <!-- DEFTER -->
     <section id="s-defter" hidden>
-      <div class="head"><div><h2>Yanlış defteri</h2><p class="sub">Her yanlış ve boş için bir satır. Neden sütununu boş bırakma. Enter ile ekle.</p></div></div>
+      <div class="head"><div><h2>Yanlış <em>defteri</em></h2><p class="sub">Her yanlış ve boş için bir satır. Neden sütununu boş bırakma. Enter ile ekle.</p></div></div>
       <div class="card"><div class="in">
         <div class="form">
           <div class="f"><label for="hSinav">Sınav</label><select id="hSinav"><option>TYT</option><option>AYT</option></select></div>
@@ -158,7 +158,7 @@
 
     <!-- YIL -->
     <section id="s-yil" hidden>
-      <div class="head"><div><h2>Yılın şekli</h2><p class="sub">Her kare bir hafta. Kırmızı çerçeve bulunduğun hafta.</p></div></div>
+      <div class="head"><div><h2>Yılın <em>şekli</em></h2><p class="sub">Her kare bir hafta. Kırmızı çerçeve bulunduğun hafta.</p></div></div>
       <div class="card"><div class="in">
         <div class="strip" id="strip"></div>
         <p class="note" id="stripNote" style="margin-top:12px"></p>
@@ -171,9 +171,59 @@
       <p class="note"><b>Deneme neti sınav neti değildir.</b> Gerçekte 3–5 net altta çıkar; merdivenin tepesi bu yüzden hedefin üstünde.</p>
     </section>
 
+    <!-- GÜNDEM -->
+    <section id="s-gundem" hidden>
+      <div class="head"><div><h2>Günün <em>gündemi</em></h2><p class="sub" id="gundemAlt"></p></div><button class="btn sm ghost" id="gundemYenile" type="button">Yenile</button></div>
+      <div class="hesaplar" id="hesaplar"></div>
+      <div class="card"><div id="gundemListe"></div></div>
+      <p class="note"><b>Tek pencere.</b> Gün içinde olan biteni buradan gör, başka sayfaya gitme. Günün işi bitmeden açılmaz; süre dolunca kapanır.</p>
+    </section>
+
     <!-- PLAN -->
     <section id="s-plan" hidden>
-      <div class="head"><div><h2>Kurallar ve protokoller</h2><p class="sub">Ayda bir okunacak şeyler.</p></div></div>
+      <div class="head"><div><h2>Kurallar ve <em>protokoller</em></h2><p class="sub">Ayda bir okunacak şeyler.</p></div></div>
+      <div class="yasam">
+        <div class="yk">
+          <div class="ust"><h2>Günün <em>düzeni</em></h2><span>06:45 — 23:00</span></div>
+          <div class="dzl"><div class="ayrac">Sabah</div><div class="dz y"><time>06:45</time><span class="nk"></span><b>Kalk<i>su · diş</i></b></div><div class="dz y"><time>07:15</time><span class="nk"></span><b>Kahvaltı</b></div><div class="dz"><time>08:00</time><span class="nk"></span><b>Odak I</b></div><div class="dz"><time>10:30</time><span class="nk"></span><b>Gözden geçir</b></div><div class="dz b"><time>11:30</time><span class="nk"></span><b>Spor</b></div><div class="ayrac">Öğleden sonra</div><div class="dz y"><time>13:00</time><span class="nk"></span><b>Yemek</b></div><div class="dz"><time>14:00</time><span class="nk"></span><b>Odak II</b></div><div class="dz"><time>16:00</time><span class="nk"></span><b>Odak III</b></div><div class="dz"><time>17:30</time><span class="nk"></span><b>Pekiştir</b></div><div class="dz"><time>18:00</time><span class="nk"></span><b>Pratik</b></div><div class="ayrac">Akşam</div><div class="dz y"><time>19:00</time><span class="nk"></span><b>Akşam yemeği</b></div><div class="dz y"><time>20:00</time><span class="nk"></span><b>Buluşma</b></div><div class="dz y"><time>22:15</time><span class="nk"></span><b>Kapanış</b></div><div class="dz y"><time>22:30</time><span class="nk"></span><b>Kitap<i>telefon dışarıda</i></b></div><div class="dz y"><time>23:00</time><span class="nk"></span><b>Uyku</b></div></div>
+          <div class="lejant"><span><i></i>Çalışma</span><span class="b"><i></i>Beden</span><span class="y"><i></i>Yemek · dinlenme</span></div>
+          <p class="dip">Yolda: podcast</p>
+        </div>
+        <div class="yk">
+          <div class="ust"><h2>Beslenme <em class="m">planı</em></h2><span>Günlük</span></div>
+          <div class="halkalar">
+            <div class="halka"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/><circle cx="27" cy="27" r="22" fill="none" stroke="var(--mint)" stroke-width="4" stroke-linecap="round" stroke-dasharray="103.7 138.2" transform="rotate(-90 27 27)"/></svg><div><b>~150<small>g</small></b><span>Protein</span></div></div>
+            <div class="halka"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/><circle cx="27" cy="27" r="22" fill="none" stroke="var(--gold)" stroke-width="4" stroke-linecap="round" stroke-dasharray="96.8 138.2" transform="rotate(-90 27 27)"/></svg><div><b>~2400<small>kcal</small></b><span>Enerji</span></div></div>
+          </div>
+          <div class="ayrac">Gün içi</div>
+          <div class="ogun"><span class="ad">Kahvaltı</span><div><b>3 yumurta · 60 g yulaf</b><span>200 g yoğurt · 1 meyve</span></div></div>
+          <div class="ogun"><span class="ad">Spor sonu</span><div><b>1 ölçek protein</b><span>3–5 g kreatin</span></div></div>
+          <div class="ogun"><span class="ad">Öğle</span><div><b>200 g tavuk · 70 g pirinç <i>ya da</i> 90 g makarna</b><span>çiğ tartı · 200–300 g salata · 1 yk zeytinyağı</span></div></div>
+          <div class="ogun"><span class="ad">Ara</span><div><b>300 g yoğurt · 1 meyve</b></div></div>
+          <div class="ayrac">Akşam · birini seç</div>
+          <div class="secenek">
+            <div><em>A</em>60 g mercimek çorbası<br>150 g tavuk · 150 g yoğurt</div>
+            <div><em>B</em>150 g kıyma · 300 g sebze<br>1–2 dilim ekmek</div>
+            <div><em>C</em>60 g mercimek çorbası<br>3 yumurta</div>
+            <div><em>D</em>1 ton · 90 g makarna<br>200 g sebze</div>
+          </div>
+          <p class="dip">Pazar: tavuk ve pirinci toplu pişir<br>Haftada bir esnek öğün · ilk iki hafta sabah tartı</p>
+        </div>
+      </div>
+      <div class="card" id="esitleKart">
+        <div class="hd"><h3>Cihazlar arası eşitleme</h3><span class="r" id="esDurum">—</span></div>
+        <div class="in">
+          <p class="note" id="esAciklama" style="margin:0 0 12px"></p>
+          <div id="esKapali">
+            <div class="iorow"><button class="btn sm" type="button" id="esBaslat">Bu cihazda başlat</button></div>
+            <div class="iorow" style="margin-top:10px"><input type="text" id="esGir" placeholder="Başka cihazdaki anahtarı yapıştır" autocomplete="off" spellcheck="false" style="flex:1;min-width:200px"><button class="btn sm ghost" type="button" id="esBaglan">Bağlan</button></div>
+          </div>
+          <div id="esAcik" hidden>
+            <input type="text" id="esAnahtar" readonly style="width:100%;font-family:var(--mono);font-size:12px" aria-label="Eşitleme anahtarı">
+            <div class="iorow" style="margin-top:10px"><button class="btn sm" type="button" id="esKopyala">Öbür cihaz için bağlantıyı kopyala</button><button class="btn sm ghost" type="button" id="esSimdi">Şimdi eşitle</button><button class="btn sm ghost" type="button" id="esKes">Bağlantıyı kes</button></div>
+          </div>
+        </div>
+      </div>
       <div class="card" id="planCard"></div>
     </section>
 
@@ -181,6 +231,7 @@
 </div>
 
 <input type="file" id="ioFile" accept="application/json" hidden>
+<script src="esitle.js"></script>
 <script src="app.js"></script>
 <script>
   if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }

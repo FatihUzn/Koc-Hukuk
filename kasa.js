@@ -20,7 +20,7 @@ function ozet(kod,tuz){
 var stil=document.createElement("style");
 stil.textContent=
  "html.kasali body>*:not(#kasa){visibility:hidden!important}"+
- "#kasa{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;color:#f6f4fd;font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;"+
+ "#kasa{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 24px 24px;overflow:auto;color:#f6f4fd;font-family:Inter,'Segoe UI',Roboto,Arial,sans-serif;"+
  "background:#14173a;background-image:radial-gradient(900px 620px at 85% -10%,#5b43c4 0%,rgba(91,67,196,0) 65%),radial-gradient(760px 560px at -5% 105%,#1c7f86 0%,rgba(28,127,134,0) 65%)}"+
  "#kasa[hidden]{display:none}"+
  "#kasa .kk{width:100%;max-width:320px;text-align:center}"+

@@ -61,10 +61,12 @@ tam = f'''<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0f1020">
+<meta name="theme-color" content="#f6f7fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="../icons/favicon-64.png" type="image/png">
 <script>try{{if(localStorage.getItem("kasa")&&sessionStorage.getItem("kasa_acik")!=="1")document.documentElement.classList.add("kasali")}}catch(e){{}}</script>
 <style>html.kasali body>*:not(#kasa){{visibility:hidden!important}}</style>
+<script>try{{var t=localStorage.getItem("tema");document.documentElement.setAttribute("data-theme",t?JSON.parse(t):"light")}}catch(e){{document.documentElement.setAttribute("data-theme","light")}}</script>
 {stil_site}</head>
 <body>
 {govde}

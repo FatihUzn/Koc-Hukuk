@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="styles.css">
 <script>
   // tema: erken uygula, yanıp sönme olmasın
-  try{var t=localStorage.getItem("tema");if(t)document.documentElement.setAttribute("data-theme",JSON.parse(t));}catch(e){}
+  try{var t=localStorage.getItem("tema");document.documentElement.setAttribute("data-theme",t?JSON.parse(t):"light");}catch(e){document.documentElement.setAttribute("data-theme","light");}
 </script>
 </head>
 <body>
@@ -28,7 +28,8 @@
 
   <aside class="side">
     <div class="logo"><span class="mark"></span><b id="brand">275<em>gün</em></b></div>
-    <nav class="nav" id="nav" aria-label="Bölümler"></nav>
+    <nav class="nav" id="nav" aria-hidden="true"></nav>
+    <nav class="gnav" id="gnav" aria-label="Bölümler"></nav>
     <div class="sidefoot">
       <button class="ghostbtn theme" id="themeBtn" type="button" aria-label="Tema">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/></svg>
@@ -71,6 +72,8 @@
       <div class="fact"><div class="k">Son AYT</div><div class="v" id="fAyt">—</div></div>
       <div class="fact now"><div class="k">Şu an</div><div class="v" id="fNow">—</div></div>
     </div>
+
+    <div class="sekme" id="sekme" role="tablist" hidden></div>
 
     <!-- BUGÜN -->
     <section id="s-bugun">
@@ -190,6 +193,7 @@
 
     <!-- GÜNDEM -->
     <section id="s-gundem" hidden>
+      <a class="okukart" href="arsiv/"><span><b>Arşiv</b><i>Dünya Nasıl İşler · okuma dosyaları, günlük beş soru</i></span><em id="okuArsivDurum"></em></a>
       <div class="head"><div><h2>Günün <em>gündemi</em></h2><p class="sub" id="gundemAlt"></p></div><button class="btn sm ghost" id="gundemYenile" type="button">Yenile</button></div>
       <div class="hesaplar" id="hesaplar"></div>
       <div class="card"><div id="gundemListe"></div></div>
@@ -198,15 +202,15 @@
 
     <!-- PLAN -->
     <section id="s-plan" hidden>
-      <div class="head"><div><h2>Kurallar ve <em>protokoller</em></h2><p class="sub">Ayda bir okunacak şeyler.</p></div></div>
+      <div class="head" data-alt="kurallar"><div><h2>Kurallar ve <em>protokoller</em></h2><p class="sub">Ayda bir okunacak şeyler.</p></div></div>
       <div class="yasam">
-        <div class="yk">
+        <div class="yk" data-alt="duzen">
           <div class="ust"><h2>Günün <em>düzeni</em></h2><span>06:45 — 23:00</span></div>
           <div class="dzl"><div class="ayrac">Sabah</div><div class="dz y"><time>06:45</time><span class="nk"></span><b>Kalk<i>su · diş</i></b></div><div class="dz y"><time>07:15</time><span class="nk"></span><b>Kahvaltı</b></div><div class="dz"><time>08:00</time><span class="nk"></span><b>Odak I</b></div><div class="dz"><time>10:30</time><span class="nk"></span><b>Gözden geçir</b></div><div class="dz b"><time>11:30</time><span class="nk"></span><b>Spor</b></div><div class="ayrac">Öğleden sonra</div><div class="dz y"><time>13:00</time><span class="nk"></span><b>Yemek</b></div><div class="dz"><time>14:00</time><span class="nk"></span><b>Odak II</b></div><div class="dz"><time>16:00</time><span class="nk"></span><b>Odak III</b></div><div class="dz"><time>17:30</time><span class="nk"></span><b>Pekiştir</b></div><div class="dz"><time>18:00</time><span class="nk"></span><b>Pratik</b></div><div class="ayrac">Akşam</div><div class="dz y"><time>19:00</time><span class="nk"></span><b>Akşam yemeği</b></div><div class="dz y"><time>20:00</time><span class="nk"></span><b>Buluşma</b></div><div class="dz y"><time>22:15</time><span class="nk"></span><b>Kapanış</b></div><div class="dz y"><time>22:30</time><span class="nk"></span><b>Kitap<i>telefon dışarıda</i></b></div><div class="dz y"><time>23:00</time><span class="nk"></span><b>Uyku</b></div></div>
           <div class="lejant"><span><i></i>Çalışma</span><span class="b"><i></i>Beden</span><span class="y"><i></i>Yemek · dinlenme</span></div>
           <p class="dip">Yolda: podcast</p>
         </div>
-        <div class="yk">
+        <div class="yk" data-alt="beslenme">
           <div class="ust"><h2>Beslenme <em class="m">planı</em></h2><span>Günlük</span></div>
           <div class="halkalar">
             <div class="halka"><svg viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/><circle cx="27" cy="27" r="22" fill="none" stroke="var(--mint)" stroke-width="4" stroke-linecap="round" stroke-dasharray="103.7 138.2" transform="rotate(-90 27 27)"/></svg><div><b>~150<small>g</small></b><span>Protein</span></div></div>
@@ -227,21 +231,25 @@
           <p class="dip">Pazar: tavuk ve pirinci toplu pişir<br>Haftada bir esnek öğün · ilk iki hafta sabah tartı</p>
         </div>
       </div>
-      <div class="card" id="takvimKart">
+      <div class="card" id="gorunumKart" data-alt="ayarlar">
+        <div class="hd"><h3>Görünüm ve veri</h3></div>
+        <div class="in"><div class="iorow"><button class="btn sm" type="button" id="ayTema">Açık / koyu tema</button><button class="btn sm ghost" type="button" id="ayYedek">Yedek indir</button><button class="btn sm ghost" type="button" id="ayYukle">Yedek yükle</button></div></div>
+      </div>
+      <div class="card" id="takvimKart" data-alt="ayarlar">
         <div class="hd"><h3>Takvim</h3><span class="r">yalnızca blok adları</span></div>
         <div class="in">
           <p class="note" style="margin:0 0 12px">Blokları telefonun takvimine ekler. Takvimde "Odak I", "Spor" gibi adlar görünür; ne çalıştığın yazmaz. Önce Takvim uygulamasında "275" adında ayrı bir takvim aç ve oraya ekle; düzen değişirse o takvimi silip yeniden eklersin.</p>
           <div class="iorow"><a class="btn sm" href="takvim.ics">Alarmlı ekle</a><a class="btn sm ghost" href="takvim-sessiz.ics">Alarmsız ekle</a></div>
         </div>
       </div>
-      <div class="card" id="kasaKart">
+      <div class="card" id="kasaKart" data-alt="ayarlar">
         <div class="hd"><h3>Giriş kodu</h3><span class="r" id="kasaDurum">—</span></div>
         <div class="in">
           <p class="note" style="margin:0 0 12px">Uygulama açılırken ve bir dakikadan uzun arka planda kaldıktan sonra kod sorar. Kod bu cihazda kalır; her cihazda ayrı belirlenir. Unutursan tarayıcının site verisini silmen gerekir; kayıtların eşitlemeden geri gelir.</p>
           <div class="iorow"><button class="btn sm" type="button" id="kasaBelirle">Kod belirle</button><button class="btn sm ghost" type="button" id="kasaKaldir">Kodu kaldır</button><button class="btn sm ghost" type="button" id="kasaSimdi">Şimdi kilitle</button></div>
         </div>
       </div>
-      <div class="card" id="esitleKart">
+      <div class="card" id="esitleKart" data-alt="ayarlar">
         <div class="hd"><h3>Cihazlar arası eşitleme</h3><span class="r" id="esDurum">—</span></div>
         <div class="in">
           <p class="note" id="esAciklama" style="margin:0 0 12px"></p>
@@ -255,7 +263,7 @@
           </div>
         </div>
       </div>
-      <div class="card" id="planCard"></div>
+      <div class="card" id="planCard" data-alt="kurallar"></div>
     </section>
 
   </main>

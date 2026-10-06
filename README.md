@@ -59,6 +59,18 @@ Telefon ile bilgisayar arasında bloklar, netler, defter ve arşiv ilerlemesi e�
 - `takvim.ics` (alarmlı) ve `takvim-sessiz.ics`: Plan → Takvim'den telefona eklenir.
 - `kasa.js` giriş kodu ekranı: Plan → Giriş kodu. Kod cihazda kalır.
 
+## Anlık bildirim (`api/bildir.js`, `supabase/bildirim.sql`)
+
+Supabase'deki zamanlayıcı 5 dakikada bir `api/bildir`'i çağırır; o da o dakikada başlayan blok
+varsa, ya da ara mesaj / durum yoklaması sırası geldiyse, kayıtlı cihazlara bildirim gönderir.
+Bildirimde yalnızca bloğun dış adı ve saat yazar.
+1. Vercel → Settings → Environment Variables: `VAPID_OZEL` ve `BILDIRIM_SIFRE` (ikisi de gizli) → Redeploy.
+2. Supabase → SQL Editor: `supabase/bildirim.sql` → Run.
+3. Telefonda (ana ekrandaki uygulamadan) Bugün → "Bildirimleri aç".
+4. Supabase → SQL Editor: `select public.bildirim_kur('<BILDIRIM_SIFRE>', 'https://<site>');`
+   Zamanlayıcıyı kurar ve bir deneme bildirimi gönderir.
+Mesaj metinleri ve saatleri: `api/bildir.js` → `SERT`, `secim()`.
+
 ## Gündem (`api/gundem.js`)
 
 Seçili kaynakların son başlıklarını tek listede gösterir; yalnızca Vercel'de çalışır.

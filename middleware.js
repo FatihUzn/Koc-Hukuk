@@ -2,7 +2,7 @@
    Vercel → Project → Settings → Environment Variables → SITE_SIFRE = <şifren>  → Redeploy.
    Değişken yoksa site açıktır. Şifreyi değiştirince eski girişler geçersiz olur.
    Giriş çerezi 1 yıl kalır; telefonda bir kez girmen yeter. */
-export const config = { matcher: '/((?!icons/|manifest.webmanifest).*)' };
+export const config = { matcher: '/((?!icons/|manifest.webmanifest|api/bildir).*)' };
 
 const SAYFA = (hata) => `<!doctype html><html lang="tr"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#14173a">

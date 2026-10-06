@@ -197,25 +197,42 @@ function cizSimdi(r){
   } else {
     et.textContent="Bugün"; ad.textContent="Gün bitti"; $("simdiIs").textContent=""; bar.style.width="100%"; kal.textContent=""; son.textContent=""; k.classList.add("bos");
   }
-  // blok değişince (uygulama açıkken) haber ver
-  var id=r.simdi?r.simdi.id:null;
-  if(sonBlokId!==null && id && id!==sonBlokId && yerelOku("zil",false) && window.Notification && Notification.permission==="granted"){
-    var baslik=r.simdi.ad, govde=r.simdi.s+" · "+r.simdi.dk+" dk";   // asıl iş bildirimde yazmaz
-    try{
-      if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function(g){ g.showNotification(baslik,{body:govde,icon:"icons/icon-192.png",tag:"blok"}); });
-      else new Notification(baslik,{body:govde});
-    }catch(e){}
-  }
-  sonBlokId = id || "";
 }
+/* ---- anlık bildirim aboneliği: sunucu gönderir (api/bildir.js), uygulama kapalıyken de gelir ---- */
+var VAPID_ACIK="BPKlCoyAdJY5YQObv1IahVHWB0lfAOl3dSv1Mi7ozs9GPvHw1Vt2mBbc0hVeuI_7AWcSAFHllPw_RLokahQoaCQ";
+function b64Dizi(s){ var p="=".repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/")), d=new Uint8Array(b.length); for(var i=0;i<b.length;i++) d[i]=b.charCodeAt(i); return d; }
 function zilKur(){
-  var z=$("zil"); if(!z || !window.Notification) return;
-  function yaz(){ var acik=yerelOku("zil",false) && Notification.permission==="granted"; z.hidden=false; z.textContent = acik ? "Haber veriliyor ✓" : "Blok başlarken haber ver"; z.classList.toggle("acik",acik); }
+  var z=$("zil"); if(!z) return;
+  var E=window.Esitleme;
+  function metin(t,acik){ z.hidden=false; z.textContent=t; z.classList.toggle("acik",!!acik); }
+  if(!("serviceWorker" in navigator) || !("PushManager" in window) || !window.Notification){
+    metin("Bildirim için: ana ekrandaki uygulamadan aç"); z.disabled=true; return;
+  }
+  function durum(){
+    return navigator.serviceWorker.ready.then(function(g){ return g.pushManager.getSubscription(); }).then(function(a){
+      var acik = !!a && Notification.permission==="granted";
+      metin(acik ? "Bildirimler açık ✓" : "Bildirimleri aç", acik); return a;
+    }).catch(function(){ metin("Bildirimleri aç"); return null; });
+  }
   z.addEventListener("click",function(){
-    if(yerelOku("zil",false) && Notification.permission==="granted"){ yerelYaz("zil",false); yaz(); return; }
-    Notification.requestPermission().then(function(p){ yerelYaz("zil",p==="granted"); yaz(); });
+    if(!E || !E.anahtar()){ metin("Önce Plan'dan eşitlemeyi başlat"); return; }
+    navigator.serviceWorker.ready.then(function(g){
+      return g.pushManager.getSubscription().then(function(a){
+        if(a && Notification.permission==="granted"){
+          var uc=a.endpoint;
+          return a.unsubscribe().then(function(){ return E.rpc("abone_sil",{p_anahtar:E.anahtar(), p_uc:uc}); }).then(durum);
+        }
+        return Notification.requestPermission().then(function(p){
+          if(p!=="granted"){ metin("İzin verilmedi (telefon ayarlarından açılır)"); return; }
+          return g.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64Dizi(VAPID_ACIK)})
+            .then(function(yeni){ return E.rpc("abone_kaydet",{p_anahtar:E.anahtar(), p_abone:yeni.toJSON()}); })
+            .then(function(){ return g.showNotification("275",{body:"Bildirimler açık.",icon:"icons/icon-192.png",tag:"275"}); })
+            .then(durum);
+        });
+      });
+    }).catch(function(e){ metin("Açılamadı: "+String((e&&e.message)||e).slice(0,60)); });
   });
-  yaz();
+  durum();
 }
 function suAnYaz(){
   var r=suAnkiBlok(), e=$("fNow");

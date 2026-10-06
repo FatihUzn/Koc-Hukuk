@@ -102,6 +102,6 @@ setInterval(function(){
   if(!esit(topla(), oku(K_GOLGE,{})) || Date.now()-sonCekme>60000) esitle();
 },8000);
 
-window.Esitleme = { esitle:esitle, baslat:baslat, baglan:baglan, kes:kes, durum:function(){ durum.bagli=!!oku(K_ANAHTAR,null); durum.son=oku(K_SON,null); return durum; }, anahtar:function(){ return oku(K_ANAHTAR,null); }, _birlestir:birlestir };
+window.Esitleme = { esitle:esitle, baslat:baslat, baglan:baglan, kes:kes, durum:function(){ durum.bagli=!!oku(K_ANAHTAR,null); durum.son=oku(K_SON,null); return durum; }, anahtar:function(){ return oku(K_ANAHTAR,null); }, rpc:rpc, _birlestir:birlestir };
 bildir(); esitle();
 })();

@@ -7,7 +7,7 @@
 var SB_URL = "https://pqzjayxdrnpokyffyole.supabase.co";       // örn. https://abcdefgh.supabase.co
 var SB_ANAHTAR = "sb_publishable_ViJ3hRKsZVHcDpVVUA3BOw_ZOZbDMRD";   // sb_publishable_... ya da anon anahtar
 
-var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","bugun_ozet","dni-done","dni-last","dni-okuma","dni-istisna","gundem_okuma"];
+var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","tekrar","bugun_ozet","dni-done","dni-last","dni-okuma","dni-istisna","gundem_okuma","dni-yer","dni-soru","dni-soru-gun"];
 var K_ANAHTAR="esitle_anahtar", K_GOLGE="esitle_golge", K_SON="esitle_son";
 
 function oku(k,v){ try{ var x=localStorage.getItem(k); return x==null?v:JSON.parse(x); }catch(e){ return v; } }

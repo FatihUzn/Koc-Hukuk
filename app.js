@@ -849,6 +849,7 @@ function yereldenYukle(){
   S.denemeler=yerelOku("denemeler",[]) || [];
   S.hatalar=yerelOku("hatalar",[]) || [];
   S.motto=yerelOku("motto","") || "";
+  S.tekrar=yerelOku("tekrar",{}) || {};
   $("motto").textContent=S.motto;
   yerelYaz("son_kayit", new Date().toISOString());
 }
@@ -864,7 +865,7 @@ function mottoKur(){
 
 /* yedek al / yükle */
 function yedekAl(){
-  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto };
+  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{} };
   var blob=new Blob([JSON.stringify(paket,null,2)],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="275-yedek-"+anahtar(new Date())+".json"; document.body.appendChild(a); a.click();
@@ -881,6 +882,7 @@ function yedekYukle(file){
       if(Array.isArray(p.denemeler)) S.denemeler=p.denemeler;
       if(Array.isArray(p.hatalar)) S.hatalar=p.hatalar;
       if(typeof p.motto==="string"){ S.motto=p.motto; $("motto").textContent=p.motto; }
+      if(p.tekrar && typeof p.tekrar==="object"){ S.tekrar=p.tekrar; yerelYaz("tekrar",S.tekrar); }
       yerelYaz("gunler",S.gunler); yerelYaz("denemeler",S.denemeler); yerelYaz("hatalar",S.hatalar); yerelYaz("motto",S.motto);
       ciz(); durumYaz("yedek yüklendi");
     }catch(e){ durumYaz("dosya okunamadı"); }
@@ -1010,6 +1012,81 @@ setInterval(function(){
   var d=gundemDurum(); if(!d.acik) cizGundem(); else $("gundemAlt").textContent="Bugün kalan süre: "+Math.ceil(d.kalan/60)+" dk";
 },5000);
 $("gundemYenile").addEventListener("click",function(){ cizGundem(true); });
+
+/* ============ tekrar kuyruğu: hata yapılan konu 1, 3, 7, 21 gün sonra geri gelir ============ */
+var TEKRAR_ARALIK=[1,3,7,21];
+function gunEkle(k,n){ var p=k.split("-"), d=new Date(+p[0],+p[1]-1,+p[2]); d.setDate(d.getDate()+n); return anahtar(d); }
+function tekrarHesap(){
+  var bugun=anahtar(bugunTarih()), dun=gunEkle(bugun,-1), m={}, T=S.tekrar||{}, vadesi=[], yarin=0, ogrenilen=0;
+  S.hatalar.forEach(function(h){
+    var k=h.ders+"||"+h.konu, t=h.tarih||dun;
+    if(!m[k]) m[k]={k:k,ders:h.ders,konu:h.konu,adet:0,sonHata:t};
+    m[k].adet++; if(t>m[k].sonHata) m[k].sonHata=t;
+  });
+  Object.keys(m).forEach(function(k){
+    var r=m[k], t=T[k]||{adim:0,son:""}, adim=t.adim, taban=t.son;
+    if(!taban || r.sonHata>taban){ adim=0; taban=r.sonHata; }      // yeni hata: baştan başlar
+    if(adim>=TEKRAR_ARALIK.length){ ogrenilen++; return; }
+    var vade=gunEkle(taban,TEKRAR_ARALIK[adim]);
+    r.adim=adim; r.vade=vade;
+    if(vade<=bugun) vadesi.push(r); else if(vade===gunEkle(bugun,1)) yarin++;
+  });
+  vadesi.sort(function(a,b){ return a.vade<b.vade?-1:a.vade>b.vade?1:b.adet-a.adet; });
+  return {vadesi:vadesi, yarin:yarin, ogrenilen:ogrenilen, toplam:Object.keys(m).length};
+}
+function cizTekrar(){
+  var kutu=$("tekrarListe"); if(!kutu) return;
+  var r=tekrarHesap(), bugun=anahtar(bugunTarih());
+  $("tekrarSayi").textContent = r.vadesi.length ? (r.vadesi.length+" konu") : (r.yarin ? ("yarın "+r.yarin+" konu") : "");
+  kutu.innerHTML="";
+  if(!r.toplam){ kutu.appendChild(el("div","empty","Deftere hata girdikçe, o konular 1, 3, 7 ve 21 gün sonra burada tekrar için çıkar.")); return; }
+  if(!r.vadesi.length){ kutu.appendChild(el("div","empty","Bugün tekrar yok."+(r.yarin?" Yarın "+r.yarin+" konu bekliyor.":"")+(r.ogrenilen?" "+r.ogrenilen+" konu dört tekrarı tamamladı.":""))); return; }
+  r.vadesi.forEach(function(x){
+    var s=el("div","tkr");
+    var sol=el("div","tks"); sol.appendChild(el("b",null,x.konu));
+    var gec=gunFark(new Date(x.vade), new Date(bugun));
+    sol.appendChild(el("span",null,x.ders+" · "+x.adet+" hata · "+(x.adim+1)+". tekrar"+(gec>0?" · "+gec+" gün gecikti":"")));
+    s.appendChild(sol);
+    var b=el("button","btn sm","Tekrar ettim"); b.type="button";
+    b.addEventListener("click",function(){ if(!S.tekrar) S.tekrar={}; S.tekrar[x.k]={adim:x.adim+1, son:bugun}; yerelYaz("tekrar",S.tekrar); cizTekrar(); });
+    s.appendChild(b); kutu.appendChild(s);
+  });
+}
+
+/* ============ ders bazlı netler ============ */
+function dersNet(o){ return o ? net(o.d,o.y) : null; }
+function cizDersBazli(){
+  var kutu=$("dersBazli"); if(!kutu) return; kutu.innerHTML="";
+  var varMi=false;
+  ["TYT","AYT"].forEach(function(tur){
+    var l=S.denemeler.filter(function(d){return d.tur===tur && d.dersler;}).sort(function(a,b){return a.tarih<b.tarih?-1:1;});
+    if(!l.length) return; varMi=true;
+    kutu.appendChild(el("div","dbt",tur==="AYT"?"AYT-SAY":"TYT"));
+    DERSLER[tur].forEach(function(d){
+      var seri=l.map(function(x){return dersNet(x.dersler[d[0]]);}).filter(function(v){return v!==null;});
+      if(!seri.length) return;
+      var son=seri[seri.length-1], onceki=seri.slice(-4,-1), ort=onceki.length?onceki.reduce(function(a,b){return a+b;},0)/onceki.length:null;
+      var fark=ort===null?null:son-ort;
+      var s=el("div","dbs");
+      s.appendChild(el("b",null,d[1]));
+      // küçük çizgi: son 8 deneme; ölçek dersin kendi aralığı (hareket görünsün diye), en az 4 netlik pencere
+      var w=120,hh=28,pts=seri.slice(-8), n=pts.length, yol="";
+      var alt=Math.min.apply(null,pts), ust=Math.max.apply(null,pts), orta=(alt+ust)/2, yar=Math.max(2,(ust-alt)/2+0.5);
+      function yy(v){ return hh-4-((v-(orta-yar))/(2*yar))*(hh-8); }
+      pts.forEach(function(v,i){ var x=n===1?w/2:(i*(w-6)/(n-1))+3; yol+=(i?" L":"M")+x.toFixed(1)+" "+yy(v).toFixed(1); });
+      var sx=n===1?w/2:w-3, sy=yy(son);
+      var g=document.createElement("span"); g.className="dbg";
+      g.innerHTML='<svg viewBox="0 0 '+w+' '+hh+'" width="'+w+'" height="'+hh+'" role="img" aria-label="'+d[1]+' son '+n+' deneme"><path d="'+yol+'" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+sx.toFixed(1)+'" cy="'+sy.toFixed(1)+'" r="2.6" fill="currentColor"/></svg>';
+      s.appendChild(g);
+      var sayi=el("span","dbn"); sayi.innerHTML=vir(son,1)+' <small>/ '+d[2]+'</small>'; s.appendChild(sayi);
+      var f=el("span","dbf"+(fark===null?"":fark>0.24?" art":fark<-0.24?" az":""), fark===null?"ilk":((fark>0?"+":"")+vir(fark,1)));
+      s.appendChild(f);
+      kutu.appendChild(s);
+    });
+  });
+  if(!varMi) kutu.appendChild(el("div","empty","Deneme girdikçe her dersin gidişi burada görünür. Toplam net iyi görünürken tek bir dersin düştüğünü buradan yakalarsın."));
+}
+(function(){ var a=cizDefter; cizDefter=function(){ a(); cizTekrar(); }; var b=cizDenemeler; cizDenemeler=function(){ b(); cizDersBazli(); }; })();
 
 /* ============ derinlik: üst kart fareyle eğilir ============ */
 (function(){

@@ -59,6 +59,12 @@ Telefon ile bilgisayar arasında bloklar, netler, defter ve arşiv ilerlemesi e�
 - `takvim.ics` (alarmlı) ve `takvim-sessiz.ics`: Plan → Takvim'den telefona eklenir.
 - `kasa.js` giriş kodu ekranı: Plan → Giriş kodu. Kod cihazda kalır.
 
+## Tekrar araçları
+
+- **Bugün tekrar** (Yanlış defteri): hata girilen konu 1, 3, 7, 21 gün sonra listeye düşer. Aralıklar: `app.js` → `TEKRAR_ARALIK`.
+- **Ders bazlı** (Netler): her dersin son neti ve önceki üç denemenin ortalamasına göre farkı.
+- **Arşivde** arama, sözlük, kaldığın yerden devam ve günlük beş soru: `arsiv/kaynak/ek.html`.
+
 ## Anlık bildirim (`api/bildir.js`, `supabase/bildirim.sql`)
 
 Supabase'deki zamanlayıcı 5 dakikada bir `api/bildir`'i çağırır; o da o dakikada başlayan blok

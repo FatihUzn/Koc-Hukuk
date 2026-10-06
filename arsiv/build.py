@@ -48,6 +48,7 @@ betik = oku("betik.html")
 betik = betik.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
 betik = betik.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
 govde.append(betik)
+govde.append(oku("ek.html"))
 stil, govde = oku("stil.html"), "".join(govde)
 # Site derlemesinde yazı tipleri depodan (../fonts); --tek kopyasında Google Fonts bağlantısı kalır.
 import re as _re

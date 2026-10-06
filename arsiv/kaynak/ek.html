@@ -1,0 +1,205 @@
+<!-- Ek özellikler: arama, sözlük, kaldığın yer, günlük beş soru. Görünümler betik tarafından .shell içine taşınır. -->
+<style>
+.arac{margin:26px 0 8px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.ara{position:relative;max-width:640px}
+.ara input{width:100%;font:inherit;font-size:17px;color:var(--strong);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 18px;outline:none}
+.ara input:focus{border-color:var(--lav)}
+.ara input::placeholder{color:var(--muted)}
+.sonuc{display:grid;gap:8px;max-width:760px}
+.sonuc a{display:block;text-decoration:none;color:inherit;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+.sonuc a:hover{border-color:var(--lav)}
+.sonuc .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mint)}
+.sonuc p{margin:4px 0 0;font-size:15.5px;line-height:1.55;color:var(--fg)}
+.sonuc mark{background:rgba(185,167,245,.3);color:var(--strong);border-radius:3px;padding:0 2px}
+.sonuc .yok{color:var(--muted);font-size:15px;padding:4px 2px}
+.kisayol{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;max-width:760px}
+.bulundu{animation:bulundu 2.6s ease}
+@keyframes bulundu{0%,60%{background:rgba(185,167,245,.22);box-shadow:0 0 0 8px rgba(185,167,245,.22);border-radius:6px}100%{background:transparent;box-shadow:0 0 0 8px transparent}}
+.tost{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;background:var(--paper);border:1px solid var(--lav);border-radius:999px;padding:9px 10px 9px 18px;font-size:14.5px;color:var(--fg);display:flex;gap:12px;align-items:center;box-shadow:0 14px 36px -14px rgba(0,0,0,.8);max-width:calc(100vw - 32px)}
+.tost[hidden]{display:none}
+.tost button{font:inherit;font-size:13.5px;font-weight:600;color:var(--lav);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;white-space:nowrap}
+.dar{max-width:680px}
+.dar h1 em{color:var(--lav)}
+.sk{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px 26px 22px;margin-top:22px}
+.sk .ust{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.sk .ust b{color:var(--mint);font-weight:500}
+.sk .q{font-size:22px;line-height:1.45;font-weight:500;color:var(--strong);margin:0 0 18px}
+.sk .a{border-left:3px solid var(--mint);background:var(--mint-soft);border-radius:0 12px 12px 0;padding:14px 18px;margin:0 0 18px;font-size:17px;line-height:1.7}
+.sk .a p{margin:0}
+.sk .dg{display:flex;flex-wrap:wrap;gap:10px}
+.sk .bitti{font-family:var(--display);font-style:italic;font-size:26px;color:var(--strong);margin:0 0 8px}
+.szf{max-width:420px;margin:18px 0 6px}
+</style>
+
+<div class="view" id="v-sozluk" data-title="Sözlük">
+  <div class="dar">
+    <div class="eyebrow">Başvuru</div>
+    <h1>Bütün <em>kelimeler</em></h1>
+    <p class="lede">Bölümlerde altı noktalı geçen her kelime burada. Yazarak süz.</p>
+    <div class="ara szf"><input type="search" id="sz-ara" placeholder="Kelime ara" autocomplete="off" aria-label="Sözlükte ara"></div>
+    <dl class="words" id="sz-liste"></dl>
+    <p><a class="home" href="#ev">← Kütüphaneye dön</a></p>
+  </div>
+</div>
+
+<div class="view" id="v-soru" data-title="Günlük beş soru">
+  <div class="dar">
+    <div class="eyebrow">Tekrar</div>
+    <h1>Günlük <em>beş soru</em></h1>
+    <p class="lede">Okuduğun bölümlerin sonundaki sorular, unutmaya yakınken geri gelir. Bildiğin soru daha geç, bilemediğin yarın yeniden sorulur.</p>
+    <div class="sk" id="soru-kart"></div>
+    <p style="margin-top:22px"><a class="home" href="#ev">← Kütüphaneye dön</a></p>
+  </div>
+</div>
+
+<div class="tost" id="tost" hidden><span id="tost-m"></span><button type="button" id="tost-b"></button></div>
+
+<script>
+(function(){
+  var shell=document.querySelector('.shell');
+  ['v-sozluk','v-soru'].forEach(function(id){ var v=document.getElementById(id); if(v&&shell) shell.appendChild(v); });
+  function oku(k,v){try{var x=localStorage.getItem(k);return x==null?v:JSON.parse(x)}catch(e){return v}}
+  function yaz(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function kucuk(s){return String(s).toLocaleLowerCase('tr')}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function pad(n){return n<10?'0'+n:''+n}
+  function gunAd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+  function bugun(ek){var d=new Date();if(d.getHours()<4)d.setDate(d.getDate()-1);if(ek)d.setDate(d.getDate()+ek);return gunAd(d)}
+  var G=(window.DNI&&window.DNI.G)||[], adlar=(window.DNI&&window.DNI.names)||{}, dosyalar=(window.DNI&&window.DNI.files)||{};
+  function bolumAdi(id){var m=id.match(/^([a-z]+)-(\d+)$/);return m&&dosyalar[m[1]]?dosyalar[m[1]].title+' · Bölüm '+m[2]:id}
+
+  /* ---------- ana sayfa: arama + kısayollar ---------- */
+  var ev=document.getElementById('v-ev'), resume=document.getElementById('resume');
+  var arac=document.createElement('div'); arac.className='arac';
+  arac.innerHTML='<div class="ara"><input type="search" id="ara" placeholder="Bütün bölümlerde ara: enflasyon, 2001, saadet zinciri…" autocomplete="off" aria-label="Arşivde ara"></div><div class="sonuc" id="ara-sonuc"></div>'+
+    '<div class="kisayol"><a class="file" href="#soru"><b>Günlük beş soru</b><span id="soru-ozet">Okuduğun bölümlerden tekrar.</span><span class="st" id="soru-st"></span></a>'+
+    '<a class="file" href="#sozluk"><b>Sözlük</b><span>Bölümlerde açıklanan '+G.length+' kelime, tek yerde.</span><span class="st">Başvuru</span></a></div>';
+  if(resume&&resume.parentNode) resume.parentNode.insertBefore(arac,resume.nextSibling); else if(ev) ev.insertBefore(arac,ev.firstChild);
+
+  var dizin=null, bekleyen=null;
+  function dizinKur(){
+    dizin=[];
+    document.querySelectorAll('.chapter').forEach(function(ch){
+      var id=ch.id.replace(/^c-/,''), baslik='';
+      ch.querySelectorAll('.prose h2, .prose h3, .prose p, .prose li').forEach(function(n){
+        if(n.closest('.fine,.nav,.words,details,.hint,.time')) return;
+        if(n.tagName==='H2'){baslik=n.textContent.trim()}
+        var t=n.textContent.replace(/\s+/g,' ').trim(); if(t.length<12) return;
+        dizin.push({id:id,baslik:baslik,metin:t,alt:kucuk(t),n:n});
+      });
+    });
+  }
+  function ara(q){
+    var kutu=document.getElementById('ara-sonuc'); q=kucuk(q.trim());
+    if(q.length<3){kutu.innerHTML='';return}
+    if(!dizin) dizinKur();
+    var sonuc=[], say=0;
+    for(var i=0;i<dizin.length;i++){var p=dizin[i].alt.indexOf(q); if(p>=0){say++; if(sonuc.length<30) sonuc.push([dizin[i],p,i])}}
+    if(!sonuc.length){kutu.innerHTML='<div class="yok">Bulunamadı.</div>';return}
+    kutu.innerHTML=sonuc.map(function(r){
+      var d=r[0],p=r[1], a=Math.max(0,p-70), b=Math.min(d.metin.length,p+q.length+110);
+      var once=(a>0?'…':'')+esc(d.metin.slice(a,p)), orta=esc(d.metin.slice(p,p+q.length)), son=esc(d.metin.slice(p+q.length,b))+(b<d.metin.length?'…':'');
+      return '<a href="#'+d.id+'" data-i="'+r[2]+'"><span class="k">'+esc(bolumAdi(d.id))+(d.baslik?' · '+esc(d.baslik):'')+'</span><p>'+once+'<mark>'+orta+'</mark>'+son+'</p></a>';
+    }).join('')+(say>sonuc.length?'<div class="yok">'+(say-sonuc.length)+' sonuç daha var; aramayı daralt.</div>':'');
+  }
+  var araKutu=document.getElementById('ara'), araZ;
+  araKutu.addEventListener('input',function(){clearTimeout(araZ);araZ=setTimeout(function(){ara(araKutu.value)},140)});
+  document.getElementById('ara-sonuc').addEventListener('click',function(e){
+    var a=e.target.closest('a[data-i]'); if(!a) return;
+    bekleyen=dizin[+a.getAttribute('data-i')].n;
+    if(location.hash===a.getAttribute('href')){e.preventDefault();git()}
+  });
+  function git(){
+    if(!bekleyen) return false; var n=bekleyen; bekleyen=null;
+    setTimeout(function(){n.scrollIntoView({block:'center'});n.classList.remove('bulundu');void n.offsetWidth;n.classList.add('bulundu')},80);
+    return true;
+  }
+
+  /* ---------- kaldığın yer ---------- */
+  var tost=document.getElementById('tost'), tostZ;
+  function tostGoster(m,b,fn){document.getElementById('tost-m').textContent=m;var d=document.getElementById('tost-b');d.textContent=b;d.onclick=function(){tost.hidden=true;fn()};tost.hidden=false;clearTimeout(tostZ);tostZ=setTimeout(function(){tost.hidden=true},6000)}
+  function bolum(){var h=(location.hash||'').slice(1);return /^[a-z]+-\d+$/.test(h)&&document.getElementById('c-'+h)?h:null}
+  function boy(){return Math.max(1,document.documentElement.scrollHeight-window.innerHeight)}
+  var kayZ;
+  window.addEventListener('scroll',function(){
+    clearTimeout(kayZ);kayZ=setTimeout(function(){
+      var h=bolum(); if(!h) return; var y=oku('dni-yer',{})||{}, o=window.scrollY/boy();
+      if(window.scrollY<300) delete y[h]; else y[h]=Math.round(o*1000)/1000;
+      yaz('dni-yer',y);
+    },400);
+  },{passive:true});
+  function yereDon(){
+    var h=bolum(); if(!h) return; var o=(oku('dni-yer',{})||{})[h];
+    if(!o||o<0.03||o>0.97) return;
+    setTimeout(function(){window.scrollTo(0,Math.round(o*boy()));tostGoster('Kaldığın yerden devam.','Başa dön',function(){window.scrollTo(0,0)})},90);
+  }
+
+  /* ---------- sözlük ---------- */
+  function sozlukCiz(q){
+    q=kucuk(q||'').trim();
+    var l=G.map(function(g){return [g[0],g[2]]}).sort(function(a,b){return a[0].localeCompare(b[0],'tr')});
+    if(q) l=l.filter(function(x){return kucuk(x[0]).indexOf(q)>=0||kucuk(x[1]).indexOf(q)>=0});
+    document.getElementById('sz-liste').innerHTML=l.length?l.map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>'}).join(''):'<div><dd>Bulunamadı.</dd></div>';
+  }
+  document.getElementById('sz-ara').addEventListener('input',function(e){sozlukCiz(e.target.value)});
+
+  /* ---------- günlük beş soru: aralıklı tekrar ---------- */
+  var ARALIK=[1,3,7,21,60], GUNLUK=5;
+  function sorular(){
+    var okunan=oku('dni-done',{})||{}, l=[];
+    document.querySelectorAll('.chapter').forEach(function(ch){
+      var id=ch.id.replace(/^c-/,''); if(!okunan[id]) return;
+      ch.querySelectorAll('details').forEach(function(d,i){
+        var s=d.querySelector('summary'); if(!s) return;
+        var c=[].filter.call(d.children,function(x){return x!==s}).map(function(x){return '<p>'+esc(x.textContent)+'</p>'}).join('');
+        l.push({id:id+'#'+i,bolum:id,q:s.textContent.trim(),a:c});
+      });
+    });
+    return l;
+  }
+  function bekleyenler(){
+    var d=oku('dni-soru',{})||{}, t=bugun(), tum=sorular();
+    var eski=tum.filter(function(s){return d[s.id]&&d[s.id].t<=t}).sort(function(a,b){return d[a.id].t<d[b.id].t?-1:1});
+    var yeni=tum.filter(function(s){return !d[s.id]});
+    return {tum:tum,sira:eski.concat(yeni)};
+  }
+  function gunDurum(){var g=oku('dni-soru-gun',null);if(!g||g.gun!==bugun())g={gun:bugun(),n:0};return g}
+  function soruOzet(){
+    var b=bekleyenler(), g=gunDurum(), kalan=Math.max(0,Math.min(GUNLUK-g.n,b.sira.length));
+    var st=document.getElementById('soru-st'), oz=document.getElementById('soru-ozet'); if(!st) return;
+    if(!b.tum.length){oz.textContent='Önce bir bölümü okuyup "okudum" işaretle.';st.textContent='Henüz soru yok'}
+    else if(kalan===0){oz.textContent='Okuduğun bölümlerden tekrar.';st.textContent='Bugün tamam'}
+    else{oz.textContent='Okuduğun bölümlerden tekrar.';st.textContent=kalan+' soru bekliyor'}
+  }
+  function soruCiz(){
+    var k=document.getElementById('soru-kart'), b=bekleyenler(), g=gunDurum();
+    if(!b.tum.length){k.innerHTML='<p class="bitti">Henüz soru yok.</p><p>Bir bölümü bitirip sonundaki "Bu bölümü okudum" düğmesine bastığında, o bölümün soruları buraya gelir.</p>';return}
+    if(g.n>=GUNLUK||!b.sira.length){
+      var d=oku('dni-soru',{})||{}, yarin=bugun(1), yn=b.tum.filter(function(s){return !d[s.id]||d[s.id].t<=yarin}).length;
+      k.innerHTML='<p class="bitti">Bugünlük tamam.</p><p>'+(g.n?'Bugün '+g.n+' soru yanıtladın. ':'')+(yn?'Yarın '+Math.min(GUNLUK,yn)+' soru bekliyor.':'Bekleyen soru yok; yeni bölüm okudukça gelir.')+'</p>';return}
+    var s=b.sira[0];
+    k.innerHTML='<div class="ust"><span>'+esc(bolumAdi(s.bolum))+'</span><b>'+(g.n+1)+' / '+GUNLUK+'</b></div><p class="q">'+esc(s.q)+'</p><div class="a" id="soru-a" hidden>'+s.a+'</div>'+
+      '<div class="dg" id="soru-d1"><button class="btn" type="button" id="soru-goster">Cevabı göster</button></div>'+
+      '<div class="dg" id="soru-d2" hidden><button class="btn ok" type="button" data-s="1">Bildim</button><button class="btn ghost" type="button" data-s="0">Bilemedim</button><a class="btn ghost" href="#'+s.bolum+'">Bölüme git</a></div>';
+    document.getElementById('soru-goster').onclick=function(){document.getElementById('soru-a').hidden=false;document.getElementById('soru-d1').hidden=true;document.getElementById('soru-d2').hidden=false};
+    k.querySelectorAll('button[data-s]').forEach(function(btn){btn.onclick=function(){
+      var d=oku('dni-soru',{})||{}, e=d[s.id]||{k:-1}, bildi=btn.getAttribute('data-s')==='1';
+      e.k=bildi?Math.min(e.k+1,ARALIK.length-1):0; e.t=bugun(bildi?ARALIK[e.k]:1); d[s.id]=e; yaz('dni-soru',d);
+      var gg=gunDurum(); gg.n++; yaz('dni-soru-gun',gg); soruCiz(); soruOzet();
+    }});
+  }
+
+  function yon(){
+    var h=(location.hash||'#ev').slice(1);
+    if(h==='sozluk') sozlukCiz(document.getElementById('sz-ara').value);
+    if(h==='soru') soruCiz();
+    if(h==='ev'||h==='') soruOzet();
+    if(!git()) yereDon();
+  }
+  window.addEventListener('hashchange',yon);
+  window.addEventListener('esitleme-geldi',function(){soruOzet();if((location.hash||'').slice(1)==='soru')soruCiz()});
+  document.addEventListener('click',function(e){if(e.target.closest('button[data-done]')) setTimeout(soruOzet,50)});
+  /* bu betik, görünümler sayfaya eklendikten sonra çalışır: açılıştaki adresi yeniden yönlendir */
+  try{ window.dispatchEvent(new HashChangeEvent('hashchange')); }catch(e){ yon(); }
+})();
+</script>

@@ -156,6 +156,8 @@
     if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('term')){e.preventDefault();show(+e.target.dataset.gi)}
   });
 
+  window.DNI={G:G,names:names,files:files};
+
   /* ---- okuma takibi ve yönlendirme ---- */
   function get(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
   function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
@@ -176,6 +178,8 @@
       document.querySelectorAll('.side a[data-ch]').forEach(function(a){a.classList.toggle('cur',a.dataset.ch===h)});
       crumb.textContent=files[m[1]].title+' · Bölüm '+m[2];
       set('dni-last',h);
+    } else if(h!=='ev' && h!=='pano' && !files[h] && /^[a-z]+$/.test(h) && document.getElementById('v-'+h)){
+      document.getElementById('v-'+h).classList.add('on'); crumb.textContent=document.getElementById('v-'+h).getAttribute('data-title')||h;
     } else if(h==='pano'){
       document.getElementById('v-pano').classList.add('on'); crumb.textContent='Ekim 2026 panosu';
     } else {

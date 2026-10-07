@@ -11,7 +11,8 @@ var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","tekrar","bugun_ozet","
 var K_ANAHTAR="esitle_anahtar", K_GOLGE="esitle_golge", K_SON="esitle_son";
 
 function oku(k,v){ try{ var x=localStorage.getItem(k); return x==null?v:JSON.parse(x); }catch(e){ return v; } }
-function yaz(k,v){ try{ if(v===undefined) localStorage.removeItem(k); else localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+var kendi=false;   // true iken yazan bu dosyadır; "yerel değişti" sayılmaz
+function yaz(k,v){ kendi=true; try{ if(v===undefined) localStorage.removeItem(k); else localStorage.setItem(k,JSON.stringify(v)); }catch(e){} kendi=false; }
 function nesne(x){ return x!==null && typeof x==="object" && !Array.isArray(x); }
 function sirali(x){
   if(Array.isArray(x)) return x.map(sirali);
@@ -49,33 +50,42 @@ function birlestir(taban, yerel, uzak, ad){
 function topla(){ var o={}; ANAHTARLAR.forEach(function(k){ var v=oku(k,undefined); if(v!==undefined) o[k]=v; }); return o; }
 
 function rpc(ad, govde){
-  return fetch(SB_URL.replace(/\/$/,"")+"/rest/v1/rpc/"+ad, {
+  var g=JSON.stringify(govde), o={
     method:"POST", cache:"no-store",
     headers:{ "apikey":SB_ANAHTAR, "Authorization":"Bearer "+SB_ANAHTAR, "content-type":"application/json" },
-    body:JSON.stringify(govde)
-  }).then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error("HTTP "+r.status+" "+t.slice(0,120)); return t?JSON.parse(t):null; }); });
+    body:g
+  };
+  /* uygulama kapanırken giden istek yarıda kalmasın (tarayıcı sınırı 64 KB) */
+  if(g.length<60000) o.keepalive=true;
+  /* cevap hiç gelmezse eşitleme sonsuza dek "sürüyor" kalmasın */
+  try{ if(window.AbortController){ var ac=new AbortController(); o.signal=ac.signal; setTimeout(function(){ try{ ac.abort(); }catch(e){} },20000); } }catch(e){}
+  return fetch(SB_URL.replace(/\/$/,"")+"/rest/v1/rpc/"+ad, o).then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error("HTTP "+r.status+" "+t.slice(0,120)); return t?JSON.parse(t):null; }); });
 }
 
-var calisiyor=false, sonCekme=0, durum={kurulu:!!(SB_URL&&SB_ANAHTAR), bagli:false, son:null, hata:null};
+var calisiyor=false, bekleyen=false, sonCekme=0, durum={kurulu:!!(SB_URL&&SB_ANAHTAR), bagli:false, son:null, hata:null};
 function bildir(){ durum.bagli=!!oku(K_ANAHTAR,null); durum.son=oku(K_SON,null); try{ window.dispatchEvent(new CustomEvent("esitleme-durum",{detail:durum})); }catch(e){} }
 
 function esitle(){
   var a=oku(K_ANAHTAR,null);
-  if(!durum.kurulu || !a || calisiyor) return Promise.resolve(false);
-  calisiyor=true;
+  if(!durum.kurulu || !a) return Promise.resolve(false);
+  if(calisiyor){ bekleyen=true; return Promise.resolve(false); }   // biten turun ardından bir tur daha
+  calisiyor=true; bekleyen=false;
   return rpc("esitle_oku",{p_anahtar:a}).then(function(c){
     var uzak=(c&&c.veri)||{}, taban=oku(K_GOLGE,{})||{}, yerel=topla();
     var yeni=birlestir(taban, yerel, uzak, "") || {};
     var degisti=false;
     ANAHTARLAR.forEach(function(k){ if(!esit(yeni[k], yerel[k])){ yaz(k, yeni[k]); degisti=true; } });
     yaz(K_GOLGE, yeni); sonCekme=Date.now();
+    /* Sayfa, gelen veriyi HEMEN belleğe alsın: gönderme bitene kadar beklenirse arada yapılan
+       bir işaret eski bellekle kaydedilir ve öbür cihazdan geleni siler. */
+    if(degisti){ try{ window.dispatchEvent(new CustomEvent("esitleme-geldi")); }catch(e){} }
     var gonder = !esit(yeni, uzak) ? rpc("esitle_yaz",{p_anahtar:a, p_veri:yeni}) : Promise.resolve();
     return gonder.then(function(){
       yaz(K_SON, new Date().toISOString()); durum.hata=null; calisiyor=false; bildir();
-      if(degisti){ try{ window.dispatchEvent(new CustomEvent("esitleme-geldi")); }catch(e){} }
+      if(bekleyen) setTimeout(esitle,50);
       return true;
     });
-  }).catch(function(e){ calisiyor=false; durum.hata=String((e&&e.message)||e).slice(0,140); bildir(); return false; });
+  }).catch(function(e){ calisiyor=false; durum.hata=String((e&&e.message)||e).slice(0,140); bildir(); if(bekleyen) setTimeout(esitle,3000); return false; });
 }
 
 function anahtarUret(){
@@ -97,10 +107,31 @@ try{
   if(h){ history.replaceState(null,"",location.pathname+location.search); baglan(h[1]); }
 }catch(e){}
 
-document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible") esitle(); });
+/* Yerelde bir şey değişince 8 saniyelik turu bekleme: işaretleyip uygulamayı hemen kapatınca
+   değişiklik telefonda kalıyordu. Süre sayaçları sık yazdığı için onlar yine tura bırakılır. */
+var HIZLI={gunler:1,denemeler:1,hatalar:1,motto:1,tekrar:1,"dni-done":1,"dni-istisna":1,"dni-soru":1}, plan=null;
+function planla(){ clearTimeout(plan); plan=setTimeout(esitle,250); }
+try{
+  var _koy=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){
+    var once = (!kendi && HIZLI[k]===1 && this===window.localStorage) ? this.getItem(k) : null, bak = !kendi && HIZLI[k]===1 && this===window.localStorage;
+    _koy.apply(this,arguments);
+    if(bak && once!==String(v) && oku(K_ANAHTAR,null)) planla();
+  };
+}catch(e){}
+function bekleyenVar(){ return !!oku(K_ANAHTAR,null) && !esit(topla(), oku(K_GOLGE,{})); }
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible") esitle();
+  else if(bekleyenVar()){ clearTimeout(plan); esitle(); }     // arka plana giderken son değişikliği yolla
+});
+window.addEventListener("pagehide",function(){ if(bekleyenVar()){ clearTimeout(plan); esitle(); } });
+/* iPhone ana ekran uygulaması öne gelirken visibilitychange her zaman gelmiyor */
+window.addEventListener("pageshow",function(){ esitle(); });
+window.addEventListener("focus",function(){ if(Date.now()-sonCekme>3000) esitle(); });
+window.addEventListener("online",function(){ esitle(); });
 setInterval(function(){
   if(document.visibilityState!=="visible" || !oku(K_ANAHTAR,null)) return;
-  if(!esit(topla(), oku(K_GOLGE,{})) || Date.now()-sonCekme>60000) esitle();
+  if(!esit(topla(), oku(K_GOLGE,{})) || Date.now()-sonCekme>20000) esitle();
 },8000);
 
 window.Esitleme = { esitle:esitle, baslat:baslat, baglan:baglan, kes:kes, durum:function(){ durum.bagli=!!oku(K_ANAHTAR,null); durum.son=oku(K_SON,null); return durum; }, anahtar:function(){ return oku(K_ANAHTAR,null); }, rpc:rpc, _birlestir:birlestir };

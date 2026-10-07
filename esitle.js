@@ -131,8 +131,8 @@ window.addEventListener("focus",function(){ if(Date.now()-sonCekme>3000) esitle(
 window.addEventListener("online",function(){ esitle(); });
 setInterval(function(){
   if(document.visibilityState!=="visible" || !oku(K_ANAHTAR,null)) return;
-  if(!esit(topla(), oku(K_GOLGE,{})) || Date.now()-sonCekme>20000) esitle();
-},8000);
+  esitle();   // ekran açıkken 4 saniyede bir karşıya bak: öbür cihazdaki işaret birkaç saniyede görünsün
+},4000);
 
 window.Esitleme = { esitle:esitle, baslat:baslat, baglan:baglan, kes:kes, durum:function(){ durum.bagli=!!oku(K_ANAHTAR,null); durum.son=oku(K_SON,null); return durum; }, anahtar:function(){ return oku(K_ANAHTAR,null); }, rpc:rpc, _birlestir:birlestir };
 bildir(); esitle();

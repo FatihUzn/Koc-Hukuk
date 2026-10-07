@@ -1,5 +1,19 @@
 <!-- Ek özellikler: arama, sözlük, kaldığın yer, günlük beş soru. Görünümler betik tarafından .shell içine taşınır. -->
 <style>
+.gv{display:inline-block;margin-left:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:none;font-style:normal;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);vertical-align:middle;white-space:nowrap}
+.gv.g-d{color:var(--mint);border-color:var(--mint)}
+.gv.g-h{color:var(--amber);border-color:var(--amber)}
+a.gv{text-decoration:none;cursor:pointer;font-size:10.5px;padding:3px 9px}
+mark.vurgu{background:rgba(242,185,107,.38);color:inherit;border-radius:3px;padding:1px 0;cursor:pointer;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.vdugme{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:45;font:inherit;font-size:14.5px;font-weight:600;color:var(--strong);background:var(--paper);border:1px solid var(--amber);border-radius:999px;padding:10px 20px;cursor:pointer;box-shadow:0 14px 36px -14px rgba(0,0,0,.8)}
+.vdugme[hidden]{display:none}
+.notum{margin:34px 0 10px;border-top:1px solid var(--line);padding-top:20px}
+.notum h4{margin:0 0 10px}
+.notum ul{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+.notum li{font-size:15.5px;line-height:1.55;color:var(--fg);border-left:3px solid var(--amber);padding:2px 0 2px 12px;cursor:pointer}
+.notum textarea{width:100%;min-height:96px;font:inherit;font-size:16px;line-height:1.55;color:var(--strong);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;resize:vertical}
+.notum textarea:focus{border-color:var(--lav)}
+.notum .ip{font-size:13px;color:var(--muted);margin:6px 2px 0}
 .arac{margin:26px 0 8px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .ara{position:relative;max-width:640px}
 .ara input{width:100%;font:inherit;font-size:17px;color:var(--strong);background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 18px;outline:none}
@@ -52,6 +66,7 @@
   </div>
 </div>
 
+<button type="button" class="vdugme" id="vdugme" hidden>Vurgula</button>
 <div class="tost" id="tost" hidden><span id="tost-m"></span><button type="button" id="tost-b"></button></div>
 
 <script>
@@ -199,6 +214,92 @@
   window.addEventListener('hashchange',yon);
   window.addEventListener('esitleme-geldi',function(){soruOzet();if((location.hash||'').slice(1)==='soru')soruCiz()});
   document.addEventListener('click',function(e){if(e.target.closest('button[data-done]')) setTimeout(soruOzet,50)});
+
+  /* ---------- kaynak güveni rozeti ---------- */
+  var GUVEN=/*GUVEN*/{}, GAD={d:'ana rakamlar doğrulandı',k:'kısmen doğrulandı',h:'çoğu hafızadan'};
+  document.querySelectorAll('.chapter').forEach(function(ch){
+    var id=ch.id.replace(/^c-/,''), g=GUVEN[id], t=ch.querySelector('.time'); if(!g||!t) return;
+    var a=document.createElement('a'); a.className='gv g-'+g; a.textContent=GAD[g]; a.setAttribute('role','button'); a.tabIndex=0;
+    a.title='Bu bölümde neyin kaynakla karşılaştırıldığını, neyin hafızadan yazıldığını gör';
+    a.addEventListener('click',function(){ var h=[].filter.call(ch.querySelectorAll('h4'),function(x){return /Kaynak ve doğrulama/.test(x.textContent)})[0]; if(h) h.scrollIntoView({block:'start'}); });
+    t.appendChild(a);
+  });
+
+  /* ---------- vurgulama ve not ----------
+     Vurgu, paragrafın kaçıncı harfinden kaçıncı harfine kadar olduğu ile saklanır (dni-isaret);
+     metin değişirse baştaki parça aranır, bulunamazsa o vurgu sessizce atlanır. */
+  var BLOK='p,li,td,dd,blockquote';
+  function bloklar(ch){ return [].filter.call(ch.querySelectorAll(BLOK),function(b){ return !b.querySelector(BLOK) && !b.closest('.notum,.words,details'); }); }
+  function isaretler(){ return oku('dni-isaret',{})||{}; }
+  function boya(b,a,z,vid){
+    var w=document.createTreeWalker(b,NodeFilter.SHOW_TEXT,null), n, p=0, hedef=[];
+    while((n=w.nextNode())){ var u=n.nodeValue.length; if(p+u>a && p<z) hedef.push([n,Math.max(0,a-p),Math.min(u,z-p)]); p+=u; }
+    hedef.forEach(function(h){ var n=h[0]; if(n.parentNode.closest && n.parentNode.closest('mark.vurgu')) return;
+      if(h[2]<n.nodeValue.length) n.splitText(h[2]); if(h[1]>0) n=n.splitText(h[1]);
+      var m=document.createElement('mark'); m.className='vurgu'; m.setAttribute('data-v',vid); n.parentNode.insertBefore(m,n); m.appendChild(n); });
+  }
+  function temizle(ch){ ch.querySelectorAll('mark.vurgu').forEach(function(m){ var p=m.parentNode; while(m.firstChild) p.insertBefore(m.firstChild,m); p.removeChild(m); p.normalize(); }); }
+  function vurgulaCiz(ch){
+    var id=ch.id.replace(/^c-/,''), l=isaretler()[id]||[], B=bloklar(ch); temizle(ch);
+    l.forEach(function(v){
+      var b=B[v.i], a=v.a, z=v.b;
+      if(!b || b.textContent.slice(a,z).slice(0,24)!==v.t.slice(0,24)){            // metin kaymış: parçayı ara
+        b=null; for(var j=0;j<B.length;j++){ var k=B[j].textContent.indexOf(v.t); if(k>=0){ b=B[j]; a=k; z=k+v.t.length; break; } }
+      }
+      if(b) boya(b,a,z,v.id);
+    });
+    notCiz(ch);
+  }
+  function notCiz(ch){
+    var id=ch.id.replace(/^c-/,''), kutu=ch.querySelector('.notum');
+    if(!kutu){
+      kutu=document.createElement('div'); kutu.className='notum';
+      kutu.innerHTML='<h4>Vurgularım ve notum</h4><ul></ul><textarea placeholder="Bu bölümden aklında kalan, katılmadığın, sonra bakacağın…" aria-label="Bölüm notu"></textarea><p class="ip">Metinde bir yeri seçip Vurgula’ya basarsan burada listelenir. Not ve vurgular cihazların arasında eşitlenir.</p>';
+      var d=ch.querySelector('button[data-done]'), yer=d?(d.closest('.nav')||d):null;
+      if(yer) yer.parentNode.insertBefore(kutu,yer); else (ch.querySelector('.prose')||ch).appendChild(kutu);
+      var ta=kutu.querySelector('textarea'), z;
+      ta.addEventListener('input',function(){ clearTimeout(z); z=setTimeout(function(){ var n=oku('dni-not',{})||{}, v=ta.value.trim().slice(0,4000); if(v) n[id]=v; else delete n[id]; yaz('dni-not',n); },600); });
+      kutu.querySelector('ul').addEventListener('click',function(e){ var li=e.target.closest('li'); if(!li) return; var m=ch.querySelector('mark.vurgu[data-v="'+li.getAttribute('data-v')+'"]'); if(m){ m.scrollIntoView({block:'center'}); m.classList.remove('bulundu'); void m.offsetWidth; m.classList.add('bulundu'); } });
+    }
+    var ta2=kutu.querySelector('textarea'); if(document.activeElement!==ta2) ta2.value=(oku('dni-not',{})||{})[id]||'';
+    var ul=kutu.querySelector('ul'), l=(isaretler()[id]||[]).slice().sort(function(x,y){return x.i-y.i||x.a-y.a}); ul.innerHTML='';
+    l.forEach(function(v){ var li=document.createElement('li'); li.setAttribute('data-v',v.id); li.textContent=v.t.length>180?v.t.slice(0,180)+'…':v.t; ul.appendChild(li); });
+  }
+  document.querySelectorAll('.chapter').forEach(vurgulaCiz);
+  window.addEventListener('esitleme-geldi',function(){ document.querySelectorAll('.chapter').forEach(vurgulaCiz); });
+
+  var vd=document.getElementById('vdugme'), secim=null;
+  function secimOku(){
+    var s=window.getSelection(); if(!s||s.isCollapsed||!s.rangeCount) return null;
+    var r=s.getRangeAt(0), kok=r.commonAncestorContainer; if(kok.nodeType!==1) kok=kok.parentNode;
+    var ch=kok.closest('.chapter'); if(!ch || kok.closest('.notum')) return null;
+    if(String(s).replace(/\s+/g,'').length<3) return null;
+    var B=bloklar(ch), l=[];
+    function ofs(b,dugum,o){ var x=document.createRange(); x.selectNodeContents(b); try{ x.setEnd(dugum,o); }catch(e){ return 0; } return String(x).length; }
+    B.forEach(function(b,i){
+      if(!r.intersectsNode(b)) return;
+      var a=b.contains(r.startContainer)?ofs(b,r.startContainer,r.startOffset):0, z=b.contains(r.endContainer)?ofs(b,r.endContainer,r.endOffset):b.textContent.length;
+      var t=b.textContent.slice(a,z); if(t.trim().length<2) return;
+      l.push({i:i,a:a,b:z,t:t});
+    });
+    return l.length?{ch:ch,l:l.slice(0,12)}:null;
+  }
+  document.addEventListener('selectionchange',function(){ secim=secimOku(); vd.textContent='Vurgula'; vd.onclick=vurgula; vd.hidden=!secim; });
+  vd.addEventListener('mousedown',function(e){ e.preventDefault(); });     // seçim kaybolmasın
+  function vurgula(){
+    if(!secim) return; var id=secim.ch.id.replace(/^c-/,''), d=isaretler(); d[id]=d[id]||[];
+    secim.l.forEach(function(v,k){ v.id='v'+Date.now().toString(36)+k; d[id].push(v); });
+    yaz('dni-isaret',d); var ch=secim.ch; try{ window.getSelection().removeAllRanges(); }catch(e){}
+    vd.hidden=true; vurgulaCiz(ch);
+  }
+  document.addEventListener('click',function(e){
+    var m=e.target.closest('mark.vurgu'); if(!m || (window.getSelection()&&!window.getSelection().isCollapsed)) return;
+    var ch=m.closest('.chapter'), id=ch.id.replace(/^c-/,''), vid=m.getAttribute('data-v');
+    vd.textContent='Vurguyu kaldır'; vd.hidden=false;
+    vd.onclick=function(){ var d=isaretler(); d[id]=(d[id]||[]).filter(function(v){return v.id!==vid}); if(!d[id].length) delete d[id]; yaz('dni-isaret',d); vd.hidden=true; vurgulaCiz(ch); };
+    setTimeout(function(){ if(vd.textContent==='Vurguyu kaldır') vd.hidden=true; },5000);
+  });
+
   /* bu betik, görünümler sayfaya eklendikten sonra çalışır: açılıştaki adresi yeniden yönlendir */
   try{ window.dispatchEvent(new HashChangeEvent('hashchange')); }catch(e){ yon(); }
 })();

@@ -106,3 +106,17 @@ Değişken yoksa site açıktır. Giriş bir yıl hatırlanır. GitHub Pages'te 
 | `middleware.js` | İsteğe bağlı şifre kapısı (yalnızca Vercel) |
 | `arsiv/` | Okuma arşivi: derlenmiş `index.html`, `kaynak/`, `build.py` |
 | `icons/` | Uygulama ikonları |
+
+## Denetim (otomatik test)
+
+`node araclar/test.js` — bağımlılık gerektirmez, birkaç saniye sürer. Değişiklik yayınlamadan önce çalıştırılır; "KALDI" yazıyorsa o değişiklik bir şeyi bozmuştur.
+Baktıkları: eşitleme birleştirmesi (iki cihaz benzetimi), blok listeleri, **gizlilik** (bildirim, takvim, uygulama adı, giriş ekranı gibi dışarıdan görünen hiçbir yerde ders ya da sınav adı geçmemesi), arşiv derlemesinin güncel olması, eksik dosya.
+
+## 7 Ekim eklentileri
+
+- **Çalışma → Netler:** "Gidiş ve tahmin" (son denemelerin haftalık eğimi ile hedefe gereken eğim; 5 denemeden önce uzatma yapmaz), "Sınav modu" (165/180 dk, ekranda yalnızca sayaç).
+- **Çalışma → Defter:** "Konu haritası" (her kare bir konu, koyulaştıkça hata çok).
+- **Çalışma → Hafta:** haftanın özeti (yüzde, gün gün, en çok atlanan blok, denemeler, deftere giren hata, günlük cümleler).
+- **Çalışma → Yıl:** "Gün gün" yoğunluk takvimi.
+- **Bugün:** "Bugünden tek cümle".
+- **Arşiv:** metin seçip vurgulama, bölüm notu, bölüm ve pano kartlarında kaynak güveni rozeti. Pano rakamları `arsiv/kaynak/pano.json` içinde; güncellemek için yalnızca o dosya değişir, sonra `python arsiv/build.py`.

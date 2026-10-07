@@ -9,8 +9,40 @@ K = Path(__file__).parent / "kaynak"
 oku = lambda p: (K / p).read_text(encoding="utf-8")
 dosyalar = json.loads(oku("dosyalar.json"))
 
-govde = [oku("kutuphane.html"), oku("pano.html")]
-files, names = {}, {}
+GUVEN_AD = {"d": "doğrulandı", "k": "kısmen doğrulandı", "h": "hafızadan"}
+def pano_html():
+    """Pano kartlarını kaynak/pano.json'dan üretir."""
+    p = json.loads(oku("pano.json"))
+    kart = []
+    for t in p["kartlar"]:
+        gv = t.get("guven", "k")
+        kart.append(f'''
+    <div class="tile">
+      <span class="k">{t["baslik"]}<i class="gv g-{gv}">{GUVEN_AD[gv]}</i></span>
+      <div class="v">{t["deger"]}</div>
+      <span class="d">{t["tarih"]}</span>
+      ''' + "\n      ".join(f"<p>{m}</p>" for m in t["metin"]) + "\n    </div>")
+    return f'''<!-- =================== PANO (kaynak/pano.json) =================== -->
+<div class="view" id="v-pano">
+<div class="pano">
+  <div class="eyebrow">Ekonomi · Güncel durum</div>
+  <h1>{p["ay"]} <em>panosu</em></h1>
+  <p class="lede">{p["lede"]}</p>
+  <p class="time">{p["veri"]}</p>
+
+  <div class="tiles">
+{"".join(kart)}
+
+  </div>
+
+  <p class="fine" style="margin-top:28px">{p["kaynak"]}</p>
+  <div class="nav"><a class="btn ghost" href="#ev">← Kütüphaneye dön</a><a class="btn" href="#para-1">Para dosyasına git</a></div>
+</div>
+</div>
+'''
+
+govde = [oku("kutuphane.html"), pano_html()]
+files, names, guven = {}, {}, {}
 for d in dosyalar:
     i, t = d["id"], d["baslik"]
     files[i] = {"title": t}
@@ -20,6 +52,7 @@ for d in dosyalar:
         yol = K / i / f"bolum-{n}.html"
         if yol.exists():
             names[f"{i}-{n}"] = ad
+            guven[f"{i}-{n}"] = (d.get("guven") or [])[n-1] if n-1 < len(d.get("guven") or []) else "k"
             li.append(f'    <li><a href="#{i}-{n}" data-ch="{i}-{n}">{html.escape(ad, quote=False)}</a></li>')
             bol.append(yol.read_text(encoding="utf-8"))
         else:
@@ -48,7 +81,7 @@ betik = oku("betik.html")
 betik = betik.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
 betik = betik.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
 govde.append(betik)
-govde.append(oku("ek.html"))
+govde.append(oku("ek.html").replace("/*GUVEN*/{}", json.dumps(guven)))
 stil, govde = oku("stil.html"), "".join(govde)
 # Site derlemesinde yazı tipleri depodan (../fonts); --tek kopyasında Google Fonts bağlantısı kalır.
 import re as _re

@@ -90,7 +90,7 @@ function tamam(){
         else { yaz(null); acikYaz(false); kapat(); if(bitince) bitince(true); bitince=null; }
       } else {
         yanlisSay++;
-        if(yanlisSay>=5){ kilitBitis=Date.now()+30000; yanlisSay=0; salla("Beş yanlış deneme. 30 sn bekle."); }
+        if(yanlisSay>=5){ kilitBitis=Date.now()+30000; yanlisSay=0; salla("Beş yanlış giriş. 30 sn bekle."); }
         else salla("Kod yanlış.");
       }
     });

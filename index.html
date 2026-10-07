@@ -94,6 +94,7 @@
         </div>
         <div class="blocks" id="blocks"></div>
       </div>
+      <div class="gunluk"><label for="gunlukGir">Bugünden tek cümle</label><input type="text" id="gunlukGir" maxlength="200" placeholder="Bugün ne öğrendin, ne takıldı?" autocomplete="off"></div>
       <a class="arsiv" id="arsivLink" href="arsiv/"><span><b>Arşiv</b> Dünya Nasıl İşler — günün işi bitince okuma</span><em id="arsivDurum"></em></a>
       <p class="note"><b>40 saniye kuralı.</b> Matematikte bir soruya 40 saniyede başlayamıyorsan atla ve işaretle. Hız süresiz çözerek değil, kısıt altında çözerek gelir.</p>
       <p class="note"><b>Hafta içi konu, hafta sonu deneme.</b> Cmt TYT · Paz AYT, ikisi de 10:15'te. <b>Perşembe hafif gün.</b> Dinleme: yürüyüş → 32. Gün / 49W / İngilizce podcast · spor → Storytel · akşam → Almanca.</p>
@@ -103,11 +104,24 @@
     <section id="s-hafta" hidden>
       <div class="head"><div><h2>Bu <em>hafta</em></h2><p class="sub">Cumartesi TYT, Pazar AYT — gerçek sınav saatinde. Pazar akşamı kapalı.</p></div></div>
       <div class="week" id="week"></div>
+      <div class="card" style="margin-top:14px">
+        <div class="hd"><h3 id="raporBaslik">Bu hafta</h3><span class="r"><span id="raporAralik"></span> <button class="btn sm ghost" id="raporOnce" type="button" style="margin-left:8px">Geçen hafta</button></span></div>
+        <div class="in" id="rapor"></div>
+      </div>
     </section>
 
     <!-- NETLER -->
     <section id="s-netler" hidden>
-      <div class="head"><div><h2>Deneme <em>netleri</em></h2><p class="sub">Ders bazlı doğru / yanlış / boş gir, net otomatik (D − Y/4). Toplam tutmuyorsa uyarır.</p></div></div>
+      <div class="head"><div><h2>Deneme <em>netleri</em></h2><p class="sub">Ders bazlı doğru / yanlış / boş gir, net otomatik (D − Y/4). Toplam tutmuyorsa uyarır.</p></div><button class="btn sm ghost" id="sinavAc" type="button">Sınav modu</button></div>
+      <div class="sinavsec" id="sinavSec" hidden>
+        <span>Süre başlar, ekranda yalnızca sayaç kalır.</span>
+        <button class="btn sm" type="button" data-dk="165" data-tur="TYT">TYT · 165 dk</button>
+        <button class="btn sm" type="button" data-dk="180" data-tur="AYT">AYT · 180 dk</button>
+      </div>
+      <div class="card">
+        <div class="hd"><h3>Gidiş ve tahmin</h3><span class="r">süresi tutulmuş son 8 deneme</span></div>
+        <div class="in" id="tahmin"></div>
+      </div>
       <div class="card">
         <div class="hd"><h3>Hedef merdiveni ve gerçekleşen</h3><span class="r">aynı ayda en yüksek deneme</span></div>
         <div class="chartwrap" id="chartWrap">
@@ -164,6 +178,11 @@
         <div id="tekrarListe"></div>
       </div>
       <div class="card">
+        <div class="hd"><h3>Konu haritası</h3><span class="r">her kare bir konu</span></div>
+        <div class="in"><div id="isiHarita"></div><div class="isb" id="isiBilgi"></div>
+          <div class="isl"><span>az</span><i class="isk l0"></i><i class="isk l1"></i><i class="isk l2"></i><i class="isk l3"></i><i class="isk l4"></i><span>çok</span></div></div>
+      </div>
+      <div class="card">
         <div class="hd"><h3>En çok hata veren konular</h3><span class="r" id="hSayi">0 kayıt</span></div>
         <div class="scroll"><table id="konuTablo"><thead><tr><th>Ders</th><th>Konu</th><th class="n">Hata</th><th class="n">Bilgi</th><th class="n">Dikkat</th><th class="n">Süre</th></tr></thead><tbody></tbody></table></div>
         <div class="empty" id="konuBos">Defter boş. Bir deneme çöz, yanlışlarını gir — plan buradan diziliyor.</div>
@@ -183,6 +202,10 @@
         <div class="strip" id="strip"></div>
         <p class="note" id="stripNote" style="margin-top:12px"></p>
       </div></div>
+      <div class="card">
+        <div class="hd"><h3>Gün gün</h3><span class="r">sütun hafta · satır gün</span></div>
+        <div class="in"><div class="yogun" id="yogun"></div><p class="note" id="yogunNot" style="margin-top:12px"></p></div>
+      </div>
       <div class="card"><div class="phases" id="phases"></div></div>
       <div class="card">
         <div class="hd"><h3>Net merdiveni</h3><span class="r">Şubat eşiği 110 / 72</span></div>
@@ -270,6 +293,14 @@
 </div>
 
 <input type="file" id="ioFile" accept="application/json" hidden>
+<div class="sinavmod" id="sinavMod" hidden>
+  <div class="smk">
+    <div class="sms" id="smSayac">—</div>
+    <div class="smb"><i id="smBar"></i></div>
+    <div class="sma" id="smAlt"></div>
+    <button type="button" class="btn ghost" id="smBitir">Bitir</button>
+  </div>
+</div>
 <script src="kasa.js"></script>
 <script src="bloklar.js"></script>
 <script src="esitle.js"></script>

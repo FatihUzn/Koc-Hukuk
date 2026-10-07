@@ -59,6 +59,7 @@ var BOLUMLER = [
   {id:"defter", ad:"Yanlış defteri",kisa:"Defter"},
   {id:"yil",    ad:"Yıl",           kisa:"Yıl"},
   {id:"plan",   ad:"Plan ve yaşam", kisa:"Plan"},
+  {id:"spor",   ad:"Spor",          kisa:"Spor"},
   {id:"gundem", ad:"Gündem",        kisa:"Gündem"}
 ];
 
@@ -108,6 +109,7 @@ var IKON={
   gundem:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="11" height="10" rx="1.500"/><path d="M5 6h6M5 8.500h6M5 11h3.500"/></svg>',
   plan:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2 1.5"/></svg>'
 };
+IKON.spor='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6v4M4.500 4.500v7M11.500 4.500v7M14 6v4M4.500 8h7"/></svg>';
 (function(){
   var nav=$("nav");
   BOLUMLER.forEach(function(b){
@@ -135,6 +137,7 @@ function git(id){
   });
   if(id==="netler") cizGrafik();
   if(id==="gundem") cizGundem();
+  if(id==="spor") cizSpor();
   window.scrollTo(0,0);
 }
 
@@ -183,6 +186,7 @@ function suAnkiBlok(){
 var sonBlokId=null;
 function cizSimdi(r){
   var k=$("simdi"); if(!k) return;
+  var ss=$("simdiSpor"); if(ss){ var sb=(r.simdi&&r.simdi.id==="b9")?r.simdi:((!r.simdi&&r.sonraki&&r.sonraki.id==="b9")?r.sonraki:null), sp=sb&&window.Spor?Spor.gun(sporMod(),bugunTarih().getDay()):null; ss.hidden=!sp; if(sp) ss.textContent="Bugünkü antrenman: "+sp.ad+" →"; }
   var ad=$("simdiAd"), et=$("simdiEt"), bar=$("simdiBar"), kal=$("simdiKalan"), son=$("simdiSonra");
   if(r.simdi){
     var bas=dkDan(r.simdi.s), sure=r.simdi.dk||1, gecen=r.dk-bas, kalan=bas+sure-r.dk;
@@ -852,6 +856,7 @@ function yereldenYukle(){
   S.motto=yerelOku("motto","") || "";
   S.tekrar=yerelOku("tekrar",{}) || {};
   S.gunluk=yerelOku("gunluk",{}) || {};
+  S.spor=yerelOku("spor",{}) || {};
   $("motto").textContent=S.motto;
   yerelYaz("son_kayit", new Date().toISOString());
 }
@@ -867,7 +872,7 @@ function mottoKur(){
 
 /* yedek al / yükle */
 function yedekAl(){
-  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{} };
+  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{}, spor:S.spor||{} };
   var blob=new Blob([JSON.stringify(paket,null,2)],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="275-yedek-"+anahtar(new Date())+".json"; document.body.appendChild(a); a.click();
@@ -886,6 +891,7 @@ function yedekYukle(file){
       if(typeof p.motto==="string"){ S.motto=p.motto; $("motto").textContent=p.motto; }
       if(p.tekrar && typeof p.tekrar==="object"){ S.tekrar=p.tekrar; yerelYaz("tekrar",S.tekrar); }
       if(p.gunluk && typeof p.gunluk==="object"){ S.gunluk=p.gunluk; yerelYaz("gunluk",S.gunluk); }
+      if(p.spor && typeof p.spor==="object"){ S.spor=p.spor; yerelYaz("spor",S.spor); }
       yerelYaz("gunler",S.gunler); yerelYaz("denemeler",S.denemeler); yerelYaz("hatalar",S.hatalar); yerelYaz("motto",S.motto);
       ciz(); durumYaz("yedek yüklendi");
     }catch(e){ durumYaz("dosya okunamadı"); }
@@ -1120,6 +1126,97 @@ function yedekKontrol(){
   if(gerek) $("yedekMetin").textContent = g===null ? "Henüz hiç yedek almadın. Kayıt yalnızca bu tarayıcıda duruyor." : ("Son yedek "+g+" gün önce. Haftalık yedek zamanı.");
 }
 $("yedekSimdi").addEventListener("click",function(){ yedekAl(); setTimeout(yedekKontrol,300); });
+/* ============ spor: günün antrenmanı, set kaydı, dinlenme sayacı ============ */
+var sporGun=null, sporSayac=null, sporBitis=0;
+function sporMod(){ return yerelOku("spor_mod","ev")==="salon" ? "salon" : "ev"; }
+function sporOnceki(mod,hid,k){            // bu hareketin bugünden önceki son kaydı
+  var G=S.spor||{}, gunler=Object.keys(G).filter(function(x){ return x<k && G[x] && G[x].h && G[x].h[hid] && G[x].h[hid].some(function(s){return s && s.t;}); }).sort();
+  if(!gunler.length) return null; var g=gunler[gunler.length-1]; return {gun:g, setler:G[g].h[hid]};
+}
+function sporOzet(setler,h){ return setler.filter(function(s){return s&&s.t;}).map(function(s){ return (h.kg && s.k ? vir(+s.k, (+s.k%1)?1:0)+"×" : "")+s.t; }).join(" · "); }
+function cizSpor(){
+  var kutu=$("sporListe"); if(!kutu || !window.Spor) return;
+  var b=bugunTarih(), k=anahtar(b), dw = sporGun===null ? b.getDay() : sporGun, mod=sporMod(), bugunMu = dw===b.getDay();
+  document.querySelectorAll("#sporMod button").forEach(function(x){ x.setAttribute("aria-pressed", x.getAttribute("data-mod")===mod ? "true":"false"); });
+  var gs=$("sporGunler"); gs.innerHTML="";
+  [[1,"Pzt"],[2,"Sal"],[3,"Çar"],[4,"Per"],[5,"Cum"],[6,"Cmt"],[0,"Paz"]].forEach(function(g){
+    var p=Spor.gun(mod,g[0]), x=el("button",g[0]===b.getDay()?"bugun":null); x.type="button";
+    x.appendChild(el("b",null,g[1])); x.appendChild(el("span",null,p?p.ad:"—"));
+    x.setAttribute("aria-pressed", g[0]===dw ? "true":"false");
+    x.addEventListener("click",function(){ sporGun=g[0]; cizSpor(); });
+    gs.appendChild(x);
+  });
+  var p=Spor.gun(mod,dw); kutu.innerHTML="";
+  $("sporBaslik").textContent = p ? p.ad : "Dinlenme günü";
+  $("sporAlt").textContent = !p ? "Antrenman yok. Yürüyüş ya da hiçbir şey." : p.alt.charAt(0).toUpperCase()+p.alt.slice(1)+". "+(bugunMu ? "Yaptığın seti yaz; geçen seferki rakam kutuda soluk görünür." : "Yalnızca bakıyorsun; kayıt bugünün antrenmanına girilir.");
+  $("sporBitir").hidden = !p || !bugunMu;
+  if(!p) return;
+  var kayit=((S.spor||{})[k]||{}).h||{}, biten=0;
+  p.hareketler.forEach(function(h,hi){
+    var once=sporOnceki(mod,h.id,k), setler=kayit[h.id]||[], dolu=setler.filter(function(s){return s&&s.t;}).length;
+    if(dolu>=h.set) biten++;
+    var c=el("div","sph"+(dolu>=h.set?" tamam":""));
+    var ust=el("div","spu"); var ad=el("div","spa"); ad.appendChild(el("b",null,(hi+1)+". "+h.ad));
+    ad.appendChild(el("span",null,h.set+" × "+h.tekrar+(h.birim==="tekrar"?"":" "+h.birim)+(once?"  ·  geçen: "+sporOzet(once.setler,h)+" ("+trTarih(once.gun)+")":"")));
+    ust.appendChild(ad);
+    if(h.nasil){ var nb=el("button","spn","?"); nb.type="button"; nb.setAttribute("aria-label","Nasıl yapılır"); nb.addEventListener("click",function(){ var n=c.querySelector(".spy"); n.hidden=!n.hidden; }); ust.appendChild(nb); }
+    c.appendChild(ust);
+    if(h.nasil){ var y=el("p","spy",h.nasil); y.hidden=true; c.appendChild(y); }
+    if(bugunMu){
+      var sr=el("div","sps");
+      for(var i=0;i<h.set;i++){ (function(i){
+        var s=setler[i]||{}, o=(once&&once.setler[i])||{}, kut=el("div","spk"+(s.t?" dolu":""));
+        kut.appendChild(el("i",null,String(i+1)));
+        function alan(tip,deger,ipucu,ek){
+          var inp=document.createElement("input"); inp.type="text"; inp.inputMode="decimal"; inp.autocomplete="off"; inp.value=deger||""; inp.placeholder=ipucu||ek; inp.setAttribute("aria-label",h.ad+" set "+(i+1)+" "+ek);
+          inp.addEventListener("change",function(){
+            var v=inp.value.replace(",",".").replace(/[^0-9.]/g,""); inp.value=v;
+            if(!S.spor) S.spor={}; if(!S.spor[k]) S.spor[k]={mod:mod,h:{}}; var hh=S.spor[k].h; if(!hh[h.id]) hh[h.id]=[];
+            var kay=hh[h.id][i]||{}; if(v) kay[tip]=v; else delete kay[tip]; hh[h.id][i]=kay;
+            for(var j=0;j<hh[h.id].length;j++) if(!hh[h.id][j]) hh[h.id][j]={};
+            S.spor[k].mod=mod; yerelYaz("spor",S.spor);
+            if(tip==="t"){ kut.classList.toggle("dolu",!!v); if(v && h.birim!=="dk" && i<h.set-1) sporDinlen(h.dinlen); }
+            var d2=hh[h.id].filter(function(q){return q&&q.t;}).length; c.classList.toggle("tamam", d2>=h.set); sporIlerleme();
+          });
+          return inp;
+        }
+        if(h.kg) kut.appendChild(alan("k",s.k,o.k,"kg"));
+        kut.appendChild(alan("t",s.t,o.t,h.birim==="tekrar"?"tekrar":h.birim));
+        sr.appendChild(kut);
+      })(i); }
+      c.appendChild(sr);
+    }
+    kutu.appendChild(c);
+  });
+  sporIlerleme();
+}
+function sporIlerleme(){
+  var b=bugunTarih(), k=anahtar(b), p=Spor.gun(sporMod(),b.getDay()), e=$("sporDurum"); if(!e) return;
+  if(!p){ e.textContent=""; return; }
+  var kayit=((S.spor||{})[k]||{}).h||{}, top=0, yap=0;
+  p.hareketler.forEach(function(h){ top+=h.set; yap+=Math.min(h.set,(kayit[h.id]||[]).filter(function(s){return s&&s.t;}).length); });
+  e.textContent = yap+" / "+top+" set";
+  var bt=$("sporBitir"); if(bt) bt.textContent = gunVerisi(k).b9 ? "Antrenman işaretli ✓" : (yap>=top ? "Antrenmanı bitir" : "Antrenmanı bitir ("+(top-yap)+" set kaldı)");
+}
+function sporDinlen(sn){
+  var e=$("sporSayac"); if(!e) return; clearInterval(sporSayac); sporBitis=Date.now()+sn*1000; e.hidden=false;
+  function tik(){ var kal=Math.ceil((sporBitis-Date.now())/1000); if(kal<=0){ clearInterval(sporSayac); e.textContent="Sıradaki set"; e.classList.add("bitti"); setTimeout(function(){ e.hidden=true; e.classList.remove("bitti"); },4000); try{ if(navigator.vibrate) navigator.vibrate(200); }catch(x){} return; }
+    e.classList.remove("bitti"); e.textContent="Dinlen "+Math.floor(kal/60)+":"+pad(kal%60); }
+  tik(); sporSayac=setInterval(tik,500);
+}
+function sporKur(){
+  if(!$("sporListe") || !window.Spor) return;
+  document.querySelectorAll("#sporMod button").forEach(function(x){ x.addEventListener("click",function(){ yerelYaz("spor_mod",x.getAttribute("data-mod")); cizSpor(); }); });
+  $("sporSayac").addEventListener("click",function(){ clearInterval(sporSayac); $("sporSayac").hidden=true; });
+  $("sporBitir").addEventListener("click",function(){
+    var k=anahtar(bugunTarih()), l=Bloklar.gunluk(bugunTarih().getDay());
+    if(l.some(function(x){return x.id==="b9";}) && !gunVerisi(k).b9){ blokAc(k,"b9"); cizBugun(); cizHafta(); cizMast(); }
+    sporIlerleme();
+  });
+  var kr=$("sporKurallar"); Spor.kurallar.forEach(function(r){ var d=el("div","rps2"); d.appendChild(el("b",null,r[0])); d.appendChild(el("p",null,r[1])); kr.appendChild(d); });
+  var sl=$("simdiSpor"); if(sl) sl.addEventListener("click",function(){ sporGun=null; git("spor"); });
+}
+
 /* ============ konu ısı haritası: her kare bir konu, koyulaştıkça hata çok ============ */
 function cizIsi(){
   var kutu=$("isiHarita"); if(!kutu) return; kutu.innerHTML="";
@@ -1324,7 +1421,7 @@ function sinavKur(){
   var d=cizYil; cizYil=function(){ d(); cizYogun(); };
 })();
 
-function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); yedekKontrol(); }
+function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); if(aktif==="spor" && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#sporListe"))) cizSpor(); yedekKontrol(); }
 
 /* ============ düzen: dört ana başlık + ortada tek düğme ============
    Aynı amaca hizmet eden bölümler aynı başlık altında:
@@ -1333,7 +1430,7 @@ var GRUPLAR=[
   {id:"bugun",   ad:"Bugün",   alt:[["bugun","Bugün"]]},
   {id:"calisma", ad:"Çalışma", alt:[["netler","Netler"],["defter","Defter"],["hafta","Hafta"],["yil","Yıl"]]},
   {id:"oku",     ad:"Oku",     alt:[["gundem","Gündem"]]},
-  {id:"ben",     ad:"Ben",     alt:[["plan","Düzen","duzen"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
+  {id:"ben",     ad:"Ben",     alt:[["plan","Düzen","duzen"],["spor","Spor"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
 ];
 var GIKON={
   bugun:IKON.bugun, calisma:IKON.netler,
@@ -1357,7 +1454,7 @@ function grupGuncelle(){
   var s=$("sekme"); s.innerHTML=""; s.hidden = g.alt.length<2;
   g.alt.forEach(function(a){
     var b=el("button",null,a[1]); b.type="button"; b.setAttribute("role","tab");
-    var secili = a[2] ? (benAlt===a[2]) : (aktif===a[0]);
+    var secili = a[2] ? (aktif===a[0] && benAlt===a[2]) : (aktif===a[0]);
     b.setAttribute("aria-selected", secili?"true":"false");
     b.addEventListener("click",function(){ if(a[2]){ benAlt=a[2]; yerelYaz("ben_alt",benAlt); } if(aktif!==a[0]) git(a[0]); else grupGuncelle(); window.scrollTo(0,0); });
     s.appendChild(b);
@@ -1450,6 +1547,7 @@ defterKur();
 mottoKur();
 gunlukKur();
 sinavKur();
+sporKur();
 ioKur();
 durumYaz();
 ciz();

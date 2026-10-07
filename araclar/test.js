@@ -12,7 +12,7 @@ const bolum=ad=>console.log("\n"+ad);
 
 /* ---------- 1. sözdizimi ---------- */
 bolum("Sözdizimi");
-["app.js","bloklar.js","esitle.js","kasa.js","sw.js","api/bildir.js","api/gundem.js","araclar/takvim-uret.js"].forEach(f=>{
+["app.js","bloklar.js","spor.js","esitle.js","kasa.js","sw.js","api/bildir.js","api/gundem.js","araclar/takvim-uret.js"].forEach(f=>{
   let hata=null; try{ new Function(oku(f).replace(/^#!.*/,"")); }catch(e){ hata=e.message; }
   T(f+" ayrıştırılıyor", !hata, hata);
 });
@@ -28,6 +28,14 @@ for(let dw=0;dw<7;dw++){
   T("gün "+dw+": saat sırası doğru", l.every((b,i)=>i===0||dk(b.s)>=dk(l[i-1].s)));
   T("gün "+dw+": bloklar üst üste binmiyor", l.every((b,i)=>i===0||dk(l[i-1].s)+(l[i-1].dk||0)<=dk(b.s)), l.map(b=>b.s).join(" "));
   T("gün "+dw+": sayılan blok var", l.filter(b=>b.say).length>=4);
+}
+
+{ const Spor=require(path.join(kok,"spor.js")), gorulen={};
+  ["ev","salon"].forEach(m=>{ for(let dw=0;dw<7;dw++){ const g=Spor.gun(m,dw); if(!g) continue;
+    T("spor "+m+" "+dw+": hareket var, alanlar tam", g.hareketler.length>0 && g.hareketler.every(x=>x.id&&x.ad&&x.set>0&&x.tekrar));
+    T("spor "+m+" "+dw+": gün içinde kimlik tekrarı yok", new Set(g.hareketler.map(x=>x.id)).size===g.hareketler.length);
+    g.hareketler.forEach(x=>{ const o=gorulen[x.id]; T("spor kimliği "+x.id+" tek harekete ait", !o||o===x.ad, o+" / "+x.ad); gorulen[x.id]=x.ad; }); } });
+  T("spor günleri blok listesindeki spor günleriyle aynı", [0,1,2,3,4,5,6].every(dw=>!!Spor.gun("ev",dw)===Bloklar.gunluk(dw).some(b=>b.id==="b9") && !!Spor.gun("salon",dw)===!!Spor.gun("ev",dw)));
 }
 
 /* ---------- 3. gizlilik ---------- */

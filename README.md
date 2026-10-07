@@ -120,3 +120,7 @@ Baktıkları: eşitleme birleştirmesi (iki cihaz benzetimi), blok listeleri, **
 - **Çalışma → Yıl:** "Gün gün" yoğunluk takvimi.
 - **Bugün:** "Bugünden tek cümle".
 - **Arşiv:** metin seçip vurgulama, bölüm notu, bölüm ve pano kartlarında kaynak güveni rozeti. Pano rakamları `arsiv/kaynak/pano.json` içinde; güncellemek için yalnızca o dosya değişir, sonra `python arsiv/build.py`.
+
+## Spor
+
+Ben → Spor. Program `spor.js` içinde (ev ve salon için ayrı; hareket, set ve tekrar aralıklarını oradan değiştirirsin; hareketin `id` alanına dokunma, kayıtlar ona bağlı). Günün antrenmanı açılır, her set için ağırlık ve tekrar yazılır, geçen seferki rakam kutuda soluk görünür. "Antrenmanı bitir" o günün Spor bloğunu işaretler. Kayıtlar eşitlenir ve yedeğe girer.

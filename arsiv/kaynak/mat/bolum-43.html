@@ -1,0 +1,548 @@
+<article class="chapter ders" id="c-mat-43">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 43 · Sayma 1</div>
+<h1>Saymadan saymak: toplama kuralı, çarpma kuralı ve faktöriyel</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bankamatik şifren dört rakamdan oluşuyor. Şifreyi unutan biri bütün olasılıkları tek tek denese kaç deneme yapması gerekir? Cevap 10 000; ama bunu bilmek için kimse 0000'dan 9999'a kadar yazıp saymadı. "Rakamları birbirinden farklı olsun" dersek kaç şifre kalır, "en az bir rakamı tekrar etsin" dersek kaç tane olur? Bir şeyi tek tek listelemeden, kaç tane olduğunu kesin olarak nasıl buluruz?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 4 (rakam ile sayı farkı, basamak, tek-çift), Parça 5 (2'ye ve 5'e bölünebilme), Parça 6 (asal çarpanlara ayırma ve pozitif bölen sayısı), Parça 35 (kartezyen çarpım ve s(A ∪ B) formülü). Yanında kâğıt kalem olsun; bu konuda her soruyu kutular çizerek çözeceksin.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Sayma, matematikte "kaç tane?" sorusunu listelemeden cevaplama sanatıdır. Sınavda bu sorular üç biçimde gelir. Birincisi doğrudan sayma: "Bu rakamlarla kaç farklı üç basamaklı çift sayı yazılabilir?", "A kentinden C kentine kaç farklı yoldan gidilir?", "Kaç farklı şifre oluşturulabilir?" İkincisi faktöriyelle hesap: "<span class="kes"><span>10! − 9!</span><span>8!</span></span> kaçtır?", "30! sayısının sondan kaç basamağı sıfırdır?" Üçüncüsü bu ikisinin, sonraki iki parçada göreceğin permütasyon ve kombinasyonla birleşmesi; olasılık soruları da (Parça 46 ve 47) baştan sona bu sayma becerisine dayanır.</p>
+
+<p>Bu parçanın amacı tek bir alışkanlık kurmaktır: <strong>Saymaya başlamadan önce işi adımlara ve durumlara ayır.</strong> Bir seçim art arda yapılan adımlardan oluşuyorsa adımların seçenek sayılarını çarparsın; birbirinden ayrı durumlardan oluşuyorsa durumların sayılarını toplarsın. Bütün sayma soruları bu iki kuralın ve onları doğru sırayla uygulamanın üstüne kurulur. Formül ezberlemek burada neredeyse işe yaramaz; çünkü her soru, kuralları kendine göre birleştirmeni ister.</p>
+
+<p>Sırayla şunları kuracağız: eşleme yoluyla sayma, toplama kuralı, çarpma kuralı ve ağaç şeması, "ve" ile "veya" ayrımı, yol sayma, kutu (basamak) yöntemi ve kısıtlı adımı önce doldurma ilkesi, şifre ve plaka soruları, faktöriyel, faktöriyelli ifadelerde sadeleştirme ve denklem, n! içindeki asal çarpan kuvveti ve sondaki sıfırlar, faktöriyel toplamlarının birler basamağı ve son olarak tümleyenden sayma.</p>
+
+<h2 class="s">Eşleme yoluyla sayma: saymak istediğini sayması kolay bir şeye bağla</h2>
+
+<p>En eski sayma yöntemi eşlemedir. Bir çoban, sürüsündeki koyunları saymak yerine her koyun için bir taş ayırabilir; akşam taşlar ile koyunları yeniden eşler. Taş ile koyun arasında bire bir bir eşleme varsa ikisinin sayısı aynıdır. Matematikte de sayması zor bir kümeyi, elemanları bire bir eşlenebilen ve sayması kolay bir kümeyle değiştiririz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Eşleme ilkesi.</strong> A kümesinin her elemanına B kümesinden tam bir eleman karşılık geliyor ve B'nin her elemanı da tam bir A elemanına bağlanıyorsa s(A) = s(B)'dir. Bu yüzden saymak istediğin şeyi, aynı sayıda olduğunu gösterebildiğin daha kolay bir şeyle sayabilirsin.</p></div>
+
+<p>Neden doğru olduğu tanımın içindedir: eşleme hiçbir elemanı açıkta bırakmıyor ve hiçbir elemanı iki kez kullanmıyorsa iki küme "yan yana dizildiğinde" tam olarak denk gelir. Parça 37'de bunun adını koymuştun: bire bir ve örten fonksiyon.</p>
+
+<p><strong>Birinci uygulama.</strong> 5 ile 95 arasındaki (ikisi de dahil) 5'in katları kaç tanedir? Sayıları 5'e böl: 5, 10, 15, …, 95 dizisi 1, 2, 3, …, 19 dizisine bire bir eşlenir. Demek ki 19 tane vardır. Parça 4'teki "terim sayısı = <span class="kes"><span>son − ilk</span><span>artış</span></span> + 1" formülü aslında bu eşlemenin kısaltılmış yazımıdır: <span class="kes"><span>95 − 5</span><span>5</span></span> + 1 = 19.</p>
+
+<p><strong>İkinci uygulama.</strong> Bir eleme turnuvasına 64 takım katılıyor; her maçı kaybeden elenir, berabere yoktur. Şampiyon belli olana kadar kaç maç oynanır? Turları tek tek toplayabilirsin (32 + 16 + 8 + 4 + 2 + 1 = 63) ama eşleme çok daha hızlıdır: her maç tam bir takımı eler, her elenen takım da tam bir maçta elenir. Şampiyon dışındaki 63 takım elendiğine göre maç sayısı 63'tür. Takım sayısı 64 değil 50 olsaydı tur hesabı karışırdı (bazı takımlar bir tur maç yapmadan geçerdi), ama eşleme hiç bozulmaz: 49 maç.</p>
+
+<h2 class="s">Toplama kuralı: ayrık seçenekler</h2>
+
+<p>Bir lokantada öğle yemeği için ya bir çorba ya da bir salata alabiliyorsun, ikisini birden değil. Menüde 4 çorba ve 3 salata var. Kaç farklı seçimin var? Seçebileceğin her şeyi tek bir liste hâlinde yaz: önce 4 çorba, arkasından 3 salata. Liste 7 satırdır. Çorbalar ile salatalar ortak eleman içermediği için hiçbir satır iki kez yazılmadı ve hiçbiri dışarıda kalmadı.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Toplama kuralı.</strong> Bir iş, birbiriyle ortak çıktısı olmayan (ayrık) durumlardan <strong>yalnızca biriyle</strong> yapılıyorsa ve birinci durum m, ikinci durum n farklı biçimde gerçekleşebiliyorsa iş toplam m + n farklı biçimde yapılır. Durum sayısı ikiden fazlaysa hepsi toplanır.</p></div>
+
+<p>Bu kural Parça 35'teki s(A ∪ B) = s(A) + s(B) − s(A ∩ B) formülünün, kesişimin boş olduğu hâlidir. Durumlar ayrık değilse, yani bir çıktı iki durumun ikisine de giriyorsa, düz toplama o çıktıyı iki kez sayar ve kesişimi çıkarman gerekir. Örnek: 1'den 30'a kadar olan sayılardan 2'ye ya da 3'e bölünenler kaç tanedir? 2'ye bölünenler 15, 3'e bölünenler 10 tanedir; ama 6, 12, 18, 24, 30 (6'ya bölünenler, 5 tane) iki listede de vardır.</p>
+
+<span class="mat">15 + 10 − 5 = 20 <span class="g">(iki kez sayılan 6'nın katları bir kez çıkarılır)</span></span>
+
+<p>Sayma sorusunda "durumlara ayırdım" diyorsan her zaman şunu sor: <strong>Bir çıktı iki durumun ikisine birden girebiliyor mu?</strong> Giremiyorsa topla; girebiliyorsa ya kesişimi çıkar ya da durumları baştan ayrık olacak biçimde yeniden kur. Sınavın sevdiği tuzak, ayrık olmayan durumları düz toplamaktır; bunu parçanın sonunda "en az bir" sorularında yeniden göreceğiz.</p>
+
+<h2 class="s">Çarpma kuralı: art arda yapılan adımlar</h2>
+
+<p>Şimdi seçim türü değişiyor. Dolabında 3 gömlek ve 2 pantolon var; bir gömlek <strong>ve</strong> bir pantolon giyeceksin. Kaç farklı kombin yapabilirsin? İşi iki adıma ayır: önce gömleği seç, sonra pantolonu. Hangi gömleği seçersen seç, pantolon için yine 2 seçeneğin var. Aşağıdaki ağaç şeması bunu gösteriyor: ilk adımda 3 dal açılıyor, her dalın ucunda 2 dal daha açılıyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Ağaç şeması: üç gömlek dalının her birinden iki pantolon dalı çıkıyor, toplam altı uç">
+  <text class="sv-s" x="145" y="18" text-anchor="middle">gömlek (3)</text>
+  <text class="sv-s" x="262" y="18" text-anchor="middle">pantolon (2)</text>
+  <text class="sv-s" x="345" y="18" text-anchor="middle">kombin</text>
+  <circle class="sv-a" cx="30" cy="180" r="7" />
+  <text class="sv-s" x="30" y="204" text-anchor="middle">başla</text>
+  <line class="sv-c" x1="37" y1="178" x2="120" y2="85" />
+  <line class="sv-c" x1="37" y1="180" x2="120" y2="180" />
+  <line class="sv-c" x1="37" y1="182" x2="120" y2="275" />
+  <rect class="sv-l" x="120" y="72" width="50" height="26" rx="6" />
+  <text class="sv-b" x="145" y="90" text-anchor="middle">G1</text>
+  <rect class="sv-l" x="120" y="167" width="50" height="26" rx="6" />
+  <text class="sv-b" x="145" y="185" text-anchor="middle">G2</text>
+  <rect class="sv-l" x="120" y="262" width="50" height="26" rx="6" />
+  <text class="sv-b" x="145" y="280" text-anchor="middle">G3</text>
+  <line class="sv-c" x1="170" y1="85" x2="240" y2="60" />
+  <line class="sv-c" x1="170" y1="85" x2="240" y2="110" />
+  <line class="sv-c" x1="170" y1="180" x2="240" y2="155" />
+  <line class="sv-c" x1="170" y1="180" x2="240" y2="205" />
+  <line class="sv-c" x1="170" y1="275" x2="240" y2="250" />
+  <line class="sv-c" x1="170" y1="275" x2="240" y2="300" />
+  <rect class="sv-m" x="240" y="49" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="65" text-anchor="middle">P1</text>
+  <rect class="sv-m" x="240" y="99" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="115" text-anchor="middle">P2</text>
+  <rect class="sv-m" x="240" y="144" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="160" text-anchor="middle">P1</text>
+  <rect class="sv-m" x="240" y="194" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="210" text-anchor="middle">P2</text>
+  <rect class="sv-m" x="240" y="239" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="255" text-anchor="middle">P1</text>
+  <rect class="sv-m" x="240" y="289" width="44" height="22" rx="5" />
+  <text class="sv-t" x="262" y="305" text-anchor="middle">P2</text>
+  <text class="sv-t" x="345" y="65" text-anchor="middle">G1 P1</text>
+  <text class="sv-t" x="345" y="115" text-anchor="middle">G1 P2</text>
+  <text class="sv-t" x="345" y="160" text-anchor="middle">G2 P1</text>
+  <text class="sv-t" x="345" y="210" text-anchor="middle">G2 P2</text>
+  <text class="sv-t" x="345" y="255" text-anchor="middle">G3 P1</text>
+  <text class="sv-t" x="345" y="305" text-anchor="middle">G3 P2</text>
+</svg>
+<figcaption>Her yol (başlangıçtan bir uca) bir kombindir. İlk adımda 3 dal var ve her dal aynı sayıda, 2 dala ayrılıyor; bu yüzden uç sayısı 2 + 2 + 2 = 3 · 2 = 6'dır. Çarpma, eşit dalların tekrarlı toplamasıdır (Parça 2).</figcaption>
+</figure>
+
+<p>Şekildeki uçları say: 6. Bunu toplama olarak da yazabilirsin: G1'in 2 dalı, G2'nin 2 dalı, G3'ün 2 dalı, yani 2 + 2 + 2. Parça 2'de çarpmanın tekrarlı toplama olduğunu görmüştün; 2 + 2 + 2 = 3 · 2. Çarpma kuralının bütün gerekçesi budur. Bir de ayakkabı adımı eklersen (2 ayakkabı) her uç yeniden 2'ye ayrılır: 6 · 2 = 12 kombin.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çarpma kuralı.</strong> Bir iş art arda yapılan adımlardan oluşuyorsa ve birinci adım m, (birinci adımda ne seçilirse seçilsin) ikinci adım n farklı biçimde yapılabiliyorsa iş toplam m · n farklı biçimde yapılır. Adım sayısı ikiden fazlaysa bütün adımların seçenek sayıları çarpılır.</p></div>
+
+<p>Kuralın içindeki parantez çok önemlidir: <strong>ikinci adımın seçenek sayısı, birinci adımda ne seçildiğine bağlı olmamalı.</strong> Seçeneklerin kendisi değişebilir (G1'den sonra kalan pantolonlar ile G2'den sonra kalanlar farklı olabilir), ama <em>sayısı</em> aynı kalmalı. Ağaçta her dalın aynı sayıda dala ayrılması bu demektir. Sayılar dala göre değişiyorsa çarpamazsın; o zaman durumlara ayırıp her durumu ayrı çarpar, sonra toplarsın. Aşağıda kutu yönteminde bunun en tipik örneğini göreceğiz.</p>
+
+<p>Parça 35'te s(A × B) = s(A) · s(B) formülünü görmüştün. Gömlek-pantolon kombinleri tam olarak {gömlekler} × {pantolonlar} kartezyen çarpımının elemanlarıdır; çarpma kuralı, kartezyen çarpımın eleman sayısının sayma dilindeki adıdır. Parça 6'daki bölen sayısı formülü de aynı kuraldan gelir: 72 = 2<sup>3</sup> · 3<sup>2</sup> sayısının bir böleni, 2'nin üssünü (0, 1, 2, 3: 4 seçenek) ve 3'ün üssünü (0, 1, 2: 3 seçenek) seçerek kurulur; 4 · 3 = 12 bölen. Parça 36'daki fonksiyon sayısı s(B)<sup>s(A)</sup> da öyle: A'nın her elemanı için ayrı bir adımda B'den bir görüntü seçersin.</p>
+
+<h2 class="s">"Ve" mi, "veya" mı? Kararı veren soru</h2>
+
+<p>Sayma sorularında en çok hata, toplanacak yerde çarpmak ya da çarpılacak yerde toplamaktır. Karar için soru metnindeki sözcükler ipucu verir, ama asıl ölçüt şudur: <strong>Seçimi tamamlamak için hepsini mi yapıyorsun, yoksa yalnızca birini mi?</strong> Hepsini yapıyorsan adımlardır, çarp. Yalnızca birini yapıyorsan durumlardır, topla.</p>
+
+<div class="tablo"><table>
+<tr><th>Metindeki ifade</th><th>Ne anlatır</th><th>İşlem</th><th>Örnek</th></tr>
+<tr><td>"ve", "hem … hem …", "önce … sonra …", "her biri için"</td><td>art arda yapılan adımlar; hepsi yapılır</td><td>çarp</td><td>bir gömlek ve bir pantolon: 3 · 2</td></tr>
+<tr><td>"veya", "ya da", "ya … ya …", "… olursa / … olursa"</td><td>ayrık durumlar; yalnızca biri olur</td><td>topla</td><td>bir çorba ya da bir salata: 4 + 3</td></tr>
+<tr><td>"son basamak 0 ise …, değilse …"</td><td>durumlara ayırma; her durumun içi adımlardır</td><td>önce her durumda çarp, sonra durumları topla</td><td>çift sayılar: 20 + 32</td></tr>
+<tr><td>"en az bir", "en az iki"</td><td>çok sayıda örtüşen durum</td><td>tümünden çıkar (tümleyen)</td><td>en az bir 5 içeren: 900 − 648</td></tr>
+</table></div>
+
+<p>Sözcükler yanıltabilir. "Bir kitap ya da bir dergi alıp okuyacak ve bitince bir kalem alacak" cümlesinde "ya da" ilk adımın içindeki durumları, "ve" adımların birleşmesini anlatır: (kitap + dergi) · kalem. Bu yüzden önce işi bir sıra hâlinde kendi cümlenle yaz: "1. adım: okuyacak şeyi seç (kitaplar ya da dergiler). 2. adım: kalemi seç." Sonra her adımın içine bak: içinde "ya da" varsa o adımın seçenek sayısı bir toplamdır.</p>
+
+<h2 class="s">Yol sayma: kentler arası yollar ve gidiş-dönüş</h2>
+
+<p>Yol soruları çarpma ve toplama kuralını birlikte kullanmanın en temiz örneğidir. Kentleri noktalar, yolları çizgiler olarak çiz; bir rotayı bir kentten öbürüne giden adımlar dizisi olarak düşün.</p>
+
+<figure>
+<svg viewBox="0 0 400 225" role="img" aria-label="A, B ve C kentleri: A ile B arasında üç yol, B ile C arasında iki yol, A ile C arasında B'ye uğramayan iki yol">
+  <path class="sv-c" d="M58 90H182" />
+  <path class="sv-c" d="M58 82Q120 40 182 82" />
+  <path class="sv-c" d="M58 98Q120 140 182 98" />
+  <path class="sv-c" d="M218 84Q280 55 342 84" />
+  <path class="sv-c" d="M218 96Q280 125 342 96" />
+  <path class="sv-cl" d="M48 106Q200 230 352 106" />
+  <path class="sv-cl" d="M44 110Q200 268 356 110" />
+  <circle class="sv-l" cx="40" cy="90" r="18" />
+  <circle class="sv-l" cx="200" cy="90" r="18" />
+  <circle class="sv-l" cx="360" cy="90" r="18" />
+  <text class="sv-b" x="40" y="95" text-anchor="middle">A</text>
+  <text class="sv-b" x="200" y="95" text-anchor="middle">B</text>
+  <text class="sv-b" x="360" y="95" text-anchor="middle">C</text>
+  <text class="sv-t" x="120" y="38" text-anchor="middle">3 yol</text>
+  <text class="sv-t" x="280" y="48" text-anchor="middle">2 yol</text>
+  <text class="sv-t" x="200" y="214" text-anchor="middle">B'ye uğramadan 2 yol</text>
+</svg>
+<figcaption>B üzerinden giden bir rota iki adımdır (A→B, sonra B→C): 3 · 2 = 6. Doğrudan giden rotalar ayrı bir durumdur: 2. Bir rota ya B'den geçer ya geçmez; iki durum ayrık olduğu için toplanır: 6 + 2 = 8.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Şekildeki yollarla (A ile B arasında 3, B ile C arasında 2, A ile C arasında B'ye uğramayan 2 yol) a) A'dan C'ye kaç farklı rotayla gidilir? b) Biri A'dan C'ye B üzerinden gidip yine B üzerinden dönecek; dönüşte gidişte kullandığı yolların hiçbirini kullanmayacak. Kaç farklı gidiş-dönüş planı yapabilir? c) Yine B üzerinden gidip dönecek; bu kez yollar tekrar kullanılabilir ama dönüş rotası gidiş rotasının aynısı olmayacak. Kaç plan vardır?</p>
+<p><strong>Adım 1.</strong> a) şıkkında rotaları iki ayrık duruma ayırırım: B'den geçenler ve geçmeyenler.</p>
+<span class="mat">B'den geçen: 3 · 2 = 6 <span class="g">(önce A→B, sonra B→C: adımlar, çarpılır)</span></span>
+<span class="mat">6 + 2 = 8 <span class="g">(doğrudan 2 rota ayrı durum: toplanır)</span></span>
+<p><strong>Adım 2.</strong> b) şıkkında plan dört adımdır: A→B, B→C, C→B, B→A. Her adımın seçenek sayısını sırayla yazarım.</p>
+<span class="mat">A→B: 3 · B→C: 2 · C→B: 2 − 1 = 1 · B→A: 3 − 1 = 2 <span class="g">(dönüşte gidişte kullanılan birer yol düşer)</span></span>
+<span class="mat">3 · 2 · 1 · 2 = 12 <span class="g">(dört adım art arda: çarpılır)</span></span>
+<p><strong>Adım 3.</strong> c) şıkkında kısıt yoktur ama "aynı rota olmasın" istenir. Önce kısıtsız sayarım, sonra istenmeyenleri çıkarırım.</p>
+<span class="mat">kısıtsız: 6 · 6 = 36 <span class="g">(gidiş 6 rota, dönüş 6 rota)</span></span>
+<span class="mat">36 − 6 = 30 <span class="g">(dönüşün gidişle aynı olduğu 6 plan atılır)</span></span>
+<p><strong>Kontrol yolu.</strong> b) şıkkını küçük bir listeyle dene: gidişte A→B'nin 1. yolunu ve B→C'nin 1. yolunu seçtin diyelim. Dönüşte C→B için yalnızca 2. yol kalır, B→A için 2. ve 3. yollar kalır: 2 plan. Gidiş 6 türlü olduğu için 6 · 2 = 12. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> a) 8 rota, b) 12 plan, c) 30 plan. c) şıkkındaki "tümünden istenmeyeni çıkar" fikri, parçanın sonundaki tümleyen yönteminin ilk örneğidir.</p></div>
+
+<h2 class="s">Kutu (basamak) yöntemi: sayı yazma soruları</h2>
+
+<p>"Bu rakamlarla kaç sayı yazılır" sorularında her basamak bir adımdır. Kâğıda basamak sayısı kadar kutu çiz, her kutunun içine o basamağa kaç rakam konabileceğini yaz, sonra kutuları çarp. Bu yöntem çarpma kuralının ta kendisidir; kutular yalnızca hangi adımı neden öyle saydığını görmeni sağlar.</p>
+
+<p>Bu bölümdeki bütün örneklerde rakamlarımız {0, 1, 2, 3, 4, 5} olsun. Parça 4'ten hatırla: rakam, sayıları yazmak için kullanılan on simgeden biridir; sayı ise rakamlarla yazılan değerdir. Üç basamaklı bir sayının ilk (yüzler) basamağına <strong>0 yazılamaz</strong>, çünkü 042 üç basamaklı değil iki basamaklı bir sayıdır (42). Bu tek kısıt, kutu sorularının yarısının kaynağıdır.</p>
+
+<p><strong>Rakam tekrar edebilir.</strong> Yüzler basamağına 0 dışında 5 rakam, onlar ve birler basamağına 6'şar rakam gelebilir: 5 · 6 · 6 = 180 sayı.</p>
+
+<p><strong>Rakamları farklı.</strong> Yüzler basamağına 5 rakam (0 hariç). Onlar basamağına, yüzlerde kullanılan dışında 5 rakam (0 artık kullanılabilir). Birler basamağına kalan 4 rakam: 5 · 5 · 4 = 100 sayı. Dikkat et: onlar basamağı için "5" sayısı, yüzlerde hangi rakamı seçtiğine bağlı değil; her seçimde 6 rakamdan 1'i kullanılmış, 5'i kalmıştır. Çarpma kuralının koşulu sağlanıyor.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Kısıtlı adımı önce doldur.</strong> Kutuları soldan sağa değil, <strong>en çok kısıtı olan kutudan başlayarak</strong> doldur: önce tek, çift, 5'e bölünme, "0 olamaz", "şu rakamla başlasın" gibi koşulu olan basamaklar, sonra serbest basamaklar. Bir kısıtlı kutunun seçenek sayısı, önceki kutularda ne seçildiğine bağlı kalıyorsa (örneğin 0'ın kullanılıp kullanılmadığına) soruyu o noktada durumlara ayır.</p></div>
+
+<p>Neden böyle? Serbest kutuyu önce doldurursan, kısıtlı kutunun seçenek sayısı daha önce ne seçtiğine göre değişmeye başlar. "Çift olsun" diyelim: yüzler basamağına 2'yi yazdıysan birler için 0 ve 4 kalır (2 seçenek); 1'i yazdıysan 0, 2, 4 kalır (3 seçenek). Ağacın dalları eşit sayıda ayrılmıyor; çarpma kuralının koşulu bozuldu. Kısıtlı kutuyu önce doldurduğunda bu bağımlılık ya ortadan kalkar ya da açıkça görünür ve sen de soruyu bilinçli olarak durumlara ayırırsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> {0, 1, 2, 3, 4, 5} kümesinin elemanları kullanılarak rakamları birbirinden farklı üç basamaklı kaç çift sayı yazılabilir?</p>
+<p><strong>Adım 1.</strong> Kısıtlı kutular: birler (çift olmalı: 0, 2, 4) ve yüzler (0 olamaz). Önce birleri doldururum.</p>
+<p><strong>Adım 2.</strong> Birlere ne yazdığım yüzlerin seçenek sayısını değiştiriyor mu? Birlere 0 yazarsam 0 harcanmış olur ve yüzlere kalan 5 rakamın hepsi gelebilir; 2 ya da 4 yazarsam 0 hâlâ ortadadır ve yüzlere gelemez. Değiştiriyor: iki duruma ayırırım.</p>
+<span class="mat">Durum 1, birler 0: 1 · 5 · 4 = 20 <span class="g">(birler 1 yol, yüzler 1–5'ten 5, onlar kalan 4)</span></span>
+<span class="mat">Durum 2, birler 2 ya da 4: 2 · 4 · 4 = 32 <span class="g">(birler 2 yol, yüzler 0 ve birlerdeki hariç 4, onlar kalan 4)</span></span>
+<span class="mat">20 + 32 = 52 <span class="g">(birler ya 0'dır ya değildir: ayrık durumlar toplanır)</span></span>
+<p><strong>Kontrol yolu.</strong> Aynı yolla tek sayıları say: birler 1, 3 ya da 5 (3 yol), yüzler 0 ve birlerdeki hariç 4 yol, onlar kalan 4 yol: 3 · 4 · 4 = 48. Her sayı ya tektir ya çifttir: 52 + 48 = 100, bu da yukarıda bulduğumuz "rakamları farklı bütün sayılar" sayısıdır. Tutuyor.</p>
+<p><strong>Sonuç:</strong> 52 çift sayı yazılabilir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 240" role="img" aria-label="Kutu yöntemi: birler basamağı 0 olduğunda 5 çarpı 4 çarpı 1, birler 2 ya da 4 olduğunda 4 çarpı 4 çarpı 2">
+  <text class="sv-b" x="10" y="36">Durum 1: birler 0</text>
+  <rect class="sv-l" x="30" y="50" width="60" height="44" rx="8" />
+  <rect class="sv-k" x="115" y="50" width="60" height="44" rx="8" />
+  <rect class="sv-m" x="200" y="50" width="60" height="44" rx="8" />
+  <text class="sv-b" x="60" y="78" text-anchor="middle">5</text>
+  <text class="sv-b" x="145" y="78" text-anchor="middle">4</text>
+  <text class="sv-b" x="230" y="78" text-anchor="middle">1</text>
+  <text class="sv-s" x="60" y="112" text-anchor="middle">yüzler (2.)</text>
+  <text class="sv-s" x="145" y="112" text-anchor="middle">onlar (3.)</text>
+  <text class="sv-s" x="230" y="112" text-anchor="middle">birler (1.)</text>
+  <text class="sv-t" x="280" y="78">= 20</text>
+  <text class="sv-b" x="10" y="150">Durum 2: birler 2 ya da 4</text>
+  <rect class="sv-l" x="30" y="164" width="60" height="44" rx="8" />
+  <rect class="sv-k" x="115" y="164" width="60" height="44" rx="8" />
+  <rect class="sv-m" x="200" y="164" width="60" height="44" rx="8" />
+  <text class="sv-b" x="60" y="192" text-anchor="middle">4</text>
+  <text class="sv-b" x="145" y="192" text-anchor="middle">4</text>
+  <text class="sv-b" x="230" y="192" text-anchor="middle">2</text>
+  <text class="sv-s" x="60" y="226" text-anchor="middle">yüzler (2.)</text>
+  <text class="sv-s" x="145" y="226" text-anchor="middle">onlar (3.)</text>
+  <text class="sv-s" x="230" y="226" text-anchor="middle">birler (1.)</text>
+  <text class="sv-t" x="280" y="192">= 32</text>
+</svg>
+<figcaption>Kutuların altındaki sayılar doldurma sırasıdır: önce yeşil (birler, çift olma kısıtı), sonra mor (yüzler, 0 olamaz), en son serbest kutu. Birler basamağında 0'ın kullanılıp kullanılmaması yüzlerin seçenek sayısını değiştirdiği için iki durum ayrı çizildi; toplam 20 + 32 = 52.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kutuları soldan sağa doldurup "5 · 5 · 3 = 75" demek.</strong> Yüzlere 5, onlara 5 rakam yazıp birlere "üç çift rakam var" diye 3 koymak, birlerdeki 3 seçeneğin her dalda hep 3 olduğunu varsayar. Oysa 0, 2 ya da 4 daha önce kullanılmışsa birler için 2, hatta 1 seçenek kalır. Sonuç gerçek değerden (52) büyük çıkar, çünkü olmayan sayılar da sayılmış olur. Doğrusu: kısıtlı kutuyu önce doldur, gerekiyorsa durumlara ayır.</p>
+<p><strong>"Rakamları farklı" sorusunda 0'ı tamamen unutmak ya da yüzlere de koymak.</strong> Onlar ve birler basamağına 0 gelebilir; yalnızca yüzlere gelemez. 0'ı her yerden çıkarırsan eksik, her yere koyarsan fazla sayarsın.</p></div>
+
+<p><strong>5'e bölünen sayılar.</strong> Parça 5'ten: bir sayı birler basamağı 0 ya da 5 ise 5'e bölünür. {0, …, 5} ile rakamları farklı üç basamaklı 5'e bölünen sayılar yine iki durumdur. Birler 0 ise 5 · 4 = 20; birler 5 ise yüzlere 0 ve 5 hariç 4, onlara kalan 4 rakam: 4 · 4 = 16. Toplam 36. Gördüğün gibi her seferinde aynı soru: <strong>Kısıtlı kutuya yazdığım rakam, 0 sorununu değiştiriyor mu?</strong></p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> {0, 1, 2, 3, 4, 5} kümesinin elemanları kullanılarak yazılabilen, rakamları farklı üç basamaklı sayılardan kaç tanesi 250'den büyüktür?</p>
+<p><strong>Adım 1.</strong> Büyüklük önce yüzler basamağına bakılarak karar verilir. Yüzler 3, 4 ya da 5 ise sayı kesinlikle 250'den büyüktür. Yüzler 0 ya da 1 olamaz (0 olamaz, 1 ise sayı en çok 154'tür). Yüzler 2 ise onlar basamağına bakmak gerekir. Üç durum çıkar.</p>
+<span class="mat">yüzler 3, 4, 5: 3 · 5 · 4 = 60 <span class="g">(onlar kalan 5, birler kalan 4 rakam)</span></span>
+<p><strong>Adım 2.</strong> Yüzler 2 iken sayının 250'den büyük olması için onlar en az 5 olmalı; elimizdeki en büyük rakam 5 olduğu için onlar tam 5'tir.</p>
+<span class="mat">yüzler 2, onlar 5: birler {0, 1, 3, 4}'ten biri <span class="g">(2 ve 5 kullanıldı)</span></span>
+<p><strong>Adım 3.</strong> Bu dört sayıyı yaz: 250, 251, 253, 254. Soru "büyük" diyor; 250, 250'den büyük değildir. 3 sayı kalır.</p>
+<span class="mat">60 + 3 = 63 <span class="g">(ayrık durumlar toplanır)</span></span>
+<p><strong>Kontrol yolu.</strong> Tümleyenle: rakamları farklı bütün sayılar 100 taneydi. 250'den küçük ya da eşit olanlar: yüzler 1 ise 5 · 4 = 20 sayı; yüzler 2 ise onlar 0, 1, 3, 4 (4 yol) ve birler kalan 4 rakam: 16 sayı; artı 250'nin kendisi. 20 + 16 + 1 = 37. 100 − 37 = 63. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> 63 sayı. "Büyük" ile "büyük ya da eşit" arasındaki tek sayı, bu soru tipinde en sık kaybedilen puandır; sınır sayıyı her zaman ayrıca denetle.</p></div>
+
+<h2 class="s">Şifre, plaka ve kıyafet: aynı kuralın kılıkları</h2>
+
+<p>Şifre sorularının sayı sorularından tek farkı, <strong>şifrenin başına 0 gelebilmesidir</strong>; şifre bir değer değil, bir simge dizisidir. Dört haneli bir şifrede her haneye 10 rakam gelir: 10 · 10 · 10 · 10 = 10<sup>4</sup> = 10 000. Rakamlar farklı olsun dersen ilk haneye 10, ikinciye 9, üçüncüye 8, dördüncüye 7 rakam kalır: 10 · 9 · 8 · 7 = 5040. Bu iki sayıyı aklında tut; parçanın sonunda "en az bir rakamı tekrar eden" şifreleri bunlardan bulacağız.</p>
+
+<p>Plaka, kart kodu, kullanıcı adı gibi sorular harf ve rakam kutularının karışımıdır. Bir otoparkın verdiği kart kodu 2 harf ve ardından 3 basamaklı bir sayıdan oluşsun; harfler A, B, C, D, E'den seçilsin ve tekrar edebilsin. Harf kutuları 5 · 5, sayı kısmı (üç basamaklı sayı olduğu için ilk basamak 0 olamaz) 9 · 10 · 10: toplam 5 · 5 · 9 · 10 · 10 = 22 500 kod. Harfler farklı olmalıysa harf kısmı 5 · 4 olur: 20 · 900 = 18 000 kod. Bu sorularda dikkat edeceğin tek şey her kutunun ne olduğunu doğru okumaktır: "rakam dizisi" mi (0 başta olabilir), "sayı" mı (olamaz); "tekrar edebilir" mi, "farklı" mı?</p>
+
+<p>Kıyafet soruları "ve-veya" ayrımını sınar. Üst giyim için 3 gömlek ya da 4 tişört, alt giyim için 2 pantolon ya da 3 şort varsa bir üst ve bir alt seçimi (3 + 4) · (2 + 3) = 7 · 5 = 35 türlü yapılır. Her adımın içi bir toplamdır (gömlek ya da tişört), adımlar çarpılır (üst ve alt).</p>
+
+<h2 class="s">Faktöriyel: azalarak çarpılan sayılar için bir ad</h2>
+
+<p>Beş kişiyi beş sandalyelik bir sıraya kaç türlü oturtabilirsin? Kutu yöntemiyle: birinci sandalyeye 5 kişiden biri, ikinciye kalan 4 kişiden biri, sonra 3, 2 ve 1. Toplam 5 · 4 · 3 · 2 · 1 = 120. Bu türden "birer azalarak 1'e kadar inen çarpım" sayma sorularında o kadar sık çıkar ki ona bir ad ve bir işaret verilmiştir. Farklı nesnelerin sıralanışlarını gelecek parçada (Parça 44, permütasyon) ayrıntılı işleyeceğiz; burada faktöriyelin kendisini ve onunla hesap yapmayı öğreneceksin.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>n bir sayma sayısı olmak üzere 1'den n'ye kadar olan bütün sayma sayılarının çarpımına <strong>n faktöriyel</strong> denir ve n! ile gösterilir: n! = 1 · 2 · 3 · … · n. Ayrıca <strong>0! = 1</strong> olarak tanımlanır. Bu tanımdan her n ≥ 1 için n! = n · (n − 1)! bağıntısı çıkar. Faktöriyel yalnızca doğal sayılar için tanımlıdır; (−1)!, (1,5)! gibi ifadeler bu programda tanımsızdır.</p></div>
+
+<p><strong>n! = n · (n − 1)! nereden gelir?</strong> 5! = 5 · 4 · 3 · 2 · 1 çarpımında 5'ten sonraki kısım 4 · 3 · 2 · 1, yani 4!'dir: 5! = 5 · 4!. Aynı yolla 5! = 5 · 4 · 3! = 5 · 4 · 3 · 2!. Bu "açma" bütün faktöriyel sadeleştirmelerinin anahtarıdır: büyük faktöriyeli, küçüğe ulaşana kadar açarsın.</p>
+
+<p><strong>0! neden 1'dir?</strong> Üç gerekçe var ve üçü de aynı yere çıkar. Birincisi örüntü: tablodaki her faktöriyel bir öncekinin n katıdır; tersinden okursan her adımda n'ye bölersin. 4! = 24, 24 ÷ 4 = 6 = 3!, 6 ÷ 3 = 2 = 2!, 2 ÷ 2 = 1 = 1!, 1 ÷ 1 = 1 = 0!. Parça 10'da a<sup>0</sup> = 1 tanımını tam olarak bu tür bir örüntüden çıkarmıştın. İkincisi bağıntının korunması: n! = n · (n − 1)! bağıntısı n = 1 için de doğru kalsın istiyorsak 1! = 1 · 0! olmalı, yani 0! = 1. Üçüncüsü saymanın anlamı: hiç nesne yokken onları "dizmenin" tek bir yolu vardır, hiçbir şey yapmamak. Aynı bağıntı (−1)!'in neden tanımsız kaldığını da gösterir: n = 0 için 0! = 0 · (−1)! yazsaydık 1 = 0 çıkardı; böyle bir sayı yoktur.</p>
+
+<div class="tablo"><table>
+<tr><th>n</th><th>n!</th><th>nasıl bulunur</th></tr>
+<tr><td>0</td><td>1</td><td>tanım</td></tr>
+<tr><td>1</td><td>1</td><td>1 · 0!</td></tr>
+<tr><td>2</td><td>2</td><td>2 · 1!</td></tr>
+<tr><td>3</td><td>6</td><td>3 · 2!</td></tr>
+<tr><td>4</td><td>24</td><td>4 · 3!</td></tr>
+<tr><td>5</td><td>120</td><td>5 · 4!</td></tr>
+<tr><td>6</td><td>720</td><td>6 · 5!</td></tr>
+<tr><td>7</td><td>5040</td><td>7 · 6!</td></tr>
+<tr><td>8</td><td>40 320</td><td>8 · 7!</td></tr>
+<tr><td>9</td><td>362 880</td><td>9 · 8!</td></tr>
+<tr><td>10</td><td>3 628 800</td><td>10 · 9!</td></tr>
+</table></div>
+
+<p>Tablonun ilk altı satırını (6! = 720'ye kadar) ezbere bil; 7! = 5040 de sık çıkar ve dört haneli farklı rakamlı şifre sayısıyla aynı olduğunu fark et (10 · 9 · 8 · 7 = <span class="kes"><span>10!</span><span>6!</span></span>). Faktöriyel çok hızlı büyür: 10! üç buçuk milyonu geçer. Bu yüzden sınav senden büyük bir faktöriyeli hesaplamanı değil, <strong>sadeleştirmeni</strong> ister.</p>
+
+<h2 class="s">Faktöriyelli ifadelerde sadeleştirme ve denklem</h2>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Büyüğü küçüğe kadar aç.</strong> Bölümde: büyük faktöriyeli, paydadaki faktöriyele ulaşana kadar n · (n − 1) · … biçiminde aç, sonra sadeleştir. Toplam ve farkta: bütün terimleri <strong>en küçük faktöriyel</strong> cinsinden yaz ve onu ortak paranteze al (Parça 3'teki ortak paranteze alma). Hiçbir zaman faktöriyelleri doğrudan toplama, çıkarma ya da bölme.</p></div>
+
+<p>Bölüm örneği: <span class="kes"><span>10!</span><span>8!</span></span> = <span class="kes"><span>10 · 9 · 8!</span><span>8!</span></span> = 10 · 9 = 90. Toplam örneği: 7! + 8! = 7! + 8 · 7! = 7!(1 + 8) = 9 · 7!. Fark örneği: 8! − 7! = 8 · 7! − 7! = 7!(8 − 1) = 7 · 7!. Kesirli örnek: <span class="kes"><span>1</span><span>5!</span></span> + <span class="kes"><span>1</span><span>6!</span></span> toplamında payda eşitlemek için 6! = 6 · 5! olduğundan ilk kesri 6 ile genişletirsin: <span class="kes"><span>6 + 1</span><span>6!</span></span> = <span class="kes"><span>7</span><span>720</span></span>. Parça 8'deki payda eşitlemenin aynısı; EKOK burada her zaman en büyük faktöriyeldir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Faktöriyeli sayı gibi dağıtmak.</strong> (a + b)! ile a! + b! eşit değildir: (2 + 3)! = 5! = 120, oysa 2! + 3! = 2 + 6 = 8. <span class="kes"><span>6!</span><span>3!</span></span> ile 2! de eşit değildir: <span class="kes"><span>6!</span><span>3!</span></span> = 6 · 5 · 4 = 120, 2! ise 2'dir. (2n)! ile 2 · n! de farklıdır: n = 3 için 6! = 720, 2 · 3! = 12. Faktöriyel bir çarpımdır; ancak çarpım olarak açıldıktan sonra sadeleşir.</p>
+<p><strong>Açarken bir çarpan eksik ya da fazla yazmak.</strong> <span class="kes"><span>9!</span><span>7!</span></span> = 9 · 8'dir (9'dan 8'e, iki çarpan); 9 · 8 · 7 yazarsan 7!'in içindeki 7'yi bir kez daha kullanmış olursun. Kısa denetim: <span class="kes"><span>n!</span><span>k!</span></span> açılımında tam n − k çarpan bulunur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> a) <span class="kes"><span>7! + 8!</span><span>6!</span></span> ifadesinin değeri kaçtır? b) <span class="kes"><span>(n + 1)!</span><span>(n − 1)!</span></span> = 20 olduğuna göre n kaçtır?</p>
+<p><strong>Adım 1.</strong> a) şıkkında payı en küçük faktöriyel olan 6! cinsinden yazarım.</p>
+<span class="mat">7! = 7 · 6! <span class="g">(n! = n · (n − 1)!)</span></span>
+<span class="mat">8! = 8 · 7 · 6! = 56 · 6! <span class="g">(8!'i 6!'e kadar açtım)</span></span>
+<span class="mat">7! + 8! = 6!(7 + 56) = 63 · 6! <span class="g">(ortak paranteze aldım)</span></span>
+<span class="mat"><span class="kes"><span>63 · 6!</span><span>6!</span></span> = 63 <span class="g">(6! sadeleşti)</span></span>
+<p><strong>Adım 2.</strong> b) şıkkında büyük faktöriyeli küçüğe kadar açarım: (n + 1)! = (n + 1) · n · (n − 1)!.</p>
+<span class="mat"><span class="kes"><span>(n + 1) · n · (n − 1)!</span><span>(n − 1)!</span></span> = (n + 1) · n <span class="g">(iki çarpan kaldı: n + 1'den n'ye)</span></span>
+<span class="mat">n(n + 1) = 20 <span class="g">(denklem kuruldu)</span></span>
+<p><strong>Adım 3.</strong> Ardışık iki sayının çarpımı 20: 4 · 5 = 20. n = 4. (Denklemi n<sup>2</sup> + n − 20 = 0 diye yazıp (n + 5)(n − 4) = 0 biçiminde çarpanlara ayırırsan n = −5 de çıkar; ama (n − 1)! tanımlı olsun diye n − 1 ≥ 0, yani n ≥ 1 olmalı. n = −5 atılır.)</p>
+<p><strong>Hızlı yol.</strong> n(n + 1) ≈ n<sup>2</sup> ≈ 20 ise n, √20'den biraz küçük bir tam sayıdır: 4'ü dene.</p>
+<p><strong>Kontrol yolu.</strong> n = 4 için <span class="kes"><span>5!</span><span>3!</span></span> = <span class="kes"><span>120</span><span>6</span></span> = 20. Doğru.</p>
+<p><strong>Sonuç:</strong> a) 63, b) n = 4.</p></div>
+
+<h2 class="s">n! içinde bir asal çarpanın kuvveti ve sondaki sıfırlar</h2>
+
+<p>"10! sayısı 2'nin en çok kaçıncı kuvvetine tam bölünür?" sorusu, Parça 6'daki asal çarpanlara ayırmanın faktöriyele uygulanmasıdır. 10! = 1 · 2 · 3 · … · 10 çarpımındaki 2 çarpanlarını saymak istiyoruz. 2'yi yalnızca çift sayılar içerir; ama bazı çift sayılar 2'yi birden çok kez içerir: 4 = 2<sup>2</sup>, 8 = 2<sup>3</sup>. Aşağıdaki şekil bu sayımı satır satır yapıyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="1'den 10'a kadar sayılar ve her çift sayının üstünde içerdiği 2 çarpanı kadar nokta; satırlar 10 bölü 2, 10 bölü 4, 10 bölü 8 sayılarını veriyor">
+  <text class="sv-s" x="200" y="22" text-anchor="middle">10! içindeki 2 çarpanları: her nokta bir tane 2</text>
+  <text class="sv-b" x="200" y="56" text-anchor="middle">toplam 5 + 2 + 1 = 8</text>
+  <line class="sv-c" x1="18" y1="166" x2="276" y2="166" />
+  <text class="sv-t" x="30" y="186" text-anchor="middle">1</text>
+  <text class="sv-t" x="56" y="186" text-anchor="middle">2</text>
+  <text class="sv-t" x="82" y="186" text-anchor="middle">3</text>
+  <text class="sv-t" x="108" y="186" text-anchor="middle">4</text>
+  <text class="sv-t" x="134" y="186" text-anchor="middle">5</text>
+  <text class="sv-t" x="160" y="186" text-anchor="middle">6</text>
+  <text class="sv-t" x="186" y="186" text-anchor="middle">7</text>
+  <text class="sv-t" x="212" y="186" text-anchor="middle">8</text>
+  <text class="sv-t" x="238" y="186" text-anchor="middle">9</text>
+  <text class="sv-t" x="264" y="186" text-anchor="middle">10</text>
+  <circle class="sv-m" cx="56" cy="148" r="7" />
+  <circle class="sv-m" cx="108" cy="148" r="7" />
+  <circle class="sv-m" cx="160" cy="148" r="7" />
+  <circle class="sv-m" cx="212" cy="148" r="7" />
+  <circle class="sv-m" cx="264" cy="148" r="7" />
+  <circle class="sv-l" cx="108" cy="122" r="7" />
+  <circle class="sv-l" cx="212" cy="122" r="7" />
+  <circle class="sv-a" cx="212" cy="96" r="7" />
+  <text class="sv-t" x="292" y="153">10 ÷ 2 → 5</text>
+  <text class="sv-t" x="292" y="127">10 ÷ 4 → 2</text>
+  <text class="sv-t" x="292" y="101">10 ÷ 8 → 1</text>
+</svg>
+<figcaption>Noktaları sütun sütun saymak yerine satır satır say. Alt satır 2'nin katlarına birer nokta verir (10 ÷ 2 = 5). İkinci satır yalnızca 4'ün katlarında vardır (10 ÷ 4'ün tam kısmı 2). Üst satır 8'in katlarında (1). 16 > 10 olduğu için dördüncü satır yoktur. 10! = 2<sup>8</sup> · 3<sup>4</sup> · 5<sup>2</sup> · 7.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Ardışık bölme.</strong> p asal olmak üzere n! sayısındaki p çarpanlarının sayısını bulmak için n'yi p'ye böl, bölümü yine p'ye böl ve bölüm p'den küçük olana kadar sürdür; her adımda kalanı at, yalnızca bölümü tut. Bütün bölümlerin toplamı, n!'in tam bölündüğü en büyük p kuvvetinin üssüdür.</p></div>
+
+<p>Neden doğru? İlk bölüm, 1'den n'ye kadar p'nin katlarının sayısıdır (Parça 5: n'yi p'ye bölünce bölüm, p'nin kaç katının n'yi aşmadığını söyler). Bunların her biri en az bir p verir. İkinci bölüm, p<sup>2</sup>'nin katlarının sayısıdır; bunlar ikinci bir p daha verir. Üçüncü bölüm p<sup>3</sup>'ün katları ve böyle sürer. Şekildeki satırlar tam olarak bunlardır. "Bölümü yine p'ye böl" kısayolu, n ÷ p<sup>2</sup>'nin tam kısmının (n ÷ p'nin tam kısmı) ÷ p'nin tam kısmına eşit olmasından gelir; sınavda ikisi de aynı sonucu verir, ardışık bölme daha az hesap ister.</p>
+
+<p><strong>Sondaki sıfırlar.</strong> Bir sayının sonundaki her sıfır bir tane 10 = 2 · 5 çarpanıdır. n! içinde 2'ler her zaman 5'lerden çoktur (her ikinci sayı 2 verir, ancak her beşinci sayı 5 verir); bu yüzden 2 · 5 çiftlerinin sayısını 5'ler belirler. <strong>n!'in sondaki sıfır sayısı = n! içindeki 5 çarpanlarının sayısı.</strong></p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> a) 30! sayısı 2'nin en çok kaçıncı kuvvetine tam bölünür? b) 30! sayısının sondan kaç basamağı sıfırdır? c) 100! sayısının sondan kaç basamağı sıfırdır?</p>
+<p><strong>Adım 1.</strong> a) 30'u art arda 2'ye bölüp bölümleri yazarım.</p>
+<span class="mat">30 ÷ 2 = 15 <span class="g">(2'nin katları: 15 tane)</span></span>
+<span class="mat">15 ÷ 2 → 7 <span class="g">(4'ün katları; kalan atılır)</span></span>
+<span class="mat">7 ÷ 2 → 3 <span class="g">(8'in katları)</span></span>
+<span class="mat">3 ÷ 2 → 1 <span class="g">(16'nın katları; 1 &lt; 2, dururum)</span></span>
+<span class="mat">15 + 7 + 3 + 1 = 26 <span class="g">(bütün bölümler toplanır)</span></span>
+<p><strong>Adım 2.</strong> b) Sondaki sıfırlar için 5'leri sayarım.</p>
+<span class="mat">30 ÷ 5 = 6 <span class="g">(5'in katları)</span></span>
+<span class="mat">6 ÷ 5 → 1 <span class="g">(25'in katları: yalnızca 25)</span></span>
+<span class="mat">6 + 1 = 7 <span class="g">(7 tane 5 var, 2'ler 26 tane: 7 çift kurulur)</span></span>
+<p><strong>Adım 3.</strong> c) 100 için aynısını yaparım.</p>
+<span class="mat">100 ÷ 5 = 20, 20 ÷ 5 = 4, 4 &lt; 5 <span class="g">(5'in ve 25'in katları)</span></span>
+<span class="mat">20 + 4 = 24 <span class="g">(125 &gt; 100, üçüncü adım yok)</span></span>
+<p><strong>Kontrol yolu.</strong> Küçük bir değerle yöntemi sına: 10! = 3 628 800 sayısının sonunda iki sıfır var; ardışık bölme 10 ÷ 5 = 2 verir. Tutuyor. Ayrıca 25 = 5 · 5 iki tane 5 verdiği için 25!'in sonunda 5 değil 6 sıfır olmalı: 25 ÷ 5 = 5, 5 ÷ 5 = 1, toplam 6.</p>
+<p><strong>Bir adım öte.</strong> "30! sayısı 12<sup>k</sup> ile tam bölünüyorsa k en çok kaçtır?" Bölen asal değilse önce asal çarpanlarına ayır: 12 = 2<sup>2</sup> · 3. 30!'de 26 tane 2 var, bunlar 13 tane 2<sup>2</sup> eder; 3'ler 10 + 3 + 1 = 14 tanedir. Her 12 için iki tane 2 ve bir tane 3 gerektiğinden, önce tükenen 2<sup>2</sup>'lerdir: k = 13. Hangi çarpanın önce tükeneceğini her zaman ayrıca hesapla; her zaman en büyük asal değildir.</p>
+<p><strong>Sonuç:</strong> a) 2<sup>26</sup>, b) 7 sıfır, c) 24 sıfır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Yalnızca ilk bölmeyi yapmak.</strong> 100!'in sonundaki sıfırlar için "100 ÷ 5 = 20" deyip durmak, 25, 50, 75 ve 100'ün ikişer tane 5 içerdiğini unutmaktır; doğrusu 24'tür. Bir başka hata 100'ü 10'a bölmektir (10 sıfır): 10'un katları sıfır üretir ama 5 ile çift bir sayının çarpımı da (örneğin 5 · 4 = 20) sıfır üretir; bunlar 10'un katı değildir.</p></div>
+
+<h2 class="s">Faktöriyellerin toplamının birler basamağı</h2>
+
+<p>5! = 120 sayısı 2 · 5 içerdiği için 0 ile biter. 5'ten büyük her n için n! = n · (n − 1) · … · 5 · … · 2 · 1 çarpımı da hem 5'i hem 2'yi içerir, yani 0 ile biter. Bu yüzden 1! + 2! + 3! + … + n! toplamında, n ne kadar büyük olursa olsun, birler basamağını yalnızca ilk dört terim belirler.</p>
+
+<span class="mat">1! + 2! + 3! + 4! = 1 + 2 + 6 + 24 = 33 <span class="g">(5!'den sonrası birler basamağına 0 ekler)</span></span>
+
+<p>Demek ki n ≥ 4 için 1! + 2! + … + n! toplamının birler basamağı her zaman 3'tür; n = 40 da olsa, 100 de olsa. Toplam 3!'den başlarsa 6 + 24 = 30, birler basamağı 0 olur. Aynı mantıkla son iki basamak sorulursa 10!'den itibaren her terim 00 ile biter (10! içinde iki tane 5 vardır: 5 ve 10), bu yüzden yalnızca 1!'den 9!'e kadarki terimlere bakarsın; 1! + … + 9! = 409 113 olduğundan son iki basamak 13'tür.</p>
+
+<p><strong>Hızlı yol ve kontrol yolu.</strong> Birler basamağını bulmak için sayıların tamamını değil yalnızca birler basamaklarını topla: 1 + 2 + 6 + 4 = 13, birler 3. Denetim için toplamı bir terim eksik ya da fazla alarak dene: 4!'ü unutursan 9, 1!'i unutursan 2 bulursun; sorudaki ilk terimi her zaman yeniden oku.</p>
+
+<h2 class="s">Tümleyenden sayma: "en az bir" sorularının anahtarı</h2>
+
+<p>"En az bir rakamı 5 olan üç basamaklı kaç sayı vardır?" Bu soruyu doğrudan saymak için "tam bir tane 5", "tam iki tane 5", "üç tane 5" durumlarına ayırman ve her birini yine basamaklara göre ayırman gerekir. Durumlar çoğalır ve kolayca biri unutulur. Oysa sorunun tersi çok basittir: <strong>hiç 5 içermeyen</strong> sayılar.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Tümleyen.</strong> İstenen durumu saymak zor, tersini saymak kolaysa: istenen = tümü − istenmeyen. Özellikle "en az bir" = tümü − "hiç"; "en az iki tanesi aynı" = tümü − "hepsi farklı"; "yan yana gelmesin" gibi olumsuz koşullar da çoğu zaman tümünden "gelsin" durumunu çıkararak bulunur.</p></div>
+
+<p>Neden doğru? Her nesne ya istenen durumdadır ya değildir; iki küme ayrıktır ve birleşimleri tümüdür. Toplama kuralına göre tümü = istenen + istenmeyen, buradan istenen = tümü − istenmeyen. Parça 35'teki s(A′) = s(E) − s(A) bağıntısının aynısıdır. Parça 46'da olasılığa geçince bu kural P(A′) = 1 − P(A) adını alacak.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Üç basamaklı doğal sayılardan kaç tanesinin en az bir rakamı 5'tir?</p>
+<p><strong>Adım 1.</strong> Tümünü sayarım. Rakamlar 0–9; yüzlere 0 gelemez.</p>
+<span class="mat">tümü: 9 · 10 · 10 = 900 <span class="g">(100'den 999'a: 999 − 100 + 1 = 900 ile de tutuyor)</span></span>
+<p><strong>Adım 2.</strong> Hiç 5 içermeyenleri sayarım. Yüzlere 0 ve 5 dışında 8 rakam, onlara ve birlere 5 dışında 9'ar rakam gelir.</p>
+<span class="mat">hiç 5 yok: 8 · 9 · 9 = 648 <span class="g">(kısıtlı kutu yüzler: 0 ve 5 hariç)</span></span>
+<p><strong>Adım 3.</strong> Tümünden çıkarırım.</p>
+<span class="mat">900 − 648 = 252 <span class="g">(en az bir 5 = tümü − hiç 5)</span></span>
+<p><strong>Kontrol yolu.</strong> Doğrudan say. Tam bir tane 5: 5 yüzlerdeyse 9 · 9 = 81, onlardaysa 8 · 9 = 72, birlerdeyse 8 · 9 = 72; toplam 225. Tam iki tane 5: yüzler ve onlar 5 ise birler 9, yüzler ve birler 5 ise onlar 9, onlar ve birler 5 ise yüzler 8; toplam 26. Üç tane 5: yalnızca 555, 1 tane. 225 + 26 + 1 = 252. Aynı sonuç; ama tümleyen yolu üç satırdı.</p>
+<p><strong>Sonuç:</strong> 252 sayı.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"En az bir"i konumları toplayarak saymak.</strong> "Yüzleri 5 olan 100 sayı, onları 5 olan 90 sayı, birleri 5 olan 90 sayı; toplam 280" demek yanlıştır. Bu üç durum ayrık değildir: 505, 550, 555 gibi sayılar birden çok kez sayılır. Toplama kuralı yalnızca ayrık durumlarda geçerlidir. Fark (280 − 252 = 28) tam olarak fazla sayılanlardır. "En az" görünce önce tümleyeni düşün.</p></div>
+
+<p>Şifre sorusuna dönelim. Dört haneli şifrelerden en az bir rakamı tekrar edenler: tümü 10 000, hepsi farklı olanlar 5040; 10 000 − 5040 = 4960. "Tekrar eden" doğrudan sayılsa iki aynı, üç aynı, iki çift aynı (1122 gibi), dördü aynı durumlarına ayırmak gerekirdi. Tümleyen yolu bir çıkarma işlemidir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 44'e (permütasyon):</strong> Kutu yöntemiyle bulduğun "n kişiyi sıraya dizme = n!" ve "10 rakamdan 4'ünü farklı sırayla yazma = 10 · 9 · 8 · 7" sayıları orada P(n, r) adını alacak. Yan yana gelme, yan yana gelmeme gibi koşullar da buradaki kısıtlı-adım-önce ve tümleyen fikirleriyle çözülecek.</p>
+<p><strong>Parça 45'e (kombinasyon):</strong> Sıranın önemsiz olduğu seçimleri sayarken, sıralı sayımı faktöriyelle bölmeyi öğreneceksin; faktöriyelli sadeleştirme orada her soruda kullanılır.</p>
+<p><strong>Parça 46 ve 47'ye (olasılık):</strong> Olasılık = istenen durum sayısı ÷ tüm durum sayısı. İki sayıyı da bu parçanın kurallarıyla sayacaksın; "en az bir" olasılıkları tümleyenle bulunacak.</p>
+<p><strong>Önceki parçalara:</strong> Parça 6'daki bölen sayısı formülü ve Parça 36'daki fonksiyon sayısı birer çarpma kuralıdır; Parça 35'teki kartezyen çarpım ve birleşim formülü, çarpma ve toplama kuralının küme dilindeki karşılığıdır.</p>
+<p><strong>Öbür derslere:</strong> Biyolojide genetik çaprazlamalarda olası gamet ve genotip sayılarını bulurken aynı çarpma kuralını kullanırsın; Türkçede ve sosyalde "kaç farklı sıralama" sorusu çıkmaz ama yeni nesil mantık sorularında (Parça 33) sistematik liste kurarken bu parçadaki "durumlara ayır, ayrık mı denetle" alışkanlığı işine yarar.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir sayma sorusunda ne zaman çarpar, ne zaman toplarsın? Kararı hangi soruyla verirsin?</summary><p>Seçimi tamamlamak için hepsini mi yapıyorum, yalnızca birini mi diye sorarım. Art arda yapılan adımların hepsi yapılıyorsa seçenek sayılarını çarparım (çarpma kuralı); birbirinden ayrık durumlardan yalnızca biri gerçekleşiyorsa durumların sayılarını toplarım (toplama kuralı). Durumlar ayrık değilse düz toplamak bazı çıktıları iki kez sayar.</p></details>
+<details><summary>Kutu yönteminde kısıtlı kutuyu neden önce doldurursun?</summary><p>Çarpma kuralı, her adımın seçenek sayısının önceki seçimlere bağlı olmamasını ister. Serbest kutular önce doldurulursa kısıtlı kutunun seçenek sayısı (örneğin kaç çift rakam kaldığı) önceki seçimlere göre değişir ve çarpım yanlış çıkar. Kısıtlı kutu önce doldurulunca bağımlılık ya kalkar ya da açıkça görünür; o zaman soruyu durumlara ayırırım.</p></details>
+<details><summary>0! neden 1'dir ve (−1)! neden tanımsızdır?</summary><p>n! = n · (n − 1)! bağıntısı n = 1 için de geçerli olsun diye 1! = 1 · 0! olmalı, yani 0! = 1. Örüntüden de çıkar: 3! ÷ 3 = 2!, 2! ÷ 2 = 1!, 1! ÷ 1 = 0! = 1. Aynı bağıntıyı n = 0 için yazarsak 0! = 0 · (−1)!, yani 1 = 0 çıkar; bu olanaksız olduğu için (−1)! tanımsızdır.</p></details>
+<details><summary>n! sayısının sondaki sıfırlarını bulurken neden 2'leri değil 5'leri sayarsın?</summary><p>Her sondaki sıfır bir 2 · 5 çiftidir. 1'den n'ye kadar her ikinci sayı 2 verirken ancak her beşinci sayı 5 verir; bu yüzden 5'ler her zaman daha azdır ve çift sayısını 5'ler belirler. 5'leri ardışık bölmeyle sayarım: n ÷ 5, sonra bölüm ÷ 5 ve böyle sürer; 25, 125 gibi sayıların birden çok 5 verdiği bu yolla hesaba girer.</p></details>
+<details><summary>1! + 2! + … + 50! toplamının birler basamağı neden 3'tür?</summary><p>5!'den itibaren her faktöriyel hem 2'yi hem 5'i çarpan olarak içerdiği için 0 ile biter ve birler basamağına bir şey eklemez. Geriye 1 + 2 + 6 + 24 = 33 kalır; birler basamağı 3'tür. 4 ya da daha büyük her n için sonuç aynıdır.</p></details>
+<details><summary>64 takımlı, beraberliği olmayan bir eleme turnuvasında kaç maç oynanır ve bunu turları toplamadan nasıl bulursun?</summary><p>Eşleme ile: her maç tam bir takımı eler ve her elenen takım tam bir maçta elenir. Şampiyon dışındaki 63 takım elendiğine göre 63 maç oynanır. Takım sayısı ne olursa olsun maç sayısı takım sayısının bir eksiğidir.</p></details>
+<details><summary>"En az bir" içeren sayma sorularında neden tümleyeni kullanırsın?</summary><p>"En az bir" çok sayıda örtüşen durumu birleştirir (tam bir, tam iki, …); bunları doğrudan saymak uzundur ve konumlara göre toplarsan ayrık olmayan durumları iki kez sayarsın. Tersi olan "hiç" durumu ise tek bir çarpımdır. İstenen = tümü − hiç.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Eşleme:</strong> saymak istediğini, bire bir eşlenen ve sayması kolay bir şeyle say (eleme turnuvası: maç = elenen takım).</li>
+<li><strong>Toplama kuralı:</strong> ayrık durumlardan yalnızca biri → topla. Ayrık değilse kesişimi çıkar.</li>
+<li><strong>Çarpma kuralı:</strong> art arda adımların hepsi → çarp. Koşul: her adımın seçenek <em>sayısı</em> öncekilere bağlı olmasın. Ağaçta eşit dallar.</li>
+<li><strong>Karar:</strong> "hepsini mi yapıyorum, birini mi?" Adımların içi "ya da" ise her adım bir toplam: (3 + 4) · (2 + 3).</li>
+<li><strong>Yol:</strong> rota = adımlar dizisi. Gidiş-dönüşte aynı yolu kullanmama: dönüşteki her adımdan 1 düş.</li>
+<li><strong>Kutu yöntemi:</strong> kısıtlı kutu önce (birler: tek/çift/5; yüzler: 0 olamaz). Kısıtlı kutu 0'ı etkiliyorsa durumlara ayır (çift: birler 0 / birler 0 değil).</li>
+<li><strong>Şifre:</strong> başa 0 gelir (10<sup>4</sup>). <strong>Sayı:</strong> başa 0 gelmez (9 · 10 · 10).</li>
+<li><strong>Faktöriyel:</strong> n! = 1 · 2 · … · n, 0! = 1, n! = n · (n − 1)!. 1, 1, 2, 6, 24, 120, 720, 5040.</li>
+<li><strong>Sadeleştirme:</strong> bölümde büyüğü küçüğe kadar aç; toplamda en küçük faktöriyel parantezine al. (a + b)! ≠ a! + b!.</li>
+<li><strong>Asal çarpan kuvveti:</strong> n'yi p'ye art arda böl, bölümleri topla. Sondaki sıfır = 5'lerin sayısı (100! → 20 + 4 = 24).</li>
+<li><strong>Birler basamağı:</strong> 1! + … + n! (n ≥ 4) → 3; 5!'den sonrası 0 ile biter.</li>
+<li><strong>Tümleyen:</strong> en az bir = tümü − hiç. Konumları toplamak çift sayar.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-43">
+<h3>Quiz 43</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir öğrenci üst giyim olarak 3 farklı gömlekten ya da 4 farklı tişörtten birini, alt giyim olarak 2 farklı pantolondan ya da 3 farklı şorttan birini giyecektir. Öğrenci bir üst ve bir alt giyimden oluşan kaç farklı seçim yapabilir?</p>
+<ul class="sec"><li>12</li><li>18</li><li>35</li><li>60</li><li>72</li></ul>
+<div class="coz"><p>Seçim iki adımdır (üst ve alt), adımlar çarpılır. Her adımın içinde ise "ya da" vardır: üst için 3 + 4 = 7, alt için 2 + 3 = 5 seçenek. 7 · 5 = 35. 12, her şeyi toplayanın (3 + 4 + 2 + 3) sonucudur. 72, her şeyi çarpanın (3 · 4 · 2 · 3); bu, gömlek ile tişörtü aynı anda giymek demektir. 18, aynı gruptakileri çarpıp grupları toplayanın (3 · 4 + 2 · 3), 60 ise üst giyimi çarpıp alt giyimi toplayanın (3 · 4 · 5) sonucudur. Önce işi adımlara ayır, sonra her adımın içine bak.</p></div></li>
+
+<li data-c="A"><p class="q">{0, 1, 2, 3, 4} kümesinin elemanları kullanılarak rakamları birbirinden farklı üç basamaklı kaç sayı yazılabilir?</p>
+<ul class="sec"><li>48</li><li>60</li><li>64</li><li>100</li><li>125</li></ul>
+<div class="coz"><p>Kısıtlı kutu yüzlerdir: 0 olamaz, 4 seçenek. Onlara yüzlerde kullanılan dışında 4 rakam (0 artık gelebilir), birlere kalan 3 rakam: 4 · 4 · 3 = 48. 60, yüzlere de 0 koyup 5 · 4 · 3 yapanın sonucudur. 64, 0'ı hiç kullanmayıp 4 · 4 · 4 yazan ve üstelik rakamları tekrarlayanın sonucudur. 100, rakam tekrarına izin veren doğru sayımdır (4 · 5 · 5) ama soru "farklı" diyor. 125 ise hem tekrara izin verip hem 0'ı başa koyanın (5 · 5 · 5) sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q"><span class="kes"><span>10! − 9!</span><span>8!</span></span> ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>9</li><li>18</li><li>81</li><li>90</li></ul>
+<div class="coz"><p>Payı en küçük faktöriyel olan 8! cinsinden yaz: 10! = 10 · 9 · 8! = 90 · 8!, 9! = 9 · 8!. Pay 8!(90 − 9) = 81 · 8!, bölüm 81'dir. 90 yalnızca <span class="kes"><span>10!</span><span>8!</span></span> terimini alanın, 9 yalnızca <span class="kes"><span>9!</span><span>8!</span></span> terimini alanın sonucudur. 1, faktöriyeli sayı gibi dağıtıp 10! − 9! = 1! sananın sonucudur. 18, <span class="kes"><span>9!</span><span>8!</span></span>'i bir çarpan fazla açıp 9 · 8 = 72 yazan ve 90 − 72 bulanın sonucudur; <span class="kes"><span>n!</span><span>k!</span></span> açılımında tam n − k çarpan olduğunu denetlemek bu hatayı önler.</p></div></li>
+
+<li data-c="B"><p class="q"><span class="kes"><span>(n + 1)!</span><span>(n − 1)!</span></span> = 30 olduğuna göre n kaçtır?</p>
+<ul class="sec"><li>4</li><li>5</li><li>6</li><li>15</li><li>29</li></ul>
+<div class="coz"><p>(n + 1)! = (n + 1) · n · (n − 1)! olduğundan bölüm (n + 1) · n'dir. n(n + 1) = 30 ve ardışık iki sayının çarpımı 30 ise 5 · 6 = 30, n = 5. Denetim: <span class="kes"><span>6!</span><span>4!</span></span> = 6 · 5 = 30. 6, bulunan n + 1'i cevap sanmanın ya da açılımı n(n − 1) diye yazmanın sonucudur. 4, n − 1'i cevap olarak yazmanın sonucudur. 15, sonucu 2!'e bölmek gerektiğini sananın; 29 ise bölümü yalnızca n + 1 sanıp n + 1 = 30 yazanın sonucudur.</p></div></li>
+
+<li data-c="B"><p class="q">A kentinden B kentine 4 farklı yol, B kentinden C kentine 3 farklı yol vardır. Bir sürücü A'dan C'ye B üzerinden gidip yine B üzerinden A'ya dönecektir. Dönüşte gidişte kullandığı yolların hiçbirini kullanmayacaksa sürücü kaç farklı biçimde gidip dönebilir?</p>
+<ul class="sec"><li>12</li><li>72</li><li>96</li><li>132</li><li>144</li></ul>
+<div class="coz"><p>Yolculuk dört adımdır: A→B (4), B→C (3), C→B (gidişte kullanılan düşer: 2), B→A (gidişte kullanılan düşer: 3). 4 · 3 · 2 · 3 = 72. 144, hiçbir kısıt koymayanın (12 · 12) sonucudur. 132, "dönüş rotası gidişin aynısı olmasın" diye anlayıp 144 − 12 yapanın sonucudur; soru ise iki yolun da değişmesini istiyor. 96, dönüşte yalnızca C→B adımını kısıtlayıp B→A adımında 4 yolun hepsini serbest bırakanın sonucudur (12 · 2 · 4). 12 yalnızca gidiş sayısıdır.</p></div></li>
+
+<li data-c="E"><p class="q">{0, 1, 2, 3, 4, 5, 6} kümesinin elemanları kullanılarak rakamları birbirinden farklı üç basamaklı kaç çift sayı yazılabilir?</p>
+<ul class="sec"><li>30</li><li>75</li><li>80</li><li>100</li><li>105</li></ul>
+<div class="coz"><p>Kısıtlı kutu birlerdir; 0'ın kullanılması yüzlerin seçenek sayısını değiştirdiği için iki durum vardır. Birler 0: yüzler 6, onlar 5 seçenek, 30 sayı. Birler 2, 4 ya da 6: birler 3, yüzler (0 ve birlerdeki hariç) 5, onlar 5 seçenek, 75 sayı. Toplam 105. 100, dört çift rakamı tek durum sayıp 4 · 5 · 5 yapanın sonucudur; birler 0 iken yüzlere 5 değil 6 rakam gelebildiği unutulmuştur. 30 ve 75 durumlardan yalnızca birini alanın sonucudur (75 aynı zamanda tek sayıların sayısıdır). 80, onlar basamağına bir seçenek eksik yazanın (4 · 5 · 4) sonucudur. Kontrol: farklı rakamlı bütün sayılar 6 · 6 · 5 = 180, tekler 75, çiftler 180 − 75 = 105.</p></div></li>
+
+<li data-c="A"><p class="q">Rakamlardan oluşan ve ilk hanesi 0 olabilen dört haneli şifrelerden kaç tanesinde en az bir rakam birden çok kez kullanılmıştır?</p>
+<ul class="sec"><li>4960</li><li>5040</li><li>9000</li><li>9990</li><li>10 000</li></ul>
+<div class="coz"><p>Tümleyen: bütün şifreler 10<sup>4</sup> = 10 000 (her haneye 10 rakam, başa 0 gelebilir). Hiçbir rakamı tekrar etmeyenler 10 · 9 · 8 · 7 = 5040. En az bir rakamı tekrar edenler 10 000 − 5040 = 4960. 5040, istenmeyen durumun kendisidir. 10 000 bütün şifrelerdir. 9990, "dört rakamı da aynı olmayan" şifrelerin sayısıdır (10 000 − 10); "en az bir tekrar" ile "hepsi aynı değil" farklı şeylerdir. 9000, şifreyi sayı sanıp ilk haneye 0 koymayanın bulduğu tüm sayısıdır (9 · 10 · 10 · 10).</p></div></li>
+
+<li data-c="C"><p class="q">50! sayısının sondan kaç basamağı sıfırdır?</p>
+<ul class="sec"><li>5</li><li>10</li><li>12</li><li>15</li><li>47</li></ul>
+<div class="coz"><p>Sondaki her sıfır bir 2 · 5 çiftidir ve 5'ler daha az olduğu için 5'leri sayarız. 50 ÷ 5 = 10 (5'in katları), 10 ÷ 5 = 2 (25'in katları: 25 ve 50), 2 &lt; 5. Toplam 10 + 2 = 12. 10, yalnızca ilk bölmeyi yapıp 25 ile 50'nin ikinci 5'ini unutanın sonucudur. 5, 50'yi 10'a bölenin; 15, 5'lerin ve 10'ların sayısını toplayanın (10 + 5) sonucudur; 10'un katlarındaki 5'ler zaten ilk bölmede sayılmıştır. 47, 2'leri sayanın (25 + 12 + 6 + 3 + 1) sonucudur; 2'ler fazla olduğu için sıfır sayısını belirlemezler.</p></div></li>
+
+<li data-c="A" data-k="mat-2"><p class="q">−3<sup>2</sup> + (−3)<sup>2</sup> − (−2) · (−5) işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>−10</li><li>0</li><li>8</li><li>10</li><li>28</li></ul>
+<div class="coz"><p>−3<sup>2</sup>, 3<sup>2</sup>'nin karşıtıdır: −9. (−3)<sup>2</sup> = (−3) · (−3) = 9. (−2) · (−5) = 10 (aynı işaretlilerin çarpımı pozitif). İşlem −9 + 9 − 10 = −10. 8, −3<sup>2</sup>'yi 9 sanıp 9 + 9 − 10 yapanın; 28, ayrıca son terimin işaretini de karıştırıp 9 + 9 + 10 yapanın sonucudur. 10, (−2) · (−5)'i −10 sanıp −(−10) = +10 yazanın; 0 ise son terimi unutanın sonucudur.</p></div></li>
+
+<li data-c="C" data-k="mat-6"><p class="q">72 sayısının asal olmayan pozitif bölenlerinin sayısı kaçtır?</p>
+<ul class="sec"><li>2</li><li>6</li><li>10</li><li>12</li><li>24</li></ul>
+<div class="coz"><p>72 = 2<sup>3</sup> · 3<sup>2</sup>; pozitif bölen sayısı (3 + 1)(2 + 1) = 12. Asal bölenler 2 ve 3, yani 2 tane. Asal olmayan pozitif bölenler 12 − 2 = 10 (1 asal değildir, bu 10'un içindedir). 12 bütün pozitif bölenlerin, 24 tam sayı bölenlerin (pozitif ve negatif), 2 asal bölenlerin sayısıdır. 6, üsleri 1 artırmadan çarpanın (3 · 2) sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-10"><p class="q">2<sup>10</sup> + 2<sup>10</sup> + 2<sup>11</sup> toplamı aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li>2<sup>11</sup></li><li>2<sup>12</sup></li><li>2<sup>21</sup></li><li>2<sup>31</sup></li><li>6<sup>31</sup></li></ul>
+<div class="coz"><p>2<sup>10</sup> + 2<sup>10</sup> = 2 · 2<sup>10</sup> = 2<sup>11</sup>. Sonra 2<sup>11</sup> + 2<sup>11</sup> = 2 · 2<sup>11</sup> = 2<sup>12</sup>. 2<sup>31</sup>, toplamada üsleri toplayanın; 6<sup>31</sup>, tabanları da toplayanın sonucudur. 2<sup>21</sup>, toplamayı çarpma sanıp yalnızca iki terimin üssünü toplayanın; 2<sup>11</sup> ise ilk iki terimi doğru toplayıp üçüncü terimi unutanın sonucudur. Üslü ifadelerde yalnızca benzer terimler toplanır ve üs değişmez, katsayı değişir.</p></div></li>
+
+<li data-c="D" data-k="mat-14"><p class="q">(x + 3)(2x − 1) çarpımı düzenlendiğinde x'li terimin katsayısı kaç olur?</p>
+<ul class="sec"><li>−3</li><li>−1</li><li>2</li><li>5</li><li>6</li></ul>
+<div class="coz"><p>Her terimi her terimle çarp: x · 2x = 2x<sup>2</sup>, x · (−1) = −x, 3 · 2x = 6x, 3 · (−1) = −3. Benzer terimler: −x + 6x = 5x. Çarpım 2x<sup>2</sup> + 5x − 3, x'in katsayısı 5'tir. 2, x<sup>2</sup>'nin katsayısıdır; −3 sabit terimdir. −1 ve 6, iki x'li terimden yalnızca birini alanın sonucudur.</p></div></li>
+
+<li data-c="D" data-k="mat-18"><p class="q">x + y = 7, y + z = 9 ve x + z = 10 olduğuna göre x + y + z toplamı kaçtır?</p>
+<ul class="sec"><li>7</li><li>9</li><li>10</li><li>13</li><li>26</li></ul>
+<div class="coz"><p>Üç denklemi taraf tarafa topla: (x + y) + (y + z) + (x + z) = 7 + 9 + 10, yani 2(x + y + z) = 26. İki yanı 2'ye böl: x + y + z = 13. 26, ikiye bölmeyi unutanın sonucudur. 7, 9 ve 10 verilen toplamlardır; bilinmeyenlerden biri yalnızca bir denklemde eksik olduğu için hiçbiri üç bilinmeyenin toplamı olamaz. Denetim: x = 4, y = 3, z = 6 bütün denklemleri sağlar ve toplamları 13'tür.</p></div></li>
+
+<li data-c="A" data-k="mat-22"><p class="q">x ile y ters orantılıdır. x = 6 iken y = 10 olduğuna göre x = 15 iken y kaçtır?</p>
+<ul class="sec"><li>4</li><li>10</li><li>19</li><li>25</li><li>60</li></ul>
+<div class="coz"><p>Ters orantıda çarpım sabittir: x · y = 6 · 10 = 60. x = 15 iken 15 · y = 60, y = 4. 25, doğru orantı kurup <span class="kes"><span>10 · 15</span><span>6</span></span> yapanın sonucudur (ters orantıda oranı düz kurmak). 19, farkın sabit kaldığını sanıp 10 + 9 yazanın; 60, orantı sabitini cevap sanmanın; 10 ise y'nin değişmediğini sanmanın sonucudur.</p></div></li>
+
+<li data-c="A" data-k="mat-26"><p class="q">Bir annenin yaşı kızının yaşının 4 katıdır. 6 yıl sonra annenin yaşı kızının yaşının 2,5 katı olacaktır. Kızın bugünkü yaşı kaçtır?</p>
+<ul class="sec"><li>6</li><li>9</li><li>10</li><li>12</li><li>24</li></ul>
+<div class="coz"><p>Kızın yaşı k, annenin 4k olsun. 6 yıl sonra ikisi de 6 yaş büyür: 4k + 6 = 2,5(k + 6). Sağ yan 2,5k + 15; buradan 1,5k = 9, k = 6. Denetim: bugün 6 ve 24; 6 yıl sonra 12 ve 30, 30 ÷ 12 = 2,5. 10, annenin yaşına 6 eklemeyi unutanın (4k = 2,5(k + 6)) sonucudur. 9, 1,5k = 9 adımında durup k'yı bulmayanın; 12, kızın 6 yıl sonraki yaşını, 24 annenin bugünkü yaşını cevap sanmanın sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-30"><p class="q">Bir ürünün fiyatına önce %25 zam, ardından yeni fiyat üzerinden %20 indirim yapılıyor. Ürünün son fiyatı ilk fiyatına göre nasıl değişmiştir?</p>
+<ul class="sec"><li>%5 artmıştır.</li><li>%5 azalmıştır.</li><li>%4 azalmıştır.</li><li>%45 artmıştır.</li><li>Değişmemiştir.</li></ul>
+<div class="coz"><p>Ardışık değişimler çarpanla yazılır ve çarpılır: %25 zam × 1,25, %20 indirim × 0,80. 1,25 · 0,80 = 1; fiyat değişmemiştir. Denetim: 100 TL → 125 TL → 125'in %20'si 25, 125 − 25 = 100 TL. %5 artış, yüzdeleri toplayıp 25 − 20 yapanın sonucudur; indirim yeni (daha büyük) fiyat üzerinden yapıldığı için yüzdeler toplanmaz. %4 azalış, "%20 zam + %20 indirim" kalıbını ezberden uygulayanın; %45 artış, indirimi de artış sanıp toplayanın; %5 azalış ise işaretleri karıştıranın sonucudur.</p></div></li>
+
+<li data-c="C" data-k="mat-34"><p class="q">A = {a, b, c, d, e} kümesinin alt kümelerinden kaç tanesi a elemanını içerir ama b elemanını içermez?</p>
+<ul class="sec"><li>3</li><li>4</li><li>8</li><li>16</li><li>32</li></ul>
+<div class="coz"><p>a'nın içinde, b'nin dışında olacağı kesindir; bu iki eleman için seçim yoktur. Kalan c, d, e elemanlarının her biri alt kümede olabilir ya da olmayabilir: 2 · 2 · 2 = 2<sup>3</sup> = 8. Bu, bu parçadaki çarpma kuralının aynısıdır. 16, yalnızca "a'yı içeren" alt kümeleri sayanın (2<sup>4</sup>), 32 bütün alt kümeleri sayanın sonucudur. 3, serbest eleman sayısını cevap sanmanın; 4, serbest elemanları bir eksik sayıp 2<sup>2</sup> yapanın sonucudur.</p></div></li>
+
+<li data-c="C" data-k="mat-38"><p class="q">f(x) = 2x − 3 olduğuna göre f<sup>−1</sup>(5) değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>7</span></span></li><li>1</li><li>4</li><li>7</li><li>13</li></ul>
+<div class="coz"><p>f(a) = b ⇔ f<sup>−1</sup>(b) = a. f<sup>−1</sup>(5) = a ise f(a) = 5: 2a − 3 = 5, 2a = 8, a = 4. Denetim: f(4) = 8 − 3 = 5. 7, f(5)'i hesaplayanın (f<sup>−1</sup> ile f'yi karıştırmak); <span class="kes"><span>1</span><span>7</span></span>, f<sup>−1</sup>(x)'i <span class="kes"><span>1</span><span>f(x)</span></span> sananın sonucudur. 1, ters işlemde 3'ü eklemek yerine çıkarıp (5 − 3) ÷ 2 yapanın; 13, ters işlemlerin sırasını karıştırıp 2 · 5 + 3 yapanın sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-40"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + 3x − 5 polinomunun x − 2 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>−27</li><li>−7</li><li>−5</li><li>0</li><li>1</li></ul>
+<div class="coz"><p>Kalan teoremi: P(x)'in x − a ile bölümünden kalan P(a)'dır; burada a = 2. P(2) = 8 − 2 · 4 + 6 − 5 = 8 − 8 + 6 − 5 = 1. −27, x − 2'nin kökünü −2 alıp P(−2)'yi hesaplayanın sonucudur. −7, 2x<sup>2</sup>'yi (2x)<sup>2</sup> sanıp 16 çıkaranın; −5, kalanı sabit terim sanmanın; 0 ise P(x)'in x − 2 ile tam bölündüğünü varsaymanın sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-40"><p class="q">P(x) = x<sup>3</sup> + ax<sup>2</sup> − 5x + 6 polinomunun çarpanlarından biri x − 1 olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>−10</li><li>−2</li><li>0</li><li>2</li><li>10</li></ul>
+<div class="coz"><p>Çarpan teoremi: x − 1 bir çarpansa P(1) = 0'dır. P(1) = 1 + a − 5 + 6 = a + 2 = 0, a = −2. −10, P(−1) = 0 yazanın sonucudur (−1 + a + 5 + 6 = 0); x − 1'in kökü 1'dir, −1 değil. 2, a + 2 = 0'dan işareti yanlış taşıyanın; 10, iki hatayı birlikte yapanın sonucudur. 0 seçeneği, a'nın hiç etkisi olmadığını sanmaktır.</p></div></li>
+
+<li data-c="D" data-k="mat-41"><p class="q">x<sup>2</sup> − 6x + m = 0 denkleminin birbirine eşit iki gerçek kökü olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>−9</li><li>3</li><li>6</li><li>9</li><li>36</li></ul>
+<div class="coz"><p>Eşit (çakışık) iki kök için Δ = b<sup>2</sup> − 4ac = 0 olmalı: (−6)<sup>2</sup> − 4 · 1 · m = 36 − 4m = 0, m = 9. Denetim: x<sup>2</sup> − 6x + 9 = (x − 3)<sup>2</sup>, çift katlı kök 3. 36, Δ'yı 36 − m diye yazıp 4'ü unutanın sonucudur. 3 kökün kendisidir, m değil. −9 işaret hatasının, 6 ise b'nin mutlak değerini cevap sanmanın sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-41"><p class="q">x<sup>4</sup> − 10x<sup>2</sup> + 9 = 0 denkleminin kaç tane gerçek kökü vardır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>
+<div class="coz"><p>Değişken değiştir: x<sup>2</sup> = t. t<sup>2</sup> − 10t + 9 = 0, (t − 1)(t − 9) = 0, t = 1 ya da t = 9. İkisi de pozitif olduğu için x<sup>2</sup> = 1'den x = ±1, x<sup>2</sup> = 9'dan x = ±3: dört gerçek kök. 2, t'nin değerlerini x'in kökleri sanmanın ya da yalnızca pozitif kökleri almanın sonucudur. t'lerden biri negatif olsaydı o t'den gerçek kök çıkmazdı; burada böyle bir durum yok. 0, 1 ve 3 seçenekleri bu denklem için hiçbir doğru yoldan çıkmaz.</p></div></li>
+
+<li data-c="B" data-k="mat-42"><p class="q">2x<sup>2</sup> − 8x + 3 = 0 denkleminin kökleri x<sub>1</sub> ve x<sub>2</sub> olduğuna göre x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> toplamı kaçtır?</p>
+<ul class="sec"><li>10</li><li>13</li><li>14,5</li><li>19</li><li>61</li></ul>
+<div class="coz"><p>x<sub>1</sub> + x<sub>2</sub> = <span class="kes"><span>−b</span><span>a</span></span> = <span class="kes"><span>8</span><span>2</span></span> = 4, x<sub>1</sub> · x<sub>2</sub> = <span class="kes"><span>c</span><span>a</span></span> = <span class="kes"><span>3</span><span>2</span></span>. Parça 15'teki özdeşlik: x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> = (x<sub>1</sub> + x<sub>2</sub>)<sup>2</sup> − 2x<sub>1</sub>x<sub>2</sub> = 16 − 3 = 13. 14,5, 2 çarpanını unutup 16 − 1,5 yapanın; 19, çıkarma yerine toplayanın sonucudur. 10, çarpımı a'ya bölmeyi unutup 3 alanın (16 − 6); 61 ise toplamı a'ya bölmeyi unutup 8 alanın (64 − 3) sonucudur.</p></div></li>
+
+<li data-c="D" data-k="mat-42"><p class="q">Kökleri 3 ve −5 olan ve baş katsayısı 1 olan ikinci dereceden denklem aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>x<sup>2</sup> − 2x − 15 = 0</li><li>x<sup>2</sup> − 2x + 15 = 0</li><li>x<sup>2</sup> + 2x + 15 = 0</li><li>x<sup>2</sup> + 2x − 15 = 0</li><li>x<sup>2</sup> + 15x − 2 = 0</li></ul>
+<div class="coz"><p>Kökleri verilen denklem x<sup>2</sup> − (toplam)x + (çarpım) = 0'dır. Toplam 3 + (−5) = −2, çarpım 3 · (−5) = −15: x<sup>2</sup> − (−2)x + (−15) = x<sup>2</sup> + 2x − 15 = 0. Denetim: x = 3 için 9 + 6 − 15 = 0, x = −5 için 25 − 10 − 15 = 0. A, toplamın önündeki eksiyi unutanın; C, çarpımın işaretini karıştıranın; B, ikisini birden karıştıranın; E ise toplam ile çarpımın yerini değiştirenin sonucudur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-42">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-43">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-44">Sonraki parça: permütasyon</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"sayma toplama ve çarpma yoluyla sayma konu anlatımı 10. sınıf"</li>
+  <li>"rakamları farklı üç basamaklı çift sayı kaç tane yazılabilir soru çözümü"</li>
+  <li>"faktöriyel sadeleştirme ve faktöriyel denklemleri TYT"</li>
+  <li>"n faktöriyel sondan kaç basamak sıfır ardışık bölme"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler ("toplama yoluyla sayma", "çarpma yoluyla sayma", "eşleme", faktöriyel) 2018 Ortaöğretim Matematik Öğretim Programı'nın 10. sınıf "Sayma ve Olasılık" ünitesindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: rakam sorularının hepsi (180, 100, 52, 48, 36, 63) üç basamaklı sayılar tek tek üretilerek; yol örneğindeki 8, 12 ve 30 (b şıkkı bütün yol dörtlüleri denenerek); 1–30 arası 2'ye ya da 3'e bölünenler (20); kart kodu ve şifre sayıları; 0!'den 10!'e kadar tablo; örnek 4'teki 63 ve n = 4; 10!, 25!, 30!, 50!, 100! için ardışık bölme sonuçları faktöriyel doğrudan çarpanlarına ayrılarak ve sondaki sıfırlar sayılarak; 30!'de 12<sup>k</sup> için k = 13; faktöriyel toplamlarının birler basamağı ve 1! + … + 9! = 409 113; en az bir 5 içeren üç basamaklı sayılar (252) ve yanlış yöntemin verdiği 280; quizdeki 24 sorunun doğru cevabı ve çeldiricilerin her birinin anlatılan hatadan çıktığı.</li>
+  <li>Toplama ve çarpma kurallarının programdaki adlandırması: bazı kaynaklar "toplama ilkesi / çarpma ilkesi", bazıları "toplama yoluyla sayma / çarpma yoluyla sayma" der; ikisi aynı şeydir. "Kutu yöntemi" ders kitabı terimi değil, sınav hazırlık kitaplarının yaygın adıdır.</li>
+  <li>n!'deki asal çarpan kuvvetinin ardışık bölmeyle bulunması ve faktöriyel toplamlarının birler basamağı, kapsam listesinde bu parçaya yazılmış ama 2018 programında açık bir kazanım olarak geçip geçmediğini doğrulayamadım; sınav hazırlık kaynaklarında yerleşik soru tipleridir. "Bir adım öte" kutusundaki 12<sup>k</sup> sorusu kapsam listesinde açıkça yazmıyor; asal çarpan kuvvetinin doğrudan uygulaması olarak kısa tutuldu.</li>
+  <li>Tekrar soruları Parça 2, 6, 10, 14, 18, 22, 26, 30, 34, 38'den birer, Parça 40, 41, 42'den ikişer tanedir (toplam 16 sınırı; daha eski 39 parçadan 10 tanesi eşit aralıklarla seçildi). Bu parça yazılmaya başlandığında Parça 38, 41 ve 42 depoda yoktu; tekrar soruları kapsam listesine göre yazıldı, sonradan eklenen bu üç parçayla yalnızca gösterim ve terim uyumu (f<sup>−1</sup>, çakışık kök, x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup>) denetlendi. Parça 40 hâlâ depoda yok; oradan gelen iki soru (kalan teoremi, çarpan teoremi) yalnızca kapsam listesine dayanıyor.</li>
+  <li>Sorular ve örnekler bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

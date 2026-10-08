@@ -1,0 +1,581 @@
+<article class="chapter ders" id="c-mat-40">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 40 · Polinomlarda bölme, kalan ve çarpan teoremi</div>
+<h1>Bölmeden kalanı bulmak: polinomlarda bölme, kalan ve çarpan teoremi</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>P(x) = x<sup>50</sup> − 3x + 2 polinomunu x − 1'e bölersen kalan kaç olur? Uzun bölmeyle bu, elli satırlık bir işlem. Oysa cevap tek satırda bulunuyor: x yerine 1 yaz, 1 − 3 + 2 = 0. Kalan 0, demek ki x − 1 bu polinomun bir çarpanı. Bölme yapmadan kalanı bilmek nasıl mümkün oluyor ve bu fikir bir polinomu çarpanlarına ayırmayı neden bu kadar kolaylaştırıyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 39 (polinom, derece, baş katsayı, P(1) = katsayılar toplamı, P(0) = sabit terim, polinomlarda çarpma ve derece kuralları), Parça 5 (bölünen = bölen × bölüm + kalan), Parça 16 (çarpanlara ayırma, "çarpım sıfırsa çarpanlardan biri sıfırdır"), Parça 36 (f(2), f(a + 1) gibi değer bulma). Yanında kâğıt kalem olsun; her örneği önce kendin dene.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Bu konunun soruları üç kalıpta toplanır. Birincisi: "P(x) polinomunun x − 2 ile bölümünden kalan kaçtır?" Bunun cevabı bir değer yerine koymaktır. İkincisi: "P(x) polinomu x + 1 ile tam bölünebildiğine göre m kaçtır?" Bunun cevabı yine yerine koyup sıfıra eşitlemektir. Üçüncüsü: bölen ikinci dereceden olur, (x − 1)(x − 2) ya da x<sup>2</sup> + 1 gibi; o zaman kalan bir sayı değil, mx + n biçiminde bir polinom çıkar ve onu iki denklemle bulursun.</p>
+
+<p>Üçünün de arkasında tek bir eşitlik var: bölünen = bölen × bölüm + kalan. Parça 5'te bunu sayılar için yazdın. Bu parçada aynı eşitliği polinomlar için yazacağız, sonra içine akıllıca seçilmiş bir x değeri koyacağız. Bölen o değerde sıfır olursa "bölen × bölüm" kısmı yok olur ve geriye yalnızca kalan kalır. Parçanın bütün kısa yolları bu tek hamleden çıkar.</p>
+
+<p>Sıra şöyle: önce uzun bölmeyi adım adım öğreneceğiz, çünkü kısa yolların neden doğru olduğunu ancak bölmeyi bilen görür. Sonra kalan teoremini, ardından çarpan teoremini kuracağız. Bunları kullanarak polinomun köklerini, çarpanlarını ve kökleri verilen polinomu yazmayı göreceğiz. En sonda ikinci dereceden bölenleri, (x − a)<sup>2</sup> ile tam bölünmeyi ve P(x − 2) gibi kaydırılmış polinomları ele alacağız.</p>
+
+<p>Bir uyarı: polinomlar 10. sınıf konusu olduğu için kâğıt üzerinde TYT kapsamındadır; ama son yıllarda bu konunun TYT'de doğrudan soru olarak seyrek geldiği, asıl AYT'de sorulduğu yaygın kanıdır. Bunu resmî bir kaynaktan yıl yıl doğrulayamadım. Her iki durumda da buradaki araçlar Parça 41 ve 42'de (ikinci dereceden denklemler) ve AYT'nin büyük bölümünde kullanılacak; o yüzden atlanacak bir konu değil.</p>
+
+<h2 class="s">Sayılardaki bölmeden polinomlara</h2>
+
+<p>Parça 5'te 47'yi 5'e böldün: bölüm 9, kalan 2. Bunu tek bir eşitlikle yazdın: 47 = 5 · 9 + 2. Kalanın bir koşulu vardı: 0 ≤ kalan &lt; bölen. Neden? Çünkü kalan 5 ya da daha büyük olsaydı, içinden bir 5 daha çıkarabilirdin; bölme bitmemiş olurdu. Kalan, "artık bölenden bir tane daha çıkaramıyorum" dediğin yerde kalan şeydir.</p>
+
+<p>Polinomlarda da aynı mantık işler; yalnızca "büyüklük" yerine <strong>derece</strong> konuşur. x<sup>2</sup> + 3x + 5'i x + 1'e bölüyorsan, elindeki ifadenin derecesi bölenin derecesine eşit ya da ondan büyük olduğu sürece bir adım daha bölebilirsin. Elinde x'siz bir sayı kaldığında (derecesi 0) artık x + 1'i (derecesi 1) içinden çıkaramazsın; o sayı kalandır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>P(x) polinomu, sıfırdan farklı bir B(x) polinomuna bölündüğünde öyle bir Q(x) bölümü ve K(x) kalanı vardır ki <strong>P(x) = B(x) · Q(x) + K(x)</strong> olur. Kalanın koşulu: K(x) = 0 ya da <strong>der K &lt; der B</strong>. Bölümün derecesi: der Q = der P − der B. Kalan 0 ise "P(x), B(x) ile tam bölünür" denir.</p></div>
+
+<p>Bölümün derecesi neden der P − der B? Parça 39'daki çarpma kuralından: der(B · Q) = der B + der Q. B · Q çarpımının derecesi P'nin derecesine eşit olmalı (kalanın derecesi daha küçük, en yüksek dereceli terimi o belirlemez). O hâlde der B + der Q = der P. Örneğin 5. dereceden bir polinomu ikinci dereceden bir polinoma bölersen bölüm 3. dereceden olur, kalanın derecesi ise en çok 1'dir.</p>
+
+<div class="tablo"><table>
+<tr><th>Bölenin derecesi</th><th>Kalanın derecesi</th><th>Kalanın en genel biçimi</th><th>Örnek bölen</th></tr>
+<tr><td>1</td><td>0 (ya da kalan 0)</td><td>bir sayı: k</td><td>x − 2, x + 5, 2x − 1</td></tr>
+<tr><td>2</td><td>en çok 1</td><td>mx + n</td><td>x<sup>2</sup> + 1, (x − 1)(x + 3), x<sup>2</sup> − 2</td></tr>
+<tr><td>3</td><td>en çok 2</td><td>ax<sup>2</sup> + bx + c</td><td>x<sup>3</sup> − 1, (x − 1)(x − 2)(x − 3)</td></tr>
+</table></div>
+
+<p>Bir de şunu bil: belli bir bölünen ve bölen için bölüm ve kalan <strong>tektir</strong>. Yani hangi yoldan bölersen böl (uzun bölme, aşağıdaki kısa yollar ya da Horner), aynı bölümü ve aynı kalanı bulmak zorundasın. Bu, kontrol yollarının dayanağıdır: iki farklı yöntem farklı kalan veriyorsa birinde hesap hatası vardır.</p>
+
+<p>Bu tablo yeni nesil sorularda çok işe yarar: bölen ikinci dereceden olduğu anda kalan için "mx + n" diye iki bilinmeyen yazarsın. Kalanı sabit bir sayı sanmak, bu parçadaki en sık hatalardan biridir; aşağıda ona döneceğiz.</p>
+
+<h2 class="s">Uzun bölme, adım adım</h2>
+
+<p>Polinomlarda bölme, sayılardaki bölmenin harfli hâlidir. Sayılarda en soldaki basamaktan başlarsın; burada en yüksek dereceli terimden başlarsın. Her tur aynı dört hamleden oluşur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>1. Bölünenin ve bölenin terimlerini <strong>dereceye göre azalan sırada</strong> yaz; eksik dereceleri 0 katsayısıyla yer tutucu olarak düşün (0x<sup>2</sup> gibi).<br>
+2. <strong>Böl:</strong> bölünenin en yüksek dereceli terimini, bölenin en yüksek dereceli terimine böl; çıkan terimi bölüme yaz.<br>
+3. <strong>Çarp:</strong> bu terimi bölenin tamamıyla çarp ve sonucu bölünenin altına, aynı dereceli terimler alt alta gelecek biçimde yaz.<br>
+4. <strong>Çıkar:</strong> alt satırı üst satırdan çıkar (en güvenlisi alt satırın bütün işaretlerini değiştirip toplamaktır). En yüksek dereceli terim yok olur.<br>
+Kalan ifadenin derecesi hâlâ bölenin derecesinden küçük değilse 2. adıma dön. Küçükse dur: elindeki ifade kalandır.</p></div>
+
+<p>Neden en yüksek dereceli terimler? Çünkü her turda amaç bölünenin derecesini bir düşürmektir. 2. adımda seçtiğin terim, çarpımın en yüksek dereceli terimini bölünenin en yüksek dereceli terimine eşit yapar; 4. adımdaki çıkarmada ikisi birbirini götürür. Her tur bir dereceyi temizler, sonunda bölenden küçük dereceli bir şey kalır.</p>
+
+<figure>
+<svg viewBox="0 0 400 236" role="img" aria-label="2x küp eksi 3x kare artı 4x eksi 5 polinomunun x eksi 2 ile uzun bölmesi: bölüm 2x kare artı x artı 6, kalan 7">
+  <text class="sv-s" x="116" y="16" text-anchor="middle">bölünen</text>
+  <text class="sv-t" x="58" y="40" text-anchor="end">2x³</text>
+  <text class="sv-t" x="118" y="40" text-anchor="end">− 3x²</text>
+  <text class="sv-t" x="172" y="40" text-anchor="end">+ 4x</text>
+  <text class="sv-t" x="214" y="40" text-anchor="end">− 5</text>
+  <line class="sv-cl" x1="232" y1="22" x2="232" y2="84" />
+  <line class="sv-cl" x1="232" y1="50" x2="336" y2="50" />
+  <text class="sv-b" x="244" y="40">x − 2</text>
+  <text class="sv-s" x="344" y="40">bölen</text>
+  <text class="sv-b" x="244" y="74">2x² + x + 6</text>
+  <text class="sv-s" x="344" y="74">bölüm</text>
+  <text class="sv-s" x="14" y="66" text-anchor="middle">+</text>
+  <text class="sv-t" x="58" y="66" text-anchor="end">−2x³</text>
+  <text class="sv-t" x="118" y="66" text-anchor="end">+ 4x²</text>
+  <line class="sv-c" x1="22" y1="74" x2="122" y2="74" />
+  <text class="sv-t" x="118" y="94" text-anchor="end">x²</text>
+  <text class="sv-t" x="172" y="94" text-anchor="end">+ 4x</text>
+  <text class="sv-t" x="214" y="94" text-anchor="end">− 5</text>
+  <text class="sv-s" x="72" y="120" text-anchor="middle">+</text>
+  <text class="sv-t" x="118" y="120" text-anchor="end">−x²</text>
+  <text class="sv-t" x="172" y="120" text-anchor="end">+ 2x</text>
+  <line class="sv-c" x1="78" y1="128" x2="176" y2="128" />
+  <text class="sv-t" x="172" y="148" text-anchor="end">6x</text>
+  <text class="sv-t" x="214" y="148" text-anchor="end">− 5</text>
+  <text class="sv-s" x="128" y="174" text-anchor="middle">+</text>
+  <text class="sv-t" x="172" y="174" text-anchor="end">−6x</text>
+  <text class="sv-t" x="214" y="174" text-anchor="end">+ 12</text>
+  <line class="sv-c" x1="134" y1="182" x2="218" y2="182" />
+  <text class="sv-b" x="214" y="204" text-anchor="end">7</text>
+  <text class="sv-s" x="228" y="204">← kalan</text>
+  <text class="sv-s" x="22" y="228">+ satırları: bölüm terimi × bölen, işareti çevrilmiş</text>
+</svg>
+<figcaption>Üç turluk bölme. Birinci tur: 2x<sup>3</sup> ÷ x = 2x<sup>2</sup>; 2x<sup>2</sup>(x − 2) = 2x<sup>3</sup> − 4x<sup>2</sup>, işaretleri çevrilip yazıldı ve toplandı. İkinci tur: x<sup>2</sup> ÷ x = x; x(x − 2) = x<sup>2</sup> − 2x. Üçüncü tur: 6x ÷ x = 6; 6(x − 2) = 6x − 12. Her turda en soldaki terim yok oluyor; sonunda derecesi 0 olan 7 kalıyor.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> 2x<sup>3</sup> − 3x<sup>2</sup> + 4x − 5 polinomunu x − 2'ye böl; bölümü ve kalanı bul. (Şekildeki bölmenin satır satır anlatımı.)</p>
+<span class="mat">2x<sup>3</sup> ÷ x = 2x<sup>2</sup> <span class="g">en yüksek dereceli terimler bölündü; bölümün ilk terimi</span></span>
+<span class="mat">2x<sup>2</sup> · (x − 2) = 2x<sup>3</sup> − 4x<sup>2</sup> <span class="g">bölümün terimi bölenin tamamıyla çarpıldı</span></span>
+<span class="mat">(2x<sup>3</sup> − 3x<sup>2</sup> + 4x − 5) − (2x<sup>3</sup> − 4x<sup>2</sup>) = x<sup>2</sup> + 4x − 5 <span class="g">−3x<sup>2</sup> − (−4x<sup>2</sup>) = +x<sup>2</sup></span></span>
+<span class="mat">x<sup>2</sup> ÷ x = x <span class="g">bölümün ikinci terimi</span></span>
+<span class="mat">(x<sup>2</sup> + 4x − 5) − (x<sup>2</sup> − 2x) = 6x − 5 <span class="g">4x − (−2x) = 6x</span></span>
+<span class="mat">6x ÷ x = 6 <span class="g">bölümün üçüncü terimi</span></span>
+<span class="mat">(6x − 5) − (6x − 12) = 7 <span class="g">−5 − (−12) = 7; derece 0 &lt; 1, dur</span></span>
+<p><strong>Sonuç:</strong> Bölüm Q(x) = 2x<sup>2</sup> + x + 6, kalan 7. Bölüm 2. dereceden çıktı: 3 − 1 = 2, kural tuttu.</p>
+<p><strong>Kontrol yolu:</strong> Bölme bağıntısını yaz ve bir değer koy. x = 0 için sol taraf P(0) = −5; sağ taraf (0 − 2)(0 + 0 + 6) + 7 = −12 + 7 = −5. Tuttu.</p></div>
+
+<p>Bölen ikinci dereceden olduğunda da yöntem aynıdır; yalnızca her turda bölenin üç terimini birden çarparsın ve bölüm terimini bölenin x<sup>2</sup>'li terimine bölerek bulursun. Eksik terimler burada hayati önemdedir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> P(x) = 2x<sup>4</sup> − x<sup>3</sup> + 3x − 4 polinomunun x<sup>2</sup> + 1 ile bölümünden elde edilen bölümü ve kalanı bul.</p>
+<span class="mat">2x<sup>4</sup> − x<sup>3</sup> + 0x<sup>2</sup> + 3x − 4 <span class="g">x<sup>2</sup>'li terim yok; yerini 0x<sup>2</sup> ile tut</span></span>
+<span class="mat">2x<sup>4</sup> ÷ x<sup>2</sup> = 2x<sup>2</sup> <span class="g">bölümün ilk terimi</span></span>
+<span class="mat">2x<sup>2</sup>(x<sup>2</sup> + 1) = 2x<sup>4</sup> + 2x<sup>2</sup> <span class="g">çarp</span></span>
+<span class="mat">(2x<sup>4</sup> − x<sup>3</sup> + 0x<sup>2</sup> + 3x − 4) − (2x<sup>4</sup> + 2x<sup>2</sup>) = −x<sup>3</sup> − 2x<sup>2</sup> + 3x − 4 <span class="g">0x<sup>2</sup> − 2x<sup>2</sup> = −2x<sup>2</sup></span></span>
+<span class="mat">−x<sup>3</sup> ÷ x<sup>2</sup> = −x <span class="g">bölümün ikinci terimi</span></span>
+<span class="mat">(−x<sup>3</sup> − 2x<sup>2</sup> + 3x − 4) − (−x<sup>3</sup> − x) = −2x<sup>2</sup> + 4x − 4 <span class="g">−x(x<sup>2</sup> + 1) = −x<sup>3</sup> − x; 3x − (−x) = 4x</span></span>
+<span class="mat">−2x<sup>2</sup> ÷ x<sup>2</sup> = −2 <span class="g">bölümün üçüncü terimi</span></span>
+<span class="mat">(−2x<sup>2</sup> + 4x − 4) − (−2x<sup>2</sup> − 2) = 4x − 2 <span class="g">derece 1 &lt; 2, dur</span></span>
+<p><strong>Sonuç:</strong> Bölüm 2x<sup>2</sup> − x − 2, kalan 4x − 2. Kalan bir sayı değil, birinci dereceden bir polinom; bölen ikinci dereceden olduğu için bu beklenen şey.</p>
+<p><strong>Kontrol yolu:</strong> x = 1 koy. P(1) = 2 − 1 + 3 − 4 = 0. Sağ taraf: (1 + 1)(2 − 1 − 2) + (4 − 2) = 2 · (−1) + 2 = 0. Tuttu.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Eksik terimin yerini tutmamak.</strong> Örnek 2'de 0x<sup>2</sup> yazılmazsa 2x<sup>2</sup>, yanlışlıkla 3x'in altına yazılır ve bütün bölme kayar. Bölünende eksik derece varsa önce 0 katsayılı terimi yaz; satırlar ancak böyle alt alta oturur.</p>
+<p><strong>Çıkarırken yalnızca ilk terimin işaretini çevirmek.</strong> (x<sup>2</sup> + 4x − 5) − (x<sup>2</sup> − 2x) işleminde ikinci parantezin <em>bütün</em> terimlerinin işareti değişir: −x<sup>2</sup> + 2x. 4x − 2x = 2x yazarsan kalan yanlış çıkar. Parça 3'teki "parantez önündeki eksi içeriye dağılır" kuralı burada da geçerli.</p></div>
+
+<h2 class="s">Kalan teoremi: bölmeden kalanı bulmak</h2>
+
+<p>Örnek 1'de kalan 7 çıktı. Şimdi aynı polinomda x yerine 2 yaz: P(2) = 2 · 8 − 3 · 4 + 4 · 2 − 5 = 16 − 12 + 8 − 5 = 7. Kalanın aynısı. Bu rastlantı değil; nedeni bölme bağıntısında saklı.</p>
+
+<p>P(x)'i x − a'ya böldüğünü düşün. Bölen birinci dereceden olduğu için kalan bir sayıdır; ona K de. Bölme bağıntısı: P(x) = (x − a) · Q(x) + K. Bu eşitlik her x için doğrudur; çünkü bir özdeşliktir (Parça 15'teki anlamda). Öyleyse x yerine istediğin değeri koyabilirsin. En işe yarayan değer, böleni sıfır yapan değerdir: x = a.</p>
+
+<span class="mat">P(x) = (x − a) · Q(x) + K <span class="g">bölme bağıntısı, her x için doğru</span></span>
+<span class="mat">P(a) = (a − a) · Q(a) + K <span class="g">x yerine a koy</span></span>
+<span class="mat">P(a) = 0 · Q(a) + K <span class="g">a − a = 0</span></span>
+<span class="mat">P(a) = K <span class="g">sıfırın herhangi bir sayıyla çarpımı sıfır (Parça 2)</span></span>
+
+<p>Q(x)'in ne olduğunu hiç bilmedik, bilmemiz de gerekmedi; sıfırla çarpıldığı için yok oldu. Bütün kısa yolun gücü bu: bölümü bulmadan kalanı bulursun.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kalan teoremi.</strong> P(x) polinomunun x − a ile bölümünden kalan <strong>P(a)</strong>'dır. Kısacası: böleni sıfıra eşitle, bulduğun x değerini polinomda yerine koy. Özel durumlar: x ile bölümden kalan P(0), yani sabit terim; x + a ile bölümden kalan P(−a), çünkü x + a = 0 ise x = −a.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="y eşittir x küp eksi 4x kare artı x artı 6 grafiği; x eksi 1 ile bölümden kalan, x eşittir 1 noktasındaki yükseklik olan 4'tür; kökler eksi 1, 2 ve 3'te">
+  <line class="sv-c" x1="30" y1="186.4" x2="392" y2="186.4" />
+  <line class="sv-c" x1="127" y1="14" x2="127" y2="282" />
+  <text class="sv-s" x="388" y="178" text-anchor="end">x</text>
+  <text class="sv-s" x="134" y="24">y</text>
+  <line class="sv-c" x1="185" y1="182" x2="185" y2="191" />
+  <line class="sv-c" x1="359" y1="182" x2="359" y2="191" />
+  <line class="sv-c" x1="122" y1="82.4" x2="132" y2="82.4" />
+  <line class="sv-c" x1="122" y1="238.4" x2="132" y2="238.4" />
+  <text class="sv-s" x="118" y="87" text-anchor="end">10</text>
+  <text class="sv-s" x="118" y="243" text-anchor="end">−5</text>
+  <text class="sv-s" x="185" y="205" text-anchor="middle">1</text>
+  <text class="sv-s" x="359" y="205" text-anchor="middle">4</text>
+  <polyline class="sv-cl" points="40.0,268.3 45.8,248.6 51.6,230.7 57.4,214.4 63.2,199.6 69.0,186.4 74.8,174.6 80.6,164.3 86.4,155.2 92.2,147.5 98.0,140.9 103.8,135.5 109.6,131.1 115.4,127.8 121.2,125.5 127.0,124.0 132.8,123.4 138.6,123.5 144.4,124.3 150.2,125.8 156.0,127.9 161.8,130.5 167.6,133.5 173.4,137.0 179.2,140.8 185.0,144.8 190.8,149.1 196.6,153.5 202.4,157.9 208.2,162.4 214.0,166.9 219.8,171.3 225.6,175.4 231.4,179.4 237.2,183.1 243.0,186.4 248.8,189.3 254.6,191.7 260.4,193.6 266.2,194.9 272.0,195.5 277.8,195.4 283.6,194.5 289.4,192.7 295.2,190.1 301.0,186.4 306.8,181.7 312.6,175.9 318.4,169.0 324.2,160.8 330.0,151.3 335.8,140.5 341.6,128.2 347.4,114.5 353.2,99.3 359.0,82.4 364.8,63.9 370.6,43.6 376.4,21.6" />
+  <line class="sv-a" x1="185" y1="186.4" x2="185" y2="144.8" />
+  <circle class="sv-a" cx="185" cy="144.8" r="4.5" />
+  <text class="sv-b" x="185" y="118" text-anchor="middle">(1, 4)</text>
+  <circle class="sv-m" cx="69" cy="186.4" r="4.5" />
+  <circle class="sv-m" cx="243" cy="186.4" r="4.5" />
+  <circle class="sv-m" cx="301" cy="186.4" r="4.5" />
+  <text class="sv-t" x="56" y="178" text-anchor="middle">−1</text>
+  <text class="sv-t" x="243" y="212" text-anchor="middle">2</text>
+  <text class="sv-t" x="301" y="212" text-anchor="middle">3</text>
+  <circle class="sv-l" cx="359" cy="82.4" r="4.5" />
+  <text class="sv-s" x="352" y="70" text-anchor="end">(4, 10)</text>
+  <text class="sv-s" x="340" y="30" text-anchor="end">y = P(x)</text>
+  <text class="sv-s" x="210" y="262">yeşil: kökler (kalan 0)</text>
+  <text class="sv-s" x="210" y="278">turuncu: x − 1 ile kalan 4</text>
+</svg>
+<figcaption>P(x) = x<sup>3</sup> − 4x<sup>2</sup> + x + 6 grafiği. Kalan teoremi, kalanı bir yükseklik olarak gösterir: x − 1 ile bölümden kalan, grafiğin x = 1'deki yüksekliği olan P(1) = 4'tür; x − 4 ile kalan P(4) = 10'dur. Grafiğin x eksenini kestiği −1, 2 ve 3'te yükseklik sıfırdır: x + 1, x − 2 ve x − 3 ile bölümden kalan 0, yani üçü de birer çarpandır.</figcaption>
+</figure>
+
+<p><strong>Hızlı yol:</strong> P(a)'yı hesaplarken üsleri tek tek al, büyük sayılarla uğraşacaksan Parça 10'daki üs kurallarını kullan. Sorudaki x<sup>50</sup> − 3x + 2 için x = 1: 1'in her kuvveti 1'dir, kalan 1 − 3 + 2 = 0. x = −1 için ise (−1)<sup>50</sup> = 1 (çift kuvvet), kalan 1 + 3 + 2 = 6. <strong>Kontrol yolu:</strong> Kalan teoremi ile uzun bölme aynı sonucu vermek zorundadır. Emin olmadığın bir soruda, küçük dereceli bir polinomla ikisini birden dene; bu parçada Örnek 1 tam bu denetimdi.</p>
+
+<p>Kalan teoreminin bir sonucu daha var: bölünenin değerini bilmek, kalanı bilmektir; tersi de doğrudur. "P(x)'in x + 3 ile bölümünden kalan 4'tür" cümlesi ile "P(−3) = 4" cümlesi aynı bilgiyi taşır. Sorular çoğu zaman bilgiyi birinci biçimde verir, sen ikinci biçime çevirip çalışırsın. Bu çeviriyi her soruda kâğıda yazmak, parçanın sonundaki bütün soru tiplerinde işini kolaylaştırır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>x − a ile bölümde P(−a) koymak.</strong> "x − 2 ile bölünüyor, içinde −2 var, o hâlde −2 koyarım" düşüncesi yanlıştır. Koyacağın değer, böleni <em>sıfır yapan</em> değerdir: x − 2 = 0 ise x = 2. Her soruda böleni sıfıra eşitleyip x'i yalnız bırakma alışkanlığı bu hatayı bitirir: x + 3 = 0 ⇒ x = −3; 2x − 1 = 0 ⇒ x = <span class="kes"><span>1</span><span>2</span></span>.</p>
+<p><strong>Kalanı katsayılar toplamı sanmak.</strong> P(1), katsayılar toplamıdır (Parça 39) ve yalnızca x − 1 ile bölümün kalanıdır. Bölen x − 2 ise katsayıları toplamak hiçbir şey vermez.</p></div>
+
+<h3>Bölen ax + b ise</h3>
+
+<p>Bölen 2x − 1, 3x + 2 gibi baş katsayısı 1 olmayan birinci dereceden bir polinomsa aynı akıl yürütme işler. P(x) = (ax + b) · Q(x) + K yaz ve böleni sıfır yapan değeri koy: ax + b = 0 ⇒ x = −<span class="kes"><span>b</span><span>a</span></span>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>P(x) polinomunun ax + b ile bölümünden kalan <strong>P(−<span class="kes"><span>b</span><span>a</span></span>)</strong>'dır. Kalan teoremi her zaman aynı cümleye iner: böleni sıfıra eşitle, kökünü bul, yerine koy.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> P(x) = 4x<sup>3</sup> − 2x<sup>2</sup> + x + 3 polinomunun 2x − 1 ile bölümünden kalan kaçtır?</p>
+<span class="mat">2x − 1 = 0 ⇒ x = <span class="kes"><span>1</span><span>2</span></span> <span class="g">böleni sıfıra eşitle</span></span>
+<span class="mat">P(<span class="kes"><span>1</span><span>2</span></span>) = 4 · <span class="kes"><span>1</span><span>8</span></span> − 2 · <span class="kes"><span>1</span><span>4</span></span> + <span class="kes"><span>1</span><span>2</span></span> + 3 <span class="g">(<span class="kes"><span>1</span><span>2</span></span>)<sup>3</sup> = <span class="kes"><span>1</span><span>8</span></span>, (<span class="kes"><span>1</span><span>2</span></span>)<sup>2</sup> = <span class="kes"><span>1</span><span>4</span></span></span></span>
+<span class="mat">= <span class="kes"><span>1</span><span>2</span></span> − <span class="kes"><span>1</span><span>2</span></span> + <span class="kes"><span>1</span><span>2</span></span> + 3 <span class="g">çarpımları yap</span></span>
+<span class="mat">= <span class="kes"><span>7</span><span>2</span></span> <span class="g"><span class="kes"><span>1</span><span>2</span></span> + 3 = <span class="kes"><span>7</span><span>2</span></span></span></span>
+<p><strong>Sonuç:</strong> Kalan <span class="kes"><span>7</span><span>2</span></span>. Kalan kesirli çıkabilir; bölen tam sayı katsayılı olsa bile kalanın tam sayı olması gerekmez.</p>
+<p><strong>Not:</strong> Aynı polinomu x − <span class="kes"><span>1</span><span>2</span></span>'ye bölseydin kalan yine <span class="kes"><span>7</span><span>2</span></span> olurdu, ama bölüm iki katına çıkardı: 2x − 1 ile bölümde bölüm 2x<sup>2</sup> + <span class="kes"><span>1</span><span>2</span></span>, x − <span class="kes"><span>1</span><span>2</span></span> ile bölümde 4x<sup>2</sup> + 1. Çünkü 2x − 1 = 2(x − <span class="kes"><span>1</span><span>2</span></span>); bölendeki 2 çarpanı bölümden düşer. Kalan değişmez, çünkü ikisinde de böleni sıfır yapan değer aynıdır.</p></div>
+
+<h3>Bölme bağıntısından değer okumak</h3>
+
+<p>Bazı sorular kalanı vermez, bölme bağıntısını verir: "P(x) polinomunun x<sup>2</sup> − 4 ile bölümünden bölüm Q(x), kalan 3x − 1'dir. P(x)'in x − 2 ile bölümünden kalan kaçtır?" Bağıntıyı yaz: P(x) = (x<sup>2</sup> − 4) · Q(x) + 3x − 1. İstenen P(2). x = 2 koy: 2<sup>2</sup> − 4 = 0, Q(2) ne olursa olsun çarpım sıfır; P(2) = 3 · 2 − 1 = 5. Bölünen hakkında hiçbir şey bilmeden kalanı bulmuş oldun.</p>
+
+<h2 class="s">Çarpan teoremi: kalan sıfırsa</h2>
+
+<p>Kalan teoreminde K = 0 olduğunu düşün. Bağıntı P(x) = (x − a) · Q(x) olur: P(x), (x − a) ile bir başka polinomun çarpımı. Parça 16'nın diliyle (x − a), P(x)'in bir <strong>çarpanıdır</strong>. Tersi de doğru: (x − a) bir çarpansa P(x) = (x − a) · Q(x) yazılır, x = a koyunca P(a) = 0 çıkar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çarpan teoremi.</strong> P(a) = 0 ⇔ (x − a), P(x)'in bir çarpanıdır ⇔ P(x), x − a ile tam bölünür. P(a) = 0 eşitliğini sağlayan a sayısına P(x)'in <strong>kökü</strong> (sıfırı) denir. "Kök", "çarpan" ve "tam bölünme" aynı olgunun üç adıdır.</p></div>
+
+<p>Bunun pratik anlamı şu: bir polinomun çarpanını aramak için bölmeye gerek yok, bir değer koyup sıfır çıkıp çıkmadığına bakarsın. Parça 39'dan gelen iki değer burada altın değerindedir.</p>
+
+<div class="tablo"><table>
+<tr><th>Bilgi</th><th>Ne anlama gelir?</th><th>Neden?</th></tr>
+<tr><td>Katsayılar toplamı 0</td><td>x − 1 bir çarpandır</td><td>Katsayılar toplamı P(1)'dir; P(1) = 0 ise çarpan teoremi</td></tr>
+<tr><td>Çift dereceli terimlerin katsayıları toplamı = tek dereceli terimlerin katsayıları toplamı</td><td>x + 1 bir çarpandır</td><td>P(−1)'de tek dereceli terimler eksi, çift dereceliler artı işaret alır; ikisi eşitse P(−1) = 0</td></tr>
+<tr><td>Sabit terim 0</td><td>x bir çarpandır</td><td>Sabit terim P(0)'dır; P(0) = 0 ise x − 0 = x çarpan</td></tr>
+<tr><td>P(x), x − a ile tam bölünür</td><td>P(a) = 0</td><td>Kalan teoremi, kalan 0</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> P(x) = x<sup>3</sup> + mx<sup>2</sup> + x + 6 polinomu x − 2 ile tam bölünebildiğine göre m kaçtır? Bulduğun m için P(x)'i çarpanlarına ayır.</p>
+<span class="mat">x − 2 = 0 ⇒ x = 2 <span class="g">böleni sıfıra eşitle</span></span>
+<span class="mat">P(2) = 8 + 4m + 2 + 6 = 0 <span class="g">tam bölünme: kalan P(2) sıfır</span></span>
+<span class="mat">16 + 4m = 0 <span class="g">sayıları topla</span></span>
+<span class="mat">m = −4 <span class="g">her iki yandan 16 çıkar, 4'e böl</span></span>
+<span class="mat">P(x) = x<sup>3</sup> − 4x<sup>2</sup> + x + 6 <span class="g">m'yi yerine yaz</span></span>
+<span class="mat">P(x) = (x − 2)(x<sup>2</sup> − 2x − 3) <span class="g">x − 2'ye böl: bölüm x<sup>2</sup> − 2x − 3, kalan 0</span></span>
+<span class="mat">P(x) = (x − 2)(x − 3)(x + 1) <span class="g">çarpımı −3, toplamı −2 olan sayılar −3 ve 1 (Parça 16)</span></span>
+<p><strong>Sonuç:</strong> m = −4 ve P(x) = (x + 1)(x − 2)(x − 3). Kökler −1, 2, 3; yukarıdaki grafiğin x eksenini kestiği noktalar tam bunlar.</p>
+<p><strong>Kontrol yolu:</strong> P(−1) = −1 − 4 − 1 + 6 = 0 ve P(3) = 27 − 36 + 3 + 6 = 0. İki kök de tuttu. Ayrıca çarpanlı biçimde x = 0 koy: (1)(−2)(−3) = 6 = P(0). Sabit terim de tuttu.</p></div>
+
+<h3>Kök, çarpan ve çarpanlara ayrılmış yazım</h3>
+
+<p>Örnek 4'te üç kök bulduk ve her biri bir çarpan verdi. Genel olarak bir polinomun kökleri x<sub>1</sub>, x<sub>2</sub>, …, x<sub>n</sub> ise ve polinom bunların çarpanlarına tamamen ayrılıyorsa şöyle yazılır:</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>P(x) = a(x − x<sub>1</sub>)(x − x<sub>2</sub>)…(x − x<sub>n</sub>). Burada a, P'nin <strong>baş katsayısıdır</strong>. Nedeni: parantezler açıldığında en yüksek dereceli terim a · x · x · … · x = a · x<sup>n</sup> olur. n. dereceden bir polinomun en çok n farklı gerçek kökü vardır; çünkü her farklı kök ayrı bir birinci dereceden çarpan verir ve çarpanların dereceleri toplamı n'yi aşamaz.</p></div>
+
+<p>Bir kök birden çok kez çarpan olarak görünebilir. P(x) = (x − 1)<sup>2</sup>(x + 2) polinomunda 1, <strong>çift katlı</strong> (iki kez tekrarlanan) köktür; polinomun derecesi 3 olduğu hâlde iki farklı kökü vardır: 1 ve −2. Bu ayrım aşağıda (x − a)<sup>2</sup> ile tam bölünmede ve Parça 41'de Δ = 0 durumunda karşına çıkacak. Bir de şu var: x<sup>2</sup> + 1 gibi bazı çarpanların hiç gerçek kökü yoktur (x<sup>2</sup> + 1 en az 1'dir, hiç sıfır olmaz). Böyle bir çarpan içeren polinom birinci dereceden çarpanlara tamamen ayrılamaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Üçüncü dereceden P(x) polinomunun kökleri −1, 2 ve 4'tür. P(0) = 16 olduğuna göre P(3) kaçtır?</p>
+<span class="mat">P(x) = a(x + 1)(x − 2)(x − 4) <span class="g">her kök bir çarpan; üç çarpan, derece 3; a bilinmiyor</span></span>
+<span class="mat">P(0) = a(0 + 1)(0 − 2)(0 − 4) = 8a <span class="g">x = 0 koy: 1 · (−2) · (−4) = 8</span></span>
+<span class="mat">8a = 16 ⇒ a = 2 <span class="g">verilen değere eşitle</span></span>
+<span class="mat">P(3) = 2(3 + 1)(3 − 2)(3 − 4) <span class="g">x = 3 koy</span></span>
+<span class="mat">= 2 · 4 · 1 · (−1) = −8 <span class="g">çarp</span></span>
+<p><strong>Sonuç:</strong> P(3) = −8.</p>
+<p><strong>Kontrol yolu:</strong> 3, kökler arasında 2 ile 4'ün arasında. Çarpanlardan yalnızca (x − 4) negatif, öbürleri pozitif; baş katsayı da pozitif. Bir negatif çarpan, sonuç negatif olmalı. −8 negatif: işaret tuttu. Bu işaret denetimi, a'yı bulurken yapılan işaret hatalarını yakalar.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Baş katsayıyı 1 sanmak.</strong> "Kökleri −1, 2, 4 olan polinom (x + 1)(x − 2)(x − 4)'tür" demek eksiktir; bu yalnızca baş katsayı 1 ise doğrudur. Kökler polinomu tek başına belirlemez, a çarpanını belirlemek için soruda her zaman fazladan bir bilgi (P(0), P(1), baş katsayı) verilir. O bilgiyi kullanmadan cevaplarsan Örnek 5'te −8 yerine −4 bulursun.</p>
+<p><strong>Kökün işaretini çarpana yanlış taşımak.</strong> Kök −1 ise çarpan x − (−1) = x + 1'dir, x − 1 değil. Denetim: çarpanı sıfıra eşitlediğinde kökü geri almalısın.</p></div>
+
+<h3>Tam sayı kök adayları</h3>
+
+<p>Çarpan teoremi, bir kök bulduğunda polinomu bölüp derecesini düşürmeni sağlar. Peki ilk kökü nasıl bulursun? Rastgele değer denemek yerine adayların listesini çıkaran bir kural var.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Katsayıları tam sayı olan bir polinomun <strong>tam sayı kökleri, sabit terimin bölenleri arasındadır</strong>. Sabit terim 6 ise tam sayı kök adayları ±1, ±2, ±3, ±6'dır; bunların dışında tam sayı kök olamaz.</p></div>
+
+<p>Nedeni: r tam sayısı x<sup>3</sup> + bx<sup>2</sup> + cx + d polinomunun kökü olsun. r<sup>3</sup> + br<sup>2</sup> + cr + d = 0 yazılır. d'yi yalnız bırak: d = −r<sup>3</sup> − br<sup>2</sup> − cr = r · (−r<sup>2</sup> − br − c). Parantezin içi tam sayı (tam sayıların çarpımı ve toplamı). Demek ki d, r ile bir tam sayının çarpımı; yani r, d'yi böler. Aynı akıl her dereceden polinomda işler. Dikkat: kural adayları verir, kökleri değil. Her adayı yine yerine koyup denemen gerekir; kural yalnızca denemeyi sekiz değerle sınırlar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> P(x) = x<sup>3</sup> − 2x<sup>2</sup> − 5x + 6 polinomunu çarpanlarına ayır.</p>
+<span class="mat">sabit terim 6 ⇒ adaylar ±1, ±2, ±3, ±6 <span class="g">tam sayı kök adayları kuralı</span></span>
+<span class="mat">P(1) = 1 − 2 − 5 + 6 = 0 <span class="g">önce 1'i dene: katsayılar toplamı, hesabı en kolay aday</span></span>
+<span class="mat">P(x) = (x − 1) · Q(x) <span class="g">çarpan teoremi</span></span>
+<span class="mat">Q(x) = x<sup>2</sup> − x − 6 <span class="g">P(x)'i x − 1'e böl; kalan 0 çıkmalı</span></span>
+<span class="mat">x<sup>2</sup> − x − 6 = (x − 3)(x + 2) <span class="g">çarpımı −6, toplamı −1 olan sayılar −3 ve 2</span></span>
+<span class="mat">P(x) = (x − 1)(x − 3)(x + 2) <span class="g">çarpanları birleştir</span></span>
+<p><strong>Sonuç:</strong> Kökler 1, 3 ve −2. Üçü de 6'nın böleni; kural tuttu.</p>
+<p><strong>Kontrol yolu:</strong> Kökleri çarpanlı biçimden doğrudan oku ve iki tanesini asıl polinomda dene: P(3) = 27 − 18 − 15 + 6 = 0, P(−2) = −8 − 8 + 10 + 6 = 0.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Aday</th><th>1</th><th>−1</th><th>2</th><th>−2</th><th>3</th><th>−3</th><th>6</th><th>−6</th></tr>
+<tr><td>P(aday)</td><td>0</td><td>8</td><td>−4</td><td>0</td><td>0</td><td>−24</td><td>120</td><td>−252</td></tr>
+</table></div>
+
+<p>Tablo, Örnek 6'daki polinomda sekiz adayın hepsini gösteriyor: sıfır veren üç aday tam üç köktür. Sınavda sekizini de denemezsin; bir kök bulduğun anda bölüp ikinci dereceye inersin, gerisini Parça 16'daki ayırmayla bitirirsin. Baş katsayı 1 değilse polinomun kesirli kökleri de olabilir (2x − 1 çarpanının kökü <span class="kes"><span>1</span><span>2</span></span> gibi); yukarıdaki kural yalnızca tam sayı kökler hakkında konuşur.</p>
+
+<h3>İki polinomun ortak çarpanı</h3>
+
+<p>"P(x) ile Q(x)'in ortak çarpanı var" demek, bir x − r ifadesinin ikisini birden böldüğünü söylemektir. Çarpan teoremiyle: aynı r sayısı için hem P(r) = 0 hem Q(r) = 0. Soru çoğunlukla polinomlardan birini çarpanlarına ayrılabilir biçimde verir; onun köklerini bulur, her birini öbür polinomda denersin.</p>
+
+<p>Örnek: P(x) = x<sup>2</sup> + mx + 6 ile Q(x) = x<sup>2</sup> − x − 6 polinomlarının birinci dereceden bir ortak çarpanı varsa m kaç olabilir? Q(x) = (x − 3)(x + 2); kökleri 3 ve −2. Ortak çarpan x − 3 ise P(3) = 9 + 3m + 6 = 0, m = −5. Ortak çarpan x + 2 ise P(−2) = 4 − 2m + 6 = 0, m = 5. İki değer de mümkün: m ∈ {−5, 5}. Denetim: m = −5 için P(x) = (x − 2)(x − 3), gerçekten x − 3 ortak; m = 5 için P(x) = (x + 2)(x + 3), gerçekten x + 2 ortak.</p>
+
+<h2 class="s">Bölen ikinci dereceden olunca: kalan mx + n</h2>
+
+<p>Bölen (x − a)(x − b) gibi ikinci dereceden bir polinomsa ilk tablodan biliyorsun: kalanın derecesi en çok 1'dir. Kalanı K(x) = mx + n diye yaz. İki bilinmeyen var, o hâlde iki denklem gerekir. Bölme bağıntısı:</p>
+
+<span class="mat">P(x) = (x − a)(x − b) · Q(x) + mx + n <span class="g">bölme bağıntısı; a ≠ b</span></span>
+<span class="mat">P(a) = 0 · Q(a) + ma + n = ma + n <span class="g">x = a koy: (a − a) = 0</span></span>
+<span class="mat">P(b) = 0 · Q(b) + mb + n = mb + n <span class="g">x = b koy: (b − b) = 0</span></span>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>P(x)'in (x − a)(x − b) ile bölümünden kalanı bulmak için K(x) = mx + n yaz; bölenin iki kökünü ayrı ayrı koyarak <strong>P(a) = ma + n</strong> ve <strong>P(b) = mb + n</strong> denklemlerini kur; sistemi Parça 18'deki yok etme yöntemiyle çöz. P(a) ve P(b) değerleri soruda çoğu zaman "x − a ile bölümünden kalan …" diye verilir; kalan teoremiyle onları P(a), P(b)'ye çevirirsin.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> P(x) polinomunun x − 2 ile bölümünden kalan 5, x + 1 ile bölümünden kalan −1'dir. P(x)'in x<sup>2</sup> − x − 2 ile bölümünden kalan nedir?</p>
+<span class="mat">x<sup>2</sup> − x − 2 = (x − 2)(x + 1) <span class="g">böleni çarpanlarına ayır; kökleri 2 ve −1</span></span>
+<span class="mat">P(2) = 5, P(−1) = −1 <span class="g">kalan teoremi</span></span>
+<span class="mat">K(x) = mx + n <span class="g">bölen 2. dereceden, kalan en çok 1. dereceden</span></span>
+<span class="mat">2m + n = 5 <span class="g">x = 2 için P(2) = K(2)</span></span>
+<span class="mat">−m + n = −1 <span class="g">x = −1 için P(−1) = K(−1)</span></span>
+<span class="mat">3m = 6 ⇒ m = 2 <span class="g">birinci denklemden ikinciyi çıkar: n'ler gider</span></span>
+<span class="mat">n = 5 − 2 · 2 = 1 <span class="g">m'yi birinci denklemde yerine koy</span></span>
+<p><strong>Sonuç:</strong> Kalan K(x) = 2x + 1.</p>
+<p><strong>Kontrol yolu:</strong> Kalanı iki kökte dene: K(2) = 5 ve K(−1) = −1. İkisi de verilenle aynı. Bu denetim ikişer saniye sürer ve sistemdeki işaret hatalarını yakalar.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="y eşittir P(x) eğrisi ve kalan doğrusu y eşittir 2x artı 2; doğru eğriyi x eşittir 1 ve x eşittir 4'te keser">
+  <line class="sv-c" x1="30" y1="186.4" x2="392" y2="186.4" />
+  <line class="sv-c" x1="127" y1="14" x2="127" y2="282" />
+  <text class="sv-s" x="388" y="178" text-anchor="end">x</text>
+  <text class="sv-s" x="134" y="24">y</text>
+  <line class="sv-c" x1="185" y1="182" x2="185" y2="191" />
+  <line class="sv-c" x1="359" y1="182" x2="359" y2="191" />
+  <text class="sv-s" x="185" y="205" text-anchor="middle">1</text>
+  <text class="sv-s" x="359" y="205" text-anchor="middle">4</text>
+  <polyline class="sv-cl" points="40.0,268.3 45.8,248.6 51.6,230.7 57.4,214.4 63.2,199.6 69.0,186.4 74.8,174.6 80.6,164.3 86.4,155.2 92.2,147.5 98.0,140.9 103.8,135.5 109.6,131.1 115.4,127.8 121.2,125.5 127.0,124.0 132.8,123.4 138.6,123.5 144.4,124.3 150.2,125.8 156.0,127.9 161.8,130.5 167.6,133.5 173.4,137.0 179.2,140.8 185.0,144.8 190.8,149.1 196.6,153.5 202.4,157.9 208.2,162.4 214.0,166.9 219.8,171.3 225.6,175.4 231.4,179.4 237.2,183.1 243.0,186.4 248.8,189.3 254.6,191.7 260.4,193.6 266.2,194.9 272.0,195.5 277.8,195.4 283.6,194.5 289.4,192.7 295.2,190.1 301.0,186.4 306.8,181.7 312.6,175.9 318.4,169.0 324.2,160.8 330.0,151.3 335.8,140.5 341.6,128.2 347.4,114.5 353.2,99.3 359.0,82.4 364.8,63.9 370.6,43.6 376.4,21.6" />
+  <line class="sv-c" x1="40" y1="196.8" x2="376.4" y2="76.2" />
+  <circle class="sv-a" cx="185" cy="144.8" r="4.5" />
+  <circle class="sv-a" cx="359" cy="82.4" r="4.5" />
+  <text class="sv-b" x="185" y="118" text-anchor="middle">(1, 4)</text>
+  <text class="sv-b" x="350" y="70" text-anchor="end">(4, 10)</text>
+  <text class="sv-t" x="150" y="34">düz çizgi: K(x) = 2x + 2</text>
+  <text class="sv-s" x="150" y="52">eğri: y = P(x)</text>
+  <text class="sv-s" x="200" y="262">P ile K, x = 1 ve x = 4'te</text>
+  <text class="sv-s" x="200" y="278">aynı değeri alır</text>
+</svg>
+<figcaption>Aynı P(x) = x<sup>3</sup> − 4x<sup>2</sup> + x + 6 polinomunun (x − 1)(x − 4) ile bölümünden kalan 2x + 2'dir (uzun bölmeyle de denetlendi). Kalan, eğrinin x = 1 ve x = 4'teki iki noktasından geçen doğrudur: P(x) − K(x) = (x − 1)(x − 4) · Q(x) farkı bu iki noktada sıfır olur. "İki kökte iki denklem kur" yönteminin resmi budur: iki noktadan tek bir doğru geçer.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>İkinci dereceden bölende kalanı sabit sanmak.</strong> Örnek 7'de kalanı "5 + (−1) = 4" ya da "5 · (−1) = −5" diye bir sayı olarak yazmak yanlıştır; kalanın derecesi bölenden küçük olmalı, ama 0 olmak zorunda değil. Bölen 2. dereceden ise kalanı her zaman mx + n diye kur; sonuçta m = 0 çıkarsa kalan zaten sabit olur.</p>
+<p><strong>Kalanları köklerle yanlış eşleştirmek.</strong> "x − 2 ile kalan 5" bilgisi P(2) = 5'tir ve 2m + n = 5 denklemine gider; x = −1'in denklemine değil. Yer değiştirirsen −2x + 3 bulursun. Her denklemi yazarken hangi kökü koyduğunu satırın yanına not et.</p></div>
+
+<p>Bölen çarpanlarına ayrılmış verilmeyebilir: x<sup>2</sup> − 5x + 6 gibi. O zaman önce Parça 16'daki yöntemle ayır: (x − 2)(x − 3). Kökleri 2 ve 3; gerisi aynı. Bölenin kökleri birbirine eşitse, yani bölen (x − a)<sup>2</sup> ise bu yöntem tek denklem verir; o durumu aşağıda ayrıca ele alacağız.</p>
+
+<h3>Bölen x<sup>2</sup> + 1 ya da x<sup>2</sup> − a gibi ise: x<sup>2</sup> yerine değer koymak</h3>
+
+<p>x<sup>2</sup> + 1'in gerçek kökü yoktur, bu yüzden yukarıdaki "iki kökü koy" yöntemi işlemez. Burada başka bir gözlem kullanılır. Bölme bağıntısını x<sup>2</sup> + 1 için düşün: P(x) = (x<sup>2</sup> + 1) · Q(x) + K(x). Bölenin herhangi bir katını P'ye ekleyip çıkarmak kalanı değiştirmez, çünkü o kat zaten "bölen × bölüm" kısmına gider. Şimdi şu eşitliğe bak: x<sup>2</sup> = (x<sup>2</sup> + 1) − 1. Her x<sup>2</sup>, −1'den yalnızca bölenin bir katı kadar farklıdır. O hâlde kalanı ararken her x<sup>2</sup> yerine −1 yazabilirsin; atılan şey hep bölenin katıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Bölen x<sup>2</sup> + c biçimindeyse (x<sup>2</sup> + 1, x<sup>2</sup> − 2, x<sup>2</sup> − 3 …) böleni sıfıra eşitle ve <strong>x<sup>2</sup>'yi yalnız bırak</strong>: x<sup>2</sup> = −c. Polinomdaki her kuvveti x<sup>2</sup>'nin kuvvetleri cinsinden yaz (x<sup>4</sup> = (x<sup>2</sup>)<sup>2</sup>, x<sup>5</sup> = x · (x<sup>2</sup>)<sup>2</sup>, x<sup>3</sup> = x · x<sup>2</sup>) ve x<sup>2</sup> yerine −c koy. Geriye mx + n biçiminde bir ifade kalır; o kalandır.</p></div>
+
+<p>Örnek 2'deki bölmeyi bu yolla yeniden yap: P(x) = 2x<sup>4</sup> − x<sup>3</sup> + 3x − 4, bölen x<sup>2</sup> + 1, yani x<sup>2</sup> = −1.</p>
+
+<span class="mat">2x<sup>4</sup> = 2(x<sup>2</sup>)<sup>2</sup> = 2 · (−1)<sup>2</sup> = 2 <span class="g">x<sup>4</sup>, x<sup>2</sup>'nin karesi</span></span>
+<span class="mat">−x<sup>3</sup> = −x · x<sup>2</sup> = −x · (−1) = x <span class="g">x<sup>3</sup> = x · x<sup>2</sup></span></span>
+<span class="mat">K(x) = 2 + x + 3x − 4 = 4x − 2 <span class="g">kalan terimleri ekle ve topla</span></span>
+
+<p>Uzun bölmede yedi satır süren sonuç üç satırda geldi ve ikisi aynı: 4x − 2. Bir örnek daha: x<sup>4</sup> + x<sup>3</sup> − x + 1 polinomunun x<sup>2</sup> − 2 ile bölümünden kalan. x<sup>2</sup> = 2 yaz: x<sup>4</sup> = 4, x<sup>3</sup> = x · 2 = 2x; kalan 4 + 2x − x + 1 = x + 5. Bu yöntem, bölen (x − a)(x − b) biçiminde de çalışır ama orada iki kökü koymak genellikle daha hızlıdır; x<sup>2</sup> yerine koyma, kökleri gerçek sayı olmayan ya da kökleri köklü sayı olan bölenlerde (x<sup>2</sup> − 2 için ±√2 gibi) asıl kısa yoldur.</p>
+
+<p><strong>Kontrol yolu:</strong> Kökleri gerçek sayı olan bir bölende iki yöntemi karşılaştırabilirsin. x<sup>5</sup> + 2x + 1 polinomunu x<sup>2</sup> − 1 ile böl. x<sup>2</sup> = 1 yazınca x<sup>5</sup> = x · (x<sup>2</sup>)<sup>2</sup> = x ve kalan x + 2x + 1 = 3x + 1. Kökleri koyarak: P(1) = 4, P(−1) = −2; m + n = 4 ve −m + n = −2 sisteminden m = 3, n = 1. İkisi de 3x + 1; bölüm ve kalan tek olduğu için böyle olmak zorundaydı.</p>
+
+<h2 class="s">(x − a)<sup>2</sup> ile tam bölünme</h2>
+
+<p>Soru: "P(x) = x<sup>3</sup> + ax + b polinomu (x − 1)<sup>2</sup> ile tam bölünebildiğine göre a ve b kaçtır?" İlk akla gelen P(1) = 0 yazmaktır ve doğrudur, ama tek bir denklem iki bilinmeyeni bulamaz. (x − 1)<sup>2</sup>'nin tek kökü 1 olduğundan "iki kökü koy" yöntemi de ikinci denklemi vermez. İkinci bilgi nereden gelir?</p>
+
+<p>(x − 1)<sup>2</sup> = (x − 1)(x − 1). P'nin bu çarpımla tam bölünmesi, P'nin önce x − 1 ile tam bölünmesi, sonra çıkan <strong>bölümün de</strong> bir kez daha x − 1 ile tam bölünmesi demektir. Sayılarda da böyledir: 36, 4 = 2 · 2 ile bölünür, çünkü 36 ÷ 2 = 18 ve 18 de 2'ye bölünür.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>P(x)'in (x − a)<sup>2</sup> ile tam bölünmesi için: (1) P(a) = 0 olmalı; (2) P(x)'i x − a'ya bölüp bölümü Q(x) diye yazdığında <strong>Q(a) = 0</strong> olmalı. Böylece iki denklem elde edilir. Bu durumda a, P(x)'in çift katlı köküdür. (Bu yönteme "bölümü bir daha bölme" de denir; AYT'de türev öğrenildikten sonra aynı iş daha kısa yoldan yapılabilir.)</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> P(x) = x<sup>3</sup> + ax + b polinomu (x − 1)<sup>2</sup> ile tam bölünebildiğine göre a ve b kaçtır?</p>
+<span class="mat">P(1) = 1 + a + b = 0 <span class="g">birinci koşul: x − 1 ile tam bölünme</span></span>
+<span class="mat">x<sup>3</sup> + 0x<sup>2</sup> + ax + b = (x − 1)(x<sup>2</sup> + x + 1 + a) + (1 + a + b) <span class="g">x − 1'e uzun bölme; eksik x<sup>2</sup>'yi 0 ile tut</span></span>
+<span class="mat">Q(x) = x<sup>2</sup> + x + 1 + a <span class="g">bölüm; kalan 1 + a + b zaten sıfır</span></span>
+<span class="mat">Q(1) = 1 + 1 + 1 + a = 0 <span class="g">ikinci koşul: bölüm de x − 1 ile tam bölünmeli</span></span>
+<span class="mat">a = −3 <span class="g">3 + a = 0</span></span>
+<span class="mat">b = −1 − a = 2 <span class="g">birinci koşuldan b = −1 − a</span></span>
+<p><strong>Sonuç:</strong> a = −3, b = 2. Polinom x<sup>3</sup> − 3x + 2'dir.</p>
+<p><strong>Kontrol yolu:</strong> (x − 1)<sup>2</sup>(x + 2) çarpımını aç: (x<sup>2</sup> − 2x + 1)(x + 2) = x<sup>3</sup> + 2x<sup>2</sup> − 2x<sup>2</sup> − 4x + x + 2 = x<sup>3</sup> − 3x + 2. Bulduğun polinomun aynısı. Üçüncü çarpanı nereden bildin? Baş katsayı 1, sabit terim 2; (x − 1)<sup>2</sup>'nin sabit terimi 1 olduğundan kalan çarpanın sabit terimi 2 olmalı: x + 2.</p></div>
+
+<p>Örnekteki kontrol yolu aslında başlı başına bir <strong>hızlı yol</strong>dur: P(x) = (x − a)<sup>2</sup>(x + c) yaz, c'yi baş katsayı ve sabit terimden ya da x<sup>2</sup>'nin katsayısını eşitleyerek bul. x<sup>3</sup> + ax + b'de x<sup>2</sup> terimi yok; (x − 1)<sup>2</sup>(x + c) açılınca x<sup>2</sup>'nin katsayısı c − 2 olur; c − 2 = 0, c = 2. Polinom (x − 1)<sup>2</sup>(x + 2) çıkar. Parça 39'daki katsayı eşitleme burada iki satırda işi bitirir.</p>
+
+<h2 class="s">Kaydırılmış polinomlar: P(x − 2), P(2x + 1)</h2>
+
+<p>Soru: "P(x) = x<sup>3</sup> − 2x + 5 olduğuna göre P(x − 2) polinomunun x − 3 ile bölümünden kalan kaçtır?" Bölünen artık P(x) değil, P(x − 2) adında yeni bir polinom. Ona R(x) = P(x − 2) de. Kalan teoremi R için de geçerli: kalan R(3).</p>
+
+<span class="mat">x − 3 = 0 ⇒ x = 3 <span class="g">böleni sıfıra eşitle</span></span>
+<span class="mat">R(3) = P(3 − 2) = P(1) <span class="g">bölünen P(x − 2); x yerine 3 yaz, parantezin içi 1</span></span>
+<span class="mat">P(1) = 1 − 2 + 5 = 4 <span class="g">P(x) = x<sup>3</sup> − 2x + 5'te x = 1</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p>P(f(x)) polinomunun x − a ile bölümünden kalan <strong>P(f(a))</strong>'dır. Yani bölenin kökünü, P'nin <em>parantezinin içine</em> koyarsın; parantezin içinden çıkan sayı, P'de yerine konacak sayıdır. P(x − 2)'nin x − 3 ile kalanı P(1); P(2x + 1)'in x − 1 ile kalanı P(3).</p></div>
+
+<p>Kural iki yönde kullanılır. Soru bazen kaydırılmış polinomun kalanını verip asıl polinomunkini sorar: "P(2x + 1) polinomunun x − 1 ile bölümünden kalan 7'dir. P(x)'in x − 3 ile bölümünden kalan kaçtır?" Verilen bilgi: x = 1 için P(2 · 1 + 1) = P(3) = 7. İstenen: P(x)'in x − 3 ile kalanı, yani P(3). Cevap 7. Burada asıl iş, verilen bilgiyi "P(hangi sayı) = kaç" biçimine çevirmektir; bundan sonra soru bir kalan teoremi sorusuna döner.</p>
+
+<p>Kaydırma, bölünende değil kuralın verilişinde de olabilir: "P(x + 1) = x<sup>2</sup> + 3x − 1 olduğuna göre P(x)'in x − 3 ile bölümünden kalan kaçtır?" İstenen P(3). P(3)'ü verilen eşitlikten elde etmek için parantezin içi 3 olmalı: x + 1 = 3, x = 2. Eşitlikte x = 2 koy: P(3) = 4 + 6 − 1 = 9. P(x)'in kuralını hiç bulmadın. İstersen denetle: P(x) = (x − 1)<sup>2</sup> + 3(x − 1) − 1 = x<sup>2</sup> + x − 3 ve P(3) = 9 + 3 − 3 = 9.</p>
+
+<p>Parça 36'daki "f(x + 1) verilip f(x) bulma" sorularıyla aynı akıl: içerideki ifadeye bak, P'nin hangi değerinin konuşulduğunu bul. Parça 39'da da gördün: P(x + 1)'in katsayılar toplamı, x = 1 koyunca P(2)'dir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kaydırmayı unutmak.</strong> P(x − 2)'nin x − 3 ile bölümünden kalanı P(3) sanmak en sık hatadır. Bölünen P(x) değil, P(x − 2)'dir; x = 3 parantezin içinde 3 − 2 = 1 olur. Kural: önce bölenin kökünü bul, sonra onu <em>parantezin içine</em> koy, en son P'yi hesapla.</p></div>
+
+<h2 class="s">Horner yöntemi: yalnızca katsayılarla bölme</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir:</strong> Horner yönteminin 2018 programında açık bir kazanım olarak bulunup bulunmadığını doğrulayamadım. Uzun bölmenin kısaltılmış yazımı olduğu için hiçbir yeni bilgi içermez; işini hızlandırıyorsa kullan, kafanı karıştırıyorsa atla.</p>
+
+<p>Örnek 1'deki uzun bölmeye geri dön. Her satırda x'ler hep aynı yerde durdu; asıl iş katsayılarla yapıldı. Horner yöntemi x'leri hiç yazmaz. Yalnızca bölen x − a biçimindeyken kullanılır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Bölünenin katsayılarını azalan dereceye göre bir satıra yaz (eksik dereceye 0). Bölenin kökünü (a) sola koy. İlk katsayıyı aynen aşağı indir. Sonra her adımda: indirdiğin sayıyı a ile çarp, sonucu bir sonraki katsayının altına yaz, topla, toplamı aşağı indir. Alt satırdaki son sayı <strong>kalan</strong>, ondan öncekiler <strong>bölümün katsayılarıdır</strong> (bölüm, bölünenden bir derece düşüktür).</p></div>
+
+<div class="tablo"><table>
+<tr><th>a = 2</th><th>x<sup>3</sup></th><th>x<sup>2</sup></th><th>x</th><th>sabit</th></tr>
+<tr><td>bölünenin katsayıları</td><td>2</td><td>−3</td><td>4</td><td>−5</td></tr>
+<tr><td>a × (alttaki sayı)</td><td></td><td>2 · 2 = 4</td><td>2 · 1 = 2</td><td>2 · 6 = 12</td></tr>
+<tr><td>toplam (aşağı indir)</td><td>2</td><td>−3 + 4 = 1</td><td>4 + 2 = 6</td><td>−5 + 12 = 7</td></tr>
+</table></div>
+
+<p>Alt satır 2, 1, 6 | 7: bölüm 2x<sup>2</sup> + x + 6, kalan 7. Uzun bölmeyle aynı. Neden çalışır? Uzun bölmede her tur "bölüm terimini (x − 2) ile çarp, çıkar" idi; −2 ile çarpıp çıkarmak, +2 ile çarpıp toplamakla aynıdır. Horner, bu toplamaları sütun sütun yapmaktır. Örnek 8'de ikinci koşulu kontrol etmek için de kullanılabilir: x<sup>3</sup> − 3x + 2'nin katsayıları 1, 0, −3, 2; a = 1 ile alt satır 1, 1, −2 | 0; bölüm x<sup>2</sup> + x − 2'yi bir daha 1 ile bölersen 1, 2 | 0. İki kalan da sıfır: (x − 1)<sup>2</sup> ile tam bölünme doğrulandı.</p>
+
+<p>Bölen 2x − 1 gibi baş katsayısı 1 olmayan bir polinomsa Horner'ı a = <span class="kes"><span>1</span><span>2</span></span> ile yaparsın. Kalan doğru çıkar, ama bulduğun bölüm x − <span class="kes"><span>1</span><span>2</span></span> ile bölümün bölümüdür; 2x − 1 ile bölümün bölümü için onu 2'ye bölmen gerekir (Örnek 3'teki nota bak).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 5'e:</strong> Bölünen = bölen × bölüm + kalan bağıntısı ve "kalan bölenden küçük" koşulu, buradaki her şeyin kaynağı. Sayılarda "küçük" büyüklük demekti, polinomlarda derece demek.</p>
+<p><strong>Parça 16 ve 39'a:</strong> Çarpan teoremi, Parça 16'daki çarpanlara ayırma yöntemlerine "kök bul, böl, dereceyi düşür" diye yeni bir yöntem ekler. P(1) ve P(−1) bilgileri (Parça 39) en hızlı kök denemeleridir.</p>
+<p><strong>Parça 41 ve 42'ye:</strong> İkinci dereceden denklemin kökleri, ax<sup>2</sup> + bx + c polinomunun kökleridir; çarpan teoremi orada a(x − x<sub>1</sub>)(x − x<sub>2</sub>) yazımına ve kök-katsayı bağıntılarına dönüşecek. Buradaki çift katlı kök, Parça 41'de Δ = 0 durumudur.</p>
+<p><strong>Öbür derslere:</strong> AYT'de limitteki 0/0 belirsizliğini gidermek (ileri Parça 20), eşitsizliklerde işaret tablosu kurmak (ileri Parça 7) ve polinom grafiği çizmek (ileri Parça 26) için polinomu köklerine ayırman gerekecek; hepsi bu parçadaki çarpan teoremine dayanır. Çift katlı kökte grafiğin x eksenine teğet olması da orada görülecek.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç. Bu sorular ileriki günlerde "günlük soru" ekranında da karşına çıkacak.</p>
+
+<details><summary>Kalan teoremi neden doğrudur? Bölme bağıntısından başlayarak tek cümleyle açıkla.</summary><p>P(x) = (x − a) · Q(x) + K her x için doğrudur; x = a koyunca (a − a) · Q(a) = 0 olur ve geriye P(a) = K kalır, yani bölümü hiç bilmeden kalan P(a)'dır.</p></details>
+<details><summary>Beşinci dereceden bir polinom x<sup>2</sup> − 3x + 1 ile bölünürse bölümün derecesi kaçtır, kalanın derecesi en çok kaç olabilir?</summary><p>Bölümün derecesi 5 − 2 = 3'tür, çünkü der(bölen) + der(bölüm) = der(bölünen) olmalı. Kalanın derecesi bölenin derecesinden küçük olmak zorunda olduğu için en çok 1'dir; kalan mx + n biçimindedir.</p></details>
+<details><summary>P(x)'in 3x + 2 ile bölümünden kalanı bulmak için x yerine hangi sayıyı koyarsın?</summary><p>Böleni sıfıra eşitlerim: 3x + 2 = 0 ise x = −2/3. Kalan P(−2/3)'tür.</p></details>
+<details><summary>"Kök", "çarpan" ve "tam bölünme" arasındaki ilişki nedir?</summary><p>Üçü aynı olgudur: P(a) = 0 ise a bir köktür, x − a bir çarpandır ve P(x), x − a ile tam bölünür (kalan 0). Bu, kalan teoreminin kalan sıfır olduğu özel durumudur ve çarpan teoremi adını alır.</p></details>
+<details><summary>Bölen x<sup>2</sup> + 1 olduğunda kalanı nasıl bulursun ve bu neden geçerlidir?</summary><p>Polinomdaki her x<sup>2</sup> yerine −1 yazarım (x<sup>4</sup> = 1, x<sup>3</sup> = −x gibi) ve geriye kalan mx + n ifadesi kalandır. Geçerlidir, çünkü x<sup>2</sup> = (x<sup>2</sup> + 1) − 1 ve atılan her parça bölenin bir katıdır; bölenin katı kalanı değiştirmez.</p></details>
+<details><summary>P(x)'in (x − a)<sup>2</sup> ile tam bölünmesi için hangi iki koşul gerekir?</summary><p>Birincisi P(a) = 0, yani P(x) x − a ile tam bölünmeli. İkincisi, P(x)'i x − a'ya böldüğünde çıkan bölüm Q(x) için de Q(a) = 0 olmalı; çünkü (x − a)<sup>2</sup> ile bölünmek, x − a ile iki kez art arda bölünmektir.</p></details>
+<details><summary>P(x − 2) polinomunun x − 3 ile bölümünden kalan neden P(3) değil de P(1)'dir?</summary><p>Bölünen P(x − 2) adında yeni bir polinomdur; kalan, onun x = 3'teki değeridir. x = 3 koyunca parantezin içi 3 − 2 = 1 olur, yani kalan P(1)'dir. Bölenin kökü parantezin içine konur, P'ye doğrudan konmaz.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Bölme bağıntısı:</strong> P(x) = B(x) · Q(x) + K(x); der K &lt; der B (ya da K = 0); der Q = der P − der B.</li>
+<li><strong>Kalanın biçimi:</strong> bölen 1. dereceden → kalan sayı; 2. dereceden → mx + n; 3. dereceden → ax<sup>2</sup> + bx + c.</li>
+<li><strong>Uzun bölme:</strong> böl → çarp → çıkar (bütün işaretleri çevir) → tekrarla. Eksik dereceye 0 yaz.</li>
+<li><strong>Kalan teoremi:</strong> x − a ile kalan P(a); ax + b ile kalan P(−b/a); x ile kalan P(0). Böleni sıfıra eşitle, kökü koy.</li>
+<li><strong>Çarpan teoremi:</strong> P(a) = 0 ⇔ x − a çarpan ⇔ tam bölünme. Katsayılar toplamı 0 ise x − 1 çarpan; P(−1) = 0 ise x + 1 çarpan.</li>
+<li><strong>Çarpanlı yazım:</strong> P(x) = a(x − x<sub>1</sub>)…(x − x<sub>n</sub>); a baş katsayı, onu ek bilgiden (P(0) gibi) bul.</li>
+<li><strong>Tam sayı kök adayları:</strong> sabit terimin bölenleri (±). Önce ±1'i dene; kök bulunca böl, derece düşür.</li>
+<li><strong>Ortak çarpan:</strong> aynı r için P(r) = Q(r) = 0.</li>
+<li><strong>(x − a)(x − b) ile kalan:</strong> K = mx + n; P(a) = ma + n, P(b) = mb + n; sistemi çöz, iki kökte denetle.</li>
+<li><strong>x<sup>2</sup> + c ile kalan:</strong> x<sup>2</sup> yerine −c koy; kalan mx + n çıkar.</li>
+<li><strong>(x − a)<sup>2</sup> ile tam bölünme:</strong> P(a) = 0 ve bölüm Q için Q(a) = 0. Kısa yol: P = (x − a)<sup>2</sup>(x + c) yaz.</li>
+<li><strong>Kaydırma:</strong> P(f(x))'in x − a ile kalanı P(f(a)); kökü parantezin içine koy.</li>
+<li><strong>Horner</strong> (kapsam belirsiz): katsayılarla bölme; son sayı kalan, öncekiler bölüm.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-40">
+<h3>Quiz 40</h3>
+<p class="qa">Yirmi dört soru: sekizi bu parçadan, on altısı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + 3x − 1 polinomunun x − 2 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>−23</li><li>1</li><li>5</li><li>7</li><li>21</li></ul>
+<div class="coz"><p>Böleni sıfıra eşitle: x − 2 = 0, x = 2. Kalan P(2) = 8 − 8 + 6 − 1 = 5. A (−23), x yerine −2 koymaktır; "x − 2'de −2 var" yanılgısı. B (1), katsayıları toplamaktır; o P(1)'dir ve yalnızca x − 1 ile kalanı verir. D (7), sondaki −1'i +1 almaktır; E (21), −2x<sup>2</sup> teriminin işaretini kaçırıp 8 + 8 + 6 − 1 yazmaktır.</p></div></li>
+
+<li data-c="B"><p class="q">Beşinci dereceden bir P(x) polinomu x<sup>2</sup> − 3x + 1 polinomuna bölündüğünde elde edilen bölümün derecesi a, kalanın derecesi en çok b'dir. Buna göre a + b kaçtır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>5</li><li>6</li><li>7</li></ul>
+<div class="coz"><p>der(bölen) + der(bölüm) = der(bölünen) olduğundan a = 5 − 2 = 3. Kalanın derecesi bölenin derecesinden küçük olmalı: en çok 1, yani b = 1. a + b = 4. A (3), kalanı her zaman sabit sayıp b = 0 almaktır. C (5), kalanın derecesini bölenle eşit (2) almaktır; der K &lt; der B koşulu buna izin vermez. D (6) ve E (7), bölümün derecesini bölünenin derecesi (5) sanmaktır; bölüm bölenle çarpılınca 5. dereceye ulaşmalı, bu yüzden derecesi 5 − 2 = 3 olur.</p></div></li>
+
+<li data-c="C"><p class="q">P(x) = 8x<sup>3</sup> − 4x<sup>2</sup> + 6x − 1 polinomunun 2x − 1 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>−6</li><li>1</li><li>2</li><li>4</li><li>9</li></ul>
+<div class="coz"><p>2x − 1 = 0 ise x = 1/2. P(1/2) = 8 · 1/8 − 4 · 1/4 + 6 · 1/2 − 1 = 1 − 1 + 3 − 1 = 2. A (−6), x = −1/2 koymaktır (işaret yanılgısı). E (9), x = 1 koymaktır; böleni sıfıra eşitlemeden "2x − 1'de 1 var" demek. B (1) ve D (4), doğru kalanı bölendeki 2 katsayısı yüzünden 2'ye bölmek ya da 2 ile çarpmaktır; oysa ax + b ile bölümde kalan doğrudan P(−b/a)'dır, düzeltme gerekmez.</p></div></li>
+
+<li data-c="A"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + mx + 6 polinomunun çarpanlarından biri x + 2 olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>−5</li><li>−3</li><li>−1</li><li>3</li><li>5</li></ul>
+<div class="coz"><p>Çarpan teoremi: x + 2 çarpansa P(−2) = 0. P(−2) = −8 − 8 − 2m + 6 = −10 − 2m = 0, m = −5. B (−3), x = 2 koyup 8 − 8 + 2m + 6 = 0 çözmektir. E (5), doğru denklemi kurup −10 − 2m = 0'da işareti kaçırmaktır. C (−1) ve D (3) için P(−2) sırasıyla −8 ve −16 olur, sıfır değil. Denetim: m = −5 için P(x) = x<sup>3</sup> − 2x<sup>2</sup> − 5x + 6 = (x − 1)(x + 2)(x − 3); x + 2 gerçekten çarpan.</p></div></li>
+
+<li data-c="E"><p class="q">Üçüncü dereceden P(x) polinomunun kökleri 1, −2 ve 3'tür. P(0) = 12 olduğuna göre P(2) kaçtır?</p>
+<ul class="sec"><li>12</li><li>8</li><li>4</li><li>−4</li><li>−8</li></ul>
+<div class="coz"><p>P(x) = a(x − 1)(x + 2)(x − 3). P(0) = a(−1)(2)(−3) = 6a = 12, a = 2. P(2) = 2 · (1)(4)(−1) = −8. D (−4), baş katsayıyı 1 sanmaktır; kökler polinomu a çarpanı dışında belirler, a'yı P(0) bilgisi verir. B (8), P(0)'daki çarpımı −6 alıp a = −2 bulmaktır (işaret hatası). A (12), verilen P(0) değerini cevap sanmaktır; C (4), a = 1 alıp bir de işareti kaçırmaktır. İşaret denetimi: x = 2'de yalnızca (x − 3) negatif, a pozitif; sonuç negatif olmalı.</p></div></li>
+
+<li data-c="A"><p class="q">P(x) = x<sup>4</sup> + 3x<sup>3</sup> − 2x<sup>2</sup> + x + 4 polinomunun x<sup>2</sup> + 1 ile bölümünden kalan aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−2x + 7</li><li>−2x + 5</li><li>2x + 7</li><li>4x + 3</li><li>7</li></ul>
+<div class="coz"><p>x<sup>2</sup> + 1 = 0 ise x<sup>2</sup> = −1. x<sup>4</sup> = (−1)<sup>2</sup> = 1; 3x<sup>3</sup> = 3x · x<sup>2</sup> = −3x; −2x<sup>2</sup> = 2. Kalan 1 − 3x + 2 + x + 4 = −2x + 7. B (−2x + 5), x<sup>4</sup>'ü −1 almaktır; x<sup>4</sup>, x<sup>2</sup>'nin karesidir ve pozitif 1 olur. D (4x + 3), x<sup>2</sup> = 1 almaktır (bölen x<sup>2</sup> − 1 olsaydı doğru olurdu). C (2x + 7), −3x + x toplamında işareti kaçırmaktır; E, kalanı sabit sanıp x'li terimleri atmaktır, oysa bölen 2. dereceden olduğu için kalan mx + n biçimindedir.</p></div></li>
+
+<li data-c="E"><p class="q">P(x) = x<sup>3</sup> + ax + b polinomu (x + 1)<sup>2</sup> ile tam bölünebildiğine göre a · b çarpımı kaçtır?</p>
+<ul class="sec"><li>−6</li><li>−5</li><li>−3</li><li>−2</li><li>6</li></ul>
+<div class="coz"><p>P(x) = (x + 1)<sup>2</sup>(x + c) yaz. Açılımda x<sup>2</sup>'nin katsayısı 2 + c olur; P'de x<sup>2</sup> terimi olmadığından c = −2. P(x) = (x<sup>2</sup> + 2x + 1)(x − 2) = x<sup>3</sup> − 3x − 2; a = −3, b = −2, a · b = 6. Uzun yoldan: P(−1) = −1 − a + b = 0 ve x + 1'e bölümün bölümü x<sup>2</sup> − x + (1 + a) için Q(−1) = 3 + a = 0; aynı sonuç. A (−6), (x − 1)<sup>2</sup> ile çalışıp b = 2 bulmaktır. B (−5), çarpım yerine a + b toplamını almaktır; C (−3) ve D (−2), istenen çarpım yerine yalnızca a'yı ya da yalnızca b'yi yazmaktır.</p></div></li>
+
+<li data-c="B"><p class="q">P(x + 1) polinomunun x − 1 ile bölümünden kalan 5, P(x − 3) polinomunun x − 2 ile bölümünden kalan −1'dir. Buna göre P(x) polinomunun x<sup>2</sup> − x − 2 ile bölümünden kalan aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−5</li><li>2x + 1</li><li>4</li><li>2x − 1</li><li>−2x + 3</li></ul>
+<div class="coz"><p>Kaydırmayı çöz: x = 1 için P(1 + 1) = P(2) = 5; x = 2 için P(2 − 3) = P(−1) = −1. Bölen (x − 2)(x + 1), kalan mx + n: 2m + n = 5 ve −m + n = −1; çıkarınca 3m = 6, m = 2, n = 1. Kalan 2x + 1. E (−2x + 3), değerleri köklerle ters eşleştirmektir (P(2) = −1, P(−1) = 5). A (−5) ve C (4), kalanı sabit sanıp verilen kalanları çarpmak ya da toplamaktır; D, n'yi hesaplarken işaret hatasıdır. Denetim: K(2) = 5, K(−1) = −1.</p></div></li>
+
+<li data-c="D" data-k="mat-1"><p class="q">Aşağıdakilerden hangisi rasyonel sayı <strong>değildir</strong>?</p>
+<ul class="sec"><li>−7</li><li>0</li><li><span class="kes"><span>3</span><span>4</span></span></li><li>√5</li><li>√9</li></ul>
+<div class="coz"><p>Rasyonel sayı, a ve b tam sayı (b ≠ 0) olmak üzere a/b biçiminde yazılabilen sayıdır. √5 böyle yazılamaz; 5 tam kare olmadığından √5 irrasyoneldir. E (√9) bir tuzaktır: kök işareti görünce irrasyonel sanmak; oysa √9 = 3 = 3/1. −7 = −7/1 ve 0 = 0/1 de rasyoneldir; her tam sayı rasyoneldir (Z ⊂ Q). 3/4 zaten kesir biçimindedir.</p></div></li>
+
+<li data-c="A" data-k="mat-5"><p class="q">Bir doğal sayının 6 ile bölümünden kalan 4'tür. Bu sayının 5 katının 6 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>4</li><li>5</li><li>20</li></ul>
+<div class="coz"><p>Sayı 6k + 4 biçimindedir. 5 katı 30k + 20 = 6(5k) + 20; 30k kısmı 6'ya tam bölünür, kalan 20'nin 6 ile bölümünden kalandır: 20 = 6 · 3 + 2, kalan 2. E (20), kalanı çarpıp küçültmeyi unutmaktır; kalan bölenden küçük olmalı (0 ≤ kalan &lt; 6). B (3), çarpmak yerine 4 + 5 = 9 deyip kalan almaktır. C, kalanın değişmediğini sanmaktır; D (5), çarpan olan 5'i kalan sanmaktır; sayıyla dene: 4'ün 5 katı 20, kalan 2.</p></div></li>
+
+<li data-c="E" data-k="mat-9"><p class="q">0,1<span class="ust">6</span> devirli ondalık sayısının kesir olarak yazılışı aşağıdakilerden hangisidir? (Yalnızca 6 devrediyor.)</p>
+<ul class="sec"><li><span class="kes"><span>4</span><span>25</span></span></li><li><span class="kes"><span>16</span><span>99</span></span></li><li><span class="kes"><span>5</span><span>33</span></span></li><li><span class="kes"><span>8</span><span>45</span></span></li><li><span class="kes"><span>1</span><span>6</span></span></li></ul>
+<div class="coz"><p>Kural: (sayının tamamı − devretmeyen kısım) / (devreden basamak kadar 9, devretmeyen ondalık basamak kadar 0). Sayının tamamı 16, devretmeyen kısım 1; payda 90: (16 − 1)/90 = 15/90 = 1/6. A (4/25 = 0,16), devri yok saymaktır. B (16/99), iki basamağın da devrettiğini sanmaktır. C (15/99 = 5/33), paydaya 0 yerine 9 yazmaktır. D (16/90 = 8/45), devretmeyen kısmı çıkarmayı unutmaktır. Denetim: 1 ÷ 6 = 0,1666…</p></div></li>
+
+<li data-c="A" data-k="mat-13"><p class="q"><span class="kes"><span>4</span><span>√5 − 1</span></span> ifadesinin paydası rasyonel yapılmış hâli aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>√5 + 1</li><li>√5 − 1</li><li>4√5 + 4</li><li><span class="kes"><span>2(√5 + 1)</span><span>3</span></span></li><li><span class="kes"><span>√5 + 1</span><span>4</span></span></li></ul>
+<div class="coz"><p>Pay ve paydayı eşlenik √5 + 1 ile çarp: payda (√5 − 1)(√5 + 1) = 5 − 1 = 4 (iki kare farkı). Pay 4(√5 + 1). Sonuç 4(√5 + 1)/4 = √5 + 1. B, eşleniği yanlış işaretle almaktır. C, paydanın 4 olduğunu görüp sadeleştirmeyi unutmaktır. D, paydayı 5 + 1 = 6 hesaplamaktır. E, payı 4 ile çarpmak yerine paydaya 4'ü bırakmaktır. Yaklaşık denetim: 4/(2,236 − 1) ≈ 3,24 ve √5 + 1 ≈ 3,24.</p></div></li>
+
+<li data-c="D" data-k="mat-17"><p class="q"><span class="kes"><span>x − 1</span><span>2</span></span> − <span class="kes"><span>x + 1</span><span>3</span></span> = 1 denkleminin çözümü kaçtır?</p>
+<ul class="sec"><li>1</li><li>6</li><li>7</li><li>11</li><li>−11</li></ul>
+<div class="coz"><p>Paydaların EKOK'u 6; her terimi 6 ile çarp: 3(x − 1) − 2(x + 1) = 6. Eksiyi dağıt: 3x − 3 − 2x − 2 = 6, x − 5 = 6, x = 11. C (7), −2(x + 1)'i −2x + 2 yazmaktır. B (6), sağ taraftaki 1'i 6 ile çarpmayı unutmaktır. A (1), x − 5 = 6'dan x = 6 − 5 yazmaktır. E (−11), çarpanları karıştırıp 2(x − 1) − 3(x + 1) = 6 yazmaktır. Denetim: x = 11 için 10/2 − 12/3 = 5 − 4 = 1.</p></div></li>
+
+<li data-c="E" data-k="mat-20"><p class="q">x &lt; 0 &lt; y olduğuna göre |x − y| + |x| − |y| ifadesinin eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>0</li><li>−2y</li><li>2x − 2y</li><li>2y − 2x</li><li>−2x</li></ul>
+<div class="coz"><p>x negatif, y pozitif olduğundan x − y negatiftir: |x − y| = y − x. |x| = −x (negatifin mutlak değeri, −x burada pozitif). |y| = y. Toplam (y − x) + (−x) − y = −2x. A, |x| = x almaktır. B, |x − y|'yi x − y almaktır. C, iki işaret hatasının birleşimidir. D, |y|'yi −y alıp çıkarmaktır. Değer vererek denetle: x = −2, y = 3 için 5 + 2 − 3 = 4 = −2 · (−2).</p></div></li>
+
+<li data-c="B" data-k="mat-24"><p class="q">120 metrelik düz bir yolun bir kenarına, iki uçta da birer direk olacak biçimde 8'er metre arayla direk dikilecektir. Kaç direk gerekir?</p>
+<ul class="sec"><li>15</li><li>16</li><li>17</li><li>30</li><li>32</li></ul>
+<div class="coz"><p>Aralık sayısı 120 ÷ 8 = 15. Açık (uçları olan) bir yolda direk sayısı aralık sayısından 1 fazladır: 16. A (15), aralık sayısını direk sayısı sanmaktır; bu yalnızca kapalı bir çevrede (çember, havuz kenarı) doğrudur. C (17), her iki uç için ayrı ayrı 1 eklemektir. D ve E, yolun iki kenarını hesaplamaktır; soru bir kenarı soruyor.</p></div></li>
+
+<li data-c="D" data-k="mat-28"><p class="q">Bir araç A'dan B'ye saatte 60 km hızla gidip aynı yoldan saatte 40 km hızla dönüyor. Aracın bütün yolculuktaki ortalama hızı saatte kaç kilometredir?</p>
+<ul class="sec"><li>100</li><li>96</li><li>50</li><li>48</li><li>24</li></ul>
+<div class="coz"><p>Ortalama hız = toplam yol / toplam zaman; hızların ortalaması değildir. Eşit yollarda 2v<sub>1</sub>v<sub>2</sub>/(v<sub>1</sub> + v<sub>2</sub>) = 2 · 60 · 40 / 100 = 48. Sayıyla denetle: yol 240 km olsun; gidiş 4 saat, dönüş 6 saat; 480 km / 10 saat = 48. C (50), hızların aritmetik ortalamasıdır; araç yavaş giderken daha uzun süre geçirdiği için ortalama 50'nin altında kalır. A (100), hızları toplamaktır. B (96), formülde paydaya hızların toplamı yerine ortalamasını (50) yazmaktır; E (24), formüldeki 2 çarpanını unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-32"><p class="q">A tarifesinde aylık sabit ücret 100 TL ve dakika başına 2 TL; B tarifesinde aylık sabit ücret 40 TL ve dakika başına 3 TL ödenmektedir. Aylık kaç dakikalık konuşmada iki tarifenin ücreti eşit olur?</p>
+<ul class="sec"><li>140</li><li>60</li><li>40</li><li>28</li><li>20</li></ul>
+<div class="coz"><p>Ücretler doğrusal: A = 100 + 2t, B = 40 + 3t. Eşitle: 100 + 2t = 40 + 3t, t = 60. Grafikte bu, iki doğrunun kesiştiği noktadır. Denetim: 100 + 120 = 220 ve 40 + 180 = 220. D (28), sabitleri ve birim ücretleri toplayıp bölmektir (140/5). A (140), sabit ücretleri toplamaktır; C (40), B tarifesinin sabit ücretini cevap sanmaktır. E (20), farkı 3'e bölmektir; doğru bölen birim ücretlerin farkıdır (3 − 2 = 1).</p></div></li>
+
+<li data-c="D" data-k="mat-36"><p class="q">f(x + 1) = 2x + 3 olduğuna göre f(4) kaçtır?</p>
+<ul class="sec"><li>15</li><li>13</li><li>11</li><li>9</li><li>7</li></ul>
+<div class="coz"><p>f(4)'ü elde etmek için parantezin içi 4 olmalı: x + 1 = 4, x = 3. Verilen eşitlikte x = 3 koy: f(4) = 2 · 3 + 3 = 9. C (11), x = 4 koymaktır; o f(5)'i verir. B (13), x = 5 koymaktır. E (7), x = 2 koyup f(3)'ü bulmaktır; A (15), x = 6 koymaktır. Yolu genelle: f(x) = 2(x − 1) + 3 = 2x + 1, f(4) = 9; bu parçadaki kaydırmalı kalan sorularıyla aynı akıl.</p></div></li>
+
+<li data-c="C" data-k="mat-37"><p class="q">f(x) = ax + b doğrusal fonksiyonu için f(1) = 5 ve f(3) = 11'dir. Buna göre f(−2) kaçtır?</p>
+<ul class="sec"><li>−13</li><li>−8</li><li>−4</li><li>2</li><li>8</li></ul>
+<div class="coz"><p>Eğim a = (11 − 5)/(3 − 1) = 3. f(1) = 3 + b = 5, b = 2. f(−2) = −6 + 2 = −4. A (−13), eğimi 6 alıp (değişimi 2'ye bölmeyi unutmak) b = −1 bulmaktır. B (−8), b'nin işaretini kaçırmaktır. D (2), sabit terimi cevap sanmaktır. E (8), −2'nin işaretini kaçırıp 3 · 2 + 2 yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-37"><p class="q">f(x) = <span class="kes"><span>6x + m</span><span>2x + 3</span></span> fonksiyonu sabit fonksiyon olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>18</li><li>9</li><li>4</li><li>3</li><li>1</li></ul>
+<div class="coz"><p>(ax + b)/(cx + d) sabit ise a/c = b/d. Burada 6/2 = m/3, m = 9. Denetim: (6x + 9)/(2x + 3) = 3(2x + 3)/(2x + 3) = 3; her x için (x ≠ −3/2) aynı değer. E (1), oranı ters kurup m/3 = 2/6 yazmaktır. A (18), içler-dışlar çarpımında 2'ye bölmeyi unutmaktır. C (4), 6 · 2/3 hesaplamaktır. D (3), fonksiyonun aldığı sabit değeri (3) m sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-38"><p class="q">f(x) = 2x − 1 ve g(x) = x<sup>2</sup> + 1 olduğuna göre (f∘g)(2) kaçtır?</p>
+<ul class="sec"><li>5</li><li>8</li><li>9</li><li>10</li><li>15</li></ul>
+<div class="coz"><p>(f∘g)(2) = f(g(2)); sağdan sola oku, önce g çalışır. g(2) = 5, f(5) = 9. D (10), sırayı ters çevirip g(f(2)) = g(3) hesaplamaktır; bileşkenin değişme özelliği yoktur. E (15), f(2) · g(2) çarpımıdır; B (8), f(2) + g(2) toplamıdır. A (5), yalnızca g(2)'de durmaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-38"><p class="q">f(x) = <span class="kes"><span>2x + 1</span><span>x − 3</span></span> olduğuna göre f<sup>−1</sup>(5) kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>16</span><span>3</span></span></li><li><span class="kes"><span>14</span><span>3</span></span></li><li><span class="kes"><span>11</span><span>2</span></span></li><li><span class="kes"><span>2</span><span>11</span></span></li><li>3</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(5) = a ise f(a) = 5: (2a + 1)/(a − 3) = 5, 2a + 1 = 5a − 15, 3a = 16, a = 16/3. Denetim: f(16/3) = (35/3)/(7/3) = 5. C (11/2), f(5)'i hesaplamaktır. D (2/11), f<sup>−1</sup>(5)'i 1/f(5) sanmaktır; ters fonksiyon çarpmaya göre ters değildir. B (14/3), ters kuralı (3x − 1)/(x − 2) diye işaret hatasıyla yazmaktır. E (3), tanım kümesinden çıkarılan değeri cevap sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-39"><p class="q">P(x) = (2x − 1)<sup>3</sup> + (x + 2)<sup>2</sup> − 4 polinomunun katsayılar toplamı kaçtır?</p>
+<ul class="sec"><li>−1</li><li>0</li><li>6</li><li>10</li><li>14</li></ul>
+<div class="coz"><p>Katsayılar toplamı P(1)'dir: (2 − 1)<sup>3</sup> + (1 + 2)<sup>2</sup> − 4 = 1 + 9 − 4 = 6. A (−1), P(0)'ı, yani sabit terimi hesaplamaktır. D (10), sondaki −4'ü unutmaktır; E (14), onu +4 almaktır. B (0), üsleri unutup 1 + 3 − 4 yazmaktır. Parantezleri açmaya gerek yok; x = 1 koymak yeter.</p></div></li>
+
+<li data-c="D" data-k="mat-39"><p class="q">der P(x) = 4 ve der Q(x) = 3 olduğuna göre der[P(Q(x))] − der[P(x) · Q(x)] farkı kaçtır?</p>
+<ul class="sec"><li>−5</li><li>0</li><li>1</li><li>5</li><li>19</li></ul>
+<div class="coz"><p>Bileşkede dereceler çarpılır: der P(Q(x)) = 4 · 3 = 12. Çarpımda dereceler toplanır: der(P · Q) = 4 + 3 = 7. Fark 12 − 7 = 5. B (0), iki kuralı da aynı sanmaktır (ikisini de çarpım ya da ikisini de toplam almak). A (−5), kuralları birbiriyle değiştirmektir: 7 − 12. E (19), farkı alacakken toplamaktır. C (1), yalnızca der P − der Q hesaplamaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-39">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-40">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-41">Sonraki parça: ikinci dereceden denklemler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"polinomlarda bölme işlemi konu anlatımı uzun bölme"</li>
+  <li>"kalan teoremi çarpan teoremi polinomlar soru çözümü"</li>
+  <li>"polinomlar ikinci dereceden bölen kalan mx+n x kare yerine değer koyma"</li>
+  <li>"polinom (x−a)² ile tam bölünme Horner yöntemi"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, 2018 Ortaöğretim Matematik Öğretim Programı'nın 10. sınıf polinomlar ünitesine ve bu arşivin kapsam listesine göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Bütün çözümlü örnekler, şekillerdeki değerler (P(1) = 4, P(4) = 10, kökler −1, 2, 3; (x − 1)(x − 4) ile kalan 2x + 2) ve 24 quiz sorusunun cevapları Python'da kesirli (yuvarlamasız) aritmetikle yazılmış küçük bir polinom bölme betiğiyle denetlendi. Sembolik cebir kütüphanesi (sympy) ortamda yoktu; bölme, çarpma ve değer bulma elle kurulan işlevlerle yapıldı. Quizde her yanlış seçeneğin doğru cevaptan farklı olduğu ve çözümde adı geçen hatanın gerçekten o değeri verdiği ayrıca hesaplandı. Grafik koordinatları aynı betikle polinomdan hesaplandı.</li>
+  <li>Polinomların son yıllardaki TYT'lerde doğrudan soru olarak seyrek, AYT'de daha sık geldiği yaygın bir kanıdır; yıl yıl soru sayısını resmî kaynaktan doğrulayamadım.</li>
+  <li><strong>Horner yöntemi</strong> programda açık bir kazanım olarak bulunmayabilir; metinde "sınav kapsamında olmayabilir" diye işaretlendi ve kısa tutuldu. Uzun bölmenin kısaltılmış yazımı olduğundan yanlış bir şey öğretmez.</li>
+  <li>"(x − a)<sup>2</sup> ile tam bölünmenin türevle kısa yolu" yalnızca adıyla anıldı; türev bu dersin konusu değil, ileri derste işlenecek.</li>
+  <li>Tekrar sorularında Parça 36–39 için yalnızca kapsam listesinde yazan konular ve terimler kullanıldı; bu parçalar yazılırken metinleri elimde değildi, terim farkı varsa (örneğin "sabit fonksiyon" kalıbının anlatımı) Parça 37 ile karşılaştırılmalı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

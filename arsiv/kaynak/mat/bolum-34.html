@@ -1,0 +1,581 @@
+<article class="chapter ders" id="c-mat-34">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 34 · Mantık ve kümeler 1</div>
+<h1>Önermeler, niceleyiciler ve küme kavramı: matematiğin dil bilgisi</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 7 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Baban "Sınavı kazanırsan sana bisiklet alacağım." dedi. Sınavı kazanamadın, ama yine de bisikleti aldı. Baban yalan mı söyledi? Günlük dilde bu soruya herkes başka bir cevap verebilir; matematik ise tek bir cevap vermek zorunda. "İse", "ve", "veya", "her", "bazı" sözcüklerinin anlamını kesin olarak nasıl sabitleriz ve bu sabitleme, 6 elemanlı bir kümenin neden tam 64 alt kümesi olduğunu saymamıza nasıl yarar?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (sayı kümeleri N, Z, Q, R ve ⊂ işaretiyle ilk karşılaşma), Parça 10 (2'nin kuvvetleri), Parça 19 (eşitsizlik işaretleri). Yanında kâğıt kalem olsun; doğruluk tablolarını okumak yetmez, kendi elinle doldurman gerekir.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Bu parçada iki konu var ve ikisi de matematiğin geri kalanının dilini kurar. Birincisi <strong>mantık</strong>: bir cümlenin doğru ya da yanlış olduğunu söylemenin ve cümleleri "ve", "veya", "ise" ile birbirine bağlamanın kuralları. İkincisi <strong>küme</strong>: nesneleri bir araya toplayıp tek bir şey gibi ele almanın yolu. Parça 1'de N ⊂ Z ⊂ Q ⊂ R yazarken bu dili zaten kullandın; şimdi kurallarını öğreneceksin.</p>
+
+<p>Sınavda mantıktan doğrudan soru seyrek gelir, kümelerden ise hemen her yıl gelir. Ama mantığın asıl getirisi dolaylıdır: "her x için", "en az bir", "ise", "ancak ve ancak" sözcükleri bütün soru köklerinde geçer. "Hangisi daima doğrudur?" diye soran bir soruda tek bir karşı örneğin seçeneği elediğini, "p ise q" biçimindeki bir bilginin ters yönde okunamayacağını bilen kişi, konuyu bilmeyenin düştüğü tuzakların yarısına düşmez.</p>
+
+<p>Sıramız şöyle: önerme ve doğruluk değeri, beş bağlaç ve tabloları, bağlaçların özellikleri ve De Morgan kuralları, koşullu önermenin karşıtı, tersi ve karşıt tersi, totoloji ile çelişki, açık önerme ve niceleyiciler, tanım-aksiyom-teorem-ispat kavramları; ardından küme, eleman, gösterimler, boş küme, eşit ve denk kümeler, alt küme ve alt küme sayısı. Küme işlemleri (birleşim, kesişim, fark) bu parçada yok; onlar Parça 35'in konusu.</p>
+
+<h2 class="s">1. Önerme: doğru ya da yanlış, ama kesin</h2>
+
+<p>Matematik bir yargıyı ancak doğruluğu tartışmasız belirlenebiliyorsa işleyebilir. "Bugün hava güzel." cümlesi sana göre doğru, yağmuru seven birine göre yanlıştır; üzerine hesap kurulamaz. "2 + 3 = 5" ise kime sorarsan sor doğrudur. Bu yüzden mantık, cümleleri önce ikiye ayırır: hüküm bildirip doğruluğu kesin olanlar ve öbürleri.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Doğru ya da yanlış kesin bir hüküm bildiren ifadeye <strong>önerme</strong> denir. Bir önerme ya doğrudur ya yanlıştır; ikisi birden ya da ikisinin arası olamaz. Önermeler p, q, r gibi küçük harflerle gösterilir. Doğru önermenin <strong>doğruluk değeri</strong> 1 (ya da D), yanlış önermeninki 0 (ya da Y) ile gösterilir.</p></div>
+
+<span class="cumle">p: "Bir hafta 7 gündür." → önerme, p ≡ 1</span>
+<span class="cumle">q: "3 çift sayıdır." → önerme, q ≡ 0</span>
+<span class="cumle">r: "En küçük asal sayı 2'dir." → önerme, r ≡ 1</span>
+
+<p>İkinci cümleye dikkat et: <strong>yanlış bir cümle de önermedir.</strong> Önerme olmanın şartı doğru olmak değil, doğruluğunun kesin biçimde söylenebilmesidir. Şu cümleler ise önerme değildir:</p>
+
+<p><strong>Soru, emir, dilek, ünlem cümleleri.</strong> "Saat kaç?", "Kapıyı kapat.", "Keşke yağmur yağsa.", "Ne güzel!" Bunlar hüküm bildirmez; "doğru mu yanlış mı?" diye sorulamaz.</p>
+<p><strong>Kişiye göre değişen yargılar.</strong> "Mavi en güzel renktir.", "Matematik zordur." Hüküm var ama kesin değil.</p>
+<p><strong>İçinde değeri belli olmayan bir değişken bulunanlar.</strong> "x + 3 = 7" cümlesi x = 4 için doğru, x = 5 için yanlıştır; x verilmeden doğruluk değeri söylenemez. Buna <strong>açık önerme</strong> denir ve aşağıda ayrı bir başlıkta işleyeceğiz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Doğruluk değerleri aynı olan iki önermeye <strong>denk önermeler</strong> denir ve p ≡ q yazılır. Denklik içeriğe bakmaz, yalnızca doğruluk değerine bakar: "2 + 2 = 4" ile "Ankara Türkiye'nin başkentidir." önermeleri konuları ilgisiz olsa da denktir, çünkü ikisi de doğrudur. p ≡ 1 yazımı da buradan gelir: "p, doğru önermelere denktir".</p></div>
+
+<h3>Değil: bir önermenin olumsuzu</h3>
+
+<p>Bir önermenin hükmünü tersine çevirmek en basit işlemdir. p: "5 asal sayıdır." ise olumsuzu "5 asal sayı değildir." olur. p doğruysa olumsuzu yanlış, p yanlışsa olumsuzu doğrudur; başka seçenek yok, çünkü bir önerme yalnızca iki değerden birini alabilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>p önermesinin <strong>olumsuzu (değili)</strong> p′ ile gösterilir (bazı kaynaklarda ~p). p ≡ 1 ise p′ ≡ 0, p ≡ 0 ise p′ ≡ 1 olur. Olumsuzun olumsuzu önermenin kendisidir: (p′)′ ≡ p.</p></div>
+
+<p>Olumsuz alırken eşitsizliklere dikkat: "x &gt; 3"ün olumsuzu "x &lt; 3" değil, <strong>"x ≤ 3"</strong>tür. Çünkü olumsuz, ilk önermenin kapsamadığı <em>bütün</em> durumları kapsamalıdır; x = 3 durumu "x &gt; 3"ün dışında kaldığına göre olumsuzun içinde olmalıdır. Aynı nedenle "=" ile "≠", "&lt;" ile "≥", "çifttir" ile "tektir" (tam sayılarda) birbirinin olumsuzudur. "Pozitiftir"in olumsuzu "negatiftir" değil, "pozitif değildir" yani "negatiftir ya da sıfırdır" olur; Parça 1'de sıfırın ne pozitif ne negatif olduğunu görmüştük.</p>
+
+<h2 class="s">2. Bileşik önermeler: beş bağlaç</h2>
+
+<p>İki önermeyi bir bağlaçla birleştirince yeni bir önerme elde edilir; buna <strong>bileşik önerme</strong> denir. Bileşik önermenin doğruluk değeri, parçalarının doğruluk değerlerinden ve bağlacın kuralından hesaplanır. Beş bağlaç var; her birinin kuralı günlük dildeki anlamından gelir, ama günlük dildeki belirsizlik atılarak.</p>
+
+<h3>"Ve" (∧): ikisi de doğru olmalı</h3>
+<p>"Hem ekmek aldım hem süt aldım." cümlesini ne zaman doğru sayarsın? Yalnızca ikisini de aldıysan. Birini bile almadıysan cümle yanlıştır. p ∧ q önermesi <strong>yalnızca p ile q'nun ikisi de doğruyken doğrudur</strong>; öbür üç durumda yanlıştır.</p>
+
+<h3>"Veya" (∨): en az biri doğru olmalı</h3>
+<p>İlanda "İngilizce veya Almanca bilen eleman aranıyor." yazıyor. İkisini de bilen biri başvurabilir mi? Elbette. Matematikteki "veya" budur: <strong>en az biri doğruysa doğru</strong>, yalnızca ikisi de yanlışken yanlıştır. İkisinin birden doğru olması "veya"yı bozmaz.</p>
+
+<h3>"Ya da" (⊻): tam olarak biri doğru olmalı</h3>
+<p>Mönüde "Çorba ya da salata seçiniz." yazıyorsa ikisini birden alamazsın. p ⊻ q önermesi <strong>p ile q'dan yalnızca biri doğruyken doğrudur</strong>; ikisi de doğruysa ya da ikisi de yanlışsa yanlıştır. "Veya" ile tek farkı, ikisinin birden doğru olduğu satırdır: orada "veya" 1, "ya da" 0 verir. Kısaca "ya da", doğruluk değerleri <em>farklıysa</em> doğrudur.</p>
+
+<h3>"İse" (⇒): verilen söz tutuldu mu?</h3>
+<p>Parçanın başındaki soruya dönelim. p: "Sınavı kazanırsın.", q: "Bisiklet alırım." Baban p ⇒ q dedi, yani bir söz verdi. Bu sözün <strong>çiğnendiği</strong> tek durum hangisi? Dört olasılığı sırayla düşün:</p>
+<p>Kazandın, bisiklet alındı (1 ⇒ 1): söz tutuldu. Kazandın, bisiklet alınmadı (1 ⇒ 0): söz çiğnendi. Kazanamadın, bisiklet yine de alındı (0 ⇒ 1): baban kazanamazsan ne olacağı hakkında hiçbir şey söylememişti; sözünü çiğnemedi. Kazanamadın, bisiklet alınmadı (0 ⇒ 0): yine çiğnenen bir söz yok.</p>
+<p>Matematik "çiğnenmediyse doğrudur" der. Öyleyse p ⇒ q önermesi <strong>yalnızca p doğru, q yanlışken yanlıştır</strong>; öbür üç durumda doğrudur. Baban yalan söylemedi. p ⇒ q bileşik önermesine <strong>koşullu önerme</strong> denir; p'ye öncül (hipotez), q'ya sonuç (hüküm) adı verilir.</p>
+<p>Öncül yanlışken koşullu önermenin doğru sayılması başta tuhaf gelir. Şöyle düşün: "x &gt; 5 ise x &gt; 3" cümlesinin her x için doğru olmasını istiyoruz. x = 4 koy: "4 &gt; 5 ise 4 &gt; 3" olur, yani 0 ⇒ 1. x = 1 koy: 0 ⇒ 0. Bu satırlara "yanlış" deseydik, apaçık doğru bir genel kural bazı sayılar için yanlış çıkardı. Tablonun böyle kurulması bir keyfîlik değil, bu zorunluluğun sonucudur.</p>
+
+<h3>"Ancak ve ancak" (⇔): iki yönlü söz</h3>
+<p>p ⇔ q, "p ise q" ile "q ise p"nin birlikte söylenmesidir: p ⇔ q ≡ (p ⇒ q) ∧ (q ⇒ p). "Bir tam sayı çifttir ancak ve ancak 2'ye tam bölünür." gibi. İki yön de tutacağı için p ⇔ q <strong>yalnızca p ile q'nun doğruluk değerleri aynıyken doğrudur</strong> (ikisi de 1 ya da ikisi de 0). Buna <strong>iki yönlü koşullu önerme</strong> denir. Fark ettiysen bu, "ya da"nın tam tersidir: p ⊻ q ≡ (p ⇔ q)′.</p>
+
+<div class="tablo"><table>
+<tr><th>p</th><th>q</th><th>p ∧ q</th><th>p ∨ q</th><th>p ⊻ q</th><th>p ⇒ q</th><th>p ⇔ q</th></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+</table></div>
+
+<p>Bu tabloyu ezberlemek yerine her sütunun <strong>ayrıksı satırını</strong> aklında tut; hız buradan gelir:</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>∧</strong> yalnızca 1 ∧ 1 iken doğru. <strong>∨</strong> yalnızca 0 ∨ 0 iken yanlış. <strong>⇒</strong> yalnızca 1 ⇒ 0 iken yanlış. <strong>⇔</strong> değerler aynıysa doğru. <strong>⊻</strong> değerler farklıysa doğru.</p></div>
+
+<h3>Tabloda neden dört satır var?</h3>
+<p>p için 2 olasılık (1 ya da 0), q için de 2 olasılık var; her p seçeneği her q seçeneğiyle eşleşebildiği için 2 · 2 = 4 durum çıkar. Üçüncü bir önerme r gelirse bu dört durumun her biri r ≡ 1 ve r ≡ 0 diye ikiye ayrılır: 8 durum. Her yeni önerme durum sayısını ikiye katlar.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n farklı önermenin doğruluk değerleri için <strong>2<sup>n</sup></strong> farklı durum vardır; n önermeli bir bileşik önermenin doğruluk tablosu 2<sup>n</sup> satırdır. (2 önerme: 4 satır, 3 önerme: 8 satır, 4 önerme: 16 satır.)</p></div>
+
+<p>Bu sayıyı aklında tut; parçanın sonunda alt küme sayısında aynı 2<sup>n</sup> ile, aynı nedenle yeniden karşılaşacaksın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> p ≡ 1, q ≡ 0, r ≡ 1 olduğuna göre (p ∧ q′) ⇒ (r ⊻ p) önermesinin doğruluk değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Parça 3'teki işlem önceliği burada da geçerli: önce parantez içleri, parantez içinde önce "değil".</p>
+<span class="mat">q′ ≡ 0′ ≡ 1 <span class="g">(q yanlış, olumsuzu doğru)</span></span>
+<span class="mat">p ∧ q′ ≡ 1 ∧ 1 ≡ 1 <span class="g">(ikisi de doğru, "ve" doğru)</span></span>
+<p><strong>Adım 2.</strong> İkinci parantez.</p>
+<span class="mat">r ⊻ p ≡ 1 ⊻ 1 ≡ 0 <span class="g">(değerler aynı, "ya da" yanlış)</span></span>
+<p><strong>Adım 3.</strong> İki parantezi "ise" ile bağla.</p>
+<span class="mat">1 ⇒ 0 ≡ 0 <span class="g">("ise"nin yanlış olduğu tek satır)</span></span>
+<p><strong>Sonuç:</strong> Önermenin doğruluk değeri 0'dır. Kontrol: ikinci parantezde "ya da" yerine "veya" okusaydın 1 ∨ 1 ≡ 1 ve sonuç 1 çıkardı; iki bağlacı karıştırmanın bedeli budur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (p ∧ q′) ⇒ r önermesi yanlış olduğuna göre (p ⇔ r) ∨ q önermesinin doğruluk değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Hızlı yol: "ise" yalnızca 1 ⇒ 0 iken yanlıştır. Demek ki öncül doğru, sonuç yanlış.</p>
+<span class="mat">p ∧ q′ ≡ 1 ve r ≡ 0 <span class="g">("ise" yanlışsa tek olasılık)</span></span>
+<p><strong>Adım 2.</strong> "Ve" yalnızca iki yanı da doğruyken doğrudur.</p>
+<span class="mat">p ≡ 1 ve q′ ≡ 1 <span class="g">("ve" doğruysa ikisi de doğru)</span></span>
+<span class="mat">q ≡ 0 <span class="g">(q′ doğruysa q yanlış)</span></span>
+<p><strong>Adım 3.</strong> Bulunan değerleri istenen önermeye koy.</p>
+<span class="mat">p ⇔ r ≡ 1 ⇔ 0 ≡ 0 <span class="g">(değerler farklı)</span></span>
+<span class="mat">0 ∨ q ≡ 0 ∨ 0 ≡ 0 <span class="g">(ikisi de yanlış, "veya" yanlış)</span></span>
+<p><strong>Sonuç:</strong> 0. Kontrol yolu: p ≡ 1, q ≡ 0, r ≡ 0 değerlerini baştaki önermeye geri koy: (1 ∧ 1) ⇒ 0 ≡ 1 ⇒ 0 ≡ 0; verilen bilgiyle uyuşuyor.</p></div>
+
+<h2 class="s">3. Bağlaçların özellikleri ve De Morgan kuralları</h2>
+
+<p>Parça 2'de toplama ve çarpmanın değişme, birleşme, dağılma özelliklerini gördün. "Ve" ile "veya" da benzer özellikler taşır; nedenleri tanımlarından okunur. "Ve" için önemli olan iki önermenin ikisinin de doğru olmasıdır; hangisini önce yazdığın bunu değiştirmez. "Veya" için de en az birinin doğru olması yeter; sıra önemsizdir.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>"Ve" için</th><th>"Veya" için</th></tr>
+<tr><td>Tek kuvvet</td><td>p ∧ p ≡ p</td><td>p ∨ p ≡ p</td></tr>
+<tr><td>Değişme</td><td>p ∧ q ≡ q ∧ p</td><td>p ∨ q ≡ q ∨ p</td></tr>
+<tr><td>Birleşme</td><td>(p ∧ q) ∧ r ≡ p ∧ (q ∧ r)</td><td>(p ∨ q) ∨ r ≡ p ∨ (q ∨ r)</td></tr>
+<tr><td>Dağılma</td><td>p ∧ (q ∨ r) ≡ (p ∧ q) ∨ (p ∧ r)</td><td>p ∨ (q ∧ r) ≡ (p ∨ q) ∧ (p ∨ r)</td></tr>
+<tr><td>1 ile</td><td>p ∧ 1 ≡ p</td><td>p ∨ 1 ≡ 1</td></tr>
+<tr><td>0 ile</td><td>p ∧ 0 ≡ 0</td><td>p ∨ 0 ≡ p</td></tr>
+<tr><td>Olumsuzuyla</td><td>p ∧ p′ ≡ 0</td><td>p ∨ p′ ≡ 1</td></tr>
+</table></div>
+
+<p>Tek kuvvet, "aynı şeyi iki kez söylemek yeni bilgi katmaz" demektir. Sayılardan farklı bir nokta var: sayılarda yalnızca çarpma toplama üzerine dağılır; mantıkta ise <strong>iki bağlaç da birbirinin üzerine dağılır.</strong> Son üç satır sadeleştirmede çok işe yarar ve tanımdan hemen çıkar: p ∧ 1'in doğru olması için yalnızca p'nin doğru olması kalır; p ∧ 0'da bir yan zaten yanlıştır; p ile p′ aynı anda doğru olamayacağı için p ∧ p′ hep yanlış, ikisinden biri mutlaka doğru olacağı için p ∨ p′ hep doğrudur. "İse" bağlacının değişme özelliği <strong>yoktur</strong>: 1 ⇒ 0 yanlış, 0 ⇒ 1 doğrudur.</p>
+
+<h3>De Morgan kuralları</h3>
+<p>"Hem ekmek hem süt aldım." cümlesi ne zaman yanlıştır? İkisini birden almamış olman gerekmez; <em>en az birini</em> almadıysan yanlıştır: "Ekmek almadım veya süt almadım." Öbür yönden, "Ekmek veya süt aldım." cümlesinin yanlış olması için ikisini de almamış olman gerekir: "Ekmek almadım ve süt almadım."</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>De Morgan kuralları:</strong> (p ∧ q)′ ≡ p′ ∨ q′ &nbsp; ve &nbsp; (p ∨ q)′ ≡ p′ ∧ q′. Olumsuzluk paranteze dağılırken her önerme olumsuzlanır ve bağlaç öbürüne döner: ∧ ↔ ∨.</p></div>
+
+<p>Bu kural, Parça 3'te parantezin önündeki eksiyi içeri dağıtmaya benzer; ama burada içerideki işaret de (bağlaç) değişir. Tabloyla denetleyebilirsin: (p ∧ q)′ sütunu 0, 1, 1, 1; p′ ∨ q′ sütunu da 0, 1, 1, 1 çıkar.</p>
+
+<h3>"İse"yi "veya"ya çevirme</h3>
+<p>p ⇒ q yalnızca p doğru ve q yanlışken yanlıştı. Başka bir deyişle p ⇒ q, "p yanlış <em>veya</em> q doğru" olduğunda doğrudur. Bu bize bütün koşullu önermeleri "veya" ile yazma olanağı verir; böylece yukarıdaki özellikleri koşullu önermelere de uygulayabiliriz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>p ⇒ q ≡ p′ ∨ q.</strong> Bunun olumsuzu De Morgan ile bulunur: (p ⇒ q)′ ≡ (p′ ∨ q)′ ≡ p ∧ q′. Yani "p ise q" önermesinin olumsuzu "p ve q değil"dir; bir sözün çiğnendiği durumun tam tarifi.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (p ⇒ q)′ ∨ (p ∧ q) önermesinin en sade hâli nedir?</p>
+<p><strong>Adım 1.</strong> Önce "ise"den kurtul.</p>
+<span class="mat">(p ⇒ q)′ ≡ (p′ ∨ q)′ <span class="g">(p ⇒ q ≡ p′ ∨ q)</span></span>
+<span class="mat">(p′ ∨ q)′ ≡ (p′)′ ∧ q′ <span class="g">(De Morgan: ∨ döndü ∧ oldu)</span></span>
+<span class="mat">(p′)′ ∧ q′ ≡ p ∧ q′ <span class="g">(olumsuzun olumsuzu kendisi)</span></span>
+<p><strong>Adım 2.</strong> İfadeyi yeniden yaz ve ortak olanı gör.</p>
+<span class="mat">(p ∧ q′) ∨ (p ∧ q) <span class="g">(iki parantezde de p ∧ var)</span></span>
+<span class="mat">p ∧ (q′ ∨ q) <span class="g">(dağılmanın tersi: ortak paranteze alma)</span></span>
+<p><strong>Adım 3.</strong> Parantez içini değerlendir.</p>
+<span class="mat">q′ ∨ q ≡ 1 <span class="g">(bir önerme ile olumsuzundan biri mutlaka doğru)</span></span>
+<span class="mat">p ∧ 1 ≡ p <span class="g">(1 ile "ve" etkisiz)</span></span>
+<p><strong>Sonuç:</strong> İfade p'ye denktir. Kontrol yolu (değer verme): p ≡ 1, q ≡ 0 için (1 ⇒ 0)′ ∨ (1 ∧ 0) ≡ 1 ∨ 0 ≡ 1 = p ✓; p ≡ 0, q ≡ 1 için (0 ⇒ 1)′ ∨ (0 ∧ 1) ≡ 0 ∨ 0 ≡ 0 = p ✓. Dört satırın dördünde de tuttuğunu Python ile denetledim.</p></div>
+
+<h2 class="s">4. Koşullu önermenin karşıtı, tersi ve karşıt tersi</h2>
+
+<p>p ⇒ q önermesinden, p ile q'nun yerlerini değiştirerek ve olumsuzlarını alarak üç yeni koşullu önerme türetilir. Örnek olarak p: "Bir sayı 6'ya bölünür.", q: "O sayı 3'e bölünür." alalım.</p>
+
+<div class="tablo"><table>
+<tr><th>Ad</th><th>Biçim</th><th>Örnek</th><th>Doğru mu?</th></tr>
+<tr><td>Önerme</td><td>p ⇒ q</td><td>6'ya bölünüyorsa 3'e bölünür.</td><td>Doğru</td></tr>
+<tr><td>Karşıtı</td><td>q ⇒ p</td><td>3'e bölünüyorsa 6'ya bölünür.</td><td>Yanlış (9)</td></tr>
+<tr><td>Tersi</td><td>p′ ⇒ q′</td><td>6'ya bölünmüyorsa 3'e bölünmez.</td><td>Yanlış (9)</td></tr>
+<tr><td>Karşıt tersi</td><td>q′ ⇒ p′</td><td>3'e bölünmüyorsa 6'ya bölünmez.</td><td>Doğru</td></tr>
+</table></div>
+
+<p>Karşıt: yer değiştir. Ters: yerinde bırak, ikisini de olumsuzla. Karşıt ters: ikisini birden yap. Tablodaki son sütun rastlantı değil: <strong>bir koşullu önerme karşıt tersine denktir</strong>, ama karşıtına ve tersine denk olmak zorunda değildir. Nedeni iki satırda görülür:</p>
+
+<span class="mat">q′ ⇒ p′ ≡ (q′)′ ∨ p′ <span class="g">(ise → veya çevirisi)</span></span>
+<span class="mat">(q′)′ ∨ p′ ≡ q ∨ p′ ≡ p′ ∨ q ≡ p ⇒ q <span class="g">(çift olumsuz, değişme, geri çeviri)</span></span>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Dört kutu: p ise q, karşıtı q ise p, tersi p değil ise q değil, karşıt tersi q değil ise p değil. Çapraz köşelerdeki kutular birbirine denktir.">
+  <rect class="sv-m" x="15" y="34" width="160" height="56" rx="10" />
+  <text class="sv-s" x="95" y="55" text-anchor="middle">önerme</text>
+  <text class="sv-b" x="95" y="77" text-anchor="middle">p ⇒ q</text>
+  <rect class="sv-a" x="225" y="34" width="160" height="56" rx="10" />
+  <text class="sv-s" x="305" y="55" text-anchor="middle">karşıtı</text>
+  <text class="sv-b" x="305" y="77" text-anchor="middle">q ⇒ p</text>
+  <rect class="sv-a" x="15" y="170" width="160" height="56" rx="10" />
+  <text class="sv-s" x="95" y="191" text-anchor="middle">tersi</text>
+  <text class="sv-b" x="95" y="213" text-anchor="middle">p′ ⇒ q′</text>
+  <rect class="sv-m" x="225" y="170" width="160" height="56" rx="10" />
+  <text class="sv-s" x="305" y="191" text-anchor="middle">karşıt tersi</text>
+  <text class="sv-b" x="305" y="213" text-anchor="middle">q′ ⇒ p′</text>
+  <line class="sv-cl" x1="175" y1="90" x2="225" y2="170" />
+  <line class="sv-cl" x1="225" y1="90" x2="175" y2="170" />
+  <text class="sv-t" x="172" y="135" text-anchor="end">çaprazdakiler</text>
+  <text class="sv-t" x="228" y="135">denktir</text>
+  <text class="sv-s" x="200" y="20" text-anchor="middle">yan yana: p ile q yer değiştirir</text>
+  <text class="sv-s" x="200" y="245" text-anchor="middle">alt alta: ikisi de olumsuzlanır</text>
+</svg>
+<figcaption>Aynı renkli kutular denktir: önerme ile karşıt tersi, karşıt ile ters. Yan yana ya da alt alta duran iki kutu ise denk olmak zorunda değildir.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"p ise q doğruysa q ise p de doğrudur" sanmak.</strong> "Yağmur yağarsa yer ıslanır." doğrudur; "Yer ıslaksa yağmur yağmıştır." doğru olmak zorunda değildir, biri hortumla sulamış olabilir. Soruda "a &gt; 2 ise a<sup>2</sup> &gt; 4" bilgisi verilmişse buradan "a<sup>2</sup> &gt; 4 ise a &gt; 2" çıkmaz (a = −3). Ters yönde kullanabileceğin tek biçim karşıt terstir: "a<sup>2</sup> ≤ 4 ise a ≤ 2".</p>
+<p><strong>"p ise q"nun olumsuzunu "p ise q değil" sanmak.</strong> Olumsuz bir koşullu önerme değildir: (p ⇒ q)′ ≡ p ∧ q′. "Çalışırsan geçersin."in olumsuzu "Çalışırsan geçemezsin." değil, "Çalıştın ve geçemedin."dir.</p></div>
+
+<h2 class="s">5. Totoloji ve çelişki</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bileşenleri hangi değeri alırsa alsın <strong>her durumda doğru</strong> olan bileşik önermeye <strong>totoloji</strong>, her durumda yanlış olana <strong>çelişki</strong> denir. Tabloda son sütunu baştan sona 1 olan önerme totoloji, baştan sona 0 olan çelişkidir.</p></div>
+
+<p>En basit totoloji p ∨ p′ ("yağmur yağar veya yağmaz"), en basit çelişki p ∧ p′ ("yağmur hem yağar hem yağmaz") önermesidir. Bir önermenin totoloji olup olmadığını anlamanın iki yolu var: tabloyu doldurmak (kesin ama yavaş) ya da özelliklerle sadeleştirip 1'e ulaşmak (hızlı).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> [p ∧ (p ⇒ q)] ⇒ q önermesi totoloji midir?</p>
+<p><strong>Adım 1 (tablo yolu).</strong> İki önerme var: 2<sup>2</sup> = 4 satır. Sütunları içten dışa doldur.</p>
+<div class="tablo"><table>
+<tr><th>p</th><th>q</th><th>p ⇒ q</th><th>p ∧ (p ⇒ q)</th><th>[p ∧ (p ⇒ q)] ⇒ q</th></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+</table></div>
+<p><strong>Adım 2.</strong> Son sütunun tamamı 1: önerme totolojidir.</p>
+<p><strong>Adım 3 (hızlı yol).</strong> Bir "ise"nin yanlış olabilmesi için öncül 1, sonuç 0 olmalı. Sonuç q ≡ 0 olsun. Öncülün doğru olması için p ≡ 1 ve p ⇒ q ≡ 1 gerekir; ama p ≡ 1, q ≡ 0 iken p ⇒ q ≡ 0 olur. Öncül doğru olamıyor; demek ki önermeyi yanlış yapan hiçbir durum yok.</p>
+<p><strong>Sonuç:</strong> Totolojidir. Anlamı da tanıdık: "p doğru ve p ise q doğruysa q doğrudur"; bütün matematik ispatlarında kullandığın çıkarım adımı budur.</p></div>
+
+<h2 class="s">6. Açık önerme ve niceleyiciler</h2>
+
+<p>"x + 3 = 7" cümlesinin önerme olmadığını söylemiştik, çünkü doğruluğu x'e bağlı. Böyle, içinde en az bir değişken bulunan ve değişkene değer verilince önermeye dönüşen ifadeye <strong>açık önerme</strong> denir; p(x) biçiminde gösterilir. Açık önermeyi doğru yapan değerlerin kümesine <strong>doğruluk kümesi</strong> denir. Bu, Parça 17'deki "çözüm kümesi"nin mantıktaki adıdır.</p>
+
+<p>Doğruluk kümesi, değişkenin hangi kümeden seçildiğine bağlıdır. p(x): "x<sup>2</sup> &lt; 10" açık önermesinin tam sayılardaki doğruluk kümesi {−3, −2, −1, 0, 1, 2, 3} olur (3<sup>2</sup> = 9 &lt; 10, 4<sup>2</sup> = 16 &gt; 10); doğal sayılardaki doğruluk kümesi ise yalnızca {0, 1, 2, 3}. Parça 19'da "x tam sayı mı, gerçek sayı mı" diye sormayı öğrenmiştin; aynı dikkat burada da geçerli.</p>
+
+<p>Açık önermeyi önermeye çevirmenin ikinci yolu, değişkene değer vermek yerine "kaç tanesi için doğru" diye söylemektir. Bunu yapan sözcüklere <strong>niceleyici</strong> denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Evrensel niceleyici ∀</strong> ("her", "bütün"): "∀x, p(x)" önermesi, p(x) kümedeki <em>bütün</em> x'ler için doğruysa doğrudur. <strong>Varlıksal niceleyici ∃</strong> ("bazı", "en az bir"): "∃x, p(x)" önermesi, p(x)'i doğru yapan <em>en az bir</em> x varsa doğrudur.</p></div>
+
+<p>Buradan iki pratik sonuç çıkar. "Her" ile başlayan bir önermeyi <strong>çürütmek için tek bir karşı örnek yeter</strong>; doğrulamak içinse örnek göstermek yetmez, genel bir gerekçe gerekir. "Bazı" ile başlayan bir önermeyi <strong>doğrulamak için tek bir örnek yeter</strong>. Matematikte "bazı", günlük dildeki gibi "birkaç tane ama hepsi değil" demek değildir; "en az bir" demektir, hepsi için doğru olması onu bozmaz.</p>
+
+<h3>Niceleyicili önermenin olumsuzu</h3>
+<p>"Sınıftaki herkes ödevini yaptı." cümlesi ne zaman yanlıştır? Kimsenin yapmamış olması gerekmez; <em>yapmayan bir kişi</em> bile cümleyi yanlış yapar. Olumsuzu "Sınıfta ödevini yapmayan en az bir kişi var." olur. Tersinden, "Ödevini yapan en az bir kişi var."ın olumsuzu "Hiç kimse ödevini yapmadı.", yani "Herkes ödevini yapmamış." olur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Niceleyicili önermenin olumsuzunda niceleyici öbürüne döner ve açık önerme olumsuzlanır: [∀x, p(x)]′ ≡ ∃x, p′(x) &nbsp; ve &nbsp; [∃x, p(x)]′ ≡ ∀x, p′(x).</p></div>
+
+<p>De Morgan kurallarıyla akrabalığı gör: "her" büyük bir "ve" gibidir (şu için de, bu için de, hepsi için), "bazı" büyük bir "veya" gibidir. Olumsuz alınca "ve" nasıl "veya"ya dönüyorsa "her" de "bazı"ya döner.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> "∀x ∈ Z, x<sup>2</sup> ≥ x" önermesinin doğruluk değerini bul ve olumsuzunu yaz. Aynı önerme Z yerine R için de doğru mudur?</p>
+<p><strong>Adım 1.</strong> "Her" dediği için karşı örnek ara. x = 0: 0 ≥ 0 ✓. x = 1: 1 ≥ 1 ✓. x = 2: 4 ≥ 2 ✓. x = −3: 9 ≥ −3 ✓. Örnekler tutuyor ama örnek ispat değildir; genel gerekçe gerek.</p>
+<p><strong>Adım 2.</strong> Genel gerekçe: x<sup>2</sup> − x = x(x − 1), ardışık iki tam sayının çarpımıdır.</p>
+<span class="mat">x ≥ 1 ise x ≥ 1 ve x − 1 ≥ 0 <span class="g">(ikisi de negatif değil, çarpım ≥ 0)</span></span>
+<span class="mat">x ≤ 0 ise x ≤ 0 ve x − 1 &lt; 0 <span class="g">(ikisi de pozitif değil, çarpım ≥ 0)</span></span>
+<p>Tam sayılarda başka durum yok (0 ile 1 arasında tam sayı bulunmaz); önerme doğrudur: doğruluk değeri 1.</p>
+<p><strong>Adım 3.</strong> Olumsuzu: niceleyici döner, "≥" olumsuzlanıp "&lt;" olur.</p>
+<span class="mat">∃x ∈ Z, x<sup>2</sup> &lt; x <span class="g">(∀ → ∃, ≥ → &lt;)</span></span>
+<p>Asıl önerme doğru olduğuna göre olumsuzu yanlıştır.</p>
+<p><strong>Adım 4.</strong> R için: 0 ile 1 arasında gerçek sayılar var. x = <span class="kes"><span>1</span><span>2</span></span> dene:</p>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>2</span></span> = <span class="kes"><span>1</span><span>4</span></span> &lt; <span class="kes"><span>1</span><span>2</span></span> <span class="g">(karşı örnek bulundu)</span></span>
+<p><strong>Sonuç:</strong> Önerme Z'de doğru, R'de yanlıştır. Tek karşı örnek "her"i çürütmeye yetti. Parça 20'de 0 &lt; a &lt; 1 iken a<sup>2</sup> &lt; a olduğunu görmüştük; karşı örnek aramanın ilk adresi orasıdır.</p></div>
+
+<h2 class="s">7. Tanım, aksiyom, teorem, ispat</h2>
+
+<p>Bu dört sözcük matematik metinlerinin iskeletidir; sınav bunları tek tek sormaz ama ders kitabında ve soru köklerinde geçtikleri için ne dediklerini bilmen gerekir.</p>
+
+<p><strong>Tanım</strong>, bir kavramın ne olduğunu belirleyen ifadedir: "Yalnızca 1'e ve kendisine bölünen, 1'den büyük doğal sayılara asal sayı denir." Tanım doğru ya da yanlış diye tartışılmaz; bir adlandırmadır. <strong>Aksiyom</strong>, ispatlanmadan doğru kabul edilen başlangıç önermesidir: "Farklı iki noktadan yalnızca bir doğru geçer." Her şeyi ispatlamaya kalkarsan bir yerden başlaman gerekir; aksiyomlar o başlangıç noktalarıdır. <strong>Teorem</strong>, doğruluğu ispatlanabilen önermedir. <strong>İspat</strong>, bir teoremin doğruluğunu tanımlara, aksiyomlara ve daha önce ispatlanmış teoremlere dayanarak adım adım göstermektir.</p>
+
+<p>Teoremlerin çoğu p ⇒ q biçimindedir. Burada p'ye <strong>hipotez</strong> (verilen), q'ya <strong>hüküm</strong> (gösterilecek olan) denir. "Bir tam sayı tek ise karesi de tektir." teoreminde hipotez "n tektir", hüküm "n<sup>2</sup> tektir". İspatı Parça 4'teki gösterimle iki satırdır: n = 2k + 1 yaz; n<sup>2</sup> = 4k<sup>2</sup> + 4k + 1 = 2(2k<sup>2</sup> + 2k) + 1 olur, yani 2'nin bir katının 1 fazlası, tek sayı.</p>
+
+<p>Karşıt tersin denkliği ispatta doğrudan işe yarar. "n<sup>2</sup> çift ise n çifttir." önermesini düz yoldan göstermek zordur; ama karşıt tersi "n çift değilse (tekse) n<sup>2</sup> çift değildir (tektir)" az önce ispatladığımız teoremdir. Karşıt ters doğru olduğuna göre önermenin kendisi de doğrudur.</p>
+
+<h2 class="s">8. Küme: nesneleri tek bir şey gibi ele almak</h2>
+
+<p>Matematikte çoğu zaman tek tek nesnelerle değil, nesne topluluklarıyla çalışırız: "asal sayılar", "denklemin çözümleri", "sınıftaki gözlüklü öğrenciler". Bu toplulukları tek bir ad altında toplayıp üzerlerinde işlem yapabilmek için küme kavramı kullanılır. Ama her topluluk işe yaramaz; bir nesnenin toplulukta olup olmadığı kesin biçimde söylenebilmelidir. Bu, önermedeki "kesin hüküm" şartının aynısıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Küme</strong>, iyi tanımlanmış nesnelerin topluluğudur. "İyi tanımlanmış" demek, herhangi bir nesne için "bu kümede mi?" sorusunun cevabının herkese göre aynı olması demektir. Kümedeki nesnelere <strong>eleman</strong> denir. a, A kümesinin elemanıysa a ∈ A, değilse a ∉ A yazılır. Kümeler büyük harfle adlandırılır.</p></div>
+
+<p>"Haftanın günleri", "10'dan küçük asal sayılar", "Türkiye'nin illeri" küme belirtir. "Sınıfın uzun boylu öğrencileri", "güzel şarkılar", "büyük sayılar" küme belirtmez, çünkü "uzun", "güzel", "büyük" kişiye göre değişir. "Boyu 180 santimetreden uzun öğrenciler" ise küme belirtir; ölçüt kesinleşmiştir. Dikkat et: "x ∈ A" bir önermedir (ya doğru ya yanlış); mantıkla kümelerin ilk bağlantısı budur.</p>
+
+<h3>Üç gösterim</h3>
+<p><strong>Liste yöntemi.</strong> Elemanlar süslü parantez içinde, aralarına virgül konarak yazılır: A = {2, 3, 5, 7}. İki kural var ve ikisi de "küme yalnızca kimin içeride olduğunu bilir" fikrinden gelir: <strong>elemanların sırası önemsizdir</strong> ({2, 3} = {3, 2}) ve <strong>her eleman bir kez yazılır</strong>. "KELEBEK" sözcüğünün harflerinin kümesi {K, E, L, B} olur; 7 harfli sözcüğün kümesi 4 elemanlıdır.</p>
+<p><strong>Ortak özellik yöntemi.</strong> Elemanları tek tek yazmak yerine onları belirleyen koşul yazılır: A = {x : x asal sayı ve x &lt; 10}. İki nokta (ya da dik çizgi) "öyle ki" diye okunur. İçerideki koşul bir açık önermedir; küme de o açık önermenin doğruluk kümesidir.</p>
+<p><strong>Venn şeması.</strong> Küme kapalı bir eğriyle çizilir, elemanlar içine nokta olarak konur. Aşağıdaki şekilde göreceksin.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>A kümesinin eleman sayısı <strong>s(A)</strong> ile gösterilir. Hiç elemanı olmayan kümeye <strong>boş küme</strong> denir; ∅ ya da { } ile gösterilir ve s(∅) = 0 olur. Üzerinde çalışılan bütün kümeleri kapsayan en geniş kümeye <strong>evrensel küme</strong> denir ve E ile gösterilir. Eleman sayısı bir doğal sayıyla söylenebilen küme <strong>sonlu</strong>, söylenemeyen küme <strong>sonsuz</strong> kümedir.</p></div>
+
+<p>Boş küme örnekleri: "karesi negatif olan gerçek sayılar", "2 ile 3 arasındaki tam sayılar". Sonlu küme: {x : x ∈ Z, −2 ≤ x &lt; 3}. Sonsuz küme: N, Z, çift sayılar, 0 ile 1 arasındaki gerçek sayılar. Evrensel küme soruya göre değişir: bir soruda bir sınıfın öğrencileri, başka birinde gerçek sayılar olabilir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>∅, {∅} ve {0} kümelerini aynı sanmak.</strong> ∅ boş bir kutudur: s(∅) = 0. {∅} ise içinde boş bir kutu bulunan kutudur; içinde bir şey vardır: s({∅}) = 1. {0} da boş değildir; elemanı 0 sayısıdır: s({0}) = 1. Sıfır "hiçlik" değil, bir sayıdır.</p>
+<p><strong>Eleman olan kümeyi açıp saymak.</strong> A = {1, {2, 3}, 4} kümesinin eleman sayısı 3'tür, 4 değil. Elemanlar virgüllerle ayrılır: 1, {2, 3} ve 4. Burada {2, 3} tek bir elemandır; 2 ∉ A ve {2, 3} ∈ A.</p></div>
+
+<h3>Eşit kümeler, denk kümeler</h3>
+<p>Elemanları tamamen aynı olan kümeler <strong>eşit</strong>tir: A = B. Eleman sayıları aynı olan kümeler <strong>denk</strong>tir: A ≡ B. A = {1, 2, 3}, B = {3, 1, 2}, C = {a, b, c} için A = B (aynı elemanlar, sıra önemsiz) ve A ≡ C (ikisi de 3 elemanlı) olur; A ≠ C. Eşit kümeler her zaman denktir, denk kümeler eşit olmak zorunda değildir. Bu, önermelerdeki "denk" sözcüğüyle aynı mantığı taşır: içeriğe değil, tek bir ölçüye (orada doğruluk değeri, burada eleman sayısı) bakılır.</p>
+
+<h2 class="s">9. Alt küme ve alt küme sayısı</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>A kümesinin <strong>her</strong> elemanı B kümesinin de elemanıysa A, B'nin <strong>alt kümesidir</strong>: A ⊂ B. Mantık diliyle: ∀x, (x ∈ A ⇒ x ∈ B). A'nın B'de olmayan tek bir elemanı bile varsa A ⊄ B olur.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Venn şeması: E evrensel kümesi içinde B kümesi, B'nin içinde A kümesi. A'da 1 ve 2; B'de ayrıca 3 ve 4; B'nin dışında 5 ve 6.">
+  <rect class="sv-k" x="10" y="10" width="380" height="210" rx="12" />
+  <text class="sv-b" x="26" y="34">E</text>
+  <ellipse class="sv-l" cx="215" cy="120" rx="150" ry="85" />
+  <text class="sv-b" x="215" y="58" text-anchor="middle">B</text>
+  <ellipse class="sv-m" cx="170" cy="130" rx="65" ry="45" />
+  <text class="sv-b" x="170" y="108" text-anchor="middle">A</text>
+  <circle class="sv-cl" cx="142" cy="138" r="3" /><text class="sv-t" x="150" y="143">1</text>
+  <circle class="sv-cl" cx="182" cy="138" r="3" /><text class="sv-t" x="190" y="143">2</text>
+  <circle class="sv-cl" cx="268" cy="108" r="3" /><text class="sv-t" x="276" y="113">3</text>
+  <circle class="sv-cl" cx="292" cy="150" r="3" /><text class="sv-t" x="300" y="155">4</text>
+  <circle class="sv-cl" cx="36" cy="196" r="3" /><text class="sv-t" x="44" y="201">5</text>
+  <circle class="sv-cl" cx="358" cy="40" r="3" /><text class="sv-t" x="366" y="45">6</text>
+</svg>
+<figcaption>E = {1, 2, 3, 4, 5, 6}, B = {1, 2, 3, 4}, A = {1, 2}. A'nın çizgisi B'nin çizgisinin tamamen içinde: A'nın her elemanı B'de, yani A ⊂ B. Tersi doğru değil: 3 ∈ B ama 3 ∉ A, öyleyse B ⊄ A.</figcaption>
+</figure>
+
+<p>Tanımdan dört sonuç çıkar; her birinin nedenini gör:</p>
+<p><strong>Her küme kendisinin alt kümesidir: A ⊂ A.</strong> A'nın her elemanı elbette A'dadır.</p>
+<p><strong>Boş küme her kümenin alt kümesidir: ∅ ⊂ A.</strong> Burada koşullu önermenin tablosu iş görür. "x ∈ ∅ ise x ∈ A" önermesinde öncül her x için yanlıştır (boş kümede eleman yok); öncülü yanlış olan "ise" doğrudur. Başka türlü söylersek: ∅ ⊄ A diyebilmek için ∅'de olup A'da olmayan bir eleman göstermen gerekir; gösteremezsin.</p>
+<p><strong>A ⊂ B ve B ⊂ A ise A = B.</strong> Birbirinin dışında elemanı kalmayan iki küme aynı elemanlardan oluşur. İki kümenin eşitliğini göstermenin standart yolu budur; "⇔"nin iki tane "⇒" olmasının kümelerdeki karşılığı.</p>
+<p><strong>A ⊂ B ve B ⊂ C ise A ⊂ C.</strong> Parça 1'deki N ⊂ Z ⊂ Q ⊂ R zincirinden N ⊂ R sonucunu böyle çıkarırız.</p>
+
+<p>∈ ile ⊂ işaretlerini karıştırma: <strong>∈ eleman ile küme arasında, ⊂ küme ile küme arasında</strong> kullanılır. A = {1, 2, 3} için 1 ∈ A doğru, {1} ⊂ A doğru; ama 1 ⊂ A ve {1} ∈ A yanlıştır. Bir kümenin elemanı kendisi küme olduğunda ikisi de olabilir: B = {1, {1}} için {1} ∈ B (ikinci eleman) ve {1} ⊂ B (çünkü 1 ∈ B) doğrudur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>A kümesinin kendisinden farklı alt kümelerine A'nın <strong>özalt kümeleri</strong> denir. Boş küme, boş olmayan her kümenin özalt kümesidir.</p></div>
+
+<h3>Alt küme sayısı neden 2<sup>n</sup>?</h3>
+<p>A = {a, b, c} kümesinin bir alt kümesini kurarken her eleman için tek bir karar verirsin: <strong>alayım mı, almayayım mı?</strong> a için 2 seçenek, b için 2 seçenek, c için 2 seçenek. Kararlar birbirinden bağımsız olduğu için toplam 2 · 2 · 2 = 8 farklı alt küme çıkar. Bu, üç önermeli doğruluk tablosunun 8 satırlı olmasıyla aynı sayma işidir: "eleman içeride" 1, "dışarıda" 0 de; her alt küme tablonun bir satırıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Karar ağacı: a alınır ya da alınmaz, sonra b, sonra c. Sekiz yol sekiz alt kümeyi verir: a b c, a b, a c, a, b c, b, c ve boş küme.">
+  <text class="sv-s" x="110" y="14" text-anchor="middle">a?</text>
+  <text class="sv-s" x="200" y="14" text-anchor="middle">b?</text>
+  <text class="sv-s" x="290" y="14" text-anchor="middle">c?</text>
+  <text class="sv-s" x="322" y="14">alt küme</text>
+  <circle class="sv-l" cx="26" cy="135" r="7" />
+  <line class="sv-c" x1="33" y1="135" x2="88" y2="75" /><line class="sv-c" x1="33" y1="135" x2="88" y2="195" />
+  <text class="sv-b" x="110" y="80" text-anchor="middle">var</text>
+  <text class="sv-t" x="110" y="200" text-anchor="middle">yok</text>
+  <line class="sv-c" x1="130" y1="75" x2="178" y2="45" /><line class="sv-c" x1="130" y1="75" x2="178" y2="105" />
+  <line class="sv-c" x1="130" y1="195" x2="178" y2="165" /><line class="sv-c" x1="130" y1="195" x2="178" y2="225" />
+  <text class="sv-b" x="200" y="50" text-anchor="middle">var</text>
+  <text class="sv-t" x="200" y="110" text-anchor="middle">yok</text>
+  <text class="sv-b" x="200" y="170" text-anchor="middle">var</text>
+  <text class="sv-t" x="200" y="230" text-anchor="middle">yok</text>
+  <line class="sv-c" x1="220" y1="45" x2="268" y2="30" /><line class="sv-c" x1="220" y1="45" x2="268" y2="60" />
+  <line class="sv-c" x1="220" y1="105" x2="268" y2="90" /><line class="sv-c" x1="220" y1="105" x2="268" y2="120" />
+  <line class="sv-c" x1="220" y1="165" x2="268" y2="150" /><line class="sv-c" x1="220" y1="165" x2="268" y2="180" />
+  <line class="sv-c" x1="220" y1="225" x2="268" y2="210" /><line class="sv-c" x1="220" y1="225" x2="268" y2="240" />
+  <text class="sv-b" x="290" y="35" text-anchor="middle">var</text><text class="sv-t" x="322" y="35">{a, b, c}</text>
+  <text class="sv-t" x="290" y="65" text-anchor="middle">yok</text><text class="sv-t" x="322" y="65">{a, b}</text>
+  <text class="sv-b" x="290" y="95" text-anchor="middle">var</text><text class="sv-t" x="322" y="95">{a, c}</text>
+  <text class="sv-t" x="290" y="125" text-anchor="middle">yok</text><text class="sv-t" x="322" y="125">{a}</text>
+  <text class="sv-b" x="290" y="155" text-anchor="middle">var</text><text class="sv-t" x="322" y="155">{b, c}</text>
+  <text class="sv-t" x="290" y="185" text-anchor="middle">yok</text><text class="sv-t" x="322" y="185">{b}</text>
+  <text class="sv-b" x="290" y="215" text-anchor="middle">var</text><text class="sv-t" x="322" y="215">{c}</text>
+  <text class="sv-t" x="290" y="245" text-anchor="middle">yok</text><text class="sv-t" x="322" y="245">∅</text>
+</svg>
+<figcaption>Her eleman için iki dal: "var" ya da "yok". Üç eleman, 2 · 2 · 2 = 8 yol. En üstteki yol kümenin kendisini, en alttaki yol (hepsine "yok") boş kümeyi verir; ikisi de alt kümedir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n elemanlı bir kümenin <strong>alt küme sayısı 2<sup>n</sup></strong>, <strong>özalt küme sayısı 2<sup>n</sup> − 1</strong>'dir (kümenin kendisi çıkarılır). n = 0 için de tutar: boş kümenin tek alt kümesi kendisidir, 2<sup>0</sup> = 1.</p></div>
+
+<h3>Belirli elemanı içeren ya da içermeyen alt kümeler</h3>
+<p>Ağaç mantığı bu soruları da çözer. "a'yı içeren alt kümeler" dendiğinde a için karar zaten verilmiştir (var); serbest kalan öbür elemanların her biri için yine 2 seçenek vardır. "a'yı içermeyen" dendiğinde de a'nın kararı bellidir (yok). Yani <strong>kararı verilmiş her eleman, üsten 1 düşürür.</strong></p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>n elemanlı bir kümede, k tane belirli eleman hakkında "içersin" ya da "içermesin" diye kesin koşul verilmişse koşulu sağlayan alt küme sayısı <strong>2<sup>n − k</sup></strong> olur. "Şu elemanlardan en az birini içeren" gibi koşullarda tümünden çıkar: en az birini içeren = bütün alt kümeler − hiçbirini içermeyenler.</p></div>
+
+<p>Bunun bir sonucu: bir elemanı içeren alt kümelerin sayısı ile içermeyenlerin sayısı eşittir (ikisi de 2<sup>n − 1</sup>); alt kümelerin tam yarısı o elemanı içerir.</p>
+
+<h3>r elemanlı alt küme sayısı</h3>
+<p>"5 elemanlı bir kümenin 2 elemanlı kaç alt kümesi vardır?" sorusunun genel aracı kombinasyondur ve Parça 45'te kurulacak. Şimdilik küçük durumları gerekçesiyle bil: 1 elemanlı alt küme sayısı n'dir (her eleman tek başına bir alt küme). 2 elemanlı alt küme sayısı n(n − 1)/2'dir: ilk eleman n, ikinci eleman n − 1 yolla seçilir, ama {a, b} ile {b, a} aynı küme olduğu için her alt küme iki kez sayılmıştır; 2'ye böleriz. Ayrıca r elemanlı alt kümelerin sayısı, n − r elemanlı alt kümelerin sayısına eşittir; çünkü r eleman seçmek, dışarıda kalacak n − r elemanı seçmekle aynı iştir. 5 elemanlı bir kümede eleman sayısına göre alt küme sayıları 1, 5, 10, 10, 5, 1'dir; toplamları 32 = 2<sup>5</sup>.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> A = {x : x ∈ Z, −2 ≤ x &lt; 3} kümesi veriliyor. (a) Alt küme ve özalt küme sayısı kaçtır? (b) 0'ı içeren kaç alt kümesi vardır? (c) −2'yi içeren ama 2'yi içermeyen kaç alt kümesi vardır? (d) 2 elemanlı kaç alt kümesi vardır?</p>
+<p><strong>Adım 1.</strong> Kümeyi liste yöntemiyle yaz; uçlara dikkat: −2 dahil (≤), 3 dahil değil (&lt;).</p>
+<span class="mat">A = {−2, −1, 0, 1, 2} <span class="g">(tam sayılar, −2'den 2'ye)</span></span>
+<span class="mat">s(A) = 2 − (−2) + 1 = 5 <span class="g">(Parça 4: son − ilk + 1)</span></span>
+<p><strong>Adım 2 (a).</strong></p>
+<span class="mat">2<sup>5</sup> = 32 alt küme <span class="g">(her eleman için 2 seçenek)</span></span>
+<span class="mat">32 − 1 = 31 özalt küme <span class="g">(kümenin kendisi çıkarıldı)</span></span>
+<p><strong>Adım 3 (b).</strong> 0'ın kararı verildi; geriye 4 serbest eleman kaldı.</p>
+<span class="mat">2<sup>5 − 1</sup> = 2<sup>4</sup> = 16 <span class="g">(bir koşullu eleman)</span></span>
+<p><strong>Adım 4 (c).</strong> −2 "var", 2 "yok": iki elemanın kararı verildi; 3 serbest eleman kaldı.</p>
+<span class="mat">2<sup>5 − 2</sup> = 2<sup>3</sup> = 8 <span class="g">(iki koşullu eleman)</span></span>
+<p><strong>Adım 5 (d).</strong></p>
+<span class="mat"><span class="kes"><span>5 · 4</span><span>2</span></span> = 10 <span class="g">(sıralı 20 seçim, her küme iki kez sayıldı)</span></span>
+<p><strong>Sonuç:</strong> 32 ve 31; 16; 8; 10. Kontrol: (b)'de bulunan 16, toplam 32'nin yarısı; olması gereken de bu. Python ile bütün alt kümeleri tek tek üretip saydım: 32, 31, 16, 8, 10.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Bir A kümesine yeni bir eleman eklendiğinde alt küme sayısı 16 artıyor. A kümesinin özalt küme sayısı kaçtır?</p>
+<p><strong>Adım 1.</strong> s(A) = n olsun. Önceki ve sonraki alt küme sayılarını yaz.</p>
+<span class="mat">2<sup>n + 1</sup> − 2<sup>n</sup> = 16 <span class="g">(yeni sayı − eski sayı = artış)</span></span>
+<p><strong>Adım 2.</strong> Parça 10'daki ortak paranteze alma.</p>
+<span class="mat">2<sup>n</sup> · (2 − 1) = 16 <span class="g">(2<sup>n + 1</sup> = 2 · 2<sup>n</sup>)</span></span>
+<span class="mat">2<sup>n</sup> = 16 = 2<sup>4</sup> <span class="g">(parantez 1)</span></span>
+<span class="mat">n = 4 <span class="g">(tabanlar eşit, üsler eşit: Parça 11)</span></span>
+<p><strong>Adım 3.</strong></p>
+<span class="mat">2<sup>4</sup> − 1 = 15 <span class="g">(özalt küme sayısı)</span></span>
+<p><strong>Sonuç:</strong> 15. Akılda kalacak sonuç: bir eleman eklemek alt küme sayısını ikiye katlar, yani artış eski sayı kadardır. Kontrol: 4 elemanlı küme 16, 5 elemanlı küme 32 alt kümeli; fark 16 ✓.</p></div>
+
+<h2 class="s">Hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol.</strong> Bileşik önerme sorularında bütün tabloyu doldurma; ayrıksı satırdan gir. "Bu 'ise' yanlıştır" → öncül 1, sonuç 0. "Bu 'veya' yanlıştır" → ikisi de 0. "Bu 've' doğrudur" → ikisi de 1. Verilen bilgi bu üç kalıptan biriyse değişkenlerin değerleri tek hamlede çıkar. Sadeleştirmede ilk iş "ise"yi p′ ∨ q'ya çevirmek, ikinci iş De Morgan ile olumsuzluğu içeri dağıtmaktır. Alt küme sorularında önce s(A)'yı kesinleştir, sonra "kaç elemanın kararı verilmiş?" diye sor.</p>
+
+<p><strong>Kontrol yolu.</strong> Bulduğun denkliği değer vererek sına: iki önermeli bir denklikte dört satırın tamamını denemek 20 saniye sürer. Dikkat: denkliği <em>çürütmek</em> için tek satır yeter, <em>doğrulamak</em> için dört satırın dördü gerekir; "her" ile "bazı" arasındaki farkın aynısı. Alt küme sayısında küçük bir kümede (2 ya da 3 elemanlı) alt kümeleri elle listele ve formülle karşılaştır: {a, b} için ∅, {a}, {b}, {a, b}: 4 = 2<sup>2</sup>. Bir de akla yatkınlık denetimi: alt küme sayısı her zaman 2'nin kuvvetidir; cevabın 12 ya da 30 çıktıysa bir yerde hata var. Özalt küme sayısı her zaman tektir (boş küme dışında).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 35'e:</strong> Küme işlemleri bağlaçların kopyasıdır: kesişim "ve", birleşim "veya", tümleyen "değil". Buradaki De Morgan kuralları orada (A ∩ B)′ = A′ ∪ B′ biçiminde, hiçbir şeyi yeniden ezberlemeden geri gelecek.</p>
+<p><strong>Parça 1, 4, 19 ve 20'ye dönüş:</strong> N ⊂ Z ⊂ Q ⊂ R zinciri alt küme geçişmesiydi. "Hangisi daima tektir / pozitiftir / doğrudur" soruları aslında "∀" sorularıdır: bir karşı örnek seçeneği eler.</p>
+<p><strong>Parça 43–45'e:</strong> Alt küme sayısındaki "her eleman için 2 seçenek, çarp" düşüncesi çarpma yoluyla saymanın ta kendisidir. r elemanlı alt küme sayısı kombinasyonun tanımı olacak; 1 + 5 + 10 + 10 + 5 + 1 = 2<sup>5</sup> toplamını orada genel hâliyle göreceksin.</p>
+<p><strong>Parça 46'ya:</strong> Olasılıkta örnek uzay evrensel küme, olay ise onun bir alt kümesidir.</p>
+<p><strong>Öbür derslere:</strong> Türkçedeki paragraf ve sözel mantık sorularında "Bütün A'lar B'dir" bilgisinden "Bütün B'ler A'dır" sonucunu çıkarmak, burada gördüğün karşıt hatasıdır. Geometrideki her teorem hipotez-hüküm biçimindedir ve karşıtı ayrıca ispat ister.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Beş bağlacın her biri hangi durumda ayrıksı davranır (tek başına doğru ya da tek başına yanlış olur)?</summary><p>"Ve" yalnızca iki yan da doğruyken doğrudur. "Veya" yalnızca iki yan da yanlışken yanlıştır. "İse" yalnızca öncül doğru, sonuç yanlışken yanlıştır. "Ancak ve ancak" iki yanın değeri aynıysa doğru, "ya da" iki yanın değeri farklıysa doğrudur.</p></details>
+<details><summary>Öncülü yanlış olan bir koşullu önerme neden doğru sayılır?</summary><p>Koşullu önerme bir sözdür ve yalnızca çiğnendiğinde yanlış olur; öncül gerçekleşmediyse söz çiğnenmemiştir. Ayrıca "x &gt; 5 ise x &gt; 3" gibi apaçık doğru bir genel kuralın x = 4 ya da x = 1 için de doğru çıkması gerekir; bu satırlar 0 ⇒ 1 ve 0 ⇒ 0 satırlarıdır.</p></details>
+<details><summary>p ⇒ q önermesi hangisine denktir: karşıtına mı, tersine mi, karşıt tersine mi? Olumsuzu nedir?</summary><p>Yalnızca karşıt tersine (q′ ⇒ p′) denktir. Karşıtı (q ⇒ p) ile tersi (p′ ⇒ q′) de kendi aralarında denktir ama asıl önermeye denk olmak zorunda değildir. Olumsuzu bir koşullu önerme değil, p ∧ q′ önermesidir.</p></details>
+<details><summary>"Her x için p(x)" önermesinin olumsuzu nedir ve böyle bir önermeyi çürütmek için ne gerekir?</summary><p>Olumsuzu "Bazı x için p(x) değil" önermesidir: niceleyici döner, açık önerme olumsuzlanır. Çürütmek için p(x)'i yanlış yapan tek bir karşı örnek yeter; doğrulamak için ise örnekler yetmez, genel gerekçe gerekir.</p></details>
+<details><summary>∅, {∅} ve {0} kümelerinin eleman sayıları kaçtır?</summary><p>Sırasıyla 0, 1 ve 1. Boş kümenin elemanı yoktur. {∅} kümesinin bir elemanı vardır, o da boş kümedir. {0} kümesinin elemanı sıfır sayısıdır; sıfır bir sayıdır, hiçlik değildir.</p></details>
+<details><summary>n elemanlı bir kümenin alt küme sayısı neden 2 üzeri n'dir? Belirli bir elemanı içeren alt küme sayısı neden bunun yarısıdır?</summary><p>Alt küme kurarken her eleman için iki seçenek vardır: almak ya da almamak. n bağımsız karar 2 · 2 · … · 2 = 2 üzeri n sonuç verir. Bir elemanın kararı "alınacak" diye sabitlenince geriye n − 1 serbest karar kalır: 2 üzeri (n − 1), yani toplamın yarısı.</p></details>
+<details><summary>∈ ile ⊂ arasındaki fark nedir? A = {1, 2, 3} için {1} ∈ A doğru mudur?</summary><p>∈ bir eleman ile bir küme arasında, ⊂ iki küme arasında kullanılır. A'nın elemanları 1, 2 ve 3 sayılarıdır; {1} kümesi bu listede yoktur, öyleyse {1} ∈ A yanlıştır. Doğru yazımlar 1 ∈ A ve {1} ⊂ A biçimindedir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Önerme:</strong> doğru ya da yanlış kesin hüküm. Yanlış cümle de önermedir; soru, emir, görüş ve değişkenli ifade (açık önerme) değildir. Doğru 1, yanlış 0. Denk önermeler: doğruluk değeri aynı (≡).</li>
+<li><strong>Olumsuz:</strong> p′; (p′)′ ≡ p. "&gt;"nin olumsuzu "≤".</li>
+<li><strong>Ayrıksı satırlar:</strong> ∧ yalnız 1 ∧ 1'de doğru · ∨ yalnız 0 ∨ 0'da yanlış · ⇒ yalnız 1 ⇒ 0'da yanlış · ⇔ aynıysa doğru · ⊻ farklıysa doğru.</li>
+<li><strong>n önerme:</strong> 2<sup>n</sup> durum.</li>
+<li><strong>Özellikler:</strong> tek kuvvet, değişme, birleşme, iki yönlü dağılma; p ∧ 1 ≡ p, p ∧ 0 ≡ 0, p ∨ 1 ≡ 1, p ∨ 0 ≡ p, p ∧ p′ ≡ 0, p ∨ p′ ≡ 1.</li>
+<li><strong>De Morgan:</strong> (p ∧ q)′ ≡ p′ ∨ q′, (p ∨ q)′ ≡ p′ ∧ q′.</li>
+<li><strong>İse:</strong> p ⇒ q ≡ p′ ∨ q; olumsuzu p ∧ q′. p ⇔ q ≡ (p ⇒ q) ∧ (q ⇒ p).</li>
+<li><strong>Karşıt</strong> q ⇒ p · <strong>ters</strong> p′ ⇒ q′ · <strong>karşıt ters</strong> q′ ⇒ p′. Önerme ≡ karşıt ters; karşıt ≡ ters.</li>
+<li><strong>Totoloji:</strong> hep 1. <strong>Çelişki:</strong> hep 0.</li>
+<li><strong>Niceleyiciler:</strong> ∀ (her), ∃ (en az bir). Olumsuzda niceleyici döner, içerisi olumsuzlanır. "Her"i tek karşı örnek çürütür.</li>
+<li><strong>Tanım</strong> (adlandırma), <strong>aksiyom</strong> (ispatsız kabul), <strong>teorem</strong> (ispatlanır; hipotez ⇒ hüküm), <strong>ispat</strong>.</li>
+<li><strong>Küme:</strong> iyi tanımlı topluluk. Sıra önemsiz, eleman yinelenmez. Liste, ortak özellik, Venn. s(∅) = 0, s({∅}) = 1.</li>
+<li><strong>Eşit:</strong> aynı elemanlar. <strong>Denk:</strong> aynı eleman sayısı.</li>
+<li><strong>Alt küme:</strong> A'nın her elemanı B'de. ∅ ⊂ A, A ⊂ A. ∈ eleman–küme, ⊂ küme–küme.</li>
+<li><strong>Sayılar:</strong> alt küme 2<sup>n</sup>, özalt küme 2<sup>n</sup> − 1, k elemanın kararı verilmişse 2<sup>n − k</sup>, 2 elemanlı alt küme n(n − 1)/2.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-34">
+<h3>Quiz 34</h3>
+<p class="qa">Yirmi dört soru: 8'i bu parçadan, 16'sı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="D"><p class="q">Aşağıdakilerden hangisi bir önermedir?</p>
+<ul class="sec"><li>Bugün hava ne kadar güzel!</li><li>Lütfen kapıyı kapat.</li><li>x + 3 = 7</li><li>Bir hafta 8 gündür.</li><li>Saat kaç oldu?</li></ul>
+<div class="coz"><p>Önerme, doğru ya da yanlış kesin hüküm bildiren ifadedir. "Bir hafta 8 gündür." kesin bir hüküm bildirir ve yanlıştır; yanlış olması önerme olmasına engel değildir, doğruluk değeri 0'dır. A ünlem ve kişisel yargı, B emir, E soru cümlesidir; hüküm bildirmezler. C'de x'in değeri bilinmeden doğruluk söylenemez; bu bir açık önermedir, önerme değildir. Soru "yanlış cümle önerme olmaz" yanılgısını yoklar.</p></div></li>
+
+<li data-c="C"><p class="q">p ≡ 1, q ≡ 0 ve r ≡ 1 olduğuna göre aşağıdaki önermelerden hangisinin doğruluk değeri 0'dır?</p>
+<ul class="sec"><li>p ∨ q</li><li>q ⇒ r</li><li>p ⇒ q</li><li>p ⊻ q</li><li>q′ ∧ r</li></ul>
+<div class="coz"><p>C: p ⇒ q ≡ 1 ⇒ 0 ≡ 0; "ise"nin yanlış olduğu tek satır budur. A: 1 ∨ 0 ≡ 1, biri doğru olduğu için doğru. B: 0 ⇒ 1 ≡ 1; öncül yanlışken koşullu önerme doğrudur, en sık burada yanılınır. D: 1 ⊻ 0 ≡ 1, değerler farklı. E: q′ ≡ 1 ve 1 ∧ 1 ≡ 1. Yalnızca C yanlıştır.</p></div></li>
+
+<li data-c="B"><p class="q">(p ∨ q′)′ önermesi aşağıdakilerden hangisine denktir?</p>
+<ul class="sec"><li>p′ ∨ q</li><li>p′ ∧ q</li><li>p′ ∧ q′</li><li>p ∧ q′</li><li>p′ ∨ q′</li></ul>
+<div class="coz"><p>De Morgan: olumsuzluk dağılırken her önerme olumsuzlanır ve bağlaç döner. (p ∨ q′)′ ≡ p′ ∧ (q′)′ ≡ p′ ∧ q. A'da bağlaç döndürülmemiş; C'de q′'nün olumsuzu alınmamış; D'de hiçbir önerme olumsuzlanmamış, yalnızca bağlaç değişmiş; E'de hem bağlaç döndürülmemiş hem q′ olduğu gibi bırakılmış. Denetim: p ≡ 0, q ≡ 1 için (0 ∨ 0)′ ≡ 1 ve p′ ∧ q ≡ 1 ∧ 1 ≡ 1; öbür dört seçenek dört satırın en az birinde farklı değer verir.</p></div></li>
+
+<li data-c="A"><p class="q">(p ⇒ q) ∨ r önermesi yanlış olduğuna göre p, q ve r önermelerinin doğruluk değerleri sırasıyla aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>1, 0, 0</li><li>0, 1, 0</li><li>1, 1, 0</li><li>1, 0, 1</li><li>0, 0, 0</li></ul>
+<div class="coz"><p>"Veya" yalnızca iki yanı da yanlışken yanlıştır: p ⇒ q ≡ 0 ve r ≡ 0. "İse" yalnızca 1 ⇒ 0 iken yanlıştır: p ≡ 1, q ≡ 0. Cevap 1, 0, 0. B ve E'de p yanlıştır; öncül yanlış olunca p ⇒ q doğru olur ve "veya" doğru çıkar. C'de 1 ⇒ 1 doğrudur. D'de r doğru olduğu için "veya" doğrudur. Sekiz olası durumdan yalnızca biri önermeyi yanlış yapar.</p></div></li>
+
+<li data-c="E"><p class="q">"Yağmur yağarsa yer ıslanır." önermesinin karşıt tersi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Yer ıslanırsa yağmur yağmıştır.</li><li>Yağmur yağmazsa yer ıslanmaz.</li><li>Yağmur yağar ve yer ıslanmaz.</li><li>Yağmur yağarsa yer ıslanmaz.</li><li>Yer ıslanmazsa yağmur yağmamıştır.</li></ul>
+<div class="coz"><p>p: "Yağmur yağar", q: "Yer ıslanır". Karşıt ters q′ ⇒ p′ biçimindedir: yer değiştir ve ikisini de olumsuzla: "Yer ıslanmazsa yağmur yağmamıştır." A karşıttır (q ⇒ p), B terstir (p′ ⇒ q′); ikisi de asıl önermeye denk değildir. C önermenin olumsuzudur (p ∧ q′). D yalnızca sonucu olumsuzlamıştır; adı olan bir dönüşüm değildir. Asıl önermeye denk olan tek seçenek E'dir.</p></div></li>
+
+<li data-c="B"><p class="q">"Her x gerçek sayısı için x<sup>2</sup> &gt; 0'dır." önermesinin olumsuzu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Her x gerçek sayısı için x<sup>2</sup> ≤ 0'dır.</li><li>Bazı x gerçek sayıları için x<sup>2</sup> ≤ 0'dır.</li><li>Bazı x gerçek sayıları için x<sup>2</sup> &gt; 0'dır.</li><li>Bazı x gerçek sayıları için x<sup>2</sup> &lt; 0'dır.</li><li>Her x gerçek sayısı için x<sup>2</sup> &lt; 0'dır.</li></ul>
+<div class="coz"><p>Olumsuzda niceleyici döner ("her" → "bazı") ve açık önerme olumsuzlanır ("&gt;" → "≤"). Cevap B. A'da niceleyici döndürülmemiş. C'de açık önerme olumsuzlanmamış. D ve E'de "&gt;"nin olumsuzu "&lt;" sanılmış; eşitlik durumu unutulmuş. Bu ayrıntı önemsiz değil: verilen önerme yanlıştır (x = 0 için 0<sup>2</sup> = 0), olumsuzu doğru olmalıdır; B doğrudur (x = 0 örnektir), D ise yanlıştır, çünkü hiçbir gerçek sayının karesi negatif değildir.</p></div></li>
+
+<li data-c="E"><p class="q">A = {∅, 1, {1, 2}} kümesi için aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>s(A) = 3</li><li>∅ ∈ A</li><li>∅ ⊂ A</li><li>{1, 2} ∈ A</li><li>{1, 2} ⊂ A</li></ul>
+<div class="coz"><p>A'nın elemanları virgüllerle ayrılan üç nesnedir: ∅, 1 ve {1, 2}; öyleyse s(A) = 3 (A doğru). ∅ bu listede yazılı olduğu için ∅ ∈ A (B doğru); boş küme her kümenin alt kümesi olduğu için ∅ ⊂ A (C doğru). {1, 2} listede bir eleman olarak durduğu için {1, 2} ∈ A (D doğru). {1, 2} ⊂ A olması için 1 ∈ A ve 2 ∈ A gerekir; 2 sayısı A'nın elemanı değildir (2 yalnızca bir elemanın içinde geçiyor). E yanlıştır.</p></div></li>
+
+<li data-c="C"><p class="q">Bir A kümesinin alt küme sayısı ile özalt küme sayısının toplamı 127'dir. a ve b, A'nın farklı iki elemanı olduğuna göre A'nın a'yı içeren ama b'yi içermeyen kaç alt kümesi vardır?</p>
+<ul class="sec"><li>8</li><li>15</li><li>16</li><li>32</li><li>48</li></ul>
+<div class="coz"><p>s(A) = n ise 2<sup>n</sup> + (2<sup>n</sup> − 1) = 127, buradan 2 · 2<sup>n</sup> = 128, 2<sup>n</sup> = 64 ve n = 6. a "var", b "yok": iki elemanın kararı verilmiş, 4 eleman serbest: 2<sup>4</sup> = 16. 32, yalnızca bir koşulu (a'yı içerme) hesaba katanın sonucudur. 48, a'yı ya da b'yi içerenlerin sayısıdır (64 − 16). 15, sonuçtan gereksiz yere 1 çıkaranın; 8, üsten bir fazla düşenin bulduğudur.</p></div></li>
+
+<li data-c="D" data-k="mat-3"><p class="q">24 ÷ 4 · 2 − 3 · (5 − 7) işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>6</li><li>9</li><li>12</li><li>18</li><li>24</li></ul>
+<div class="coz"><p>Önce parantez: 5 − 7 = −2. Çarpma ve bölme aynı önceliktedir, soldan sağa yapılır: 24 ÷ 4 = 6, 6 · 2 = 12. Sonra 3 · (−2) = −6. Son olarak 12 − (−6) = 12 + 6 = 18. 9, önce 4 · 2 = 8 yapıp 24 ÷ 8 = 3 bulanın sonucudur (soldan sağa kuralını çiğnemek). 6, eksi ile eksinin artı ettiğini unutup 12 − 6 yapanın; 12, ikinci terimi hiç hesaba katmayanın sonucudur.</p></div></li>
+
+<li data-c="D" data-k="mat-6"><p class="q">360 sayısının kaç tane pozitif tam sayı böleni vardır?</p>
+<ul class="sec"><li>6</li><li>12</li><li>18</li><li>24</li><li>48</li></ul>
+<div class="coz"><p>Asal çarpanlara ayır: 360 = 2<sup>3</sup> · 3<sup>2</sup> · 5<sup>1</sup>. Pozitif bölen sayısı, üslerin birer fazlasının çarpımıdır: (3 + 1)(2 + 1)(1 + 1) = 4 · 3 · 2 = 24. Nedeni: bir bölen kurarken 2'nin kuvveti için 4, 3'ün kuvveti için 3, 5'in kuvveti için 2 seçenek vardır. 6, üsleri toplayanın (3 + 2 + 1); 48, pozitif yerine bütün tam sayı bölenlerini sayanın (24 · 2) sonucudur. 12 ve 18, üslerden birine 1 eklemeyi unutunca çıkar.</p></div></li>
+
+<li data-c="A" data-k="mat-9"><p class="q">0,1<span class="ust">6</span> devirli ondalık sayısının kesir olarak en sade hâli aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>6</span></span></li><li><span class="kes"><span>4</span><span>25</span></span></li><li><span class="kes"><span>16</span><span>99</span></span></li><li><span class="kes"><span>8</span><span>45</span></span></li><li><span class="kes"><span>1</span><span>5</span></span></li></ul>
+<div class="coz"><p>Kural: (sayının tamamı − devretmeyen kısım) / (devreden basamak kadar 9, devretmeyen ondalık basamak kadar 0). Pay 16 − 1 = 15; payda 90. 15/90 = 1/6. Denetim: 1 ÷ 6 = 0,1666… 4/25 = 0,16 devri yok sayanın; 16/99 iki basamağı da devirli sananın (0,1616…); 8/45 = 16/90 devretmeyen kısmı çıkarmayı unutanın sonucudur. 1/5 = 0,2 kaba bir yuvarlamadır.</p></div></li>
+
+<li data-c="C" data-k="mat-12"><p class="q">√50 + √18 − √8 işleminin sonucu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>2√15</li><li>4√2</li><li>6√2</li><li>8√2</li><li>10√2</li></ul>
+<div class="coz"><p>Her kökü dışarı çıkar: √50 = √(25 · 2) = 5√2, √18 = √(9 · 2) = 3√2, √8 = √(4 · 2) = 2√2. Benzer kökler toplanır: 5√2 + 3√2 − 2√2 = 6√2. 2√15 = √60, kök içlerini doğrudan toplayıp çıkaranın (50 + 18 − 8) sonucudur; √a + √b ≠ √(a + b). 10√2, son terimi de toplayanın; 4√2 ve 8√2, köklerden birini yanlış çıkaranın sonucudur.</p></div></li>
+
+<li data-c="A" data-k="mat-15"><p class="q">a + b = 7 ve a · b = 10 olduğuna göre a<sup>2</sup> + b<sup>2</sup> kaçtır?</p>
+<ul class="sec"><li>29</li><li>39</li><li>49</li><li>59</li><li>69</li></ul>
+<div class="coz"><p>(a + b)<sup>2</sup> = a<sup>2</sup> + 2ab + b<sup>2</sup> özdeşliğinden a<sup>2</sup> + b<sup>2</sup> = (a + b)<sup>2</sup> − 2ab = 49 − 20 = 29. Denetim: a = 2, b = 5 koşulları sağlar ve 4 + 25 = 29. 49, (a + b)<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup> sananın; 39, 2ab yerine ab çıkaranın; 69, 2ab'yi çıkarmak yerine ekleyenin; 59, ab'yi ekleyenin sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-18"><p class="q">2x + 3y = 16 ve x − y = 3 olduğuna göre x · y kaçtır?</p>
+<ul class="sec"><li>6</li><li>7</li><li>8</li><li>9</li><li>10</li></ul>
+<div class="coz"><p>İkinci denklemi 3 ile çarp: 3x − 3y = 9. Birinciyle taraf tarafa topla: 5x = 25, x = 5. Yerine koy: 5 − y = 3, y = 2. Çarpım 5 · 2 = 10. Denetim: 2 · 5 + 3 · 2 = 16 ✓. 7, çarpım yerine toplamı (x + y) işaretleyenin sonucudur; soru kökünde isteneni yeniden okumak bu hatayı önler. Öbür seçenekler yok etme sırasında işaret ya da katsayı hatasıyla çıkar.</p></div></li>
+
+<li data-c="D" data-k="mat-21"><p class="q">|2x − 3| ≤ 7 eşitsizliğini sağlayan kaç tane x tam sayısı vardır?</p>
+<ul class="sec"><li>5</li><li>6</li><li>7</li><li>8</li><li>9</li></ul>
+<div class="coz"><p>|u| ≤ a ⇔ −a ≤ u ≤ a: −7 ≤ 2x − 3 ≤ 7. Her yana 3 ekle: −4 ≤ 2x ≤ 10. 2'ye böl: −2 ≤ x ≤ 5. Tam sayılar −2, −1, 0, 1, 2, 3, 4, 5; adet 5 − (−2) + 1 = 8. 7, "+1"i unutup yalnızca son − ilk yapanın; 6, uçları dahil etmeyenin (eşitsizlik "≤" olduğu hâlde) sonucudur. 9, uçlardan birini 6 ya da −3 bulanın sonucudur.</p></div></li>
+
+<li data-c="C" data-k="mat-24"><p class="q">4 yanlışın 1 doğruyu götürdüğü 40 soruluk bir sınavda bütün soruları işaretleyen bir öğrencinin neti 25'tir. Bu öğrencinin doğru cevap sayısı kaçtır?</p>
+<ul class="sec"><li>25</li><li>26</li><li>28</li><li>30</li><li>31</li></ul>
+<div class="coz"><p>Doğru sayısı d ise yanlış sayısı 40 − d olur (boş yok). Net = d − (40 − d)/4 = 25. Her yanı 4 ile çarp: 4d − 40 + d = 100, 5d = 140, d = 28. Denetim: 12 yanlış 3 doğruyu götürür, 28 − 3 = 25 ✓. 25, neti doğru sayısıyla karıştıranın sonucudur. Öbür seçenekleri dene: 30 doğru, 10 yanlış 27,5 net verir; 26 doğru 22,5 net verir.</p></div></li>
+
+<li data-c="B" data-k="mat-27"><p class="q">Bir işi Ali tek başına 12 günde, Berk tek başına 6 günde bitirmektedir. İkisi birlikte çalışırsa aynı işi kaç günde bitirirler?</p>
+<ul class="sec"><li>3</li><li>4</li><li>6</li><li>9</li><li>18</li></ul>
+<div class="coz"><p>Ali günde işin 1/12'sini, Berk 1/6'sını yapar. Birlikte günde 1/12 + 2/12 = 3/12 = 1/4'ünü yaparlar; iş 4 günde biter. 18, süreleri toplayanın; 9, sürelerin ortalamasını alanın sonucudur; ikisi de anlamsızdır, çünkü birlikte çalışmak süreyi hızlı olanın süresinden (6 gün) de kısaltmalıdır. Bu denetim 6, 9 ve 18'i doğrudan eler.</p></div></li>
+
+<li data-c="A" data-k="mat-30"><p class="q">Fiyatı 500 lira olan bir ürüne önce %20 zam, sonra zamlı fiyat üzerinden %20 indirim yapılıyor. Ürünün son fiyatı kaç liradır?</p>
+<ul class="sec"><li>480</li><li>484</li><li>500</li><li>520</li><li>600</li></ul>
+<div class="coz"><p>Çarpanla yaz: 500 · 1,20 · 0,80 = 500 · 0,96 = 480. Adım adım: 500'ün %20'si 100, zamlı fiyat 600; 600'ün %20'si 120, son fiyat 480. 500, "%20 zam ile %20 indirim birbirini götürür" sananın sonucudur; götürmez, çünkü indirim daha büyük bir sayı üzerinden hesaplanır. 600 yalnızca zammı yapıp duranın sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-31"><p class="q">Tuz oranı %20 olan 300 gram tuzlu su ile tuz oranı %40 olan 100 gram tuzlu su karıştırılıyor. Yeni karışımın tuz oranı yüzde kaçtır?</p>
+<ul class="sec"><li>24</li><li>25</li><li>30</li><li>35</li><li>60</li></ul>
+<div class="coz"><p>Saf madde korunur: ilk kapta 300 · 0,20 = 60 gram, ikincide 100 · 0,40 = 40 gram tuz var; toplam 100 gram tuz, 400 gram karışım. Oran 100/400 = %25. %30, yüzdelerin düz ortalamasını alanın sonucudur; miktarlar eşit olmadığı için ortalama, miktarı çok olan karışıma (%20) daha yakın çıkmalıdır. %60, yüzdeleri toplayanın sonucudur; karışımın oranı iki oranın arasında kalmak zorundadır.</p></div></li>
+
+<li data-c="E" data-k="mat-31"><p class="q">Şeker oranı %10 olan 200 gram şekerli suya kaç gram su eklenirse şeker oranı %8 olur?</p>
+<ul class="sec"><li>10</li><li>20</li><li>25</li><li>40</li><li>50</li></ul>
+<div class="coz"><p>Şeker miktarı 200 · 0,10 = 20 gramdır ve su eklenince değişmez. Eklenen su x gram ise 20/(200 + x) = 8/100. İçler dışlar: 2000 = 1600 + 8x, x = 50. Denetim: 20/250 = 0,08 ✓. 40, "%2 azalacak, 200'ün %20'si" gibi yüzdeler üzerinden doğrudan işlem yapanın; 25 ve 20, yeni toplamı 200 kabul edip oran kuranın sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-32"><p class="q">Bir okuldaki öğrencilerin kulüplere dağılımını gösteren daire grafiğinde satranç kulübüne ait dilimin merkez açısı 72°'dir. Satranç kulübünde 60 öğrenci olduğuna göre okulda toplam kaç öğrenci vardır?</p>
+<ul class="sec"><li>240</li><li>300</li><li>360</li><li>420</li><li>432</li></ul>
+<div class="coz"><p>Dairenin tamamı 360°'dir ve bütün öğrencileri gösterir. 72° tamamın 72/360 = 1/5'idir; 60 öğrenci toplamın beşte biriyse toplam 60 · 5 = 300 olur. Orantıyla: 72° → 60, 360° → x; x = 60 · 360/72 = 300. 360, açı ile kişi sayısını aynı sananın; 240, 60'ı 4 ile çarpanın (72'yi 90 gibi düşünmek) sonucudur.</p></div></li>
+
+<li data-c="D" data-k="mat-32"><p class="q">Bir taksinin ücret tarifesi doğrusal bir grafikle veriliyor: açılış ücreti 30 lira, her kilometre için 20 lira. 250 lira ödeyen bir yolcu kaç kilometre yol gitmiştir?</p>
+<ul class="sec"><li>9</li><li>10</li><li>10,5</li><li>11</li><li>12,5</li></ul>
+<div class="coz"><p>Ücret = sabit ücret + birim ücret · yol: 250 = 30 + 20x. 20x = 220, x = 11. Denetim: 30 + 20 · 11 = 250 ✓. 12,5, açılış ücretini çıkarmayı unutup 250'yi doğrudan 20'ye bölenin sonucudur. 10 ve 9, açılış ücretini bir kilometrelik ücret gibi sayanların bulduğu değerlerdir.</p></div></li>
+
+<li data-c="E" data-k="mat-33"><p class="q">Gerçek sayılarda a ★ b = 2a − b + a · b işlemi tanımlanıyor. Buna göre (3 ★ 2) ★ 1 işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>16</li><li>19</li><li>25</li><li>27</li><li>29</li></ul>
+<div class="coz"><p>Önce parantez: 3 ★ 2 = 2 · 3 − 2 + 3 · 2 = 6 − 2 + 6 = 10. Sonra 10 ★ 1 = 2 · 10 − 1 + 10 · 1 = 20 − 1 + 10 = 29. 16, parantezin yerini değiştirip 3 ★ (2 ★ 1) hesaplayanın sonucudur (2 ★ 1 = 5, 3 ★ 5 = 16); tanımlanan işlemin birleşme özelliği olduğu varsayılamaz. Öbür seçenekler kuralda bir terimi atlayınca çıkar.</p></div></li>
+
+<li data-c="A" data-k="mat-33"><p class="q">Bir çekmecede 6 siyah, 8 beyaz ve 4 gri çorap vardır. Çekmeceye bakmadan çorap alan biri, aynı renkten en az 3 çorap aldığından emin olmak için <strong>en az</strong> kaç çorap almalıdır?</p>
+<ul class="sec"><li>7</li><li>9</li><li>10</li><li>13</li><li>16</li></ul>
+<div class="coz"><p>Garanti sorularında en kötü durumu düşün: her renkten 2'şer çorap gelir ve hâlâ hiçbir renkten 3 tane yoktur; bu 2 + 2 + 2 = 6 çoraptır. 7. çorap hangi renkten olursa olsun o renk 3'e çıkar. Cevap 7. Her renkten en az 2 çorap bulunduğu için bu en kötü durum gerçekten olabilir. 9, "3 renk · 3 çorap" çarpımını yapanın sonucudur; oysa 9. çorabı beklemeye gerek yok. 13, "en az 3 beyaz çorap" sorusunu çözenin sonucudur (6 + 4 + 3); soru belirli bir rengi değil, herhangi bir rengi istiyor.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-33">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-34">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-35">Sonraki parça: küme işlemleri ve küme problemleri</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"9. sınıf mantık önermeler bileşik önermeler doğruluk tablosu konu anlatımı"</li>
+  <li>"koşullu önerme karşıt ters karşıt tersi De Morgan kuralları"</li>
+  <li>"niceleyiciler her bazı önermenin olumsuzu"</li>
+  <li>"kümeler alt küme sayısı özalt küme TYT konu anlatımı"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler 2018 Ortaöğretim Matematik Öğretim Programı'nın 9. sınıf "Mantık" ve "Kümeler" ünitelerindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: beş bağlacın tablosu; De Morgan, dağılma, p ⇒ q ≡ p′ ∨ q, (p ⇒ q)′ ≡ p ∧ q′, karşıt ters denkliği, karşıt ≡ ters, p ⊻ q ≡ (p ⇔ q)′ denklikleri (bütün satırlar); çözümlü örnek 1–4'ün sonuçları; örnek 5'teki x<sup>2</sup> ≥ x iddiası (−100 ile 100 arası tam sayılar; genel gerekçe metinde); örnek 6 ve 7'deki bütün sayılar (alt kümeler tek tek üretilerek); 24 quiz sorusunun doğru cevapları ve mantık sorularında öbür seçeneklerin yanlışlığı.</li>
+  <li>Adlandırma uyarısı: karşıt = q ⇒ p, ters = p′ ⇒ q′, karşıt ters = q′ ⇒ p′ eşleştirmesi MEB kullanımıdır. İngilizce kaynaklardan çevrilmiş bazı metinlerde "ters" ile "karşıt" sözcükleri yer değiştirir; sınavda MEB adlandırması geçerlidir.</li>
+  <li>Gösterim farkları: olumsuz için p′ yerine ~p ya da ¬p; doğruluk değeri için 1 ve 0 yerine D ve Y; "ya da" için ⊻ yerine başka işaretler görebilirsin. Alt küme için bu parçada MEB'deki gibi ⊂ kullanıldı ve A ⊂ A doğru sayıldı; bazı kaynaklar bu anlamda ⊆ yazar, ⊂ işaretini yalnızca özalt küme için kullanır.</li>
+  <li>Özalt küme tanımı ("kendisinden farklı alt kümeler", sayısı 2<sup>n</sup> − 1) ders kitabı tanımıdır. Boş kümeyi de dışarıda bırakan kaynaklar olduğunu duydum; doğrulayamadım. Kaynağın farklı diyorsa bana bildir.</li>
+  <li>Kapsam listesi r elemanlı alt küme sayısının kombinasyonla bağlantısı için Parça 44'ü gösteriyor; aynı listede kombinasyon Parça 45'in konusu olduğu için metinde Parça 45 yazdım.</li>
+  <li>Mantıktan TYT'de yıl yıl kaç soru geldiğini resmî kaynaktan doğrulamadım; "seyrek gelir" ifadesi yaygın kanıya dayanıyor.</li>
+  <li>Tekrar soruları Parça 3, 6, 9, 12, 15, 18, 21, 24, 27, 30'dan birer, Parça 31, 32, 33'ten ikişer tanedir (toplam 16 sınırı). Parça 18–33 bu parça yazılırken depoda yoktu; tekrar sorularını kapsam listesindeki konulara göre yazdım, o parçaların metinleriyle karşılaştıramadım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -7,7 +7,7 @@
 var SB_URL = "https://pqzjayxdrnpokyffyole.supabase.co";       // örn. https://abcdefgh.supabase.co
 var SB_ANAHTAR = "sb_publishable_ViJ3hRKsZVHcDpVVUA3BOw_ZOZbDMRD";   // sb_publishable_... ya da anon anahtar
 
-var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","tekrar","bugun_ozet","dni-done","dni-last","dni-okuma","dni-istisna","gundem_okuma","dni-yer","dni-soru","dni-soru-gun","gunluk","dni-isaret","dni-not","spor","spor_mod"];
+var ANAHTARLAR = ["gunler","denemeler","hatalar","motto","tekrar","bugun_ozet","dni-done","dni-last","dni-okuma","dni-istisna","gundem_okuma","dni-yer","dni-soru","dni-soru-gun","gunluk","dni-isaret","dni-not","spor","spor_mod","dni-quiz"];
 var K_ANAHTAR="esitle_anahtar", K_GOLGE="esitle_golge", K_SON="esitle_son";
 
 function oku(k,v){ try{ var x=localStorage.getItem(k); return x==null?v:JSON.parse(x); }catch(e){ return v; } }
@@ -109,7 +109,7 @@ try{
 
 /* Yerelde bir şey değişince 8 saniyelik turu bekleme: işaretleyip uygulamayı hemen kapatınca
    değişiklik telefonda kalıyordu. Süre sayaçları sık yazdığı için onlar yine tura bırakılır. */
-var HIZLI={gunler:1,denemeler:1,hatalar:1,motto:1,tekrar:1,"dni-done":1,"dni-istisna":1,"dni-soru":1,gunluk:1,"dni-isaret":1,"dni-not":1,spor:1,spor_mod:1}, plan=null;
+var HIZLI={gunler:1,denemeler:1,hatalar:1,motto:1,tekrar:1,"dni-done":1,"dni-istisna":1,"dni-soru":1,gunluk:1,"dni-isaret":1,"dni-not":1,spor:1,spor_mod:1,"dni-quiz":1}, plan=null;
 function planla(){ clearTimeout(plan); plan=setTimeout(esitle,250); }
 try{
   var _koy=Storage.prototype.setItem;

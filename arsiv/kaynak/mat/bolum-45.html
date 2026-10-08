@@ -1,0 +1,615 @@
+<article class="chapter ders" id="c-mat-45">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 45 · Sayma 3</div>
+<h1>Kombinasyon: sıranın önemsiz olduğu seçimleri saymak</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>10 kişilik bir sınıf önce bir başkan ve bir başkan yardımcısı seçiyor: 90 farklı sonuç var. Sonra aynı sınıf, okul meclisine gidecek 2 kişilik bir heyet seçiyor: bu kez yalnızca 45 farklı sonuç var. Aynı 10 kişiden aynı sayıda kişi seçiliyor; sonuç neden tam yarıya iniyor? Ve aynı düşünce, düzlemdeki 7 noktadan kaç üçgen çizilebileceğini ya da 12 kişinin kaç kez tokalaşacağını nasıl tek bir hesaba çeviriyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 34 (alt küme ve alt küme sayısı 2<sup>n</sup>), Parça 43 (çarpma ve toplama yoluyla sayma, faktöriyel, tümleyenden sayma), Parça 44 (permütasyon P(n, r), paket yöntemi). Yanında kâğıt kalem olsun; bu parçada küçük durumları elle listeleyip formülle karşılaştırmak, formülü ezberlemekten çok daha kalıcıdır.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Sayma konusunun üç parçası tek bir soruya cevap arar: "Kaç farklı durum var?" Parça 43'te bu soruyu adım adım çarparak cevapladın. Parça 44'te sıralamanın önemli olduğu seçimleri saydın: P(n, r). Bu parçada son ve en çok kullanılan aracı kuracağız: <strong>sıranın önemsiz olduğu seçim</strong>, yani kombinasyon.</p>
+
+<p>Sınavda kombinasyon üç biçimde gelir. Birincisi doğrudan seçim: bir gruptan ekip, kurul ya da takım seçmek; çoğu zaman "en az bir kadın olsun", "Ali bulunsun ama Berk bulunmasın" gibi koşullarla. İkincisi geometrik sayma: noktalardan kaç doğru ya da üçgen çizildiği, bir çokgenin kaç köşegeni olduğu, bir ızgarada kaç dikdörtgen bulunduğu. Üçüncüsü olasılık: Parça 46 ve 47'deki olasılık sorularının büyük bölümünde payı ve paydayı kombinasyonla bulacaksın. Yani bu parça, olasılığın da altyapısıdır.</p>
+
+<p>Bütün parça boyunca senden istenen tek alışkanlık şudur: her soruda hesaba başlamadan önce kendine <strong>"Seçtiklerimin yerini değiştirirsem yeni bir durum oluşur mu?"</strong> diye sor. Oluşuyorsa sıra önemlidir ve Parça 44'ün aracını kullanırsın; oluşmuyorsa sıra önemsizdir ve bu parçanın aracını kullanırsın.</p>
+
+<p>Sıramız şöyle: seçmek ile dizmek arasındaki fark ve formülün nereden geldiği; permütasyon mu kombinasyon mu kararı; kombinasyonun özellikleri ve Pascal üçgeni; alt küme sayılarıyla bağlantı; ekip ve kurul seçimi; önce seçip sonra sıralama; gruplara ayırma; geometrik kombinasyon; tokalaşma ve maç sayısı. Binom açılımı bu parçada yok; o ileri matematikte, Parça 33'te.</p>
+
+<h2 class="s">1. Seçmek ile dizmek: aynı dört kişi, iki ayrı soru</h2>
+
+<p>En küçük örnekle başlayalım ki her şeyi gözünle görebilesin. Dört arkadaş var: A, B, C ve D. İki ayrı soru soralım.</p>
+
+<p><strong>Birinci soru:</strong> Bu dört kişiden biri başkan, biri yardımcı olacak. Kaç farklı sonuç var? Parça 44'teki kutu yöntemiyle: başkan 4 yolla, yardımcı kalan 3 kişiden 3 yolla seçilir; 4 · 3 = 12. Bu P(4, 2)'dir. Burada "A başkan, B yardımcı" ile "B başkan, A yardımcı" iki ayrı sonuçtur, çünkü kimin hangi görevi aldığı değişmiştir.</p>
+
+<p><strong>İkinci soru:</strong> Bu dört kişiden 2'si bir toplantıya gidecek. Kaç farklı sonuç var? Şimdi "A ile B gitti" ile "B ile A gitti" arasında hiçbir fark yok; toplantıya giden ikili aynı ikilidir. Seçimlerin hepsini yazalım: {A, B}, {A, C}, {A, D}, {B, C}, {B, D}, {C, D}. Altı tane.</p>
+
+<figure>
+<svg viewBox="0 0 400 318" role="img" aria-label="Solda on iki sıralı ikili, ikişer ikişer gruplanmış: AB ve BA, AC ve CA, AD ve DA, BC ve CB, BD ve DB, CD ve DC. Her grup sağda tek bir seçime gider: A B, A C, A D, B C, B D, C D kümeleri.">
+  <text class="sv-b" x="110" y="22" text-anchor="middle">sıralı: P(4, 2) = 12</text>
+  <text class="sv-b" x="315" y="22" text-anchor="middle">seçim: C(4, 2) = 6</text>
+  <rect class="sv-l" x="40" y="38" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="60" text-anchor="middle">AB</text>
+  <rect class="sv-l" x="120" y="38" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="60" text-anchor="middle">BA</text>
+  <line class="sv-c" x1="186" y1="55" x2="250" y2="55" /><polygon class="sv-a" points="250,50 260,55 250,60" />
+  <rect class="sv-m" x="265" y="38" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="60" text-anchor="middle">{A, B}</text>
+  <rect class="sv-l" x="40" y="84" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="106" text-anchor="middle">AC</text>
+  <rect class="sv-l" x="120" y="84" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="106" text-anchor="middle">CA</text>
+  <line class="sv-c" x1="186" y1="101" x2="250" y2="101" /><polygon class="sv-a" points="250,96 260,101 250,106" />
+  <rect class="sv-m" x="265" y="84" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="106" text-anchor="middle">{A, C}</text>
+  <rect class="sv-l" x="40" y="130" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="152" text-anchor="middle">AD</text>
+  <rect class="sv-l" x="120" y="130" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="152" text-anchor="middle">DA</text>
+  <line class="sv-c" x1="186" y1="147" x2="250" y2="147" /><polygon class="sv-a" points="250,142 260,147 250,152" />
+  <rect class="sv-m" x="265" y="130" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="152" text-anchor="middle">{A, D}</text>
+  <rect class="sv-l" x="40" y="176" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="198" text-anchor="middle">BC</text>
+  <rect class="sv-l" x="120" y="176" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="198" text-anchor="middle">CB</text>
+  <line class="sv-c" x1="186" y1="193" x2="250" y2="193" /><polygon class="sv-a" points="250,188 260,193 250,198" />
+  <rect class="sv-m" x="265" y="176" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="198" text-anchor="middle">{B, C}</text>
+  <rect class="sv-l" x="40" y="222" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="244" text-anchor="middle">BD</text>
+  <rect class="sv-l" x="120" y="222" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="244" text-anchor="middle">DB</text>
+  <line class="sv-c" x1="186" y1="239" x2="250" y2="239" /><polygon class="sv-a" points="250,234 260,239 250,244" />
+  <rect class="sv-m" x="265" y="222" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="244" text-anchor="middle">{B, D}</text>
+  <rect class="sv-l" x="40" y="268" width="60" height="34" rx="8" /><text class="sv-t" x="70" y="290" text-anchor="middle">CD</text>
+  <rect class="sv-l" x="120" y="268" width="60" height="34" rx="8" /><text class="sv-t" x="150" y="290" text-anchor="middle">DC</text>
+  <line class="sv-c" x1="186" y1="285" x2="250" y2="285" /><polygon class="sv-a" points="250,280 260,285 250,290" />
+  <rect class="sv-m" x="265" y="268" width="100" height="34" rx="8" /><text class="sv-t" x="315" y="290" text-anchor="middle">{C, D}</text>
+</svg>
+<figcaption>Her seçim, kendi içinde 2! = 2 farklı biçimde sıralanır. Sıralı sayımda her seçim iki kez sayılmıştır; 12'yi 2'ye bölünce seçim sayısı 6 çıkar.</figcaption>
+</figure>
+
+<p>Şekle bak: soldaki her satırda aynı iki kişi, iki farklı sırayla duruyor. Sağdaki kutu o iki kişiyi sırasız, küme olarak gösteriyor. 12 sıralı sonuç, ikişer ikişer birleşip 6 seçime iniyor. Giriş sorusundaki 90 ile 45 arasındaki ilişki de tam olarak budur: 10 kişiden sıralı ikili P(10, 2) = 90, sırasız ikili 90 ÷ 2 = 45.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>n farklı elemanlı bir kümeden, sıra gözetmeksizin seçilen r elemanlı her gruba <strong>n'nin r'li kombinasyonu</strong> denir. Bu seçimlerin sayısı C(n, r) ile gösterilir; "n'nin r'li kombinasyonu" ya da kısaca "n'de r" diye okunur. Ders kitaplarında aynı sayı, büyük bir parantezin içinde n üstte, r altta yazılarak da gösterilir. Sıra gözetmeden r eleman seçmek, kümenin r elemanlı bir <strong>alt kümesini</strong> seçmekle aynı şeydir; bu yüzden C(n, r), n elemanlı bir kümenin r elemanlı alt küme sayısıdır.</p></div>
+
+<h2 class="s">2. Formül nereden gelir?</h2>
+
+<p>Şekildeki düşünceyi genelleştirelim. n kişiden r kişiyi <strong>sıralı</strong> olarak seçmek istiyorsun. Bu işi iki adımda yapabilirsin:</p>
+
+<p><strong>Adım 1:</strong> Önce kimlerin seçileceğine karar ver; sırayı hiç düşünme. Bunun C(n, r) yolu var.<br><strong>Adım 2:</strong> Seçtiğin r kişiyi sıraya diz. Parça 44'ten biliyorsun: r farklı kişi r! farklı biçimde sıralanır.</p>
+
+<p>Çarpma yoluyla sayma ilkesine göre (Parça 43) iki adımı art arda yapmanın yol sayısı, yol sayılarının çarpımıdır. Öte yandan bu iki adımın sonucu, doğrudan sıralı seçimin kendisidir; yani P(n, r).</p>
+
+<span class="mat">P(n, r) = C(n, r) · r! <span class="g">(önce seç, sonra sırala: çarpma ilkesi)</span></span>
+<span class="mat">C(n, r) = <span class="kes"><span>P(n, r)</span><span>r!</span></span> <span class="g">(iki yanı r!'e böl)</span></span>
+<span class="mat">P(n, r) = <span class="kes"><span>n!</span><span>(n − r)!</span></span> <span class="g">(Parça 44'teki permütasyon formülü)</span></span>
+<span class="mat">C(n, r) = <span class="kes"><span>n!</span><span>r! · (n − r)!</span></span> <span class="g">(yerine koy)</span></span>
+
+<div class="kural"><span class="et">Formül</span>
+<p>0 ≤ r ≤ n olmak üzere C(n, r) = <span class="kes"><span>n!</span><span>r! · (n − r)!</span></span>. Nedeni: her seçim, kendi içinde r! farklı biçimde sıralanabildiği için sıralı sayımda r! kez sayılır; sıralı sayıyı r!'e bölmek bu tekrarları atar. <strong>Hızlı yol:</strong> paya n'den başlayıp geriye doğru r tane sayının çarpımını, paydaya r!'i yaz: C(10, 3) = <span class="kes"><span>10 · 9 · 8</span><span>3 · 2 · 1</span></span> = 120.</p></div>
+
+<p>Hızlı yolun neden doğru olduğunu gör: n! / (n − r)! ifadesinde paydaki n!'in son kısmı (n − r)! ile sadeleşir, geriye n · (n − 1) · … · (n − r + 1) kalır; bu tam olarak r tane çarpandır. Bu yüzden paya ve paydaya <strong>aynı sayıda çarpan</strong> yazarsın: payda r'den 1'e iner, pay n'den aşağı iner. Sınav hesap makinesiz olduğu için önce sadeleştir, sonra çarp.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> C(9, 4) ve C(15, 13) değerlerini hesaplayınız.</p>
+<p><strong>Adım 1.</strong> C(9, 4): paya 9'dan geriye 4 çarpan, paydaya 4! yaz.</p>
+<span class="mat">C(9, 4) = <span class="kes"><span>9 · 8 · 7 · 6</span><span>4 · 3 · 2 · 1</span></span> <span class="g">(hızlı yol: 4 çarpan üstte, 4 çarpan altta)</span></span>
+<span class="mat">= <span class="kes"><span>9 · 8 · 7 · 6</span><span>24</span></span> <span class="g">(4! = 24)</span></span>
+<span class="mat">= 9 · 7 · <span class="kes"><span>8 · 6</span><span>24</span></span> = 9 · 7 · 2 <span class="g">(önce sadeleştir: 48 ÷ 24 = 2)</span></span>
+<span class="mat">= 126 <span class="g">(çarp)</span></span>
+<p><strong>Adım 2.</strong> C(15, 13): paya 13 çarpan yazmak gereksiz uzun. 15 kişiden 13'ünü seçmek, dışarıda kalacak 2 kişiyi seçmekle aynı iştir (bu özelliği aşağıda gerekçesiyle kutuya alacağız).</p>
+<span class="mat">C(15, 13) = C(15, 2) <span class="g">(13 seçmek = dışarıda kalacak 2'yi seçmek)</span></span>
+<span class="mat">= <span class="kes"><span>15 · 14</span><span>2 · 1</span></span> = 15 · 7 <span class="g">(14 ÷ 2 = 7)</span></span>
+<span class="mat">= 105 <span class="g">(çarp)</span></span>
+<p><strong>Sonuç:</strong> C(9, 4) = 126, C(15, 13) = 105. <strong>Kontrol yolu:</strong> kombinasyon bir sayma sonucudur, mutlaka tam sayı çıkar; sadeleştirmede kesir kalıyorsa bir çarpanı eksik ya da fazla yazmışsındır. Ayrıca C(9, 4) ≤ P(9, 4) = 3024 olmalı; 3024 ÷ 24 = 126 ile de aynı sonuç gelir.</p></div>
+
+<h2 class="s">3. Karar sorusu: permütasyon mu, kombinasyon mu?</h2>
+
+<p>Sınavda formülü uygulamak zor değildir; zor olan, hangi formülün uygulanacağına karar vermektir. Soru metni çoğu zaman "seçiniz" der ama bazen seçilenlere farklı görevler verir. Karar için tek test şudur: <strong>Seçilen iki kişinin (ya da iki nesnenin) yerini değiştir. Ortaya yeni bir durum çıkıyor mu?</strong></p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Seçilenler arasında görev, sıra, yer, derece ya da konum farkı varsa yer değiştirme yeni bir durum üretir: <strong>sıra önemlidir, permütasyon</strong> (ya da kutu yöntemi). Seçilenler aynı statüdeyse (aynı ekip, aynı heyet, aynı kutuya giren toplar) yer değiştirme hiçbir şeyi değiştirmez: <strong>sıra önemsizdir, kombinasyon</strong>. "Seç ve sırala" denen yerde ikisi birlikte kullanılır: C(n, r) · r!.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Yer değiştirince yeni durum?</th><th>Araç</th></tr>
+<tr><td>10 kişiden 3 kişilik ekip</td><td>Hayır, ekip aynı</td><td>C(10, 3) = 120</td></tr>
+<tr><td>10 kişiden başkan, sayman, sekreter</td><td>Evet, görevler değişir</td><td>P(10, 3) = 720</td></tr>
+<tr><td>7 farklı kitaptan 3'ünü çantaya koymak</td><td>Hayır, çantadakiler aynı</td><td>C(7, 3) = 35</td></tr>
+<tr><td>7 farklı kitaptan 3'ünü rafa yan yana dizmek</td><td>Evet, raftaki sıra değişir</td><td>P(7, 3) = 210</td></tr>
+<tr><td>6 takımdan tek devreli lig maçları</td><td>Hayır, A–B maçı ile B–A maçı aynı</td><td>C(6, 2) = 15</td></tr>
+<tr><td>6 takımdan iç saha ve dış saha (çift devre)</td><td>Evet, ev sahibi değişir</td><td>P(6, 2) = 30</td></tr>
+<tr><td>Bir yarışta ilk üç derece</td><td>Evet, birinci ile ikinci farklı</td><td>P(n, 3)</td></tr>
+<tr><td>Bir yarışta finale kalan 3 kişi</td><td>Hayır, finalistler arasında sıra yok</td><td>C(n, 3)</td></tr>
+</table></div>
+
+<p>Son iki satıra dikkat: aynı yarış, aynı 3 kişi; ama soru dereceyi soruyorsa sıra vardır, yalnızca finale kalanları soruyorsa yoktur. Karar soru metnindeki sözcüklerden değil, durumun kendisinden çıkar. "Seçiliyor" sözcüğü kombinasyonu garanti etmez: "başkan ve yardımcı seçiliyor" cümlesinde sıra önemlidir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Seç" sözcüğünü görünce hemen kombinasyon yazmak.</strong> "12 kişilik bir kulüpten bir başkan ve bir sayman seçilecek" sorusunda cevap C(12, 2) = 66 değildir. Ali başkan, Can sayman ile Can başkan, Ali sayman iki farklı yönetimdir. Doğrusu P(12, 2) = 12 · 11 = 132'dir. Tersine, "12 kişiden 2 kişilik bir temsilci heyeti" sorusunda 132 yazmak her heyeti iki kez saymaktır; doğrusu 66'dır. Önce yer değiştirme testini yap, sonra formüle geç.</p></div>
+
+<h2 class="s">4. Kombinasyonun özellikleri, her biri nedeniyle</h2>
+
+<p>Aşağıdaki özelliklerin hiçbirini ezberlemen gerekmez; her biri "seçmek ne demek" sorusundan bir cümleyle çıkar. Formülle de doğrulanabilirler, ama sınavda seni hızlandıran şey sözel gerekçedir.</p>
+
+<p><strong>C(n, 0) = 1.</strong> n kişiden hiç kimseyi seçmemenin tek bir yolu vardır: kimseyi almamak. Formülle: n! / (0! · n!) = 1; burada Parça 43'teki 0! = 1 tanımının ne işe yaradığını görüyorsun. Alt küme diliyle: her kümenin 0 elemanlı tek alt kümesi boş kümedir.</p>
+
+<p><strong>C(n, n) = 1.</strong> n kişinin hepsini seçmenin de tek yolu vardır: hepsini almak. Her kümenin n elemanlı tek alt kümesi kendisidir.</p>
+
+<p><strong>C(n, 1) = n.</strong> Tek kişi seçeceksen kaç kişi varsa o kadar seçeneğin vardır.</p>
+
+<p><strong>C(n, r) = C(n, n − r).</strong> Bu en çok işe yarayan özelliktir. 10 kişiden 3 kişilik ekip seçtiğinde, aynı anda dışarıda kalacak 7 kişiyi de seçmiş olursun. Her ekibe tam bir "dışarıda kalanlar" grubu karşılık gelir ve her "dışarıda kalanlar" grubu tam bir ekibi belirler. İki seçim birebir eşleştiği için sayıları eşittir: C(10, 3) = C(10, 7) = 120. Formülle de görülür: n! / (r! · (n − r)!) ifadesinde r ile n − r'nin yerini değiştirmek paydayı değiştirmez.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>C(n, 0) = C(n, n) = 1, C(n, 1) = C(n, n − 1) = n, C(n, r) = C(n, n − r). Bunun sonucu olarak <strong>C(n, a) = C(n, b) ise ya a = b ya da a + b = n</strong>. Nedeni: n sabitken C(n, r), r = 0'dan ortaya doğru büyür, ortadan sonra aynı değerlerle küçülür; aynı değer en çok iki yerde, birbirine simetrik iki yerde görülür. Bu yüzden eşitlik sorularında <strong>iki durumu da</strong> denemek zorundasın.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> a) C(n, 3) = C(n, 5) olduğuna göre C(n, 2) kaçtır? b) C(11, 2x + 1) = C(11, x + 4) eşitliğini sağlayan x değerlerini bulunuz.</p>
+<p><strong>Adım 1.</strong> a) 3 ≠ 5 olduğu için ilk durum (a = b) olamaz; geriye ikinci durum kalır.</p>
+<span class="mat">3 + 5 = n <span class="g">(a + b = n durumu)</span></span>
+<span class="mat">n = 8 <span class="g">(topla)</span></span>
+<span class="mat">C(8, 2) = <span class="kes"><span>8 · 7</span><span>2 · 1</span></span> = 28 <span class="g">(hızlı yol)</span></span>
+<p><strong>Adım 2.</strong> b) Birinci durum: alt değerler eşit.</p>
+<span class="mat">2x + 1 = x + 4 <span class="g">(a = b durumu)</span></span>
+<span class="mat">x = 3 <span class="g">(iki yandan x ve 1 çıkar)</span></span>
+<span class="mat">2 · 3 + 1 = 7 ve 3 + 4 = 7 <span class="g">(denetim: ikisi de 7, 0 ile 11 arasında)</span></span>
+<p><strong>Adım 3.</strong> İkinci durum: alt değerlerin toplamı 11.</p>
+<span class="mat">(2x + 1) + (x + 4) = 11 <span class="g">(a + b = n durumu)</span></span>
+<span class="mat">3x + 5 = 11 <span class="g">(benzer terimleri topla)</span></span>
+<span class="mat">3x = 6, x = 2 <span class="g">(5 çıkar, 3'e böl)</span></span>
+<span class="mat">2 · 2 + 1 = 5 ve 2 + 4 = 6 <span class="g">(denetim: 5 + 6 = 11, ikisi de 0 ile 11 arasında)</span></span>
+<p><strong>Sonuç:</strong> a) 28. b) x = 2 ya da x = 3. <strong>Kontrol yolu:</strong> bulduğun her x için alt değerin 0 ile n arasında kaldığını denetle; C(11, 13) ya da C(11, −1) tanımsızdır ve böyle bir kök atılır. Yalnızca bir durumu çözüp duranlar, b) şıkkında iki kökten birini kaybeder; sınavda "x değerlerinin toplamı" sorulursa cevap 5 olmalıdır.</p></div>
+
+<h3>Pascal üçgeni ve C(n, r) + C(n, r + 1) = C(n + 1, r + 1)</h3>
+
+<p>Şimdi bir kombinasyonu iki küçük kombinasyona bölen özelliği kuralım. n + 1 kişilik bir sınıf var; içlerinden biri Ali. Bu sınıftan r + 1 kişilik ekip seçeceksin. Bütün ekipleri Ali'ye göre ikiye ayır:</p>
+
+<p><strong>Ali'nin bulunduğu ekipler:</strong> Ali'nin yeri kesin; kalan r kişiyi, Ali dışındaki n kişiden seçersin: C(n, r) yol.<br><strong>Ali'nin bulunmadığı ekipler:</strong> r + 1 kişinin hepsini Ali dışındaki n kişiden seçersin: C(n, r + 1) yol.</p>
+
+<p>Her ekip bu iki gruptan tam birine girer; ikisinde birden olamaz, hiçbirinde olmaması da imkânsızdır. Ayrık seçenekleri toplama yoluyla sayarız (Parça 43):</p>
+
+<span class="mat">C(n + 1, r + 1) = C(n, r) + C(n, r + 1) <span class="g">(Ali var + Ali yok)</span></span>
+
+<p>Bu bağıntıyı bir tabloya döktüğünde ortaya <strong>Pascal üçgeni</strong> çıkar. Her satır bir n değerine karşılık gelir; satırdaki sayılar sırasıyla C(n, 0), C(n, 1), …, C(n, n)'dir. Kenarlar hep 1'dir (C(n, 0) = C(n, n) = 1) ve içerideki her sayı, hemen üstündeki iki sayının toplamıdır.</p>
+
+<figure>
+<svg viewBox="0 0 420 330" role="img" aria-label="Pascal üçgeninin n eşittir 0'dan 6'ya kadar satırları. Beşinci satırdaki 10 ve 10 vurgulanmış, altlarındaki 20'ye ok gidiyor. Sağ sütunda satır toplamları: 1, 2, 4, 8, 16, 32, 64.">
+  <text class="sv-s" x="14" y="16">n</text>
+  <text class="sv-s" x="395" y="16" text-anchor="middle">toplam</text>
+  <text class="sv-s" x="14" y="44">0</text><text class="sv-s" x="14" y="86">1</text><text class="sv-s" x="14" y="128">2</text><text class="sv-s" x="14" y="170">3</text><text class="sv-s" x="14" y="212">4</text><text class="sv-s" x="14" y="254">5</text><text class="sv-s" x="14" y="296">6</text>
+  <circle class="sv-k" cx="190" cy="40" r="16" /><text class="sv-t" x="190" y="45" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="167" cy="82" r="16" /><text class="sv-t" x="167" y="87" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="213" cy="82" r="16" /><text class="sv-t" x="213" y="87" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="144" cy="124" r="16" /><text class="sv-t" x="144" y="129" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="190" cy="124" r="16" /><text class="sv-t" x="190" y="129" text-anchor="middle">2</text>
+  <circle class="sv-k" cx="236" cy="124" r="16" /><text class="sv-t" x="236" y="129" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="121" cy="166" r="16" /><text class="sv-t" x="121" y="171" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="167" cy="166" r="16" /><text class="sv-t" x="167" y="171" text-anchor="middle">3</text>
+  <circle class="sv-k" cx="213" cy="166" r="16" /><text class="sv-t" x="213" y="171" text-anchor="middle">3</text>
+  <circle class="sv-k" cx="259" cy="166" r="16" /><text class="sv-t" x="259" y="171" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="98" cy="208" r="16" /><text class="sv-t" x="98" y="213" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="144" cy="208" r="16" /><text class="sv-t" x="144" y="213" text-anchor="middle">4</text>
+  <circle class="sv-k" cx="190" cy="208" r="16" /><text class="sv-t" x="190" y="213" text-anchor="middle">6</text>
+  <circle class="sv-k" cx="236" cy="208" r="16" /><text class="sv-t" x="236" y="213" text-anchor="middle">4</text>
+  <circle class="sv-k" cx="282" cy="208" r="16" /><text class="sv-t" x="282" y="213" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="75" cy="250" r="16" /><text class="sv-t" x="75" y="255" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="121" cy="250" r="16" /><text class="sv-t" x="121" y="255" text-anchor="middle">5</text>
+  <circle class="sv-a" cx="167" cy="250" r="16" /><text class="sv-b" x="167" y="255" text-anchor="middle">10</text>
+  <circle class="sv-a" cx="213" cy="250" r="16" /><text class="sv-b" x="213" y="255" text-anchor="middle">10</text>
+  <circle class="sv-k" cx="259" cy="250" r="16" /><text class="sv-t" x="259" y="255" text-anchor="middle">5</text>
+  <circle class="sv-k" cx="305" cy="250" r="16" /><text class="sv-t" x="305" y="255" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="52" cy="292" r="16" /><text class="sv-t" x="52" y="297" text-anchor="middle">1</text>
+  <circle class="sv-k" cx="98" cy="292" r="16" /><text class="sv-t" x="98" y="297" text-anchor="middle">6</text>
+  <circle class="sv-k" cx="144" cy="292" r="16" /><text class="sv-t" x="144" y="297" text-anchor="middle">15</text>
+  <circle class="sv-m" cx="190" cy="292" r="16" /><text class="sv-b" x="190" y="297" text-anchor="middle">20</text>
+  <circle class="sv-k" cx="236" cy="292" r="16" /><text class="sv-t" x="236" y="297" text-anchor="middle">15</text>
+  <circle class="sv-k" cx="282" cy="292" r="16" /><text class="sv-t" x="282" y="297" text-anchor="middle">6</text>
+  <circle class="sv-k" cx="328" cy="292" r="16" /><text class="sv-t" x="328" y="297" text-anchor="middle">1</text>
+  <line class="sv-cl" x1="175" y1="264" x2="183" y2="277" />
+  <line class="sv-cl" x1="205" y1="264" x2="197" y2="277" />
+  <text class="sv-t" x="395" y="45" text-anchor="middle">1</text><text class="sv-t" x="395" y="87" text-anchor="middle">2</text><text class="sv-t" x="395" y="129" text-anchor="middle">4</text><text class="sv-t" x="395" y="171" text-anchor="middle">8</text><text class="sv-t" x="395" y="213" text-anchor="middle">16</text><text class="sv-t" x="395" y="255" text-anchor="middle">32</text><text class="sv-t" x="395" y="297" text-anchor="middle">64</text>
+</svg>
+<figcaption>Vurgulu iki sayı C(5, 2) = 10 ve C(5, 3) = 10; toplamları altlarındaki C(6, 3) = 20'dir. Her satır simetriktir (C(n, r) = C(n, n − r)) ve satır toplamı 2<sup>n</sup>'dir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>C(n, r) + C(n, r + 1) = C(n + 1, r + 1)</strong> (Pascal kuralı): üst satırda yan yana duran iki sayının toplamı, altlarındaki sayıdır. <strong>C(n, 0) + C(n, 1) + … + C(n, n) = 2<sup>n</sup></strong>: n elemanlı bir kümenin bütün alt kümelerini eleman sayısına göre gruplayıp topladın; Parça 34'te bütün alt kümelerin sayısının 2<sup>n</sup> olduğunu (her eleman için "alınır / alınmaz" iki seçenek) göstermiştin. Aynı şeyi iki yoldan saydığın için sonuçlar eşittir.</p></div>
+
+<p>Parça 34'te 5 elemanlı bir kümenin alt küme sayılarını 1, 5, 10, 10, 5, 1 olarak bulup toplamın 32 = 2<sup>5</sup> olduğunu görmüştün. O satır, Pascal üçgeninin n = 5 satırıdır. Pascal üçgenini ileride ileri matematikte binom açılımının katsayıları olarak yeniden göreceksin; burada yalnızca kombinasyonun bir tablosu olarak tanı.</p>
+
+<div class="tablo"><table>
+<tr><th>Sık gelen değerler</th><th>Hızlı hesap</th><th>Sonuç</th></tr>
+<tr><td>C(n, 2)</td><td>n · (n − 1) ÷ 2</td><td>C(6, 2) = 15, C(8, 2) = 28, C(10, 2) = 45</td></tr>
+<tr><td>C(n, 3)</td><td>n · (n − 1) · (n − 2) ÷ 6</td><td>C(6, 3) = 20, C(7, 3) = 35, C(8, 3) = 56, C(9, 3) = 84</td></tr>
+<tr><td>C(n, 4)</td><td>n · (n − 1) · (n − 2) · (n − 3) ÷ 24</td><td>C(7, 4) = 35, C(8, 4) = 70, C(10, 4) = 210</td></tr>
+<tr><td>C(n, n − 1)</td><td>C(n, 1) ile aynı</td><td>C(20, 19) = 20</td></tr>
+</table></div>
+
+<h2 class="s">5. Alt küme soruları: r elemanlı, en az ve en çok k elemanlı</h2>
+
+<p>Kombinasyonun tanımı gereği "n elemanlı kümenin r elemanlı alt küme sayısı" doğrudan C(n, r)'dir. Sınav bunu genellikle bir koşulla sorar: "en az 2 elemanlı", "en çok 2 elemanlı", "a'yı içeren", "a'yı içerip b'yi içermeyen".</p>
+
+<p><strong>En az ya da en çok k elemanlı alt kümeler.</strong> "En çok 2 elemanlı" demek "0, 1 ya da 2 elemanlı" demektir; bu ayrık durumları toplarsın. "En az 2 elemanlı" için toplanacak terim çoksa tümleyenden saymak daha hızlıdır: bütün alt kümelerden 0 ve 1 elemanlıları çıkar.</p>
+
+<span class="mat">6 elemanlı kümede en çok 2 elemanlı: C(6, 0) + C(6, 1) + C(6, 2) <span class="g">(ayrık durumlar toplanır)</span></span>
+<span class="mat">= 1 + 6 + 15 = 22 <span class="g">(Pascal üçgeninin n = 6 satırı)</span></span>
+<span class="mat">6 elemanlı kümede en az 2 elemanlı: 2<sup>6</sup> − C(6, 0) − C(6, 1) <span class="g">(tümleyenden sayma)</span></span>
+<span class="mat">= 64 − 1 − 6 = 57 <span class="g">(hesapla)</span></span>
+
+<p><strong>Kontrol yolu:</strong> 2, 3, 4, 5, 6 elemanlı alt kümeleri tek tek topla: 15 + 20 + 15 + 6 + 1 = 57. İki yol aynı sonucu veriyor.</p>
+
+<p><strong>Belirli bir elemanı içeren ya da içermeyen alt kümeler.</strong> Pascal kuralındaki "Ali var / Ali yok" düşüncesinin aynısı. {a, b, c, d, e, f} kümesinin a'yı içeren 3 elemanlı alt kümelerinde a'nın yeri kesindir; kalan 2 eleman, a dışındaki 5 elemandan seçilir: C(5, 2) = 10. a'yı içermeyen 3 elemanlı alt kümelerde a hiç kullanılmaz; 3 eleman 5 elemandan seçilir: C(5, 3) = 10. Toplam 10 + 10 = 20 = C(6, 3); bu da kendi kontrolündür.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Koşullu seçimde önce <strong>kesin olanları yerleştir, yasak olanları kümeden çıkar</strong>, sonra kalan yerleri kalan elemanlardan seç. n elemanlı bir kümede k belirli elemanın hepsini içeren r elemanlı alt küme sayısı C(n − k, r − k); m belirli elemanın hiçbirini içermeyenlerin sayısı C(n − m, r). Nedeni: kesin elemanlar zaten seçilmiştir, yasaklar zaten dışarıdadır; geriye seçim yapılacak daha küçük bir küme kalır.</p></div>
+
+<h2 class="s">6. Ekip, kurul, komisyon seçimi</h2>
+
+<p>Sınavın en sevdiği kombinasyon sorusu budur: bir gruptan belirli koşullarla ekip seçmek. Üç tip var ve üçünün mantığı farklı.</p>
+
+<h3>Tip 1: Belirli kişi bulunsun ya da bulunmasın</h3>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Aralarında Ali ve Berk'in de bulunduğu 10 kişiden 4 kişilik bir ekip seçilecektir. a) Ali'nin bulunduğu kaç ekip vardır? b) Ali'nin bulunmadığı kaç ekip vardır? c) Ali ile Berk'in birlikte bulunmadığı kaç ekip vardır?</p>
+<p><strong>Adım 1.</strong> a) Ali kesin; kalan 3 yer, Ali dışındaki 9 kişiden doldurulur.</p>
+<span class="mat">C(9, 3) = <span class="kes"><span>9 · 8 · 7</span><span>3 · 2 · 1</span></span> = 84 <span class="g">(kesin olan yerleşti, 3 yer 9 kişi kaldı)</span></span>
+<p><strong>Adım 2.</strong> b) Ali yasak; 4 kişinin hepsi kalan 9 kişiden seçilir.</p>
+<span class="mat">C(9, 4) = 126 <span class="g">(Çözümlü örnek 1'de hesaplandı)</span></span>
+<p><strong>Adım 3.</strong> Kontrol: Her ekipte Ali ya vardır ya yoktur. İki sayının toplamı bütün ekiplerin sayısını vermeli.</p>
+<span class="mat">84 + 126 = 210 = C(10, 4) <span class="g">(Pascal kuralı: C(9, 3) + C(9, 4) = C(10, 4))</span></span>
+<p><strong>Adım 4.</strong> c) "Birlikte bulunmasın" demek "ikisi aynı anda olmasın" demektir; biri olabilir, ikisi de olmayabilir. Tümleyenden say: bütün ekiplerden ikisinin birlikte bulunduğu ekipleri çıkar.</p>
+<span class="mat">ikisi birlikte: C(8, 2) = 28 <span class="g">(Ali ve Berk kesin, 2 yer 8 kişiden)</span></span>
+<span class="mat">210 − 28 = 182 <span class="g">(tümü − ikisi birlikte)</span></span>
+<p><strong>Sonuç:</strong> a) 84, b) 126, c) 182. <strong>Kontrol yolu</strong> (c için doğrudan sayma): ikisi de yok C(8, 4) = 70; yalnız Ali var C(8, 3) = 56; yalnız Berk var 56. Toplam 70 + 56 + 56 = 182. Aynı sonuç.</p></div>
+
+<h3>Tip 2: Kadın ve erkek sayısı belirli</h3>
+
+<p>"5 kadın ve 6 erkekten 2 kadın, 3 erkek seçilecek" türü sorularda iki ayrı seçim art arda yapılır: önce kadınları kadınlar arasından, sonra erkekleri erkekler arasından seçersin. Her kadın seçimi her erkek seçimiyle birleşebildiği için iki sayı <strong>çarpılır</strong>; toplanmaz. Bu Parça 43'teki "ve" ile çarpma kuralıdır: C(5, 2) · C(6, 3) = 10 · 20 = 200.</p>
+
+<h3>Tip 3: "En az bir", "en az iki" koşulu</h3>
+
+<p>"En az" koşulunda iki yol vardır. Ya olası bütün durumları ayrı ayrı sayıp toplarsın (durum ayırma), ya da bütün seçimlerden istenmeyenleri çıkarırsın (tümleyen). Hangisinin kısa olduğuna bakarak seç; fırsat varsa ikisini birden yaparak kendini denetle.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 6 kadın ve 5 erkek arasından 4 kişilik bir kurul seçilecektir. Kurulda en az 2 kadın bulunması koşuluyla kaç farklı kurul seçilebilir?</p>
+<p><strong>Adım 1.</strong> "En az 2 kadın": kadın sayısı 2, 3 ya da 4 olabilir. Her durumda kalan yerler erkeklerle dolar.</p>
+<span class="mat">2 kadın, 2 erkek: C(6, 2) · C(5, 2) = 15 · 10 = 150 <span class="g">("ve" çarpılır)</span></span>
+<span class="mat">3 kadın, 1 erkek: C(6, 3) · C(5, 1) = 20 · 5 = 100 <span class="g">(aynı mantık)</span></span>
+<span class="mat">4 kadın, 0 erkek: C(6, 4) · C(5, 0) = 15 · 1 = 15 <span class="g">(C(6, 4) = C(6, 2))</span></span>
+<p><strong>Adım 2.</strong> Durumlar ayrıktır (bir kurulda kadın sayısı aynı anda hem 2 hem 3 olamaz); toplanır.</p>
+<span class="mat">150 + 100 + 15 = 265 <span class="g">("veya" toplanır)</span></span>
+<p><strong>Adım 3.</strong> Kontrol yolu: tümleyenden say. Toplam 11 kişiden 4 kişilik kurul sayısından, 0 ya da 1 kadınlı kurulları çıkar.</p>
+<span class="mat">tümü: C(11, 4) = 330 <span class="g">(koşulsuz)</span></span>
+<span class="mat">0 kadın: C(5, 4) = 5; 1 kadın: C(6, 1) · C(5, 3) = 6 · 10 = 60 <span class="g">(istenmeyen durumlar)</span></span>
+<span class="mat">330 − 5 − 60 = 265 <span class="g">(iki yol aynı sonucu verdi)</span></span>
+<p><strong>Sonuç:</strong> 265 kurul.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"En az bir kadın" için önce bir kadın seçip kalanları herkesten seçmek.</strong> 5 kadın, 4 erkekten 3 kişilik ve en az bir kadınlı ekip sorusunda şu çözüm çok yaygındır: "Önce 5 kadından birini seçerim, sonra kalan 8 kişiden 2'sini: 5 · C(8, 2) = 5 · 28 = 140." Doğru cevap ise C(9, 3) − C(4, 3) = 84 − 4 = 80'dir. Fark nereden geliyor? Kadınlar K1 ve K2 ile bir erkek E1'den oluşan ekibi düşün. Bu ekip, "önce K1 seçildi, sonra K2 ve E1" yolunda bir kez, "önce K2 seçildi, sonra K1 ve E1" yolunda bir kez daha sayılır. İki kadınlı her ekip iki kez, üç kadınlı her ekip üç kez sayılmıştır. "Özel bir kişiyi önce seç" yöntemi yalnızca o kişi gerçekten belirliyse (Ali gibi) doğrudur; "herhangi bir kadın" belirli değildir. En az bir koşulunda tümleyeni kullan: tümü − hiç kadın olmayan.</p></div>
+
+<h2 class="s">7. Önce seç, sonra sırala</h2>
+
+<p>Bazı sorular iki işi birlikte ister: önce bir grup seçilir, sonra seçilenler sıraya, koltuğa ya da göreve yerleştirilir. Formülü kurarken yaptığın iki adımlı düşünce burada doğrudan çözüm yöntemi olur: <strong>seçim sayısı × seçilenlerin sıralanış sayısı</strong>.</p>
+
+<p>Koşul yoksa bu çarpım zaten permütasyondur: 7 kişiden 3'ünü seçip 3 farklı sandalyeye oturtmak C(7, 3) · 3! = 35 · 6 = 210 = P(7, 3). Ama seçimde koşul olduğunda (kadın-erkek sayısı gibi) permütasyon formülü tek başına yetmez; önce koşula göre kombinasyonla seçer, sonra sıralarsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> 5 kız ve 4 erkek öğrenci arasından 2 kız ve 1 erkek seçilip bir fotoğraf için yan yana dizilecektir. Kaç farklı fotoğraf çekilebilir?</p>
+<p><strong>Adım 1.</strong> Kızları seç: sıra önemsiz, yalnızca kimlerin fotoğrafta olacağı.</p>
+<span class="mat">C(5, 2) = <span class="kes"><span>5 · 4</span><span>2</span></span> = 10 <span class="g">(5 kızdan 2'si)</span></span>
+<p><strong>Adım 2.</strong> Erkeği seç.</p>
+<span class="mat">C(4, 1) = 4 <span class="g">(4 erkekten 1'i)</span></span>
+<p><strong>Adım 3.</strong> Seçilen 3 kişiyi yan yana diz: fotoğrafta soldan sağa sıra önemlidir.</p>
+<span class="mat">3! = 6 <span class="g">(3 farklı kişinin sıralanışı)</span></span>
+<p><strong>Adım 4.</strong> Üç adım art arda yapılır; çarp.</p>
+<span class="mat">10 · 4 · 6 = 240 <span class="g">(çarpma ilkesi)</span></span>
+<p><strong>Sonuç:</strong> 240 farklı fotoğraf. <strong>Kontrol yolu:</strong> kutu yöntemiyle say. Üç konumdan erkeğin duracağı yeri seç (3 yol), erkeği seç (4 yol), kalan iki konuma sıralı olarak kız yerleştir (5 · 4 = 20 yol): 3 · 4 · 20 = 240. Aynı sonuç.</p></div>
+
+<h2 class="s">8. Gruplara ayırma: adlı gruplar ve adsız gruplar</h2>
+
+<p>Bir topluluğu gruplara bölmek, art arda seçim yapmaktır: önce birinci grubu, sonra kalanlardan ikinci grubu seçersin. Ama bir incelik var: gruplar birbirinden ayırt edilebiliyor mu?</p>
+
+<p>Küçük bir örnekle görelim. A, B, C, D dört kişisini 2'şer kişilik iki gruba ayıracaksın. Art arda seçimle: birinci grup C(4, 2) = 6, ikinci grup kalan 2 kişiden C(2, 2) = 1; çarpım 6. Şimdi bütün ayrılışları elle yaz: {A, B} ile {C, D}; {A, C} ile {B, D}; {A, D} ile {B, C}. Yalnızca 3 tane! Çünkü "önce {A, B}, sonra {C, D}" ile "önce {C, D}, sonra {A, B}" aynı ayrılıştır; gruplar adsız olduğu için hangisinin "birinci" seçildiğinin anlamı yoktur. Her ayrılış, grupların sıralanış sayısı olan 2! kadar sayılmıştır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Gruplara ayırırken art arda seçimle C(…) · C(…) · … çarpımını kur. Sonra: <strong>adsız ve eşit büyüklükteki k grup için çarpımı k!'e böl</strong>; çünkü bu grupların kendi aralarındaki k! sıralanışı aynı ayrılışı verir. Gruplar adlıysa (A odası, B odası; kırmızı takım, mavi takım) ya da büyüklükleri farklıysa bölme yapılmaz; çünkü o zaman gruplar zaten birbirinden ayırt edilir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> a) 6 kişi 2'şer kişilik 3 gruba kaç farklı biçimde ayrılır? b) Aynı 6 kişi, 1, 2 ve 3 numaralı odalara ikişer kişi olarak kaç farklı biçimde yerleşir? c) 9 kişi 4, 3 ve 2 kişilik üç gruba kaç farklı biçimde ayrılır?</p>
+<p><strong>Adım 1.</strong> a) Art arda seç.</p>
+<span class="mat">C(6, 2) · C(4, 2) · C(2, 2) = 15 · 6 · 1 = 90 <span class="g">(birinci, ikinci, üçüncü grup)</span></span>
+<p><strong>Adım 2.</strong> Gruplar adsız ve eşit büyüklükte: 3 grubun 3! sıralanışı aynı ayrılışı verir.</p>
+<span class="mat"><span class="kes"><span>90</span><span>3!</span></span> = <span class="kes"><span>90</span><span>6</span></span> = 15 <span class="g">(tekrarları at)</span></span>
+<p><strong>Adım 3.</strong> b) Odaların numarası var: "1. odada A ile B" ile "2. odada A ile B" farklı yerleşimlerdir. Art arda seçim bu farkı zaten gözetiyor; bölme yok.</p>
+<span class="mat">C(6, 2) · C(4, 2) · C(2, 2) = 90 <span class="g">(adlı gruplar: bölme yapılmaz)</span></span>
+<p><strong>Adım 4.</strong> c) Grupların büyüklükleri farklı: 4 kişilik grup ile 2 kişilik grup karıştırılamaz, yani gruplar kendiliğinden ayırt edilir.</p>
+<span class="mat">C(9, 4) · C(5, 3) · C(2, 2) = 126 · 10 · 1 = 1260 <span class="g">(farklı büyüklük: bölme yapılmaz)</span></span>
+<p><strong>Sonuç:</strong> a) 15, b) 90, c) 1260. <strong>Kontrol yolu</strong> (a için): A'nın eşini seç: 5 yol. Kalan 4 kişide, kalanların ilkinin eşini seç: 3 yol. Son iki kişi kendiliğinden eş olur: 1 yol. 5 · 3 · 1 = 15. Aynı sonuç.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Bölmeyi unutmak ya da gereksiz yere bölmek.</strong> Adsız eşit gruplarda k!'e bölmeyi unutan kişi a) şıkkına 90 der. Tersine, odalar numaralıyken ya da gruplar farklı büyüklükteyken de bölen kişi b) şıkkına 15, c) şıkkına 1260 ÷ 3! = 210 der. Bölüp bölmemeye karar vermek için kendine sor: "İki grubun içindekileri tümden yer değiştirirsem yeni bir durum oluşur mu?" Oluşmuyorsa (adsız, eşit gruplar) böl; oluşuyorsa bölme.</p></div>
+
+<h2 class="s">9. Geometrik kombinasyon: noktalar, doğrular, çokgenler</h2>
+
+<p>Geometrik sayma soruları kombinasyonun en saf hâlidir; çünkü bir doğru parçası ya da üçgen, köşelerinin <strong>hangi sırayla</strong> seçildiğine bağlı değildir. AB doğrusu ile BA doğrusu aynıdır; ABC üçgeni ile CAB üçgeni aynıdır.</p>
+
+<h3>Noktalardan doğru ve üçgen</h3>
+
+<p>İki farklı noktadan tek bir doğru geçer. Herhangi üçü aynı doğru üzerinde olmayan n nokta varsa, her nokta ikilisi farklı bir doğru verir: C(n, 2) doğru. Üç nokta, aynı doğru üzerinde değilse, bir üçgen belirler; herhangi üçü doğrusal olmayan n noktadan C(n, 3) üçgen çizilir.</p>
+
+<p>İş, bazı noktalar aynı doğru üzerinde olduğunda inceleşir. 7 noktadan 4'ü aynı d doğrusu üzerinde, başka hiçbir üçü doğrusal değil diyelim.</p>
+
+<p><strong>Doğru sayısı:</strong> C(7, 2) = 21 ikilinin hepsi ayrı doğru sayılmıştı. Oysa d üzerindeki 4 noktanın oluşturduğu C(4, 2) = 6 ikilinin hepsi aynı doğruyu, d'yi verir. Bu 6 ikiliyi çıkarıp d'yi bir kez ekle: 21 − 6 + 1 = 16.</p>
+
+<p><strong>Üçgen sayısı:</strong> C(7, 3) = 35 üçlünün içinde, üç noktası da d üzerinde olan C(4, 3) = 4 üçlü üçgen oluşturmaz (üç nokta aynı doğrudadır, kapalı bir şekil çıkmaz). Bunları çıkar: 35 − 4 = 31. Üçgende "geri ekleme" yoktur, çünkü doğrusal üç nokta hiçbir üçgen vermez.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n noktadan k tanesi aynı doğru üzerinde, başka hiçbir üçü doğrusal değilse: <strong>doğru sayısı = C(n, 2) − C(k, 2) + 1</strong>, <strong>üçgen sayısı = C(n, 3) − C(k, 3)</strong>. Nedeni: doğrusal k nokta, kendi aralarında C(k, 2) ayrı doğru değil tek bir doğru verir; kendi aralarındaki C(k, 3) üçlü ise hiç üçgen vermez.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 236" role="img" aria-label="Birbirine paralel iki doğru. Üstteki d doğrusunda A, B, C, D noktaları, alttaki e doğrusunda E, F, G noktaları. A, C ve F noktalarını birleştiren bir üçgen taralı gösterilmiş.">
+  <polygon class="sv-l" points="70,60 230,60 200,176" />
+  <line class="sv-c" x1="20" y1="60" x2="380" y2="60" />
+  <line class="sv-c" x1="20" y1="176" x2="380" y2="176" />
+  <text class="sv-s" x="372" y="50" text-anchor="end">d</text>
+  <text class="sv-s" x="372" y="200" text-anchor="end">e</text>
+  <circle class="sv-a" cx="70" cy="60" r="5" /><text class="sv-b" x="70" y="42" text-anchor="middle">A</text>
+  <circle class="sv-a" cx="150" cy="60" r="5" /><text class="sv-b" x="150" y="42" text-anchor="middle">B</text>
+  <circle class="sv-a" cx="230" cy="60" r="5" /><text class="sv-b" x="230" y="42" text-anchor="middle">C</text>
+  <circle class="sv-a" cx="310" cy="60" r="5" /><text class="sv-b" x="310" y="42" text-anchor="middle">D</text>
+  <circle class="sv-a" cx="110" cy="176" r="5" /><text class="sv-b" x="110" y="200" text-anchor="middle">E</text>
+  <circle class="sv-a" cx="200" cy="176" r="5" /><text class="sv-b" x="200" y="200" text-anchor="middle">F</text>
+  <circle class="sv-a" cx="290" cy="176" r="5" /><text class="sv-b" x="290" y="200" text-anchor="middle">G</text>
+  <text class="sv-s" x="200" y="226" text-anchor="middle">ACF: d'den 2 nokta, e'den 1 nokta</text>
+</svg>
+<figcaption>Paralel iki doğru üzerindeki 7 nokta. Bir üçgenin üç köşesi aynı doğrudan gelemez; ya üstten 2 ve alttan 1, ya üstten 1 ve alttan 2 nokta seçilir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Şekildeki paralel d ve e doğruları üzerinde sırasıyla 4 ve 3 nokta vardır. Köşeleri bu 7 noktadan seçilen kaç üçgen çizilebilir? Bu noktalardan kaç farklı doğru geçer?</p>
+<p><strong>Adım 1.</strong> Hızlı yol (durum ayırma): Üçgenin köşeleri ya d'den 2, e'den 1; ya d'den 1, e'den 2 noktadır.</p>
+<span class="mat">d'den 2, e'den 1: C(4, 2) · C(3, 1) = 6 · 3 = 18 <span class="g">(iki ayrı seçim çarpılır)</span></span>
+<span class="mat">d'den 1, e'den 2: C(4, 1) · C(3, 2) = 4 · 3 = 12 <span class="g">(aynı mantık)</span></span>
+<span class="mat">18 + 12 = 30 <span class="g">(ayrık durumlar toplanır)</span></span>
+<p><strong>Adım 2.</strong> Kontrol yolu (tümleyen): bütün üçlülerden, aynı doğrudaki üçlüleri çıkar.</p>
+<span class="mat">C(7, 3) − C(4, 3) − C(3, 3) = 35 − 4 − 1 = 30 <span class="g">(d'deki ve e'deki doğrusal üçlüler atıldı)</span></span>
+<p><strong>Adım 3.</strong> Doğru sayısı: d ile e'nin kendisi 2 doğru; ayrıca d'den bir, e'den bir nokta alarak çizilen her doğru farklıdır.</p>
+<span class="mat">2 + 4 · 3 = 14 <span class="g">(d, e ve çapraz doğrular)</span></span>
+<span class="mat">C(7, 2) − C(4, 2) − C(3, 2) + 2 = 21 − 6 − 3 + 2 = 14 <span class="g">(kontrol: kutudaki formülün iki doğrulu hâli)</span></span>
+<p><strong>Sonuç:</strong> 30 üçgen, 14 doğru. İki ayrı yolun aynı sonucu vermesi, hesabının doğru olduğuna dair en güçlü işarettir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Doğru sayısında "+1"i unutmak, üçgen sayısında "+1" eklemek.</strong> Doğrusal noktaların ikilileri çıkarıldığında, o noktaların üzerinde durduğu doğru da hesaptan düşer; oysa o doğru vardır ve bir kez sayılmalıdır. Üçgende ise doğrusal üçlüler hiçbir üçgen vermediği için geri eklenecek bir şey yoktur. Formülü ezberlemek yerine "çıkardığım ikililer hiç doğru vermiyor muydu, yoksa tek bir doğru mu veriyordu?" diye sor.</p></div>
+
+<h3>Paralel doğrulardan paralelkenar</h3>
+
+<p>Birbirine paralel m doğrudan oluşan bir demet, bu demete paralel olmayan ve kendi içinde paralel n doğruluk ikinci bir demetle kesişiyor. Bir paralelkenarın karşılıklı kenarları paraleldir; yani bir paralelkenar, birinci demetten 2 doğru ve ikinci demetten 2 doğru seçilerek kesin olarak belirlenir. Seçimler bağımsız olduğu için çarpılır: <strong>C(m, 2) · C(n, 2)</strong>. Örneğin 5 ve 4 paralel doğrudan oluşan iki demet C(5, 2) · C(4, 2) = 10 · 6 = 60 paralelkenar verir.</p>
+
+<h3>Izgarada dikdörtgen sayısı</h3>
+
+<p>Aynı düşüncenin en sık sorulan biçimi budur. 4 sütun ve 3 satırdan oluşan, birim karelerden yapılmış bir ızgara düşün. Izgarada kaç dikdörtgen (kareler dahil) vardır? Tek tek saymak umutsuzdur; ama her dikdörtgenin iki dikey ve iki yatay kenarı vardır ve bu kenarlar ızgaranın çizgileri üzerindedir.</p>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Dört sütun ve üç satırlık ızgara. Dikey çizgiler 1'den 5'e, yatay çizgiler 1'den 4'e numaralı. İkinci ve dördüncü dikey çizgilerle birinci ve üçüncü yatay çizgiler vurgulanmış; aralarında kalan dikdörtgen taralı.">
+  <rect class="sv-m" x="140" y="40" width="120" height="100" />
+  <line class="sv-c" x1="80" y1="40" x2="80" y2="190" />
+  <line class="sv-c" x1="140" y1="40" x2="140" y2="190" />
+  <line class="sv-c" x1="200" y1="40" x2="200" y2="190" />
+  <line class="sv-c" x1="260" y1="40" x2="260" y2="190" />
+  <line class="sv-c" x1="320" y1="40" x2="320" y2="190" />
+  <line class="sv-c" x1="80" y1="40" x2="320" y2="40" />
+  <line class="sv-c" x1="80" y1="90" x2="320" y2="90" />
+  <line class="sv-c" x1="80" y1="140" x2="320" y2="140" />
+  <line class="sv-c" x1="80" y1="190" x2="320" y2="190" />
+  <line class="sv-cl" x1="140" y1="30" x2="140" y2="200" />
+  <line class="sv-cl" x1="260" y1="30" x2="260" y2="200" />
+  <line class="sv-cl" x1="70" y1="40" x2="330" y2="40" />
+  <line class="sv-cl" x1="70" y1="140" x2="330" y2="140" />
+  <text class="sv-s" x="80" y="218" text-anchor="middle">1</text><text class="sv-b" x="140" y="218" text-anchor="middle">2</text><text class="sv-s" x="200" y="218" text-anchor="middle">3</text><text class="sv-b" x="260" y="218" text-anchor="middle">4</text><text class="sv-s" x="320" y="218" text-anchor="middle">5</text>
+  <text class="sv-b" x="52" y="45" text-anchor="middle">1</text><text class="sv-s" x="52" y="95" text-anchor="middle">2</text><text class="sv-b" x="52" y="145" text-anchor="middle">3</text><text class="sv-s" x="52" y="195" text-anchor="middle">4</text>
+  <text class="sv-s" x="200" y="242" text-anchor="middle">5 dikey çizgiden 2'si, 4 yatay çizgiden 2'si</text>
+</svg>
+<figcaption>Taralı dikdörtgen, 2 ve 4 numaralı dikey çizgiler ile 1 ve 3 numaralı yatay çizgiler seçilerek oluştu. Her çizgi seçimi tek bir dikdörtgen verir, her dikdörtgen de tek bir çizgi seçiminden gelir.</figcaption>
+</figure>
+
+<p>4 sütunlu ızgarada 5 dikey çizgi, 3 satırlı ızgarada 4 yatay çizgi vardır (her zaman bir fazlası; Parça 24'teki "aralık sayısı ile direk sayısı" farkının aynısı). Dikdörtgen sayısı C(5, 2) · C(4, 2) = 10 · 6 = 60'tır. Genel olarak <strong>m sütun, n satırlı ızgarada C(m + 1, 2) · C(n + 1, 2)</strong> dikdörtgen vardır.</p>
+
+<h3>Çember üzerindeki noktalar ve köşegen sayısı</h3>
+
+<p>Bir çemberin üzerindeki noktaların hiçbir üçü doğrusal olamaz; çünkü bir doğru bir çemberi en çok iki noktada keser. Bu yüzden çember üzerindeki n noktayla sorular "doğrusal nokta" inceliği olmadan doğrudan kombinasyondur: <strong>kiriş sayısı C(n, 2)</strong>, <strong>üçgen sayısı C(n, 3)</strong>, <strong>k kenarlı çokgen sayısı C(n, k)</strong>. 8 nokta için: 28 kiriş, 56 üçgen, 70 dörtgen.</p>
+
+<p>Köşegen, bir çokgenin komşu olmayan iki köşesini birleştiren doğru parçasıdır. n kenarlı bir çokgenin n köşesinden C(n, 2) ikili seçilir; bu ikililerin n tanesi komşu köşelerdir ve kenarları verir. Geriye köşegenler kalır.</p>
+
+<span class="mat">köşegen sayısı = C(n, 2) − n <span class="g">(bütün köşe ikilileri − kenarlar)</span></span>
+<span class="mat">= <span class="kes"><span>n(n − 1)</span><span>2</span></span> − n = <span class="kes"><span>n(n − 1) − 2n</span><span>2</span></span> <span class="g">(payda eşitle)</span></span>
+<span class="mat">= <span class="kes"><span>n(n − 3)</span><span>2</span></span> <span class="g">(n'yi ortak paranteze al)</span></span>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>n kenarlı bir çokgenin köşegen sayısı <span class="kes"><span>n(n − 3)</span><span>2</span></span>'dir.</strong> İkinci gerekçe (kontrol yolu): her köşeden, kendisi ve iki komşusu dışındaki n − 3 köşeye köşegen çizilir; n köşe için n(n − 3) eder; ama her köşegen iki ucundan birer kez sayıldığı için 2'ye bölünür. Altıgende 6 · 3 / 2 = 9, onikigende 12 · 9 / 2 = 54 köşegen vardır.</p></div>
+
+<h3>Doğruların en çok kesişim noktası</h3>
+
+<p>Düzlemde n doğru varsa, her doğru ikilisi en çok bir noktada kesişir (paralellerse hiç kesişmezler, çakışıklarsa zaten aynı doğrudurlar). Kesişim noktası sayısının <strong>en çok</strong> olması için hiçbir iki doğru paralel olmamalı ve hiçbir üç doğru aynı noktadan geçmemeli; o zaman her ikili ayrı bir nokta verir: en çok C(n, 2) nokta. 6 doğru en çok C(6, 2) = 15 noktada kesişir. Üç doğru aynı noktadan geçerse, o üç doğrunun C(3, 2) = 3 ikilisi tek noktaya düşer ve sayı azalır.</p>
+
+<div class="tablo"><table>
+<tr><th>Ne sayılıyor?</th><th>Neyin seçimi?</th><th>Sayı</th></tr>
+<tr><td>n noktadan doğru (üçü doğrusal değil)</td><td>2 nokta</td><td>C(n, 2)</td></tr>
+<tr><td>n noktadan üçgen (üçü doğrusal değil)</td><td>3 nokta</td><td>C(n, 3)</td></tr>
+<tr><td>k'sı doğrusal n nokta: doğru / üçgen</td><td>2 nokta / 3 nokta</td><td>C(n, 2) − C(k, 2) + 1 / C(n, 3) − C(k, 3)</td></tr>
+<tr><td>m ve n paralel doğruluk iki demette paralelkenar</td><td>her demetten 2 doğru</td><td>C(m, 2) · C(n, 2)</td></tr>
+<tr><td>m sütun, n satırlı ızgarada dikdörtgen</td><td>2 dikey, 2 yatay çizgi</td><td>C(m + 1, 2) · C(n + 1, 2)</td></tr>
+<tr><td>Çemberde n noktadan kiriş / üçgen / k-gen</td><td>2 / 3 / k nokta</td><td>C(n, 2) / C(n, 3) / C(n, k)</td></tr>
+<tr><td>n kenarlı çokgenin köşegenleri</td><td>komşu olmayan 2 köşe</td><td>n(n − 3) / 2</td></tr>
+<tr><td>n doğrunun en çok kesişim noktası</td><td>2 doğru</td><td>C(n, 2)</td></tr>
+</table></div>
+
+<h2 class="s">10. Tokalaşma ve maç sayısı</h2>
+
+<p>Bir toplantıdaki herkes, öbür herkesle birer kez tokalaşıyor. Bir tokalaşma iki kişiyle belirlenir ve Ali'nin Berk'le tokalaşması ile Berk'in Ali'yle tokalaşması aynı olaydır: sıra önemsiz. n kişilik toplantıda tokalaşma sayısı C(n, 2)'dir. Bu, çember üzerindeki n noktadan çizilen kiriş sayısıyla aynı sorudur: kişileri nokta, tokalaşmaları kiriş gibi düşün.</p>
+
+<p>Spor ligleri de aynı modeldir. Tek devreli bir ligde her takım öbür her takımla bir kez oynar: C(n, 2) maç. Çift devreli ligde (iç saha ve dış saha) her ikili iki kez oynar ve iki maç ev sahibine göre ayırt edilir: 2 · C(n, 2) = n(n − 1) = P(n, 2) maç. Bu, kombinasyon ile permütasyon arasındaki ilişkinin en somut örneğidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> a) Bir toplantıda herkes birbiriyle birer kez tokalaşmış ve toplam 45 tokalaşma olmuştur. Toplantıda kaç kişi vardır? b) 18 takımlı çift devreli bir ligde toplam kaç maç oynanır? c) 16 takım 4'er takımlı 4 gruba ayrılıyor ve her grupta tek devreli maçlar oynanıyor. Grup aşamasında toplam kaç maç oynanır?</p>
+<p><strong>Adım 1.</strong> a) Kişi sayısına n de; tokalaşma sayısını C(n, 2) ile yaz.</p>
+<span class="mat"><span class="kes"><span>n(n − 1)</span><span>2</span></span> = 45 <span class="g">(C(n, 2) = 45)</span></span>
+<span class="mat">n(n − 1) = 90 <span class="g">(iki yanı 2 ile çarp)</span></span>
+<span class="mat">10 · 9 = 90 ⇒ n = 10 <span class="g">(ardışık iki sayının çarpımı 90)</span></span>
+<p><strong>Adım 2.</strong> b) Çift devre: her ikili iki maç.</p>
+<span class="mat">2 · C(18, 2) = 2 · <span class="kes"><span>18 · 17</span><span>2</span></span> = 18 · 17 = 306 <span class="g">(= P(18, 2))</span></span>
+<p><strong>Adım 3.</strong> c) Her grupta C(4, 2) = 6 maç; 4 grup var.</p>
+<span class="mat">4 · C(4, 2) = 4 · 6 = 24 <span class="g">(gruplar arasında maç yok)</span></span>
+<p><strong>Sonuç:</strong> a) 10 kişi, b) 306 maç, c) 24 maç. <strong>Kontrol yolu</strong> (a için): 10 kişide her kişi 9 kişiyle tokalaşır; 10 · 9 = 90, ama her tokalaşmada iki kişi vardır ve her tokalaşma iki kez sayılmıştır; 90 ÷ 2 = 45. Tutuyor. Sınavda n(n − 1) = 90 türü denklemlerde ikinci dereceden denklemi (Parça 41) çözmek yerine "hangi iki ardışık sayının çarpımı 90?" diye düşünmek çok daha hızlıdır; negatif kök (−9) zaten kişi sayısı olamaz.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 34'e:</strong> C(n, r), n elemanlı kümenin r elemanlı alt küme sayısıdır; C(n, 0) + … + C(n, n) = 2<sup>n</sup>, orada gördüğün alt küme sayısının eleman sayısına göre dağılmış hâlidir.</p>
+<p><strong>Parça 43 ve 44'e:</strong> Kombinasyonun formülü, permütasyonun "önce seç, sonra sırala" diye iki adıma bölünmesinden çıktı: P(n, r) = C(n, r) · r!. "En az bir" sorularındaki tümleyenden sayma da Parça 43'ün yöntemidir.</p>
+<p><strong>Parça 46 ve 47'ye:</strong> "Torbadan 3 top çekiliyor, ikisinin kırmızı olma olasılığı" türü soruların neredeyse hepsinde pay da payda da kombinasyonla bulunur. Bu parçadaki ekip seçimi soruları, olasılıkta "seçilen ekipte en az bir kadın bulunma olasılığı" olarak geri dönecek.</p>
+<p><strong>Öbür derslere:</strong> İleri matematikte Parça 33'te (a + b)<sup>n</sup> açılımının katsayılarının tam olarak Pascal üçgeninin satırları olduğunu göreceksin. Geometride çokgenler konusunda köşegen sayısı yeniden çıkar; bir köşeden çizilen n − 3 köşegenin çokgeni n − 2 üçgene ayırması, iç açılar toplamının (n − 2) · 180° olmasının da gerekçesidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir sayma sorusunda permütasyon mu kombinasyon mu kullanacağına nasıl karar verirsin?</summary><p>Seçilen iki elemanın yerini değiştiririm. Yeni bir durum oluşuyorsa (görev, sıra, yer ya da derece farkı varsa) sıra önemlidir ve permütasyon kullanırım; oluşmuyorsa (aynı ekip, aynı heyet) sıra önemsizdir ve kombinasyon kullanırım. "Seç" sözcüğü tek başına kombinasyon demek değildir.</p></details>
+<details><summary>C(n, r) = n! / (r! · (n − r)!) formülü nereden gelir?</summary><p>Sıralı seçimi iki adıma bölerim: önce r kişiyi sırasız seçerim (C(n, r) yol), sonra seçtiklerimi sıralarım (r! yol). Çarpım sıralı seçim sayısıdır: P(n, r) = C(n, r) · r!. İki yanı r!'e bölüp P(n, r) = n! / (n − r)! yazınca formül çıkar.</p></details>
+<details><summary>C(n, r) = C(n, n − r) neden doğrudur ve C(n, a) = C(n, b) eşitliğinden ne çıkar?</summary><p>r kişiyi seçmek, dışarıda kalacak n − r kişiyi seçmekle aynı iştir; iki seçim birebir eşleşir. Bu yüzden C(n, a) = C(n, b) ise ya a = b ya da a + b = n'dir; iki durumu da denemek gerekir.</p></details>
+<details><summary>"En az bir kadın bulunsun" koşulunda neden önce bir kadın seçip kalanları herkesten seçmek yanlıştır?</summary><p>Çünkü iki ya da daha çok kadının bulunduğu ekipler, hangi kadının "önce" seçildiğine göre birden çok kez sayılır. Doğru yol tümleyendir: bütün ekiplerden hiç kadın bulunmayan ekipleri çıkarmak; ya da kadın sayısına göre ayrık durumları tek tek sayıp toplamak.</p></details>
+<details><summary>6 kişiyi 2'şer kişilik 3 gruba ayırırken neden 3!'e böleriz, numaralı 3 odaya yerleştirirken neden bölmeyiz?</summary><p>Art arda seçim (C(6, 2) · C(4, 2) · C(2, 2) = 90) grupları birinci, ikinci, üçüncü diye ayırt eder. Gruplar adsızsa aynı üç grubun 3! = 6 sıralanışı tek bir ayrılıştır; 90 ÷ 6 = 15. Odalar numaralıysa grupların hangi odada olduğu fark yaratır; 90'ın hepsi farklı yerleşimdir.</p></details>
+<details><summary>k tanesi aynı doğru üzerinde olan n noktadan kaç doğru ve kaç üçgen çizilir? Doğruda neden 1 eklenir?</summary><p>Doğru: C(n, 2) − C(k, 2) + 1; üçgen: C(n, 3) − C(k, 3). Doğrusal k noktanın ikilileri ayrı ayrı doğru vermez ama hepsi birlikte tek bir doğru verir; o doğru bir kez geri eklenir. Doğrusal üçlüler ise hiç üçgen vermediği için geri eklenecek bir şey yoktur.</p></details>
+<details><summary>n kenarlı çokgenin köşegen sayısını iki ayrı yoldan nasıl bulursun?</summary><p>Birinci yol: bütün köşe ikilileri C(n, 2), bunlardan n tanesi kenar; C(n, 2) − n = n(n − 3)/2. İkinci yol: her köşeden n − 3 köşegen çıkar, n köşe için n(n − 3); her köşegen iki ucundan sayıldığı için 2'ye bölünür.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Karar testi:</strong> seçilen ikisinin yerini değiştir; yeni durum varsa permütasyon, yoksa kombinasyon.</li>
+<li><strong>Formül:</strong> C(n, r) = n! / (r! · (n − r)!) = P(n, r) / r!. Hızlı yol: üstte n'den geriye r çarpan, altta r!.</li>
+<li><strong>Özellikler:</strong> C(n, 0) = C(n, n) = 1; C(n, 1) = n; C(n, r) = C(n, n − r); C(n, a) = C(n, b) ⇒ a = b ya da a + b = n (iki durumu da dene).</li>
+<li><strong>Pascal:</strong> C(n, r) + C(n, r + 1) = C(n + 1, r + 1) ("Ali var" + "Ali yok"). Satır toplamı C(n, 0) + … + C(n, n) = 2<sup>n</sup>.</li>
+<li><strong>Belirli kişi:</strong> bulunsun → onu yerleştir, kalan yerleri kalanlardan seç; bulunmasın → onu kümeden çıkar. "İkisi birlikte olmasın" → tümü − ikisi birlikte.</li>
+<li><strong>Kadın-erkek sayısı belirli:</strong> C(K, a) · C(E, b), çarpılır.</li>
+<li><strong>En az bir:</strong> tümü − hiç. "Önce bir tane seç, sonra herkesten" yöntemi çift sayar.</li>
+<li><strong>Seç ve sırala:</strong> C(…) · r!.</li>
+<li><strong>Gruplara ayırma:</strong> art arda seç; adsız ve eşit büyüklükteki k grup için k!'e böl. Adlı ya da farklı büyüklükte gruplarda bölme yok.</li>
+<li><strong>Geometri:</strong> doğru C(n, 2) − C(k, 2) + 1; üçgen C(n, 3) − C(k, 3); paralelkenar C(m, 2) · C(n, 2); ızgarada dikdörtgen C(m + 1, 2) · C(n + 1, 2); köşegen n(n − 3)/2; n doğrunun en çok kesişimi C(n, 2).</li>
+<li><strong>Tokalaşma ve tek devreli lig:</strong> C(n, 2). Çift devre: n(n − 1) = P(n, 2).</li>
+<li><strong>Kontrol:</strong> sonuç tam sayı mı? Durum ayırma ile tümleyen aynı sayıyı veriyor mu?</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-45">
+<h3>Quiz 45</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">8 kişilik bir arkadaş grubundan, bir bilgi yarışmasına katılacak 3 kişilik bir takım kaç farklı şekilde seçilebilir?</p>
+<ul class="sec"><li>28</li><li>56</li><li>70</li><li>168</li><li>336</li></ul>
+<div class="coz"><p>Takımda görev ayrımı yok; seçilen üç kişinin yerini değiştirmek yeni bir takım oluşturmaz, yani sıra önemsizdir: C(8, 3) = (8 · 7 · 6) / (3 · 2 · 1) = 336 / 6 = 56. 336, sırayı önemseyip P(8, 3) hesaplamanın sonucudur. 168, 336'yı 3! yerine 2'ye bölmenin sonucudur; paydaya r! yazılmalıdır. 28 = C(8, 2) ve 70 = C(8, 4), seçilen kişi sayısını yanlış almaktan gelir.</p></div></li>
+
+<li data-c="D"><p class="q">C(12, 2x − 1) = C(12, x + 4) eşitliğini sağlayan x değerlerinin toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>5</li><li>8</li><li>12</li></ul>
+<div class="coz"><p>C(n, a) = C(n, b) ise ya a = b ya da a + b = n'dir; iki durum da denenmelidir. a = b: 2x − 1 = x + 4, x = 5 (iki alt değer de 9). a + b = 12: 3x + 3 = 12, x = 3 (alt değerler 5 ve 7; ikisi de 0 ile 12 arasında). x değerlerinin toplamı 5 + 3 = 8. 5 ya da 3 yalnızca bir durumu çözmenin sonucudur; 2, çözüm sayısıdır (toplamı değil); 12 ise n'nin kendisidir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdakilerden hangisinin sonucu C(10, 3) ile hesaplanır?</p>
+<ul class="sec"><li>10 kişilik bir gruptan 3 kişilik bir çalışma ekibi seçmek</li><li>10 kişilik bir kulüpten bir başkan, bir sayman ve bir sekreter seçmek</li><li>10 farklı kitaptan 3'ünü bir rafa yan yana dizmek</li><li>10 koşucunun katıldığı bir yarışta ilk üç derecenin kimlere gideceğini belirlemek</li><li>0'dan 9'a kadar olan rakamlarla, rakamları farklı 3 haneli bir şifre oluşturmak</li></ul>
+<div class="coz"><p>Yer değiştirme testini her seçeneğe uygula. A'da ekipteki iki kişinin yerini değiştirmek aynı ekibi verir: sıra önemsiz, C(10, 3) = 120. B'de görevler farklıdır (başkan ile sayman yer değiştirirse yeni yönetim), C'de raftaki sıra değişir, D'de birinci ile ikinci farklıdır, E'de şifredeki rakamların yeri değişince başka bir şifre olur. Bu dördünün cevabı P(10, 3) = 720'dir. Soru metninde "seç" sözcüğünün bulunması (B) kombinasyonu garanti etmez.</p></div></li>
+
+<li data-c="C"><p class="q">5 kadın ve 6 erkek arasından 2 kadın ve 3 erkekten oluşan 5 kişilik bir kurul kaç farklı şekilde oluşturulabilir?</p>
+<ul class="sec"><li>30</li><li>150</li><li>200</li><li>462</li><li>2400</li></ul>
+<div class="coz"><p>Kadınlar kadınlar arasından, erkekler erkekler arasından seçilir; her kadın seçimi her erkek seçimiyle birleşebildiği için çarpılır: C(5, 2) · C(6, 3) = 10 · 20 = 200. 30, iki sayıyı çarpmak yerine toplamaktır. 150 = C(5, 3) · C(6, 2), kadın ve erkek sayılarını karıştırmaktır. 462 = C(11, 5), cinsiyet koşulunu hiç kullanmamaktır. 2400 = P(5, 2) · P(6, 3), kurulda sıra yokken sırayı önemsemektir.</p></div></li>
+
+<li data-c="C"><p class="q">4 kadın ve 5 erkek arasından 3 kişilik bir ekip seçilecektir. Ekipte en az bir kadın bulunması koşuluyla kaç farklı ekip seçilebilir?</p>
+<ul class="sec"><li>10</li><li>40</li><li>74</li><li>84</li><li>112</li></ul>
+<div class="coz"><p>Tümleyenden say: bütün ekipler C(9, 3) = 84; hiç kadın bulunmayan, yani yalnız erkeklerden oluşan ekipler C(5, 3) = 10. En az bir kadınlı ekipler 84 − 10 = 74. 112 = 4 · C(8, 2) = 4 · 28, "önce bir kadın seç, sonra kalan 8 kişiden 2'sini" yönteminin sonucudur ve iki ya da üç kadınlı ekipleri birden çok kez sayar. 84 koşulu unutmaktır, 10 çıkarılması gereken sayının kendisidir, 40 = 4 · C(5, 2) ise yalnızca "tam bir kadın" durumudur.</p></div></li>
+
+<li data-c="D"><p class="q">Düzlemde 9 nokta vardır. Bu noktalardan 4'ü aynı doğru üzerindedir ve bunlar dışında hiçbir üçü doğrusal değildir. Köşeleri bu noktalardan seçilen kaç üçgen çizilebilir?</p>
+<ul class="sec"><li>20</li><li>50</li><li>78</li><li>80</li><li>84</li></ul>
+<div class="coz"><p>Bütün üçlüler C(9, 3) = 84; bunlardan üç noktası da aynı doğru üzerinde olan C(4, 3) = 4 üçlü üçgen oluşturmaz: 84 − 4 = 80. Kontrol: doğrudan 2 nokta ve dışarıdan 1 nokta C(4, 2) · 5 = 30, doğrudan 1 ve dışarıdan 2 nokta 4 · C(5, 2) = 40, hepsi dışarıdan C(5, 3) = 10; toplam 80. 84 doğrusal üçlüleri çıkarmamaktır; 78 = 84 − C(4, 2), üçlü yerine ikili çıkarmaktır; 50 "doğrudan 2 nokta, dışarıdan 1 nokta" durumunu unutmaktır (40 + 10); 20 = C(6, 3), doğrusal 4 noktayı tek nokta saymaktır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir çokgenin köşegen sayısı, kenar sayısının 4 katıdır. Köşeleri bu çokgenin köşelerinden seçilen kaç farklı üçgen çizilebilir?</p>
+<ul class="sec"><li>35</li><li>44</li><li>55</li><li>88</li><li>165</li></ul>
+<div class="coz"><p>Köşegen sayısı n(n − 3)/2 = 4n; n ≠ 0 olduğu için iki yanı n'ye bölüp (n − 3)/2 = 4, n − 3 = 8, n = 11 bulunur. Çokgenin köşeleri bir çember üzerindeki noktalar gibi davranır (hiçbir üçü doğrusal değil), bu yüzden üçgen sayısı C(11, 3) = (11 · 10 · 9)/6 = 165. 35 = C(7, 3), 2'ye bölmeyi unutup n − 3 = 4, n = 7 bulmaktan gelir. 44 köşegen sayısı, 88 onun 2 katı, 55 = C(11, 2) ise üçgen yerine köşe ikililerini saymaktır.</p></div></li>
+
+<li data-c="C"><p class="q">8 kişilik bir grup, 4'er kişilik iki takıma ayrılacaktır; takımların adı ya da forması yoktur. Ali ile Berk'in farklı takımlarda bulunduğu kaç farklı ayrılış vardır?</p>
+<ul class="sec"><li>10</li><li>15</li><li>20</li><li>35</li><li>40</li></ul>
+<div class="coz"><p>Ali'nin takımına bak: Berk o takımda olmayacağı için Ali'nin 3 takım arkadaşı, Ali ve Berk dışındaki 6 kişiden seçilir: C(6, 3) = 20. Kalan 4 kişi (Berk dahil) öbür takımı kendiliğinden oluşturur. Ali'nin takımı her ayrılışı tek bir kez belirlediği için burada ayrıca bölme gerekmez. Kontrol: bütün ayrılışlar C(8, 4)/2 = 35, Ali ile Berk'in aynı takımda olduğu ayrılışlar C(6, 2) = 15; 35 − 15 = 20. 35 ve 15 bu iki ara sonuçtur; 40 takımları adlı sayıp 2 · C(6, 3) yazmaktır; 10 ise 20'yi gereksiz yere bir kez daha 2'ye bölmektir.</p></div></li>
+
+<li data-c="D" data-k="mat-3"><p class="q">20 − 12 ÷ 4 · 2 + 3 işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>5</li><li>7</li><li>11</li><li>17</li><li>21,5</li></ul>
+<div class="coz"><p>Çarpma ve bölme toplama-çıkarmadan önce, kendi aralarında soldan sağa yapılır: 12 ÷ 4 = 3, sonra 3 · 2 = 6. Ardından toplama ve çıkarma soldan sağa: 20 − 6 + 3 = 17. 21,5, önce 4 · 2 = 8 yapıp 12 ÷ 8 = 1,5 hesaplamaktır (soldan sağa kuralını bozmak). 11, eksiyi 6 + 3'ün tamamına uygulamaktır: 20 − (6 + 3). 7, 20 − 12'yi önce yapmaktır; 5 ise 2 + 3'ü önce toplayıp 20 − 3 · 5 hesaplamaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-7"><p class="q">Kenar uzunlukları 24 cm ve 36 cm olan dikdörtgen biçimindeki bir karton, hiç artmayacak biçimde eş karelere kesilecektir. En az kaç kare elde edilir?</p>
+<ul class="sec"><li>6</li><li>12</li><li>24</li><li>72</li><li>216</li></ul>
+<div class="coz"><p>En az sayıda kare için karenin kenarı olabildiğince büyük olmalı ve iki kenarı da tam bölmeli: EBOB(24, 36) = 12 cm. Kare sayısı (24 ÷ 12) · (36 ÷ 12) = 2 · 3 = 6. 12, karenin kenar uzunluğunu kare sayısı sanmaktır. 24, kenarı 6 cm almaktır (6 ortak bölen ama en büyüğü değil). 72 = EKOK(24, 36), "en az" sözcüğünü görüp EKOK'a gitmektir; 216, kenarı 2 cm almaktır.</p></div></li>
+
+<li data-c="E" data-k="mat-11"><p class="q">7<sup>42</sup> sayısının birler basamağındaki rakam kaçtır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>3</li><li>7</li><li>9</li></ul>
+<div class="coz"><p>7'nin kuvvetlerinin birler basamağı 4'lü döngüyle tekrar eder: 7, 9, 3, 1, 7, 9, … 42'nin 4'e bölümünden kalan 2'dir; döngünün 2. elemanı 9'dur. 7, kalanı 1 sanmaktır; 3, döngünün üçüncü elemanını almaktır; 1, "üs çift ise sonuç 1 ile biter" diye yanlış genellemektir; 2 ise üssün kendi birler basamağıdır.</p></div></li>
+
+<li data-c="A" data-k="mat-15"><p class="q">a + b = 6 ve a · b = 4 olduğuna göre a<sup>2</sup> + b<sup>2</sup> kaçtır?</p>
+<ul class="sec"><li>28</li><li>32</li><li>36</li><li>40</li><li>44</li></ul>
+<div class="coz"><p>(a + b)<sup>2</sup> = a<sup>2</sup> + 2ab + b<sup>2</sup> özdeşliğinden a<sup>2</sup> + b<sup>2</sup> = (a + b)<sup>2</sup> − 2ab = 36 − 8 = 28. 36, (a + b)<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup> sanmaktır (çapraz terimi unutmak). 32, 2ab yerine ab çıkarmaktır. 44, 2ab'yi çıkarmak yerine eklemektir; 40 ise ab'yi eklemektir.</p></div></li>
+
+<li data-c="D" data-k="mat-19"><p class="q">−3 &lt; 2x + 1 ≤ 7 eşitsizliğini sağlayan x tam sayılarının toplamı kaçtır?</p>
+<ul class="sec"><li>0</li><li>2</li><li>3</li><li>5</li><li>6</li></ul>
+<div class="coz"><p>Üç tarafa da −1 ekle: −4 &lt; 2x ≤ 6. Pozitif 2'ye böl (yön değişmez): −2 &lt; x ≤ 3. Tam sayılar −1, 0, 1, 2, 3; toplamları 5. 3, −2'yi de almaktır (−2 + 5); oysa sol uç açık. 2, sağ uç 3'ü almamaktır (−1 + 0 + 1 + 2); oysa ≤ işareti 3'ü içerir. 0, iki ucu da yanlış okumaktır (−2'den 2'ye); 6 ise yalnızca pozitif tam sayıları toplamaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-23"><p class="q">Not ortalaması 70 olan 20 kişilik bir sınıfa, not ortalaması 85 olan 10 öğrenci katılıyor. Yeni sınıfın not ortalaması kaçtır?</p>
+<ul class="sec"><li>72,5</li><li>75</li><li>77,5</li><li>78</li><li>80</li></ul>
+<div class="coz"><p>Toplam = ortalama × adet. Eski toplam 70 · 20 = 1400, gelenlerin toplamı 85 · 10 = 850. Yeni ortalama (1400 + 850) / 30 = 2250 / 30 = 75. 77,5, iki ortalamanın düz ortalamasıdır; gruplar eşit büyüklükte olmadığı için yanlıştır. Yeni ortalama, kalabalık grubun ortalamasına (70'e) daha yakın olmalıdır; 78 ve 80 bu denetimi geçemez, 72,5 ise fazla yakındır.</p></div></li>
+
+<li data-c="E" data-k="mat-27"><p class="q">Bir havuzu A musluğu tek başına 6 saatte doldurmakta, B musluğu ise dolu havuzu tek başına 9 saatte boşaltmaktadır. Boş havuzda iki musluk birlikte açılırsa havuz kaç saatte dolar?</p>
+<ul class="sec"><li>3</li><li>3,6</li><li>7,5</li><li>15</li><li>18</li></ul>
+<div class="coz"><p>A saatte havuzun 1/6'sını doldurur, B saatte 1/9'unu boşaltır; boşaltanın katkısı eksidir. Birlikte saatte 1/6 − 1/9 = 3/18 − 2/18 = 1/18; havuz 18 saatte dolar. 3,6, iki musluğu da dolduran sayıp 1/6 + 1/9 = 5/18 almaktır. 15 süreleri toplamak, 3 süreleri çıkarmak, 7,5 sürelerin ortalamasını almaktır; süreler toplanmaz, birim zamandaki işler toplanır.</p></div></li>
+
+<li data-c="D" data-k="mat-31"><p class="q">Tuz oranı %30 olan 200 gram tuzlu sudan 50 gram su buharlaştırılıyor. Kalan karışımın tuz oranı yüzde kaçtır?</p>
+<ul class="sec"><li>%24</li><li>%30</li><li>%35</li><li>%40</li><li>%45</li></ul>
+<div class="coz"><p>Saf madde korunur: tuz 200 · 0,30 = 60 gram, buharlaşmadan sonra da 60 gram. Karışım 200 − 50 = 150 gram. Oran 60 / 150 = 0,40, yani %40. %24, 50 gram suyu çıkarmak yerine eklemektir (60 / 250). %30, oranın değişmediğini sanmaktır. %35 ve %45, yüzdeye göz kararıyla 5 ya da 15 puan eklemektir; oran her zaman saf madde ÷ karışım ile hesaplanır.</p></div></li>
+
+<li data-c="C" data-k="mat-35"><p class="q">30 kişilik bir sınıfta 18 öğrenci İngilizce, 15 öğrenci Almanca bilmektedir. Bu iki dilden hiçbirini bilmeyen 5 öğrenci olduğuna göre her iki dili de bilen kaç öğrenci vardır?</p>
+<ul class="sec"><li>3</li><li>7</li><li>8</li><li>10</li><li>13</li></ul>
+<div class="coz"><p>En az bir dil bilenler 30 − 5 = 25 kişidir. s(İ ∪ A) = s(İ) + s(A) − s(İ ∩ A) bağıntısından 25 = 18 + 15 − s(İ ∩ A), yani s(İ ∩ A) = 8. 3, hiçbirini bilmeyenleri unutup 18 + 15 − 30 hesaplamaktır. 10 yalnız İngilizce bilenlerin, 7 yalnız Almanca bilenlerin sayısıdır (18 − 8 ve 15 − 8); 13 ise İngilizce bilenlerden hiçbirini bilmeyen 5 kişiyi çıkarmaktır; oysa o 5 kişi zaten İngilizce bilenlerin içinde değildir.</p></div></li>
+
+<li data-c="D" data-k="mat-39"><p class="q">P(x) = (x<sup>2</sup> − 3x + 1)<sup>5</sup> + 2x polinomunun katsayılar toplamı kaçtır?</p>
+<ul class="sec"><li>−3</li><li>−1</li><li>0</li><li>1</li><li>3</li></ul>
+<div class="coz"><p>Bir polinomun katsayılar toplamı P(1)'dir. P(1) = (1 − 3 + 1)<sup>5</sup> + 2 · 1 = (−1)<sup>5</sup> + 2 = −1 + 2 = 1. −1, 2x teriminin katkısını unutmaktır. 3, (−1)<sup>5</sup>'i +1 sanmaktır; negatif tabanın tek kuvveti negatiftir. −3, 2x'in katkısını eksi işaretle almaktır (−1 − 2); 0 ise 2x terimini x gibi alıp −1 + 1 hesaplamaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-42"><p class="q">x<sup>2</sup> − 5x + 3 = 0 denkleminin kökleri x<sub>1</sub> ve x<sub>2</sub> olduğuna göre x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> kaçtır?</p>
+<ul class="sec"><li>13</li><li>19</li><li>22</li><li>25</li><li>31</li></ul>
+<div class="coz"><p>Kök-katsayı bağıntıları: x<sub>1</sub> + x<sub>2</sub> = −b/a = 5, x<sub>1</sub> · x<sub>2</sub> = c/a = 3. x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> = (x<sub>1</sub> + x<sub>2</sub>)<sup>2</sup> − 2x<sub>1</sub>x<sub>2</sub> = 25 − 6 = 19. 25, çapraz terimi unutmaktır; 22, 2x<sub>1</sub>x<sub>2</sub> yerine x<sub>1</sub>x<sub>2</sub> çıkarmaktır; 31, çıkarmak yerine eklemektir; 13 = 25 − 12 ise bu ifadeyi (x<sub>1</sub> − x<sub>2</sub>)<sup>2</sup> = (x<sub>1</sub> + x<sub>2</sub>)<sup>2</sup> − 4x<sub>1</sub>x<sub>2</sub> özdeşliğiyle karıştırmaktır.</p></div></li>
+
+<li data-c="E" data-k="mat-42"><p class="q">Kökleri 2 ve −5 olan, baş katsayısı 1 olan ikinci dereceden denklem aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>x<sup>2</sup> − 3x − 10 = 0</li><li>x<sup>2</sup> + 3x + 10 = 0</li><li>x<sup>2</sup> − 3x + 10 = 0</li><li>x<sup>2</sup> + 7x − 10 = 0</li><li>x<sup>2</sup> + 3x − 10 = 0</li></ul>
+<div class="coz"><p>Kökleri verilen denklem x<sup>2</sup> − (toplam)x + (çarpım) = 0 biçimindedir. Toplam 2 + (−5) = −3, çarpım 2 · (−5) = −10; denklem x<sup>2</sup> − (−3)x + (−10) = x<sup>2</sup> + 3x − 10 = 0. Kontrol: x = 2 için 4 + 6 − 10 = 0, x = −5 için 25 − 15 − 10 = 0. A, toplamın önündeki eksiyi unutmaktır; B ve C, çarpımın işaretini kaçırmaktır; D, toplam yerine farkı (2 − (−5) = 7) kullanmaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-43"><p class="q">0, 1, 2, 3, 4, 5 rakamları kullanılarak rakamları birbirinden farklı üç basamaklı kaç tane çift sayı yazılabilir?</p>
+<ul class="sec"><li>52</li><li>60</li><li>90</li><li>100</li><li>120</li></ul>
+<div class="coz"><p>Kısıtlı basamakları önce doldur; ama birler basamağının 0 olup olmamasına göre yüzler basamağının seçenek sayısı değiştiği için iki duruma ayır. Birler 0: yüzler 5, onlar 4 yol, 5 · 4 = 20. Birler 2 ya da 4: yüzler 0 ve birlerdeki rakam dışında 4 yol, onlar 4 yol: 2 · 4 · 4 = 32. Toplam 52. 60, yüzlere her durumda 5 seçenek verip 5 · 4 · 3 hesaplamaktır; 90, rakamların farklı olma koşulunu unutmaktır (5 · 6 · 3); 100 çift olma koşulunu, 120 = P(6, 3) ise hem çiftliği hem başa 0 gelememeyi unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-43"><p class="q">20! sayısının sondan kaç basamağı sıfırdır?</p>
+<ul class="sec"><li>4</li><li>6</li><li>8</li><li>10</li><li>18</li></ul>
+<div class="coz"><p>Sondaki her sıfır bir 2 · 5 = 10 çarpanından gelir; 20! içinde 2 çarpanı 5'ten çok olduğu için sayıyı 5'in kuvveti belirler. Ardışık bölme: 20 ÷ 5 = 4, 4 ÷ 5 = 0; toplam 4. 18, 2'nin kuvvetidir (10 + 5 + 2 + 1); sıfır sayısı küçük olan kuvvete bağlıdır. 6, 10 ve 20'yi hem 5'in katı hem ayrıca "sonu sıfır" diye iki kez saymaktır; 10, 20 ÷ 2 ile 2'nin katlarını saymaktır; 8 ise 5'in katlarını iki kez saymaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-44"><p class="q">KALEM sözcüğünün harfleri birer kez kullanılarak, K ile M harfleri yan yana olmak koşuluyla 5 harfli anlamlı ya da anlamsız kaç sözcük yazılabilir?</p>
+<ul class="sec"><li>24</li><li>48</li><li>72</li><li>96</li><li>120</li></ul>
+<div class="coz"><p>Paket yöntemi: K ile M'yi tek bir paket say. Paket, A, L, E: 4 birim, 4! = 24 biçimde dizilir. Paketin içi KM ya da MK olarak 2! = 2 biçimde düzenlenir: 24 · 2 = 48. 24, paket içindeki sırayı unutmaktır. 120 = 5!, koşulu hiç kullanmamaktır; 72 = 120 − 48, yan yana olmama durumudur; 96, paket içini 4 sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-44"><p class="q">BAKKAL sözcüğünün harflerinin tamamı kullanılarak 6 harfli anlamlı ya da anlamsız kaç farklı sözcük yazılabilir?</p>
+<ul class="sec"><li>90</li><li>120</li><li>180</li><li>360</li><li>720</li></ul>
+<div class="coz"><p>BAKKAL'da 6 harf var: A iki kez, K iki kez, B ve L birer kez. Tekrarlı permütasyon: 6! / (2! · 2!) = 720 / 4 = 180. Nedeni: iki A'nın kendi arasında yer değiştirmesi ve iki K'nin kendi arasında yer değiştirmesi aynı sözcüğü verir; her sözcük 2! · 2! = 4 kez sayılmıştır. 720 hiç bölmemek, 360 yalnızca bir harfin tekrarını hesaba katmaktır; 120, 6!'i 3!'e bölmek, 90 ise 6!'i 8'e bölmektir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-44">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-45">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-46">Sonraki parça: olasılığa giriş</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"kombinasyon konu anlatımı TYT"</li>
+  <li>"kombinasyon komisyon seçme en az bir kadın soruları"</li>
+  <li>"geometrik kombinasyon doğru üçgen köşegen sayısı"</li>
+  <li>"gruplara ayırma kombinasyon ve Pascal üçgeni"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin matematik kapsam listesindeki 45. satıra göre yazıldı (2018 Ortaöğretim Matematik Öğretim Programı, 10. sınıf sayma ünitesi). Bu oturumda bir MEB ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Bütün sayısal sonuçlar (çözümlü örnekler, tablolardaki değerler, Pascal üçgeni, quiz cevapları ve çeldiricilerin nasıl elde edildiği) Python ile hesaplanarak denetlendi; "en az bir kadın" hatası, 6 kişinin ikili gruplara ayrılışı ve ızgaradaki dikdörtgen sayısı ayrıca bütün durumları tek tek sayan bir betikle doğrulandı.</li>
+  <li><strong>Gruplara ayırma</strong> (adsız eşit gruplarda k!'e bölme) kapsam listesinde yer alıyor; ancak 2018 programında açık bir kazanım olarak ne kadar ayrıntılı geçtiğinden emin değilim. Sınavda bu tip soru seyrek görülür; bu kısım sınav kapsamında olmayabilir.</li>
+  <li>Bazı ders kitapları C(n, r) yerine büyük parantez içinde alt alta yazılmış gösterimi kullanır; ikisi aynı sayıdır. Kombinasyonun 0 ≤ r ≤ n dışında tanımsız sayıldığı yaklaşım esas alındı.</li>
+  <li>Çeldiricilerin çoğu belirli bir tipik hatanın sonucudur; birkaçı (örneğin 20! sorusundaki 8 ve 10, ortalama sorusundaki 78 ve 80) belirli bir hesap hatasından çok tahmin ve kaba karışıklığı yoklar.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

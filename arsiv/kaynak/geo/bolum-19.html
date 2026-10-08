@@ -1,0 +1,631 @@
+<article class="chapter ders" id="c-geo-19">
+<div class="prose">
+<div class="eyebrow">Geometri · Parça 19 · İki doğrunun durumu, açı ve uzaklık</div>
+<h1>Analitik geometri 3: iki doğrunun durumu, aralarındaki açı ve uzaklık</h1>
+<p class="time">Okuma ve çözme yaklaşık 50 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir haritada iki yolun denklemi elinde: 2x − y + 3 = 0 ve x + 2y − 6 = 0. Hiçbir şey çizmeden şunları bilebilir misin: Bu yollar kesişiyor mu, kesişiyorsa dik mi kesişiyor? Yolun dışındaki bir köyden yola en kısa yoldan kaç kilometre yürünür? Ve "yolun kuzeyinde kalan bütün tarlalar" gibi bir bölgeyi tek bir satırla nasıl yazarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 18 (eğim, m = tan α, doğru denkleminin biçimleri), Parça 17 (iki nokta arası uzaklık, orta nokta, köşeleri verilen üçgenin alanı), Parça 3 (Pisagor ve tersi, Öklid bağıntıları), Parça 1 (paralel iki doğru ve bir kesen), Matematik Parça 18 (denklem sistemleri ve katsayı oranları), Matematik Parça 19 (eşitsizliğin iki yanını negatif sayıyla çarpma). Kâğıt kalem ve kareli kâğıt yanında olsun.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 18'de tek bir doğruyla uğraştın: eğimini buldun, denklemini yazdın, grafiğini çizdin. Bu parçada sahneye ikinci bir doğru ya da doğrunun dışında bir nokta giriyor. Sorular hep aynı birkaç kalıba iner. İki doğru verilir ve "paralel olduğuna göre" ya da "dik kesiştiğine göre" bir parametre istenir. Bir noktadan geçip verilen doğruya dik ya da paralel olan doğrunun denklemi sorulur. Bir noktanın bir doğruya uzaklığı istenir; çoğu zaman bu soru "üçgenin yüksekliği", "çemberin yarıçapı" ya da "karenin kenarı" kılığına girer. İki paralel doğru arasındaki uzaklık sorulur. Son olarak bir eşitsizlik sistemi verilip taranan bölge ya da onun alanı istenir.</p>
+
+<p>Bütün bunları taşıyan iki fikir var. Birincisi: <strong>bir doğrunun yönünü eğimi, yerini sabit terimi belirler.</strong> Paralellik ve diklik yalnızca yönle ilgilidir; o yüzden yalnızca eğimlere bakılarak karar verilir. İkincisi: <strong>uzaklık her zaman dik ölçülür.</strong> Bir noktadan bir doğruya giden sonsuz yol vardır, en kısası dik olandır; formüllerin hepsi bu dik parçanın uzunluğunu hesaplamanın kısa yollarıdır.</p>
+
+<p>Sırayla kuracağımız yapı şu: paralel ve dik doğrular, genel denklemde katsayılarla karar, kesim noktası, bir noktadan geçen paralel ya da dik doğru, iki doğru arasındaki açı, noktanın doğruya uzaklığı, paralel doğrular arası uzaklık, orta dikme ve üçgenin özel doğruları, dik izdüşüm, açıortay doğruları, doğruların sınırladığı alanlar ve son olarak doğrusal eşitsizlikler.</p>
+
+<h2 class="s">Paralel doğrular: eğimler neden eşit olmalı?</h2>
+
+<p>Parça 18'de eğimi m = tan α diye yazdın; α, doğrunun x ekseninin pozitif yönüyle yaptığı açıdır. Şimdi iki doğru düşün, ikisi de x eksenini kessin. x ekseni bu iki doğru için bir <strong>kesen</strong>dir. Parça 1'de gördün: iki doğruyu bir kesen kestiğinde yöndeş açılar eşitse o iki doğru paraleldir, paralelse yöndeş açılar eşittir. Doğruların x ekseniyle yaptığı α açıları tam olarak bu yöndeş açılardır. Demek ki iki doğrunun eğim açıları eşitse doğrular paraleldir; eğim açıları eşitse tanjantları, yani eğimleri de eşittir.</p>
+
+<p>Eğim üçgeniyle düşünmek de aynı sonuca götürür: eğimi 2 olan bir doğruda "1 sağa git, 2 yukarı çık" her yerde geçerlidir. Aynı tarifle çizilen iki doğru aynı yöne gider; aralarındaki dikey açıklık her x değerinde aynı kalır, bu yüzden hiç buluşmazlar. Tek bir istisna var: aralarındaki açıklık sıfırsa iki doğru üst üste biner. Bu durumda <strong>çakışık</strong> doğrular deriz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>d<sub>1</sub>: y = m<sub>1</sub>x + n<sub>1</sub> ve d<sub>2</sub>: y = m<sub>2</sub>x + n<sub>2</sub> olsun.</p>
+<p>m<sub>1</sub> = m<sub>2</sub> ve n<sub>1</sub> ≠ n<sub>2</sub> ise doğrular <strong>paraleldir</strong> (d<sub>1</sub> ∥ d<sub>2</sub>), ortak noktaları yoktur. m<sub>1</sub> = m<sub>2</sub> ve n<sub>1</sub> = n<sub>2</sub> ise doğrular <strong>çakışıktır</strong>, bütün noktaları ortaktır. m<sub>1</sub> ≠ m<sub>2</sub> ise doğrular <strong>tek bir noktada kesişir</strong>. Eğimi tanımsız olan düşey doğrular (x = a ve x = b, a ≠ b) da birbirine paraleldir.</p></div>
+
+<p>Kısa bir deneme: y = 3x − 1 ile y = 3x + 4 paraleldir; eğimler 3, kesim noktaları −1 ve 4. y = 3x − 1 ile 6x − 2y − 2 = 0 ise çakışıktır: ikinciyi y için çözersen 2y = 6x − 2, yani y = 3x − 1 çıkar; aynı doğru, yalnızca iki ile çarpılarak yazılmış.</p>
+
+<h2 class="s">Dik doğrular: eğimler çarpımı neden −1?</h2>
+
+<p>Diklik kuralı genellikle ezber cümlesiyle verilir: "eğimler çarpımı −1". Nereden geldiğini görmezsen sınavda "ters mi alıyordum, eksi mi koyuyordum" diye takılırsın. Gerekçeyi Parça 3'teki Pisagor teoremiyle kuralım.</p>
+
+<p>Önce bir sadeleştirme: doğruyu sağa-sola ya da yukarı-aşağı kaydırmak yönünü değiştirmez, dolayısıyla diklik de değişmez. O hâlde iki doğruyu da orijinden geçecek kadar kaydırabiliriz: d<sub>1</sub>: y = m<sub>1</sub>x ve d<sub>2</sub>: y = m<sub>2</sub>x. Şimdi x = 1 düşey doğrusunu çiz. Bu doğru d<sub>1</sub>'i P(1, m<sub>1</sub>) noktasında, d<sub>2</sub>'yi Q(1, m<sub>2</sub>) noktasında keser. O, P, Q üçgenine bak.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Orijinden geçen y = 2x ve y = −x/2 doğruları; x = 1 doğrusu bunları P(1, 2) ve Q(1, −1/2) noktalarında kesiyor; O köşesinde dik açı">
+  <line class="sv-c" x1="20" y1="150" x2="390" y2="150" />
+  <line class="sv-c" x1="120" y1="290" x2="120" y2="10" />
+  <text class="sv-b" x="388" y="140" text-anchor="end">x</text><text class="sv-b" x="128" y="22">y</text>
+  <line class="sv-c" x1="160" y1="20" x2="160" y2="290" />
+  <text class="sv-s" x="166" y="282">x = 1</text>
+  <line class="sv-cl" x1="72" y1="246" x2="184" y2="22" />
+  <line class="sv-cl" x1="32" y1="106" x2="360" y2="270" />
+  <polyline class="sv-c" points="125.37,139.27 136.1,144.63 130.73,155.37" />
+  <circle class="sv-m" cx="160" cy="70" r="5" /><circle class="sv-m" cx="160" cy="170" r="5" /><circle class="sv-k" cx="160" cy="150" r="3" />
+  <text class="sv-b" x="170" y="68">P(1, m₁)</text>
+  <text class="sv-b" x="170" y="190">Q(1, m₂)</text>
+  <text class="sv-s" x="166" y="144">H(1, 0)</text>
+  <text class="sv-s" x="104" y="166" text-anchor="end">O</text>
+  <text class="sv-t" x="190" y="34">d₁: y = 2x</text>
+  <text class="sv-t" x="250" y="250">d₂: y = −x/2</text>
+  <text class="sv-s" x="250" y="60">OP² = 1 + m₁²</text>
+  <text class="sv-s" x="250" y="80">OQ² = 1 + m₂²</text>
+  <text class="sv-s" x="250" y="100">PQ = m₁ − m₂</text>
+</svg>
+<figcaption>Gerçek ölçüyle çizildi (1 birim = 40 piksel): m₁ = 2, m₂ = −1/2, çarpımları −1. O köşesindeki açı diktir. P ile Q aynı düşey doğru üzerinde olduğundan PQ uzunluğu ordinatların farkıdır.</figcaption>
+</figure>
+
+<p>Uzunlukları Parça 17'deki uzaklık formülüyle yaz:</p>
+<span class="mat">OP<sup>2</sup> = 1<sup>2</sup> + m<sub>1</sub><sup>2</sup> = 1 + m<sub>1</sub><sup>2</sup> <span class="g">(O(0, 0) ile P(1, m₁) arası)</span></span>
+<span class="mat">OQ<sup>2</sup> = 1 + m<sub>2</sub><sup>2</sup> <span class="g">(O ile Q(1, m₂) arası)</span></span>
+<span class="mat">PQ<sup>2</sup> = (m<sub>1</sub> − m<sub>2</sub>)<sup>2</sup> = m<sub>1</sub><sup>2</sup> − 2m<sub>1</sub>m<sub>2</sub> + m<sub>2</sub><sup>2</sup> <span class="g">(apsisler aynı, yalnızca ordinat farkı)</span></span>
+<p>Parça 3'te Pisagor'un tersini de gördün: bir üçgende iki kenarın kareleri toplamı üçüncünün karesine eşitse o üçüncü kenarın karşısındaki açı diktir. O hâlde O köşesindeki açının dik olması şuna denktir:</p>
+<span class="mat">OP<sup>2</sup> + OQ<sup>2</sup> = PQ<sup>2</sup> <span class="g">(Pisagor ve tersi)</span></span>
+<span class="mat">2 + m<sub>1</sub><sup>2</sup> + m<sub>2</sub><sup>2</sup> = m<sub>1</sub><sup>2</sup> − 2m<sub>1</sub>m<sub>2</sub> + m<sub>2</sub><sup>2</sup> <span class="g">(üç satırı yerine koydum)</span></span>
+<span class="mat">2 = −2m<sub>1</sub>m<sub>2</sub> <span class="g">(iki yandaki m₁² ve m₂² sadeleşti)</span></span>
+<span class="mat">m<sub>1</sub> · m<sub>2</sub> = −1 <span class="g">(iki yanı −2'ye böldüm)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Eğimleri tanımlı ve sıfırdan farklı iki doğru için: d<sub>1</sub> ⊥ d<sub>2</sub> ⇔ m<sub>1</sub> · m<sub>2</sub> = −1, yani m<sub>2</sub> = −<span class="kes"><span>1</span><span>m<sub>1</sub></span></span>. Bir doğruya dik doğrunun eğimi, verilen eğimin <strong>hem tersi hem ters işaretlisi</strong>dir. Özel durum: yatay bir doğru (eğim 0) ile düşey bir doğru (eğim tanımsız) diktir; burada çarpım yazılamaz, kural ayrıca hatırlanır.</p></div>
+
+<p>Aynı sonucu döndürmeyle de sezebilirsin. Eğimi m olan doğrunun yönü "1 sağa, m yukarı" adımıdır. Bu adımı 90° döndürürsen "m sola, 1 yukarı" adımı olur. Yeni eğim yukarı / sağa = 1 / (−m) = −1/m. Tersi alınır çünkü yatay ve düşey adımlar yer değiştirir; işaret değişir çünkü döndürünce sağa giden adım sola dönmüştür.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Dik doğrunun eğimini yalnızca ters ya da yalnızca eksi almak.</strong> Eğimi 3 olan doğruya dik doğrunun eğimi 1/3 değildir (çarpım 1 olur), −3 de değildir (çarpım −9 olur). Doğrusu −1/3'tür. Emin olmak için her zaman çarpımı yap: 3 · (−1/3) = −1 çıkıyorsa doğrudur. İki saniyelik bu denetim, bu konudaki hataların çoğunu yakalar.</p></div>
+
+<h2 class="s">Genel denklemde karar: katsayı oranları</h2>
+
+<p>Sınav doğruları çoğu zaman ax + by + c = 0 biçiminde verir. Parça 18'de bu biçimde eğimin m = −a/b olduğunu gördün: by = −ax − c, y = (−a/b)x − c/b. İki doğru için eğimleri eşitlersek:</p>
+<span class="mat">−<span class="kes"><span>a<sub>1</sub></span><span>b<sub>1</sub></span></span> = −<span class="kes"><span>a<sub>2</sub></span><span>b<sub>2</sub></span></span> ⇔ <span class="kes"><span>a<sub>1</sub></span><span>a<sub>2</sub></span></span> = <span class="kes"><span>b<sub>1</sub></span><span>b<sub>2</sub></span></span> <span class="g">(içler-dışlar: a₁b₂ = a₂b₁)</span></span>
+<p>Yani x ve y katsayılarının oranları eşitse doğrular aynı yöne bakar. Matematik Parça 18'de aynı oranları denklem sistemleri için kurmuştun: sol yanlar orantılıysa ya hiç çözüm yoktur ya da sonsuz çözüm vardır. Şimdi bunun şekildeki anlamını görüyorsun: her denklem bir doğrudur, sistemin çözümü iki doğrunun ortak noktalarıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>d<sub>1</sub>: a<sub>1</sub>x + b<sub>1</sub>y + c<sub>1</sub> = 0 ve d<sub>2</sub>: a<sub>2</sub>x + b<sub>2</sub>y + c<sub>2</sub> = 0 için (paydalar sıfırdan farklıyken):</p>
+<p><span class="kes"><span>a<sub>1</sub></span><span>a<sub>2</sub></span></span> ≠ <span class="kes"><span>b<sub>1</sub></span><span>b<sub>2</sub></span></span> ⇒ kesişen (tek ortak nokta); <span class="kes"><span>a<sub>1</sub></span><span>a<sub>2</sub></span></span> = <span class="kes"><span>b<sub>1</sub></span><span>b<sub>2</sub></span></span> ≠ <span class="kes"><span>c<sub>1</sub></span><span>c<sub>2</sub></span></span> ⇒ paralel; üç oran da eşit ⇒ çakışık.</p>
+<p><strong>Diklik:</strong> a<sub>1</sub>a<sub>2</sub> + b<sub>1</sub>b<sub>2</sub> = 0.</p></div>
+
+<p>Diklik koşulu nereden geliyor? Eğimler çarpımını −1'e eşitle: (−a<sub>1</sub>/b<sub>1</sub>) · (−a<sub>2</sub>/b<sub>2</sub>) = −1, yani a<sub>1</sub>a<sub>2</sub>/(b<sub>1</sub>b<sub>2</sub>) = −1, içler-dışlar çarpımıyla a<sub>1</sub>a<sub>2</sub> = −b<sub>1</sub>b<sub>2</sub>, buradan a<sub>1</sub>a<sub>2</sub> + b<sub>1</sub>b<sub>2</sub> = 0. Bu biçimin güzel bir yanı var: payda içermediği için yatay-düşey özel durumunu da kapsar. x − 2 = 0 (a = 1, b = 0) ile y + 5 = 0 (a = 0, b = 1) için 1 · 0 + 0 · 1 = 0 çıkar; gerçekten diktirler.</p>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Eğimle</th><th>Genel denklemde</th><th>Ortak nokta</th></tr>
+<tr><td>Kesişen</td><td>m₁ ≠ m₂</td><td>a₁/a₂ ≠ b₁/b₂</td><td>tek nokta</td></tr>
+<tr><td>Dik kesişen</td><td>m₁ · m₂ = −1</td><td>a₁a₂ + b₁b₂ = 0</td><td>tek nokta</td></tr>
+<tr><td>Paralel</td><td>m₁ = m₂, n₁ ≠ n₂</td><td>a₁/a₂ = b₁/b₂ ≠ c₁/c₂</td><td>yok (çözüm kümesi boş)</td></tr>
+<tr><td>Çakışık</td><td>m₁ = m₂, n₁ = n₂</td><td>a₁/a₂ = b₁/b₂ = c₁/c₂</td><td>sonsuz (bütün noktalar)</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> d<sub>1</sub>: (m − 1)x + 2y − 3 = 0 ve d<sub>2</sub>: 3x − y + 5 = 0 doğruları veriliyor. a) d<sub>1</sub> ∥ d<sub>2</sub> ise m kaçtır? b) d<sub>1</sub> ⊥ d<sub>2</sub> ise m kaçtır?</p>
+<p><strong>Adım 1.</strong> Eğimleri yazarım. m = −a/b kuralını kullanırım.</p>
+<span class="mat">m<sub>1</sub> = −<span class="kes"><span>m − 1</span><span>2</span></span> <span class="g">(a₁ = m − 1, b₁ = 2)</span></span>
+<span class="mat">m<sub>2</sub> = −<span class="kes"><span>3</span><span>−1</span></span> = 3 <span class="g">(a₂ = 3, b₂ = −1)</span></span>
+<p><strong>Adım 2.</strong> a) Paralellik için eğimleri eşitlerim.</p>
+<span class="mat">−<span class="kes"><span>m − 1</span><span>2</span></span> = 3 <span class="g">(m₁ = m₂)</span></span>
+<span class="mat">m − 1 = −6 <span class="g">(iki yanı −2 ile çarptım)</span></span>
+<span class="mat">m = −5 <span class="g">(1'i karşıya geçirdim)</span></span>
+<p><strong>Adım 3.</strong> Çakışık olmadığını denetlerim. m = −5 için d<sub>1</sub>: −6x + 2y − 3 = 0, yani y = 3x + 1,5. d<sub>2</sub>: y = 3x + 5. Kesim noktaları farklı (1,5 ve 5), demek ki gerçekten paralel.</p>
+<p><strong>Adım 4.</strong> b) Diklik için a<sub>1</sub>a<sub>2</sub> + b<sub>1</sub>b<sub>2</sub> = 0 yazarım.</p>
+<span class="mat">(m − 1) · 3 + 2 · (−1) = 0 <span class="g">(diklik koşulu)</span></span>
+<span class="mat">3m − 3 − 2 = 0 <span class="g">(dağıttım)</span></span>
+<span class="mat">m = <span class="kes"><span>5</span><span>3</span></span> <span class="g">(3m = 5)</span></span>
+<p><strong>Kontrol yolu.</strong> m = 5/3 için m<sub>1</sub> = −(2/3)/2 = −1/3. m<sub>1</sub> · m<sub>2</sub> = (−1/3) · 3 = −1. Doğru.</p>
+<p><strong>Sonuç:</strong> Paralellik için m = −5, diklik için m = 5/3.</p></div>
+
+<h2 class="s">Kesim noktası ve bir noktadan geçen paralel ya da dik doğru</h2>
+
+<p>İki doğrunun kesim noktası, iki denklemi birlikte sağlayan noktadır: o nokta hem birinci doğrunun hem ikincinin üzerindedir. Bu yüzden kesim noktasını bulmak, Matematik Parça 18'deki gibi iki bilinmeyenli sistemi çözmektir. 2x − y = 3 ile x + y = 6 doğrularında denklemleri taraf tarafa toplarsan 3x = 9, x = 3 çıkar; ikinci denklemden y = 3. Kesim noktası (3, 3). <strong>Kontrol yolu:</strong> noktayı iki denklemde de yerine koy: 2 · 3 − 3 = 3 ve 3 + 3 = 6. İkisi de tutuyor.</p>
+
+<p>Şimdi bir A(x<sub>0</sub>, y<sub>0</sub>) noktasından geçen ve ax + by + c = 0 doğrusuna paralel ya da dik olan doğruyu yazalım. Uzun yol: eğimi bul, paralelse aynısını, dikse −1/m'sini al, sonra Parça 18'deki y − y<sub>0</sub> = m(x − x<sub>0</sub>) kalıbını kullan. Kısa yol ise katsayılarla çalışır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Paralel doğru:</strong> ax + by = ax<sub>0</sub> + by<sub>0</sub>. Sol yan aynı kalır (aynı eğim), sağ yan noktanın yerine konmasıyla bulunur.</p>
+<p><strong>Dik doğru:</strong> bx − ay = bx<sub>0</sub> − ay<sub>0</sub>. Katsayıların yeri değişir ve biri işaret değiştirir.</p></div>
+
+<p>Neden doğru? Paralel doğru için: ax + by + k = 0 biçimindeki her doğrunun eğimi −a/b'dir, yani verilen doğruyla aynıdır. k'yi doğrunun A'dan geçmesi belirler: A'yı yerine koyunca k = −(ax<sub>0</sub> + by<sub>0</sub>) çıkar. Dik doğru için: bx − ay + k = 0 ile ax + by + c = 0 diklik koşulunu sağlar, çünkü a · b + b · (−a) = 0. Sağ yan yine A yerine konarak bulunur.</p>
+
+<p>Deneme: A(1, 2) noktasından geçen ve 3x − 2y + 5 = 0 doğrusuna paralel doğru 3x − 2y = 3 · 1 − 2 · 2 = −1, yani 3x − 2y + 1 = 0 olur. Dik doğru 2x + 3y = 2 · 1 + 3 · 2 = 8, yani 2x + 3y − 8 = 0 olur. Denetim: eğimler 3/2 ve −2/3, çarpımları −1.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> A(4, 1) noktasından d: 2x − y + 3 = 0 doğrusuna inilen dikmenin ayağı H olsun. H noktasını ve AH uzunluğunu bulunuz.</p>
+<p><strong>Adım 1.</strong> A'dan geçen ve d'ye dik doğruyu yazarım. a = 2, b = −1 olduğundan dik doğru bx − ay = bx<sub>0</sub> − ay<sub>0</sub> kalıbıyla −x − 2y = −4 − 2 olur; iki yanı −1 ile çarparım.</p>
+<span class="mat">x + 2y = 6 <span class="g">(A'dan geçen dik doğru; denetim: 4 + 2 · 1 = 6)</span></span>
+<p><strong>Adım 2.</strong> H iki doğrunun kesim noktasıdır. d'den y'yi yalnız bırakırım.</p>
+<span class="mat">y = 2x + 3 <span class="g">(d doğrusu)</span></span>
+<span class="mat">x + 2(2x + 3) = 6 <span class="g">(dik doğruda yerine koydum)</span></span>
+<span class="mat">5x + 6 = 6 ⇒ x = 0 <span class="g">(benzer terimleri topladım)</span></span>
+<span class="mat">y = 2 · 0 + 3 = 3 <span class="g">(H(0, 3))</span></span>
+<p><strong>Adım 3.</strong> AH uzunluğunu iki nokta arası uzaklıkla bulurum (Parça 17).</p>
+<span class="mat">AH = √((4 − 0)<sup>2</sup> + (1 − 3)<sup>2</sup>) = √(16 + 4) = √20 = 2√5 <span class="g">(√20 = √4 · √5)</span></span>
+<p><strong>Kontrol yolu.</strong> H'yi d'de yerine koy: 2 · 0 − 3 + 3 = 0, H gerçekten d üzerinde. AH'nin eğimi (1 − 3)/(4 − 0) = −1/2, d'nin eğimi 2; çarpım −1, gerçekten dik.</p>
+<p><strong>Sonuç:</strong> H(0, 3) ve AH = 2√5 birim. H noktasına A'nın d üzerindeki <strong>dik izdüşümü</strong> denir.</p></div>
+
+<p>Bu örnek bir yöntemin kendisidir: bir noktanın bir doğru üzerindeki dik izdüşümünü bulmak için noktadan doğruya dik doğruyu yaz, iki doğrunun kesim noktasını bul. Parça 21'de bir noktanın doğruya göre simetriğini ararken aynı yolu yürüyeceksin; H orada simetrik noktalar arasındaki orta nokta olacak.</p>
+
+<h2 class="s">İki doğru arasındaki açı</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir</strong>: formülün 2018 programında ayrı bir kazanım olarak istendiğini doğrulayamadım. Bu yüzden kısa tutuyorum; ama fikri bilmek, dik ve paralel durumlarını tek çatı altında görmeni sağlar.</p>
+
+<p>Kesişen iki doğru dört açı oluşturur: ikisi θ, ikisi 180° − θ (Parça 1'deki ters ve komşu bütünler açılar). "İki doğru arasındaki açı" denince genellikle dar olan θ kastedilir. Doğruların eğim açıları α<sub>1</sub> ve α<sub>2</sub> ise, iki doğru ve x ekseninin oluşturduğu üçgende α<sub>1</sub> bir dış açıdır ve kendisine komşu olmayan iki iç açının toplamına eşittir (Parça 2): α<sub>1</sub> = α<sub>2</sub> + θ. Yani θ = α<sub>1</sub> − α<sub>2</sub>. Bu farkın tanjantı Matematik: ileri Parça 11'deki tanjant fark formülüyle hesaplanır ve şu sonuç çıkar:</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Eğimleri m<sub>1</sub> ve m<sub>2</sub> olan iki doğru arasındaki dar açı θ için: tan θ = <span class="kes"><span>|m<sub>1</sub> − m<sub>2</sub>|</span><span>|1 + m<sub>1</sub>m<sub>2</sub>|</span></span>. Mutlak değer dar açıyı verir; geniş açı 180° − θ'dır.</p></div>
+
+<p>Formülün iki ucu bildiğin kurallarla tutarlı. Doğrular paralelse m<sub>1</sub> = m<sub>2</sub>, pay sıfır, tan θ = 0, yani θ = 0°. Doğrular dikse m<sub>1</sub>m<sub>2</sub> = −1, payda sıfır olur; tanjantı tanımsız olan açı 90°'dir. Örnek: y = 3x ve y = x/2 için tan θ = |3 − 1/2| / |1 + 3/2| = (5/2)/(5/2) = 1, yani θ = 45°. Bunu formülsüz, yalnızca Pisagor'la da doğrulayabilirsin; aşağıdaki şekil bunu gösteriyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y = 3x ve y = x/2 doğruları; O(0, 0), A(2, 1), B(1, 3) üçgeni ikizkenar dik üçgen; O köşesindeki açı 45 derece">
+  <line class="sv-c" x1="20" y1="270" x2="390" y2="270" />
+  <line class="sv-c" x1="60" y1="290" x2="60" y2="20" />
+  <text class="sv-b" x="388" y="260" text-anchor="end">x</text><text class="sv-b" x="68" y="30">y</text>
+  <polygon class="sv-l" points="60,270 190,205 125,75" />
+  <line class="sv-cl" x1="60" y1="270" x2="134.75" y2="45.75" />
+  <line class="sv-cl" x1="60" y1="270" x2="352.5" y2="123.75" />
+  <polyline class="sv-c" points="181.06,209.47 176.58,200.53 185.53,196.06" />
+  <circle class="sv-m" cx="190" cy="205" r="5" /><circle class="sv-m" cx="125" cy="75" r="5" />
+  <text class="sv-b" x="200" y="218">A(2, 1)</text>
+  <text class="sv-b" x="135" y="72">B(1, 3)</text>
+  <text class="sv-s" x="50" y="286" text-anchor="end">O</text>
+  <text class="sv-t" x="144" y="50">y = 3x</text>
+  <text class="sv-t" x="290" y="128">y = x/2</text>
+  <text class="sv-s" x="130" y="256">√5</text>
+  <text class="sv-s" x="166" y="144">√5</text>
+  <text class="sv-b" x="88" y="236">45°</text>
+</svg>
+<figcaption>1 birim = 65 piksel. OA = √(4 + 1) = √5, AB = √(1 + 4) = √5, OB = √(1 + 9) = √10. OA² + AB² = 10 = OB², yani A köşesi diktir; OA = AB olduğu için üçgen 45-45-90 üçgenidir (Parça 4) ve O'daki açı 45°'dir.</figcaption>
+</figure>
+
+<h2 class="s">Noktanın doğruya uzaklığı</h2>
+
+<p>Bir P noktasının bir d doğrusuna uzaklığı, P'den d'ye inilen dikmenin uzunluğudur. Neden dikme? Çünkü P'den d'ye çizilen her eğik parça, dikmeyle birlikte bir dik üçgen kurar ve o dik üçgenin hipotenüsüdür; hipotenüs dik kenardan her zaman uzundur (Parça 5: dik üçgende en uzun kenar hipotenüstür). Demek ki en kısa yol diktir.</p>
+
+<p>Çözümlü örnek 2'de bu uzunluğu üç adımda bulduk: dik doğruyu yaz, kesim noktasını bul, iki nokta arası uzaklığı hesapla. İş görür ama uzun sürer. Aynı sonucu tek satırda veren bir formül var ve onu Parça 3'teki Öklid bağıntısından çıkarabiliriz.</p>
+
+<p>d: ax + by + c = 0 doğrusu ve onun üzerinde olmayan P(x<sub>0</sub>, y<sub>0</sub>) noktası verilsin; önce a ve b'nin ikisi de sıfırdan farklı olsun. Kısalık için D = ax<sub>0</sub> + by<sub>0</sub> + c yazalım. D, P'yi doğrunun denkleminde yerine koyunca çıkan sayıdır; P doğru üzerinde olmadığı için sıfırdan farklıdır.</p>
+
+<p><strong>Yatay parça.</strong> P'den geçen yatay doğru d'yi K noktasında kessin. K'nin ordinatı y<sub>0</sub>'dır; apsisi doğru denkleminden x<sub>K</sub> = (−by<sub>0</sub> − c)/a çıkar. PK uzunluğu apsisler farkıdır:</p>
+<span class="mat">PK = |x<sub>0</sub> − x<sub>K</sub>| = <span class="kes"><span>|ax<sub>0</sub> + by<sub>0</sub> + c|</span><span>|a|</span></span> = <span class="kes"><span>|D|</span><span>|a|</span></span> <span class="g">(paydayı eşitleyip birleştirdim)</span></span>
+<p><strong>Düşey parça.</strong> P'den geçen düşey doğru d'yi L noktasında kessin. Aynı akıl yürütmeyle:</p>
+<span class="mat">PL = <span class="kes"><span>|D|</span><span>|b|</span></span> <span class="g">(bu kez ordinatlar farkı)</span></span>
+<p><strong>Dik üçgen.</strong> PK yatay, PL düşey olduğundan P köşesinde dik açı vardır. KL ise d doğrusunun bir parçasıdır, yani bu dik üçgenin hipotenüsü d üzerindedir. P'den d'ye inilen dikme, bu dik üçgende hipotenüse ait yüksekliktir. Parça 3'teki bağıntıyı uygula: 1/h<sup>2</sup> = 1/b<sup>2</sup> + 1/c<sup>2</sup> (h hipotenüse ait yükseklik, b ve c dik kenarlar).</p>
+<span class="mat"><span class="kes"><span>1</span><span>d<sup>2</sup></span></span> = <span class="kes"><span>1</span><span>PK<sup>2</sup></span></span> + <span class="kes"><span>1</span><span>PL<sup>2</sup></span></span> = <span class="kes"><span>a<sup>2</sup></span><span>D<sup>2</sup></span></span> + <span class="kes"><span>b<sup>2</sup></span><span>D<sup>2</sup></span></span> = <span class="kes"><span>a<sup>2</sup> + b<sup>2</sup></span><span>D<sup>2</sup></span></span> <span class="g">(Öklid; dik kenarları yerine koydum)</span></span>
+<span class="mat">d = <span class="kes"><span>|D|</span><span>√(a<sup>2</sup> + b<sup>2</sup>)</span></span> <span class="g">(iki yanın tersini alıp karekök aldım)</span></span>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="x + 2y − 4 = 0 doğrusu ve P(4, 3) noktası; P'den doğruya yatay PK = 6, düşey PL = 3 ve dik PH parçaları">
+  <line class="sv-c" x1="10" y1="210" x2="390" y2="210" />
+  <line class="sv-c" x1="140" y1="250" x2="140" y2="20" />
+  <text class="sv-b" x="388" y="228" text-anchor="end">x</text><text class="sv-b" x="148" y="30">y</text>
+  <polygon class="sv-k" points="60,90 300,90 300,210" />
+  <line class="sv-cl" x1="20" y1="70" x2="380" y2="250" />
+  <line class="sv-cl" x1="300" y1="90" x2="252" y2="186" />
+  <polyline class="sv-c" points="256.47,177.06 247.53,172.59 243.06,181.53" />
+  <circle class="sv-m" cx="300" cy="90" r="5" /><circle class="sv-k" cx="60" cy="90" r="4" /><circle class="sv-k" cx="300" cy="210" r="4" /><circle class="sv-k" cx="252" cy="186" r="4" />
+  <text class="sv-b" x="308" y="86">P(4, 3)</text>
+  <text class="sv-s" x="66" y="80">K(−2, 3)</text>
+  <text class="sv-s" x="308" y="228">L(4, 0)</text>
+  <text class="sv-s" x="246" y="206" text-anchor="end">H</text>
+  <text class="sv-t" x="180" y="84">PK = 6</text>
+  <text class="sv-t" x="308" y="154">PL = 3</text>
+  <text class="sv-b" x="284" y="142">d</text>
+  <text class="sv-t" x="20" y="160">x + 2y − 4 = 0</text>
+</svg>
+<figcaption>1 birim = 40 piksel. D = 4 + 2 · 3 − 4 = 6. Yatay parça 6/1 = 6, düşey parça 6/2 = 3. Dik kenarları 6 ve 3 olan üçgende hipotenüs √45 = 3√5 ve hipotenüse ait yükseklik 6 · 3 / (3√5) = 6/√5. Formül de aynısını verir: 6/√(1 + 4) = 6/√5.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Formül</span>
+<p>P(x<sub>0</sub>, y<sub>0</sub>) noktasının ax + by + c = 0 doğrusuna uzaklığı: d = <span class="kes"><span>|ax<sub>0</sub> + by<sub>0</sub> + c|</span><span>√(a<sup>2</sup> + b<sup>2</sup>)</span></span>. Kullanmadan önce doğru mutlaka "… = 0" biçiminde yazılır.</p></div>
+
+<p>Formüldeki iki parçanın anlamını aklında tut. <strong>Pay</strong>, noktayı doğru denkleminde yerine koyunca çıkan sayının mutlak değeridir; nokta doğru üzerindeyse sıfırdır, uzaklaştıkça büyür. Mutlak değer gereklidir çünkü uzaklık negatif olamaz; işaret yalnızca noktanın doğrunun hangi yanında olduğunu söyler (bu bilgiyi aşağıda eşitsizliklerde kullanacağız). <strong>Payda</strong> ise denklemin "ölçeğini" düzeltir: 2x + 4y − 8 = 0 ile x + 2y − 4 = 0 aynı doğrudur ama pay ilkinde iki kat büyük çıkar; paydadaki √(4 + 16) = 2√5 de iki kat büyüktür ve oran değişmez.</p>
+
+<p>Formül a ya da b sıfırken de çalışır, yalnızca yukarıdaki türetme o durumu ayrıca gerektirmez. y = k yatay doğrusuna uzaklık |y<sub>0</sub> − k|, x = k düşey doğrusuna uzaklık |x<sub>0</sub> − k| olur; formüle y − k = 0 (a = 0, b = 1) koyarsan aynısını bulursun. Orijinin ax + by + c = 0 doğrusuna uzaklığı da kısaca |c|/√(a<sup>2</sup> + b<sup>2</sup>)'dir.</p>
+
+<p><strong>Çözümlü örnek 2'ye dönüş (kontrol yolu).</strong> A(4, 1) ve 2x − y + 3 = 0 için formül: |2 · 4 − 1 + 3| / √(4 + 1) = 10/√5 = 2√5. Üç adımda bulduğumuzla aynı. Sınavda tersini yap: formülle hızlıca bul, vakit kalırsa izdüşümle doğrula.</p>
+
+<p><strong>Kullanım yerleri.</strong> Formül çoğu zaman kendi adıyla sorulmaz. "Köşeleri verilen üçgenin A'dan inen yüksekliği" A'nın BC doğrusuna uzaklığıdır. "Merkezi M olan ve d doğrusuna teğet çemberin yarıçapı" M'nin d'ye uzaklığıdır, çünkü teğet, değme noktasında yarıçapa diktir (Parça 14) ve o yarıçap tam olarak merkezden doğruya inen dikmedir. Örneğin merkezi (1, 2) olan ve 3x + 4y + 4 = 0 doğrusuna teğet çemberin yarıçapı |3 + 8 + 4| / 5 = 3'tür. Bunu Parça 20'de çemberin denklemini yazarken sürekli kullanacaksın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Köşeleri A(1, 5), B(−2, 1) ve C(4, −1) olan ABC üçgeninde A köşesinden inen yüksekliği ve üçgenin alanını bulunuz.</p>
+<p><strong>Adım 1.</strong> BC doğrusunun eğimini bulurum.</p>
+<span class="mat">m<sub>BC</sub> = <span class="kes"><span>−1 − 1</span><span>4 − (−2)</span></span> = <span class="kes"><span>−2</span><span>6</span></span> = −<span class="kes"><span>1</span><span>3</span></span> <span class="g">(Parça 18'deki eğim formülü)</span></span>
+<p><strong>Adım 2.</strong> B noktasını kullanarak BC'nin denklemini yazar, genel biçime çeviririm.</p>
+<span class="mat">y − 1 = −<span class="kes"><span>1</span><span>3</span></span>(x + 2) <span class="g">(y − y₀ = m(x − x₀))</span></span>
+<span class="mat">3y − 3 = −x − 2 <span class="g">(iki yanı 3 ile çarptım)</span></span>
+<span class="mat">x + 3y − 1 = 0 <span class="g">(hepsini sola topladım; denetim C: 4 − 3 − 1 = 0)</span></span>
+<p><strong>Adım 3.</strong> A'nın bu doğruya uzaklığı yüksekliktir.</p>
+<span class="mat">h<sub>a</sub> = <span class="kes"><span>|1 + 3 · 5 − 1|</span><span>√(1 + 9)</span></span> = <span class="kes"><span>15</span><span>√10</span></span> <span class="g">(nokta-doğru uzaklığı)</span></span>
+<p><strong>Adım 4.</strong> Taban BC'nin uzunluğunu bulurum.</p>
+<span class="mat">BC = √(6<sup>2</sup> + 2<sup>2</sup>) = √40 = 2√10 <span class="g">(iki nokta arası uzaklık)</span></span>
+<p><strong>Adım 5.</strong> Alan = taban × yükseklik / 2 (Parça 8).</p>
+<span class="mat">Alan = <span class="kes"><span>1</span><span>2</span></span> · 2√10 · <span class="kes"><span>15</span><span>√10</span></span> = 15 <span class="g">(√10'lar sadeleşti)</span></span>
+<p><strong>Kontrol yolu.</strong> Parça 17'deki ayakkabı bağı kalıbıyla: (1 · 1 − (−2) · 5) + ((−2) · (−1) − 4 · 1) + (4 · 5 − 1 · (−1)) = 11 − 2 + 21 = 30; yarısı 15. Aynı.</p>
+<p><strong>Sonuç:</strong> h<sub>a</sub> = 15/√10 = 3√10/2 birim, alan 15 birimkare.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Doğruyu genel biçime çevirmeden formüle koymak.</strong> y = 2x + 1 doğrusunda a = 2, b = 1, c = 1 alırsan yanlış olur. Önce her şeyi tek yana topla: 2x − y + 1 = 0; b = −1'dir. Payda √(a² + b²) olduğu için b'nin işareti paydayı değiştirmez ama paydaki toplamı değiştirir.</p>
+<p><strong>Paydaya a + b yazmak ya da kökü unutmak.</strong> Payda bir uzunluktur ve Pisagor'dan gelir: √(a² + b²). 3x + 4y + c = 0 için 5'tir; 7 ya da 25 değildir.</p></div>
+
+<h2 class="s">Paralel iki doğru arasındaki uzaklık</h2>
+
+<p>Paralel iki doğru arasındaki uzaklık, birinden öbürüne çizilen dik parçanın uzunluğudur ve doğrular paralel olduğu için bu uzunluk her yerde aynıdır. O hâlde birinci doğru üzerinde herhangi bir nokta seçip ikinci doğruya uzaklığını bulmak yeter. Bunu genel olarak yapalım: d<sub>1</sub>: ax + by + c<sub>1</sub> = 0 ve d<sub>2</sub>: ax + by + c<sub>2</sub> = 0 (dikkat: x ve y katsayıları <strong>aynı</strong>). (x<sub>0</sub>, y<sub>0</sub>) noktası d<sub>1</sub> üzerindeyse ax<sub>0</sub> + by<sub>0</sub> = −c<sub>1</sub>'dir. Bu noktanın d<sub>2</sub>'ye uzaklığı:</p>
+<span class="mat">d = <span class="kes"><span>|ax<sub>0</sub> + by<sub>0</sub> + c<sub>2</sub>|</span><span>√(a<sup>2</sup> + b<sup>2</sup>)</span></span> = <span class="kes"><span>|−c<sub>1</sub> + c<sub>2</sub>|</span><span>√(a<sup>2</sup> + b<sup>2</sup>)</span></span> <span class="g">(ax₀ + by₀ yerine −c₁ yazdım)</span></span>
+
+<div class="kural"><span class="et">Formül</span>
+<p>ax + by + c<sub>1</sub> = 0 ve ax + by + c<sub>2</sub> = 0 paralel doğruları arasındaki uzaklık: d = <span class="kes"><span>|c<sub>1</sub> − c<sub>2</sub>|</span><span>√(a<sup>2</sup> + b<sup>2</sup>)</span></span>. Koşul: iki denklemde x'in katsayıları birbirine, y'nin katsayıları birbirine eşit olmalı; değilse önce bir denklemi bölerek ya da çarparak eşitle.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 3x + 4y − 2 = 0 ve 6x + 8y + 11 = 0 doğruları arasındaki uzaklık kaç birimdir? Bir karenin iki kenarı bu doğrular üzerindeyse karenin alanı kaçtır?</p>
+<p><strong>Adım 1.</strong> Paralel olduklarını denetlerim: 3/6 = 4/8 = 1/2, ama −2/11 ≠ 1/2. Paraleller.</p>
+<p><strong>Adım 2.</strong> Katsayıları eşitlerim. İkinci denklemi 2'ye bölerim.</p>
+<span class="mat">3x + 4y + 5,5 = 0 <span class="g">(6x + 8y + 11 = 0'ın yarısı)</span></span>
+<p><strong>Adım 3.</strong> Formülü uygularım.</p>
+<span class="mat">d = <span class="kes"><span>|−2 − 5,5|</span><span>√(9 + 16)</span></span> = <span class="kes"><span>7,5</span><span>5</span></span> = 1,5 <span class="g">(c₁ = −2, c₂ = 5,5)</span></span>
+<p><strong>Adım 4.</strong> Karenin karşılıklı iki kenarı paralel doğrular üzerindeyse, kenar uzunluğu bu iki doğru arasındaki uzaklıktır (kenarlar arasındaki dik uzaklık karenin kenarıdır).</p>
+<span class="mat">Alan = 1,5<sup>2</sup> = 2,25 <span class="g">(kare alanı a²)</span></span>
+<p><strong>Kontrol yolu.</strong> Birinci doğrudan bir nokta seç: x = 2 için 6 + 4y − 2 = 0, y = −1; nokta (2, −1). Bu noktanın 6x + 8y + 11 = 0 doğrusuna uzaklığı |12 − 8 + 11| / √(36 + 64) = 15/10 = 1,5. Aynı.</p>
+<p><strong>Sonuç:</strong> Uzaklık 1,5 birim, karenin alanı 2,25 birimkare.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Katsayıları eşitlemeden sabitleri çıkarmak.</strong> Örnek 4'te doğrudan |−2 − 11| / 5 yazarsan 13/5 = 2,6 bulursun; yanlış. 6x + 8y + 11 = 0 denklemindeki 11, 3x + 4y'li denklemin ölçeğinde 5,5'e karşılık gelir. Sabitleri ancak x ve y katsayıları birebir aynıyken karşılaştırabilirsin.</p></div>
+
+<h2 class="s">Orta dikme ve üçgenin özel doğruları</h2>
+
+<p>Bir AB doğru parçasının <strong>orta dikmesi</strong>, AB'nin orta noktasından geçen ve AB'ye dik olan doğrudur. Önemli bir özelliği var: orta dikme üzerindeki her nokta A ve B'ye eşit uzaklıktadır. Nedeni Parça 6'daki eşlik: orta dikme üzerindeki bir P noktası için P, orta nokta M ve A ile P, M, B üçgenleri K.A.K. kuralıyla eştir (PM ortak, AM = MB, M'deki açılar 90°), dolayısıyla PA = PB. Bu yüzden orta dikmenin denklemini iki farklı yoldan yazabilirsin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> A(−1, 2) ve B(5, 6) noktalarını birleştiren doğru parçasının orta dikmesinin denklemini yazınız.</p>
+<p><strong>Adım 1.</strong> Orta noktayı bulurum (Parça 17).</p>
+<span class="mat">M = (<span class="kes"><span>−1 + 5</span><span>2</span></span>, <span class="kes"><span>2 + 6</span><span>2</span></span>) = (2, 4) <span class="g">(apsislerin ve ordinatların ortalaması)</span></span>
+<p><strong>Adım 2.</strong> AB'nin eğimini ve ona dik eğimi bulurum.</p>
+<span class="mat">m<sub>AB</sub> = <span class="kes"><span>6 − 2</span><span>5 − (−1)</span></span> = <span class="kes"><span>2</span><span>3</span></span> ⇒ m<sub>dik</sub> = −<span class="kes"><span>3</span><span>2</span></span> <span class="g">(ters ve ters işaretli)</span></span>
+<p><strong>Adım 3.</strong> M'den geçen ve eğimi −3/2 olan doğruyu yazarım.</p>
+<span class="mat">y − 4 = −<span class="kes"><span>3</span><span>2</span></span>(x − 2) <span class="g">(nokta-eğim kalıbı)</span></span>
+<span class="mat">2y − 8 = −3x + 6 <span class="g">(iki yanı 2 ile çarptım)</span></span>
+<span class="mat">3x + 2y − 14 = 0 <span class="g">(hepsini sola topladım)</span></span>
+<p><strong>İkinci yol (kontrol).</strong> Orta dikmedeki P(x, y) için PA<sup>2</sup> = PB<sup>2</sup> yazarım: (x + 1)<sup>2</sup> + (y − 2)<sup>2</sup> = (x − 5)<sup>2</sup> + (y − 6)<sup>2</sup>. Kareleri açınca x<sup>2</sup> ve y<sup>2</sup> iki yanda da sadeleşir: 2x + 1 − 4y + 4 = −10x + 25 − 12y + 36. Toplayınca 12x + 8y = 56, yani 3x + 2y = 14. Aynı doğru.</p>
+<p><strong>Sonuç:</strong> 3x + 2y − 14 = 0.</p></div>
+
+<p>Üçgenin dört tür özel doğrusu vardır ve her birinin kesim noktasının bir adı vardır. Analitik düzlemde hepsi aynı iki araçla yazılır: bir noktadan geçen doğru ve dik doğru.</p>
+
+<div class="tablo"><table>
+<tr><th>Doğru</th><th>Nereden geçer, neye diktir?</th><th>Denklem için gerekenler</th><th>Kesim noktası</th></tr>
+<tr><td>Kenarortay</td><td>Köşeden ve karşı kenarın orta noktasından</td><td>Orta nokta + iki noktadan geçen doğru</td><td>Ağırlık merkezi G (köşelerin ortalaması, Parça 17)</td></tr>
+<tr><td>Yükseklik</td><td>Köşeden geçer, karşı kenara diktir</td><td>Karşı kenarın eğimi → dik eğim → köşeden geçen doğru</td><td>Diklik merkezi H</td></tr>
+<tr><td>Kenar orta dikmesi</td><td>Kenarın orta noktasından geçer, kenara diktir</td><td>Orta nokta + dik eğim (ya da PA² = PB²)</td><td>Çevrel çemberin merkezi O (köşelere eşit uzak)</td></tr>
+<tr><td>Açıortay</td><td>Köşeden geçer, açıyı iki eşit parçaya böler</td><td>Kenar doğrularına eşit uzaklık (aşağıda)</td><td>İç teğet çemberin merkezi (Parça 7)</td></tr>
+</table></div>
+
+<p>Üç doğrunun da tek noktada buluştuğunu bilmek işini kısaltır: kesim noktasını bulmak için üç doğrunun <strong>ikisini</strong> yazıp kesiştirmek yeter. Üçüncüsü kontrol yolu olarak kalır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Köşeleri A(0, 0), B(6, 0) ve C(2, 4) olan üçgenin diklik merkezi H'yi ve çevrel çemberinin merkezi O'yu bulunuz.</p>
+<p><strong>Adım 1.</strong> C'den inen yükseklik AB'ye diktir. AB x ekseni üzerinde (yatay) olduğundan bu yükseklik düşeydir ve C'den geçer.</p>
+<span class="mat">x = 2 <span class="g">(C'den geçen düşey doğru)</span></span>
+<p><strong>Adım 2.</strong> A'dan inen yükseklik BC'ye diktir.</p>
+<span class="mat">m<sub>BC</sub> = <span class="kes"><span>4 − 0</span><span>2 − 6</span></span> = −1 ⇒ m<sub>dik</sub> = 1 <span class="g">(çarpım −1)</span></span>
+<span class="mat">y = x <span class="g">(A(0, 0)'dan geçen, eğimi 1 olan doğru)</span></span>
+<p><strong>Adım 3.</strong> İki yüksekliği kesiştiririm: x = 2 ⇒ y = 2. H(2, 2).</p>
+<p><strong>Adım 4.</strong> Çevrel çemberin merkezi için iki kenar orta dikmesi yazarım. AB'nin orta noktası (3, 0) ve AB yatay olduğundan orta dikmesi düşeydir.</p>
+<span class="mat">x = 3 <span class="g">(AB'nin orta dikmesi)</span></span>
+<p><strong>Adım 5.</strong> AC'nin orta noktası (1, 2), eğimi 4/2 = 2, dik eğim −1/2.</p>
+<span class="mat">y − 2 = −<span class="kes"><span>1</span><span>2</span></span>(x − 1) <span class="g">(AC'nin orta dikmesi)</span></span>
+<span class="mat">x = 3 ⇒ y = 2 − <span class="kes"><span>1</span><span>2</span></span> · 2 = 1 <span class="g">(x = 3'ü yerine koydum)</span></span>
+<p><strong>Kontrol yolu.</strong> O(3, 1) köşelere eşit uzak olmalı: OA<sup>2</sup> = 9 + 1 = 10, OB<sup>2</sup> = 9 + 1 = 10, OC<sup>2</sup> = 1 + 9 = 10. H için üçüncü yüksekliği dene: BH'nin eğimi (2 − 0)/(2 − 6) = −1/2, AC'nin eğimi 2; çarpım −1, yani BH gerçekten AC'ye dik.</p>
+<p><strong>Sonuç:</strong> H(2, 2), O(3, 1); çevrel çemberin yarıçapı √10.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 280" role="img" aria-label="A(0, 0), B(6, 0), C(2, 4) üçgeni; üç yükseklik H(2, 2) noktasında kesişiyor; çevrel çemberin merkezi O(3, 1)">
+  <line class="sv-c" x1="20" y1="240" x2="390" y2="240" />
+  <line class="sv-c" x1="50" y1="260" x2="50" y2="20" />
+  <polygon class="sv-l" points="50,240 350,240 150,40" />
+  <line class="sv-c" x1="150" y1="40" x2="150" y2="240" stroke-dasharray="6 5" />
+  <line class="sv-c" x1="50" y1="240" x2="200" y2="90" stroke-dasharray="6 5" />
+  <line class="sv-c" x1="350" y1="240" x2="110" y2="120" stroke-dasharray="6 5" />
+  <circle class="sv-a" cx="150" cy="140" r="5" />
+  <circle class="sv-m" cx="200" cy="190" r="5" />
+  <text class="sv-b" x="38" y="258">A</text>
+  <text class="sv-b" x="356" y="258">B</text>
+  <text class="sv-b" x="150" y="30" text-anchor="middle">C</text>
+  <text class="sv-b" x="156" y="172">H</text>
+  <text class="sv-b" x="208" y="202">O</text>
+  <text class="sv-s" x="150" y="256" text-anchor="middle">(2, 0)</text>
+  <text class="sv-s" x="206" y="84">(3, 3)</text>
+  <text class="sv-s" x="104" y="114" text-anchor="end">(1,2; 2,4)</text>
+</svg>
+<figcaption>1 birim = 50 piksel. Kesikli çizgiler üç yükseklik; ayakları (2, 0), (3, 3) ve (1,2; 2,4). Üçü de H(2, 2)'den geçer. O(3, 1), üç köşeye de √10 uzaklıktadır. Bu üçgen dar açılı olduğu için H ve O üçgenin içinde kaldı; geniş açılı üçgende ikisi de dışarı düşer.</figcaption>
+</figure>
+
+<p>Kenarortay doğrusu daha da kolaydır: aynı üçgende A'dan çizilen kenarortay, BC'nin orta noktası (4, 2) ile A(0, 0)'dan geçer; denklemi y = x/2'dir. Ağırlık merkezi ise doğru yazmadan, köşelerin ortalamasıyla bulunur: G((0 + 6 + 2)/3, (0 + 0 + 4)/3) = (8/3, 4/3).</p>
+
+<h2 class="s">İki doğruya eşit uzaklıktaki noktalar: açıortay doğruları</h2>
+
+<p>Parça 7'de bir açıortayın üzerindeki her noktanın açının kollarına eşit uzaklıkta olduğunu gördün. Bunu tersine çevir: kesişen iki doğruya eşit uzaklıktaki noktaların hepsi, bu doğruların oluşturduğu açıların açıortayları üzerindedir. Kesişen iki doğru iki çift açı oluşturduğu için iki açıortay doğrusu vardır.</p>
+
+<p>Örnek: 3x − 4y + 1 = 0 ve 4x + 3y − 2 = 0 doğruları. İkisinde de √(a<sup>2</sup> + b<sup>2</sup>) = 5. P(x, y) noktası iki doğruya eşit uzaklıktaysa |3x − 4y + 1| / 5 = |4x + 3y − 2| / 5, yani |3x − 4y + 1| = |4x + 3y − 2|. İki mutlak değerin eşitliği, içlerin ya eşit ya da ters işaretli olmasıdır (Matematik Parça 21):</p>
+<span class="mat">3x − 4y + 1 = 4x + 3y − 2 ⇒ x + 7y − 3 = 0 <span class="g">(içler eşit)</span></span>
+<span class="mat">3x − 4y + 1 = −(4x + 3y − 2) ⇒ 7x − y − 1 = 0 <span class="g">(içler ters işaretli)</span></span>
+<p>İki açıortay birbirine diktir: 1 · 7 + 7 · (−1) = 0. Bu, Parça 1'deki "komşu bütünler açıların açıortayları diktir" kuralının analitik görüntüsüdür. Paydalar farklı olsaydı (örneğin biri 5, öbürü √5) onları atamazdın; her ifadeyi kendi paydasıyla bölüp öyle eşitlemen gerekirdi.</p>
+
+<h2 class="s">Doğruların sınırladığı üçgen ve dörtgenlerin alanı</h2>
+
+<p>Parça 18'de bir doğrunun eksenlerle oluşturduğu üçgeni gördün: x/a + y/b = 1 doğrusu için alan |a · b| / 2. Şimdi iki doğru ve bir eksen ya da iki doğru ve iki eksen var. Yöntem hep aynı: <strong>köşeleri bul, sonra alanı hesapla.</strong> Köşeler, doğruların birbirleriyle ve eksenlerle kesim noktalarıdır.</p>
+
+<p><strong>İki doğru ve x ekseni.</strong> y = 2x ve x + y = 6 doğruları x ekseniyle bir üçgen oluşturur. x eksenini kestikleri noktalar (0, 0) ve (6, 0); taban 6 birim. Birbirleriyle kesim noktası: 2x = 6 − x, x = 2, y = 4. Yükseklik, bu noktanın x eksenine uzaklığı, yani ordinatı: 4. Alan = 6 · 4 / 2 = 12.</p>
+
+<p><strong>İki doğru ve y ekseni.</strong> Bu kez taban y ekseni üzerindedir, yükseklik kesim noktasının <strong>apsisidir</strong>. y = x + 2 ve y = −x + 6 doğrularının y eksenini kestiği noktalar 2 ve 6; taban 4. Kesim noktası x + 2 = −x + 6'dan x = 2. Alan = 4 · 2 / 2 = 4. Taban ve yüksekliği hangi eksenin belirlediğini karıştırmamak için kısa bir taslak çiz.</p>
+
+<p><strong>Dörtgen.</strong> Dört kenarlı bölgeyi bir köşegenle iki üçgene ayır ya da köşeleri sırayla yazıp Parça 17'deki ayakkabı bağı kalıbını kullan. Aşağıdaki eşitsizlik bölümünde bir örnek var.</p>
+
+<h2 class="s">Doğrusal eşitsizlikler: yarı düzlem</h2>
+
+<p>Bir doğru düzlemi iki parçaya ayırır. Her parçaya <strong>yarı düzlem</strong> denir. y = 2x − 4 doğrusunu düşün ve x = 1'de dur: doğrunun o noktadaki yüksekliği −2'dir. (1, 0) noktasının ordinatı 0 &gt; −2 olduğundan doğrunun üstündedir; (1, −5) noktasının ordinatı −5 &lt; −2 olduğundan altındadır. Her x için aynı şey geçerli: <strong>y &gt; 2x − 4</strong> eşitsizliğini sağlayan noktalar doğrunun tam üstündeki yarı düzlemi, <strong>y &lt; 2x − 4</strong> sağlayanlar altındakini doldurur. Doğrunun kendisi ise eşitliği sağlar.</p>
+
+<p>Genel biçimde aynı fikir şöyle söylenir: ax + by + c ifadesi doğrunun üzerinde sıfırdır, bir yanında hep pozitif, öbür yanında hep negatiftir. İşaret ancak doğru geçilirken değişebilir, çünkü değişmesi için önce sıfır olması gerekir ve sıfır olduğu yerler doğrunun kendisidir. Bu yüzden bir yarı düzlemin tamamını tek bir nokta temsil eder: <strong>deneme noktası</strong>.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1.</strong> Eşitsizliği eşitlik gibi düşünüp doğruyu çiz (eksenleri kestiği iki nokta yeter). ≤ ya da ≥ ise doğru çözüme dahildir: <strong>düz çizgi</strong>. &lt; ya da &gt; ise dahil değildir: <strong>kesikli çizgi</strong>.</p>
+<p><strong>2.</strong> Doğrunun üzerinde olmayan bir deneme noktası seç. Doğru orijinden geçmiyorsa O(0, 0) en kolayıdır.</p>
+<p><strong>3.</strong> Noktayı eşitsizlikte yerine koy. Sağlıyorsa noktanın bulunduğu yarı düzlemi, sağlamıyorsa öbür yarı düzlemi tara.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="2x − y &lt; 4 eşitsizliğinin çözüm bölgesi: kesikli çizilmiş y = 2x − 4 doğrusunun sol üst yanı taralı; deneme noktası orijin">
+  <polygon class="sv-l" points="20,10 270,10 130,290 20,290" />
+  <line class="sv-c" x1="20" y1="150" x2="390" y2="150" />
+  <line class="sv-c" x1="130" y1="290" x2="130" y2="10" />
+  <text class="sv-b" x="388" y="140" text-anchor="end">x</text><text class="sv-b" x="138" y="24">y</text>
+  <line class="sv-cl" x1="270" y1="10" x2="130" y2="290" stroke-dasharray="8 6" />
+  <circle class="sv-m" cx="130" cy="150" r="5" />
+  <circle class="sv-a" cx="270" cy="220" r="5" />
+  <circle class="sv-k" cx="200" cy="150" r="4" />
+  <text class="sv-s" x="206" y="168">(2, 0)</text>
+  <text class="sv-s" x="138" y="282">(0, −4)</text>
+  <text class="sv-t" x="122" y="172" text-anchor="end">O: 0 &lt; 4 doğru</text>
+  <text class="sv-t" x="300" y="246" text-anchor="middle">(4, −2): 10 &lt; 4 yanlış</text>
+  <text class="sv-b" x="40" y="70">çözüm bölgesi</text>
+  <text class="sv-t" x="276" y="70">2x − y = 4</text>
+  <text class="sv-s" x="276" y="88">(kesikli: dahil değil)</text>
+</svg>
+<figcaption>1 birim = 35 piksel. Doğru, eksenleri (2, 0) ve (0, −4) noktalarında keser. Eşitsizlik kesin (&lt;) olduğu için doğru kesikli çizildi. Orijin eşitsizliği sağladığından orijinin bulunduğu yan tarandı; (4, −2) sağlamadığından öbür yan boş kaldı.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Eşitsizlik</th><th>Çizgi</th><th>Taranan yan</th></tr>
+<tr><td>x &gt; a</td><td>x = a, kesikli</td><td>Düşey doğrunun sağı</td></tr>
+<tr><td>x ≤ a</td><td>x = a, düz</td><td>Düşey doğrunun solu (doğru dahil)</td></tr>
+<tr><td>y ≥ b</td><td>y = b, düz</td><td>Yatay doğrunun üstü</td></tr>
+<tr><td>y &gt; mx + n</td><td>kesikli</td><td>Doğrunun üstü</td></tr>
+<tr><td>y ≤ mx + n</td><td>düz</td><td>Doğrunun altı</td></tr>
+<tr><td>ax + by + c &lt; 0</td><td>kesikli</td><td>Deneme noktasıyla karar ver</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>y'yi yalnız bırakırken yön değiştirmeyi unutmak.</strong> 2x − y &lt; 4 eşitsizliğinde −y &lt; 4 − 2x yazıp iki yanı −1 ile çarptığında yön döner: y &gt; 2x − 4. Yönü çevirmeyi unutursan "doğrunun altı" der ve tam ters bölgeyi tararsın (Matematik Parça 19'daki kural). Deneme noktası yöntemi bu hatayı kendiliğinden önler; o yüzden y'yi yalnız bıraksan bile sonucu bir noktayla denetle.</p>
+<p><strong>Deneme noktasını doğrunun üzerinden seçmek.</strong> y &gt; 3x doğrusu orijinden geçer; O(0, 0) koyarsan 0 &gt; 0 yanlış çıkar ve bu sana hiçbir yan hakkında bilgi vermez. Doğru orijinden geçiyorsa (1, 0) ya da (0, 1) gibi başka bir nokta seç.</p></div>
+
+<h2 class="s">Eşitsizlik sistemi ve taranan bölgenin alanı</h2>
+
+<p>Birden çok eşitsizlik birlikte verildiğinde çözüm, hepsini <strong>aynı anda</strong> sağlayan noktalardır; yani tek tek yarı düzlemlerin kesişimi. Sınav genellikle bu kesişimin bir üçgen ya da dörtgen olduğu sistemleri verir ve alanını sorar. Yol: her sınır doğrusunu çiz, ortak bölgeyi belirle, köşeleri kesim noktalarından bul, alanı hesapla.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> x ≥ 0, y ≥ 0, x + y ≤ 6 ve 2x + y ≤ 10 eşitsizliklerinin oluşturduğu sistemin çözüm bölgesinin alanı kaç birimkaredir?</p>
+<p><strong>Adım 1.</strong> x ≥ 0 ve y ≥ 0 bölgeyi birinci bölgeye (eksenler dahil) sınırlar.</p>
+<p><strong>Adım 2.</strong> x + y = 6 eksenleri (6, 0) ve (0, 6)'da keser; orijin 0 ≤ 6'yı sağladığından doğrunun orijin tarafı alınır. 2x + y = 10 eksenleri (5, 0) ve (0, 10)'da keser; orijin 0 ≤ 10'u sağlar, yine orijin tarafı.</p>
+<p><strong>Adım 3.</strong> x ekseni üzerinde hangi sınır önce gelir? x + y ≤ 6, x'e 6'ya kadar izin verir; 2x + y ≤ 10 ise 5'e kadar. İkisi birden sağlanacağı için x ekseninde köşe (5, 0). y ekseninde ise 6 ile 10'dan küçüğü geçerli: köşe (0, 6).</p>
+<p><strong>Adım 4.</strong> İki eğik doğrunun kesim noktasını bulurum.</p>
+<span class="mat">(2x + y) − (x + y) = 10 − 6 ⇒ x = 4 <span class="g">(taraf tarafa çıkardım)</span></span>
+<span class="mat">y = 6 − 4 = 2 <span class="g">(x + y = 6'da yerine koydum)</span></span>
+<p><strong>Adım 5.</strong> Bölge, köşeleri O(0, 0), (5, 0), (4, 2), (0, 6) olan dörtgendir. (0, 0)–(4, 2) köşegeniyle iki üçgene ayırırım.</p>
+<span class="mat">S<sub>1</sub> = <span class="kes"><span>5 · 2</span><span>2</span></span> = 5 <span class="g">(taban x ekseninde 5, yükseklik (4, 2)'nin ordinatı 2)</span></span>
+<span class="mat">S<sub>2</sub> = <span class="kes"><span>6 · 4</span><span>2</span></span> = 12 <span class="g">(taban y ekseninde 6, yükseklik (4, 2)'nin apsisi 4)</span></span>
+<span class="mat">S = 5 + 12 = 17 <span class="g">(iki üçgenin toplamı)</span></span>
+<p><strong>Kontrol yolu.</strong> Ayakkabı bağı: (0 · 0 − 5 · 0) + (5 · 2 − 4 · 0) + (4 · 6 − 0 · 2) + (0 · 0 − 0 · 6) = 0 + 10 + 24 + 0 = 34; yarısı 17. Bir de bölgenin içinden bir nokta dene: (1, 1) dört eşitsizliği de sağlıyor; bölgeyi doğru seçmişiz.</p>
+<p><strong>Sonuç:</strong> 17 birimkare.</p></div>
+
+<p><strong>|x| + |y| ≤ a bölgesi.</strong> Mutlak değer, işaretin dört bölgede ayrı ayrı ele alınmasını gerektirir (Matematik Parça 21). I. bölgede x ≥ 0, y ≥ 0 olduğundan eşitsizlik x + y ≤ a olur: eksenlerle birlikte dik kenarları a olan bir üçgen. II. bölgede −x + y ≤ a, III. bölgede −x − y ≤ a, IV. bölgede x − y ≤ a; her biri yine dik kenarları a olan bir üçgen verir. Dört üçgen birleşince köşeleri (a, 0), (0, a), (−a, 0), (0, −a) olan bir <strong>kare</strong> çıkar. Bu karenin köşegenleri eksenler üzerindedir ve her biri 2a uzunluğundadır; Parça 11'deki "alan = köşegenin karesinin yarısı" kuralıyla alan (2a)<sup>2</sup> / 2 = 2a<sup>2</sup>'dir. Dört üçgenle de aynı sonuç: 4 · a<sup>2</sup>/2 = 2a<sup>2</sup>. |x| + |y| = a ise yalnızca karenin çerçevesidir; kenarı a√2, çevresi 4a√2.</p>
+
+<figure>
+<svg viewBox="0 0 400 280" role="img" aria-label="Solda x + y ≤ 6, 2x + y ≤ 10 ve birinci bölge koşullarının belirttiği dörtgen; sağda |x| + |y| ≤ 3 bölgesi olan, köşeleri eksenler üzerinde kare">
+  <text class="sv-b" x="100" y="30" text-anchor="middle">Çözümlü örnek 7</text>
+  <polygon class="sv-l" points="30,240 155,240 130,190 30,90" />
+  <line class="sv-c" x1="20" y1="240" x2="195" y2="240" />
+  <line class="sv-c" x1="30" y1="255" x2="30" y2="60" />
+  <line class="sv-cl" x1="30" y1="90" x2="180" y2="240" />
+  <line class="sv-cl" x1="92.5" y1="115" x2="155" y2="240" />
+  <circle class="sv-m" cx="130" cy="190" r="4" />
+  <text class="sv-s" x="138" y="186">(4, 2)</text>
+  <text class="sv-s" x="155" y="258" text-anchor="middle">(5, 0)</text>
+  <text class="sv-s" x="36" y="84">(0, 6)</text>
+  <text class="sv-s" x="22" y="258" text-anchor="end">O</text>
+  <text class="sv-b" x="50" y="210">alan 17</text>
+  <text class="sv-b" x="300" y="30" text-anchor="middle">|x| + |y| ≤ 3</text>
+  <polygon class="sv-l" points="375,165 300,90 225,165 300,240" />
+  <line class="sv-c" x1="210" y1="165" x2="392" y2="165" />
+  <line class="sv-c" x1="300" y1="252" x2="300" y2="70" />
+  <text class="sv-s" x="378" y="182">3</text>
+  <text class="sv-s" x="222" y="182" text-anchor="end">−3</text>
+  <text class="sv-s" x="292" y="86" text-anchor="end">3</text>
+  <text class="sv-s" x="292" y="254" text-anchor="end">−3</text>
+  <text class="sv-b" x="306" y="150">18</text>
+</svg>
+<figcaption>Solda 1 birim = 25 piksel; köşeler (0, 0), (5, 0), (4, 2), (0, 6). x + y = 6 ile 2x + y = 10 doğrularının x ekseninde içte kalanı (5, 0), y ekseninde içte kalanı (0, 6) bölgeyi sınırlar. Sağda a = 3: köşegenler 6, alan 6² / 2 = 18 = 2 · 3².</figcaption>
+</figure>
+
+<h2 class="s">Hesap makinesiz: hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Paralel ve dik kararında</strong> eğim hesaplama; genel denklemde doğrudan katsayılara bak. Paralellik için a<sub>1</sub>b<sub>2</sub> = a<sub>2</sub>b<sub>1</sub>, diklik için a<sub>1</sub>a<sub>2</sub> + b<sub>1</sub>b<sub>2</sub> = 0. Kontrol: bulduğun parametreyi geri koy, eğimlerin çarpımı gerçekten −1 mi, eşit mi, bak.</p>
+
+<p><strong>Paralel ya da dik doğru yazarken</strong> "sol yanı koru" ya da "katsayıları yer değiştir, birinin işaretini değiştir" kısayolunu kullan. Kontrol: verilen noktayı yeni denklemde yerine koy; sıfır çıkmalı.</p>
+
+<p><strong>Uzaklıkta</strong> payda çoğu zaman bir Pisagor üçlüsüdür: (3, 4) → 5, (5, 12) → 13, (8, 15) → 17, (1, 1) → √2, (1, 2) → √5. Soru yazanlar katsayıları bilerek böyle seçer. Kontrol: sonuç negatif çıkamaz; ayrıca kabaca bir taslakla "noktanın doğruya uzaklığı bu kadar olabilir mi" diye bak. Örnek 3'te 15/√10 yaklaşık 4,7; A(1, 5) ile BC arasındaki dikey açıklık taslakta 4-5 birim görünüyor, makul.</p>
+
+<p><strong>Paralel doğrular arası uzaklıkta</strong> ilk iş katsayıları eşitlemek. Kontrol: birinci doğrudan tam sayı koordinatlı bir nokta bul, nokta-doğru formülüyle ikinci doğruya uzaklığını hesapla.</p>
+
+<p><strong>Eşitsizlikte</strong> her zaman deneme noktası; alan sorusunda köşeleri bulduktan sonra bölgenin içinden bir noktayla tüm eşitsizlikleri dene. Alanı hem üçgenlere bölerek hem ayakkabı bağıyla hesaplamak, aritmetik hatasını yakalar.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 18'e:</strong> Eğim ve doğru denklemi bu parçanın ham maddesiydi; burada iki doğruyu eğimleriyle karşılaştırdık.</p>
+<p><strong>Parça 3, 5 ve 17'ye:</strong> Diklik kuralı Pisagor'un tersinden, uzaklık formülü Öklid'in 1/h² bağıntısından, "en kısa yol diktir" fikri hipotenüsün en uzun kenar oluşundan çıktı. Alan sorularında Parça 17'deki ayakkabı bağını kontrol yolu olarak kullandık.</p>
+<p><strong>Parça 20'ye:</strong> Bir doğrunun bir çembere teğet, kesen ya da dışında olduğunu merkezin doğruya uzaklığını yarıçapla karşılaştırarak anlayacaksın; teğet çemberin yarıçapı doğrudan bu parçanın formülüdür.</p>
+<p><strong>Parça 21 ve 25'e:</strong> Bir noktanın doğruya göre simetriği, burada bulduğumuz dik izdüşümün iki katı uzağıdır; yansıma ile en kısa yol soruları da bu dik doğru tekniğine dayanır.</p>
+<p><strong>Öbür derslere:</strong> Katsayı oranları Matematik Parça 18'deki sistem yorumunun şekle dökülmüş hâlidir. Eşitsizlikte yön değiştirme Matematik Parça 19'dan, mutlak değerin dört bölgede açılması Matematik Parça 21'den geliyor. İkinci dereceden eşitsizlik sistemleri Matematik: ileri Parça 7'de, açı formülünün dayandığı tanjant fark formülü ileri Parça 11'de. İktisatta bir hanenin bütçe kısıtı (iki malın fiyatları çarpı miktarları toplamı ≤ gelir) tam olarak bir yarı düzlemdir; eksenlerle birlikte bir üçgen bölge çizer.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Dik iki doğrunun eğimleri çarpımının −1 olduğunu nasıl gösterirsin?</summary><p>Doğruları orijinden geçecek kadar kaydırırım (yön değişmez). x = 1 doğrusu onları P(1, m₁) ve Q(1, m₂)'de keser. OP² = 1 + m₁², OQ² = 1 + m₂², PQ² = (m₁ − m₂)². O köşesi dik ⇔ OP² + OQ² = PQ² (Pisagor ve tersi) ⇔ 2 = −2m₁m₂ ⇔ m₁m₂ = −1.</p></details>
+<details><summary>Genel denklemde verilen iki doğrunun dik olduğunu eğim hesaplamadan nasıl anlarsın? Bu koşul neden yatay-düşey durumunu da kapsar?</summary><p>a₁a₂ + b₁b₂ = 0 olup olmadığına bakarım. Koşul eğimler çarpımı −1'den içler-dışlar çarpımıyla gelir ama payda içermez; bu yüzden b = 0 olan düşey doğru ile a = 0 olan yatay doğru için de yazılabilir: 1 · 0 + 0 · 1 = 0.</p></details>
+<details><summary>Nokta-doğru uzaklık formülünde pay neden mutlak değerli, payda neden √(a² + b²)?</summary><p>Pay, noktayı denklemde yerine koyunca çıkan sayıdır; işareti yalnızca noktanın doğrunun hangi yanında olduğunu söyler, uzaklık ise negatif olamaz. Payda, yatay parça |D|/|a| ve düşey parça |D|/|b| olan dik üçgende hipotenüse ait yüksekliği Öklid'le (1/h² = 1/b² + 1/c²) bulurken ortaya çıkar; denklemi bir sayıyla çarpmanın sonucu değiştirmemesini de o sağlar.</p></details>
+<details><summary>3x − 4y + 2 = 0 ile 6x − 8y − 6 = 0 doğruları arasındaki uzaklığı hesaplamadan önce ilk ne yaparsın?</summary><p>x ve y katsayılarını eşitlerim: ikinci denklemi 2'ye bölüp 3x − 4y − 3 = 0 yazarım. Ancak bundan sonra |c₁ − c₂| / √(a² + b²) = |2 − (−3)| / 5 = 1 bulunur. Eşitlemeden yapılan hesap yanlış sonuç verir.</p></details>
+<details><summary>Bir doğrusal eşitsizliğin bölgesini çizerken çizginin düz mü kesikli mi olacağına ve hangi yanın taranacağına nasıl karar verirsin?</summary><p>≤ ya da ≥ ise doğru çözüme dahildir, düz çizerim; &lt; ya da &gt; ise dahil değildir, kesikli çizerim. Sonra doğrunun üzerinde olmayan bir deneme noktası (genellikle orijin) koyarım: eşitsizliği sağlıyorsa onun bulunduğu yanı, sağlamıyorsa öbür yanı tararım.</p></details>
+<details><summary>|x| + |y| ≤ a bölgesinin alanı neden 2a²'dir?</summary><p>Dört bölgede mutlak değer açılınca her bölgede dik kenarları a olan bir üçgen çıkar; dördü birleşince köşeleri (±a, 0) ve (0, ±a) olan bir kare oluşur. Köşegenleri 2a olan karenin alanı (2a)²/2 = 2a²'dir; dört üçgenin toplamı 4 · a²/2 de aynı sonucu verir.</p></details>
+<details><summary>Bir noktanın bir doğru üzerindeki dik izdüşümü nasıl bulunur?</summary><p>Noktadan geçen ve doğruya dik olan doğruyu yazarım (katsayıların yeri değişir, biri işaret değiştirir; sağ yan noktayla bulunur). Sonra bu dik doğru ile verilen doğrunun kesim noktasını iki denklemi birlikte çözerek bulurum. O kesim noktası izdüşümdür; noktayla arasındaki uzaklık nokta-doğru uzaklığına eşittir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Paralel:</strong> m₁ = m₂ (n'ler farklı). Genel: a₁/a₂ = b₁/b₂ ≠ c₁/c₂. Üç oran eşitse çakışık; a₁/a₂ ≠ b₁/b₂ ise kesişen.</li>
+<li><strong>Dik:</strong> m₁ · m₂ = −1 (ters ve ters işaretli). Genel: a₁a₂ + b₁b₂ = 0; yatay-düşey de kapsanır. Gerekçe: Pisagor'un tersi.</li>
+<li><strong>Kesim noktası:</strong> iki denklemi birlikte çöz; noktayı iki denklemde de denetle.</li>
+<li><strong>A(x₀, y₀)'dan geçen doğru:</strong> paralel ax + by = ax₀ + by₀; dik bx − ay = bx₀ − ay₀.</li>
+<li><strong>Açı (kapsam belirsiz):</strong> tan θ = |m₁ − m₂| / |1 + m₁m₂|; payda 0 ⇒ 90°, pay 0 ⇒ paralel.</li>
+<li><strong>Nokta-doğru:</strong> d = |ax₀ + by₀ + c| / √(a² + b²). Önce "= 0" biçimine getir. Yükseklik ve teğet çember yarıçapı bu.</li>
+<li><strong>Paralel doğrular arası:</strong> katsayıları eşitle, sonra |c₁ − c₂| / √(a² + b²).</li>
+<li><strong>Orta dikme:</strong> orta nokta + dik eğim, ya da PA² = PB². Üçgende iki doğruyu kesiştir: yükseklikler → H, orta dikmeler → O, kenarortaylar → G.</li>
+<li><strong>Açıortay doğruları:</strong> iki doğruya eşit uzaklık; |…|/√ = |…|/√, iki doğru çıkar ve birbirine diktir.</li>
+<li><strong>Yarı düzlem:</strong> ≤, ≥ düz; &lt;, &gt; kesikli; deneme noktası (doğru üzerinde olmasın).</li>
+<li><strong>Sistem alanı:</strong> köşeleri kesim noktalarından bul, üçgenlere böl ya da ayakkabı bağı. |x| + |y| ≤ a ⇒ 2a².</li>
+</ul></div>
+
+<section class="quiz" data-quiz="geo-19">
+<h3>Quiz 19</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">2x − y + 4 = 0 doğrusuna paralel olan doğru aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>y = −2x + 4</li><li>x − 2y + 4 = 0</li><li>y = 2x − 3</li><li>x + 2y − 1 = 0</li><li>y = 4x + 2</li></ul>
+<div class="coz"><p>Verilen doğrunun eğimi m = −a/b = −2/(−1) = 2; paralel doğrunun eğimi de 2 olmalı ve doğrular çakışmamalı. y = 2x − 3'ün eğimi 2, kesim noktası −3 (verilen doğrununki 4): paralel. y = −2x + 4, eğimi a/b diye işaretsiz okuyanların seçeneğidir. x − 2y + 4 = 0'ın eğimi 1/2'dir; x ve y katsayılarının yerini değiştirmek paralel değil, başka bir yön verir. x + 2y − 1 = 0'ın eğimi −1/2'dir; 2 · (−1/2) = −1 olduğundan bu doğru verilen doğruya diktir. y = 4x + 2, sabit terimi (4) eğim sanan birinin seçeneğidir.</p></div></li>
+
+<li data-c="A"><p class="q">ax + 3y − 1 = 0 ve 2x − y + 5 = 0 doğruları birbirine dik olduğuna göre a kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>2</span></span></li><li>−<span class="kes"><span>3</span><span>2</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li><li>−6</li><li>6</li></ul>
+<div class="coz"><p>Diklik koşulu a₁a₂ + b₁b₂ = 0: a · 2 + 3 · (−1) = 0, buradan a = 3/2. Denetim: eğimler −a/3 = −1/2 ve 2; çarpım −1. −3/2, ikinci denklemdeki y katsayısını −1 yerine +1 alanların sonucudur. 2/3, katsayıları çapraz eşleştirip a · 3 + 2 · (−1) = 0 yazanlarındır. −6, paralellik koşulunu (−a/3 = 2) kullananların cevabıdır. 6 ise birinci doğrunun eğimini ters çevirip −3/a yazan ve bunu 2 ile çarpıp −1'e eşitleyenlerin bulduğu değerdir.</p></div></li>
+
+<li data-c="E"><p class="q">(k − 1)x + 4y − 2 = 0 ve 3x + 6y + m = 0 doğruları çakışık olduğuna göre k + m toplamı kaçtır?</p>
+<ul class="sec"><li>6</li><li>−1</li><li>3</li><li>−3</li><li>0</li></ul>
+<div class="coz"><p>Çakışık doğrularda üç oran eşittir: (k − 1)/3 = 4/6 = −2/m. Ortadaki oran 2/3. İlk eşitlikten k − 1 = 2, k = 3. Son eşitlikten −2/m = 2/3, yani m = −3. Toplam 3 + (−3) = 0. 6, m'nin işaretini yanlış alıp m = 3 bulanların sonucudur. −1, k − 1 = 2'den k = 2 diyerek 1'i karşıya geçirmeyi unutanlarındır. 3 yalnızca k'nin, −3 yalnızca m'nin değeridir; soru toplamı istiyor.</p></div></li>
+
+<li data-c="B"><p class="q">A(2, −1) noktasından geçen ve 3x + y − 7 = 0 doğrusuna dik olan doğrunun denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>3x + y − 5 = 0</li><li>x − 3y − 5 = 0</li><li>x + 3y + 1 = 0</li><li>x − 3y + 5 = 0</li><li>3x − y − 7 = 0</li></ul>
+<div class="coz"><p>ax + by + c = 0'a dik doğru bx − ay = bx₀ − ay₀ biçimindedir: x − 3y = 2 − 3 · (−1) = 5, yani x − 3y − 5 = 0. Denetim: A yerine konunca 2 + 3 − 5 = 0; eğimler −3 ve 1/3, çarpım −1. 3x + y − 5 = 0, A'dan geçen <em>paralel</em> doğrudur. x + 3y + 1 = 0, katsayıların yerini değiştirip işaret değiştirmeyi unutanlarındır; eğimi −1/3, çarpım (−3)(−1/3) = 1 olur. x − 3y + 5 = 0, sağ yandaki 5'i sola geçirirken işaretini değiştirmeyenlerindir; A bu doğruyu sağlamaz. 3x − y − 7 = 0'da yalnızca y'nin işareti değişmiş; eğimi 3, dik değil.</p></div></li>
+
+<li data-c="D"><p class="q">P(1, 3) noktasının 4x + 3y + 2 = 0 doğrusuna uzaklığı kaç birimdir?</p>
+<ul class="sec"><li>15</li><li><span class="kes"><span>15</span><span>7</span></span></li><li><span class="kes"><span>13</span><span>5</span></span></li><li>3</li><li><span class="kes"><span>11</span><span>5</span></span></li></ul>
+<div class="coz"><p>d = |4 · 1 + 3 · 3 + 2| / √(16 + 9) = 15/5 = 3. 15, paydayı hiç yazmayanların sonucudur. 15/7, paydaya √(a² + b²) yerine a + b yazanlarındır. 13/5, paydaki sabit terimi (c = 2) unutanlarındır. 11/5, c'yi −2 alanların (4 + 9 − 2) cevabıdır. Paydanın 5 çıkması, 3-4-5 üçlüsünün bilerek seçildiğini gösteriyor; böyle sorularda payda neredeyse hep tam sayıdır.</p></div></li>
+
+<li data-c="A"><p class="q">2x − y + 3 = 0 ve 4x − 2y − 4 = 0 paralel doğruları arasındaki uzaklık kaç birimdir?</p>
+<ul class="sec"><li>√5</li><li><span class="kes"><span>7√5</span><span>5</span></span></li><li><span class="kes"><span>7√5</span><span>10</span></span></li><li><span class="kes"><span>√5</span><span>5</span></span></li><li>5</li></ul>
+<div class="coz"><p>Önce katsayıları eşitle: ikinci denklemi 2'ye bölünce 2x − y − 2 = 0. Uzaklık |3 − (−2)| / √(4 + 1) = 5/√5 = √5. 7√5/5, eşitlemeden |3 − (−4)| / √5 yazanların sonucudur. 7√5/10, paydaya ikinci denklemin √(16 + 4) = 2√5'ini koyup birinci denklemin sabitini 2 ile çarpmayı unutanlarındır. √5/5, sabitlerin farkı yerine toplamını (|3 + (−2)| = 1) alanlarındır. 5 ise paydaya bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="C"><p class="q">x ≥ 0, y ≥ 0, x + 2y ≤ 8 ve 3x + 2y ≤ 12 eşitsizlik sisteminin analitik düzlemde belirttiği bölgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>8</li><li>12</li><li>10</li><li>16</li><li>20</li></ul>
+<div class="coz"><p>x + 2y = 8 eksenleri (8, 0) ve (0, 4)'te, 3x + 2y = 12 ise (4, 0) ve (0, 6)'da keser; orijin ikisini de sağlar. x ekseninde içte kalan (4, 0), y ekseninde (0, 4). Eğik doğruların kesim noktası: taraf tarafa çıkarınca 2x = 4, x = 2, y = 3. Bölge (0, 0), (4, 0), (2, 3), (0, 4) dörtgeni; (0, 0)–(2, 3) köşegeniyle ayrılan üçgenlerin alanları 4 · 3 / 2 = 6 ve 4 · 2 / 2 = 4, toplam 10. 16 yalnızca x + 2y ≤ 8 üçgeninin, 12 yalnızca 3x + 2y ≤ 12 üçgeninin alanıdır. 20, ayakkabı bağı toplamını ikiye bölmeyi unutmaktır. 8, kesim noktasını atlayıp (4, 0) ile (0, 4)'ü doğrudan birleştirerek üçgen sanmaktır.</p></div></li>
+
+<li data-c="E"><p class="q">Köşeleri A(0, 0), B(8, 0) ve C(2, 6) olan ABC üçgeninin yüksekliklerinin kesim noktası H(p, q) olduğuna göre p + q toplamı kaçtır?</p>
+<ul class="sec"><li>6</li><li><span class="kes"><span>16</span><span>3</span></span></li><li>0</li><li>8</li><li>4</li></ul>
+<div class="coz"><p>AB yatay olduğundan C'den inen yükseklik düşeydir: x = 2. BC'nin eğimi (6 − 0)/(2 − 8) = −1, buna dik eğim 1; A'dan geçen yükseklik y = x. Kesim: x = 2, y = 2, yani H(2, 2) ve p + q = 4. 6, kenar orta dikmelerinin kesiştiği çevrel çember merkezinin (4, 2) toplamıdır; yükseklik ile orta dikmeyi karıştıranlar bunu bulur. 16/3, ağırlık merkezinin (10/3, 2) toplamıdır. 0, A'dan çizilen doğruya BC'nin eğimini (−1) verip y = −x alanların sonucudur (paralel çizilmiş, dik değil). 8, C köşesinin koordinatları toplamıdır.</p></div></li>
+
+<li data-c="B" data-k="geo-1"><p class="q">Paralel d₁ ve d₂ doğrularını bir kesen kesiyor. Kesenin aynı tarafında ve iki paralelin arasında kalan iki açının ölçüleri (3x + 10)° ve (2x + 20)°'dir. Buna göre x kaçtır?</p>
+<ul class="sec"><li>10</li><li>30</li><li>12</li><li>80</li><li>36</li></ul>
+<div class="coz"><p>Kesenin aynı tarafında, iki paralelin arasında kalan açılar karşı durumlu açılardır ve toplamları 180°'dir: 3x + 10 + 2x + 20 = 180, 5x = 150, x = 30. 10, bu açıları eşit sanıp 3x + 10 = 2x + 20 yazanların sonucudur (eşitlik yöndeş ve iç ters açılar içindir). 12, toplamı 90° alıp tümler sananlarındır. 36, sabitleri unutup 5x = 180 yazmaktır. 80 ise x yerine açılardan birinin ölçüsünü (2 · 30 + 20) cevap vermektir.</p></div></li>
+
+<li data-c="D" data-k="geo-2"><p class="q">ABC üçgeninde B ve C açılarının iç açıortayları I noktasında kesişiyor. m(BAC) = 70° olduğuna göre m(BIC) kaç derecedir?</p>
+<ul class="sec"><li>35</li><li>55</li><li>110</li><li>125</li><li>140</li></ul>
+<div class="coz"><p>İki iç açıortayın oluşturduğu açı 90° + A/2'dir: 90 + 35 = 125. Gerekçe: B + C = 110°, yarıları toplamı 55°, BIC üçgeninde kalan açı 180 − 55 = 125°. 55, iki dış açıortayın kuralını (90° − A/2) kullananların cevabıdır. 35 yalnızca A/2'dir (bir iç bir dış açıortayın açısı). 110, B + C toplamını açının kendisi sanmaktır. 140, çevrel çemberdeki merkez açı kuralını (2A) karıştırmaktır.</p></div></li>
+
+<li data-c="A" data-k="geo-4"><p class="q">x bir dar açı ve cos x = <span class="kes"><span>5</span><span>13</span></span> olduğuna göre tan x kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>12</span><span>5</span></span></li><li><span class="kes"><span>5</span><span>12</span></span></li><li><span class="kes"><span>12</span><span>13</span></span></li><li><span class="kes"><span>13</span><span>12</span></span></li><li><span class="kes"><span>13</span><span>5</span></span></li></ul>
+<div class="coz"><p>Dik üçgen çiz: komşu kenar 5, hipotenüs 13. Karşı kenar Pisagor'dan √(169 − 25) = 12 (5-12-13 üçlüsü). tan x = karşı / komşu = 12/5. 5/12 kotanjanttır (komşu / karşı). 12/13 sinüstür. 13/12 ve 13/5 ise hipotenüsü paya koyan, yani sinüs ya da kosinüsün tersini yazan hatalardır.</p></div></li>
+
+<li data-c="C" data-k="geo-5"><p class="q">Kenar uzunlukları 5, 12 ve x birim olan bir üçgende en uzun kenar x'tir ve bu kenarın karşısındaki açı geniş açıdır. Buna göre x'in alabileceği kaç farklı tam sayı değeri vardır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>3</li><li>9</li><li>5</li></ul>
+<div class="coz"><p>Üçgen eşitsizliği: 12 − 5 &lt; x &lt; 12 + 5, yani 7 &lt; x &lt; 17. x'in karşısındaki açı geniş ise x² &gt; 5² + 12² = 169, yani x &gt; 13. İkisi birlikte 13 &lt; x &lt; 17: x = 14, 15, 16, üç değer. 4, x = 13'ü de sayanların sonucudur; 13 için açı geniş değil, diktir (5-12-13). 9, geniş açı koşulunu atlayıp yalnızca 8'den 16'ya kadar sayanlarındır. 5, iki sınırı da (13 ve 17) dahil edenlerindir; 17 için üçgen oluşmaz. 2, üst sınırı 16 alıp 16'yı dışarıda bırakan bir sayım hatasıdır.</p></div></li>
+
+<li data-c="E" data-k="geo-7"><p class="q">ABC üçgeninde AB = 6, AC = 9 ve BC = 10 birimdir. A açısının iç açıortayı BC kenarını N noktasında kestiğine göre BN kaç birimdir?</p>
+<ul class="sec"><li>6</li><li>5</li><li><span class="kes"><span>20</span><span>3</span></span></li><li>3</li><li>4</li></ul>
+<div class="coz"><p>İç açıortay teoremi: BN / NC = AB / AC = 6/9 = 2/3. BC = 10'u 2 : 3 oranında bölersen BN = 4, NC = 6. 6, oranı ters kurup (BN / NC = AC / AB) NC'yi BN sananların sonucudur. 5, açıortayı kenarortayla karıştırıp N'yi orta nokta sanmaktır. 20/3, BN / BC = AB / AC diye yanlış oran kurmaktır (10 · 6/9). 3 bu soruda tipik bir hatadan gelmiyor; BN'nin AB'nin yarısı olduğunu varsaymak gibi dayanaksız bir tahmindir.</p></div></li>
+
+<li data-c="B" data-k="geo-8"><p class="q">ABC üçgeninde AB = 8, AC = 6 birim ve m(BAC) = 150° olduğuna göre üçgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>6</li><li>12</li><li>12√3</li><li>24</li><li>24√3</li></ul>
+<div class="coz"><p>Sinüslü alan: ½ · b · c · sin A = ½ · 6 · 8 · sin 150°. 150°'nin bütünleri 30° olduğundan sin 150° = sin 30° = ½. Alan = ½ · 48 · ½ = 12. 12√3, sin 150°'yi √3/2 sananların (cos 30° ile karıştırma) sonucudur. 24, baştaki ½'yi unutmaktır. 24√3 iki hatanın birlikte yapılmasıdır. 6, ½'yi bir kez fazla kullanmaktır.</p></div></li>
+
+<li data-c="D" data-k="geo-10"><p class="q">Kenar uzunlukları 6 ve 10 birim olan bir paralelkenarın bu kenarları arasındaki açılardan biri 150° olduğuna göre paralelkenarın alanı kaç birimkaredir?</p>
+<ul class="sec"><li>15</li><li>15√3</li><li>30√3</li><li>30</li><li>60</li></ul>
+<div class="coz"><p>Paralelkenarın alanı a · b · sin α'dır (bir köşegen paralelkenarı iki eş üçgene ayırır, her birinin alanı ½ · a · b · sin α). sin 150° = sin 30° = ½, alan 6 · 10 · ½ = 30. Komşu açıların bütünler olduğunu da hatırla: 150° ile 30° aynı sinüsü verir, hangi açıyı alırsan al sonuç aynı. 15, üçgen alanındaki ½'yi paralelkenara da koymaktır. 30√3 ve 15√3, sinüs yerine √3/2 alan hatalardır. 60, sinüsü hiç kullanmayıp kenarları çarpmaktır; bu yalnızca dikdörtgen için doğrudur.</p></div></li>
+
+<li data-c="A" data-k="geo-11"><p class="q">ABCD dikdörtgeninin içindeki bir P noktası için PA = 3, PB = 4 ve PC = 5 birimdir. Buna göre PD kaç birimdir?</p>
+<ul class="sec"><li>3√2</li><li>4</li><li>4√2</li><li>√34</li><li>5√2</li></ul>
+<div class="coz"><p>Dikdörtgende karşılıklı köşelere uzaklıkların kareleri toplamı eşittir: PA² + PC² = PB² + PD². 9 + 25 = 16 + PD², PD² = 18, PD = 3√2. 4, kareleri almadan PA + PC − PB yazmaktır. 4√2, köşeleri yanlış eşleştirip PB² + PC² − PA² = 32 bulanlarındır; A ile C, B ile D karşılıklı köşelerdir. √34, PA² + PC² toplamını PD² sanmaktır. 5√2 üç karenin toplamıdır (50).</p></div></li>
+
+<li data-c="C" data-k="geo-13"><p class="q">Bir çemberin dışındaki P noktasından çizilen iki teğet çembere A ve B noktalarında değiyor. m(APB) = 40° olduğuna göre küçük AB yayını gören bir çevre açının ölçüsü kaç derecedir?</p>
+<ul class="sec"><li>20</li><li>40</li><li>70</li><li>110</li><li>140</li></ul>
+<div class="coz"><p>İki teğette dış açı ile küçük yayın toplamı 180°'dir: küçük AB yayı 180 − 40 = 140°. Çevre açı gördüğü yayın yarısıdır: 70°. 140, yayın ölçüsünü (merkez açıyı) cevap sanmaktır. 110, büyük yayı (220°) görenin yarısıdır; soru küçük yayı istiyor. 20, P açısının yarısını almaktır. 40, dış açıyı çevre açıya eşit sanmaktır.</p></div></li>
+
+<li data-c="E" data-k="geo-14"><p class="q">Yarıçapı 13 cm olan bir çemberde merkeze uzaklığı 5 cm olan kirişin uzunluğu kaç cm'dir?</p>
+<ul class="sec"><li>8</li><li>12</li><li>18</li><li>26</li><li>24</li></ul>
+<div class="coz"><p>Merkezden kirişe inen dikme kirişi ortalar. Yarıçap, dikme ve kirişin yarısı bir dik üçgen kurar: yarım kiriş √(13² − 5²) = √144 = 12. Kiriş 2 · 12 = 24 cm. 12, yarıyı ikiyle çarpmayı unutmaktır. 8 ve 18, Pisagor yerine yarıçap ile uzaklığı çıkarmak ya da toplamaktır. 26 çaptır; en uzun kiriş çaptır ama merkeze uzaklığı 0 olan kiriştir.</p></div></li>
+
+<li data-c="B" data-k="geo-16"><p class="q">Yarıçapı 6 cm ve merkez açısı 60° olan bir daire diliminin yay uzunluğu kaç cm'dir?</p>
+<ul class="sec"><li>π</li><li>2π</li><li>4π</li><li>6π</li><li>12π</li></ul>
+<div class="coz"><p>Yay uzunluğu = 2πr · α/360 = 2π · 6 · 60/360 = 2π. 12π, çemberin tüm çevresidir (oranla çarpmayı unutmak). 6π, dilimin alanıdır (πr² · α/360 = 36π/6); yay uzunluğuyla dilim alanını karıştıranlar bunu bulur. 4π, 360 yerine 180'e bölmektir. π, formüldeki 2'yi unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="geo-16"><p class="q">Eş merkezli iki çemberden büyüğünün, küçük çembere teğet olan bir kirişinin uzunluğu 12 cm'dir. İki çember arasında kalan halkanın alanı kaç cm²'dir?</p>
+<ul class="sec"><li>6π</li><li>12π</li><li>72π</li><li>36π</li><li>144π</li></ul>
+<div class="coz"><p>Halka alanı π(R² − r²). Kiriş küçük çembere teğet olduğundan değme noktasında küçük çemberin yarıçapına diktir ve büyük çemberin kirişini ortalar. Merkez, değme noktası ve kirişin ucu bir dik üçgen kurar: R² − r² = 6² = 36. Alan 36π. 144π, kirişin yarısı yerine tamamının karesini almaktır. 72π, 144π'nin yarısıdır; yine tüm kirişle başlayan bir hata. 12π ve 6π, kare almayı unutup kirişi ya da yarısını doğrudan π ile çarpmaktır.</p></div></li>
+
+<li data-c="B" data-k="geo-17"><p class="q">ABCD paralelkenarının üç köşesi A(1, 2), B(4, 3) ve C(6, 7) olduğuna göre D köşesinin koordinatları toplamı kaçtır?</p>
+<ul class="sec"><li>17</li><li>9</li><li>−3</li><li>8</li><li>16</li></ul>
+<div class="coz"><p>Paralelkenarın köşegenleri birbirini ortalar; AC ile BD'nin orta noktası ortaktır, yani A + C = B + D. D = A + C − B = (1 + 6 − 4, 2 + 7 − 3) = (3, 6); toplam 9. 17, B + C − A yazıp karşılıklı köşeleri yanlış eşleştirmektir (A ile C, B ile D karşılıklıdır). −3, A + B − C'dir. 8, AC'nin orta noktasının (3,5; 4,5) koordinatları toplamıdır. 16, A + C'nin toplamıdır; B'yi çıkarmayı unutmak.</p></div></li>
+
+<li data-c="A" data-k="geo-17"><p class="q">Köşeleri A(1, 1), B(5, 2) ve C(3, 6) olan üçgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>9</li><li>18</li><li>11</li><li>20</li><li>4,5</li></ul>
+<div class="coz"><p>Ayakkabı bağı: (1 · 2 − 5 · 1) + (5 · 6 − 3 · 2) + (3 · 1 − 1 · 6) = −3 + 24 − 3 = 18; alan bunun yarısı, 9. Çevreleyen dikdörtgenle: 4 × 5 = 20'den köşelerdeki üç dik üçgen (2, 4, 5; toplam 11) çıkarılır, yine 9. 18, yarıya bölmeyi unutmaktır. 20 dikdörtgenin kendisi, 11 ise çıkarılan üçgenlerin toplamıdır; sonucu yarıda bırakmak. 4,5, yarısını iki kez almaktır.</p></div></li>
+
+<li data-c="C" data-k="geo-18"><p class="q">Eğim açısı 135° olan ve (2, 1) noktasından geçen doğrunun denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>x − y − 1 = 0</li><li>x + y − 1 = 0</li><li>x + y − 3 = 0</li><li>x + y + 3 = 0</li><li>x − y + 1 = 0</li></ul>
+<div class="coz"><p>m = tan 135° = −tan 45° = −1 (geniş açıda eğim negatiftir). y − 1 = −1 · (x − 2), y = −x + 3, yani x + y − 3 = 0. Denetim: 2 + 1 − 3 = 0. x − y − 1 = 0, eğimi 1 alanların (tan 135° = 1 sanma) cevabıdır. x + y − 1 = 0, kalıpta x − 2 yerine yalnızca x yazanlarındır. x + y + 3 = 0, noktayı ters işaretle (y + 1 = −(x + 2)) koyanlarındır. x − y + 1 = 0 hem eğimi 1 alıp hem noktanın işaretini ters koymaktır.</p></div></li>
+
+<li data-c="E" data-k="geo-18"><p class="q">A(−1, 4) ve B(3, −2) noktalarından geçen doğrunun y eksenini kestiği noktanın ordinatı kaçtır?</p>
+<ul class="sec"><li>−<span class="kes"><span>3</span><span>2</span></span></li><li><span class="kes"><span>5</span><span>3</span></span></li><li>−<span class="kes"><span>5</span><span>2</span></span></li><li>4</li><li><span class="kes"><span>5</span><span>2</span></span></li></ul>
+<div class="coz"><p>Eğim (−2 − 4)/(3 + 1) = −6/4 = −3/2. A'dan: y − 4 = −3/2 · (x + 1); x = 0 koyunca y = 4 − 3/2 = 5/2. Denklem 3x + 2y − 5 = 0 olarak da yazılır; A ve B ikisi de sağlar. −3/2 eğimin kendisidir. 5/3, x eksenini kestiği noktadır (y = 0 için x). −5/2, eğimin işaretini yanlış alıp y = 4 + 3/2 − ... gibi hesaplarda işareti karıştırmanın sonucudur. 4, A'nın ordinatıdır; A y ekseni üzerinde değil.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#geo-18">← Önceki parça</a>
+  <button class="btn ok" data-done="geo-19">Bu bölümü okudum</button>
+  <a class="btn" href="#geo-20">Sonraki parça: çemberin analitiği</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"iki doğrunun birbirine göre durumu paralel dik eğimler çarpımı analitik geometri"</li>
+  <li>"noktanın doğruya uzaklığı paralel iki doğru arası uzaklık formülü"</li>
+  <li>"üçgenin diklik merkezi çevrel çember merkezi analitik düzlemde bulma"</li>
+  <li>"doğrusal eşitsizlik sistemi taranan bölgenin alanı analitik geometri"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu deponun kapsam dosyasındaki 19. satıra ve 2018 Ortaöğretim Matematik Öğretim Programı'nın analitik geometri kazanımlarına göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>İki doğru arasındaki açı formülü (tan θ = |m₁ − m₂| / |1 + m₁m₂|), kapsam dosyasının "Doğrulanamayanlar" notunda programda açık kazanım olduğundan emin olunmayan formüller arasında. Metinde kısa tutuldu ve "sınav kapsamında olmayabilir" diye işaretlendi; quizde bu formülden soru yok. Formülün tanjant fark formülünden çıkarılışı burada yapılmadı, Matematik: ileri Parça 11'e bırakıldı; yalnızca paralel ve dik uçlarla tutarlılığı ve bir sayısal örneğin Pisagor'la doğrulaması gösterildi.</li>
+  <li>Diklik kuralının Pisagor'un tersiyle, nokta-doğru uzaklık formülünün Öklid'in 1/h² = 1/b² + 1/c² bağıntısıyla türetilmesi benim seçtiğim gerekçelerdir; ders kitapları bu formülleri farklı yollardan (vektör, alan ya da izdüşüm) çıkarabilir. Sonuçlar aynıdır.</li>
+  <li>"Paralel" sözcüğünü çakışık doğruları dışarıda bırakarak kullandım (ortak noktası olmayan doğrular). Bazı kaynaklar çakışık doğruları paralelliğin özel durumu sayar; quizdeki sorular bu farktan etkilenmeyecek biçimde yazıldı.</li>
+  <li>Metindeki bütün çözümlü örnekler, ara örnekler ve şekil açıklamalarındaki sayılar ile quizdeki 24 sorunun cevapları Python ile (kesirli tam aritmetikle; kesim noktaları denklemlerde yerine konarak, uzaklıklar hem formülle hem dik izdüşümle, alanlar hem üçgenlere bölerek hem ayakkabı bağıyla, tam sayı değerleri kaba kuvvetle sayılarak) doğrulandı. Sayısal çeldiricilerin çözümde anlatılan hatanın gerçek sonucu olduğu da aynı betikle denetlendi. Şekillerdeki noktalar ve doğrular gerçek ölçekten (her şeklin altında yazan piksel/birim oranıyla) hesaplandı.</li>
+  <li>Belirli bir tipik hatadan gelmeyen ya da zayıf gerekçeli çeldiriciler: yeni 1. sorudaki y = 4x + 2, tekrar sorularında geo-5 sorusundaki 2, geo-7 sorusundaki 3, geo-8 sorusundaki 6 ve son geo-18 sorusundaki −5/2. Çözümlerde bunlar olduğu gibi anlatıldı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralıyla seçildi: son üç parçadan (16, 17, 18) ikişer, daha eski 15 parçadan eşit aralıklarla 10'u (1, 2, 4, 5, 7, 8, 10, 11, 13, 14) birer soru; toplam 16. Parça 3, 6, 9, 12 ve 15 bu quizde yok. Bu parçayı yazarken geometri dersinin önceki parçaları depoda henüz yoktu; göndermeler ve tekrar soruları kapsam dosyasındaki satırlara dayanıyor. Önceki parçalarda kullanılan gösterimle (örneğin açı adları, H ve O harfleri) küçük farklar olabilir.</li>
+  <li>Bütçe kısıtı örneği yalnızca yarı düzlem fikrine bağ kurmak için verildi; iktisattaki ayrıntılı kullanımı bu parçanın konusu değildir.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

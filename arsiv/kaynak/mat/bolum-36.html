@@ -1,0 +1,594 @@
+<article class="chapter ders" id="c-mat-36">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 36 · Fonksiyonlar 1</div>
+<h1>Fonksiyon nedir: her girdiye tek bir çıktı</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir içecek otomatında 12 numaralı düğmeye bastın; bir kez su düştü, bir kez gazoz. 15 numaralı düğmeye bastığında ise hiçbir şey düşmedi. Bu otomata güvenir misin? Matematikteki "fonksiyon" tam olarak güvenilir bir otomatın tarifidir: her düğme çalışır ve her düğme hep aynı şeyi verir. Bu iki şart neden bu kadar önemli ve bir şemaya, bir listeye ya da bir grafiğe bakıp şartların sağlanıp sağlanmadığını nasıl anlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 35 (sıralı ikili, kartezyen çarpım ve koordinat düzleminde gösterimi), Parça 14 (cebirsel ifadede yerine koyma), Parça 17 ve 18 (birinci dereceden denklem ve iki bilinmeyenli sistem), Parça 10 (üslü sayılar). Yanında kâğıt kalem olsun; her örneği okumadan önce kendin çözmeyi dene.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Fonksiyon, matematiğin "bir şey değişince öbürü nasıl değişir?" sorusunu sorma biçimidir. Taksiye binince ödediğin para gittiğin yola, bir bardaktaki çayın sıcaklığı geçen süreye, bir dükkânın kârı sattığı mal sayısına bağlıdır. Her birinde bir girdi (yol, süre, mal sayısı) ve ona bağlı bir çıktı (ücret, sıcaklık, kâr) vardır. Fonksiyon, bu bağı kesin bir kurala bağlar.</p>
+
+<p>Sınavda bu konudan gelen sorular birkaç kalıba toplanır: verilen bir eşlemenin fonksiyon olup olmadığını anlamak; f(x) kuralı verilince f(2), f(a + 1) gibi değerleri bulmak; f(x + 1) gibi bir ifade verilince f(x)'in kendisini bulmak; bir grafikten değer, kök ve küme okumak; iki kümeden kaç fonksiyon yazılabileceğini saymak; iki fonksiyonu toplayıp çarpmak; "f(x + y) = f(x) + f(y)" gibi bir bağıntıdan değer çıkarmak. Yeni nesil sorularda da fonksiyon çoğu zaman adı konmadan gelir: "kiralanan gün sayısına göre ücret" bir fonksiyondur.</p>
+
+<p>Sıramız şöyle: makine modeli ve tanım; tanım kümesi, değer kümesi, görüntü kümesi; bir eşlemenin fonksiyon olup olmadığını şemadan, listeden ve grafikten anlamak; f(x) yazımı ve değer bulma; değişken değiştirme; fonksiyon sayısı; fonksiyonların eşitliği; grafik okuma; dört işlem; fonksiyonel bağıntılar; günlük hayattan modeller. Fonksiyon türleri (bire bir, örten, doğrusal) Parça 37'nin, bileşke ve ters fonksiyon Parça 38'in konusudur; burada yalnızca adlarını anacağız.</p>
+
+<h2 class="s">1. Makine modeli: girdi, kural, çıktı</h2>
+
+<p>Bir fonksiyonu, içine sayı attığın bir makine gibi düşün. Makinenin üstünde bir kural yazar: "Girdinin 2 katını al, 1 ekle." 3 atarsan 7, 0 atarsan 1, −2 atarsan −3 çıkar. Makineye f adını verirsek, "3 girince 7 çıkar" cümlesini kısaca f(3) = 7 diye yazarız. Okunuşu "f 3 eşittir 7" ya da "f'nin 3'teki değeri 7"dir.</p>
+
+<figure>
+<svg viewBox="0 0 400 160" role="img" aria-label="Fonksiyon makinesi: 3 girer, iki katının bir fazlası kuralıyla 7 çıkar">
+<rect class="sv-k" x="10" y="45" width="92" height="56" rx="10" />
+<text class="sv-s" x="56" y="67" text-anchor="middle">girdi</text><text class="sv-b" x="56" y="89" text-anchor="middle">x = 3</text>
+<line class="sv-c" x1="104.0" y1="73.0" x2="129.0" y2="73.0" /><polygon class="sv-l" points="138.0,73.0 129.0,77.0 129.0,69.0" />
+<rect class="sv-l" x="140" y="28" width="122" height="90" rx="14" />
+<text class="sv-b" x="201" y="56" text-anchor="middle">f</text><text class="sv-t" x="201" y="80" text-anchor="middle">2 katını al,</text><text class="sv-t" x="201" y="100" text-anchor="middle">1 ekle</text>
+<line class="sv-c" x1="264.0" y1="73.0" x2="287.0" y2="73.0" /><polygon class="sv-l" points="296.0,73.0 287.0,77.0 287.0,69.0" />
+<rect class="sv-m" x="298" y="45" width="92" height="56" rx="10" />
+<text class="sv-s" x="344" y="67" text-anchor="middle">çıktı</text><text class="sv-b" x="344" y="89" text-anchor="middle">f(3) = 7</text>
+<text class="sv-s" x="200" y="140" text-anchor="middle">0 girerse 1, −2 girerse −3 çıkar.</text>
+<text class="sv-s" x="200" y="156" text-anchor="middle">Aynı girdi her seferinde aynı çıktıyı verir.</text>
+</svg>
+<figcaption>Makine modeli. Girdiye x, makineye f, çıktıya f(x) denir. Kural "2 katını al, 1 ekle" olduğuna göre f(x) = 2x + 1 yazılır. Makine bir girdiye iki ayrı çıktı vermez; bu, fonksiyonu fonksiyon yapan şarttır.</figcaption>
+</figure>
+
+<p>Bu makineden iki şey bekleriz. Birincisi, izin verilen her girdiyle çalışmalı: girdiler listesinde yazan bir sayıyı attığında makine boş dönmemeli. İkincisi, aynı girdiye her seferinde aynı çıktıyı vermeli: 3'ü bugün atınca 7, yarın atınca 8 çıkarsa makinenin kuralı yok demektir. Bu iki beklenti, birazdan yazacağımız tanımın iki şartıdır. Şartların neden konduğunu şimdiden söyleyelim: fonksiyonla hesap yapacağız, f(3) yazınca tek bir sayıdan söz ettiğimizden emin olmalıyız. f(3)'ün "bazen 7 bazen 8" olduğu bir dünyada f(3) + 1 diye bir işlem anlamsızdır.</p>
+
+<h2 class="s">2. Tanım: her elemana tek bir karşılık</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>A ve B boş olmayan iki küme olsun. A'nın <strong>her</strong> elemanını B'nin <strong>yalnızca bir</strong> elemanıyla eşleyen kurala A'dan B'ye bir <strong>fonksiyon</strong> denir ve f: A → B yazılır. x ∈ A elemanının eşlendiği eleman f(x) ile gösterilir; f(x)'e x'in <strong>görüntüsü</strong> denir. Eşleme, x ↦ f(x) biçiminde de yazılır.</p></div>
+
+<p>Tanımın iki şartını ayrı ayrı oku, çünkü sorular hep bu ikisinden birinin bozulmasını yoklar:</p>
+
+<p><strong>Şart 1: A'da boşta eleman kalmaz.</strong> A'nın her elemanından bir ok çıkmalıdır. A = {1, 2, 3} iken yalnızca 1 ile 2'yi eşleyip 3'ü boşta bırakırsan bu, A'dan B'ye bir fonksiyon değildir. Nedeni makine modelinde: 3 izin verilen bir girdidir, makine onunla çalışmak zorundadır.</p>
+
+<p><strong>Şart 2: Hiçbir elemandan iki ok çıkmaz.</strong> A'daki bir eleman B'de iki ayrı elemana gidiyorsa f(x) tek bir sayı olmaktan çıkar; fonksiyon değildir.</p>
+
+<p>Tanımın <strong>istemediği</strong> şeyler de en az şartlar kadar önemlidir. B'de boşta eleman kalabilir: B'deki bazı elemanlara hiç ok gelmeyebilir. B'deki bir elemana birden fazla ok gelebilir: 1 de 2 de aynı elemana gidebilir. İki farklı girdinin aynı çıktıyı vermesinde bir sakınca yoktur; otomatta iki ayrı düğmenin ikisi de su veriyorsa otomat yine güvenilirdir. Asimetri buradadır: <strong>kısıt yalnızca A tarafındadır.</strong></p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 250" role="img" aria-label="Üç ok şeması: birincisi fonksiyon, ikincisinde 3 boşta kaldığı için, üçüncüsünde 1 iki elemana gittiği için fonksiyon değil">
+<text class="sv-b" x="110" y="24" text-anchor="middle">Fonksiyon</text>
+<ellipse class="sv-k" cx="55" cy="130" rx="32" ry="78" />
+<ellipse class="sv-k" cx="165" cy="130" rx="32" ry="78" />
+<text class="sv-t" x="55" y="90" text-anchor="middle">1</text>
+<text class="sv-t" x="165" y="90" text-anchor="middle">a</text>
+<text class="sv-t" x="55" y="135" text-anchor="middle">2</text>
+<text class="sv-t" x="165" y="135" text-anchor="middle">b</text>
+<text class="sv-t" x="55" y="180" text-anchor="middle">3</text>
+<text class="sv-t" x="165" y="180" text-anchor="middle">c</text>
+<line class="sv-cl" x1="66.0" y1="85.0" x2="144.0" y2="85.0" /><polygon class="sv-l" points="153.0,85.0 144.0,89.0 144.0,81.0" />
+<line class="sv-cl" x1="66.0" y1="130.0" x2="145.0" y2="89.1" /><polygon class="sv-l" points="153.0,85.0 146.8,92.7 143.2,85.6" />
+<line class="sv-cl" x1="66.0" y1="175.0" x2="144.0" y2="175.0" /><polygon class="sv-l" points="153.0,175.0 144.0,179.0 144.0,171.0" />
+<text class="sv-s" x="55" y="232" text-anchor="middle">A</text><text class="sv-s" x="165" y="232" text-anchor="middle">B</text>
+<text class="sv-b" x="322" y="24" text-anchor="middle">Değil: 3 boşta</text>
+<ellipse class="sv-k" cx="267" cy="130" rx="32" ry="78" />
+<ellipse class="sv-k" cx="377" cy="130" rx="32" ry="78" />
+<text class="sv-t" x="267" y="90" text-anchor="middle">1</text>
+<text class="sv-t" x="377" y="90" text-anchor="middle">a</text>
+<text class="sv-t" x="267" y="135" text-anchor="middle">2</text>
+<text class="sv-t" x="377" y="135" text-anchor="middle">b</text>
+<text class="sv-t" x="267" y="180" text-anchor="middle">3</text>
+<text class="sv-t" x="377" y="180" text-anchor="middle">c</text>
+<line class="sv-cl" x1="278.0" y1="85.0" x2="356.0" y2="85.0" /><polygon class="sv-l" points="365.0,85.0 356.0,89.0 356.0,81.0" />
+<line class="sv-cl" x1="278.0" y1="130.0" x2="356.0" y2="130.0" /><polygon class="sv-l" points="365.0,130.0 356.0,134.0 356.0,126.0" />
+<text class="sv-s" x="267" y="232" text-anchor="middle">A</text><text class="sv-s" x="377" y="232" text-anchor="middle">B</text>
+<text class="sv-b" x="534" y="24" text-anchor="middle">Değil: 1'in iki karşılığı</text>
+<ellipse class="sv-k" cx="479" cy="130" rx="32" ry="78" />
+<ellipse class="sv-k" cx="589" cy="130" rx="32" ry="78" />
+<text class="sv-t" x="479" y="90" text-anchor="middle">1</text>
+<text class="sv-t" x="589" y="90" text-anchor="middle">a</text>
+<text class="sv-t" x="479" y="135" text-anchor="middle">2</text>
+<text class="sv-t" x="589" y="135" text-anchor="middle">b</text>
+<text class="sv-t" x="479" y="180" text-anchor="middle">3</text>
+<text class="sv-t" x="589" y="180" text-anchor="middle">c</text>
+<line class="sv-cl" x1="490.0" y1="85.0" x2="568.0" y2="85.0" /><polygon class="sv-l" points="577.0,85.0 568.0,89.0 568.0,81.0" />
+<line class="sv-cl" x1="490.0" y1="85.0" x2="569.0" y2="125.9" /><polygon class="sv-l" points="577.0,130.0 567.2,129.4 570.8,122.3" />
+<line class="sv-cl" x1="490.0" y1="130.0" x2="568.0" y2="130.0" /><polygon class="sv-l" points="577.0,130.0 568.0,134.0 568.0,126.0" />
+<line class="sv-cl" x1="490.0" y1="175.0" x2="568.0" y2="175.0" /><polygon class="sv-l" points="577.0,175.0 568.0,179.0 568.0,171.0" />
+<text class="sv-s" x="479" y="232" text-anchor="middle">A</text><text class="sv-s" x="589" y="232" text-anchor="middle">B</text>
+</svg>
+<figcaption>Soldaki şemada 1 ile 2'nin ikisi de a'ya gidiyor ve b'ye hiç ok gelmiyor; ikisi de serbesttir, şema bir fonksiyondur. Ortadakinde 3'ten ok çıkmıyor (şart 1 bozuk). Sağdakinde 1'den iki ok çıkıyor (şart 2 bozuk).</figcaption>
+</figure>
+
+<h3>Sıralı ikili olarak fonksiyon</h3>
+
+<p>Parça 35'te A × B kartezyen çarpımını gördük: birinci bileşeni A'dan, ikinci bileşeni B'den alınan bütün sıralı ikililerin kümesi. Bir fonksiyonun her okunu bir sıralı ikili olarak yazabilirsin: 1'den a'ya giden ok (1, a) ikilisidir. Böylece bir fonksiyon, A × B'nin bir alt kümesi olarak yazılır: f = {(1, a), (2, a), (3, c)}. İkililerin birinci bileşeni girdi, ikinci bileşeni çıktıdır; (x, y) ∈ f ile y = f(x) aynı şeyi söyler.</p>
+
+<p>A × B'nin her alt kümesi fonksiyon değildir; tanımın iki şartı sıralı ikili diline şöyle çevrilir. A'nın her elemanı bir ikilinin birinci bileşeni olarak görünmeli (şart 1). A'nın hiçbir elemanı, ikinci bileşenleri farklı olan iki ikilide birinci bileşen olmamalı (şart 2). İkinci bileşenin tekrarlanması serbesttir: (1, a) ile (2, a) bir arada durabilir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> A = {−1, 0, 1, 2} ve B = {0, 1, 2, 3, 4, 5} olmak üzere f: A → B, f(x) = x<sup>2</sup> + 1 kuralıyla veriliyor. f'yi sıralı ikililerle yazınız, fonksiyon olduğunu gösteriniz ve görüntü kümesini bulunuz.</p>
+<p><strong>Adım 1.</strong> A'nın her elemanını kurala koyarım.</p>
+<span class="mat">f(−1) = (−1)<sup>2</sup> + 1 = 2 <span class="g">(önce üs, sonra toplama; Parça 3)</span></span>
+<span class="mat">f(0) = 0<sup>2</sup> + 1 = 1 <span class="g">(0'ın karesi 0)</span></span>
+<span class="mat">f(1) = 1<sup>2</sup> + 1 = 2 <span class="g">(1'in karesi 1)</span></span>
+<span class="mat">f(2) = 2<sup>2</sup> + 1 = 5 <span class="g">(2'nin karesi 4)</span></span>
+<p><strong>Adım 2.</strong> İkilileri yazarım: f = {(−1, 2), (0, 1), (1, 2), (2, 5)}.</p>
+<p><strong>Adım 3.</strong> Şart 1: A'nın dört elemanının dördü de birinci bileşen olarak görünüyor. Şart 2: hiçbir birinci bileşen iki kez yazılmamış. Ayrıca bütün çıktılar (2, 1, 2, 5) B'nin elemanı. Fonksiyondur.</p>
+<p><strong>Adım 4.</strong> Görüntü kümesi, çıktıların kümesidir: f(A) = {1, 2, 5}. 2 iki kez çıktı ama kümede bir kez yazılır.</p>
+<p><strong>Denetim.</strong> 2'ye iki ok geliyor (−1'den ve 1'den); bu serbesttir, çünkü kısıt yalnızca A tarafında. B'nin 0, 3, 4 elemanlarına ok gelmiyor; bu da serbesttir.</p>
+<p><strong>Sonuç:</strong> f bir fonksiyondur; görüntü kümesi {1, 2, 5}, eleman sayısı 3'tür.</p></div>
+
+<h2 class="s">3. Tanım kümesi, değer kümesi, görüntü kümesi</h2>
+
+<p>f: A → B yazınca üç ayrı küme devreye girer ve sınav bunları birbirinden ayırmanı ister. Karışıklığın kaynağı, ikisinin ("değer" ve "görüntü") günlük dilde yakın anlamlı olmasıdır; matematikte farklı şeyleri adlandırırlar.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f: A → B fonksiyonunda A'ya <strong>tanım kümesi</strong>, B'ye <strong>değer kümesi</strong> denir. A'nın elemanlarının görüntülerinden oluşan küme f(A) = {f(x) : x ∈ A} ise <strong>görüntü kümesi</strong>dir. Görüntü kümesi değer kümesinin alt kümesidir: f(A) ⊂ B.</p></div>
+
+<p>Değer kümesi, çıktıların <em>düşebileceği</em> yer olarak önceden ilan edilen kümedir; görüntü kümesi çıktıların <em>gerçekten düştüğü</em> yerdir. Otomatta değer kümesi "otomatın raflarındaki her şey", görüntü kümesi "bugün birinin düğmeye basınca gerçekten aldığı şeyler"dir. Raflarda olup kimsenin almadığı ürün olabilir; ama rafta olmayan bir şey düşemez.</p>
+
+<div class="tablo"><table>
+<tr><th>Küme</th><th>Neyi anlatır?</th><th>Örnek 1'de</th><th>Sık karışıklık</th></tr>
+<tr><td>Tanım kümesi (A)</td><td>İzin verilen bütün girdiler; her birinden ok çıkmalı</td><td>{−1, 0, 1, 2}</td><td>"Okların çıktığı yer" ile aynıdır, fazlası yoktur</td></tr>
+<tr><td>Değer kümesi (B)</td><td>Çıktıların düşebileceği, önceden verilen küme</td><td>{0, 1, 2, 3, 4, 5}</td><td>Boşta eleman kalabilir; görüntü kümesiyle eşit olmak zorunda değil</td></tr>
+<tr><td>Görüntü kümesi f(A)</td><td>Gerçekten elde edilen çıktılar</td><td>{1, 2, 5}</td><td>Tekrarlanan çıktı bir kez yazılır; eleman sayısı s(A)'dan fazla olamaz</td></tr>
+</table></div>
+
+<p>Tablonun son sütunundaki bir bilgi soru çözmede çok işe yarar: görüntü kümesinin eleman sayısı, tanım kümesinin eleman sayısını aşamaz. Nedeni basit: her girdi tek bir çıktı verir, o hâlde n girdi en çok n farklı çıktı verebilir. Daha az da verebilir, çünkü farklı girdiler aynı çıktıda buluşabilir (Örnek 1'de dört girdi üç çıktı verdi). Görüntü kümesi değer kümesine eşitse, yani B'de boşta eleman kalmıyorsa fonksiyona örten denir; bu ve bire bir fonksiyon Parça 37'nin konusudur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"B'deki bir elemana iki ok geliyorsa fonksiyon değildir" demek.</strong> Yanlış; tanım B tarafına hiçbir kısıt koymaz. Örnek 1'de 2'ye iki ok geldi ve f yine fonksiyondu. Fonksiyonluğu bozan, A'daki bir elemandan iki ok <em>çıkması</em> ya da hiç ok çıkmamasıdır. Kuralı aklında tutmanın yolu: oklar girdiden çıkar; girdinin kararsız kalmasına izin yoktur, çıktının kalabalık olmasına vardır.</p>
+<p><strong>Değer kümesi ile görüntü kümesini eş tutmak.</strong> "f'nin değer kümesi nedir?" sorusunun cevabı f: A → B yazımındaki B'dir; "görüntü kümesi nedir?" sorusunun cevabı ise hesaplanır. Örnek 1'de değer kümesi altı elemanlı, görüntü kümesi üç elemanlıdır.</p></div>
+
+<h2 class="s">4. Fonksiyon mu, değil mi? Üç gösterimde test</h2>
+
+<p>Bir eşleme sana üç biçimde verilebilir: ok şeması, sıralı ikili listesi ya da koordinat düzleminde grafik. Her birinde aynı iki şartı sınarsın; değişen yalnızca şartın nasıl göründüğüdür.</p>
+
+<div class="tablo"><table>
+<tr><th>Gösterim</th><th>Şart 1 (boşta eleman yok)</th><th>Şart 2 (tek karşılık)</th></tr>
+<tr><td>Ok şeması</td><td>A'nın her elemanından ok çıkıyor mu?</td><td>Hiçbir elemandan iki ok çıkmıyor mu?</td></tr>
+<tr><td>Sıralı ikili listesi</td><td>A'nın her elemanı bir ikilinin başında görünüyor mu?</td><td>Aynı birinci bileşenli, ikinci bileşeni farklı iki ikili yok mu?</td></tr>
+<tr><td>Grafik</td><td>Tanım kümesindeki her x'ten çizilen düşey doğru grafiğe değiyor mu?</td><td>Bu düşey doğrulardan hiçbiri grafiği iki noktada kesmiyor mu?</td></tr>
+</table></div>
+
+<p><strong>Listede deneme.</strong> A = {1, 2, 3, 4} olsun. f = {(1, 5), (2, 7), (3, 5), (4, 9)} bir fonksiyondur: dört elemanın dördü de bir ikilinin başında görünüyor ve hiçbiri iki kez başta değil; 5'in iki kez sonda görünmesi serbesttir. g = {(1, 5), (2, 7), (2, 8), (3, 5), (4, 9)} fonksiyon değildir, çünkü 2 iki ikilinin başında ve ikinci bileşenler farklı (7 ve 8). h = {(1, 5), (2, 7), (4, 9)} de fonksiyon değildir: 3 hiçbir ikilinin başında yok. Bir ayrıntı: aynı ikili listede iki kez yazılmışsa, örneğin (1, 5) iki kez, bu fonksiyonu bozmaz; kümede tekrarlanan eleman bir kez sayılır ve 1'in karşılığı yine tektir.</p>
+
+<h3>Düşey doğru testi ve nedeni</h3>
+
+<p>Grafikte bir nokta (x, y) bir girdi-çıktı ikilisidir: yatay konum girdiyi, düşey konum çıktıyı gösterir. Şimdi x = 2 noktasından düşey bir doğru çiz. Bu doğrunun üstündeki bütün noktaların yatay konumu 2'dir; yani doğrunun grafiği kestiği her nokta, 2'nin bir çıktısıdır. Doğru grafiği tek noktada kesiyorsa 2'nin tek çıktısı vardır. İki noktada kesiyorsa 2'nin iki çıktısı vardır ve şart 2 bozulur. Hiç kesmiyorsa 2'nin çıktısı yoktur; 2 tanım kümesindeyse şart 1 bozulur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Düşey doğru testi:</strong> Bir grafiğin, tanım kümesi A olan bir fonksiyonun grafiği olması için A'daki her x'ten çizilen düşey doğrunun grafiği <strong>tam olarak bir</strong> noktada kesmesi gerekir. Tek bir düşey doğru bile iki (ya da daha çok) noktada kesiyorsa grafik bir fonksiyon belirtmez.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Düşey doğru testi: parabolü her düşey doğru bir noktada keser, çemberi x = 1 doğrusu iki noktada keser">
+<text class="sv-b" x="100" y="18" text-anchor="middle">Fonksiyon</text>
+<line class="sv-c" x1="12" y1="190" x2="190" y2="190" /><line class="sv-c" x1="100" y1="232" x2="100" y2="32" />
+<polyline class="sv-cl" points="40.0,100.0 45.0,114.4 50.0,127.5 55.0,139.4 60.0,150.0 65.0,159.4 70.0,167.5 75.0,174.4 80.0,180.0 85.0,184.4 90.0,187.5 95.0,189.4 100.0,190.0 105.0,189.4 110.0,187.5 115.0,184.4 120.0,180.0 125.0,174.4 130.0,167.5 135.0,159.4 140.0,150.0 145.0,139.4 150.0,127.5 155.0,114.4 160.0,100.0" />
+<line class="sv-c" x1="140" y1="232" x2="140" y2="32" />
+<circle class="sv-a" cx="140" cy="150" r="5" />
+<text class="sv-s" x="147" y="154">tek nokta</text>
+<text class="sv-s" x="144" y="244">x = 2</text>
+<text class="sv-s" x="94" y="205" text-anchor="end">O</text>
+<text class="sv-s" x="100" y="244" text-anchor="end">y = x²/2</text>
+<text class="sv-b" x="300" y="18" text-anchor="middle">Fonksiyon değil</text>
+<line class="sv-c" x1="212" y1="125" x2="390" y2="125" /><line class="sv-c" x1="300" y1="232" x2="300" y2="32" />
+<circle class="sv-cl" cx="300" cy="125" r="60" />
+<line class="sv-c" x1="320" y1="232" x2="320" y2="32" />
+<circle class="sv-a" cx="320" cy="68.4" r="5" /><circle class="sv-a" cx="320" cy="181.6" r="5" />
+<text class="sv-s" x="328" y="62.4">y ≈ 2,83</text>
+<text class="sv-s" x="328" y="197.6">y ≈ −2,83</text>
+<text class="sv-s" x="324" y="244">x = 1</text>
+<text class="sv-s" x="296" y="244" text-anchor="end">x² + y² = 9</text>
+</svg>
+<figcaption>Solda y = x²/2 parabolü: hangi düşey doğruyu çizersen çiz grafiği bir kez keser; fonksiyondur. Sağda x² + y² = 9 çemberi: x = 1 doğrusu çemberi iki noktada keser, yani 1'in iki çıktısı olurdu (y ≈ 2,83 ve y ≈ −2,83); fonksiyon değildir.</figcaption>
+</figure>
+
+<p>Testi denklemlere de uygulayabilirsin. y = x<sup>2</sup> denkleminde her x için y tek türlü hesaplanır; fonksiyon belirtir. x = y<sup>2</sup> denkleminde ise x = 4 için y<sup>2</sup> = 4, yani y = 2 ya da y = −2 olur; bir girdiye iki çıktı düşer, fonksiyon belirtmez. Aynı nedenle x = 3 gibi bir <strong>düşey doğru</strong> da fonksiyon grafiği değildir: x = 3 girdisi sonsuz çok çıktıya gider. Buna karşılık y = 3 gibi <strong>yatay doğru</strong> fonksiyondur; her girdiye aynı çıktıyı (3'ü) verir ve bu serbesttir.</p>
+
+<p><strong>Hızlı yol:</strong> Grafikte "geri dönen" bir kıvrım, bir yuvarlak ya da dik bir çizgi görüyorsan önce oradan düşey doğru geçir. <strong>Kontrol yolu:</strong> Şüphelendiğin bir x değeri seç, grafikte kaç y'ye karşılık geldiğini say.</p>
+
+<h2 class="s">5. f(x) yazımı ve değer bulma</h2>
+
+<p>Fonksiyon çoğu zaman bir kuralla verilir: f(x) = x<sup>2</sup> − 3x + 1. Buradaki x bir yer tutucudur; "buraya ne gelirse" demektir. Kuralı "f(□) = □<sup>2</sup> − 3 · □ + 1" diye okuyabilirsin: kutuya ne koyarsan, sağdaki her kutuya da onu koyarsın. Değer bulmanın bütün kuralı budur ve f(2) ile f(a + 1) arasında yöntem farkı yoktur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f(x) kuralında x yerine bir sayı ya da ifade yazarken, sağ taraftaki <strong>her</strong> x'in yerine o sayıyı ya da ifadeyi <strong>parantez içinde</strong> yaz, sonra işlem önceliğine göre hesapla. Parantez, eksi işaretinin ve üssün yeni girdinin tamamına uygulanmasını güvenceye alır.</p></div>
+
+<p>f(x) = x<sup>2</sup> − 3x + 1 için deneyelim:</p>
+
+<span class="mat">f(2) = (2)<sup>2</sup> − 3(2) + 1 = 4 − 6 + 1 = −1 <span class="g">(her x yerine 2)</span></span>
+<span class="mat">f(−2) = (−2)<sup>2</sup> − 3(−2) + 1 = 4 + 6 + 1 = 11 <span class="g">(parantezsiz yazsan −2<sup>2</sup> = −4 hatasına düşerdin; Parça 10)</span></span>
+<span class="mat">f(a + 1) = (a + 1)<sup>2</sup> − 3(a + 1) + 1 <span class="g">(her x yerine a + 1)</span></span>
+<span class="mat">= a<sup>2</sup> + 2a + 1 − 3a − 3 + 1 <span class="g">(tam kare açılımı ve dağılma; Parça 15 ve 14)</span></span>
+<span class="mat">= a<sup>2</sup> − a − 1 <span class="g">(benzer terimler toplandı)</span></span>
+<span class="mat">f(2x) = (2x)<sup>2</sup> − 3(2x) + 1 = 4x<sup>2</sup> − 6x + 1 <span class="g">(her x yerine 2x)</span></span>
+
+<p><strong>Kontrol yolu:</strong> f(a + 1) = a<sup>2</sup> − a − 1 sonucunu a = 1 ile denetle: sol taraf f(2) = −1, sağ taraf 1 − 1 − 1 = −1. Tuttu. Harfli bir sonucu her zaman küçük bir sayı vererek denetleyebilirsin; bu, sınavda on saniyelik bir sigortadır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>f(a + 1) = f(a) + 1 sanmak.</strong> f(a) + 1, "önce a'yı makineye at, çıkana 1 ekle" demektir: a<sup>2</sup> − 3a + 2. f(a + 1) ise "a + 1'i makineye at" demektir: a<sup>2</sup> − a − 1. a = 1 için ilki 0, ikincisi −1 verir. Parantez içindeki değişiklik girdiyi, parantez dışındaki değişiklik çıktıyı değiştirir.</p>
+<p><strong>f(2x) = 2f(x) sanmak.</strong> 2f(x) = 2x<sup>2</sup> − 6x + 2, oysa f(2x) = 4x<sup>2</sup> − 6x + 1. Benzer biçimde f(a) + f(b) çoğu zaman f(a + b) değildir. Bu eşitlikler ancak bazı özel fonksiyonlarda doğrudur (aşağıda f(x + y) = f(x) + f(y) bağıntısını göreceğiz); genel kural sanılmamalıdır.</p></div>
+
+<h3>f(x + 1) verilince f(x)'i bulmak: değişken değiştirme</h3>
+
+<p>Bazen kural doğrudan f(x) için değil, f(2x − 1) gibi bir ifade için verilir. Yapılacak şey, makineye giren şeye yeni bir ad vermektir. "f(2x − 1) = 4x + 3" cümlesi şunu söyler: girdi 2x − 1 olduğunda çıktı 4x + 3'tür. Girdiye t dersek, çıktıyı t cinsinden yazabilmek için x'i t cinsinden bulmamız gerekir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> f(2x − 1) = 4x + 3 olduğuna göre f(x) kuralını ve f(5) değerini bulunuz.</p>
+<p><strong>Adım 1.</strong> Girdiye yeni ad veririm.</p>
+<span class="mat">t = 2x − 1 <span class="g">(makineye giren ifade)</span></span>
+<p><strong>Adım 2.</strong> x'i t cinsinden yalnız bırakırım (Parça 17'deki formül dönüştürme).</p>
+<span class="mat">2x = t + 1 <span class="g">(iki yana 1 eklendi)</span></span>
+<span class="mat">x = <span class="kes"><span>t + 1</span><span>2</span></span> <span class="g">(iki yan 2'ye bölündü)</span></span>
+<p><strong>Adım 3.</strong> Sağ taraftaki x'in yerine bunu yazarım.</p>
+<span class="mat">f(t) = 4 · <span class="kes"><span>t + 1</span><span>2</span></span> + 3 <span class="g">(4x yerine)</span></span>
+<span class="mat">f(t) = 2(t + 1) + 3 = 2t + 5 <span class="g">(4 ile 2 sadeleşti, dağılma)</span></span>
+<p><strong>Adım 4.</strong> Harfin adı önemsizdir; t yerine x yazarım: f(x) = 2x + 5. Buradan f(5) = 2 · 5 + 5 = 15.</p>
+<p><strong>Hızlı yol.</strong> Yalnızca f(5) isteniyorsa kuralı bulmana gerek yok. Makineye 5 girmesi için 2x − 1 = 5, yani x = 3 olmalı. Verilen eşitlikte x = 3 yaz: f(2 · 3 − 1) = 4 · 3 + 3, yani f(5) = 15.</p>
+<p><strong>Denetim.</strong> Bulduğun f(x) = 2x + 5 kuralını baştaki eşitliğe koy: f(2x − 1) = 2(2x − 1) + 5 = 4x + 3. Verilenle aynı.</p>
+<p><strong>Sonuç:</strong> f(x) = 2x + 5, f(5) = 15.</p></div>
+
+<p>Hızlı yolun mantığını iyi kavra, çünkü sınavda çoğu zaman bu kullanılır: <strong>parantezin içini istenen sayıya eşitle, x'i bul, sağ tarafa koy.</strong> Kuralın tamamı istendiğinde ya da aynı fonksiyonla birkaç değer bulunacaksa değişken değiştirme daha düzenlidir.</p>
+
+<h2 class="s">6. Kaç fonksiyon yazılabilir?</h2>
+
+<p>A = {1, 2, 3} ve B = {a, b} olsun. A'dan B'ye kaç farklı fonksiyon yazabilirsin? Bir fonksiyonu belirlemek, A'nın her elemanına bir çıktı seçmek demektir. 1'in çıktısı için 2 seçenek var (a ya da b). 2'nin çıktısı için de, öbür seçimden bağımsız olarak, 2 seçenek var. 3 için de 2. Seçimler art arda yapıldığı için seçenek sayıları çarpılır: 2 · 2 · 2 = 8. Bu "art arda seçimlerde çarp" ilkesi Parça 43'te çarpma kuralı adıyla ayrıntılı işlenecek; burada yalnızca sezgisini kullanıyoruz.</p>
+
+<div class="tablo"><table>
+<tr><th>Fonksiyon</th><th>f(1)</th><th>f(2)</th><th>f(3)</th><th>Görüntü kümesi</th></tr>
+<tr><td>1.</td><td>a</td><td>a</td><td>a</td><td>{a}</td></tr>
+<tr><td>2.</td><td>a</td><td>a</td><td>b</td><td>{a, b}</td></tr>
+<tr><td>3.</td><td>a</td><td>b</td><td>a</td><td>{a, b}</td></tr>
+<tr><td>4.</td><td>a</td><td>b</td><td>b</td><td>{a, b}</td></tr>
+<tr><td>5.</td><td>b</td><td>a</td><td>a</td><td>{a, b}</td></tr>
+<tr><td>6.</td><td>b</td><td>a</td><td>b</td><td>{a, b}</td></tr>
+<tr><td>7.</td><td>b</td><td>b</td><td>a</td><td>{a, b}</td></tr>
+<tr><td>8.</td><td>b</td><td>b</td><td>b</td><td>{b}</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Formül</span>
+<p>s(A) = m ve s(B) = n ise A'dan B'ye tanımlanabilecek fonksiyon sayısı <strong>n<sup>m</sup></strong>, yani <strong>s(B)<sup>s(A)</sup></strong>'dır. Taban, seçeneklerin geldiği küme (B), üs, seçim yapan elemanların sayısıdır (A).</p></div>
+
+<p>Taban ile üssün yerini karıştırmamak için formülü değil, nedenini hatırla: her <em>girdi</em> bir seçim yapar, her seçimde <em>değer kümesinin</em> eleman sayısı kadar seçenek vardır. Girdi sayısı kadar çarpan olduğu için girdi sayısı üsse gider. B'den A'ya fonksiyon sayısı ise 3<sup>2</sup> = 9'dur; 8 ile 9 farklıdır, yön önemlidir.</p>
+
+<p>Koşullu sorular aynı mantıkla çözülür: koşulun sabitlediği elemanın seçeneği 1'e iner. A'dan B'ye f(1) = a olan fonksiyon sayısı, 1'in seçeneği 1, ötekilerin 2 olduğu için 1 · 2 · 2 = 4'tür. Tablonun ilk dört satırına bak: f(1) = a olanlar tam dört tane.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>s(A)<sup>s(B)</sup> yazmak.</strong> s(A) = 3, s(B) = 2 için 3<sup>2</sup> = 9 bulan kişi aslında B'den A'ya fonksiyonları saymıştır. Denetim için küçük bir durumu kafanda dene: A tek elemanlı, B beş elemanlıysa o tek eleman beş yere gidebilir, cevap 5 olmalıdır. 5<sup>1</sup> = 5 doğru, 1<sup>5</sup> = 1 yanlış.</p></div>
+
+<h2 class="s">7. İki fonksiyon ne zaman eşittir?</h2>
+
+<p>Bir fonksiyonu belirleyen şey yazılış biçimi değil, hangi girdiye hangi çıktıyı verdiğidir. İki makinenin içi farklı olsa da, aynı düğmelere basınca hep aynı ürünü veriyorlarsa dışarıdan bakan için aynı otomattır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f: A → B ve g: A → B iki fonksiyon olsun. A'daki <strong>her</strong> x için f(x) = g(x) ise f ile g <strong>eşit fonksiyonlardır</strong> ve f = g yazılır. Tanım kümeleri farklı olan iki fonksiyon eşit değildir.</p></div>
+
+<p>Örnek: A = {−1, 0, 1} kümesinde f(x) = x<sup>3</sup> ve g(x) = x fonksiyonlarını düşün. f(−1) = −1 = g(−1), f(0) = 0 = g(0), f(1) = 1 = g(1). Üç girdinin üçünde de çıktılar aynı; bu tanım kümesinde f = g'dir, kuralları farklı yazılmış olsa bile. Ama tanım kümesine 2'yi eklersen f(2) = 8, g(2) = 2 olur ve eşitlik bozulur. "Eşit mi?" sorusunu her zaman tanım kümesini akılda tutarak cevapla.</p>
+
+<p>Tanım kümesinin önemine ikinci bir örnek: f(x) = x ile g(x) = <span class="kes"><span>x<sup>2</sup></span><span>x</span></span>. Sadeleştirince g(x) = x gibi görünür, ama g'nin kuralı x = 0'da tanımsızdır (Parça 16'da gördük: sadeleşse bile tanımsızlık sürer). f, 0'ı da içeren bir kümede tanımlıyken g tanımlı değildir; ikisi gerçek sayılarda eşit fonksiyon değildir.</p>
+
+<h2 class="s">8. Grafik okuma</h2>
+
+<p>Bir fonksiyonun grafiği, bütün (x, f(x)) ikililerinin koordinat düzlemindeki görüntüsüdür; Parça 35'te kartezyen çarpımı düzlemde noktalar olarak çizdiğimiz gibi. Bu yüzden grafikten okuyacağın her bilgi bir ikiliden gelir: yatay eksen girdiyi, düşey eksen çıktıyı söyler.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>f(a) değeri:</strong> x = a noktasından düşey git, grafiğe değdiğin yerin yüksekliği f(a)'dır. <strong>f(x) = 0'ın kökleri:</strong> grafiğin x eksenini kestiği noktaların apsisleri. <strong>f(0):</strong> grafiğin y eksenini kestiği noktanın ordinatı. <strong>Tanım kümesi:</strong> grafiğin x eksenine dik izdüşümü (grafik soldan sağa nereden nereye uzanıyor). <strong>Görüntü kümesi:</strong> grafiğin y eksenine dik izdüşümü (en alçak ve en yüksek nokta arası). <strong>f(x) = k'nin çözüm sayısı:</strong> y = k yatay doğrusunun grafiği kestiği nokta sayısı.</p></div>
+
+<p>Son maddenin nedeni: y = k doğrusu üstündeki her noktanın yüksekliği k'dir; grafiği kestiği her noktada çıktı k olur, o noktanın apsisi de f(x) = k denkleminin bir çözümüdür. Düşey doğru girdi sabitken çıktıları sayar, yatay doğru çıktı sabitken girdileri sayar.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Tanım kümesi eksi 3 ile 5 arası olan parçalı doğrusal bir fonksiyonun grafiği; x eksenini eksi 2, 2 ve 4 noktalarında kesiyor">
+<line class="sv-c" x1="56" y1="146" x2="56" y2="154" />
+<line class="sv-c" x1="92" y1="146" x2="92" y2="154" />
+<line class="sv-c" x1="128" y1="146" x2="128" y2="154" />
+<line class="sv-c" x1="200" y1="146" x2="200" y2="154" />
+<line class="sv-c" x1="236" y1="146" x2="236" y2="154" />
+<line class="sv-c" x1="272" y1="146" x2="272" y2="154" />
+<line class="sv-c" x1="308" y1="146" x2="308" y2="154" />
+<line class="sv-c" x1="344" y1="146" x2="344" y2="154" />
+<line class="sv-c" x1="160" y1="222" x2="168" y2="222" />
+<line class="sv-c" x1="160" y1="186" x2="168" y2="186" />
+<line class="sv-c" x1="160" y1="114" x2="168" y2="114" />
+<line class="sv-c" x1="160" y1="78" x2="168" y2="78" />
+<line class="sv-c" x1="12" y1="150" x2="388" y2="150" /><line class="sv-c" x1="164" y1="278" x2="164" y2="28" />
+<text class="sv-s" x="392" y="154">x</text><text class="sv-s" x="170" y="34">y</text>
+<text class="sv-s" x="53" y="168" text-anchor="end">−3</text>
+<text class="sv-s" x="131" y="168" text-anchor="start">−1</text>
+<text class="sv-s" x="197" y="168" text-anchor="end">1</text>
+<text class="sv-s" x="233" y="168" text-anchor="end">2</text>
+<text class="sv-s" x="269" y="168" text-anchor="end">3</text>
+<text class="sv-s" x="95" y="168" text-anchor="start">−2</text>
+<text class="sv-s" x="311" y="168" text-anchor="start">4</text>
+<text class="sv-s" x="341" y="168" text-anchor="end">5</text>
+<text class="sv-s" x="158" y="166" text-anchor="end">O</text>
+<text class="sv-s" x="157" y="72" text-anchor="end">2</text>
+<text class="sv-s" x="157" y="190" text-anchor="end">−1</text>
+<text class="sv-s" x="157" y="226" text-anchor="end">−2</text>
+<line class="sv-c" x1="20" y1="114" x2="380" y2="114" />
+<text class="sv-s" x="384" y="108" text-anchor="end">y = 1</text>
+<polyline class="sv-cl" points="56,222 128,78 200,78 272,222 344,78" />
+<line class="sv-c" x1="272" y1="150" x2="272" y2="222" />
+<circle class="sv-l" cx="56" cy="222" r="5" />
+<circle class="sv-l" cx="344" cy="78" r="5" />
+<circle class="sv-m" cx="92" cy="150" r="4.5" />
+<circle class="sv-m" cx="236" cy="150" r="4.5" />
+<circle class="sv-m" cx="308" cy="150" r="4.5" />
+<circle class="sv-a" cx="110.0" cy="114" r="4" />
+<circle class="sv-a" cx="218.0" cy="114" r="4" />
+<circle class="sv-a" cx="326.0" cy="114" r="4" />
+<text class="sv-s" x="56" y="242" text-anchor="middle">(−3, −2)</text>
+<text class="sv-s" x="338" y="68" text-anchor="middle">(5, 2)</text>
+<text class="sv-s" x="272" y="242" text-anchor="middle">(3, −2)</text>
+</svg>
+<figcaption>f: [−3, 5] → R fonksiyonunun grafiği, (−3, −2), (−1, 2), (1, 2), (3, −2), (5, 2) noktalarını sırayla birleştiren doğru parçalarından oluşuyor. Yeşil noktalar kökler (−2, 2, 4), turuncu noktalar y = 1 doğrusuyla kesişimler. Uçlardaki dolu daireler, uç noktaların grafiğe dahil olduğunu gösterir; boş daire görseydin o nokta dahil olmazdı.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Grafiği yukarıda verilen f fonksiyonu için f(0) − f(3) değerini, f(x) = 0 denkleminin köklerini, tanım ve görüntü kümesini ve f(x) = 1 denkleminin kaç çözümü olduğunu bulunuz.</p>
+<p><strong>Adım 1.</strong> x = 0'da grafik −1 ile 1 arasındaki yatay parçanın üstünde; yükseklik 2. Yani f(0) = 2.</p>
+<p><strong>Adım 2.</strong> x = 3'te grafik (3, −2) noktasında; f(3) = −2.</p>
+<span class="mat">f(0) − f(3) = 2 − (−2) = 4 <span class="g">(eksinin eksisi artı; Parça 2)</span></span>
+<p><strong>Adım 3.</strong> Grafik x eksenini üç yerde kesiyor: x = −2, x = 2, x = 4. Denetim: (−3, −2) ile (−1, 2) arasındaki parça 2 birim sağa giderken 4 birim yükseliyor, yani her birim sağda 2 birim yükseliyor; −2'den 0'a çıkmak için 1 birim sağa, x = −2'ye gitmek gerekir. Öbür iki kök de aynı hesapla tutar.</p>
+<p><strong>Adım 4.</strong> Grafik x ekseninde −3'ten başlayıp 5'te bitiyor, uçlar dolu: tanım kümesi [−3, 5]. En alçak yükseklik −2, en yüksek 2 ve arasındaki her yükseklik alınıyor: görüntü kümesi [−2, 2].</p>
+<p><strong>Adım 5.</strong> y = 1 doğrusu grafiği üç noktada kesiyor (x = −1,5; x = 1,5; x = 4,5). f(x) = 1 denkleminin 3 çözümü var.</p>
+<p><strong>Sonuç:</strong> f(0) − f(3) = 4; kökler −2, 2, 4; tanım kümesi [−3, 5], görüntü kümesi [−2, 2]; f(x) = 1'in 3 çözümü var.</p></div>
+
+<p>Grafikte dikkat edilecek bir ayrıntı: yatay parça (−1 ile 1 arası) fonksiyonluğu bozmaz. Orada sonsuz çok girdi aynı çıktıyı (2'yi) veriyor; bu, B tarafında kalabalıktır ve serbesttir. Bu yüzden f(x) = 2 denkleminin sonsuz çözümü vardır: [−1, 1] aralığındaki her x ve ayrıca x = 5.</p>
+
+<h2 class="s">9. Fonksiyonlarda dört işlem</h2>
+
+<p>İki makineyi yan yana koyup aynı girdiyi ikisine birden atabilir, çıktıları toplayabilirsin. Yeni makinenin kuralı "f'nin çıktısı artı g'nin çıktısı" olur. Bunun için girdinin <strong>iki makinede de</strong> izinli olması gerekir; bu yüzden yeni fonksiyonun tanım kümesi iki tanım kümesinin kesişimidir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f: A → R ve g: B → R olsun. A ∩ B ≠ ∅ ise ortak tanım kümesi A ∩ B üzerinde:</p>
+<p>(f + g)(x) = f(x) + g(x), &nbsp; (f − g)(x) = f(x) − g(x), &nbsp; (f · g)(x) = f(x) · g(x), &nbsp; (c · f)(x) = c · f(x) (c bir gerçek sayı).</p>
+<p>(f/g)(x) = <span class="kes"><span>f(x)</span><span>g(x)</span></span> ise yalnızca g(x) ≠ 0 olan x'lerde tanımlıdır; tanım kümesi A ∩ B'den g(x) = 0 yapan elemanlar çıkarılarak bulunur.</p></div>
+
+<p>Bölmedeki ek şartın nedeni Parça 2'den tanıdık: sıfıra bölme tanımsızdır. f(x) = 0 olması ise sorun değildir; 0'ın sıfır olmayan bir sayıya bölümü 0'dır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> f = {(1, 3), (2, 5), (3, −1), (5, 2)} ve g = {(2, 4), (3, 0), (4, 7), (5, −2)} fonksiyonları veriliyor. f + g, f · g ve <span class="kes"><span>f</span><span>g</span></span> fonksiyonlarını sıralı ikililerle yazınız.</p>
+<p><strong>Adım 1.</strong> Tanım kümelerini ayırırım: f'ninki {1, 2, 3, 5}, g'ninki {2, 3, 4, 5}.</p>
+<span class="mat">ortak tanım kümesi = {1, 2, 3, 5} ∩ {2, 3, 4, 5} = {2, 3, 5} <span class="g">(1 g'de, 4 f'de yok)</span></span>
+<p><strong>Adım 2.</strong> Her ortak eleman için çıktıları toplarım.</p>
+<span class="mat">(f + g)(2) = 5 + 4 = 9, &nbsp; (f + g)(3) = −1 + 0 = −1, &nbsp; (f + g)(5) = 2 + (−2) = 0 <span class="g">(çıktılar toplandı)</span></span>
+<p><strong>Adım 3.</strong> Çarparım.</p>
+<span class="mat">(f · g)(2) = 5 · 4 = 20, &nbsp; (f · g)(3) = (−1) · 0 = 0, &nbsp; (f · g)(5) = 2 · (−2) = −4 <span class="g">(çıktılar çarpıldı)</span></span>
+<p><strong>Adım 4.</strong> Bölmeden önce g'nin sıfır olduğu yeri ararım: g(3) = 0. 3 tanım kümesinden çıkar.</p>
+<span class="mat">(f/g)(2) = <span class="kes"><span>5</span><span>4</span></span>, &nbsp; (f/g)(5) = <span class="kes"><span>2</span><span>−2</span></span> = −1 <span class="g">(x = 3'te payda 0)</span></span>
+<p><strong>Sonuç:</strong> f + g = {(2, 9), (3, −1), (5, 0)}; f · g = {(2, 20), (3, 0), (5, −4)}; <span class="kes"><span>f</span><span>g</span></span> = {(2, <span class="kes"><span>5</span><span>4</span></span>), (5, −1)}.</p></div>
+
+<p>Kuralla verilen fonksiyonlarda da aynısı yapılır. f(x) = 2x + 1 ve g(x) = x − 3 ise (f + g)(x) = 3x − 2; (3f − 2g)(x) = 3(2x + 1) − 2(x − 3) = 6x + 3 − 2x + 6 = 4x + 9; (f · g)(2) = f(2) · g(2) = 5 · (−1) = −5; (f/g)(x) = <span class="kes"><span>2x + 1</span><span>x − 3</span></span>, x ≠ 3. <strong>Hızlı yol:</strong> yalnızca tek bir değer isteniyorsa kuralı birleştirme, önce f(2) ve g(2)'yi ayrı ayrı bul, sonra işlemi yap. <strong>Kontrol yolu:</strong> birleştirdiğin kurala bir sayı koy ve ayrı ayrı hesapladığın sonuçla karşılaştır: (3f − 2g)(1) = 4 · 1 + 9 = 13; ayrı ayrı 3 · 3 − 2 · (−2) = 13.</p>
+
+<h2 class="s">10. Bağıntıyla verilen fonksiyonlar: f(x + y) = f(x) + f(y)</h2>
+
+<p>Bazı sorularda f'nin kuralı hiç verilmez; yalnızca her x ve y için sağlanan bir eşitlik verilir. Böyle bir eşitlik bir anahtar gibidir: x ile y'ye uygun değerler vererek istediğin kapıyı açarsın. Hangi değerin verileceğine dair üç alışkanlık çoğu soruyu çözer: <strong>0 ver</strong> (f(0)'ı yakalamak için), <strong>eşit değer ver</strong> (x = y), <strong>istenen sayıyı parçalara ayır</strong> (5 = 2 + 2 + 1).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Her x, y gerçek sayısı için f(x + y) = f(x) + f(y) ve f(1) = 3 olduğuna göre f(0), f(5) ve f(−1) değerlerini bulunuz.</p>
+<p><strong>Adım 1.</strong> x = 0, y = 0 veririm.</p>
+<span class="mat">f(0 + 0) = f(0) + f(0) <span class="g">(bağıntı x = y = 0 için)</span></span>
+<span class="mat">f(0) = 2f(0) ⇒ f(0) = 0 <span class="g">(iki yandan f(0) çıkarıldı)</span></span>
+<p><strong>Adım 2.</strong> x = y = 1 veririm.</p>
+<span class="mat">f(2) = f(1) + f(1) = 3 + 3 = 6 <span class="g">(bağıntı x = y = 1 için)</span></span>
+<p><strong>Adım 3.</strong> 5'i parçalarım: 5 = 2 + 2 + 1.</p>
+<span class="mat">f(4) = f(2) + f(2) = 12 <span class="g">(x = y = 2)</span></span>
+<span class="mat">f(5) = f(4) + f(1) = 12 + 3 = 15 <span class="g">(x = 4, y = 1)</span></span>
+<p><strong>Adım 4.</strong> Negatif için x = 1, y = −1 veririm.</p>
+<span class="mat">f(0) = f(1) + f(−1) ⇒ 0 = 3 + f(−1) ⇒ f(−1) = −3 <span class="g">(Adım 1'deki f(0) = 0 kullanıldı)</span></span>
+<p><strong>Kontrol yolu.</strong> f(x) = 3x kuralı bağıntıyı sağlar (3(x + y) = 3x + 3y) ve f(1) = 3 verir. Bu kuralla f(0) = 0, f(5) = 15, f(−1) = −3; hepsi tuttu.</p>
+<p><strong>Sonuç:</strong> f(0) = 0, f(5) = 15, f(−1) = −3.</p></div>
+
+<p>Aynı fikir başka bağıntılarda da çalışır. f(x · y) = f(x) + f(y) verilmişse x = y = 1 yaz: f(1) = 2f(1), buradan f(1) = 0. f(x + 1) = f(x) + 4 ve f(2) = 5 verilmişse her adımda girdi 1 artınca çıktı 4 artar: f(3) = 9, f(4) = 13, …; 2'den 10'a 8 adım vardır, f(10) = 5 + 8 · 4 = 37. Bu, Parça 4'teki ardışık sayıların ve terim sayısının aynısıdır. Denetim: f(x) = 4x − 3 kuralı f(x + 1) = f(x) + 4'ü sağlar, f(2) = 5 verir ve f(10) = 37 bulur.</p>
+
+<h2 class="s">11. Simetrik ifadeler: f(x) ile f(1 − x)</h2>
+
+<p>"f(x) + f(1 − x) = …" ya da "2f(x) − f(1 − x) = …" biçimindeki sorularda x ile 1 − x bir çift oluşturur: x = 0 verince öbürü 1, x = 1 verince öbürü 0 olur. x = 0,2 verirsen öbürü 0,8 olur. Bu eşleşmeden iki tür soru çıkar.</p>
+
+<p><strong>Birinci tür: iki bilinmeyenli sistem.</strong> x yerine bir sayı ve onun eşini ayrı ayrı yazınca, aynı iki bilinmeyeni içeren iki denklem elde edersin; Parça 18'deki gibi çözersin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Her x gerçek sayısı için 2f(x) − f(1 − x) = 3x olduğuna göre f(0) kaçtır?</p>
+<p><strong>Adım 1.</strong> x = 0 yazarım; eşi 1 − 0 = 1.</p>
+<span class="mat">2f(0) − f(1) = 0 <span class="g">(3 · 0 = 0)</span></span>
+<p><strong>Adım 2.</strong> x = 1 yazarım; eşi 1 − 1 = 0.</p>
+<span class="mat">2f(1) − f(0) = 3 <span class="g">(3 · 1 = 3)</span></span>
+<p><strong>Adım 3.</strong> f(0) = a, f(1) = b dersem sistem: 2a − b = 0 ve 2b − a = 3.</p>
+<span class="mat">b = 2a <span class="g">(ilk denklemden)</span></span>
+<span class="mat">2(2a) − a = 3 ⇒ 3a = 3 ⇒ a = 1 <span class="g">(yerine koyma; Parça 18)</span></span>
+<p><strong>Denetim.</strong> a = 1, b = 2: 2 · 1 − 2 = 0 ✓, 2 · 2 − 1 = 3 ✓. Ayrıca f(x) = x + 1 kuralı bağıntıyı sağlar: 2(x + 1) − (1 − x + 1) = 2x + 2 − 2 + x = 3x.</p>
+<p><strong>Sonuç:</strong> f(0) = 1.</p></div>
+
+<p><strong>İkinci tür: eşleri toplayarak toplam bulma.</strong> Her x için f(x) + f(1 − x) = 5 olsun. f(0,1) + f(0,2) + … + f(0,9) toplamı istenirse terimleri eşleriyle grupla: (0,1 ile 0,9), (0,2 ile 0,8), (0,3 ile 0,7), (0,4 ile 0,6); her çiftin toplamı 5, dört çift 20 eder. Ortada eşi kendisi olan 0,5 kalır: x = 0,5 yazınca f(0,5) + f(0,5) = 5, yani f(0,5) = 2,5. Toplam 20 + 2,5 = 22,5. Hiçbir f değerini tek tek bilmeden toplamı bulduk; bu, Parça 4'teki 1 + 2 + … + n toplamında baştan ve sondan eşleme fikriyle aynıdır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Ortadaki eşsiz terimi unutmak ya da iki kez saymak.</strong> Dokuz terimli bir toplamda dört çift ve bir yalnız terim vardır. Çift sayısını "9 ÷ 2" diye hesaplayıp 4,5 · 5 = 22,5 bulan kişi doğru sayıya rastlantıyla ulaşır; terim sayısı çift olsaydı ya da ortadaki değer farklı bir eşitlikle bulunacak olsaydı yanılırdı. Her zaman ortadaki terimi ayrı yaz.</p></div>
+
+<h2 class="s">12. Günlük hayattan fonksiyonlar: ücret ve sıcaklık</h2>
+
+<p>Fonksiyonun en sık göründüğü yer, adı hiç geçmeyen yeni nesil sorulardır. "Bir taksinin açılış ücreti 30 TL, kilometre başına ücreti 25 TL'dir" cümlesi bir fonksiyon tanımlar: girdi gidilen yol x (km), çıktı ödenen ücret f(x) (TL).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Yukarıdaki taksi için ücret fonksiyonunu yazınız; 12 km'lik yolculuğun ücretini ve 280 TL ödeyen bir yolcunun kaç km gittiğini bulunuz.</p>
+<p><strong>Adım 1.</strong> Ücret, sabit kısım ile yola bağlı kısmın toplamıdır.</p>
+<span class="mat">f(x) = 30 + 25x <span class="g">(açılış + km başına ücret × km)</span></span>
+<p><strong>Adım 2.</strong> 12 km için girdiyi koyarım.</p>
+<span class="mat">f(12) = 30 + 25 · 12 = 30 + 300 = 330 <span class="g">(önce çarpma)</span></span>
+<p><strong>Adım 3.</strong> Bu kez çıktı verilmiş, girdi isteniyor: f(x) = 280 denklemini çözerim (Parça 17).</p>
+<span class="mat">30 + 25x = 280 ⇒ 25x = 250 ⇒ x = 10 <span class="g">(30 çıkarıldı, 25'e bölündü)</span></span>
+<p><strong>Denetim.</strong> 30 + 25 · 10 = 280 ✓. Tahmin: 12 km 330 TL ise 280 TL biraz daha kısa bir yol olmalı; 10 km akla yatkın.</p>
+<p><strong>Sonuç:</strong> f(x) = 30 + 25x; 12 km 330 TL; 280 TL ödeyen 10 km gitmiştir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Yol x (km)</th><td>0</td><td>1</td><td>2</td><td>4</td><td>10</td><td>12</td></tr>
+<tr><th>Ücret f(x) (TL)</th><td>30</td><td>55</td><td>80</td><td>130</td><td>280</td><td>330</td></tr>
+</table></div>
+
+<p>Tablo da bir fonksiyon gösterimidir: üst satır tanım kümesinden seçilmiş girdiler, alt satır onların görüntüleridir. Her 1 km'lik artış ücreti 25 TL artırıyor; 0'dan 2'ye de, 2'den 4'e de 50 TL. Çıktıların eşit adımlarla artması, kuralın "sabit ücret + birim ücret" biçiminde olduğunu gösterir; bir tabloyla karşılaşınca önce bu eşit adımı ara.</p>
+
+<p>Bu modelde tanım kümesi de bir anlam taşır: gidilen yol negatif olamaz, o yüzden tanım kümesi x ≥ 0 olan sayılardır. f(0) = 30, taksiye binip hiç gitmeden inersen ödeyeceğin açılış ücretidir. Kilometre başına ücret (25), girdi 1 artınca çıktının ne kadar arttığını söyler; Parça 32'de grafikten okuduğumuz "birim başına değişim" budur ve Parça 37'de doğrusal fonksiyonun eğimi adını alacak.</p>
+
+<p>İkinci örnek sıcaklık. Celsius (°C) cinsinden ölçülen bir sıcaklığı Fahrenheit (°F) cinsine çeviren kural f(C) = 1,8C + 32'dir. Suyun donduğu 0 °C için f(0) = 32 °F, kaynadığı 100 °C için f(100) = 212 °F, 25 °C'lik bir gün için f(25) = 1,8 · 25 + 32 = 77 °F. "Hangi sıcaklıkta iki ölçek aynı sayıyı gösterir?" diye sorarsan f(C) = C denklemini kurarsın: 1,8C + 32 = C, 0,8C = −32, C = −40. −40 °C ile −40 °F aynı sıcaklıktır. Bu soru, "girdi ile çıktının eşit olduğu nokta" kalıbının tipik örneğidir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 35'e:</strong> Fonksiyon, A × B kartezyen çarpımının özel bir alt kümesidir; grafiği de kartezyen çarpımı düzlemde çizdiğimiz gibi çizilir.</p>
+<p><strong>Parça 22 ve 32'ye:</strong> Doğru orantıdaki y = kx ve "sabit ücret + birim ücret" grafikleri birer fonksiyondur; orada adını koymadan fonksiyon kullanmıştık.</p>
+<p><strong>Parça 37 ve 38'e:</strong> Bu parçadaki "B tarafında kalabalık serbest" ve "B'de boşta eleman kalabilir" gözlemleri, bire bir ve örten fonksiyon kavramlarına dönüşecek; makine modeli de iki makineyi art arda bağlayan bileşkeye ve makineyi geri çalıştıran ters fonksiyona temel olacak.</p>
+<p><strong>Parça 39 ve 43'e:</strong> Polinomlar P(x) ile yazılan fonksiyonlardır; s(B)<sup>s(A)</sup> formülündeki "art arda seçimde çarp" fikri sayma konusunun çarpma kuralıdır.</p>
+<p><strong>Öbür derslere:</strong> Fizikteki konum-zaman ve hız-zaman grafikleri fonksiyon grafikleridir; düşey doğru testi orada "bir cisim aynı anda iki yerde olamaz" demektir. İleri matematikte fonksiyon grafiklerinin kaydırılması ve türev bu temel üzerine kurulur; iktisatta talep ve maliyet de birer fonksiyondur.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir eşlemenin A'dan B'ye fonksiyon olması için hangi iki şart gerekir; B tarafında herhangi bir şart var mıdır?</summary><p>A'nın her elemanından bir ok çıkmalı (boşta eleman kalmamalı) ve hiçbir elemandan iki ok çıkmamalı (tek karşılık). B tarafında şart yoktur: B'de boşta eleman kalabilir, B'deki bir elemana birden çok ok gelebilir.</p></details>
+<details><summary>Değer kümesi ile görüntü kümesi arasındaki fark nedir?</summary><p>Değer kümesi, f: A → B yazımındaki B'dir; çıktıların düşebileceği, önceden verilen kümedir. Görüntü kümesi f(A), gerçekten elde edilen çıktıların kümesidir ve B'nin alt kümesidir. Eleman sayısı tanım kümesinin eleman sayısını aşamaz.</p></details>
+<details><summary>Düşey doğru testi neden işe yarar?</summary><p>Düşey doğru üzerindeki bütün noktaların apsisi aynıdır; doğrunun grafiği kestiği her nokta o girdinin bir çıktısıdır. İki noktada kesiyorsa bir girdinin iki çıktısı vardır ve tanımın "tek karşılık" şartı bozulur.</p></details>
+<details><summary>f(2x − 1) = 4x + 3 verildiğinde f(5)'i kuralı bulmadan nasıl hesaplarsın?</summary><p>Parantezin içini 5'e eşitlerim: 2x − 1 = 5, x = 3. Sağ tarafa x = 3 koyarım: 4 · 3 + 3 = 15. Yani f(5) = 15.</p></details>
+<details><summary>s(A) = 4 ve s(B) = 3 ise A'dan B'ye kaç fonksiyon vardır ve neden üs 4'tür?</summary><p>3<sup>4</sup> = 81 fonksiyon vardır. A'nın dört elemanının her biri çıktısını üç seçenek arasından bağımsız olarak seçer; dört ayrı seçim olduğu için 3 dört kez çarpılır.</p></details>
+<details><summary>f/g fonksiyonunun tanım kümesi nasıl bulunur?</summary><p>Önce f ile g'nin tanım kümelerinin kesişimi alınır, sonra bu kesişimden g(x) = 0 yapan elemanlar çıkarılır, çünkü sıfıra bölme tanımsızdır. f(x) = 0 olan elemanlar çıkarılmaz.</p></details>
+<details><summary>f(x + y) = f(x) + f(y) bağıntısını sağlayan bir fonksiyonda f(0) neden 0'dır?</summary><p>x = y = 0 yazınca f(0) = f(0) + f(0) = 2f(0) olur; iki yandan f(0) çıkarılınca f(0) = 0 bulunur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Fonksiyon:</strong> A'nın her elemanını B'nin yalnızca bir elemanıyla eşler. f: A → B, x ↦ f(x).</li>
+<li><strong>Kısıt yalnızca A tarafında:</strong> A'da boşta eleman yok, A'dan iki ok çıkmaz. B'de boşta eleman ve aynı elemana çok ok serbest.</li>
+<li><strong>Kümeler:</strong> tanım kümesi A, değer kümesi B, görüntü kümesi f(A) ⊂ B; s(f(A)) ≤ s(A).</li>
+<li><strong>Sıralı ikili:</strong> aynı birinci bileşen, farklı ikinci bileşenle iki kez görünürse fonksiyon değil.</li>
+<li><strong>Düşey doğru testi:</strong> tanım kümesindeki her x'ten çizilen düşey doğru grafiği tam bir kez kesmeli. x = y<sup>2</sup>, çember, düşey doğru: fonksiyon değil.</li>
+<li><strong>Değer bulma:</strong> her x yerine yeni girdiyi parantez içinde yaz. f(a + 1) ≠ f(a) + 1, f(2x) ≠ 2f(x).</li>
+<li><strong>f(g(x)) kuralı verilince:</strong> içi istenen sayıya eşitle, x'i bul, sağa koy; kural isteniyorsa t = içerisi, x'i t cinsinden yaz.</li>
+<li><strong>Fonksiyon sayısı:</strong> s(B)<sup>s(A)</sup>; koşulla sabitlenen elemanın seçeneği 1.</li>
+<li><strong>Eşitlik:</strong> aynı tanım kümesinde her x için f(x) = g(x).</li>
+<li><strong>Grafik:</strong> kökler x ekseni kesişimi, f(0) y ekseni kesişimi, tanım kümesi x eksenine, görüntü kümesi y eksenine izdüşüm; f(x) = k'nin çözüm sayısı y = k doğrusunun kesişim sayısı.</li>
+<li><strong>Dört işlem:</strong> ortak tanım kümesi A ∩ B; f/g'de g(x) = 0 olanlar çıkar.</li>
+<li><strong>Bağıntılar:</strong> 0 ver, eşit ver, sayıyı parçala. f(x) ile f(1 − x): sayıyı ve eşini yazıp sistem kur; toplamda eşleri grupla.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-36">
+<h3>Quiz 36</h3>
+<p class="qa">Yirmi dört soru: 8'i bu parçadan, 16'sı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">A = {1, 2, 3} ve B = {a, b, c} olmak üzere aşağıdaki kümelerden hangisi A'dan B'ye bir fonksiyon belirtir?</p>
+<ul class="sec"><li>{(1, a), (2, b)}</li><li>{(1, a), (1, b), (2, c), (3, a)}</li><li>{(1, c), (2, c), (3, c)}</li><li>{(1, a), (2, b), (3, d)}</li><li>{(a, 1), (b, 2), (c, 3)}</li></ul>
+<div class="coz"><p>C'de A'nın üç elemanının her biri tam bir kez birinci bileşen olarak görünüyor ve hepsi B'deki c'ye gidiyor; aynı elemana birden çok ok gelmesi serbesttir, fonksiyondur. A'da 3 hiç görünmüyor (boşta eleman). B'de 1'in iki ayrı karşılığı var (a ve b). D'de d, B'nin elemanı değil; çıktı değer kümesinin dışına düşüyor. E'deki ikililer B'den A'ya yazılmış; birinci bileşenler A'nın elemanı değil. Soru, "aynı çıktıya giden çok ok fonksiyonu bozar" yanılgısını yoklar.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki eşitliklerden hangisi, her x gerçek sayısını bir y gerçek sayısıyla eşleyen bir fonksiyon <strong>belirtmez</strong>?</p>
+<ul class="sec"><li>y = x<sup>2</sup> − 1</li><li>y = 3 − 2x</li><li>y = |x|</li><li>y = 5</li><li>x = y<sup>2</sup></li></ul>
+<div class="coz"><p>E'de x = 4 için y<sup>2</sup> = 4, yani y = 2 ya da y = −2 olur; bir girdiye iki çıktı düşer. Üstelik x = −1 için hiç gerçek y yoktur. Düşey doğru testiyle de görülür: x = 4 doğrusu grafiği iki noktada keser. A, B ve C'de her x için y tek türlü hesaplanır. D'de her x'e aynı çıktı (5) verilir; bu, B tarafındaki kalabalıktır ve serbesttir. Yatay doğrunun fonksiyon, düşey doğrunun fonksiyon olmadığını karıştıranlar D'yi işaretler.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = x<sup>2</sup> − 2x + 3 olduğuna göre f(−1) + f(2) toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>5</li><li>7</li><li>9</li><li>17</li></ul>
+<div class="coz"><p>Her x yerine parantezle yaz: f(−1) = (−1)<sup>2</sup> − 2(−1) + 3 = 1 + 2 + 3 = 6; f(2) = 4 − 4 + 3 = 3; toplam 9. 7, (−1)<sup>2</sup> yerine −1<sup>2</sup> = −1 yazanın sonucudur (f(−1) = 4). 5, −2 · (−1) çarpımını −2 alanın sonucudur (f(−1) = 2). 17, f(2)'de −2 · 2'nin işaretini kaçırıp 4 + 4 + 3 = 11 bulanın sonucudur. 2 ise f(−1) + f(2)'yi f(−1 + 2) = f(1) sananın sonucudur; f(a) + f(b) genelde f(a + b) değildir.</p></div></li>
+
+<li data-c="C"><p class="q">A = {−2, −1, 0, 1, 2} olmak üzere f: A → R, f(x) = x<sup>2</sup> + 1 fonksiyonunun görüntü kümesi kaç elemanlıdır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>3</li><li>4</li><li>5</li></ul>
+<div class="coz"><p>Görüntüler: f(−2) = 5, f(−1) = 2, f(0) = 1, f(1) = 2, f(2) = 5. Görüntü kümesi {1, 2, 5}, üç elemanlı. Tekrarlanan çıktılar kümede bir kez yazılır. 5, tanım kümesinin eleman sayısını görüntü kümesininki sanmanın sonucudur. 2, 0'ın görüntüsünü unutup yalnızca {2, 5}'i saymanın; 4, tekrarlardan yalnızca birini atmanın sonucudur. 1 hiçbir hesapla çıkmaz, çünkü f(0) ile f(1) farklıdır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x + 2) = 3x − 1 olduğuna göre f(5) kaçtır?</p>
+<ul class="sec"><li>8</li><li>11</li><li>12</li><li>14</li><li>20</li></ul>
+<div class="coz"><p>Parantezin içi 5 olmalı: x + 2 = 5, x = 3. Sağ tarafa koy: 3 · 3 − 1 = 8. Kural olarak da bulunabilir: t = x + 2 ise x = t − 2 ve f(t) = 3(t − 2) − 1 = 3t − 7; f(5) = 8. 14, verilen 3x − 1'e doğrudan 5 koyanın; 20, x = 5 + 2 = 7 alanın sonucudur (kaydırmayı ters yöne yapmak). 12, f(x) = 3x − 3 diye "2'yi sağdan da çıkaran"ın; 11, x = 4 alıp 3 · 4 − 1 yazanın sonucudur.</p></div></li>
+
+<li data-c="B"><p class="q">s(A) = 3 ve s(B) = 4 olmak üzere 1 ∈ A ve b ∈ B veriliyor. A'dan B'ye tanımlanan fonksiyonlardan kaç tanesinde f(1) = b olur?</p>
+<ul class="sec"><li>12</li><li>16</li><li>27</li><li>64</li><li>81</li></ul>
+<div class="coz"><p>1'in çıktısı b'ye sabitlendi, seçeneği 1. A'nın kalan iki elemanının her biri 4 seçenekten birini seçer: 1 · 4 · 4 = 16. 64 = 4<sup>3</sup>, koşulsuz bütün fonksiyonların sayısıdır. 81 = 3<sup>4</sup>, tabanla üssün yerini değiştirenin; 27 = 3<sup>3</sup>, koşulu yanlış tarafa uygulayanın sonucudur. 12 = 3 · 4, seçimleri çarpmak yerine eleman sayılarını çarpanın sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q">f = {(−1, 2), (0, 3), (1, 0), (2, 5)} ve g = {(0, 4), (1, 1), (2, 0), (3, 6)} fonksiyonları veriliyor. <span class="kes"><span>f</span><span>g</span></span> fonksiyonunun tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−1, 0, 1, 2, 3}</li><li>{0, 1, 2}</li><li>{0, 2}</li><li>{0, 1}</li><li>{−1, 3}</li></ul>
+<div class="coz"><p>Ortak tanım kümesi {−1, 0, 1, 2} ∩ {0, 1, 2, 3} = {0, 1, 2}. Paydada g var; g(2) = 0 olduğu için 2 çıkarılır: {0, 1}. f(1) = 0 olması sorun değildir, (f/g)(1) = 0/1 = 0. B, sıfıra bölmeyi unutanın; C, paydayı değil payı sıfır yapan elemanı (1) atanın; A, kesişim yerine birleşim alanın; E, ortak olmayan elemanları alanın cevabıdır.</p></div></li>
+
+<li data-c="A"><p class="q">Her x gerçek sayısı için f(x) + 2f(1 − x) = 3x + 3 olduğuna göre f(2) kaçtır?</p>
+<ul class="sec"><li>−3</li><li>1</li><li>3</li><li>6</li><li>9</li></ul>
+<div class="coz"><p>x = 2 yazınca eşi 1 − 2 = −1: f(2) + 2f(−1) = 9. x = −1 yazınca eşi 2: f(−1) + 2f(2) = 0. f(2) = a, f(−1) = b: a + 2b = 9 ve b = −2a; yerine koyunca a − 4a = 9, a = −3 (b = 6). Denetim: −3 + 12 = 9 ✓, 6 − 6 = 0 ✓. 6, bulunan f(−1)'i cevap sanmaktır. 9, yalnızca sağ tarafı hesaplamaktır. 3, f(2) ile f(−1)'i eşit sayıp 3f(2) = 9 yazmaktır. 1, x = −1 için sağ tarafı −3 + 3 yerine 3 + 3 = 6 alan işaret hatasının sonucudur.</p></div></li>
+
+<li data-c="A" data-k="mat-1"><p class="q">İki basamaklı en küçük tam sayı ile en büyük negatif tam sayının toplamı kaçtır?</p>
+<ul class="sec"><li>−100</li><li>−99</li><li>−11</li><li>9</li><li>10</li></ul>
+<div class="coz"><p>Tam sayılarda negatifler de vardır; iki basamaklı en küçük tam sayı −99'dur. En büyük negatif tam sayı, sıfıra en yakın negatif olan −1'dir. Toplam −100. −99, en büyük negatif tam sayıyı 0 sanmanın (0 ne pozitif ne negatiftir); 9, iki basamaklı en küçük tam sayıyı 10 sanmanın; 10, ikisini birden yanlış alanın sonucudur. −11, −10'u en küçük sanmaktır; oysa −99 &lt; −10.</p></div></li>
+
+<li data-c="C" data-k="mat-4"><p class="q">Ardışık 7 tek sayının toplamı 91 olduğuna göre bu sayıların en büyüğü kaçtır?</p>
+<ul class="sec"><li>13</li><li>17</li><li>19</li><li>21</li><li>25</li></ul>
+<div class="coz"><p>Ardışık sayılarda ortanca terim ortalamaya eşittir: 91 ÷ 7 = 13, dördüncü terim. Ardışık tek sayılar 2'şer artar; en büyük terim ortancadan 3 adım ileridedir: 13 + 3 · 2 = 19. Sayılar 7, 9, 11, 13, 15, 17, 19; toplamı 91 ✓. 13 ortanca terimin kendisidir. 17, iki adım ilerlemektir. 25, en büyüğü ortanca + 2 · 6 sanmaktır (6 adım, ilk terimden sona olan uzaklıktır). 21, dört adım ilerlemektir.</p></div></li>
+
+<li data-c="D" data-k="mat-8"><p class="q"><span class="kes"><span>3</span><span>4</span></span>'ü 18 olan sayının <span class="kes"><span>5</span><span>6</span></span>'sı kaçtır?</p>
+<ul class="sec"><li>11,25</li><li>15</li><li>18</li><li>20</li><li>24</li></ul>
+<div class="coz"><p>Sayıya x de: x · 3/4 = 18, x = 18 · 4/3 = 24. Sayının 5/6'sı 24 · 5/6 = 20. 24, sayının kendisidir; soru onun 5/6'sını istiyor. 15, 18'in 5/6'sını almaktır; 18 bütün değil, bütünün 3/4'üdür. 11,25, bütünü 18 · 3/4 = 13,5 sanıp onun 5/6'sını almaktır (kesri ters yönde kullanmak). 18, verilen sayıyı cevap sanmaktır.</p></div></li>
+
+<li data-c="E" data-k="mat-11"><p class="q">3<sup>x</sup> = 5 olduğuna göre 9<sup>x + 1</sup> ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li>26</li><li>45</li><li>75</li><li>135</li><li>225</li></ul>
+<div class="coz"><p>9<sup>x + 1</sup> = 9<sup>x</sup> · 9 ve 9<sup>x</sup> = (3<sup>2</sup>)<sup>x</sup> = (3<sup>x</sup>)<sup>2</sup> = 25. Sonuç 25 · 9 = 225. 45, 9<sup>x</sup> yerine 5 yazmaktır (tabanı 3'e çevirmeyi unutmak). 135, 9<sup>x</sup>'i 3 · 3<sup>x</sup> = 15 sanmaktır; oysa 9<sup>x</sup>, 3<sup>x</sup>'in karesidir. 75, 9 yerine 3 ile çarpmaktır. 26, üssün içindeki +1'i dışarıya toplanan 1 sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-15"><p class="q">x + <span class="kes"><span>1</span><span>x</span></span> = 4 olduğuna göre x<sup>2</sup> + <span class="kes"><span>1</span><span>x<sup>2</sup></span></span> kaçtır?</p>
+<ul class="sec"><li>8</li><li>14</li><li>15</li><li>16</li><li>18</li></ul>
+<div class="coz"><p>İki yanın karesini al: (x + 1/x)<sup>2</sup> = x<sup>2</sup> + 2 · x · (1/x) + 1/x<sup>2</sup> = x<sup>2</sup> + 2 + 1/x<sup>2</sup> = 16. Buradan x<sup>2</sup> + 1/x<sup>2</sup> = 14. 16, çapraz terimi unutup (a + b)<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup> sanmaktır. 18, 2'yi çıkarmak yerine eklemektir. 15, çapraz terimi 2 yerine 1 almaktır. 8, kare almak yerine 2 ile çarpmaktır.</p></div></li>
+
+<li data-c="E" data-k="mat-18"><p class="q">x + y = 10, y + z = 14 ve x + z = 12 olduğuna göre z kaçtır?</p>
+<ul class="sec"><li>4</li><li>5</li><li>6</li><li>7</li><li>8</li></ul>
+<div class="coz"><p>Üç denklemi taraf tarafa topla: 2(x + y + z) = 36, x + y + z = 18. z = 18 − (x + y) = 18 − 10 = 8. Denetim: x = 4, y = 6, z = 8 üç denklemi de sağlar. 4 ve 6, x ile y'nin değerleridir; istenen bilinmeyeni karıştırmaktır. 7, 14'ü ikiye bölmek, 5, 10'u ikiye bölmektir; her biri iki bilinmeyeni eşit sanmaktır.</p></div></li>
+
+<li data-c="D" data-k="mat-22"><p class="q"><span class="kes"><span>a</span><span>b</span></span> = <span class="kes"><span>2</span><span>3</span></span>, <span class="kes"><span>b</span><span>c</span></span> = <span class="kes"><span>4</span><span>5</span></span> ve a + b + c = 70 olduğuna göre c kaçtır?</p>
+<ul class="sec"><li>14</li><li>16</li><li>24</li><li>30</li><li>35</li></ul>
+<div class="coz"><p>b iki oranda ortak; 3 ile 4'ün EKOK'u 12'ye eşitle: a : b = 8 : 12, b : c = 12 : 15, yani a : b : c = 8 : 12 : 15. Toplam 35 pay 70'e eşit, bir pay 2: a = 16, b = 24, c = 30. 35, oranları ortak terim eşitlemeden 2 : 3 : 5 diye birleştirmenin sonucudur (10 pay, bir pay 7, c = 35). 16 ve 24, a ile b'dir. 14, 70'i 5'e bölmektir.</p></div></li>
+
+<li data-c="C" data-k="mat-25"><p class="q">Ali parasının önce <span class="kes"><span>1</span><span>3</span></span>'ünü, sonra kalan parasının <span class="kes"><span>1</span><span>4</span></span>'ünü harcıyor ve geriye 150 TL kalıyor. Ali'nin başlangıçta kaç TL'si vardı?</p>
+<ul class="sec"><li>240</li><li>270</li><li>300</li><li>360</li><li>450</li></ul>
+<div class="coz"><p>İlk harcamadan sonra paranın 2/3'ü kalır. Kalanın 1/4'ü harcanınca kalanın 3/4'ü kalır: 2/3 · 3/4 = 1/2. Paranın yarısı 150 ise tamamı 300. Denetim: 300'ün 1/3'ü 100, kalan 200; 200'ün 1/4'ü 50, kalan 150 ✓. 360, ikinci harcamayı tamamın 1/4'ü sanıp harcananı 1/3 + 1/4 = 7/12 almaktır. 450, ikinci harcamayı yok sayıp 150'yi paranın 1/3'ü sanmaktır. 240 ile başlarsan 80 harcanır, kalan 160'ın 1/4'ü 40'tır, geriye 120 kalır; 270 ile başlarsan geriye 135 kalır. İkisi de tutmaz.</p></div></li>
+
+<li data-c="B" data-k="mat-29"><p class="q">Saat 3.40'ı gösterdiğinde akrep ile yelkovan arasındaki küçük açı kaç derecedir?</p>
+<ul class="sec"><li>120</li><li>130</li><li>150</li><li>220</li><li>230</li></ul>
+<div class="coz"><p>Açı = |30 · saat − 5,5 · dakika| = |90 − 220| = 130°. Gerekçe: yelkovan 40 dakikada 6 · 40 = 240°'de; akrep saat 3'ün yerinden (90°) 40 dakikada 0,5 · 40 = 20° ilerlemiş, 110°'de. Fark 130°. 230 = 360 − 130 büyük açıdır; soru küçük açıyı istiyor. 150, akrebin 40 dakikada ilerlediğini unutup onu 90°'de sanmaktır (240 − 90). 220, yalnızca 5,5 · 40 hesaplamaktır. 120, akrebi tam 4'ün üstünde (120°'de) sanmaktır; 40 dakikada akrep 4'e henüz varmamıştır.</p></div></li>
+
+<li data-c="C" data-k="mat-32"><p class="q">Bir telefon tarifesinde aylık ücret, sabit bir ücret ile konuşulan dakika başına ödenen ücretin toplamıdır. 100 dakika konuşan biri 140 TL, 250 dakika konuşan biri 230 TL ödediğine göre sabit ücret kaç TL'dir?</p>
+<ul class="sec"><li>40</li><li>60</li><li>80</li><li>90</li><li>100</li></ul>
+<div class="coz"><p>150 dakikalık fark 90 TL'lik farka yol açmış; dakika başına 90/150 = 0,6 TL. 100 dakikanın değişken kısmı 60 TL, sabit ücret 140 − 60 = 80 TL. Denetim: 80 + 0,6 · 250 = 230 ✓. 60, değişken kısmın kendisidir. 90, iki ücretin farkıdır. 100 ve 40, birim ücreti yanlış bulanların sonucudur: birim 0,4 TL sanılırsa 140 − 40 = 100, birim 1 TL sanılırsa 140 − 100 = 40 çıkar ve ikisi de 250 dakikada 230'u vermez.</p></div></li>
+
+<li data-c="B" data-k="mat-33"><p class="q">a ★ b = 2a − b + a · b işlemi tanımlanıyor. Buna göre (1 ★ 2) ★ 3 işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>2</li><li>7</li><li>9</li><li>13</li><li>16</li></ul>
+<div class="coz"><p>Önce parantez: 1 ★ 2 = 2 · 1 − 2 + 1 · 2 = 2. Sonra 2 ★ 3 = 2 · 2 − 3 + 2 · 3 = 4 − 3 + 6 = 7. 2, işlemi sağdan başlatıp 1 ★ (2 ★ 3) = 1 ★ 7 = 2 − 7 + 7 hesaplamaktır; bu işlemde parantezin yeri sonucu değiştirir. 13, 2 ★ 3'te −b'yi +b almaktır (4 + 3 + 6). 9, a · b çarpımını a + b sanmaktır (1 ★ 2 = 3, sonra 3 ★ 3 = 9). 16, a ile b'nin rollerini değiştirip 2b − a + ab hesaplamaktır (1 ★ 2 = 5, 5 ★ 3 = 16). Her adımı ayrı satıra yazarsan bu hatalar çıkmaz.</p></div></li>
+
+<li data-c="E" data-k="mat-33"><p class="q">Bir torbada 5 kırmızı, 4 mavi ve 3 yeşil top vardır. Torbadan bakmadan çekilen toplar arasında her renkten en az bir top bulunmasını garanti etmek için en az kaç top çekilmelidir?</p>
+<ul class="sec"><li>3</li><li>6</li><li>7</li><li>9</li><li>10</li></ul>
+<div class="coz"><p>Garanti sorularında en şanssız durum düşünülür: önce en kalabalık iki rengin bütün topları gelir, 5 kırmızı ve 4 mavi, yani 9 top, hâlâ yeşil yok. 10. top mutlaka yeşildir. Cevap 10. 9, en kötü durumu bulup bir topu eklemeyi unutmaktır. 3, en şanslı durumdur; garanti değildir. 7, "aynı renkten en az 3 top" sorusunun cevabıdır (her renkten 2, sonra 1 tane daha). 6, her renkten ikişer almaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-34"><p class="q">5 elemanlı bir kümenin alt kümelerinden kaç tanesi, kümenin belirli iki elemanını birlikte içerir?</p>
+<ul class="sec"><li>4</li><li>8</li><li>16</li><li>24</li><li>32</li></ul>
+<div class="coz"><p>İki eleman her alt kümede bulunmak zorunda; onlar için seçim yok. Kalan 3 elemanın her biri ya alınır ya alınmaz: 2<sup>3</sup> = 8. 32, bütün alt kümelerin sayısıdır (2<sup>5</sup>). 16, yalnızca bir elemanın bulunmasını istemektir (2<sup>4</sup>). 24 = 32 − 8, iki elemanı birlikte içermeyen alt kümelerin sayısıdır; soru tersini istiyor. 4 = 2<sup>2</sup>, seçimi sabit iki eleman üzerinden yapmaktır; oysa seçim yapan, kalan üç elemandır.</p></div></li>
+
+<li data-c="A" data-k="mat-34"><p class="q">(p ⇒ q)′ önermesi aşağıdakilerden hangisine denktir?</p>
+<ul class="sec"><li>p ∧ q′</li><li>p′ ∧ q</li><li>p′ ∨ q</li><li>q ⇒ p</li><li>p′ ⇒ q′</li></ul>
+<div class="coz"><p>p ⇒ q ≡ p′ ∨ q. Olumsuzunu De Morgan ile al: (p′ ∨ q)′ ≡ p ∧ q′. Anlamı da tutarlı: "ise" önermesinin yanlış olduğu tek durum p doğru, q yanlış durumudur. C, p ⇒ q'nun kendisine denktir; olumsuzu değildir. B, olumsuzu yanlış bileşene uygulamaktır. D karşıt, E terstir; ikisi birbirine denktir ama (p ⇒ q)′'ye denk değildir: p ≡ 1, q ≡ 1 için ikisi de 1, (p ⇒ q)′ ise 0'dır.</p></div></li>
+
+<li data-c="D" data-k="mat-35"><p class="q">s(A) = 12, s(B) = 9 ve s(A ∪ B) = 17 olduğuna göre s(A − B) kaçtır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>5</li><li>8</li><li>13</li></ul>
+<div class="coz"><p>s(A ∪ B) = s(A) + s(B) − s(A ∩ B) ⇒ 17 = 21 − s(A ∩ B) ⇒ s(A ∩ B) = 4. A − B, A'nın B'de olmayan elemanlarıdır: 12 − 4 = 8. 4, kesişimin kendisidir. 5, B − A'dır (9 − 4). 3, s(A) − s(B) farkıdır; kesişim düşünülmeden alınmış. 13, s(A ∪ B) − s(A ∩ B)'dir; bu, yalnız bir kümede olanların toplamıdır (8 + 5).</p></div></li>
+
+<li data-c="A" data-k="mat-35"><p class="q">s(A) = s(B) + 2 ve s(A × B) = 15 olduğuna göre s(A ∪ B) en az kaçtır?</p>
+<ul class="sec"><li>5</li><li>6</li><li>7</li><li>8</li><li>15</li></ul>
+<div class="coz"><p>s(A × B) = s(A) · s(B) = 15 ve s(A) iki fazla: 5 · 3 = 15, yani s(A) = 5, s(B) = 3. Birleşimin en küçük olması için kesişim en büyük olmalı; B ⊂ A ise kesişim 3, birleşim 5 + 3 − 3 = 5. 8, kümeleri ayrık alıp en büyük değeri bulmaktır. 6 ve 7 ara değerlerdir (kesişim 2 ya da 1); olabilir ama en az değildir. 15, A × B'nin eleman sayısını birleşimin eleman sayısı sanmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-35">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-36">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-37">Sonraki parça: fonksiyon türleri ve doğrusal fonksiyon</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"fonksiyon kavramı tanım kümesi değer kümesi görüntü kümesi konu anlatımı"</li>
+  <li>"fonksiyon grafiği düşey doğru testi fonksiyon mudur"</li>
+  <li>"f(x+1) verilip f(x) bulma fonksiyonda değer bulma TYT"</li>
+  <li>"fonksiyon sayısı fonksiyonlarda dört işlem ortak tanım kümesi"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler (tanım kümesi, değer kümesi, görüntü kümesi, fonksiyonların eşitliği, fonksiyonlarda dört işlem) 2018 Ortaöğretim Matematik Öğretim Programı'nın 10. sınıf "Fonksiyonlar" ünitesindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: çözümlü örnek 1–7'deki bütün sayılar; f(a + 1) = a<sup>2</sup> − a − 1 ve f(2x) = 4x<sup>2</sup> − 6x + 1 açılımları (−3 ile 3 arası değerlerle); f(x) = 2x + 5, f(x) = x + 1, f(x) = 3 − 3x kurallarının verilen bağıntıları sağladığı; 3 elemanlıdan 2 elemanlıya 8 fonksiyonun tablosu; grafik okuma şeklindeki parçalı grafiğin kökleri, görüntü kümesi ve y = 1 kesişimleri; 1,8C + 32 dönüşümünün 0, 25, 100 ve −40 için değerleri; 24 quiz sorusunun doğru cevapları ve çözümlerde adı geçen çeldirici hesapları.</li>
+  <li>Fonksiyonların eşitliği tanımında bu parça "aynı tanım kümesinde her x için f(x) = g(x)" ölçütünü kullandı. Bazı kaynaklar değer kümelerinin de aynı olmasını şart koşar; ders kitabının hangi biçimi kullandığını doğrulamadım. Sınav sorularında bu ayrım genellikle sorulmaz.</li>
+  <li>Fahrenheit dönüşümü (°F = 1,8 · °C + 32) yaygın ve standart bir bağıntıdır; örnek yalnızca bir model olarak kullanıldı.</li>
+  <li>Fonksiyondan TYT'de yıl yıl kaç soru geldiğini resmî kaynaktan doğrulamadım; "sınav bu kalıpları sorar" anlatımı soru tiplerinin yaygın sınıflamasına dayanıyor.</li>
+  <li>Tekrar soruları Parça 1, 4, 8, 11, 15, 18, 22, 25, 29, 32'den birer, Parça 33, 34, 35'ten ikişer tanedir (toplam 16 sınırı; eski parçalar eşit aralıklarla seçildi). Parça 32 ve 35 bu parça yazılırken depoda yoktu; bu iki parçadan gelen tekrar sorularını kapsam listesindeki konulara ve terimlere göre yazdım, metinleriyle karşılaştıramadım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

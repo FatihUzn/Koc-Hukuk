@@ -1,0 +1,667 @@
+<article class="chapter ders" id="c-mat-35">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 35 · Mantık ve kümeler 2</div>
+<h1>Küme işlemleri, küme problemleri ve kartezyen çarpım: kümelerle hesap yapmak</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>40 kişilik bir sınıfta 25 kişi İngilizce, 18 kişi Almanca biliyor; 7 kişi ikisini de bilmiyor. 25 + 18 = 43 eder, sınıfta ise 40 kişi var; üstelik bu 40 kişinin 7'si hiçbir dil bilmiyor. Fazladan sayılan kişiler nereden geliyor, kaç kişi iki dili birden biliyor ve bunu her soruda şaşmadan hesaplamanın yolu ne?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 34 (küme, eleman, alt küme, "ve", "veya", "değil" bağlaçları ve De Morgan kuralları), Parça 4 (ardışık tam sayıların sayısı: son − ilk + 1), Parça 18 (iki bilinmeyenli denklem sistemi), Parça 19 (aralık gösterimi). Yanında kâğıt kalem olsun; bu parçanın sorularının çoğu Venn şeması çizmeden çözülmez.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 34'te kümenin ne olduğunu, alt kümeyi ve alt küme sayısını gördün. Orada kümeler duruyordu; bu parçada onlarla işlem yapacağız. Tıpkı sayılarda toplama ve çarpma olduğu gibi kümelerde de iki kümeden yeni bir küme üreten işlemler var: birleşim, kesişim, fark ve tümleme. Bu işlemlerin her biri, Parça 34'teki bir bağlacın kümelerdeki karşılığıdır. Bu yüzden kuralların çoğunu yeniden ezberlemeyeceksin; mantıktan taşıyacaksın.</p>
+
+<p>Sınavda kümelerden gelen soruların büyük kısmı <strong>küme problemleri</strong>dir: "Bir grupta şu kadar kişi şunu, şu kadar kişi bunu yapıyor; yalnız birini yapan kaç kişi?" Bu soruların hepsi aynı iki araçla çözülür: eleman sayısı formülü ve doğru doldurulmuş bir Venn şeması. İkinci büyük soru tipi <strong>iki özellikli tablo</strong> sorularıdır (kız-erkek ile gözlüklü-gözlüksüz gibi). Üçüncüsü "en az kaç, en çok kaç" sorularıdır. Parçanın sonunda ise <strong>kartezyen çarpım</strong> var: iki kümeden sıralı ikililer üretmek. Bu kavram kendi başına kısa bir konudur ama Parça 36'daki fonksiyonun ve koordinat düzleminin dayandığı zemindir.</p>
+
+<p>Sıramız şöyle: dört işlem ve Venn şemasındaki görüntüleri; işlemlerin özellikleri ve mantıkla koşutluğu; eleman sayısı formülü; iki ve üç kümeli problemler; tabloyla çözülen sorular; en az ve en çok değerler; sıralı ikili; kartezyen çarpım ve grafiği.</p>
+
+<h2 class="s">1. Dört işlem: birleşim, kesişim, fark, tümleme</h2>
+
+<p>Her işlemi aynı soruyla tanımlayacağız: <strong>"Bir x nesnesi yeni kümeye ne zaman girer?"</strong> Bir kümeyi tanımlamak, hangi nesnenin içeride olduğunu kesin olarak söylemekti (Parça 34'teki "iyi tanımlılık"). Öyleyse yeni bir küme kurmanın en temiz yolu, üyelik koşulunu yazmaktır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Birleşim:</strong> A ∪ B = {x : x ∈ A <em>veya</em> x ∈ B}. İki kümeden en az birinde bulunan elemanların kümesidir.<br><strong>Kesişim:</strong> A ∩ B = {x : x ∈ A <em>ve</em> x ∈ B}. İki kümenin ikisinde de bulunan elemanların kümesidir.</p></div>
+
+<p>Birleşimde ortak elemanlar bir kez yazılır, çünkü Parça 34'te gördüğün gibi bir kümede aynı eleman iki kez bulunmaz. A = {1, 2, 3}, B = {3, 4} ise A ∪ B = {1, 2, 3, 4} olur, {1, 2, 3, 3, 4} değil. Bu ayrıntı, eleman sayısı formülünün çıkış noktası olacak.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Fark:</strong> A − B = {x : x ∈ A ve x ∉ B}. A'da olup B'de olmayan elemanların kümesidir; "A fark B" ya da "yalnız A" diye okunur ve A \ B biçiminde de yazılır.<br><strong>Tümleme:</strong> A′ = {x : x ∈ E ve x ∉ A}. Evrensel kümede olup A'da olmayan elemanların kümesidir; A′ = E − A.</p></div>
+
+<p>Farkta sıra önemlidir. A − B, A'dan B'nin elemanlarını atmak demektir; B − A ise B'den A'nınkileri atmak. A = {1, 2, 3}, B = {3, 4} için A − B = {1, 2}, B − A = {4} olur. Tümleme ise her zaman evrensel kümeye göre yapılır; E değişirse A′ de değişir. Bu yüzden tümleme sorularında ilk iş E'yi açıkça yazmaktır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Ortak elemanı olmayan iki kümeye <strong>ayrık kümeler</strong> denir: A ∩ B = ∅. Bir kümeyle tümleyeni her zaman ayrıktır (A ∩ A′ = ∅); A − B ile B de ayrıktır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Dört Venn şeması: A birleşim B'de iki dairenin tamamı, A kesişim B'de ortak bölge, A fark B'de yalnızca A'nın B dışındaki hilal biçimli kısmı, A tümleyende A dairesinin dışındaki her yer taranmış.">
+  <rect class="sv-k" x="8" y="8" width="188" height="136" rx="10" />
+  <circle class="sv-l" cx="80" cy="90" r="36" />
+  <circle class="sv-l" cx="124" cy="90" r="36" />
+  <circle class="sv-c" cx="80" cy="90" r="36" />
+  <circle class="sv-c" cx="124" cy="90" r="36" />
+  <text class="sv-b" x="102" y="32" text-anchor="middle">A ∪ B</text>
+  <text class="sv-t" x="60" y="95" text-anchor="middle">A</text>
+  <text class="sv-t" x="144" y="95" text-anchor="middle">B</text>
+  <text class="sv-s" x="18" y="136">E</text>
+
+  <rect class="sv-k" x="204" y="8" width="188" height="136" rx="10" />
+  <path class="sv-l" d="M298 61.5A36 36 0 0 0 298 118.5A36 36 0 0 0 298 61.5Z" />
+  <circle class="sv-c" cx="276" cy="90" r="36" />
+  <circle class="sv-c" cx="320" cy="90" r="36" />
+  <text class="sv-b" x="298" y="32" text-anchor="middle">A ∩ B</text>
+  <text class="sv-t" x="256" y="95" text-anchor="middle">A</text>
+  <text class="sv-t" x="340" y="95" text-anchor="middle">B</text>
+  <text class="sv-s" x="214" y="136">E</text>
+
+  <rect class="sv-k" x="8" y="156" width="188" height="136" rx="10" />
+  <path class="sv-l" d="M102 209.5A36 36 0 1 0 102 266.5A36 36 0 0 1 102 209.5Z" />
+  <circle class="sv-c" cx="80" cy="238" r="36" />
+  <circle class="sv-c" cx="124" cy="238" r="36" />
+  <text class="sv-b" x="102" y="180" text-anchor="middle">A − B</text>
+  <text class="sv-t" x="60" y="243" text-anchor="middle">A</text>
+  <text class="sv-t" x="144" y="243" text-anchor="middle">B</text>
+  <text class="sv-s" x="18" y="284">E</text>
+
+  <rect class="sv-l" x="204" y="156" width="188" height="136" rx="10" />
+  <circle class="sv-k" cx="276" cy="238" r="36" />
+  <circle class="sv-c" cx="320" cy="238" r="36" />
+  <text class="sv-b" x="298" y="180" text-anchor="middle">A′</text>
+  <text class="sv-t" x="256" y="243" text-anchor="middle">A</text>
+  <text class="sv-t" x="340" y="243" text-anchor="middle">B</text>
+  <text class="sv-s" x="214" y="284">E</text>
+</svg>
+<figcaption>Taralı bölge her şemada işlemin sonucudur. A ∪ B iki dairenin tamamı; A ∩ B yalnızca ortak bölge; A − B, A'nın B'ye değmeyen hilali; A′ ise A dairesinin dışında kalan her yer, B'nin A dışındaki parçası da dahil.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> E = {1, 2, 3, …, 10}, A = {1, 2, 3, 4, 5, 6} ve B = {4, 5, 6, 7, 8} veriliyor. A ∪ B, A ∩ B, A − B, B − A, A′ ve (A ∪ B)′ kümelerini bul; (A ∪ B)′ ile A′ ∩ B′ kümelerini karşılaştır.</p>
+<p><strong>Adım 1.</strong> Ortak elemanları belirle; bütün işlemler buna dayanır.</p>
+<span class="mat">A ∩ B = {4, 5, 6} <span class="g">(ikisinde de olanlar)</span></span>
+<p><strong>Adım 2.</strong> Birleşimi yaz; ortakları bir kez.</p>
+<span class="mat">A ∪ B = {1, 2, 3, 4, 5, 6, 7, 8} <span class="g">(en az birinde olanlar)</span></span>
+<p><strong>Adım 3.</strong> İki farkı ayrı ayrı yaz.</p>
+<span class="mat">A − B = {1, 2, 3} <span class="g">(A'dan 4, 5, 6 atıldı)</span></span>
+<span class="mat">B − A = {7, 8} <span class="g">(B'den 4, 5, 6 atıldı)</span></span>
+<p><strong>Adım 4.</strong> Tümlemeler E'ye göre.</p>
+<span class="mat">A′ = {7, 8, 9, 10} <span class="g">(E'de olup A'da olmayanlar)</span></span>
+<span class="mat">B′ = {1, 2, 3, 9, 10} <span class="g">(E'de olup B'de olmayanlar)</span></span>
+<span class="mat">(A ∪ B)′ = {9, 10} <span class="g">(E'den A ∪ B atıldı)</span></span>
+<p><strong>Adım 5.</strong> Karşılaştırma.</p>
+<span class="mat">A′ ∩ B′ = {7, 8, 9, 10} ∩ {1, 2, 3, 9, 10} = {9, 10} <span class="g">(ikisinde de olanlar)</span></span>
+<p><strong>Sonuç:</strong> A ∪ B = {1, …, 8}, A ∩ B = {4, 5, 6}, A − B = {1, 2, 3}, B − A = {7, 8}, A′ = {7, 8, 9, 10}, (A ∪ B)′ = {9, 10} ve (A ∪ B)′ = A′ ∩ B′. Bu eşitlik rastlantı değil; bir sonraki başlıkta göreceğin De Morgan kuralıdır. Kontrol: A − B, B − A ve A ∩ B ayrık üç parçadır ve birleşimleri A ∪ B'yi verir: 3 + 2 + 3 = 8 eleman ✓.</p></div>
+
+<h2 class="s">2. İşlemler mantığın kopyasıdır</h2>
+
+<p>Tanımlara bir daha bak: birleşimde "veya", kesişimde "ve", tümlemede "değil" geçiyor. Bir x nesnesi için "x ∈ A" bir önermedir; ya doğrudur ya yanlış. O hâlde "x ∈ A ∩ B" önermesi, "x ∈ A" ile "x ∈ B" önermelerinin "ve" ile bağlanmasıdır. Parça 34'te bağlaçlar için kanıtladığın her denklik, kümelere aynen geçer; yalnızca işaretler değişir.</p>
+
+<div class="tablo"><table>
+<tr><th>Mantık (Parça 34)</th><th>Kümeler</th><th>Bağlantı</th></tr>
+<tr><td>p ∧ q ("ve")</td><td>A ∩ B</td><td>x ∈ A ∩ B ⇔ (x ∈ A) ∧ (x ∈ B)</td></tr>
+<tr><td>p ∨ q ("veya")</td><td>A ∪ B</td><td>x ∈ A ∪ B ⇔ (x ∈ A) ∨ (x ∈ B)</td></tr>
+<tr><td>p′ ("değil")</td><td>A′</td><td>x ∈ A′ ⇔ (x ∈ A)′</td></tr>
+<tr><td>p ∧ q′</td><td>A − B = A ∩ B′</td><td>A'da ve B'de değil</td></tr>
+<tr><td>1 (her zaman doğru)</td><td>E</td><td>her x evrensel kümededir</td></tr>
+<tr><td>0 (her zaman yanlış)</td><td>∅</td><td>hiçbir x boş kümede değildir</td></tr>
+<tr><td>p ⇒ q (totoloji iken)</td><td>A ⊂ B</td><td>x ∈ A ise x ∈ B</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>A − B = A ∩ B′.</strong> Nedeni tanımda: A − B'ye girmek için "A'da olmak ve B'de olmamak" gerekir; "B'de olmamak" B′'de olmaktır. Bu eşitlik sadeleştirme sorularının anahtarıdır: farkı gördüğün yerde onu kesişime çevir, sonra bilinen özellikleri kullan.</p></div>
+
+<h3>İşlemlerin özellikleri</h3>
+
+<p>Aşağıdaki tablonun her satırı, Parça 34'teki bağlaç tablosunun bir satırının çevirisidir. Örneğin A ∪ E = E satırı, "p ∨ 1 ≡ 1" denkliğinden gelir: E her şeyi içerdiği için her x "A'da veya E'de" önermesini doğrular.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Birleşim</th><th>Kesişim</th></tr>
+<tr><td>Tek kuvvet</td><td>A ∪ A = A</td><td>A ∩ A = A</td></tr>
+<tr><td>Değişme</td><td>A ∪ B = B ∪ A</td><td>A ∩ B = B ∩ A</td></tr>
+<tr><td>Birleşme</td><td>(A ∪ B) ∪ C = A ∪ (B ∪ C)</td><td>(A ∩ B) ∩ C = A ∩ (B ∩ C)</td></tr>
+<tr><td>Dağılma</td><td>A ∪ (B ∩ C) = (A ∪ B) ∩ (A ∪ C)</td><td>A ∩ (B ∪ C) = (A ∩ B) ∪ (A ∩ C)</td></tr>
+<tr><td>Boş kümeyle</td><td>A ∪ ∅ = A</td><td>A ∩ ∅ = ∅</td></tr>
+<tr><td>Evrensel kümeyle</td><td>A ∪ E = E</td><td>A ∩ E = A</td></tr>
+<tr><td>Tümleyeniyle</td><td>A ∪ A′ = E</td><td>A ∩ A′ = ∅</td></tr>
+</table></div>
+
+<p>Bunlara üç tane daha ekle: (A′)′ = A (çift olumsuz), E′ = ∅ ve ∅′ = E. Bir de alt küme durumu: <strong>A ⊂ B ise A ∩ B = A, A ∪ B = B ve A − B = ∅</strong> olur. Küçük kümenin her elemanı zaten büyükte olduğu için ortak kısım küçük kümenin kendisidir, birleşim büyük kümeye bir şey katmaz, A'dan atılacak olmayan bir şey de kalmaz. Farkın ise değişme özelliği yoktur; birleşme özelliği de yoktur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>De Morgan kuralları:</strong> (A ∪ B)′ = A′ ∩ B′ ve (A ∩ B)′ = A′ ∪ B′. Tümleme paranteze dağılırken her küme tümlenir ve işlem öbürüne döner: ∪ ↔ ∩.</p></div>
+
+<p>Gerekçe Parça 34'ten hazır geliyor: x ∈ (A ∪ B)′ demek, "x ∈ A veya x ∈ B" önermesinin yanlış olması demektir; De Morgan ile bu, "x ∉ A ve x ∉ B" önermesine, yani x ∈ A′ ∩ B′'ye denktir. Günlük dille: "iki dilden en az birini bilenler"in dışında kalanlar, "ikisini de bilmeyenler"dir. Örnek 1'de bunu sayılarla da gördün.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Tümlemeyi dağıtırken işlemi çevirmeyi unutmak.</strong> (A ∩ B)′ = A′ ∩ B′ yazmak yanlıştır. Örnek 1'deki kümelerle dene: (A ∩ B)′ = {1, 2, 3, 7, 8, 9, 10}, oysa A′ ∩ B′ = {9, 10}. Tek bir karşı örnek, bir "her zaman" iddiasını çürütür (Parça 34'teki niceleyici kuralı).</p>
+<p><strong>A − B ile B − A'yı aynı sanmak.</strong> Fark değişmeli değildir: aynı örnekte A − B = {1, 2, 3}, B − A = {7, 8}. "Yalnız A" ifadesi A − B demektir; soruyu okurken hangi kümenin "yalnız" olduğunu işaretle.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (A ∪ B) ∩ (A − B)′ ifadesinin en sade hâli nedir?</p>
+<p><strong>Adım 1.</strong> Farkı kesişime çevir, sonra tümlemeyi dağıt.</p>
+<span class="mat">(A − B)′ = (A ∩ B′)′ <span class="g">(A − B = A ∩ B′)</span></span>
+<span class="mat">(A ∩ B′)′ = A′ ∪ (B′)′ <span class="g">(De Morgan: ∩ döndü ∪ oldu)</span></span>
+<span class="mat">A′ ∪ (B′)′ = A′ ∪ B <span class="g">(çift tümleme kümenin kendisi)</span></span>
+<p><strong>Adım 2.</strong> İfadeyi yeniden yaz; iki parantezde de ∪ B olduğunu gör.</p>
+<span class="mat">(A ∪ B) ∩ (A′ ∪ B) = (B ∪ A) ∩ (B ∪ A′) <span class="g">(değişme)</span></span>
+<span class="mat">(B ∪ A) ∩ (B ∪ A′) = B ∪ (A ∩ A′) <span class="g">(dağılmanın tersi: ortak B dışarı)</span></span>
+<p><strong>Adım 3.</strong> Parantez içini değerlendir.</p>
+<span class="mat">A ∩ A′ = ∅ <span class="g">(küme ile tümleyeni ayrık)</span></span>
+<span class="mat">B ∪ ∅ = B <span class="g">(boş küme birleşimde etkisiz)</span></span>
+<p><strong>Sonuç:</strong> İfade B'ye eşittir. Kontrol yolu: Örnek 1'deki kümeleri koy. A ∪ B = {1, …, 8}, (A − B)′ = E − {1, 2, 3} = {4, 5, …, 10}; kesişimleri {4, 5, 6, 7, 8} = B ✓. Venn şemasıyla da görülür: (A − B)′, A'nın hilali dışındaki her yerdir; A ∪ B'den hilali atınca geriye yalnızca B kalır.</p></div>
+
+<h2 class="s">3. Eleman sayısı: neden "eksi kesişim"?</h2>
+
+<p>Parçanın başındaki soruya dön. 25 İngilizce bilen ile 18 Almanca bilen kişiyi topladığında, iki dili birden bilen bir kişiyi hem İngilizce listesinde hem Almanca listesinde saymış olursun. 43 sayısı, ortak bölgedeki her kişiyi iki kez içerir. Doğru sayıya ulaşmak için ortak bölgeyi bir kez geri çıkarman gerekir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>s(A ∪ B) = s(A) + s(B) − s(A ∩ B).</strong> A ile B ayrıksa s(A ∩ B) = 0 olur ve formül s(A ∪ B) = s(A) + s(B)'ye iner. Aynı düşünceden iki yardımcı formül çıkar: s(A − B) = s(A) − s(A ∩ B) ve s(A′) = s(E) − s(A).</p></div>
+
+<p>Formülü bölgelerle de görebilirsin. A ∪ B üç ayrık parçadan oluşur: yalnız A, ortak bölge, yalnız B. s(A) ilk ikisini, s(B) son ikisini sayar; toplamda ortak bölge iki kez girer. Yardımcı formüllerde de dikkat: s(A − B), s(A) − s(B) <em>değildir</em>. A'dan B'nin tamamı değil, yalnızca B ile ortak olan kısım atılır. İkisi ancak B ⊂ A iken aynı sonucu verir.</p>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="Venn şeması: İngilizce bilen 25 ve Almanca bilen 18 kişi. Yalnız İngilizce 15, ikisi de 10, yalnız Almanca 8, hiçbiri 7, toplam 40 kişi.">
+  <rect class="sv-k" x="8" y="8" width="384" height="244" rx="12" />
+  <path class="sv-a" d="M200 75.9A82 82 0 0 0 200 194.1A82 82 0 0 0 200 75.9Z" />
+  <circle class="sv-cl" cx="150" cy="135" r="82" />
+  <circle class="sv-cl" cx="250" cy="135" r="82" />
+  <text class="sv-t" x="112" y="38" text-anchor="middle">İngilizce: 25</text>
+  <text class="sv-t" x="288" y="38" text-anchor="middle">Almanca: 18</text>
+  <text class="sv-b" x="112" y="135" text-anchor="middle">15</text>
+  <text class="sv-s" x="112" y="153" text-anchor="middle">yalnız İng.</text>
+  <text class="sv-b" x="200" y="135" text-anchor="middle">10</text>
+  <text class="sv-s" x="200" y="153" text-anchor="middle">ikisi de</text>
+  <text class="sv-b" x="288" y="135" text-anchor="middle">8</text>
+  <text class="sv-s" x="288" y="153" text-anchor="middle">yalnız Alm.</text>
+  <text class="sv-s" x="20" y="240">E: 40 kişi</text>
+  <text class="sv-t" x="380" y="240" text-anchor="end">hiçbiri: 7</text>
+</svg>
+<figcaption>Dört bölge, dört ayrık grup: 15 + 10 + 8 + 7 = 40. İngilizce dairesinin toplamı 15 + 10 = 25, Almanca dairesinin toplamı 10 + 8 = 18. Turuncu ortak bölge, 25 ile 18'i toplarken iki kez sayılan kısımdır.</figcaption>
+</figure>
+
+<h3>Sözel ifadelerin bölge karşılıkları</h3>
+
+<p>Küme problemlerinde hataların çoğu hesapta değil, okumada yapılır. "En az birini" ile "yalnız birini", "en çok birini" ile "hiçbirini" farklı bölgelerdir. Her ifadeyi bir kez bölgeye çevirip öğrendiğinde bu hata biter. İki kümeli durumda dört bölge var: yalnız A, ortak, yalnız B, dışarısı.</p>
+
+<div class="tablo"><table>
+<tr><th>Sözel ifade</th><th>Küme</th><th>Hangi bölgeler</th><th>Örnekteki sayı</th></tr>
+<tr><td>yalnız A (A'yı yapıp B'yi yapmayan)</td><td>A − B</td><td>A'nın hilali</td><td>15</td></tr>
+<tr><td>ikisini de</td><td>A ∩ B</td><td>ortak bölge</td><td>10</td></tr>
+<tr><td>en az birini</td><td>A ∪ B</td><td>iki dairenin tamamı</td><td>33</td></tr>
+<tr><td>yalnız birini (tam olarak birini)</td><td>(A − B) ∪ (B − A)</td><td>iki hilal</td><td>23</td></tr>
+<tr><td>en çok birini</td><td>(A ∩ B)′</td><td>ortak bölge dışındaki her yer</td><td>30</td></tr>
+<tr><td>hiçbirini</td><td>(A ∪ B)′ = A′ ∩ B′</td><td>dairelerin dışı</td><td>7</td></tr>
+<tr><td>A'yı yapmayan</td><td>A′</td><td>yalnız B ve dışarısı</td><td>15</td></tr>
+</table></div>
+
+<p>"En çok birini" ifadesine özellikle dikkat: "en çok bir" demek "bir ya da sıfır" demektir, yani hiçbirini yapmayanlar da bu gruba girer. Mantık diliyle "en çok birini" ile "ikisini de" birbirinin olumsuzudur; bu yüzden ortak bölgenin tümleyenidir. Aynı şekilde "en az birini" ile "hiçbirini" birbirinin olumsuzudur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Venn şemasını içten dışa doldur.</strong> Önce en içteki bölgeyi (bütün kümelerin kesişimi) yaz, sonra ikili kesişimlerin yalnızca ikiye ait kısımlarını, sonra yalnız tek kümeye ait kısımları, en son dışarıyı. Her adımda bir kümenin toplamından, içindeki doldurulmuş bölgeleri çıkar. Sıra önemlidir, çünkü bir dairenin "yalnız" kısmı, iç bölgeler bilinmeden bulunamaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Parçanın sorusundaki sınıf: 40 kişi, 25 İngilizce, 18 Almanca bilen, 7 kişi ikisini de bilmiyor. (a) İki dili birden bilen kaç kişi? (b) Yalnız bir dil bilen kaç kişi? (c) En çok bir dil bilen kaç kişi?</p>
+<p><strong>Adım 1.</strong> Önce "en az birini bilen"leri bul; dışarıdakileri çıkar.</p>
+<span class="mat">s(İ ∪ A) = 40 − 7 = 33 <span class="g">(hiçbirini bilmeyenler dışarıda)</span></span>
+<p><strong>Adım 2 (a).</strong> Formülü kur, bilinmeyen kesişim.</p>
+<span class="mat">33 = 25 + 18 − s(İ ∩ A) <span class="g">(birleşim formülü)</span></span>
+<span class="mat">s(İ ∩ A) = 43 − 33 = 10 <span class="g">(iki kez sayılan fazlalık)</span></span>
+<p><strong>Adım 3.</strong> İçten dışa doldur.</p>
+<span class="mat">yalnız İngilizce = 25 − 10 = 15 <span class="g">(daire toplamı − ortak)</span></span>
+<span class="mat">yalnız Almanca = 18 − 10 = 8 <span class="g">(daire toplamı − ortak)</span></span>
+<p><strong>Adım 4 (b) ve (c).</strong></p>
+<span class="mat">yalnız bir dil = 15 + 8 = 23 <span class="g">(iki hilal)</span></span>
+<span class="mat">en çok bir dil = 23 + 7 = 30 <span class="g">(hilaller ve dışarısı)</span></span>
+<p><strong>Sonuç:</strong> 10; 23; 30. Kontrol: dört bölgenin toplamı 15 + 10 + 8 + 7 = 40 ✓. (c) için kısa yol: en çok bir dil bilenler, iki dili bilmeyenlerdir: 40 − 10 = 30 ✓. Hızlı yol: "fazlalık" düşüncesi. Dairelerin toplamı 43, en az birini bilenler 33; aradaki 10 kişi iki kez sayılmıştır, o hâlde ortak bölge 10'dur.</p></div>
+
+<h2 class="s">4. Üç küme: neden en sonda "artı" var?</h2>
+
+<p>Üç kümede aynı fazlalık düşüncesini sürdür. s(A) + s(B) + s(C) toplamında yalnız bir kümede olan eleman bir kez, tam iki kümede olan eleman iki kez, üç kümede birden olan eleman üç kez sayılır. İkili kesişimleri çıkaralım: s(A ∩ B) + s(A ∩ C) + s(B ∩ C). Tam iki kümede olan eleman bu üç kesişimden yalnızca birinde bulunur; 2 − 1 = 1 kez sayılmış olur, doğru. Üç kümede birden olan eleman ise üç kesişimin üçünde de bulunur: 3 − 3 = 0 kez. Hiç sayılmamış hâle geldi; onu bir kez geri eklemek gerekir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>s(A ∪ B ∪ C) = s(A) + s(B) + s(C) − s(A ∩ B) − s(A ∩ C) − s(B ∩ C) + s(A ∩ B ∩ C).</strong> Tek kümeler eklenir, ikili kesişimler çıkarılır, üçlü kesişim geri eklenir. Her bölgedeki eleman sonuçta tam bir kez sayılmış olur.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"A ve B'yi yapan 12 kişi" bilgisini "yalnız A ve B'yi yapan 12 kişi" diye okumak.</strong> s(A ∩ B) = 12 dendiğinde bu 12 kişinin içinde üç şeyi birden yapanlar da vardır. Venn şemasında A ile B'nin ortak bölgesi iki parçadan oluşur: C'nin dışında kalan kısım ve en içteki üçlü bölge. Şemaya 12 yazmadan önce üçlü bölgeyi çıkar. Soruda açıkça "yalnız futbol ve basketbol" ya da "bu ikisini oynayıp voleybol oynamayan" denmişse o zaman sayı doğrudan ikili bölgeye yazılır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 60 öğrencilik bir grupta 30 öğrenci futbol, 25 öğrenci basketbol, 20 öğrenci voleybol oynuyor. Futbol ve basketbol oynayan 12, futbol ve voleybol oynayan 8, basketbol ve voleybol oynayan 7 öğrenci var; 4 öğrenci üç sporu da yapıyor. (a) Hiçbir spor yapmayan kaç öğrenci var? (b) Yalnız bir spor yapan kaç öğrenci var? (c) En az iki spor yapan kaç öğrenci var?</p>
+<p><strong>Adım 1 (a).</strong> Üç küme formülü.</p>
+<span class="mat">s(F ∪ B ∪ V) = 30 + 25 + 20 − 12 − 8 − 7 + 4 <span class="g">(tekler + , ikililer − , üçlü +)</span></span>
+<span class="mat">= 75 − 27 + 4 = 52 <span class="g">(en az bir spor yapanlar)</span></span>
+<span class="mat">hiçbiri = 60 − 52 = 8 <span class="g">(grubun geri kalanı)</span></span>
+<p><strong>Adım 2.</strong> İçten dışa: önce üçlü bölge 4. Sonra ikili kesişimlerin yalnız ikiye ait kısımları.</p>
+<span class="mat">yalnız F ve B = 12 − 4 = 8 <span class="g">(üçlü bölge çıkarıldı)</span></span>
+<span class="mat">yalnız F ve V = 8 − 4 = 4 <span class="g">(üçlü bölge çıkarıldı)</span></span>
+<span class="mat">yalnız B ve V = 7 − 4 = 3 <span class="g">(üçlü bölge çıkarıldı)</span></span>
+<p><strong>Adım 3.</strong> Her dairenin toplamından içindeki üç bölgeyi çıkar.</p>
+<span class="mat">yalnız F = 30 − 8 − 4 − 4 = 14 <span class="g">(F'nin içindeki dolu bölgeler)</span></span>
+<span class="mat">yalnız B = 25 − 8 − 3 − 4 = 10 <span class="g">(B'nin içindeki dolu bölgeler)</span></span>
+<span class="mat">yalnız V = 20 − 4 − 3 − 4 = 9 <span class="g">(V'nin içindeki dolu bölgeler)</span></span>
+<p><strong>Adım 4 (b) ve (c).</strong></p>
+<span class="mat">yalnız bir spor = 14 + 10 + 9 = 33 <span class="g">(üç dış bölge)</span></span>
+<span class="mat">en az iki spor = 8 + 4 + 3 + 4 = 19 <span class="g">(yalnız ikiler ve üçlü)</span></span>
+<p><strong>Sonuç:</strong> 8; 33; 19. Kontrol yolu: yedi iç bölgenin toplamı 33 + 15 + 4 = 52 olmalı ve formülle bulduğun sayıyla aynı çıkmalı ✓. İki ayrı yoldan aynı sayıya varmak, hem formülde hem doldurmada hata olmadığını gösterir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Üç kümeli Venn şeması: futbol, basketbol ve voleybol. Yalnız futbol 14, yalnız basketbol 10, yalnız voleybol 9, futbol ve basketbol 8, futbol ve voleybol 4, basketbol ve voleybol 3, üçü 4, hiçbiri 8.">
+  <rect class="sv-k" x="8" y="8" width="384" height="284" rx="12" />
+  <circle class="sv-cl" cx="160" cy="118" r="78" />
+  <circle class="sv-cl" cx="240" cy="118" r="78" />
+  <circle class="sv-cl" cx="200" cy="186" r="78" />
+  <text class="sv-t" x="18" y="32">Futbol: 30</text>
+  <text class="sv-t" x="382" y="32" text-anchor="end">Basketbol: 25</text>
+  <text class="sv-t" x="18" y="250">Voleybol: 20</text>
+  <text class="sv-b" x="129" y="105" text-anchor="middle">14</text>
+  <text class="sv-b" x="271" y="105" text-anchor="middle">10</text>
+  <text class="sv-b" x="200" y="233" text-anchor="middle">9</text>
+  <text class="sv-b" x="200" y="93" text-anchor="middle">8</text>
+  <text class="sv-b" x="155" y="177" text-anchor="middle">4</text>
+  <text class="sv-b" x="245" y="177" text-anchor="middle">3</text>
+  <text class="sv-b" x="200" y="146" text-anchor="middle">4</text>
+  <text class="sv-s" x="18" y="282">E: 60 öğrenci</text>
+  <text class="sv-t" x="382" y="282" text-anchor="end">hiçbiri: 8</text>
+</svg>
+<figcaption>Örnek 4'ün doldurulmuş şeması. En içteki 4 ilk yazılır; futbol-basketbol ortak bölgesinin toplamı 8 + 4 = 12'dir, soruda verilen sayı budur. Futbol dairesinin dört bölgesi 14 + 8 + 4 + 4 = 30 eder.</figcaption>
+</figure>
+
+<p>Üç kümeli durumda sözel ifadeler biraz daha çeşitlenir. Hepsini aynı ilkeyle çöz: ifadeyi "kaç kümede bulunuyor?" sorusuna çevir. Yedi iç bölgenin her biri bir, iki ya da üç kümeye aittir; dışarısı sıfır kümeye.</p>
+
+<div class="tablo"><table>
+<tr><th>Sözel ifade</th><th>Kaç kümede?</th><th>Örnek 4'te</th></tr>
+<tr><td>hiçbirinde</td><td>0</td><td>8</td></tr>
+<tr><td>yalnız birinde</td><td>tam 1</td><td>14 + 10 + 9 = 33</td></tr>
+<tr><td>yalnız ikisinde</td><td>tam 2</td><td>8 + 4 + 3 = 15</td></tr>
+<tr><td>üçünde de</td><td>3</td><td>4</td></tr>
+<tr><td>en az birinde</td><td>1, 2 ya da 3</td><td>52</td></tr>
+<tr><td>en az ikisinde</td><td>2 ya da 3</td><td>19</td></tr>
+<tr><td>en çok birinde</td><td>0 ya da 1</td><td>8 + 33 = 41</td></tr>
+<tr><td>en çok ikisinde</td><td>0, 1 ya da 2</td><td>60 − 4 = 56</td></tr>
+</table></div>
+
+<h2 class="s">5. İki özellikli sorular: tablo kur</h2>
+
+<p>Bazı sorularda her kişinin iki ayrı özelliği vardır ve her özellik iki değer alır: kız ya da erkek, gözlüklü ya da gözlüksüz. Her kişi bu iki özelliğin bir bileşimine düşer: gözlüklü kız, gözlüksüz kız, gözlüklü erkek, gözlüksüz erkek. Bu dört grup ayrıktır ve birlikte bütün grubu oluşturur. Bunu Venn şemasıyla da çözebilirsin (kızlar bir küme, gözlüklüler bir küme, gözlüksüz erkekler dışarısı), ama satır ve sütun toplamları olan bir tablo çok daha hızlıdır, çünkü her satır ve her sütun ayrı bir denklem verir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Satırlara bir özelliğin değerlerini, sütunlara öbürününkini yaz; sağa satır toplamlarını, alta sütun toplamlarını, köşeye genel toplamı koy. Verilen sayıları yerleştir. Sonra <strong>yalnızca bir boşluğu kalan</strong> satır ya da sütunu bul ve o boşluğu toplamdan çıkararak doldur. Bu işlemi bütün kutular dolana kadar sürdür.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> 36 kişilik bir sınıfta 20 kız öğrenci vardır. Sınıfta gözlük kullanan 14 öğrenci vardır ve bunların 6'sı erkektir. Gözlük kullanmayan kız öğrenci sayısı kaçtır?</p>
+<p><strong>Adım 1.</strong> Tabloyu kur ve verilenleri yaz: genel toplam 36, kız toplamı 20, gözlüklü toplamı 14, gözlüklü erkek 6.</p>
+<p><strong>Adım 2.</strong> Tek boşluğu kalan satır ve sütunlar.</p>
+<span class="mat">erkek toplamı = 36 − 20 = 16 <span class="g">(toplam sütunu)</span></span>
+<span class="mat">gözlüklü kız = 14 − 6 = 8 <span class="g">(gözlüklü sütunu)</span></span>
+<span class="mat">gözlüksüz kız = 20 − 8 = 12 <span class="g">(kız satırı)</span></span>
+<span class="mat">gözlüksüz erkek = 16 − 6 = 10 <span class="g">(erkek satırı)</span></span>
+<div class="tablo"><table>
+<tr><th></th><th>Gözlüklü</th><th>Gözlüksüz</th><th>Toplam</th></tr>
+<tr><td>Kız</td><td>8</td><td>12</td><td>20</td></tr>
+<tr><td>Erkek</td><td>6</td><td>10</td><td>16</td></tr>
+<tr><td>Toplam</td><td>14</td><td>22</td><td>36</td></tr>
+</table></div>
+<p><strong>Sonuç:</strong> Gözlük kullanmayan 12 kız öğrenci vardır. Kontrol: gözlüksüz sütununun toplamı 12 + 10 = 22 ve 36 − 14 = 22 ✓. Tablonun her satırı ve her sütunu kendi toplamını vermelidir; biri bile tutmuyorsa bir kutuda hata var.</p></div>
+
+<h2 class="s">6. En az kaç, en çok kaç?</h2>
+
+<p>Bazen soru kümelerin eleman sayılarını verir ama kesişimi vermez; kesişimin alabileceği en küçük ya da en büyük değeri sorar. Bu durumda iki uç durumu düşün: iki küme olabildiğince <strong>üst üste</strong> binsin (biri öbürünün içinde) ya da olabildiğince <strong>ayrık</strong> dursun.</p>
+
+<p><strong>Kesişimin en büyük değeri.</strong> Ortak bölge, küçük kümeden büyük olamaz, çünkü ortak bölgenin her elemanı küçük kümenin de elemanıdır. Küçük küme tamamen büyüğün içine yerleştirilirse kesişim küçük kümenin kendisi olur. Öyleyse en büyük değer küçük kümenin eleman sayısıdır.</p>
+
+<p><strong>Kesişimin en küçük değeri.</strong> Kümeleri ayırmak istersin ama evrensel küme buna izin vermeyebilir. Birleşim, evrensel kümeden büyük olamaz: s(A ∪ B) ≤ s(E). Formülü yerine koy: s(A) + s(B) − s(A ∩ B) ≤ s(E), buradan s(A ∩ B) ≥ s(A) + s(B) − s(E). İki kümenin toplamı evrenseli aşıyorsa, aşan kısım mutlaka ortak bölgededir. Toplam evrenseli aşmıyorsa kümeler tamamen ayrık olabilir ve en küçük değer 0'dır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>s(A) ≤ s(B) olsun. <strong>s(A ∩ B)'nin en büyük değeri s(A)'dır</strong> (A ⊂ B iken). <strong>En küçük değeri s(A) + s(B) − s(E)'dir</strong>; bu sayı negatif ya da sıfırsa en küçük değer 0'dır. Birleşim için tersi geçerli: s(A ∪ B) en az s(B), en çok s(A) + s(B) ya da s(E)'den hangisi küçükse odur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> 50 kişilik bir grupta 30 kişi kitap okuyor, 35 kişi film izliyor. (a) Hem kitap okuyup hem film izleyenlerin sayısı en az ve en çok kaçtır? (b) Hiçbirini yapmayanların sayısı en çok kaçtır?</p>
+<p><strong>Adım 1 (a, en çok).</strong> Küçük küme büyüğün içinde olabilir.</p>
+<span class="mat">s(K ∩ F) ≤ 30 <span class="g">(küçük kümenin eleman sayısı)</span></span>
+<p><strong>Adım 2 (a, en az).</strong> İki kümenin toplamı grubu aşıyor mu?</p>
+<span class="mat">30 + 35 = 65 &gt; 50 <span class="g">(aşıyor)</span></span>
+<span class="mat">s(K ∩ F) ≥ 65 − 50 = 15 <span class="g">(aşan kısım ortakta olmalı)</span></span>
+<p><strong>Adım 3 (b).</strong> Hiçbirini yapmayanların çok olması için birleşim olabildiğince küçük olmalı; bu da kesişim en büyükken olur.</p>
+<span class="mat">s(K ∪ F) en az = 30 + 35 − 30 = 35 <span class="g">(kesişim 30 iken)</span></span>
+<span class="mat">hiçbiri en çok = 50 − 35 = 15 <span class="g">(grubun kalanı)</span></span>
+<p><strong>Sonuç:</strong> Kesişim en az 15, en çok 30; hiçbirini yapmayan en çok 15 kişi. Kontrol: kesişim 15 iken birleşim 30 + 35 − 15 = 50, yani grubun tamamı; dışarıda kimse kalmaz, olması gereken de bu. Kesişim 30 iken kitap okuyanların hepsi film de izler ve birleşim 35'tir; 50'yi aşmıyor ✓.</p></div>
+
+<h2 class="s">7. Sıralı ikili: sıranın önemli olduğu çift</h2>
+
+<p>Kümede sıra önemsizdi: {1, 2} = {2, 1}. Ama bazı bilgiler doğası gereği sıralıdır. Bir sinema biletinde "sıra 3, koltuk 7" ile "sıra 7, koltuk 3" farklı yerlerdir. Bir noktanın konumunu "3 birim sağa, 7 birim yukarı" diye verirsen, sayıların yerini değiştirdiğinde başka bir noktaya gidersin. Bu tür bilgiyi taşımak için sıralı ikili kullanılır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Birinci ve ikinci elemanı belli olan (a, b) çiftine <strong>sıralı ikili</strong> denir; a birinci bileşen, b ikinci bileşendir. <strong>(a, b) = (c, d) ⇔ a = c ve b = d.</strong> a ≠ b iken (a, b) ≠ (b, a). Bileşenlerin aynı olması da serbesttir: (2, 2) geçerli bir sıralı ikilidir; oysa {2, 2} kümesi yalnızca {2}'dir.</p></div>
+
+<p>Eşitlik kuralı, sıralı ikili sorularını Parça 17 ve 18'deki denklemlere çevirir: bileşenleri sırasıyla eşitle, ortaya çıkan denklemleri çöz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> (x + y, x − y) = (11, 3) olduğuna göre x · y kaçtır?</p>
+<p><strong>Adım 1.</strong> Bileşenleri sırasıyla eşitle.</p>
+<span class="mat">x + y = 11 <span class="g">(birinci bileşenler)</span></span>
+<span class="mat">x − y = 3 <span class="g">(ikinci bileşenler)</span></span>
+<p><strong>Adım 2.</strong> Parça 18'deki yok etme yöntemi: taraf tarafa topla.</p>
+<span class="mat">2x = 14 <span class="g">(y'ler birbirini götürdü)</span></span>
+<span class="mat">x = 7 <span class="g">(iki yanı 2'ye böl)</span></span>
+<span class="mat">7 + y = 11 ⇒ y = 4 <span class="g">(ilk denkleme koy)</span></span>
+<p><strong>Adım 3.</strong></p>
+<span class="mat">x · y = 7 · 4 = 28 <span class="g">(istenen çarpım)</span></span>
+<p><strong>Sonuç:</strong> 28. Kontrol: (7 + 4, 7 − 4) = (11, 3) ✓. Bileşenleri çapraz eşitleseydin (x + y = 3, x − y = 11) x = 7, y = −4 bulurdun ve çarpım −28 çıkardı; sıranın önemi budur.</p></div>
+
+<h2 class="s">8. Kartezyen çarpım</h2>
+
+<p>İki kümeden sıralı ikili üretmenin en doğal yolu, birinci bileşeni birinci kümeden, ikinciyi ikinci kümeden seçmektir. Bir lokantada çorbalar kümesi ile ana yemekler kümesi varsa, "bir çorba, bir ana yemek" biçimindeki bütün mönüler bu iki kümenin kartezyen çarpımıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>A × B = {(x, y) : x ∈ A ve y ∈ B}. A ile B'nin <strong>kartezyen çarpımı</strong>, birinci bileşeni A'dan, ikinci bileşeni B'den alınan bütün sıralı ikililerin kümesidir. "A çarpı B" diye okunur. A × A kümesi A<sup>2</sup> biçiminde de yazılır.</p></div>
+
+<p>Eleman sayısını say: birinci bileşen için s(A) seçenek, her birinin yanına ikinci bileşen için s(B) seçenek var. Bunları bir tabloya dizersen s(A) sütunlu, s(B) satırlı bir ızgara elde edersin; kutu sayısı satır sayısı ile sütun sayısının çarpımıdır. Parça 34'teki alt küme sayımında da aynı "her seçeneği her seçenekle eşle, çarp" düşüncesini kullanmıştın; Parça 43'te bunun adı çarpma yoluyla sayma olacak.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>s(A × B) = s(A) · s(B).</strong> Sonuçlar: s(A × B) = s(B × A); A ya da B boşsa A × B = ∅; A ≠ B ve ikisi de boş değilse A × B ≠ B × A. A × B'nin alt küme sayısı, Parça 34'teki kuralla 2<sup>s(A) · s(B)</sup> olur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> A = {1, 2, 3} ve B = {2, 4} kümeleri için A × B ve B × A kümelerini yaz; eleman sayılarını ve ortak elemanlarını bul.</p>
+<p><strong>Adım 1.</strong> A × B: birinci bileşen A'dan, ikinci B'den. A'nın her elemanını B'nin her elemanıyla eşle.</p>
+<span class="mat">A × B = {(1, 2), (1, 4), (2, 2), (2, 4), (3, 2), (3, 4)} <span class="g">(3 · 2 = 6 ikili)</span></span>
+<p><strong>Adım 2.</strong> B × A: bu kez birinci bileşen B'den.</p>
+<span class="mat">B × A = {(2, 1), (2, 2), (2, 3), (4, 1), (4, 2), (4, 3)} <span class="g">(2 · 3 = 6 ikili)</span></span>
+<p><strong>Adım 3.</strong> Ortak elemanları ara: bir ikilinin iki kümede de bulunması için birinci bileşeni hem A'da hem B'de, ikinci bileşeni de hem B'de hem A'da olmalı.</p>
+<span class="mat">(A × B) ∩ (B × A) = {(2, 2)} <span class="g">(A ∩ B = {2})</span></span>
+<p><strong>Sonuç:</strong> İki kümenin de 6 elemanı var ama yalnızca (2, 2) ortak; A × B ≠ B × A. Eleman sayıları eşit, kümeler farklı: Parça 34'teki "denk ama eşit değil" durumunun tam örneği. Kontrol: (1, 4) ∈ A × B ama (1, 4) ∉ B × A, çünkü 1 ∉ B.</p></div>
+
+<h3>Kartezyen çarpımın grafiği</h3>
+
+<p>Sıralı ikili (x, y), koordinat düzleminde bir noktadır: birinci bileşen yatay eksende (x ekseni), ikinci bileşen dikey eksende (y ekseni) okunur. A × B'nin bütün elemanlarını işaretlersen kartezyen çarpımın <strong>grafiğini</strong> çizmiş olursun. Kural: <strong>birinci küme yatay eksene, ikinci küme dikey eksene.</strong></p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Koordinat düzleminde A çarpı B'nin altı noktası daire ile, B çarpı A'nın altı noktası kare ile işaretli. İki grafik yalnızca (2, 2) noktasında çakışıyor.">
+  <line class="sv-c" x1="50" y1="262" x2="290" y2="262" />
+  <line class="sv-c" x1="50" y1="262" x2="50" y2="36" />
+  <polygon class="sv-k" points="290,257 300,262 290,267" />
+  <polygon class="sv-k" points="45,36 50,26 55,36" />
+  <text class="sv-s" x="300" y="280">x</text>
+  <text class="sv-s" x="60" y="34">y</text>
+  <text class="sv-s" x="44" y="280" text-anchor="end">0</text>
+  <line class="sv-c" x1="100" y1="258" x2="100" y2="266" /><text class="sv-s" x="100" y="282" text-anchor="middle">1</text>
+  <line class="sv-c" x1="150" y1="258" x2="150" y2="266" /><text class="sv-s" x="150" y="282" text-anchor="middle">2</text>
+  <line class="sv-c" x1="200" y1="258" x2="200" y2="266" /><text class="sv-s" x="200" y="282" text-anchor="middle">3</text>
+  <line class="sv-c" x1="250" y1="258" x2="250" y2="266" /><text class="sv-s" x="250" y="282" text-anchor="middle">4</text>
+  <line class="sv-c" x1="46" y1="212" x2="54" y2="212" /><text class="sv-s" x="40" y="216" text-anchor="end">1</text>
+  <line class="sv-c" x1="46" y1="162" x2="54" y2="162" /><text class="sv-s" x="40" y="166" text-anchor="end">2</text>
+  <line class="sv-c" x1="46" y1="112" x2="54" y2="112" /><text class="sv-s" x="40" y="116" text-anchor="end">3</text>
+  <line class="sv-c" x1="46" y1="62" x2="54" y2="62" /><text class="sv-s" x="40" y="66" text-anchor="end">4</text>
+  <rect class="sv-a" x="143" y="205" width="14" height="14" />
+  <rect class="sv-a" x="143" y="155" width="14" height="14" />
+  <rect class="sv-a" x="143" y="105" width="14" height="14" />
+  <rect class="sv-a" x="243" y="205" width="14" height="14" />
+  <rect class="sv-a" x="243" y="155" width="14" height="14" />
+  <rect class="sv-a" x="243" y="105" width="14" height="14" />
+  <circle class="sv-l" cx="100" cy="162" r="5" />
+  <circle class="sv-l" cx="100" cy="62" r="5" />
+  <circle class="sv-l" cx="150" cy="162" r="5" />
+  <circle class="sv-l" cx="150" cy="62" r="5" />
+  <circle class="sv-l" cx="200" cy="162" r="5" />
+  <circle class="sv-l" cx="200" cy="62" r="5" />
+  <circle class="sv-l" cx="314" cy="96" r="5" />
+  <text class="sv-t" x="328" y="101">A × B</text>
+  <rect class="sv-a" x="307" y="119" width="14" height="14" />
+  <text class="sv-t" x="328" y="131">B × A</text>
+  <text class="sv-s" x="306" y="160">ortak: (2, 2)</text>
+</svg>
+<figcaption>A = {1, 2, 3}, B = {2, 4}. Daireler A × B: x değerleri A'dan (1, 2, 3), y değerleri B'den (2 ve 4). Kareler B × A: bu kez x değerleri 2 ve 4, y değerleri 1, 2, 3. İki grafik birbirinin y = x doğrusuna göre yansımasıdır ve yalnızca (2, 2) noktasında çakışır.</figcaption>
+</figure>
+
+<p>Kümeler sonlu ve tam sayılardan oluşuyorsa grafik ayrık noktalardır. Kümelerden biri ya da ikisi bir <strong>aralık</strong> olursa, yani gerçek sayılardan oluşan kesintisiz bir küme (Parça 19), noktalar birbirine değecek kadar sıklaşır ve grafik doğru parçalarına ya da bir bölgeye dönüşür:</p>
+
+<p><strong>Sonlu küme × aralık.</strong> A = {1, 2, 3}, B = [1, 3] ise her x ∈ A için y, 1 ile 3 arasındaki <em>bütün</em> gerçek sayıları alır. x = 1 doğrusu üzerinde (1, 1)'den (1, 3)'e kadar dikey bir doğru parçası çıkar; x = 2 ve x = 3 için de birer tane. Grafik üç dikey doğru parçasıdır.</p>
+<p><strong>Aralık × sonlu küme.</strong> A = [1, 4], B = {2} ise y yalnızca 2, x ise 1 ile 4 arasında her değer: (1, 2)'den (4, 2)'ye yatay bir doğru parçası, uzunluğu 4 − 1 = 3 birim.</p>
+<p><strong>Aralık × aralık.</strong> A = [1, 4], B = [1, 3] ise hem x hem y kesintisiz değişir: köşeleri (1, 1), (4, 1), (4, 3), (1, 3) olan dikdörtgensel bölge, kenarlarıyla birlikte. Alanı (4 − 1) · (3 − 1) = 6 birimkare, çevresi 2 · (3 + 2) = 10 birim.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Solda A = {1, 2, 3} ile B = [1, 3] kartezyen çarpımının grafiği: x = 1, 2, 3 üzerinde y = 1'den 3'e üç dikey doğru parçası. Sağda A = [1, 4] ile B = [1, 3] çarpımının grafiği: köşeleri (1, 1) ve (4, 3) olan taralı dikdörtgen.">
+  <text class="sv-b" x="106" y="26" text-anchor="middle">A = {1, 2, 3}</text>
+  <text class="sv-b" x="106" y="46" text-anchor="middle">B = [1, 3]</text>
+  <line class="sv-c" x1="30" y1="240" x2="190" y2="240" />
+  <line class="sv-c" x1="30" y1="240" x2="30" y2="74" />
+  <text class="sv-s" x="194" y="252">x</text>
+  <text class="sv-s" x="36" y="76">y</text>
+  <text class="sv-s" x="68" y="258" text-anchor="middle">1</text>
+  <text class="sv-s" x="106" y="258" text-anchor="middle">2</text>
+  <text class="sv-s" x="144" y="258" text-anchor="middle">3</text>
+  <text class="sv-s" x="182" y="258" text-anchor="middle">4</text>
+  <text class="sv-s" x="24" y="206" text-anchor="end">1</text>
+  <text class="sv-s" x="24" y="168" text-anchor="end">2</text>
+  <text class="sv-s" x="24" y="130" text-anchor="end">3</text>
+  <text class="sv-s" x="24" y="92" text-anchor="end">4</text>
+  <line class="sv-cl" x1="68" y1="202" x2="68" y2="126" />
+  <line class="sv-cl" x1="106" y1="202" x2="106" y2="126" />
+  <line class="sv-cl" x1="144" y1="202" x2="144" y2="126" />
+  <circle class="sv-l" cx="68" cy="202" r="4" /><circle class="sv-l" cx="68" cy="126" r="4" />
+  <circle class="sv-l" cx="106" cy="202" r="4" /><circle class="sv-l" cx="106" cy="126" r="4" />
+  <circle class="sv-l" cx="144" cy="202" r="4" /><circle class="sv-l" cx="144" cy="126" r="4" />
+
+  <text class="sv-b" x="300" y="26" text-anchor="middle">A = [1, 4]</text>
+  <text class="sv-b" x="300" y="46" text-anchor="middle">B = [1, 3]</text>
+  <rect class="sv-l" x="263" y="126" width="114" height="76" />
+  <line class="sv-c" x1="225" y1="240" x2="390" y2="240" />
+  <line class="sv-c" x1="225" y1="240" x2="225" y2="74" />
+  <text class="sv-s" x="390" y="256">x</text>
+  <text class="sv-s" x="231" y="76">y</text>
+  <text class="sv-s" x="263" y="258" text-anchor="middle">1</text>
+  <text class="sv-s" x="301" y="258" text-anchor="middle">2</text>
+  <text class="sv-s" x="339" y="258" text-anchor="middle">3</text>
+  <text class="sv-s" x="377" y="258" text-anchor="middle">4</text>
+  <text class="sv-s" x="219" y="206" text-anchor="end">1</text>
+  <text class="sv-s" x="219" y="168" text-anchor="end">2</text>
+  <text class="sv-s" x="219" y="130" text-anchor="end">3</text>
+  <text class="sv-s" x="219" y="92" text-anchor="end">4</text>
+  <text class="sv-t" x="320" y="169" text-anchor="middle">alan 6</text>
+  <text class="sv-s" x="106" y="282" text-anchor="middle">3 doğru parçası</text>
+  <text class="sv-s" x="300" y="282" text-anchor="middle">dikdörtgensel bölge</text>
+</svg>
+<figcaption>Solda üç doğru parçası, her birinin uzunluğu 3 − 1 = 2; toplam uzunluk 3 · 2 = 6 birim. Sağda 3 birim eninde, 2 birim boyunda bir dikdörtgen; kenarlar dahil, çünkü aralıklar kapalı. Aralığın ucu açık olsaydı (örneğin [1, 3)), o kenar ya da uç nokta grafiğe dahil olmazdı.</figcaption>
+</figure>
+
+<h3>Kartezyen çarpımın dağılması</h3>
+
+<p>(x, y) ∈ A × (B ∪ C) demek, "x ∈ A <em>ve</em> (y ∈ B <em>veya</em> y ∈ C)" demektir. Parça 34'teki dağılma özelliği bunu "(x ∈ A ve y ∈ B) veya (x ∈ A ve y ∈ C)" önermesine çevirir; bu da (x, y)'nin A × B'de ya da A × C'de olmasıdır. Kısaca:</p>
+
+<span class="mat">A × (B ∪ C) = (A × B) ∪ (A × C) <span class="g">("ve", "veya" üzerine dağılır)</span></span>
+<span class="mat">A × (B ∩ C) = (A × B) ∩ (A × C) <span class="g">(aynı gerekçeyle)</span></span>
+
+<p>Sayılarla dene: A = {1, 2}, B = {a}, C = {b, c} için A × (B ∪ C) kümesinin 2 · 3 = 6 elemanı var; A × B'nin 2, A × C'nin 4 elemanı var ve B ile C ayrık olduğu için bu iki kümenin ortak elemanı yok: 2 + 4 = 6 ✓.</p>
+
+<h3>Eleman sayısından kümeyi bulmak</h3>
+
+<p>s(A × B) = s(A) · s(B) formülü ters yönde de kullanılır: çarpım ve ek bir bilgi verilir, kümelerin eleman sayıları istenir. Bu, Parça 6'daki "çarpımı verilen sayı ikilileri" düşüncesidir. Bir başka tip de, A × B'nin bazı elemanları verilip A ile B hakkında sonuç çıkarmaktır: (x, y) ∈ A × B ise x ∈ A ve y ∈ B olmak zorundadır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> (a) s(A) = s(B) + 2 ve s(A × B) = 24 olduğuna göre s(A) ve s(B) kaçtır? (b) (1, a), (2, b), (3, a) ve (2, c) ikilileri A × B kümesinin elemanlarıdır. A × B kümesinin en az kaç elemanı vardır?</p>
+<p><strong>Adım 1 (a).</strong> s(B) = n de ve formülü kur.</p>
+<span class="mat">(n + 2) · n = 24 <span class="g">(s(A) · s(B))</span></span>
+<p><strong>Adım 2.</strong> 24'ü farkı 2 olan iki doğal sayının çarpımı olarak yaz; eleman sayıları doğal sayıdır.</p>
+<span class="mat">24 = 6 · 4 <span class="g">(6 − 4 = 2)</span></span>
+<span class="mat">n = 4, s(A) = 6 <span class="g">(s(B) = 4)</span></span>
+<p><strong>Adım 3 (b).</strong> Birinci bileşenler A'ya, ikinci bileşenler B'ye aittir.</p>
+<span class="mat">{1, 2, 3} ⊂ A <span class="g">(birinci bileşenler)</span></span>
+<span class="mat">{a, b, c} ⊂ B <span class="g">(ikinci bileşenler)</span></span>
+<span class="mat">s(A × B) ≥ 3 · 3 = 9 <span class="g">(en az 3 ve en az 3 eleman)</span></span>
+<p><strong>Sonuç:</strong> (a) s(A) = 6, s(B) = 4. (b) En az 9. Kontrol: (a)'da 6 · 4 = 24 ✓ ve 6 = 4 + 2 ✓. (b)'de verilen 4 ikiliyi saymak yetmez; A × B bir kartezyen çarpımdır ve A'nın <em>her</em> elemanı B'nin <em>her</em> elemanıyla eşleşir. Örneğin (1, b) ve (3, c) da kümede olmak zorundadır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>s(A × B)'yi s(A) + s(B) sanmak.</strong> 3 elemanlı ve 2 elemanlı kümenin kartezyen çarpımı 5 değil 6 elemanlıdır; her eleman öbür kümenin her elemanıyla eşleşir, yani sayılar çarpılır.</p>
+<p><strong>Grafikte kümelerin eksenlerini karıştırmak.</strong> A × B'de A yatay eksende, B dikey eksendedir. Kümelerin yerini değiştirirsen B × A'yı çizmiş olursun; Örnek 8'deki şekilde gördüğün gibi bu farklı bir grafiktir.</p></div>
+
+<p>Son bir not: kartezyen çarpımın alt kümelerine bazı kaynaklarda "bağıntı" denir. 2018 programında bağıntı ayrı bir konu olarak yer almadığı için burada işlemiyoruz; bir sonraki parçada fonksiyonu doğrudan kartezyen çarpımdan, "her x'e tek bir y" koşuluyla kuracağız.</p>
+
+<h2 class="s">Hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol.</strong> İşlem sorularında farkı gördüğün an A ∩ B′'ye çevir, tümlemeyi De Morgan ile içeri dağıt, sonra dağılma ve "A ∩ A′ = ∅, A ∪ A′ = E" ile sadeleştir; Parça 34'teki önerme sadeleştirmesinin aynısı. İki kümeli problemlerde "fazlalık" düşüncesi: dairelerin toplamı ile en az birini yapanların sayısı arasındaki fark ortak bölgedir. Üç kümeli problemde şemayı mutlaka içten dışa doldur. İki özellikli sorularda Venn yerine tablo kur. Kartezyen çarpımda eleman sayısı çarpımdır; grafikte sonlu küme nokta ya da doğru parçası, aralık kesintisiz çizgi verir.</p>
+
+<p><strong>Kontrol yolu.</strong> Venn şemasında bütün bölgeleri topla; evrensel kümenin eleman sayısını vermeli. Her dairenin bölgelerini topla; o kümenin eleman sayısını vermeli. Bu iki denetim, küme problemindeki hataların neredeyse hepsini yakalar. Sadeleştirme sorularında sonucu küçük kümelerle sına: E = {1, 2, 3, 4}, A = {1, 2}, B = {2, 3} gibi bir seçim, A ile B'nin bütün bölgelerini (yalnız A, ortak, yalnız B, dışarısı) birer elemanla doldurur; bu yüzden iki kümeli bir eşitliği tek denemede güvenle sınar. Akla yatkınlık: hiçbir bölgenin sayısı negatif olamaz; kesişim küçük kümeden büyük, birleşim evrensel kümeden büyük çıkamaz. Bir bölge negatif çıktıysa ya bir veriyi yanlış bölgeye yazmışsındır ya da (en sık) ikili kesişimden üçlüyü çıkarmayı unutmuşsundur.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 34'e:</strong> Bütün küme işlemleri bağlaçların çevirisidir: ∩ ↔ ∧, ∪ ↔ ∨, ′ ↔ değil, E ↔ 1, ∅ ↔ 0. De Morgan kuralları ve dağılma oradan aynen geldi. Kartezyen çarpımın alt küme sayısı da oradaki 2<sup>n</sup> kuralıyla bulunur.</p>
+<p><strong>Parça 36–38'e:</strong> Fonksiyon, A × B'nin özel bir alt kümesidir: A'nın her elemanı tam bir ikilide birinci bileşen olarak görünür. Grafik çizerken birinci bileşeni yatay eksene koyma alışkanlığı oradan itibaren her parçada kullanılacak.</p>
+<p><strong>Parça 43–47'ye:</strong> s(A × B) = s(A) · s(B) çarpma yoluyla saymanın ilk görünüşüdür. Birleşim formülü sayma sorularındaki "ya şu ya bu" durumlarında, olasılıkta ise P(A ∪ B) = P(A) + P(B) − P(A ∩ B) biçiminde geri gelecek; Parça 47'deki iki özellikli tablolar da buradaki tablonun aynısıdır.</p>
+<p><strong>Parça 32 ve 33'e dönüş:</strong> İki özellikli tablo, tablo okuma sorularının özel bir hâlidir. "En az kaç kişi" soruları, Parça 33'teki uç durumu deneme stratejisinin uygulamasıdır.</p>
+<p><strong>Öbür derslere:</strong> Geometride koordinat düzlemi (analitik geometri) ve fizikte konum-zaman grafikleri, sıralı ikilinin "birinci bileşen yatayda" kuralıyla okunur. Biyolojide genetik çaprazlama tabloları da bir kartezyen çarpımdır: bir ebeveynin gametleri satırlara, öbürününkiler sütunlara yazılır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>A − B kümesini kesişim ve tümleme kullanarak nasıl yazarsın? Neden?</summary><p>A − B = A ∩ B′. Çünkü A − B'ye girmek için A'da olmak ve B'de olmamak gerekir; B'de olmamak B′'de olmak demektir. Sadeleştirme sorularında farkı önce bu biçime çevirmek, bilinen özellikleri kullanmanın yolunu açar.</p></details>
+<details><summary>De Morgan kurallarını kümeler için yaz ve birini günlük dille açıkla.</summary><p>(A ∪ B)′ = A′ ∩ B′ ve (A ∩ B)′ = A′ ∪ B′. Birincisi: "iki dilden en az birini bilenlerin dışında kalanlar, iki dili de bilmeyenlerdir." Tümleme paranteze dağılırken her küme tümlenir ve birleşim kesişime, kesişim birleşime döner.</p></details>
+<details><summary>s(A ∪ B) formülünde s(A ∩ B) neden çıkarılır? Üç küme formülünün sonundaki üçlü kesişim neden eklenir?</summary><p>s(A) + s(B) toplamında ortak bölgedeki her eleman iki kez sayılır; bir kez çıkarmak gerekir. Üç kümede üçlü bölgedeki eleman tekli toplamda üç kez sayılır, üç ikili kesişimin üçünde de bulunduğu için üç kez çıkarılır ve hiç sayılmamış hâle gelir; bu yüzden bir kez geri eklenir.</p></details>
+<details><summary>"En çok birini yapanlar" ile "yalnız birini yapanlar" arasındaki fark nedir?</summary><p>Yalnız birini yapanlar, tam olarak bir şeyi yapanlardır. En çok birini yapanlar ise bir ya da hiçbir şey yapanlardır; yalnız birini yapanlara hiçbirini yapmayanlar da eklenir. İki kümede "en çok birini" ortak bölgenin tümleyenidir.</p></details>
+<details><summary>Bir küme probleminde s(A ∩ B) en çok ve en az kaç olabilir? Gerekçesiyle söyle.</summary><p>En çok, küçük kümenin eleman sayısı kadardır; küçük küme büyüğün içine yerleşebilir ve ortak bölge küçük kümeden büyük olamaz. En az, s(A) + s(B) − s(E) kadardır; birleşim evrensel kümeyi aşamayacağı için iki kümenin toplamının evrenseli aşan kısmı ortakta olmak zorundadır. Bu sayı sıfır ya da negatifse en az değer 0'dır.</p></details>
+<details><summary>(a, b) ile {a, b} arasındaki fark nedir? (3, 3) ile {3, 3} için ne söylersin?</summary><p>(a, b) sıralı ikilidir; a ≠ b iken (a, b) ≠ (b, a). {a, b} ise kümedir ve sıra önemsizdir: {a, b} = {b, a}. (3, 3) geçerli bir sıralı ikilidir; {3, 3} ise yalnızca {3} kümesidir, çünkü kümede eleman yinelenmez.</p></details>
+<details><summary>A = {1, 2, 3, 4} ve B = [1, 3] iken A × B'nin grafiği nedir?</summary><p>x = 1, 2, 3 ve 4 doğruları üzerinde, y = 1'den y = 3'e uzanan dört dikey doğru parçasıdır; uçlar dahildir. Her birinin uzunluğu 2, toplam uzunluk 8 birimdir. A sonlu olduğu için yatayda yalnızca dört değer var; B bir aralık olduğu için dikeyde kesintisiz çizgi oluşur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Birleşim</strong> A ∪ B: en az birinde ("veya"). <strong>Kesişim</strong> A ∩ B: ikisinde de ("ve"). <strong>Fark</strong> A − B = A ∩ B′: A'da olup B'de olmayan. <strong>Tümleme</strong> A′ = E − A.</li>
+<li><strong>Ayrık:</strong> A ∩ B = ∅. A ⊂ B ise A ∩ B = A, A ∪ B = B, A − B = ∅.</li>
+<li><strong>Özellikler:</strong> ∪ ve ∩ için tek kuvvet, değişme, birleşme, iki yönlü dağılma. A ∪ A′ = E, A ∩ A′ = ∅, (A′)′ = A. Farkta değişme yok.</li>
+<li><strong>De Morgan:</strong> (A ∪ B)′ = A′ ∩ B′, (A ∩ B)′ = A′ ∪ B′.</li>
+<li><strong>Sayı:</strong> s(A ∪ B) = s(A) + s(B) − s(A ∩ B); s(A − B) = s(A) − s(A ∩ B); s(A′) = s(E) − s(A).</li>
+<li><strong>Üç küme:</strong> tekler +, ikili kesişimler −, üçlü +. Verilen ikili kesişim üçlüyü de içerir.</li>
+<li><strong>Venn:</strong> içten dışa doldur. Kontrol: bölgeler toplamı = s(E), her dairenin bölgeleri = o kümenin sayısı.</li>
+<li><strong>İfadeler:</strong> en az biri = birleşim · yalnız biri = hilaller · en çok biri = ortak bölgenin dışı · hiçbiri = (A ∪ B)′.</li>
+<li><strong>İki özellik:</strong> satır-sütun toplamlı tablo; tek boşluğu kalan satırdan başla.</li>
+<li><strong>En az / en çok:</strong> s(A ∩ B) en çok küçük küme kadar, en az s(A) + s(B) − s(E) (negatifse 0).</li>
+<li><strong>Sıralı ikili:</strong> (a, b) = (c, d) ⇔ a = c ve b = d.</li>
+<li><strong>Kartezyen çarpım:</strong> A × B = {(x, y) : x ∈ A, y ∈ B}; s(A × B) = s(A) · s(B); A × B ≠ B × A (A ≠ B, ikisi de boş değil); A × ∅ = ∅.</li>
+<li><strong>Grafik:</strong> birinci küme yatay eksen. Sonlu × sonlu: noktalar · sonlu × aralık: doğru parçaları · aralık × aralık: dikdörtgensel bölge.</li>
+<li><strong>Dağılma:</strong> A × (B ∪ C) = (A × B) ∪ (A × C).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-35">
+<h3>Quiz 35</h3>
+<p class="qa">Yirmi dört soru: 8'i bu parçadan, 16'sı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="A"><p class="q">A = {1, 2, 3, 4, 5} ve B = {4, 5, 6, 7} kümeleri veriliyor. Buna göre A − B kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{1, 2, 3}</li><li>{4, 5}</li><li>{6, 7}</li><li>{1, 2, 3, 6, 7}</li><li>{1, 2, 3, 4, 5, 6, 7}</li></ul>
+<div class="coz"><p>A − B, A'da olup B'de olmayan elemanlardır: A'dan B ile ortak olan 4 ve 5 atılır, geriye {1, 2, 3} kalır. {4, 5} kesişimdir (A ∩ B). {6, 7} ters yöndeki farktır (B − A); farkın değişme özelliği yoktur. {1, 2, 3, 6, 7} "yalnız birinde olanlar"dır, iki farkın birleşimi. {1, …, 7} ise birleşimdir. Soru, dört işlemin bölgelerini karıştırıp karıştırmadığını yoklar.</p></div></li>
+
+<li data-c="B"><p class="q">(x − 1, 2y + 3) = (4, 3x) olduğuna göre x + y kaçtır?</p>
+<ul class="sec"><li>6</li><li>11</li><li>14</li><li>15</li><li>30</li></ul>
+<div class="coz"><p>Sıralı ikililer, bileşenleri sırasıyla eşitse eşittir. Birinci bileşenler: x − 1 = 4, x = 5. İkinci bileşenler: 2y + 3 = 3x = 15, 2y = 12, y = 6. x + y = 11. 6, ilk denklemde 1'i yanlış yönde taşıyıp x = 3 bulanın sonucudur (o zaman 2y + 3 = 9, y = 3). 14, 2y + 3 = 15'te 3'ü ekleyip y = 9 bulanın; 15, ikinci bileşenin değerini (3x) cevap sananın; 30 ise toplam yerine çarpımı (x · y) hesaplayanın sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q">s(A) = 15, s(B) = 12 ve s(A ∪ B) = 20 olduğuna göre s(A − B) kaçtır?</p>
+<ul class="sec"><li>3</li><li>5</li><li>7</li><li>8</li><li>13</li></ul>
+<div class="coz"><p>Önce kesişim: 20 = 15 + 12 − s(A ∩ B), buradan s(A ∩ B) = 7. A − B, A'nın ortak bölge dışındaki kısmıdır: 15 − 7 = 8. 3, s(A) − s(B) yapanın sonucudur; A'dan B'nin tamamı değil, yalnızca ortak kısım atılır. 7 kesişimin kendisidir; 5, ters yöndeki farktır (12 − 7 = B − A). 13 ise iki hilalin toplamıdır (8 + 5), "yalnız birinde olanlar". Kontrol: 8 + 7 + 5 = 20 ✓.</p></div></li>
+
+<li data-c="E"><p class="q">[A′ ∪ (A ∩ B)]′ ifadesi aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li>∅</li><li>A ∩ B</li><li>B − A</li><li>A′ ∪ B</li><li>A − B</li></ul>
+<div class="coz"><p>Önce parantez içi: A′ ∪ (A ∩ B) = (A′ ∪ A) ∩ (A′ ∪ B) = E ∩ (A′ ∪ B) = A′ ∪ B (dağılma). Tümlemesi De Morgan ile: (A′ ∪ B)′ = A ∩ B′ = A − B. D, en dıştaki tümlemeyi unutup parantez içinde durmanın sonucudur. A (∅), De Morgan'ı işlemi çevirmeden uygulayanın bulduğudur: (A ∩ B)′'yi A′ ∩ B′ yazınca A ∩ A′ ∩ B′ = ∅ çıkar. B ve C ise bölgeleri karıştırmaktan gelir. Kontrol: E = {1, 2, 3, 4}, A = {1, 2}, B = {2, 3} için A′ ∪ (A ∩ B) = {2, 3, 4}, tümleyeni {1} = A − B ✓.</p></div></li>
+
+<li data-c="B"><p class="q">40 kişilik bir sınıfta 22 erkek öğrenci vardır. Sınıfta gözlük kullanan 15 öğrenci ve gözlük kullanmayan 10 kız öğrenci vardır. Buna göre gözlük kullanan erkek öğrenci sayısı kaçtır?</p>
+<ul class="sec"><li>5</li><li>7</li><li>8</li><li>12</li><li>15</li></ul>
+<div class="coz"><p>Tablo kur. Kız sayısı 40 − 22 = 18. Kız satırında tek boşluk gözlüklü kız: 18 − 10 = 8. Gözlüklü sütununda tek boşluk gözlüklü erkek: 15 − 8 = 7. Kontrol: gözlüksüz erkek 22 − 7 = 15, gözlüksüz toplam 10 + 15 = 25 = 40 − 15 ✓. 8 gözlüklü kız sayısıdır; 15 gözlüksüz erkek sayısıdır. 12 (22 − 10) ve 5 (15 − 10) farklı satır ve sütunlara ait sayıları birbirinden çıkarmanın sonucudur.</p></div></li>
+
+<li data-c="C"><p class="q">45 kişilik bir sınıfta 28 öğrenci satranç oynamayı, 30 öğrenci yüzmeyi biliyor. Her ikisini de bilen öğrenci sayısı en az a, en çok b olduğuna göre a + b kaçtır?</p>
+<ul class="sec"><li>28</li><li>30</li><li>41</li><li>43</li><li>58</li></ul>
+<div class="coz"><p>En çok: ortak bölge küçük kümeden büyük olamaz, satranç bilenlerin hepsi yüzme de bilebilir: b = 28. En az: 28 + 30 = 58 kişi 45'i 13 aşıyor; bu 13 kişi iki kümede de olmak zorunda: a = 13. a + b = 41. 43, en çok değeri büyük küme (30) sananın; 28, en az değeri 0 sananın sonucudur, oysa toplam sınıfı aştığı için kümeler ayrık olamaz. 30, en az değeri iki sayının farkı (2) sananın; 58 ise iki sayıyı toplayanın sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q">A = {1, 2, 3, 4} ve B = {y : y ∈ R, 1 ≤ y ≤ 3} olmak üzere A × B kümesinin grafiği analitik düzlemde çiziliyor. Grafiğin toplam uzunluğu kaç birimdir?</p>
+<ul class="sec"><li>2</li><li>4</li><li>6</li><li>8</li><li>12</li></ul>
+<div class="coz"><p>Birinci bileşen A'dan (yatay eksen), yalnızca 1, 2, 3, 4 değerleri. İkinci bileşen 1 ile 3 arasındaki bütün gerçek sayılar. Grafik, x = 1, 2, 3, 4 üzerinde y = 1'den 3'e uzanan dört dikey doğru parçasıdır; her biri 2 birim, toplam 4 · 2 = 8. 2 tek bir parçanın uzunluğu, 4 parça sayısıdır. 6, A'yı da [1, 4] aralığı sanıp dikdörtgenin alanını bulanın sonucudur. 12, B'yi yalnızca {1, 2, 3} tam sayıları sanıp nokta sayısını (4 · 3) bulanın sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q">50 kişilik bir öğrenci grubunda matematik kulübüne 24, müzik kulübüne 20, spor kulübüne 22 öğrenci üyedir. Matematik ve müzik kulüplerine üye olanlar 8, matematik ve spor kulüplerine üye olanlar 9, müzik ve spor kulüplerine üye olanlar 7 kişidir; üç kulübe birden üye olan 3 öğrenci vardır. Buna göre yalnız bir kulübe üye olan kaç öğrenci vardır?</p>
+<ul class="sec"><li>9</li><li>18</li><li>21</li><li>27</li><li>45</li></ul>
+<div class="coz"><p>İçten dışa doldur. Üçlü bölge 3. Yalnız ikili bölgeler: 8 − 3 = 5, 9 − 3 = 6, 7 − 3 = 4. Yalnız matematik 24 − 5 − 6 − 3 = 10, yalnız müzik 20 − 5 − 4 − 3 = 8, yalnız spor 22 − 6 − 4 − 3 = 9; toplam 27. Kontrol: formülle birleşim 66 − 24 + 3 = 45 ve 27 + 15 + 3 = 45 ✓. 9, ikili kesişimlerden üçlüyü çıkarmadan yazanın sonucudur (yalnızlar 4, 2, 3 çıkar). 45 en az bir kulübe üye olanlar, 18 en az iki kulübe üye olanlardır (15 + 3). 21, birleşimden verilen ikili sayıları doğrudan çıkaranın (45 − 24) bulduğudur.</p></div></li>
+
+<li data-c="B" data-k="mat-2"><p class="q">a = (−2) · (−3) · (−5) ve b = (−4) · (−6) olduğuna göre a + b kaçtır?</p>
+<ul class="sec"><li>−54</li><li>−6</li><li>6</li><li>54</li><li>720</li></ul>
+<div class="coz"><p>Çok çarpanlı işlemde işaret, negatif çarpan sayısından bulunur. a'da üç negatif çarpan var (tek sayı): a = −30. b'de iki negatif çarpan var (çift sayı): b = 24. a + b = −30 + 24 = −6. 54, a'nın işaretini artı alanın (30 + 24); −54, b'nin işaretini eksi alanın (−30 − 24); 6, iki işareti birden ters çevirenin sonucudur. 720, toplam yerine çarpımla uğraşıp işareti de kaçıranın bulduğudur.</p></div></li>
+
+<li data-c="D" data-k="mat-5"><p class="q">Bir A doğal sayısının 7 ile bölümünden kalan 5'tir. Buna göre 2A + 3 sayısının 7 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>1</li><li>3</li><li>5</li><li>6</li><li>13</li></ul>
+<div class="coz"><p>Kalanlarla işlem yapılabilir: A yerine kalanı 5'i koy. 2 · 5 + 3 = 13; 13'ün 7 ile bölümünden kalan 6'dır. Denetim: A = 12 al (12 = 7 + 5); 2 · 12 + 3 = 27 = 3 · 7 + 6 ✓. 13, kalanın bölenden küçük olması gerektiğini unutanın sonucudur. 3, "+3"ü unutup 10'un kalanını; 1, "2 ile çarpma"yı unutup 8'in kalanını alanın bulduğudur. 5, A'nın kalanını aynen yazanın sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-8"><p class="q">(<span class="kes"><span>2</span><span>3</span></span> + <span class="kes"><span>1</span><span>4</span></span>) ÷ <span class="kes"><span>5</span><span>6</span></span> işleminin sonucu kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>18</span><span>35</span></span></li><li><span class="kes"><span>55</span><span>72</span></span></li><li><span class="kes"><span>10</span><span>11</span></span></li><li><span class="kes"><span>11</span><span>12</span></span></li><li><span class="kes"><span>11</span><span>10</span></span></li></ul>
+<div class="coz"><p>Payda eşitle (EKOK 12): 8/12 + 3/12 = 11/12. Bölmede ikinci kesir ters çevrilip çarpılır: 11/12 · 6/5 = 66/60 = 11/10. 18/35, payları ve paydaları toplayıp 3/7 bulan, sonra doğru bölenin sonucudur; kesirlerde pay-payda toplanmaz. 55/72, bölmek yerine çarpanın; 10/11, sonucu ters çevirenin; 11/12 ise bölme adımını hiç yapmayanın sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-11"><p class="q">2<sup>x + 1</sup> + 2<sup>x</sup> = 48 olduğuna göre x kaçtır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>5</li><li>16</li><li>24</li></ul>
+<div class="coz"><p>2<sup>x + 1</sup> = 2 · 2<sup>x</sup> yaz ve ortak paranteze al: 2<sup>x</sup> · (2 + 1) = 48, 2<sup>x</sup> = 16 = 2<sup>4</sup>, x = 4. 16, 2<sup>x</sup> değerinde durup x'i bulmayı unutanın sonucudur. 24, ortak paranteze alırken ikinci terimi unutup 2 · 2<sup>x</sup> = 48 yazanın bulduğu 2<sup>x</sup> değeridir. 5, x + 1'i x sanmaktan gelir. Denetim: x = 3 için 16 + 8 = 24, x = 5 için 64 + 32 = 96; yalnız x = 4 için 32 + 16 = 48 ✓.</p></div></li>
+
+<li data-c="A" data-k="mat-14"><p class="q">(x + 3)(x − 2) − x(x + 1) ifadesinin en sade hâli aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−6</li><li>−2x − 6</li><li>−x − 6</li><li>2x − 6</li><li>2x<sup>2</sup> + 2x − 6</li></ul>
+<div class="coz"><p>Her terimi her terimle çarp: (x + 3)(x − 2) = x<sup>2</sup> − 2x + 3x − 6 = x<sup>2</sup> + x − 6. İkinci kısım x<sup>2</sup> + x; eksi önünde olduğu için parantez açılınca −x<sup>2</sup> − x olur. Toplam: x<sup>2</sup> + x − 6 − x<sup>2</sup> − x = −6. C, ilk çarpımda orta terimi (x) unutanın; B, orta terimin işaretini −x bulanın; D, eksiyi ikinci terime dağıtmayı unutup −x<sup>2</sup> + x yazanın; E, iki ifadeyi çıkarmak yerine toplayanın sonucudur. Denetim: x = 1 için 4 · (−1) − 2 = −6 ✓.</p></div></li>
+
+<li data-c="E" data-k="mat-17"><p class="q"><span class="kes"><span>x − 1</span><span>2</span></span> − <span class="kes"><span>x + 2</span><span>3</span></span> = 1 denkleminin çözümü kaçtır?</p>
+<ul class="sec"><li>5</li><li>7</li><li>8</li><li>11</li><li>13</li></ul>
+<div class="coz"><p>Paydaların EKOK'u 6; her terimi 6 ile çarp: 3(x − 1) − 2(x + 2) = 6. Parantezleri aç: 3x − 3 − 2x − 4 = 6, x − 7 = 6, x = 13. Denetim: 12/2 − 15/3 = 6 − 5 = 1 ✓. 5, −2'yi (x + 2)'ye dağıtırken −2x + 4 yazanın sonucudur. 8, sağ taraftaki 1'i 6 ile çarpmayı unutanın; 7, sağ tarafı tamamen unutanın; 11, 3(x − 1)'i 3x − 1 diye açanın sonucudur.</p></div></li>
+
+<li data-c="C" data-k="mat-20"><p class="q">a &lt; b &lt; 0 &lt; c olduğuna göre aşağıdakilerden hangisi <strong>daima</strong> doğrudur?</p>
+<ul class="sec"><li>a · b &lt; 0</li><li>a − b &gt; 0</li><li>a · b · c &gt; 0</li><li>b · c &gt; 0</li><li>a + c &gt; 0</li></ul>
+<div class="coz"><p>a ve b negatif, c pozitif. a · b iki negatifin çarpımıdır, pozitiftir; pozitif bir sayıyı pozitif c ile çarpınca yine pozitif: a · b · c &gt; 0 daima doğru. A yanlıştır, çünkü a · b &gt; 0. B yanlıştır: a &lt; b ise a − b &lt; 0. D yanlıştır: negatif × pozitif negatiftir. E ise bazen doğru bazen yanlıştır; a = −5, c = 1 için a + c = −4 &lt; 0. "Daima" sorusunda tek bir karşı örnek seçeneği eler.</p></div></li>
+
+<li data-c="E" data-k="mat-23"><p class="q">8 kişilik bir grubun yaş ortalaması 15'tir. Gruba 2 kişi katılınca grubun yaş ortalaması 16 oluyor. Buna göre gruba katılan 2 kişinin yaşları toplamı kaçtır?</p>
+<ul class="sec"><li>8</li><li>20</li><li>30</li><li>32</li><li>40</li></ul>
+<div class="coz"><p>Toplam = ortalama × kişi sayısı. Önce 8 · 15 = 120, sonra 10 · 16 = 160. Yeni gelenlerin yaşları toplamı 160 − 120 = 40. 32, yeni gelenleri yeni ortalamada (2 · 16) sayanın; 30, eski ortalamada (2 · 15) sayanın sonucudur; ikisi de eski 8 kişinin ortalamasının 1 yükseldiğini hesaba katmaz. 8, yalnızca o 1 yıllık yükselişi (8 · 1) bulanın; 20 ise iki kişinin yaş ortalamasıdır, toplam değil.</p></div></li>
+
+<li data-c="C" data-k="mat-26"><p class="q">Bir annenin yaşı kızının yaşının 3 katıdır. 10 yıl sonra annenin yaşı kızının yaşının 2 katı olacaktır. Buna göre annenin bugünkü yaşı kaçtır?</p>
+<ul class="sec"><li>10</li><li>20</li><li>30</li><li>40</li><li>60</li></ul>
+<div class="coz"><p>Kızın yaşı k ise anne 3k. 10 yıl sonra ikisi de 10 yaş büyür: 3k + 10 = 2(k + 10), 3k + 10 = 2k + 20, k = 10. Anne 30 yaşındadır. Denetim: 10 yıl sonra 40 ve 20; 40 = 2 · 20 ✓. 10 kızın yaşı, 20 yaş farkıdır. 40, annenin 10 yıl sonraki yaşıdır. 60, yalnızca kızı yaşlandırıp 3k = 2(k + 10) yazanın sonucudur; herkes aynı anda aynı kadar yaşlanır.</p></div></li>
+
+<li data-c="B" data-k="mat-29"><p class="q">Uzunluğu 200 metre olan bir tren saatte 72 kilometre sabit hızla gidiyor. Trenin bir tünele girmeye başlamasından tünelden tamamen çıkmasına kadar 30 saniye geçtiğine göre tünelin uzunluğu kaç metredir?</p>
+<ul class="sec"><li>200</li><li>400</li><li>600</li><li>800</li><li>1960</li></ul>
+<div class="coz"><p>Önce birim: 72 km/sa = 72 ÷ 3,6 = 20 m/sn. 30 saniyede alınan yol 20 · 30 = 600 m. Tren tamamen çıkana kadar ön ucu, tünel boyu + tren boyu kadar yol alır: tünel = 600 − 200 = 400 m. 600, tren boyunu çıkarmayı unutanın; 800, tren boyunu çıkarmak yerine ekleyenin sonucudur. 1960, km/sa'yı m/sn sanıp 72 · 30 − 200 hesaplayanın bulduğudur. 200 ise tren boyunun kendisidir.</p></div></li>
+
+<li data-c="C" data-k="mat-32"><p class="q">Aylık harcaması 40 000 lira olan bir ailenin harcamaları daire grafiğiyle gösteriliyor. Aile kiraya 12 000 lira ödediğine göre grafikte kira diliminin merkez açısı kaç derecedir?</p>
+<ul class="sec"><li>30</li><li>54</li><li>108</li><li>120</li><li>252</li></ul>
+<div class="coz"><p>Kira, toplamın 12 000/40 000 = 3/10'u, yani %30'udur. Dairenin tamamı 360° olduğundan açı 360 · 3/10 = 108°. 30, yüzdeyi açı sananın sonucudur. 54, tam daire yerine 180° ile çarpanın; 252, kira dışındaki harcamaların açısını (28 000 liranın payı) bulanın sonucudur. 120 ise oranı göz kararı üçte bir sanmaktan gelir.</p></div></li>
+
+<li data-c="E" data-k="mat-32"><p class="q">Bir telefon şirketinin A tarifesinde aylık 50 lira sabit ücret ve konuşulan her dakika için 2 lira; B tarifesinde sabit ücret olmadan her dakika için 3 lira alınıyor. Buna göre A tarifesi hangi durumda B tarifesinden daha ucuzdur?</p>
+<ul class="sec"><li>Aylık konuşma 10 dakikadan fazlaysa</li><li>Aylık konuşma 25 dakikadan fazlaysa</li><li>Aylık konuşma 50 dakikadan azsa</li><li>Aylık konuşma tam 50 dakikaysa</li><li>Aylık konuşma 50 dakikadan fazlaysa</li></ul>
+<div class="coz"><p>x dakikada A tarifesi 50 + 2x, B tarifesi 3x lira tutar. Eşitlik: 50 + 2x = 3x, x = 50; iki doğru 50 dakikada kesişir. 50'den sonra B'nin her dakikası 1 lira daha pahalıdır, bu yüzden A ucuzlar: x = 51 için A 152, B 153 lira. C ters yönü gösterir; 50 dakikadan az konuşanlar için B ucuzdur. D'de iki tarife eşittir, biri öbüründen ucuz değildir. A, 50'yi iki dakika ücretinin toplamına (5) bölenin; B, 50'yi 2'ye bölenin sonucudur.</p></div></li>
+
+<li data-c="A" data-k="mat-33"><p class="q">Bir kibrit örüntüsünde 1. adımda 4 kibrit kullanılıyor ve her adımda bir öncekine 3 kibrit ekleniyor. Buna göre 20. adımda kaç kibrit kullanılır?</p>
+<ul class="sec"><li>61</li><li>63</li><li>64</li><li>76</li><li>80</li></ul>
+<div class="coz"><p>1. adımdan 20. adıma kadar 19 kez ekleme yapılır: 4 + 19 · 3 = 61. Genel kural: n. adımda 4 + 3(n − 1) = 3n + 1 kibrit; n = 1 için 4 ✓, n = 20 için 61. 64, ekleme sayısını 20 sanıp 4 + 20 · 3 yapanın sonucudur (aralık sayısı ile adım sayısı farkı). 63, kuralı 3(n + 1) sananın; 80 ve 76, her adımda 4 kibrit eklendiğini sananların bulduğudur.</p></div></li>
+
+<li data-c="A" data-k="mat-33"><p class="q">Bir sayı önce 3 ile çarpılıyor, sonra sonuçtan 7 çıkarılıyor, en son elde edilen sayı 2'ye bölünüyor ve 13 bulunuyor. Buna göre başlangıçtaki sayı kaçtır?</p>
+<ul class="sec"><li>11</li><li>16</li><li>19</li><li>26</li><li>33</li></ul>
+<div class="coz"><p>Geriye doğru çalış: son işlemden başla ve her işlemi tersiyle geri al. 2'ye bölme yerine 2 ile çarp: 26. 7 çıkarma yerine 7 ekle: 33. 3 ile çarpma yerine 3'e böl: 11. Denetim: 11 · 3 = 33, 33 − 7 = 26, 26 ÷ 2 = 13 ✓. 16, işlemleri 13'e ileri yönde uygulayanın; 19, 7'yi geri alırken yine çıkaranın; 26 ve 33, geri alma zincirini yarıda bırakanların sonucudur.</p></div></li>
+
+<li data-c="D" data-k="mat-34"><p class="q">A = {a, b, c, d, e} kümesinin alt kümelerinden kaç tanesinde en az bir sesli harf bulunur?</p>
+<ul class="sec"><li>4</li><li>8</li><li>16</li><li>24</li><li>31</li></ul>
+<div class="coz"><p>"En az bir" sorusunda tümünden çıkar. Bütün alt kümeler 2<sup>5</sup> = 32. Hiç sesli harf içermeyenler, a ile e'nin ikisinin de kararı "yok" olanlardır: 2<sup>5 − 2</sup> = 8. Cevap 32 − 8 = 24. 8, çıkarmayı unutanın; 16, yalnızca a'yı içerenleri sayanın sonucudur. 4, yalnızca {a, e} kümesinin alt küme sayısıdır. 31 ise özalt küme sayısıdır.</p></div></li>
+
+<li data-c="C" data-k="mat-34"><p class="q">p ⇒ q önermesi yanlış olduğuna göre aşağıdaki önermelerden hangisi doğrudur?</p>
+<ul class="sec"><li>p ∧ q</li><li>p ⇔ q</li><li>q ⇒ p</li><li>q′ ⇒ q</li><li>p′ ∨ q</li></ul>
+<div class="coz"><p>"İse" yalnızca 1 ⇒ 0 iken yanlıştır: p ≡ 1, q ≡ 0. C: q ⇒ p ≡ 0 ⇒ 1 ≡ 1, öncülü yanlış olan koşullu önerme doğrudur. A: 1 ∧ 0 ≡ 0. B: değerler farklı, ⇔ yanlış. D: q′ ≡ 1, 1 ⇒ 0 ≡ 0. E: p′ ∨ q ≡ 0 ∨ 0 ≡ 0; bu zaten p ⇒ q'nun kendisine denktir, yanlış olması beklenir. Soru, karşıtın (q ⇒ p) asıl önermeyle aynı değeri taşımak zorunda olmadığını da gösterir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-34">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-35">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-36">Sonraki parça: fonksiyon nedir</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"kümelerde birleşim kesişim fark tümleme işlemleri konu anlatımı"</li>
+  <li>"küme problemleri üç kümeli Venn şeması TYT"</li>
+  <li>"kümeler en az en çok eleman sayısı soruları"</li>
+  <li>"kartezyen çarpım sıralı ikili grafiği 9. sınıf"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler 2018 Ortaöğretim Matematik Öğretim Programı'nın 9. sınıf "Kümeler" ünitesindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: Örnek 1'deki bütün kümeler ve De Morgan eşitliği; Örnek 2'deki sadeleştirme (rastgele üretilmiş binlerce küme çiftinde ve Örnek 1'in kümelerinde); üç küme formülü (rastgele kümelerde); Örnek 3–9'daki bütün sayılar (Örnek 6'da kesişimin alabileceği bütün değerler taranarak, Örnek 7'de denklem tam sayılar üzerinde taranarak, Örnek 8'de ikililer tek tek üretilerek); kartezyen çarpımın dağılması; 24 quiz sorusunun doğru cevapları ve çeldiricilerin çözümlerde söylenen hatalardan çıkan değerler olduğu; 4. ve 16. sorularda öbür seçeneklerin gerçekten farklı küme/doğruluk değeri verdiği; tekrar sorusu 7'de yalnızca C'nin her durumda doğru olduğu (rastgele değerlerle).</li>
+  <li>Gösterim farkları: fark için A − B yerine A \ B, tümleyen için A′ yerine A<sup>c</sup> ya da A üstü çizgili görebilirsin. Alt küme için Parça 34'teki gibi ⊂ kullanıldı. Aralık gösterimi Parça 19'daki köşeli parantez yazımıdır.</li>
+  <li>"Bağıntı konusu ayrıca yoktur" bilgisi kapsam listesinden alındı. Bazı kaynaklar kartezyen çarpım ile birlikte bağıntıyı da işler; sınav için bunu doğrulayamadım.</li>
+  <li>Biyolojideki çaprazlama tablosu benzetmesi yalnızca bir bağlantı önerisidir; biyoloji parçalarının terimleriyle karşılaştırmadım.</li>
+  <li>Tekrar soruları Parça 2, 5, 8, 11, 14, 17, 20, 23, 26, 29'dan birer, Parça 32, 33, 34'ten ikişer tanedir (toplam 16 sınırı; daha eski parçalar eşit aralıklarla seçildi). Parça 20, 31 ve 32 bu parça yazılırken depoda yoktu; o parçalardan soruları kapsam listesindeki konulara göre yazdım, metinleriyle karşılaştıramadım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

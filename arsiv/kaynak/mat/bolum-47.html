@@ -1,0 +1,588 @@
+<article class="chapter ders" id="c-mat-47">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 47 · Olasılık 2</div>
+<h1>Bileşik olaylar ve sayma ile olasılık: ağaç şeması, çarpma ve kombinasyon</h1>
+<p class="time">Okuma ve çözme yaklaşık 50 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir torbada 3 kırmızı, 2 mavi top var. Torbadan bir top çekiyorsun, rengine bakıyorsun, sonra bir top daha çekiyorsun. İki topun da kırmızı olma olasılığı, ilk topu torbaya geri koyup koymamana göre değişir mi? İki topu tek hamlede, aynı anda avucuna alırsan bu iki durumdan hangisine benzer? Bu parça, tek bir deneyin olasılığından birbirini izleyen deneylerin olasılığına nasıl geçildiğini anlatıyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 46 (örnek uzay, P(A) = s(A)/s(E), tümleyen olay ve "en az bir"), Parça 45 (kombinasyon C(n, r)), Parça 44 (permütasyon ve paket yöntemi), Parça 43 (çarpma kuralı ve ağaç şeması), Parça 8 (kesirlerde çarpma ve sadeleştirme). Yanında kâğıt kalem olsun; bu parçadaki her ağacı kendin de çiz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 46'da tek bir deneye bakmıştık: bir zar atılır, bir kart çekilir, bir sayı seçilir. Olasılık, istenen durumların sayısının bütün durumların sayısına oranıydı. Sınav soruları ise çoğu zaman tek bir deneyle yetinmez: "torbadan art arda iki top çekiliyor", "üç para birlikte atılıyor", "önce bir torba seçiliyor, sonra o torbadan top çekiliyor", "iki kişi hedefe birer atış yapıyor". Bu tür olaylara <strong>bileşik olay</strong> diyeceğiz: birden çok basamaktan oluşan bir deneyin sonucu.</p>
+
+<p>Bileşik olayların hepsi iki yoldan biriyle çözülür ve bu parçanın bütün amacı ikisini de rahatça kullanır hâle gelmendir:</p>
+
+<p><strong>Basamak basamak yol (ağaç şeması).</strong> Deneyi adımlarına ayırırsın, her adımın olasılığını yazarsın, bir yol boyunca olasılıkları çarparsın, istenen yolları toplarsın.</p>
+
+<p><strong>Sayma yolu.</strong> Bütün deneyi tek bir seçim gibi görürsün; istenen durumların sayısını ve bütün durumların sayısını kombinasyon ya da permütasyonla sayar, bölersin.</p>
+
+<p>İki yol aynı sonucu verir; bunu aşağıda göstereceğiz. Hangisinin hızlı olduğu soruya göre değişir ve sınavda bu seçimi doğru yapmak süre kazandırır. Bir yolla çözüp öbürüyle denetlemek de hesap makinesiz sınavda en güvenilir kontrol yoludur.</p>
+
+<p>Sıramız şöyle: art arda çekim (geri koyarak ve geri koymadan), ağaç şeması ve "ve–veya" kuralı, aynı anda çekme, kombinasyonla olasılık, permütasyonla olasılık, çoklu para ve zar atışı, iki torba ve torbadan torbaya aktarma, bağımsız olaylar, "en az bir" kuralı, olma olasılığının olmama olasılığına oranı, tablodan olasılık okuma ve son olarak cevabın akla yatkınlığını denetleme.</p>
+
+<h2 class="s">1. Art arda iki deney: olasılıklar neden çarpılır?</h2>
+
+<p>Önce kuralı ezberlemeden, Parça 43'teki çarpma kuralından çıkaralım. Torbada 3 kırmızı (K) ve 2 mavi (M) top var. Topları birbirinden ayırt edebilmek için numaralandır: K<sub>1</sub>, K<sub>2</sub>, K<sub>3</sub>, M<sub>1</sub>, M<sub>2</sub>. Art arda iki top çekiyoruz ve ilk topu <strong>geri koymuyoruz</strong>.</p>
+
+<p>Örnek uzayda kaç sıralı çekim var? Birinci çekimde 5 top, ikinci çekimde geriye kalan 4 top seçilebilir. Çarpma kuralıyla 5 · 4 = 20 sıralı çekim vardır ve topların her biri eşit şansla çekildiği için bu 20 çekim eş olasılıklıdır. İkisinin de kırmızı olduğu çekimler: birinci için 3 kırmızıdan biri, ikinci için kalan 2 kırmızıdan biri, yani 3 · 2 = 6 çekim. Olasılık:</p>
+
+<span class="mat">P(KK) = <span class="kes"><span>3 · 2</span><span>5 · 4</span></span> = <span class="kes"><span>6</span><span>20</span></span> = <span class="kes"><span>3</span><span>10</span></span> <span class="g">(istenen sıralı çekimler / bütün sıralı çekimler)</span></span>
+
+<p>Şimdi aynı kesre başka bir gözle bak: <span class="kes"><span>3 · 2</span><span>5 · 4</span></span> = <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>4</span></span>. Birinci çarpan, ilk topun kırmızı olma olasılığıdır (5 topun 3'ü kırmızı). İkinci çarpan, ilk top kırmızı çıktıktan <em>sonra</em> ikinci topun kırmızı olma olasılığıdır (kalan 4 topun 2'si kırmızı). Yani "önce bu, sonra şu" türü bir olayın olasılığı, adımların olasılıklarının çarpımıdır. Kural bir uzlaşma değil; çarpma kuralıyla yapılan saymanın kesre yazılmış hâlidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir deney adım adım yapılıyorsa, "birinci adımda A <strong>ve</strong> ikinci adımda B" olayının olasılığı, A'nın olasılığı ile A gerçekleştikten sonra B'nin olasılığının <strong>çarpımıdır</strong>. Her adımdaki olasılık, o andaki durumla (torbada o an kaç top kaldığıyla) hesaplanır.</p></div>
+
+<h3>Geri koyarak ve geri koymadan</h3>
+
+<p>Kuralın son cümlesi bütün farkı taşır. Çektiğin topu torbaya <strong>geri koyarsan</strong> torba her çekimden önce ilk hâline döner: yine 3 kırmızı, 2 mavi. Bu yüzden her çekimde kırmızı olasılığı <span class="kes"><span>3</span><span>5</span></span> kalır. <strong>Geri koymazsan</strong> torba her çekimde küçülür ve içindeki oran değişir; ikinci çekimin olasılığı birincinin sonucuna bağlıdır.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>Geri koyarak</th><th>Geri koymadan</th></tr>
+<tr><td>Torbadaki top sayısı</td><td>Her çekimde aynı (5, 5, 5…)</td><td>Her çekimde 1 azalır (5, 4, 3…)</td></tr>
+<tr><td>Bir rengin olasılığı</td><td>Hiç değişmez</td><td>Önceki çekimlerin sonucuna göre değişir</td></tr>
+<tr><td>İki kırmızı (3K, 2M)</td><td><span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>3</span><span>5</span></span> = <span class="kes"><span>9</span><span>25</span></span></td><td><span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>4</span></span> = <span class="kes"><span>3</span><span>10</span></span></td></tr>
+<tr><td>Aynı top iki kez çıkabilir mi?</td><td>Evet</td><td>Hayır</td></tr>
+<tr><td>Sayma yolundaki karşılığı</td><td>Tekrarlı seçim: 5 · 5 = 25 sıralı çekim</td><td>Tekrarsız seçim: 5 · 4 = 20 sıralı çekim</td></tr>
+</table></div>
+
+<p>Geri koymadan çekimde iki kırmızı olasılığının daha küçük çıkması akla da yatar: bir kırmızı çıkınca torbada kırmızılar azalır, ikinci kırmızının şansı düşer.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir torbada 3 kırmızı, 2 mavi top var. Art arda iki top çekiliyor. İkisinin de mavi olma olasılığını, (a) ilk top geri konarak, (b) geri konmadan bul.</p>
+<p><strong>Adım 1.</strong> (a) Birinci çekimde mavi olasılığını yazarım.</p>
+<span class="mat">P(1. M) = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(5 topun 2'si mavi)</span></span>
+<p><strong>Adım 2.</strong> Top geri konduğu için torba yine 3K, 2M olur.</p>
+<span class="mat">P(2. M) = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(torba değişmedi)</span></span>
+<p><strong>Adım 3.</strong> İkisini çarparım.</p>
+<span class="mat">P(MM) = <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>2</span><span>5</span></span> = <span class="kes"><span>4</span><span>25</span></span> <span class="g">("ve" ise çarp)</span></span>
+<p><strong>Adım 4.</strong> (b) Geri koymadan: birinci yine <span class="kes"><span>2</span><span>5</span></span>; mavi çıkınca torbada 3K, 1M kalır.</p>
+<span class="mat">P(2. M) = <span class="kes"><span>1</span><span>4</span></span> <span class="g">(4 topun 1'i mavi)</span></span>
+<p><strong>Adım 5.</strong> Çarparım ve sadeleştiririm.</p>
+<span class="mat">P(MM) = <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>2</span><span>20</span></span> = <span class="kes"><span>1</span><span>10</span></span> <span class="g">(pay ve payda 2'ye bölündü)</span></span>
+<p><strong>Kontrol yolu.</strong> Sayarak: geri koymadan 5 · 4 = 20 sıralı çekimin 2 · 1 = 2'si iki mavi; <span class="kes"><span>2</span><span>20</span></span> = <span class="kes"><span>1</span><span>10</span></span>. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> (a) <span class="kes"><span>4</span><span>25</span></span>, (b) <span class="kes"><span>1</span><span>10</span></span>. Geri koymadan çekimde ikinci mavi daha zordur, çünkü mavilerden biri torbadan çıkmıştır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Geri koymadan çekimde paydayı küçültmeyi unutmak.</strong> "İlk top geri konmuyor" cümlesini okuyup yine <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>2</span><span>5</span></span> yazmak, soruyu geri koyarak çekime çevirir. Geri koymadan çekimde her adımda iki şey değişebilir: toplam top sayısı her zaman 1 azalır, çıkan rengin sayısı da 1 azalır. Her adımı yazarken torbanın o anki hâlini yanına not et: "3K, 1M kaldı".</p></div>
+
+<h2 class="s">2. Ağaç şeması: dallar boyunca çarp, dallar arasında topla</h2>
+
+<p>"İkisi de kırmızı" gibi olaylar ağaçta tek bir yola karşılık gelir. "Farklı renkte iki top" gibi olaylar ise birden çok yola: önce kırmızı sonra mavi (KM) ya da önce mavi sonra kırmızı (MK). Bunları düzenli görmek için <strong>dallı ağaç şeması</strong> çizilir. Ağacın her dalına o adımın olasılığı yazılır; bir uçtan köke giden yol, deneyin bir sonucudur.</p>
+
+<figure>
+<svg viewBox="0 0 400 296" role="img" aria-label="3 kırmızı 2 mavi topluk torbadan geri koymadan iki çekimin ağaç şeması ve dört yolun olasılıkları">
+  <circle class="sv-k" cx="22" cy="145" r="6"/>
+  <line class="sv-c" x1="28" y1="145" x2="128" y2="75"/>
+  <line class="sv-c" x1="28" y1="145" x2="128" y2="215"/>
+  <text class="sv-t" x="60" y="100">3/5</text>
+  <text class="sv-t" x="60" y="198">2/5</text>
+  <circle class="sv-l" cx="142" cy="75" r="14"/><text class="sv-b" x="142" y="80" text-anchor="middle">K</text>
+  <circle class="sv-m" cx="142" cy="215" r="14"/><text class="sv-b" x="142" y="220" text-anchor="middle">M</text>
+  <line class="sv-c" x1="156" y1="75" x2="250" y2="38"/>
+  <line class="sv-c" x1="156" y1="75" x2="250" y2="112"/>
+  <line class="sv-c" x1="156" y1="215" x2="250" y2="178"/>
+  <line class="sv-c" x1="156" y1="215" x2="250" y2="252"/>
+  <text class="sv-t" x="190" y="46">2/4</text>
+  <text class="sv-t" x="190" y="112">2/4</text>
+  <text class="sv-t" x="190" y="186">3/4</text>
+  <text class="sv-t" x="190" y="252">1/4</text>
+  <circle class="sv-l" cx="264" cy="38" r="14"/><text class="sv-b" x="264" y="43" text-anchor="middle">K</text>
+  <circle class="sv-m" cx="264" cy="112" r="14"/><text class="sv-b" x="264" y="117" text-anchor="middle">M</text>
+  <circle class="sv-l" cx="264" cy="178" r="14"/><text class="sv-b" x="264" y="183" text-anchor="middle">K</text>
+  <circle class="sv-m" cx="264" cy="252" r="14"/><text class="sv-b" x="264" y="257" text-anchor="middle">M</text>
+  <text class="sv-t" x="288" y="43">KK = 3/10</text>
+  <text class="sv-t" x="288" y="117">KM = 3/10</text>
+  <text class="sv-t" x="288" y="183">MK = 3/10</text>
+  <text class="sv-t" x="288" y="257">MM = 1/10</text>
+  <text class="sv-s" x="200" y="288" text-anchor="middle">Toplam: 3/10 + 3/10 + 3/10 + 1/10 = 1</text>
+</svg>
+<figcaption>Geri koymadan iki çekim. Birinci basamakta dallar 3/5 ve 2/5; ikinci basamaktaki dallar, birinci çekimden sonra torbada kalanlara göre yazılır. Her yolun olasılığı, yol üstündeki dalların çarpımıdır. Dört yolun toplamı 1 çıkmalıdır; çıkmıyorsa bir dal yanlış yazılmıştır.</figcaption>
+</figure>
+
+<p>Ağacın dört yolu birbirini dışlar: bir çekim aynı anda hem KM hem MK olamaz. Parça 46'da ayrık olaylar için P(A ∪ B) = P(A) + P(B) olduğunu görmüştük; kesişim boş olduğu için çıkarılacak bir şey yoktur. O hâlde birden çok yolu kapsayan bir olayın olasılığı, o yolların olasılıklarının toplamıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Dallar boyunca çarp, dallar arasında topla.</strong> Tek bir yolun olasılığı, o yol üstündeki dalların çarpımıdır ("ve"). Bir olay birden çok yolu kapsıyorsa, bu yolların olasılıkları toplanır ("veya"). Toplama yapılabilmesinin nedeni, ağacın farklı yollarının birbirini dışlamasıdır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> 3 kırmızı, 2 mavi top bulunan torbadan geri koymadan art arda iki top çekiliyor. Topların farklı renkte olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Olayı yollara ayırırım: farklı renk = KM ya da MK.</p>
+<p><strong>Adım 2.</strong> KM yolunun olasılığını bulurum.</p>
+<span class="mat">P(KM) = <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>4</span></span> = <span class="kes"><span>6</span><span>20</span></span> <span class="g">(önce kırmızı, kalan 4 topun 2'si mavi)</span></span>
+<p><strong>Adım 3.</strong> MK yolunun olasılığını bulurum.</p>
+<span class="mat">P(MK) = <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>3</span><span>4</span></span> = <span class="kes"><span>6</span><span>20</span></span> <span class="g">(önce mavi, kalan 4 topun 3'ü kırmızı)</span></span>
+<p><strong>Adım 4.</strong> İki yolu toplarım.</p>
+<span class="mat">P(farklı renk) = <span class="kes"><span>6</span><span>20</span></span> + <span class="kes"><span>6</span><span>20</span></span> = <span class="kes"><span>12</span><span>20</span></span> = <span class="kes"><span>3</span><span>5</span></span> <span class="g">(ayrık yollar toplanır)</span></span>
+<p><strong>Kontrol yolu.</strong> Tümleyenle: farklı renk değilse aynı renktir. P(KK) + P(MM) = <span class="kes"><span>3</span><span>10</span></span> + <span class="kes"><span>1</span><span>10</span></span> = <span class="kes"><span>4</span><span>10</span></span>; 1 − <span class="kes"><span>4</span><span>10</span></span> = <span class="kes"><span>6</span><span>10</span></span> = <span class="kes"><span>3</span><span>5</span></span>. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> <span class="kes"><span>3</span><span>5</span></span>.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Biri kırmızı, biri mavi" olayını tek yol sanmak.</strong> Yalnızca KM'yi hesaplayıp <span class="kes"><span>3</span><span>10</span></span> demek, olayın yarısını unutmaktır. Soru "önce kırmızı, sonra mavi" diye sıra belirtmiyorsa, iki sıranın ikisi de olaya dahildir. Sıra belirtilmişse ("birincinin kırmızı, ikincinin mavi olma olasılığı") tek yol alınır. Soru kökündeki "önce", "birinci", "ikinci" sözcüklerinin altını çiz.</p></div>
+
+<h2 class="s">3. Aynı anda çekmek, geri koymadan art arda çekmekle aynıdır</h2>
+
+<p>Soru "torbadan aynı anda iki top alınıyor" diyorsa ne yapacağız? Avucuna iki topu birden aldığında topların arasında bir sıra yoktur, ama aynı top iki kez de çıkamaz. İşte bu yüzden aynı anda çekim, olasılık hesabında <strong>geri koymadan art arda çekimle</strong> aynı sonucu verir. Nedenini sayarak görelim.</p>
+
+<p>Aynı anda iki top: 5 toptan sırasız 2 seçim, C(5, 2) = 10 durum. İkisi de kırmızı: C(3, 2) = 3 durum. Olasılık <span class="kes"><span>3</span><span>10</span></span>. Geri koymadan art arda: 5 · 4 = 20 sıralı durum, 3 · 2 = 6 istenen durum; olasılık <span class="kes"><span>6</span><span>20</span></span> = <span class="kes"><span>3</span><span>10</span></span>. Sıralı saymada her sırasız seçim tam 2! = 2 kez sayılır (önce K<sub>1</sub> sonra K<sub>2</sub>, önce K<sub>2</sub> sonra K<sub>1</sub>). Pay da payda da aynı 2 ile çarpıldığı için oran değişmez.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Torbadan <strong>aynı anda</strong> r top çekmek, olasılık bakımından <strong>geri koymadan art arda</strong> r top çekmekle aynıdır. İstersen ağaçla (çarparak), istersen kombinasyonla (sayarak) çözersin. Tek şart: payı ve paydayı <em>aynı</em> yolla saymak. Payı sıralı, paydayı sırasız sayarsan sonuç bozulur.</p></div>
+
+<p>Örnek 2'yi kombinasyonla da çözebiliriz: farklı renkte iki top = 3 kırmızıdan 1 ve 2 maviden 1 seçmek. C(3, 1) · C(2, 1) = 3 · 2 = 6 durum; olasılık <span class="kes"><span>6</span><span>10</span></span> = <span class="kes"><span>3</span><span>5</span></span>. Ağaçta iki yolu toplamamız gerekmişti; kombinasyonda sıra zaten yok sayıldığı için tek çarpım yetti. Sorular "aynı anda" dediğinde kombinasyon çoğu zaman daha hızlıdır; "art arda, önce şu sonra bu" dediğinde ağaç.</p>
+
+<h2 class="s">4. Kombinasyonla olasılık: torba ve ekip soruları</h2>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Sıranın önemsiz olduğu seçimlerde: (1) bütün seçimlerin sayısını kombinasyonla bul, s(E) = C(toplam, seçilen); (2) istenen seçimleri gruplara ayırıp her gruptan kaç tane seçildiğine göre kombinasyonların çarpımıyla say; (3) birden çok durum varsa (üçü kırmızı ya da üçü beyaz) bunları topla; (4) böl ve sadeleştir. "En az bir" geçiyorsa önce tümleyeni dene.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir torbada 4 kırmızı, 3 beyaz, 2 siyah top var. Torbadan aynı anda 3 top çekiliyor. (a) Üçünün de aynı renkte olma, (b) en az birinin kırmızı olma, (c) her renkten birer top çekilme olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Bütün seçimleri sayarım: 9 toptan 3'ü.</p>
+<span class="mat">C(9, 3) = <span class="kes"><span>9 · 8 · 7</span><span>3 · 2 · 1</span></span> = 84 <span class="g">(sırasız seçim)</span></span>
+<p><strong>Adım 2.</strong> (a) Aynı renk: üç kırmızı ya da üç beyaz. Üç siyah olamaz, çünkü yalnızca 2 siyah var.</p>
+<span class="mat">C(4, 3) + C(3, 3) = 4 + 1 = 5 <span class="g">(iki ayrık durum toplanır)</span></span>
+<p><strong>Adım 3.</strong> Olasılığı yazarım.</p>
+<span class="mat">P(aynı renk) = <span class="kes"><span>5</span><span>84</span></span> <span class="g">(5 ile 84 aralarında asal)</span></span>
+<p><strong>Adım 4.</strong> (b) "En az bir kırmızı"nın tümleyeni "hiç kırmızı yok"tur: 3 top kırmızı olmayan 5 toptan (3 beyaz + 2 siyah) seçilir.</p>
+<span class="mat">C(5, 3) = 10 <span class="g">(kırmızısız seçimler)</span></span>
+<p><strong>Adım 5.</strong> Tümleyenden çıkarırım.</p>
+<span class="mat">P(en az bir K) = 1 − <span class="kes"><span>10</span><span>84</span></span> = <span class="kes"><span>74</span><span>84</span></span> = <span class="kes"><span>37</span><span>42</span></span> <span class="g">(pay ve payda 2'ye bölündü)</span></span>
+<p><strong>Adım 6.</strong> (c) Her renkten bir: kırmızıdan 1, beyazdan 1, siyahtan 1.</p>
+<span class="mat">C(4, 1) · C(3, 1) · C(2, 1) = 4 · 3 · 2 = 24 <span class="g">(üç seçim art arda: çarp)</span></span>
+<p><strong>Adım 7.</strong> Olasılığı yazıp sadeleştiririm.</p>
+<span class="mat">P = <span class="kes"><span>24</span><span>84</span></span> = <span class="kes"><span>2</span><span>7</span></span> <span class="g">(pay ve payda 12'ye bölündü)</span></span>
+<p><strong>Kontrol yolu.</strong> (b)'yi ağaçla: üç topun üçü de kırmızı olmasın; <span class="kes"><span>5</span><span>9</span></span> · <span class="kes"><span>4</span><span>8</span></span> · <span class="kes"><span>3</span><span>7</span></span> = <span class="kes"><span>60</span><span>504</span></span> = <span class="kes"><span>5</span><span>42</span></span>. 1 − <span class="kes"><span>5</span><span>42</span></span> = <span class="kes"><span>37</span><span>42</span></span>. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> (a) <span class="kes"><span>5</span><span>84</span></span>, (b) <span class="kes"><span>37</span><span>42</span></span>, (c) <span class="kes"><span>2</span><span>7</span></span>. (b)'nin 1'e yakın çıkması akla yatar: torbadaki 9 topun 4'ü kırmızı ve 3 top çekiliyor.</p></div>
+
+<p>"En az bir" sorusunu doğrudan çözmeye kalksaydın tam 1, tam 2, tam 3 kırmızı durumlarını ayrı ayrı sayıp toplaman gerekirdi: C(4, 1) · C(5, 2) + C(4, 2) · C(5, 1) + C(4, 3) = 40 + 30 + 4 = 74. Sonuç aynı, ama üç hesap yerine bir hesap yetti. Parça 46'daki ilke burada da geçerli: "en az bir" gördüğünde ilk iş tümleyene bak.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 5 kadın ve 4 erkekten oluşan bir gruptan rastgele 3 kişilik bir ekip seçiliyor. Kadınlardan biri Ayşe'dir. (a) Ekipte tam 2 kadın bulunma, (b) Ayşe'nin ekipte bulunma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Bütün ekipleri sayarım.</p>
+<span class="mat">C(9, 3) = 84 <span class="g">(9 kişiden 3'ü, sıra önemsiz)</span></span>
+<p><strong>Adım 2.</strong> (a) Tam 2 kadın demek, 2 kadın ve 1 erkek demektir.</p>
+<span class="mat">C(5, 2) · C(4, 1) = 10 · 4 = 40 <span class="g">(kadınlardan 2, erkeklerden 1)</span></span>
+<p><strong>Adım 3.</strong> Olasılığı yazarım.</p>
+<span class="mat">P = <span class="kes"><span>40</span><span>84</span></span> = <span class="kes"><span>10</span><span>21</span></span> <span class="g">(pay ve payda 4'e bölündü)</span></span>
+<p><strong>Adım 4.</strong> (b) Ayşe ekipte ise geriye kalan 2 kişi öbür 8 kişiden seçilir.</p>
+<span class="mat">C(8, 2) = 28 <span class="g">(Ayşe'nin yeri kesin)</span></span>
+<p><strong>Adım 5.</strong> Olasılığı yazarım.</p>
+<span class="mat">P = <span class="kes"><span>28</span><span>84</span></span> = <span class="kes"><span>1</span><span>3</span></span> <span class="g">(84 = 3 · 28)</span></span>
+<p><strong>Hızlı yol.</strong> 9 kişi için 3 koltuk var; her kişinin ekipte olma şansı eşit olduğundan Ayşe'nin ekipte olma olasılığı <span class="kes"><span>3</span><span>9</span></span> = <span class="kes"><span>1</span><span>3</span></span>. Bu kısa yol "belirli bir kişi seçilenler arasında mı?" sorularının hepsinde çalışır: seçilen sayısı / toplam kişi.</p>
+<p><strong>Sonuç:</strong> (a) <span class="kes"><span>10</span><span>21</span></span>, (b) <span class="kes"><span>1</span><span>3</span></span>.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Payı ve paydayı farklı dille saymak.</strong> Örnek 3(c)'de payı "önce kırmızı, sonra beyaz, sonra siyah" diye 4 · 3 · 2 = 24 sayıp paydayı sıralı 9 · 8 · 7 = 504 alırsan <span class="kes"><span>24</span><span>504</span></span> = <span class="kes"><span>1</span><span>21</span></span> bulursun; yanlış. Sıralı saymak istiyorsan, renklerin hangi sırayla geleceğini de saymalısın: 3! = 6 sıra, 24 · 6 = 144, <span class="kes"><span>144</span><span>504</span></span> = <span class="kes"><span>2</span><span>7</span></span>. Kural: pay ile payda <strong>aynı dille</strong> sayılır; ya ikisi sırasız ya ikisi sıralı.</p></div>
+
+<h2 class="s">5. Permütasyonla olasılık: diziliş ve sayı yazma</h2>
+
+<p>Bazı deneylerde sonuç bir <em>sıralamadır</em>: kişiler rastgele bir sıraya diziliyor, kartlar rastgele yan yana konuyor, rakamlar rastgele seçilip bir sayı oluşturuluyor. Bütün sıralamalar eş olasılıklıysa olasılık yine istenen sıralamaların sayısının bütün sıralamalara oranıdır; sayma işini Parça 44'teki permütasyon yöntemleri yapar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (a) Aralarında Arda ile Burcu'nun da bulunduğu 5 kişi bir sıraya rastgele diziliyor. Arda ile Burcu'nun yan yana gelme olasılığı kaçtır? (b) 1, 2, 3, 4, 5 rakamlarıyla rakamları farklı üç basamaklı sayılar yazılıyor ve bunlardan biri rastgele seçiliyor. Seçilen sayının çift olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Bütün dizilişler: 5 kişinin sıralanışı.</p>
+<span class="mat">s(E) = 5! = 120 <span class="g">(Parça 44)</span></span>
+<p><strong>Adım 2.</strong> Arda ile Burcu'yu tek paket yaparım; paket ve öbür 3 kişi 4 birim eder.</p>
+<span class="mat">4! = 24 <span class="g">(4 birimin dizilişi)</span></span>
+<p><strong>Adım 3.</strong> Paketin içi iki türlü dizilir (AB ya da BA).</p>
+<span class="mat">s(A) = 4! · 2! = 24 · 2 = 48 <span class="g">(paket içi sıra)</span></span>
+<p><strong>Adım 4.</strong> Olasılığı yazarım.</p>
+<span class="mat">P = <span class="kes"><span>48</span><span>120</span></span> = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(pay ve payda 24'e bölündü)</span></span>
+<p><strong>Kontrol yolu.</strong> Arda'nın yerinden git. Arda iki uç yerden birindeyse (olasılık <span class="kes"><span>2</span><span>5</span></span>) Burcu'nun yan yana gelebileceği 1 yer, ortadaki üç yerden birindeyse (olasılık <span class="kes"><span>3</span><span>5</span></span>) 2 yer vardır; Burcu kalan 4 yerden birine eşit şansla düşer: <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>1</span><span>4</span></span> + <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>4</span></span> = <span class="kes"><span>2</span><span>20</span></span> + <span class="kes"><span>6</span><span>20</span></span> = <span class="kes"><span>8</span><span>20</span></span> = <span class="kes"><span>2</span><span>5</span></span>.</p>
+<p><strong>Hızlı yol.</strong> Aynı hesap n kişilik bir sırada her zaman <span class="kes"><span>2</span><span>n</span></span> verir: belirli iki kişinin yan yana gelme olasılığı <span class="kes"><span>2</span><span>n</span></span>'dir. Burada <span class="kes"><span>2</span><span>5</span></span>.</p>
+<p><strong>Adım 5.</strong> (b) Bütün sayılar: üç basamak, rakamlar farklı.</p>
+<span class="mat">s(E) = 5 · 4 · 3 = 60 <span class="g">(kutu yöntemi)</span></span>
+<p><strong>Adım 6.</strong> Çift olması için birler basamağı 2 ya da 4 olmalı. Kısıtlı basamağı önce doldururum.</p>
+<span class="mat">s(A) = 2 · 4 · 3 = 24 <span class="g">(birler 2 yol, yüzler 4 yol, onlar 3 yol)</span></span>
+<p><strong>Adım 7.</strong> Olasılığı yazarım.</p>
+<span class="mat">P = <span class="kes"><span>24</span><span>60</span></span> = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(pay ve payda 12'ye bölündü)</span></span>
+<p><strong>Hızlı yol.</strong> Birler basamağına 5 rakamdan herhangi biri eşit şansla gelir; 5 rakamın 2'si çift, olasılık <span class="kes"><span>2</span><span>5</span></span>. Öbür basamaklar sonucu değiştirmez.</p>
+<p><strong>Sonuç:</strong> (a) <span class="kes"><span>2</span><span>5</span></span>, (b) <span class="kes"><span>2</span><span>5</span></span>.</p></div>
+
+<p>(b)'deki hızlı yol önemli bir fikri gösteriyor: olasılık sorusunda yalnızca koşulun ilgilendiği yere bak. "Sayının 300'den büyük olma olasılığı" sorulsaydı yalnızca yüzler basamağı önemli olurdu; 5 rakamın 3'ü (3, 4, 5) uygun, olasılık <span class="kes"><span>3</span><span>5</span></span>. Sayarak denetle: 3 · 4 · 3 = 36, <span class="kes"><span>36</span><span>60</span></span> = <span class="kes"><span>3</span><span>5</span></span>.</p>
+
+<h2 class="s">6. Birden çok para ya da zar: tam k kez</h2>
+
+<p>4 madeni para atıldığında tam 2 yazı gelme olasılığı kaçtır? Önce örnek uzay: her para 2 sonuç verir, 4 para için 2<sup>4</sup> = 16 eş olasılıklı sıralı sonuç vardır (YYYY, YYYT, …). Tam 2 yazı içeren sonuçlar kaç tane? Dört paradan hangi ikisinin yazı geleceğini seçmek yeterlidir; öbür ikisi zorunlu olarak tura olur. Bu da C(4, 2) = 6 seçimdir: YYTT, YTYT, YTTY, TYYT, TYTY, TTYY.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n madeni para atıldığında (ya da bir para n kez atıldığında) <strong>tam k yazı</strong> gelme olasılığı <span class="kes"><span>C(n, k)</span><span>2<sup>n</sup></span></span> olur. Pay, yazıların hangi atışlarda geleceğinin seçimidir; payda, bütün sonuçların sayısıdır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 244" role="img" aria-label="4 madeni para atışında yazı sayısının dağılımı: 0, 1, 2, 3, 4 yazı için 1, 4, 6, 4, 1 sonuç">
+  <line class="sv-cl" x1="40" y1="200" x2="394" y2="200"/>
+  <rect class="sv-k" x="50" y="170" width="50" height="30"/>
+  <rect class="sv-l" x="122" y="80" width="50" height="120"/>
+  <rect class="sv-m" x="194" y="20" width="50" height="180"/>
+  <rect class="sv-l" x="266" y="80" width="50" height="120"/>
+  <rect class="sv-k" x="338" y="170" width="50" height="30"/>
+  <text class="sv-t" x="75" y="164" text-anchor="middle">1/16</text>
+  <text class="sv-t" x="147" y="74" text-anchor="middle">4/16</text>
+  <text class="sv-b" x="219" y="14" text-anchor="middle">6/16</text>
+  <text class="sv-t" x="291" y="74" text-anchor="middle">4/16</text>
+  <text class="sv-t" x="363" y="164" text-anchor="middle">1/16</text>
+  <text class="sv-t" x="75" y="218" text-anchor="middle">0</text>
+  <text class="sv-t" x="147" y="218" text-anchor="middle">1</text>
+  <text class="sv-t" x="219" y="218" text-anchor="middle">2</text>
+  <text class="sv-t" x="291" y="218" text-anchor="middle">3</text>
+  <text class="sv-t" x="363" y="218" text-anchor="middle">4</text>
+  <text class="sv-s" x="219" y="238" text-anchor="middle">yazı sayısı (4 para)</text>
+</svg>
+<figcaption>Sütun yükseklikleri C(4, 0), C(4, 1), C(4, 2), C(4, 3), C(4, 4) yani 1, 4, 6, 4, 1. En olası sonuç "yarısı yazı"dır ama yalnızca 6/16 şansı vardır. Beş sütunun toplamı 16/16 = 1; dağılım ortadan simetriktir, çünkü C(n, k) = C(n, n − k).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (a) 4 madeni para birlikte atılıyor. Tam 2 yazı ve en az 1 yazı gelme olasılıkları kaçtır? (b) 3 zar birlikte atılıyor. Zarlardan yalnızca birinin 6 gelme olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Örnek uzay.</p>
+<span class="mat">s(E) = 2<sup>4</sup> = 16 <span class="g">(her para 2 sonuç)</span></span>
+<p><strong>Adım 2.</strong> Tam 2 yazı: yazı gelecek 2 parayı seçerim.</p>
+<span class="mat">P(tam 2 Y) = <span class="kes"><span>C(4, 2)</span><span>16</span></span> = <span class="kes"><span>6</span><span>16</span></span> = <span class="kes"><span>3</span><span>8</span></span> <span class="g">(pay ve payda 2'ye bölündü)</span></span>
+<p><strong>Adım 3.</strong> En az 1 yazının tümleyeni "hiç yazı yok", yani TTTT; tek bir sonuç.</p>
+<span class="mat">P(en az 1 Y) = 1 − <span class="kes"><span>1</span><span>16</span></span> = <span class="kes"><span>15</span><span>16</span></span> <span class="g">(tümleyen)</span></span>
+<p><strong>Adım 4.</strong> (b) Zarda sonuçlar eş olasılıklı ama "6" ile "6 değil" eşit şanslı değildir: <span class="kes"><span>1</span><span>6</span></span> ve <span class="kes"><span>5</span><span>6</span></span>. Önce hangi zarın 6 geleceğini seçerim.</p>
+<span class="mat">C(3, 1) = 3 <span class="g">(6 gelen zar: birinci, ikinci ya da üçüncü)</span></span>
+<p><strong>Adım 5.</strong> Seçilen bir dizilişin, örneğin "6, değil, değil"in olasılığını çarparak bulurum.</p>
+<span class="mat"><span class="kes"><span>1</span><span>6</span></span> · <span class="kes"><span>5</span><span>6</span></span> · <span class="kes"><span>5</span><span>6</span></span> = <span class="kes"><span>25</span><span>216</span></span> <span class="g">(dallar boyunca çarp)</span></span>
+<p><strong>Adım 6.</strong> Üç diziliş birbirini dışlar ve eşit olasılıklıdır; toplarım.</p>
+<span class="mat">P = 3 · <span class="kes"><span>25</span><span>216</span></span> = <span class="kes"><span>75</span><span>216</span></span> = <span class="kes"><span>25</span><span>72</span></span> <span class="g">(pay ve payda 3'e bölündü)</span></span>
+<p><strong>Kontrol yolu.</strong> (b)'yi sayarak: 6<sup>3</sup> = 216 sonuçtan, 6 gelen zarı seçmenin 3 yolu, öbür iki zarın 6 dışında 5 · 5 = 25 yolu var: 3 · 25 = 75. <span class="kes"><span>75</span><span>216</span></span> = <span class="kes"><span>25</span><span>72</span></span>.</p>
+<p><strong>Sonuç:</strong> (a) <span class="kes"><span>3</span><span>8</span></span> ve <span class="kes"><span>15</span><span>16</span></span>, (b) <span class="kes"><span>25</span><span>72</span></span>.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"2 yazı 2 tura"yı tek sonuç saymak.</strong> YYTT tek bir sonuçtur ve olasılığı <span class="kes"><span>1</span><span>16</span></span>'dır; ama "tam 2 yazı" olayı YYTT'nin yanında YTYT, TYTY gibi 6 sıralamayı içerir. Olasılığı <span class="kes"><span>1</span><span>16</span></span> değil <span class="kes"><span>6</span><span>16</span></span>'dır. Bu, Parça 46'daki "çift zarda (1, 2) ile (2, 1)'i tek durum saymak" hatasının aynısıdır. Paralar birbirinin aynısı görünse de birbirinden ayrı nesnelerdir; sonuçlar sıralı sayılır.</p></div>
+
+<h2 class="s">7. İki ayrı torba ve torbadan torbaya aktarma</h2>
+
+<p>Bazı sorularda deneyin birinci adımı torbadan top çekmek değil, <strong>hangi torbadan çekileceğini belirlemektir</strong>: bir para atılır, yazı gelirse birinci torbadan, tura gelirse ikinci torbadan çekilir. Ya da birinci torbadan bir top alınıp ikinci torbaya atılır, sonra ikinci torbadan çekim yapılır. İkisi de iki basamaklı bir ağaçtır; tek fark ikinci basamağın dallarının birinci basamağa göre değişmesidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> I. torbada 3 kırmızı, 2 mavi; II. torbada 1 kırmızı, 3 mavi top var. Bir madeni para atılıyor; yazı gelirse I. torbadan, tura gelirse II. torbadan bir top çekiliyor. Çekilen topun kırmızı olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Birinci basamak: torbanın seçilmesi.</p>
+<span class="mat">P(I. torba) = <span class="kes"><span>1</span><span>2</span></span> , P(II. torba) = <span class="kes"><span>1</span><span>2</span></span> <span class="g">(paranın iki yüzü)</span></span>
+<p><strong>Adım 2.</strong> I. torba yolunda kırmızı.</p>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>3</span><span>5</span></span> = <span class="kes"><span>3</span><span>10</span></span> <span class="g">(I. torbada 5 topun 3'ü kırmızı)</span></span>
+<p><strong>Adım 3.</strong> II. torba yolunda kırmızı.</p>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>1</span><span>8</span></span> <span class="g">(II. torbada 4 topun 1'i kırmızı)</span></span>
+<p><strong>Adım 4.</strong> İki yolu toplarım; payda olarak 40 alırım.</p>
+<span class="mat"><span class="kes"><span>3</span><span>10</span></span> + <span class="kes"><span>1</span><span>8</span></span> = <span class="kes"><span>12</span><span>40</span></span> + <span class="kes"><span>5</span><span>40</span></span> = <span class="kes"><span>17</span><span>40</span></span> <span class="g">(EKOK(10, 8) = 40)</span></span>
+<p><strong>Kontrol yolu.</strong> Sonuç, iki torbanın kırmızı oranları <span class="kes"><span>3</span><span>5</span></span> = 0,6 ile <span class="kes"><span>1</span><span>4</span></span> = 0,25 arasında olmalı ve torbalar eşit şanslı olduğundan bunların tam ortası olmalı: (0,6 + 0,25) ÷ 2 = 0,425 = <span class="kes"><span>17</span><span>40</span></span>.</p>
+<p><strong>Sonuç:</strong> <span class="kes"><span>17</span><span>40</span></span>.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>İki torbayı tek torba gibi birleştirmek.</strong> "Toplam 4 kırmızı, 9 top var; olasılık <span class="kes"><span>4</span><span>9</span></span>" demek yanlıştır. Toplar tek torbada olsaydı her top eşit şanslı olurdu; oysa burada I. torbadaki her top <span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>5</span></span> = <span class="kes"><span>1</span><span>10</span></span>, II. torbadaki her top <span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>1</span><span>8</span></span> olasılıkla çekilir. Toplar eş olasılıklı değilse "istenen / toplam" sayımı kullanılamaz; ağaç kurulur.</p></div>
+
+<p>Torbadan torbaya aktarma sorularında ikinci torbanın içeriği aktarılan topa göre değişir. Ağacın birinci basamağı "ne aktarıldı?", ikinci basamağı "ikinci torbadan ne çekildi?" sorusudur.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="I. torbadan II. torbaya top aktarıldıktan sonra II. torbadan çekim için iki basamaklı ağaç">
+  <circle class="sv-k" cx="20" cy="145" r="6"/>
+  <line class="sv-c" x1="26" y1="145" x2="110" y2="80"/>
+  <line class="sv-c" x1="26" y1="145" x2="110" y2="210"/>
+  <text class="sv-t" x="44" y="100">3/5</text>
+  <text class="sv-t" x="44" y="198">2/5</text>
+  <rect class="sv-l" x="110" y="53" width="120" height="48" rx="10"/>
+  <text class="sv-t" x="170" y="73" text-anchor="middle">K aktarıldı</text>
+  <text class="sv-s" x="170" y="91" text-anchor="middle">II: 2K, 3M</text>
+  <rect class="sv-m" x="110" y="189" width="120" height="48" rx="10"/>
+  <text class="sv-t" x="170" y="209" text-anchor="middle">M aktarıldı</text>
+  <text class="sv-s" x="170" y="227" text-anchor="middle">II: 1K, 4M</text>
+  <line class="sv-c" x1="230" y1="77" x2="276" y2="40"/>
+  <line class="sv-c" x1="230" y1="77" x2="276" y2="112"/>
+  <line class="sv-c" x1="230" y1="213" x2="276" y2="180"/>
+  <line class="sv-c" x1="230" y1="213" x2="276" y2="250"/>
+  <text class="sv-s" x="236" y="46">2/5</text>
+  <text class="sv-s" x="236" y="116">3/5</text>
+  <text class="sv-s" x="236" y="184">1/5</text>
+  <text class="sv-s" x="236" y="252">4/5</text>
+  <circle class="sv-l" cx="290" cy="40" r="14"/><text class="sv-b" x="290" y="45" text-anchor="middle">K</text>
+  <circle class="sv-m" cx="290" cy="112" r="14"/><text class="sv-b" x="290" y="117" text-anchor="middle">M</text>
+  <circle class="sv-l" cx="290" cy="180" r="14"/><text class="sv-b" x="290" y="185" text-anchor="middle">K</text>
+  <circle class="sv-m" cx="290" cy="250" r="14"/><text class="sv-b" x="290" y="255" text-anchor="middle">M</text>
+  <text class="sv-t" x="312" y="45">6/25</text>
+  <text class="sv-t" x="312" y="117">9/25</text>
+  <text class="sv-t" x="312" y="185">2/25</text>
+  <text class="sv-t" x="312" y="255">8/25</text>
+  <text class="sv-s" x="200" y="292" text-anchor="middle">Kırmızı: 6/25 + 2/25 = 8/25 · Mavi: 9/25 + 8/25 = 17/25</text>
+</svg>
+<figcaption>I. torba 3K, 2M; II. torba başta 1K, 3M. Aktarılan topa göre II. torba 5 topa çıkar ve içeriği değişir; ikinci basamaktaki dallar buna göre yazılır. Kırmızı ile mavinin toplamı 8/25 + 17/25 = 1.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> I. torbada 3 kırmızı, 2 mavi; II. torbada 1 kırmızı, 3 mavi top var. I. torbadan rastgele bir top alınıp II. torbaya atılıyor, sonra II. torbadan bir top çekiliyor. Bu topun kırmızı olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Birinci basamak: aktarılan top.</p>
+<span class="mat">P(K aktarılır) = <span class="kes"><span>3</span><span>5</span></span> , P(M aktarılır) = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(I. torbanın içeriği)</span></span>
+<p><strong>Adım 2.</strong> K aktarılırsa II. torba 2K, 3M olur.</p>
+<span class="mat"><span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>5</span></span> = <span class="kes"><span>6</span><span>25</span></span> <span class="g">(5 topun 2'si kırmızı)</span></span>
+<p><strong>Adım 3.</strong> M aktarılırsa II. torba 1K, 4M olur.</p>
+<span class="mat"><span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>1</span><span>5</span></span> = <span class="kes"><span>2</span><span>25</span></span> <span class="g">(5 topun 1'i kırmızı)</span></span>
+<p><strong>Adım 4.</strong> İki yolu toplarım.</p>
+<span class="mat"><span class="kes"><span>6</span><span>25</span></span> + <span class="kes"><span>2</span><span>25</span></span> = <span class="kes"><span>8</span><span>25</span></span> <span class="g">(ayrık yollar)</span></span>
+<p><strong>Kontrol yolu.</strong> Mavi olasılığını ayrıca hesapla: <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>3</span><span>5</span></span> + <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>4</span><span>5</span></span> = <span class="kes"><span>9</span><span>25</span></span> + <span class="kes"><span>8</span><span>25</span></span> = <span class="kes"><span>17</span><span>25</span></span>. <span class="kes"><span>8</span><span>25</span></span> + <span class="kes"><span>17</span><span>25</span></span> = 1. Ayrıca sonuç, II. torbanın olası iki hâlindeki kırmızı oranları <span class="kes"><span>1</span><span>5</span></span> ile <span class="kes"><span>2</span><span>5</span></span> arasında olmalı: 0,2 &lt; 0,32 &lt; 0,4.</p>
+<p><strong>Sonuç:</strong> <span class="kes"><span>8</span><span>25</span></span>.</p></div>
+
+<h2 class="s">8. Bağımsız olaylar: birinin sonucu öbürünü etkilemiyorsa</h2>
+
+<p>Geri koyarak çekimde ikinci çekimin olasılığı birincinin sonucundan etkilenmiyordu. Günlük hayatta da böyle durumlar çoktur: iki ayrı okçu aynı hedefe birer ok atar; birinin vurup vurmaması öbürünün elini titretmez. İki ayrı sınava giren bir öğrencinin bir sınavdaki sonucunun öbürünü etkilemediği varsayılır. Bu tür olaylara <strong>bağımsız olaylar</strong> denir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Birinin gerçekleşip gerçekleşmemesi öbürünün olasılığını değiştirmeyen iki olaya <strong>bağımsız</strong> denir. A ile B bağımsızsa ikisinin birlikte gerçekleşme olasılığı P(A) · P(B) olur. Bu parçada bağımsızlığı sezgisel olarak kullanıyoruz: soru "birbirinden bağımsız" diyorsa ya da olaylar açıkça birbirini etkilemiyorsa çarparsın. Biçimsel tanım ve koşullu olasılık AYT konusudur (ileri Parça 34).</p></div>
+
+<p>Bağımsızlığın neden çarpma verdiğini bir kare üstünde görmek kolaydır. Kenarı 1 olan bir kare düşün; alanı 1, yani bütün olasılık. Kareyi dikey bir çizgiyle Ali'nin vurma olasılığı kadar (0,6) ve ıskalama olasılığı kadar (0,4) iki şeride böl. Berk'in sonucu Ali'ninkinden bağımsız olduğu için, her iki şeridi de aynı oranda, yatay bir çizgiyle 0,7 ve 0,3 diye bölebilirsin. Ortaya çıkan dört dikdörtgenin alanları dört sonucun olasılıklarıdır ve her biri iki kenarın çarpımıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 340" role="img" aria-label="Kenarı 1 olan kare: dikeyde Ali 0,6 ve 0,4, yatayda Berk 0,7 ve 0,3; dört bölgenin alanları 0,42, 0,28, 0,18, 0,12">
+  <rect class="sv-m" x="70" y="30" width="180" height="210"/>
+  <rect class="sv-l" x="250" y="30" width="120" height="210"/>
+  <rect class="sv-l" x="70" y="240" width="180" height="90"/>
+  <rect class="sv-a" x="250" y="240" width="120" height="90"/>
+  <text class="sv-t" x="160" y="22" text-anchor="middle">Ali vurur: 0,6</text>
+  <text class="sv-t" x="310" y="22" text-anchor="middle">ıska: 0,4</text>
+  <text class="sv-t" x="34" y="128" text-anchor="middle">Berk</text>
+  <text class="sv-t" x="34" y="146" text-anchor="middle">vurur</text>
+  <text class="sv-t" x="34" y="164" text-anchor="middle">0,7</text>
+  <text class="sv-t" x="34" y="282" text-anchor="middle">ıska</text>
+  <text class="sv-t" x="34" y="300" text-anchor="middle">0,3</text>
+  <text class="sv-b" x="160" y="130" text-anchor="middle">ikisi de vurur</text>
+  <text class="sv-t" x="160" y="150" text-anchor="middle">0,6 · 0,7 = 0,42</text>
+  <text class="sv-b" x="310" y="130" text-anchor="middle">yalnız Berk</text>
+  <text class="sv-t" x="310" y="150" text-anchor="middle">0,28</text>
+  <text class="sv-b" x="160" y="280" text-anchor="middle">yalnız Ali</text>
+  <text class="sv-t" x="160" y="300" text-anchor="middle">0,18</text>
+  <text class="sv-b" x="310" y="280" text-anchor="middle">hiçbiri</text>
+  <text class="sv-t" x="310" y="300" text-anchor="middle">0,12</text>
+</svg>
+<figcaption>Alan modeli. Bütün kare 1'dir; dört dikdörtgenin alanları toplamı 0,42 + 0,28 + 0,18 + 0,12 = 1. "Hedef vurulur" (en az biri vurur) olayı, sağ alttaki "hiçbiri" dışında kalan her yerdir: 1 − 0,12 = 0,88.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>En az birinin gerçekleşmesi = 1 − hiçbirinin gerçekleşmemesi.</strong> Bağımsız A, B, C olayları için P(en az biri) = 1 − P(A′) · P(B′) · P(C′). Neden: "en az biri" olayının tümleyeni "hiçbiri"dir ve "hiçbiri", her olayın ayrı ayrı gerçekleşmemesinin birlikte olmasıdır; bağımsızlıkta bu, olmama olasılıklarının çarpımıdır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> Ali bir hedefi 0,6, Berk 0,7 olasılıkla vurmaktadır. İkisi birbirinden bağımsız olarak hedefe birer atış yapıyor. (a) İkisinin de vurma, (b) hedefin vurulma, (c) yalnızca birinin vurma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Iskalama olasılıklarını yazarım.</p>
+<span class="mat">P(Ali ıskalar) = 1 − 0,6 = 0,4 ; P(Berk ıskalar) = 1 − 0,7 = 0,3 <span class="g">(tümleyen)</span></span>
+<p><strong>Adım 2.</strong> (a) İkisi de vurur: bağımsız olaylar, çarparım.</p>
+<span class="mat">0,6 · 0,7 = 0,42 <span class="g">(6 · 7 = 42, iki ondalık basamak)</span></span>
+<p><strong>Adım 3.</strong> (b) Hedefin vurulması, en az birinin vurmasıdır; tümleyeni "ikisi de ıskalar".</p>
+<span class="mat">P(hiçbiri) = 0,4 · 0,3 = 0,12 <span class="g">(bağımsız ıskalar)</span></span>
+<p><strong>Adım 4.</strong> Tümleyenden çıkarırım.</p>
+<span class="mat">P(en az biri) = 1 − 0,12 = 0,88 <span class="g">(tümleyen)</span></span>
+<p><strong>Adım 5.</strong> (c) Yalnız biri: "Ali vurur ve Berk ıskalar" ya da "Ali ıskalar ve Berk vurur".</p>
+<span class="mat">0,6 · 0,3 + 0,4 · 0,7 = 0,18 + 0,28 = 0,46 <span class="g">(iki ayrık yol)</span></span>
+<p><strong>Kontrol yolu.</strong> Dört sonuç bütün olasılığı paylaşır: 0,42 (ikisi) + 0,46 (yalnız biri) + 0,12 (hiçbiri) = 1. Ayrıca (b), (a) ile (c)'nin toplamı olmalı: 0,42 + 0,46 = 0,88.</p>
+<p><strong>Sonuç:</strong> (a) 0,42, (b) 0,88, (c) 0,46.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"En az biri" için olasılıkları toplamak.</strong> 0,6 + 0,7 = 1,3 bulup bir de üstüne "hedef kesin vurulur" demek. 1'den büyük bir olasılık olamaz; bu sonuç bir şeyin iki kez sayıldığını gösterir. Toplamada "ikisi de vurur" durumu (0,42) iki kez sayılmıştır. Parça 46'daki formülle de düzeltebilirsin: 0,6 + 0,7 − 0,42 = 0,88. Ama en kısa ve en güvenli yol tümleyendir.</p>
+<p><strong>Bağımsız olmayan olayları çarpmak.</strong> Geri koymadan çekimde "ikinci top kırmızı" olayı birincinin sonucuna bağlıdır; orada <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>3</span><span>5</span></span> çarpılamaz, ikinci çarpan torbanın yeni hâline göre yazılır. Çarpma her zaman yapılır, ama ikinci çarpanın "birinci gerçekleştikten sonraki" olasılık olması gerekir. Bağımsız olaylarda bu olasılık değişmediği için sade P(B) yazılır.</p></div>
+
+<h2 class="s">9. Olma olasılığının olmama olasılığına oranı</h2>
+
+<p>Bazı sorular olasılığı doğrudan vermez; "bir olayın olma olasılığının olmama olasılığına oranı <span class="kes"><span>3</span><span>4</span></span>'tür" der. Bu bir orandır, olasılık değildir; Parça 22'deki orantı bilgisiyle olasılığa çevrilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir A olayı için <span class="kes"><span>P(A)</span><span>P(A′)</span></span> oranına olma olasılığının olmama olasılığına oranı denir. Oran <span class="kes"><span>a</span><span>b</span></span> ise P(A) = <span class="kes"><span>a</span><span>a + b</span></span> ve P(A′) = <span class="kes"><span>b</span><span>a + b</span></span> olur. Nedeni: P(A) = a · k, P(A′) = b · k yaz; ikisinin toplamı 1 olmak zorunda olduğu için (a + b) · k = 1, k = <span class="kes"><span>1</span><span>a + b</span></span>.</p></div>
+
+<p>Bir örnekle: olma olasılığı <span class="kes"><span>2</span><span>7</span></span> olan bir olayın olmama olasılığı <span class="kes"><span>5</span><span>7</span></span>, oranı <span class="kes"><span>2</span><span>7</span></span> ÷ <span class="kes"><span>5</span><span>7</span></span> = <span class="kes"><span>2</span><span>5</span></span> olur. Tersine, oran <span class="kes"><span>3</span><span>4</span></span> verilmişse 3 + 4 = 7 eşit pay düşün; 3'ü olma, 4'ü olmama: P(A) = <span class="kes"><span>3</span><span>7</span></span>. Oran 1'den büyük olabilir (olay olmamaktan daha olasıysa), olasılık olamaz. Bu fark, iki kavramı karıştırıp karıştırmadığını denetlemenin de yoludur.</p>
+
+<h2 class="s">10. Tablodan olasılık okuma</h2>
+
+<p>İki özelliğe göre sınıflanmış bir grup (kız-erkek ve gözlüklü-gözlüksüz gibi) Parça 35'teki gibi tabloyla verilir. Tablonun her gözü ayrık bir küme, satır ve sütun toplamları da birer olaydır. Gruptan rastgele bir kişi seçiliyorsa herkes eş olasılıklıdır ve olasılık, ilgili gözdeki sayının <strong>genel toplama</strong> oranıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>40 öğrenci</th><th>Gözlüklü</th><th>Gözlüksüz</th><th>Toplam</th></tr>
+<tr><td>Kız</td><td>8</td><td>14</td><td>22</td></tr>
+<tr><td>Erkek</td><td>6</td><td>12</td><td>18</td></tr>
+<tr><td>Toplam</td><td>14</td><td>26</td><td>40</td></tr>
+</table></div>
+
+<p>Bu sınıftan rastgele bir öğrenci seçiliyor. Gözlüklü olma olasılığı sütun toplamından okunur: <span class="kes"><span>14</span><span>40</span></span> = <span class="kes"><span>7</span><span>20</span></span>. Gözlüklü bir kız olma olasılığı tek bir gözden okunur: <span class="kes"><span>8</span><span>40</span></span> = <span class="kes"><span>1</span><span>5</span></span>. Kız veya gözlüklü olma olasılığı için Parça 46'daki birleşim formülü kullanılır: <span class="kes"><span>22</span><span>40</span></span> + <span class="kes"><span>14</span><span>40</span></span> − <span class="kes"><span>8</span><span>40</span></span> = <span class="kes"><span>28</span><span>40</span></span> = <span class="kes"><span>7</span><span>10</span></span>. Denetim: bu olayın tümleyeni "gözlüksüz erkek"tir, o gözde 12 kişi var; <span class="kes"><span>12</span><span>40</span></span> = <span class="kes"><span>3</span><span>10</span></span> ve <span class="kes"><span>7</span><span>10</span></span> + <span class="kes"><span>3</span><span>10</span></span> = 1.</p>
+
+<p>Tablodan iki kişi seçmek de aynı kombinasyon mantığıyla çalışır: ikisinin de gözlüklü olma olasılığı <span class="kes"><span>C(14, 2)</span><span>C(40, 2)</span></span> = <span class="kes"><span>91</span><span>780</span></span> = <span class="kes"><span>7</span><span>60</span></span> olur.</p>
+
+<p>Bir uyarı: "Seçilen öğrencinin kız olduğu <em>bilindiğine göre</em> gözlüklü olma olasılığı" türü sorularda payda genel toplam değil, yalnızca kızların sayısıdır (<span class="kes"><span>8</span><span>22</span></span>). Bu, örnek uzayın bir bilgiyle daraltılmasıdır ve koşullu olasılık adıyla AYT'de işlenir (ileri Parça 34). Bu parçada payda her zaman bütün gruptur; soru "bilindiğine göre" demiyorsa paydayı daraltma.</p>
+
+<h2 class="s">11. Cevabı denetleme: sonuç akla yatıyor mu?</h2>
+
+<p>Olasılık sorularında hesap hatası, yanlış yöntemden daha sık puan kaybettirir; ama olasılığın kendine özgü birkaç denetimi vardır ve her biri birkaç saniye sürer. Sınavda her olasılık sorusundan sonra en az birini yap.</p>
+
+<div class="tablo"><table>
+<tr><th>Denetim</th><th>Ne bakarsın?</th><th>Ne yakalar?</th></tr>
+<tr><td>0 ile 1 arası</td><td>Sonuç negatif ya da 1'den büyük mü?</td><td>Toplanmaması gereken olasılıkların toplanması</td></tr>
+<tr><td>Tümleyen</td><td>P(A) + P(A′) = 1 tutuyor mu?</td><td>Sayım hatası, eksik yol</td></tr>
+<tr><td>Ağaç toplamı</td><td>Bütün yolların toplamı 1 mi?</td><td>Yanlış yazılmış dal</td></tr>
+<tr><td>"Ve" küçültür</td><td>"A ve B", A'dan da B'den de küçük mü?</td><td>Çarpılacak yerde toplama</td></tr>
+<tr><td>"En az biri" büyütür</td><td>"En az biri", her birinden büyük mü?</td><td>Tümleyeni yanlış kurma</td></tr>
+<tr><td>Arada kalma</td><td>İki torbalı soruda sonuç iki torbanın oranları arasında mı?</td><td>Ağırlıkların yer değiştirmesi</td></tr>
+<tr><td>Kaba tahmin</td><td>Sezginle bulduğun değere yakın mı?</td><td>Pay ile paydanın yer değiştirmesi</td></tr>
+</table></div>
+
+<p>Bir de seçenek denetimi: seçeneklerde 1'den büyük bir sayı varsa o seçenek hiçbir zaman doğru değildir. Soru "en az bir" diyorsa ve bulduğun sonuç tek bir olayın olasılığından küçükse hesabını baştan gözden geçir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 43, 44, 45'e:</strong> Bu parçadaki her sayım oradaki çarpma kuralı, permütasyon ve kombinasyonla yapıldı; olasılık, iki sayımın oranıdır. Sayma yöntemlerinden biri zayıfsa olasılık da zayıf kalır; takıldığın sayımda o parçaya dön.</p>
+<p><strong>Parça 46'ya:</strong> Tümleyen, ayrık olay ve P(A ∪ B) formülü burada ağacın "dallar arasında topla" kuralının ve "en az bir" kuralının temeli oldu.</p>
+<p><strong>Parça 48'e:</strong> Para atışlarındaki yazı sayısı dağılımı (1, 4, 6, 4, 1) bir veri dağılımıdır; ortalama ve yayılım gibi ölçülerle Parça 48'de karşılaşacaksın.</p>
+<p><strong>Öbür derslere:</strong> AYT'de koşullu olasılık ve bağımsızlığın biçimsel tanımı (ileri Parça 34), binom açılımı (ileri Parça 33) bu parçanın üstüne kurulur; C(n, k) / 2<sup>n</sup> formülü oradaki binom katsayılarıyla aynıdır. Biyolojide kalıtım sorularında (Aa × Aa çaprazlamasında aa olasılığının <span class="kes"><span>1</span><span>4</span></span> olması, iki ayrı genin olasılıklarının çarpılması) aynı çarpma ve toplama kurallarını kullanacaksın.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Geri koyarak ve geri koymadan çekim arasındaki fark, ağaçtaki dallara nasıl yansır?</summary><p>Geri koyarak çekimde torba her seferinde ilk hâline döndüğü için ikinci basamaktaki dallar birinci basamaktakilerle aynıdır. Geri koymadan çekimde torba bir top küçülür ve çekilen rengin sayısı azalır; ikinci basamaktaki dallar birinci çekimin sonucuna göre değişir.</p></details>
+<details><summary>Ağaç şemasında ne zaman çarpar, ne zaman toplarsın? Toplamanın neden yapılabildiğini açıkla.</summary><p>Tek bir yol boyunca (bir adım ve sonraki adım) çarparım. Bir olay birden çok yolu kapsıyorsa bu yolların olasılıklarını toplarım. Toplama yapılabilir, çünkü ağacın farklı yolları birbirini dışlar; ayrık olaylarda birleşimin olasılığı olasılıkların toplamıdır.</p></details>
+<details><summary>Torbadan aynı anda iki top çekmek neden geri koymadan art arda çekmekle aynı olasılığı verir?</summary><p>İki durumda da aynı top iki kez çıkamaz. Sıralı saymada her sırasız seçim 2! kez sayılır; pay da payda da aynı çarpanla büyüdüğü için oran değişmez. Yeter ki pay ve payda aynı yolla, ikisi de sıralı ya da ikisi de sırasız sayılsın.</p></details>
+<details><summary>5 para atılınca tam 2 yazı gelme olasılığı neden 1/32 değildir? Doğrusu kaçtır?</summary><p>1/32, tek bir sıralamanın (örneğin YYTTT) olasılığıdır. Tam 2 yazı olayı, yazıların hangi iki atışta geleceğine göre C(5, 2) = 10 sıralamayı kapsar. Olasılık 10/32 = 5/16'dır.</p></details>
+<details><summary>İki torbalı bir soruda topları tek torbada birleştirip "istenen / toplam" yapmak neden yanlıştır?</summary><p>"İstenen / toplam" sayımı ancak bütün toplar eşit şanslı çekiliyorsa geçerlidir. İki torbalı soruda önce torba seçilir; az toplu torbadaki her topun çekilme şansı, çok toplu torbadakinden büyüktür. Toplar eş olasılıklı olmadığı için ağaç kurulup yollar çarpılıp toplanır.</p></details>
+<details><summary>Olma olasılığının olmama olasılığına oranı 2/3 ise olayın olasılığı kaçtır? Neden?</summary><p>2/5'tir. Olma ve olmama olasılıkları 2k ve 3k diye yazılır; toplamları 1 olmak zorunda olduğundan 5k = 1, k = 1/5 ve olma olasılığı 2/5 olur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Art arda deney:</strong> P(A ve sonra B) = P(A) · P(A'dan sonra B). Her adımı torbanın o anki hâliyle yaz.</li>
+<li><strong>Geri koyarak:</strong> olasılık değişmez. <strong>Geri koymadan:</strong> toplam ve çekilen renk 1 azalır.</li>
+<li><strong>Ağaç:</strong> dallar boyunca çarp, dallar arasında topla. Bütün yolların toplamı 1.</li>
+<li><strong>Sıra belirtilmemişse</strong> ("biri kırmızı biri mavi") bütün sıralar dahildir: KM + MK.</li>
+<li><strong>Aynı anda çekim</strong> = geri koymadan art arda çekim. Kombinasyonla: <span class="kes"><span>C(…) · C(…)</span><span>C(toplam, seçilen)</span></span>.</li>
+<li><strong>Pay ve payda aynı dille</strong> sayılır: ikisi sıralı ya da ikisi sırasız.</li>
+<li><strong>Belirli kişi seçilenler arasında:</strong> seçilen sayısı / toplam. <strong>Belirli iki kişi yan yana</strong> (n kişilik sıra): <span class="kes"><span>2</span><span>n</span></span>.</li>
+<li><strong>n para, tam k yazı:</strong> <span class="kes"><span>C(n, k)</span><span>2<sup>n</sup></span></span>. Zarda tam k kez 6: C(n, k) · (<span class="kes"><span>1</span><span>6</span></span>)<sup>k</sup> · (<span class="kes"><span>5</span><span>6</span></span>)<sup>n − k</sup>.</li>
+<li><strong>İki torba / aktarma:</strong> önce torba ya da aktarılan top dalı, sonra çekim dalı. Torbaları birleştirme.</li>
+<li><strong>Bağımsız olaylar:</strong> P(A ve B) = P(A) · P(B). <strong>En az biri</strong> = 1 − hiçbiri. Olasılıkları toplama.</li>
+<li><strong>Oran a/b</strong> (olma/olmama) ⇒ P = <span class="kes"><span>a</span><span>a + b</span></span>.</li>
+<li><strong>Tablo:</strong> payda genel toplam; "bilindiğine göre" denirse koşullu olasılık (AYT).</li>
+<li><strong>Denetim:</strong> 0 ile 1 arası, tümleyenle toplam 1, "ve" küçültür, "en az biri" büyütür.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-47">
+<h3>Quiz 47</h3>
+<p class="qa">Yirmi dört soru: 8'i bu parçadan, 16'sı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir torbada 4 kırmızı, 6 beyaz top vardır. Torbadan geri konmamak üzere art arda iki top çekiliyor. Çekilen iki topun da beyaz olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>9</span><span>25</span></span></li><li><span class="kes"><span>3</span><span>5</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>2</span><span>15</span></span></li><li><span class="kes"><span>8</span><span>15</span></span></li></ul>
+<div class="coz"><p>Birinci çekimde 10 topun 6'sı beyazdır. Beyaz çıkıp geri konmayınca torbada 9 top, 5 beyaz kalır: <span class="kes"><span>6</span><span>10</span></span> · <span class="kes"><span>5</span><span>9</span></span> = <span class="kes"><span>30</span><span>90</span></span> = <span class="kes"><span>1</span><span>3</span></span> (C). A, topu geri koyarak çekimin sonucudur (<span class="kes"><span>6</span><span>10</span></span> · <span class="kes"><span>6</span><span>10</span></span>); ikinci çekimde torbanın küçüldüğünü unutanlar onu bulur. B, yalnızca tek bir çekimin beyaz olma olasılığıdır. D iki topun da kırmızı olma (<span class="kes"><span>4</span><span>10</span></span> · <span class="kes"><span>3</span><span>9</span></span>), E farklı renk olma olasılığıdır (2 · <span class="kes"><span>4</span><span>10</span></span> · <span class="kes"><span>6</span><span>9</span></span> = <span class="kes"><span>48</span><span>90</span></span>). Denetim: <span class="kes"><span>1</span><span>3</span></span> + <span class="kes"><span>2</span><span>15</span></span> + <span class="kes"><span>8</span><span>15</span></span> = <span class="kes"><span>5</span><span>15</span></span> + <span class="kes"><span>2</span><span>15</span></span> + <span class="kes"><span>8</span><span>15</span></span> = 1.</p></div></li>
+
+<li data-c="A"><p class="q">Bir olayın gerçekleşme olasılığının gerçekleşmeme olasılığına oranı <span class="kes"><span>3</span><span>5</span></span>'tir. Buna göre bu olayın gerçekleşme olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>8</span></span></li><li><span class="kes"><span>3</span><span>5</span></span></li><li><span class="kes"><span>5</span><span>8</span></span></li><li><span class="kes"><span>2</span><span>5</span></span></li><li><span class="kes"><span>5</span><span>3</span></span></li></ul>
+<div class="coz"><p>Olma olasılığına 3k, olmama olasılığına 5k dersek ikisinin toplamı 1 olmalıdır: 8k = 1, k = <span class="kes"><span>1</span><span>8</span></span>. Olma olasılığı <span class="kes"><span>3</span><span>8</span></span>'dir (A). B, oranın kendisini olasılık sanmaktır. C olmama olasılığıdır. D, oranı olasılık sanıp tümleyenini almaktır (1 − <span class="kes"><span>3</span><span>5</span></span>). E 1'den büyük olduğu için hiçbir olayın olasılığı olamaz; olmama olasılığının olma olasılığına oranıdır. Kısa yol: oran <span class="kes"><span>a</span><span>b</span></span> ise olasılık <span class="kes"><span>a</span><span>a + b</span></span>.</p></div></li>
+
+<li data-c="D"><p class="q">30 öğrencili bir sınıfta 16 kız öğrenci vardır. Kızların 9'u, erkeklerin 6'sı gözlüklüdür. Bu sınıftan rastgele seçilen bir öğrencinin gözlüksüz bir erkek olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>4</span><span>7</span></span></li><li><span class="kes"><span>1</span><span>5</span></span></li><li><span class="kes"><span>7</span><span>15</span></span></li><li><span class="kes"><span>4</span><span>15</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li></ul>
+<div class="coz"><p>Önce tabloyu tamamla: erkek sayısı 30 − 16 = 14, gözlüksüz erkek 14 − 6 = 8. Rastgele seçimde payda bütün sınıftır: <span class="kes"><span>8</span><span>30</span></span> = <span class="kes"><span>4</span><span>15</span></span> (D). A, paydayı yalnızca erkeklerle sınırlamaktır (<span class="kes"><span>8</span><span>14</span></span>); bu "erkek olduğu bilindiğine göre" sorusunun cevabı olurdu, burada öyle bir bilgi yok. B gözlüklü erkek (<span class="kes"><span>6</span><span>30</span></span>), C erkek olma (<span class="kes"><span>14</span><span>30</span></span>), E gözlüksüz olma olasılığıdır (kızlardan 7, erkeklerden 8; <span class="kes"><span>15</span><span>30</span></span>). Denetim: tablonun dört gözü 9, 7, 6, 8 ve toplamları 30.</p></div></li>
+
+<li data-c="B"><p class="q">5 madeni para birlikte atılıyor. Paralardan tam 3'ünün yazı gelme olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>32</span></span></li><li><span class="kes"><span>5</span><span>16</span></span></li><li><span class="kes"><span>1</span><span>8</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>3</span><span>5</span></span></li></ul>
+<div class="coz"><p>Örnek uzayda 2<sup>5</sup> = 32 eş olasılıklı sıralı sonuç vardır. Yazı gelecek 3 parayı seçmenin C(5, 3) = 10 yolu var; olasılık <span class="kes"><span>10</span><span>32</span></span> = <span class="kes"><span>5</span><span>16</span></span> (B). A, tek bir sıralamanın (YYYTT gibi) olasılığıdır; sıralamaların sayısını unutanlar onu bulur. C, yalnızca üç paranın yazı gelmesini çarpıp (<span class="kes"><span>1</span><span>2</span></span>)<sup>3</sup> öbür iki parayı yok saymaktır. D "en az 3 yazı" olasılığıdır: (10 + 5 + 1) ÷ 32 = <span class="kes"><span>16</span><span>32</span></span>. E, yazı sayısını para sayısına bölmektir; olasılıkla ilgisi yoktur.</p></div></li>
+
+<li data-c="E"><p class="q">Bir öğrencinin matematik sınavını geçme olasılığı 0,8, fizik sınavını geçme olasılığı 0,6'dır. İki sınavın sonuçları birbirinden bağımsız olduğuna göre bu öğrencinin sınavlardan en az birini geçme olasılığı kaçtır?</p>
+<ul class="sec"><li>0,48</li><li>0,44</li><li>0,08</li><li>0,70</li><li>0,92</li></ul>
+<div class="coz"><p>"En az biri"nin tümleyeni "ikisinden de kalmak"tır: 0,2 · 0,4 = 0,08. İstenen olasılık 1 − 0,08 = 0,92'dir (E). A ikisini de geçme (0,8 · 0,6), B yalnızca birini geçme (0,8 · 0,4 + 0,2 · 0,6 = 0,32 + 0,12), C hiçbirini geçmeme olasılığıdır. D, iki olasılığın ortalamasıdır; anlamı yoktur. Olasılıkları doğrudan toplayan 0,8 + 0,6 = 1,4 bulur; 1'den büyük çıktığı için bunun yanlış olduğu hemen anlaşılır. Denetim: 0,48 + 0,44 + 0,08 = 1.</p></div></li>
+
+<li data-c="C"><p class="q">Bir torbada 4 kırmızı, 3 beyaz, 2 siyah top vardır. Torbadan aynı anda 2 top çekiliyor. Çekilen topların farklı renkte olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>5</span><span>18</span></span></li><li><span class="kes"><span>13</span><span>36</span></span></li><li><span class="kes"><span>13</span><span>18</span></span></li><li><span class="kes"><span>52</span><span>81</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li></ul>
+<div class="coz"><p>Bütün seçimler C(9, 2) = 36. Aynı renk: C(4, 2) + C(3, 2) + C(2, 2) = 6 + 3 + 1 = 10. Farklı renk, tümleyenle 36 − 10 = 26 seçimdir: <span class="kes"><span>26</span><span>36</span></span> = <span class="kes"><span>13</span><span>18</span></span> (C). Doğrudan sayarak da 4 · 3 + 4 · 2 + 3 · 2 = 26 bulunur. A aynı renk olasılığıdır. B, payı sırasız (26), paydayı sıralı (9 · 8 = 72) saymaktır; pay ve payda aynı dille sayılmalıdır. D, topları geri koyarak çekimin sonucudur (1 − <span class="kes"><span>29</span><span>81</span></span>). E yalnızca kırmızı-beyaz çiftlerini sayar (<span class="kes"><span>12</span><span>36</span></span>).</p></div></li>
+
+<li data-c="A"><p class="q">Aralarında Ece ile Can'ın da bulunduğu 6 kişi bir sıraya rastgele diziliyor. Ece ile Can'ın yan yana <strong>gelmeme</strong> olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>5</span><span>6</span></span></li><li><span class="kes"><span>1</span><span>6</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li></ul>
+<div class="coz"><p>Yan yana gelme: Ece ile Can bir paket, paketle 4 kişi 5 birim; 5! · 2! = 240 diziliş. Bütün dizilişler 6! = 720. P(yan yana) = <span class="kes"><span>240</span><span>720</span></span> = <span class="kes"><span>1</span><span>3</span></span>; kısa yoldan da <span class="kes"><span>2</span><span>n</span></span> = <span class="kes"><span>2</span><span>6</span></span>. Gelmeme olasılığı 1 − <span class="kes"><span>1</span><span>3</span></span> = <span class="kes"><span>2</span><span>3</span></span>'tür (A). B yan yana gelme olasılığıdır; olumsuz kökü kaçıranlar onu seçer. D paketin içindeki 2! sırayı unutmaktır (<span class="kes"><span>5!</span><span>6!</span></span> = <span class="kes"><span>1</span><span>6</span></span>), C de bu yanlış sonucun tümleyenidir. E, "ya gelirler ya gelmezler" diye iki durumu eş olasılıklı saymaktır.</p></div></li>
+
+<li data-c="D"><p class="q">I. torbada 3 kırmızı, 2 mavi; II. torbada 2 kırmızı, 2 mavi top vardır. I. torbadan rastgele bir top alınıp II. torbaya atılıyor, sonra II. torbadan bir top çekiliyor. Bu topun mavi olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>13</span><span>25</span></span></li><li><span class="kes"><span>4</span><span>9</span></span></li><li><span class="kes"><span>12</span><span>25</span></span></li><li><span class="kes"><span>6</span><span>25</span></span></li></ul>
+<div class="coz"><p>Kırmızı aktarılırsa (olasılık <span class="kes"><span>3</span><span>5</span></span>) II. torba 3K, 2M olur ve mavi olasılığı <span class="kes"><span>2</span><span>5</span></span>'tir. Mavi aktarılırsa (olasılık <span class="kes"><span>2</span><span>5</span></span>) II. torba 2K, 3M olur ve mavi olasılığı <span class="kes"><span>3</span><span>5</span></span>'tir. Toplam: <span class="kes"><span>3</span><span>5</span></span> · <span class="kes"><span>2</span><span>5</span></span> + <span class="kes"><span>2</span><span>5</span></span> · <span class="kes"><span>3</span><span>5</span></span> = <span class="kes"><span>6</span><span>25</span></span> + <span class="kes"><span>6</span><span>25</span></span> = <span class="kes"><span>12</span><span>25</span></span> (D). A, aktarmayı yok sayıp II. torbanın ilk hâline bakmaktır. B kırmızı olasılığıdır (tümleyen). C, iki torbayı birleştirmektir (9 topun 4'ü mavi). E tek bir yolu almaktır. Denetim: sonuç 0,48; II. torbanın iki olası hâlindeki mavi oranları 0,4 ile 0,6 arasında.</p></div></li>
+
+<li data-c="B" data-k="mat-4"><p class="q">Ardışık 7 tek sayının toplamı 133 olduğuna göre bu sayıların en büyüğü kaçtır?</p>
+<ul class="sec"><li>19</li><li>25</li><li>22</li><li>27</li><li>31</li></ul>
+<div class="coz"><p>Ardışık sayılarda ortanca terim ortalamaya eşittir: 133 ÷ 7 = 19. Yedi terimde ortanca 4. terimdir ve en büyük terime 3 adım vardır; ardışık tek sayılar 2'şer arttığı için en büyük 19 + 3 · 2 = 25'tir (B). Denetim: 13 + 15 + 17 + 19 + 21 + 23 + 25 = 133. A ortanca terimdir. C, adımı 1 almaktır; zaten çift olduğu için tek sayı olamaz. D, ortancadan 4 adım gitmektir. E, ortancadan 6 adım gitmektir; 6 adım en küçük terimden en büyüğe olan uzaklıktır.</p></div></li>
+
+<li data-c="E" data-k="mat-8"><p class="q">(<span class="kes"><span>2</span><span>3</span></span> − <span class="kes"><span>1</span><span>4</span></span>) ÷ <span class="kes"><span>5</span><span>6</span></span> işleminin sonucu kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>25</span><span>72</span></span></li><li>2</li><li><span class="kes"><span>6</span><span>5</span></span></li><li><span class="kes"><span>5</span><span>12</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li></ul>
+<div class="coz"><p>Önce parantez: payda 12'de eşitlenir, <span class="kes"><span>8</span><span>12</span></span> − <span class="kes"><span>3</span><span>12</span></span> = <span class="kes"><span>5</span><span>12</span></span>. Sonra bölme: bölen ters çevrilip çarpılır, <span class="kes"><span>5</span><span>12</span></span> · <span class="kes"><span>6</span><span>5</span></span> = <span class="kes"><span>30</span><span>60</span></span> = <span class="kes"><span>1</span><span>2</span></span> (E). A, bölme yerine çarpmaktır (<span class="kes"><span>5</span><span>12</span></span> · <span class="kes"><span>5</span><span>6</span></span>). B, bölüneni ters çevirmektir (<span class="kes"><span>12</span><span>5</span></span> · <span class="kes"><span>5</span><span>6</span></span>). C, payda eşitlemeden payları ve paydaları ayrı ayrı çıkarıp 1 bulmak ve 1'i <span class="kes"><span>5</span><span>6</span></span>'ya bölmektir. D, bölme işlemini unutup parantezin sonucunda durmaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-12"><p class="q">√75 − √27 + √12 işleminin sonucu kaçtır?</p>
+<ul class="sec"><li>4√3</li><li>√60</li><li>6√3</li><li>10√3</li><li>2√3</li></ul>
+<div class="coz"><p>Her kökü kök dışına çıkararak benzer köke çevir: √75 = √(25 · 3) = 5√3, √27 = √(9 · 3) = 3√3, √12 = √(4 · 3) = 2√3. Benzer kökler katsayılarla toplanır: 5 − 3 + 2 = 4, sonuç 4√3 (A). B, kök içlerini toplayıp çıkarmaktır; √a + √b ≠ √(a + b). C, işaretleri karıştırmaktır (5 + 3 − 2). D, bütün terimleri toplamaktır. E, son terimi unutup yalnızca 5√3 − 3√3 işlemini yapmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-16"><p class="q"><span class="kes"><span>x<sup>2</sup> − 9</span><span>x<sup>2</sup> + x − 6</span></span> ifadesinin en sade hâli aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>x + 3</span><span>x − 2</span></span></li><li><span class="kes"><span>x − 3</span><span>x + 2</span></span></li><li><span class="kes"><span>x − 3</span><span>x − 2</span></span></li><li><span class="kes"><span>3</span><span>2</span></span></li><li><span class="kes"><span>x + 3</span><span>x + 2</span></span></li></ul>
+<div class="coz"><p>Pay iki kare farkıdır: x<sup>2</sup> − 9 = (x − 3)(x + 3). Payda için çarpımı −6, toplamı 1 olan iki sayı 3 ve −2'dir: x<sup>2</sup> + x − 6 = (x + 3)(x − 2). Ortak çarpan (x + 3) sadeleşir: <span class="kes"><span>x − 3</span><span>x − 2</span></span> (C). A, x<sup>2</sup> − 9'u (x + 3)<sup>2</sup> sanmaktan gelir; iki kare farkı iki farklı çarpana ayrılır. E, paydayı (x − 3)(x + 2) diye ayırmaktan gelir; bu çarpımın açılımı x<sup>2</sup> − x − 6'dır. B de paydayı (x + 3)(x + 2) diye yanlış ayırmaktan gelir. D, terimleri sadeleştirip sabitleri oranlamaktır (−9 ÷ −6); yalnızca çarpanlar sadeleşir.</p></div></li>
+
+<li data-c="D" data-k="mat-20"><p class="q">x &lt; 0 &lt; y olduğuna göre |x − y| + |x| − |y| ifadesinin eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>2x</li><li>0</li><li>−2y</li><li>−2x</li><li>2y − 2x</li></ul>
+<div class="coz"><p>Her mutlak değerin içinin işaretini bul. x &lt; y olduğundan x − y &lt; 0 ve |x − y| = y − x. x &lt; 0 olduğundan |x| = −x. y &gt; 0 olduğundan |y| = y. Toplam: (y − x) + (−x) − y = −2x (D). x negatif olduğu için −2x pozitiftir; A'daki 2x ise negatif olur, oysa |x − y| = |x| + |y| olduğundan ifade 2|x|'e eşit, pozitiftir. B, |x|'i x almaktır. C, |x − y|'yi x − y almaktır. E, son terimin önündeki eksiyi unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-24"><p class="q">40 soruluk bir testte 4 yanlış cevap 1 doğru cevabı götürmektedir. Bütün soruları cevaplayan bir öğrencinin neti 25 olduğuna göre bu öğrencinin doğru sayısı kaçtır?</p>
+<ul class="sec"><li>25</li><li>28</li><li>30</li><li>32</li><li>26</li></ul>
+<div class="coz"><p>Doğru sayısına d dersen yanlış sayısı 40 − d olur. Net = d − <span class="kes"><span>40 − d</span><span>4</span></span> = 25. İki yanı 4 ile çarp: 4d − 40 + d = 100, 5d = 140, d = 28 (B). Denetim: 12 yanlış 3 doğru götürür, 28 − 3 = 25. A, neti doğru sayısı sanmaktır. Öbürlerini yerine koy: 30 doğru, 10 yanlış net 27,5; 32 doğru, 8 yanlış net 30; 26 doğru, 14 yanlış net 22,5 verir. Hiçbiri 25 değildir.</p></div></li>
+
+<li data-c="E" data-k="mat-28"><p class="q">Bir araç A kentinden B kentine 60 km/sa, aynı yoldan B'den A'ya 40 km/sa sabit hızla gidiyor. Aracın gidiş-dönüş boyunca ortalama hızı kaç km/sa'tir?</p>
+<ul class="sec"><li>50</li><li>24</li><li>45</li><li>52</li><li>48</li></ul>
+<div class="coz"><p>Ortalama hız toplam yolun toplam zamana oranıdır, hızların ortalaması değildir. Yolu 120 km al: gidiş 2 saat, dönüş 3 saat; 240 km ÷ 5 saat = 48 km/sa (E). Eşit yollar için formülle: <span class="kes"><span>2 · 60 · 40</span><span>60 + 40</span></span> = <span class="kes"><span>4800</span><span>100</span></span> = 48. A hızların aritmetik ortalamasıdır; araç yavaş giderken daha uzun süre geçirdiği için gerçek ortalama 50'nin altında kalır. B, formüldeki 2'yi unutmaktır. C ve D yerine konan yolla denetlenince tutmaz.</p></div></li>
+
+<li data-c="A" data-k="mat-32"><p class="q">Bir okuldaki 450 öğrencinin okula geliş biçimleri bir daire grafiğinde gösterilmiştir. Grafikte otobüsle gelenleri gösteren dilimin merkez açısı 72° olduğuna göre otobüsle gelen öğrenci sayısı kaçtır?</p>
+<ul class="sec"><li>90</li><li>72</li><li>324</li><li>20</li><li>360</li></ul>
+<div class="coz"><p>Daire grafiğinde 360° bütüne karşılık gelir. 72° ÷ 360° = <span class="kes"><span>1</span><span>5</span></span>, yani dilim toplamın %20'sidir: 450 ÷ 5 = 90 öğrenci (A). B, açıyı öğrenci sayısı sanmaktır. C, açıyı yüzde sanmaktır (450'nin %72'si = 324). D, yüzdeyi bulup orada durmaktır. E, otobüsle gelmeyenlerin sayısıdır (450 − 90).</p></div></li>
+
+<li data-c="C" data-k="mat-36"><p class="q">f(x + 1) = 3x − 2 olduğuna göre f(5) kaçtır?</p>
+<ul class="sec"><li>13</li><li>16</li><li>10</li><li>7</li><li>12</li></ul>
+<div class="coz"><p>f(5)'i bulmak için parantezin içini 5 yapan x'i bul: x + 1 = 5, x = 4. Bu değeri sağ tarafa koy: 3 · 4 − 2 = 10 (C). A, x yerine doğrudan 5 koymaktır (3 · 5 − 2). B, x + 1 = 5 denklemini x = 6 diye çözmektir. D, önce f(x) = 3x − 5 kuralını doğru bulup sonra x yerine 5 değil 4 koymaktır; kaydırma iki kez yapılmış olur. E, −2'yi unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-40"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + ax + 4 polinomunun x − 2 ile bölümünden kalan 10 olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>−11</li><li>3</li><li>5</li><li>7</li><li>−3</li></ul>
+<div class="coz"><p>Kalan teoremine göre x − 2 ile bölümden kalan P(2)'dir: P(2) = 8 − 8 + 2a + 4 = 2a + 4. 2a + 4 = 10, 2a = 6, a = 3 (B). A, P(2) yerine P(−2) hesaplamaktır: −8 − 8 − 2a + 4 = 10 denkleminden a = −11 çıkar. C, sabit terim 4'ü unutmaktır (2a = 10). D, 4'ü karşıya geçirirken işaretini değiştirmemektir (2a = 14). E işaret hatasıdır.</p></div></li>
+
+<li data-c="D" data-k="mat-44"><p class="q">KELEBEK sözcüğünün harflerinin yerleri değiştirilerek 7 harfli, anlamlı ya da anlamsız kaç farklı sözcük yazılabilir?</p>
+<ul class="sec"><li>5040</li><li>840</li><li>2520</li><li>420</li><li>210</li></ul>
+<div class="coz"><p>Sözcükte 7 harf var: K iki kez, E üç kez, L ve B birer kez. Tekrarlı permütasyon: <span class="kes"><span>7!</span><span>2! · 3!</span></span> = <span class="kes"><span>5040</span><span>12</span></span> = 420 (D). A, tekrarları yok sayıp 7! almaktır; özdeş harflerin yer değiştirmesi yeni sözcük vermez. B yalnızca E'lerin tekrarını (<span class="kes"><span>5040</span><span>6</span></span>), C yalnızca K'lerin tekrarını (<span class="kes"><span>5040</span><span>2</span></span>) hesaba katar. E, fazladan bir 2'ye daha bölmektir.</p></div></li>
+
+<li data-c="E" data-k="mat-44"><p class="q">4 kız ve 3 erkek öğrenci, kızların hepsi yan yana olacak biçimde bir sıraya kaç farklı şekilde dizilebilir?</p>
+<ul class="sec"><li>144</li><li>5040</li><li>288</li><li>1152</li><li>576</li></ul>
+<div class="coz"><p>4 kızı tek paket yap: paket ve 3 erkek 4 birim eder, 4! = 24 biçimde dizilir. Paketin içinde kızlar kendi aralarında 4! = 24 biçimde dizilir. Toplam 24 · 24 = 576 (E). A, paketi bir birim saymayı unutup yalnızca 3 erkeği dizmektir (3! · 4!). B, koşulsuz bütün dizilişlerdir (7!). C, sonucu yarıya bölmek; D, fazladan 2 ile çarpmaktır; ikisinin de bir gerekçesi yoktur.</p></div></li>
+
+<li data-c="A" data-k="mat-45"><p class="q">Düzlemde herhangi üçü doğrusal olmayan 8 nokta vardır. Köşeleri bu noktalar olan kaç farklı üçgen çizilebilir?</p>
+<ul class="sec"><li>56</li><li>336</li><li>28</li><li>70</li><li>24</li></ul>
+<div class="coz"><p>Üçü doğrusal olmayan her 3 nokta bir üçgen belirler ve köşelerin sırası önemsizdir: C(8, 3) = <span class="kes"><span>8 · 7 · 6</span><span>3 · 2 · 1</span></span> = 56 (A). B, sırayı önemli sayıp P(8, 3) = 336 almaktır; aynı üçgen 3! = 6 kez sayılır. C, 2 nokta seçmektir; bu doğru sayısıdır. D, C(8, 4) = 70, yani dörtgen sayısıdır. E, 8 ile 3'ü çarpmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-45"><p class="q">6 kadın ve 4 erkek arasından en az bir erkeğin bulunduğu 3 kişilik bir komisyon kaç farklı biçimde seçilebilir?</p>
+<ul class="sec"><li>144</li><li>60</li><li>100</li><li>120</li><li>20</li></ul>
+<div class="coz"><p>Tümleyenden say: bütün komisyonlar C(10, 3) = 120, hiç erkek olmayanlar (üçü de kadın) C(6, 3) = 20. En az bir erkekli komisyon 120 − 20 = 100'dür (C). A, önce bir erkek seçip kalan 2 kişiyi 9 kişiden seçmektir (4 · 36); iki erkekli bir komisyon, hangi erkeğin "önce" seçildiğine göre iki kez sayılır. B tam bir erkekli komisyonlardır (4 · 15). D bütün komisyonlar, E yalnız kadınlardan oluşanlardır.</p></div></li>
+
+<li data-c="B" data-k="mat-46"><p class="q">İki zar birlikte atılıyor. Üst yüze gelen sayıların toplamının 8 olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>11</span></span></li><li><span class="kes"><span>5</span><span>36</span></span></li><li><span class="kes"><span>1</span><span>7</span></span></li><li><span class="kes"><span>1</span><span>6</span></span></li><li><span class="kes"><span>1</span><span>9</span></span></li></ul>
+<div class="coz"><p>Örnek uzayda 36 sıralı ikili var. Toplamı 8 olanlar: (2, 6), (3, 5), (4, 4), (5, 3), (6, 2); 5 durum. Olasılık <span class="kes"><span>5</span><span>36</span></span> (B). A, 2'den 12'ye kadar 11 toplamı eş olasılıklı saymaktır; toplamlar eş olasılıklı değildir. C, sırasız ikilileri (21 tane) sayıp 3'ünü almaktır; (2, 6) ile (6, 2) ayrı sonuçlardır. D, (4, 4)'ü de iki kez saymaktır (6 durum). E, (4, 4)'ü unutmaktır (4 durum).</p></div></li>
+
+<li data-c="D" data-k="mat-46"><p class="q">1'den 30'a kadar olan tam sayılar (1 ve 30 dahil) arasından rastgele biri seçiliyor. Seçilen sayının 3'ün veya 5'in katı olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>8</span><span>15</span></span></li><li><span class="kes"><span>1</span><span>15</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>7</span><span>15</span></span></li><li><span class="kes"><span>1</span><span>5</span></span></li></ul>
+<div class="coz"><p>3'ün katları 10 tane, 5'in katları 6 tane; ikisinin de katı olanlar (15'in katları: 15 ve 30) 2 tane. Birleşim formülüyle 10 + 6 − 2 = 14 sayı; olasılık <span class="kes"><span>14</span><span>30</span></span> = <span class="kes"><span>7</span><span>15</span></span> (D). A, ortak katları çıkarmayıp 16 saymaktır; 15 ve 30 iki kez sayılmış olur. B yalnızca ortak katların olasılığıdır. C yalnızca 3'ün katlarını, E yalnızca 5'in katlarını sayar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-46">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-47">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-48">Sonraki parça: veri ve istatistik</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"olasılık geri koyarak geri koymadan çekme ağaç şeması konu anlatımı"</li>
+  <li>"kombinasyon ile olasılık torbadan top çekme TYT"</li>
+  <li>"bağımsız olaylar en az biri olasılık soru çözümü"</li>
+  <li>"iki torba torbadan torbaya top aktarma olasılık"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler 2018 Ortaöğretim Matematik Öğretim Programı'nın 10. sınıf "Olasılık" ünitesindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: dokuz çözümlü örneğin bütün sonuçları (geri koymadan çekimler, 3'lü seçimler, 5 kişinin 120 dizilişi ve 60 üç basamaklı sayı tek tek üretilip sayılarak; para ve zar sonuçları C(n, k) ile ve sayarak); iki ağaç şemasındaki dal ve yol olasılıkları; alan modelindeki dört alan; tablo sorusunun sayıları; 24 quiz sorusunun doğru cevapları ve her çeldiricinin, çözümde yazan hatanın gerçekten verdiği sonuç olduğu.</li>
+  <li>Bağımsız olaylar kapsam gereği sezgisel olarak anlatıldı; biçimsel tanım (P(A ∩ B) = P(A) · P(B)) ve koşullu olasılık AYT konusu olarak ileri Parça 34'e bırakıldı. Tablo sorularındaki "bilindiğine göre" türünün TYT'de de sorulduğu olabilir; bu ayrımın sınavda nerede çizildiğini doğrulayamadım.</li>
+  <li>"Olma olasılığının olmama olasılığına oranı" kavramı kapsam listesinde bu adla geçiyor; ders kitabında ayrı bir adla anılıp anılmadığını doğrulayamadım.</li>
+  <li>Parça 34'te "ya da" dışlayıcı bağlaç (⊻) olarak tanımlandığı için, birleşim anlamındaki sorularda "veya" kullandım. Sınav metinlerinde "ya da" sözcüğünün olasılık sorularında her zaman bu dışlayıcı anlamda kullanıldığından emin değilim; soru bağlamına bak.</li>
+  <li>Biyoloji bağlantısındaki Aa × Aa çaprazlamasında aa olasılığının 1/4 olması Mendel kalıtımının standart sonucudur.</li>
+  <li>Tekrar soruları Parça 4, 8, 12, 16, 20, 24, 28, 32, 36, 40'tan birer, Parça 44, 45, 46'dan ikişer tanedir (toplam 16 sınırı; eski parçalar eşit aralıklarla seçildi). Parça 20, 31, 32 ve 35–46 bu parça yazılırken depoda yoktu; o parçalara dayanan tekrar sorularını ve metindeki göndermeleri kapsam listesindeki konulara ve terimlere göre yazdım, o parçaların metinleriyle karşılaştıramadım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

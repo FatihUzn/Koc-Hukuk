@@ -41,7 +41,26 @@ def pano_html():
 </div>
 '''
 
-govde = [oku("kutuphane.html"), pano_html()]
+def dersler_html():
+    """Kütüphanedeki Dersler rafı: dosyalar.json içinde "ders": true olanlar; hazır parça sayısı dosyalardan sayılır."""
+    kart = []
+    for d in dosyalar:
+        if not d.get("ders"): continue
+        hazir = [n for n in range(1, len(d["bolumler"]) + 1) if (K / d["id"] / f"bolum-{n}.html").exists()]
+        top = len(d["bolumler"])
+        durum = f"{top} parça hazır · dosya tamam" if len(hazir) == top else (f"{len(hazir)} parça hazır · {top - len(hazir)} sırada" if hazir else f"Sırada · {top} parça")
+        ic = f'<b>{d["baslik"]}</b><span>{d.get("aciklama", "")}</span><span class="st">{durum}</span>'
+        kart.append(f'      <a class="file" href="#{d["id"]}-{hazir[0]}">{ic}</a>' if hazir else f'      <div class="file">{ic}</div>')
+    return '''  <div class="shelf">
+    <h2>Dersler</h2>
+    <p class="sub">Sıfırdan, en küçük ayrıntısına kadar. Her parça tek oturumda biter; sonunda öncekileri de kapsayan bir quiz var. Bu raf kilidin ve günlük okuma süresinin dışındadır.</p>
+    <div class="files">
+''' + "\n".join(kart) + '''
+    </div>
+  </div>
+'''
+
+govde = [oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html()), pano_html()]
 files, names, guven = {}, {}, {}
 for d in dosyalar:
     i, t = d["id"], d["baslik"]
@@ -76,7 +95,7 @@ for d in dosyalar:
 </div><!-- /view {i} -->
 ''')
 govde.append("\n</div><!-- /shell -->\n")
-govde.append(oku("kilit.html"))
+govde.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps([x["id"] for x in dosyalar if x.get("ders")])))
 betik = oku("betik.html")
 betik = betik.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
 betik = betik.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))

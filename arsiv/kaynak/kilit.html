@@ -59,6 +59,9 @@
   function istisnalar(){var l=oku('dni-istisna',[]);return Array.isArray(l)?l:[]}
   function okuma(){var o=oku('dni-okuma',null);if(!o||o.gun!==bugun())o={gun:bugun(),sn:0,ek:0,uz:0};return o}
 
+  /* Ders dosyaları (kaynak/dosyalar.json içinde "ders": true) günün işinin kendisidir: kilit de süre sayacı da onlara uygulanmaz. */
+  var DERS=/*DERSLER*/[];
+  function dersMi(){var m=(location.hash||'').slice(1).match(/^([a-z]+)-\d+$/);return !!(m&&DERS.indexOf(m[1])>=0)}
   var durum=null; // 'blok' | 'sure' | null
   function goster(tip){
     var o=ozet(), r=okuma();
@@ -85,6 +88,7 @@
   function kapat(){durum=null;gate.hidden=true;document.documentElement.style.overflow=''}
 
   function kontrol(){
+    if(dersMi()){kapat();return}
     var o=ozet(), r=okuma();
     if(o && o.toplam>0 && o.yapilan/o.toplam<KILIT.oran && istisnalar().indexOf(bugun())<0){goster('blok');return}
     if(r.sn>=(KILIT.gunlukDk+r.ek)*60){goster('sure');return}
@@ -105,7 +109,7 @@
   var son=Date.now();
   setInterval(function(){
     var simdi=Date.now(), fark=Math.round((simdi-son)/1000); son=simdi;
-    if(document.visibilityState!=='visible'||durum||fark<=0||fark>15){serit();return}
+    if(document.visibilityState!=='visible'||durum||fark<=0||fark>15||dersMi()){serit();return}
     var r=okuma(); r.sn+=fark; yaz('dni-okuma',r);
     serit(); if(r.sn>=(KILIT.gunlukDk+r.ek)*60) kontrol();
   },5000);

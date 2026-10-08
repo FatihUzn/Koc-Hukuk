@@ -1,0 +1,706 @@
+<article class="chapter ders" id="c-mat-48">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 48 · Veri ve istatistik</div>
+<h1>Veri ve istatistik: ortalama, ortanca, tepe değer, yayılım ve grafik türleri</h1>
+<p class="time">Okuma ve çözme yaklaşık 55 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Ayşe ile Bora son beş denemede ortalama 30'ar net yaptı. Ayşe'nin netleri 29, 31, 30, 29, 31; Bora'nınkiler 24, 40, 16, 38, 32. Ortalamaları aynı, ama yarın sınava girseler hangisinin kaç net yapacağını daha güvenle tahmin edersin? Bir veri grubunu tek bir sayıyla anlatmak neden yetmez, ikinci sayı ne olmalı? Bu parça, bir sayı yığınını birkaç sayıyla ve bir şekille özetlemeyi anlatıyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 23 (aritmetik ortalama, toplam = ortalama × adet, ağırlıklı ortalama), Parça 32 (grafik okuma, daire grafiği, kesik eksen), Parça 12 (karekök ve yaklaşık değeri), Parça 9 (ondalık sayılarla işlem). Yanında kâğıt kalem olsun; her veri listesini önce kendin sırala.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>İstatistik, çok sayıda gözlemi birkaç anlamlı sayıya indirme işidir. Bir sınıfın otuz notunu tek tek okumak yerine "ortalama 64, en düşük 31, en yüksek 92" dersin; dinleyen kişi sınıfın durumunu hemen kavrar. Sınav bu konudan üç tür soru sorar. Birincisi hesap: bir listenin ortalamasını, ortancasını, tepe değerini, açıklığını, çeyreklerini ya da standart sapmasını bulmak. İkincisi değişim: listeye bir sayı eklenince, bir sayı çıkarılınca ya da bütün sayılara aynı işlem yapılınca bu ölçülerin ne olacağı. Üçüncüsü yorum: bir tablo ya da grafik verilir, hangi ölçünün uygun olduğu, hangi yargının çıkarılabildiği sorulur.</p>
+
+<p>Bu parçada hepsini sırayla kuracağız: veri ve frekans tablosu, üç merkezî eğilim ölçüsü, veri değişince ne olduğu, uç değerin etkisi, yayılım ölçüleri (açıklık, çeyrekler, standart sapma), iki grubu karşılaştırma ve son olarak grafik türleri. Bu, temel matematiğin son parçası; buradaki ortalama, Parça 23'te gördüğün aritmetik ortalamanın aynısıdır.</p>
+
+<h2 class="s">1. Veri, kesikli ve sürekli veri, frekans tablosu</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir soruyu cevaplamak için toplanan gözlemlerin her birine <strong>veri</strong> denir. Sayarak elde edilen ve yalnızca belirli değerleri alabilen veri <strong>kesikli</strong> veridir (kardeş sayısı, atılan gol, satılan bilet). Ölçerek elde edilen ve bir aralıktaki her değeri alabilen veri <strong>süreklidir</strong> (boy, ağırlık, süre, sıcaklık). Bir değerin veride kaç kez geçtiğine o değerin <strong>frekansı</strong> denir.</p></div>
+
+<p>Ayrımın nedeni şudur: kardeş sayısı 2 ya da 3 olur, 2,4 olamaz; aradaki değerler anlamsızdır. Boy ise 172 cm ile 173 cm arasındaki her değeri alabilir; 172,6 cm de bir boydur, biz yalnızca ölçüyü yuvarlarız. Bu fark, hangi grafiğin kullanılacağını belirler: kesikli veride her değerin sütunu ayrı çizilir, sürekli veride değerler aralıklara (gruplara) toplanır.</p>
+
+<p>Bir sınıftaki 20 öğrenciye kaç kardeşi olduğu sorulmuş, cevaplar sırayla şöyle gelmiş:</p>
+
+<span class="mat">2, 1, 0, 3, 1, 2, 1, 4, 2, 1, 0, 2, 3, 1, 2, 1, 0, 3, 2, 1</span>
+
+<p>Bu hâliyle liste okunmaz. Her değerin kaç kez geçtiğini sayıp bir tabloya yazınca <strong>frekans tablosu</strong> elde edilir. Son sütundaki "değer × frekans" çarpımı, ortalamayı bulurken işimize yarayacak.</p>
+
+<div class="tablo"><table>
+<tr><th>Kardeş sayısı (değer)</th><th>Frekans (öğrenci sayısı)</th><th>Değer × frekans</th></tr>
+<tr><td>0</td><td>3</td><td>0</td></tr>
+<tr><td>1</td><td>7</td><td>7</td></tr>
+<tr><td>2</td><td>6</td><td>12</td></tr>
+<tr><td>3</td><td>3</td><td>9</td></tr>
+<tr><td>4</td><td>1</td><td>4</td></tr>
+<tr><td><strong>Toplam</strong></td><td><strong>20</strong></td><td><strong>32</strong></td></tr>
+</table></div>
+
+<p>Tablonun iki denetimi var ve her soruda ikisini de yap: frekansların toplamı veri sayısına (20) eşit olmalı; son sütunun toplamı da bütün verilerin toplamına (32) eşit olmalı. Aynı tablo bir sütun grafiğiyle de gösterilebilir; sınav soruları çoğu zaman tabloyu değil, aşağıdaki gibi bir grafiği verir.</p>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Yirmi öğrencinin kardeş sayılarının sütun grafiği: 0 kardeşli 3, 1 kardeşli 7, 2 kardeşli 6, 3 kardeşli 3, 4 kardeşli 1 öğrenci">
+  <text class="sv-s" x="50" y="24">öğrenci sayısı</text>
+  <line class="sv-c" x1="50" y1="36" x2="50" y2="220"/>
+  <line class="sv-c" x1="50" y1="220" x2="392" y2="220"/>
+  <text class="sv-s" x="42" y="224" text-anchor="end">0</text>
+  <text class="sv-s" x="42" y="180" text-anchor="end">2</text>
+  <text class="sv-s" x="42" y="136" text-anchor="end">4</text>
+  <text class="sv-s" x="42" y="92" text-anchor="end">6</text>
+  <text class="sv-s" x="42" y="48" text-anchor="end">8</text>
+  <line class="sv-c" x1="46" y1="176" x2="54" y2="176"/>
+  <line class="sv-c" x1="46" y1="132" x2="54" y2="132"/>
+  <line class="sv-c" x1="46" y1="88" x2="54" y2="88"/>
+  <line class="sv-c" x1="46" y1="44" x2="54" y2="44"/>
+  <rect class="sv-l" x="73" y="154" width="44" height="66"/>
+  <rect class="sv-l" x="139" y="66" width="44" height="154"/>
+  <rect class="sv-l" x="205" y="88" width="44" height="132"/>
+  <rect class="sv-l" x="271" y="154" width="44" height="66"/>
+  <rect class="sv-l" x="337" y="198" width="44" height="22"/>
+  <text class="sv-b" x="95" y="148" text-anchor="middle">3</text>
+  <text class="sv-b" x="161" y="60" text-anchor="middle">7</text>
+  <text class="sv-b" x="227" y="82" text-anchor="middle">6</text>
+  <text class="sv-b" x="293" y="148" text-anchor="middle">3</text>
+  <text class="sv-b" x="359" y="192" text-anchor="middle">1</text>
+  <text class="sv-t" x="95" y="240" text-anchor="middle">0</text>
+  <text class="sv-t" x="161" y="240" text-anchor="middle">1</text>
+  <text class="sv-t" x="227" y="240" text-anchor="middle">2</text>
+  <text class="sv-t" x="293" y="240" text-anchor="middle">3</text>
+  <text class="sv-t" x="359" y="240" text-anchor="middle">4</text>
+  <text class="sv-s" x="227" y="258" text-anchor="middle">kardeş sayısı</text>
+</svg>
+<figcaption>Yatay eksende değerler, düşey eksende frekanslar. Sütunların yükseklikleri gerçek ölçüyle çizildi: her birim 22 birimlik yükseklik. Kesikli veri olduğu için sütunlar ayrık; arada "1,5 kardeş" diye bir değer yok.</figcaption>
+</figure>
+
+<h2 class="s">2. Merkezî eğilim ölçüleri: veriyi tek sayıyla anlatmak</h2>
+
+<p>Bir veri grubunun "ortasını", tipik değerini anlatan üç ölçü var. Üçü de "ortalama bir öğrenci kaç kardeşli?" sorusuna cevap verir, ama farklı biçimde. Hangisinin ne zaman doğru cevap olduğunu bölüm 4'te tartışacağız; önce üçünü de tanımlayalım.</p>
+
+<h3>Aritmetik ortalama</h3>
+
+<p>Parça 23'te ortalamayı "toplamı değiştirmeden herkesi eşitleyen değer" diye tanımlamıştık: veriler toplanır, veri sayısına bölünür. Frekans tablosunda her değeri tek tek toplamak yerine değeri frekansıyla çarparsın, çünkü 1 kardeşli 7 öğrenci toplama 1 + 1 + … + 1 = 7 · 1 katkı yapar. Bu, Parça 23'teki ağırlıklı ortalamanın kendisidir; ağırlıklar frekanslardır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Aritmetik ortalama = <span class="kes"><span>verilerin toplamı</span><span>veri sayısı</span></span>. Frekans tablosunda: ortalama = <span class="kes"><span>(değer × frekans) çarpımlarının toplamı</span><span>frekansların toplamı</span></span>. Paydaya satır sayısını değil, frekansların toplamını yaz.</p></div>
+
+<h3>Ortanca (medyan)</h3>
+
+<p>Ortalamanın bir zayıflığı var: çok büyük ya da çok küçük tek bir değer onu kendine doğru çeker. "Ortadaki" değeri bulmanın daha sağlam yolu, verileri küçükten büyüğe dizip tam ortadakine bakmaktır. Verilerin yarısı bu değerin altında, yarısı üstünde kalır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Veriler önce <strong>küçükten büyüğe sıralanır</strong>. Veri sayısı n tek ise ortanca, <span class="kes"><span>n + 1</span><span>2</span></span>. sıradaki veridir. n çift ise ortada iki veri kalır (<span class="kes"><span>n</span><span>2</span></span>. ve <span class="kes"><span>n</span><span>2</span></span> + 1. sıradakiler); ortanca bu ikisinin ortalamasıdır.</p></div>
+
+<p>Kuralın gerekçesi sayarak görülür. 5 veride ortadakinin solunda 2, sağında 2 veri olmalı; o hâlde ortadaki 3. veridir ve <span class="kes"><span>5 + 1</span><span>2</span></span> = 3. 6 veride tek bir orta yoktur: 3. verinin solunda 2, sağında 3 veri kalır. Ortayı iki verinin tam arasına koymak için ikisinin ortalaması alınır.</p>
+
+<span class="mat">7, 3, 9, 4, 12 → 3, 4, 7, 9, 12 → ortanca 7 <span class="g">(n = 5, 3. veri)</span></span>
+<span class="mat">3, 4, 7, 9, 12, 15 → ortanca = <span class="kes"><span>7 + 9</span><span>2</span></span> = 8 <span class="g">(n = 6, 3. ve 4. verinin ortalaması)</span></span>
+
+<p>Çift sayıda veride ortancanın veride hiç geçmeyen bir sayı (burada 8) olabileceğine dikkat et. Bu bir hata değildir.</p>
+
+<h3>Tepe değer (mod)</h3>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Veride <strong>en çok tekrar eden değer</strong> tepe değerdir. Birden çok değer aynı en yüksek sayıda tekrar ediyorsa hepsi tepe değerdir. Bütün değerler eşit sayıda tekrar ediyorsa (örneğin her biri birer kez geçiyorsa) tepe değer <strong>yoktur</strong>.</p></div>
+
+<p>2, 3, 3, 5, 5, 8 verilerinin iki tepe değeri vardır: 3 ve 5. 1, 2, 3, 4 verilerinin tepe değeri yoktur, çünkü hiçbir değer öbürlerinden daha çok tekrar etmiyor. Tepe değer, sayı olmayan veride de anlamlı olan tek ölçüdür: "en çok tercih edilen renk" sorusunun ortalaması ya da ortancası olmaz, tepe değeri olur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Yukarıdaki sütun grafiğine göre öğrencilerin kardeş sayılarının aritmetik ortalaması, ortancası, tepe değeri ve açıklığı (en büyük değer − en küçük değer) kaçtır?</p>
+<p><strong>Adım 1.</strong> Grafikten frekansları okurum: 0 → 3, 1 → 7, 2 → 6, 3 → 3, 4 → 1. Toplam 20 öğrenci.</p>
+<span class="mat">3 + 7 + 6 + 3 + 1 = 20 <span class="g">(frekans toplamı = veri sayısı)</span></span>
+<p><strong>Adım 2.</strong> Ortalama için değer × frekans çarpımlarını toplarım.</p>
+<span class="mat">0 · 3 + 1 · 7 + 2 · 6 + 3 · 3 + 4 · 1 = 0 + 7 + 12 + 9 + 4 = 32 <span class="g">(verilerin toplamı)</span></span>
+<span class="mat">ortalama = <span class="kes"><span>32</span><span>20</span></span> = 1,6 <span class="g">(toplam ÷ veri sayısı)</span></span>
+<p><strong>Adım 3.</strong> Ortanca için sıralı listede 10. ve 11. veriyi ararım (n = 20 çift). Frekansları birikimli toplarım: 0'lar 1.–3. sırada, 1'ler 4.–10. sırada, 2'ler 11.–16. sırada.</p>
+<span class="mat">10. veri = 1, 11. veri = 2 <span class="g">(birikimli frekans: 3, 10, 16)</span></span>
+<span class="mat">ortanca = <span class="kes"><span>1 + 2</span><span>2</span></span> = 1,5 <span class="g">(ortadaki iki verinin ortalaması)</span></span>
+<p><strong>Adım 4.</strong> Tepe değer en yüksek sütunun altındaki değerdir: 1 (frekansı 7).</p>
+<p><strong>Adım 5.</strong> Açıklık: en büyük değer 4, en küçük 0.</p>
+<span class="mat">açıklık = 4 − 0 = 4 <span class="g">(en büyük − en küçük)</span></span>
+<p><strong>Kontrol yolu.</strong> Ortalama en küçük ile en büyük değer arasında olmalı: 0 &lt; 1,6 &lt; 4. Ortanca da öyle. Öğrencilerin çoğu 1–2 kardeşli; üç ölçünün de 1 ile 2 arasında çıkması akla yatıyor.</p>
+<p><strong>Sonuç:</strong> Ortalama 1,6; ortanca 1,5; tepe değer 1; açıklık 4.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Tepe değer yerine en büyük frekansı yazmak.</strong> Grafikteki en uzun sütunun yüksekliği 7'dir, ama tepe değer 7 değil, o sütunun altındaki değer olan 1'dir. Tepe değer bir <em>veri değeridir</em>, frekans değildir. Aynı hata ortancada da yapılır: frekansları (3, 7, 6, 3, 1) sıralayıp ortadakini almak anlamsızdır; sıralanan şey veriler, yani kardeş sayılarıdır.</p>
+<p><strong>Ortancayı sıralamadan bulmak.</strong> 12, 7, 15, 9 listesinin ortası 7 ile 15 değildir. Önce 7, 9, 12, 15 diye sırala; ortanca <span class="kes"><span>9 + 12</span><span>2</span></span> = 10,5'tir.</p></div>
+
+<h2 class="s">3. Veri değişince ölçüler nasıl değişir?</h2>
+
+<p>Sınavda sık gelen soru tipi şudur: bir grubun ortalaması verilir, sonra gruba biri katılır, biri ayrılır ya da bir veri yanlış yazılmış çıkar. Bütün bu soruların anahtarı Parça 23'teki ilişkidir: <strong>toplam = ortalama × veri sayısı</strong>. Ortalamanın kendisiyle değil, toplamla çalışırsın; çünkü ekleme ve çıkarma toplamı doğrudan değiştirir, ortalamayı ise dolaylı olarak.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (a) Ortalaması 12 olan 9 veriye 22 eklenirse yeni ortalama kaç olur? (b) Ortalaması 15 olan 8 veriden biri çıkarılınca ortalama 14 oluyor; çıkarılan veri kaçtır? (c) 10 verinin ortalaması 18 bulunmuş, ama 35 olan bir veri yanlışlıkla 53 yazılmış. Doğru ortalama kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Eski toplamı bulurum.</p>
+<span class="mat">9 · 12 = 108 <span class="g">(toplam = ortalama × veri sayısı)</span></span>
+<p><strong>Adım 2.</strong> Yeni toplamı yeni veri sayısına bölerim.</p>
+<span class="mat"><span class="kes"><span>108 + 22</span><span>10</span></span> = <span class="kes"><span>130</span><span>10</span></span> = 13 <span class="g">(veri sayısı 10 oldu)</span></span>
+<p><strong>Adım 3.</strong> (b) Eski ve yeni toplamı bulurum.</p>
+<span class="mat">8 · 15 = 120, &nbsp; 7 · 14 = 98 <span class="g">(çıkarmadan önce ve sonra)</span></span>
+<p><strong>Adım 4.</strong> Toplamlar farkı çıkarılan veridir.</p>
+<span class="mat">120 − 98 = 22 <span class="g">(toplamdan eksilen miktar)</span></span>
+<p><strong>Adım 5.</strong> (c) Yanlış toplamdan yanlış veriyi çıkarıp doğrusunu eklerim.</p>
+<span class="mat">10 · 18 = 180 → 180 − 53 + 35 = 162 <span class="g">(toplam 18 fazla bulunmuş)</span></span>
+<span class="mat"><span class="kes"><span>162</span><span>10</span></span> = 16,2 <span class="g">(veri sayısı değişmedi)</span></span>
+<p><strong>Kontrol yolu.</strong> (a) Eklenen 22, eski ortalamadan 10 fazla; bu fazlalık 10 veriye paylaşılınca ortalama 1 artar: 12 + 1 = 13. (c) Toplamdaki 18'lik fazlalık 10 veriye paylaşılınca ortalama 1,8 fazla çıkar: 18 − 1,8 = 16,2. İki yol aynı sonucu verdi.</p>
+<p><strong>Sonuç:</strong> (a) 13, (b) 22, (c) 16,2.</p></div>
+
+<p>Ortanca ve tepe değer bu kadar kolay hesaplanmaz, çünkü toplamla değil sırayla ve tekrarla ilgilidirler. Her değişiklikten sonra listeyi yeniden sıralayıp bakman gerekir. Yine de iki genel gözlem işini hızlandırır: en büyük veriyi daha da büyütmek ya da en küçüğü daha da küçültmek (sıra değişmedikçe) ortancayı <strong>hiç değiştirmez</strong>, çünkü ortanca yalnızca ortadaki verilere bakar. Tepe değer ise tek bir veri eklenince bile değişebilir: 2, 3, 3, 5 verilerine 5 eklersen artık iki tepe değer (3 ve 5) olur.</p>
+
+<h3>"Ortancası tepe değerine eşit olduğuna göre x kaçtır?" kalıbı</h3>
+
+<p>Bu tür sorularda x'in yeri bilinmediği için durumları ayırarak ilerlersin. İlk soru şudur: tepe değeri kim belirliyor? Veriler x dışında hep farklıysa, x yeni bir değer olduğunda hiç tepe değer olmaz; demek ki x, var olan değerlerden birine eşit olmalı ve tepe değer x'in kendisi olur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> 5, 8, 2, 9, x, 11, 7 verilerinin ortancası tepe değerine eşittir. Buna göre x'in alabileceği değerlerin toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> x dışındaki verileri sıralarım.</p>
+<span class="mat">2, 5, 7, 8, 9, 11 <span class="g">(altı farklı değer, her biri bir kez)</span></span>
+<p><strong>Adım 2.</strong> x bunlardan farklı olursa bütün değerler birer kez geçer ve tepe değer olmaz. O hâlde x bu altı değerden birine eşittir ve tepe değer x'tir.</p>
+<p><strong>Adım 3.</strong> 7 veri var; ortanca sıralı listenin <span class="kes"><span>7 + 1</span><span>2</span></span> = 4. verisidir. x'i her olası değerde deneyip 4. veriye bakarım.</p>
+<span class="mat">x = 7 → 2, 5, 7, 7, 8, 9, 11 → ortanca 7 = x <span class="g">(sağlar)</span></span>
+<span class="mat">x = 8 → 2, 5, 7, 8, 8, 9, 11 → ortanca 8 = x <span class="g">(sağlar)</span></span>
+<span class="mat">x = 2 ya da 5 → ortanca 7 ≠ x; &nbsp; x = 9 ya da 11 → ortanca 8 ≠ x <span class="g">(sağlamaz)</span></span>
+<p><strong>Adım 4.</strong> Uygun değerleri toplarım.</p>
+<span class="mat">7 + 8 = 15 <span class="g">(iki çözüm)</span></span>
+<p><strong>Kontrol yolu.</strong> Altı farklı değerin ortasındaki iki değer (3. ve 4. sıradakiler) 7 ve 8'dir. Bunlardan birini ikilersen o değer hem tepe değer olur hem de 7 verilik listenin tam ortasına oturur. Uçtaki bir değeri ikilemek ortayı değiştirmez.</p>
+<p><strong>Sonuç:</strong> 15.</p></div>
+
+<h2 class="s">4. Uç değer ve hangi ölçünün seçileceği</h2>
+
+<p>Bir apartmandaki 7 dairenin bir ayda aldığı kargo sayıları şöyle: 3, 4, 4, 5, 6, 7, 20. Son daire evden çalışan bir satıcıya ait; öbürlerinden çok farklı bu değere <strong>uç (aykırı) değer</strong> denir. Üç ölçüyü hesapla: toplam 49, ortalama <span class="kes"><span>49</span><span>7</span></span> = 7; sıralı listenin 4. verisi olan ortanca 5; tepe değer 4.</p>
+
+<figure>
+<svg viewBox="0 0 400 168" role="img" aria-label="Kargo sayılarının nokta grafiği: 3, 4, 4, 5, 6, 7 birbirine yakın, 20 uzakta; ortanca 5, ortalama 7">
+  <line class="sv-c" x1="30" y1="110" x2="370" y2="110"/>
+  <line class="sv-c" x1="30" y1="104" x2="30" y2="116"/>
+  <line class="sv-c" x1="110" y1="104" x2="110" y2="116"/>
+  <line class="sv-c" x1="190" y1="104" x2="190" y2="116"/>
+  <line class="sv-c" x1="270" y1="104" x2="270" y2="116"/>
+  <line class="sv-c" x1="350" y1="104" x2="350" y2="116"/>
+  <text class="sv-s" x="30" y="132" text-anchor="middle">0</text>
+  <text class="sv-s" x="110" y="132" text-anchor="middle">5</text>
+  <text class="sv-s" x="190" y="132" text-anchor="middle">10</text>
+  <text class="sv-s" x="270" y="132" text-anchor="middle">15</text>
+  <text class="sv-s" x="350" y="132" text-anchor="middle">20</text>
+  <circle class="sv-l" cx="78" cy="98" r="6"/>
+  <circle class="sv-l" cx="94" cy="98" r="6"/>
+  <circle class="sv-l" cx="94" cy="84" r="6"/>
+  <circle class="sv-l" cx="110" cy="98" r="6"/>
+  <circle class="sv-l" cx="126" cy="98" r="6"/>
+  <circle class="sv-l" cx="142" cy="98" r="6"/>
+  <circle class="sv-a" cx="350" cy="98" r="6"/>
+  <line class="sv-cl" x1="110" y1="44" x2="110" y2="88"/>
+  <line class="sv-cl" x1="142" y1="44" x2="142" y2="88"/>
+  <text class="sv-b" x="106" y="38" text-anchor="end">ortanca 5</text>
+  <text class="sv-b" x="146" y="38">ortalama 7</text>
+  <text class="sv-t" x="350" y="78" text-anchor="middle">uç değer</text>
+  <text class="sv-s" x="94" y="156" text-anchor="middle">tepe değer 4</text>
+</svg>
+<figcaption>Her nokta bir daire; ölçek gerçek (1 kargo = 16 birim). Tek bir uç değer, ortalamayı veri yığınının dışına, sağa doğru çekiyor; ortanca yığının içinde kalıyor. 20 yerine 8 yazsaydık ortanca yine 5 kalırdı, ortalama ise 5,3'e düşerdi.</figcaption>
+</figure>
+
+<p>Ortalama 7 dediğinde, dairelerin 5'i bu sayının altında kalıyor; "tipik daire" ortalamaya değil ortancaya daha çok benziyor. Nedeni ortalamanın tanımında: ortalama bütün toplamı eşit paylaştırır, 20'nin fazlası da herkese dağıtılır. Uç değeri çıkarıp dene: kalan altı verinin ortalaması yaklaşık 4,83'e düşer (2'den fazla azalma), ortanca ise 4,5 olur (yalnızca 0,5 azalma). Ortanca uç değerden çok daha az etkilenir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Veride uç değer yoksa ve dağılım aşağı yukarı simetrikse <strong>aritmetik ortalama</strong> en iyi temsilcidir, çünkü bütün verileri kullanır. Uç değer varsa ya da veri bir yana yığılmışsa (gelir, ev fiyatı, bekleme süresi) <strong>ortanca</strong> daha doğru bir resim verir. "En çok tercih edilen", "en çok satan beden" gibi sorularda ya da sayı olmayan veride <strong>tepe değer</strong> kullanılır.</p></div>
+
+<p>Bir yön kuralı da işine yarar: büyük bir uç değer ortalamayı ortancanın üstüne çeker, küçük bir uç değer altına. Veriler ortanca etrafında simetrikse (2, 4, 6, 8, 10 gibi) ortalama ile ortanca eşit çıkar. Gazetelerde "ortalama gelir" yerine "medyan gelir" yazılmasının nedeni budur: beş çalışanı 20, 22, 22, 24, 26 bin lira, patronu 186 bin lira alan bir işyerinde ortalama maaş 50 bin liradır, ama altı kişiden beşi bunun yarısını bile almaz. Ortanca 23 bin lira, durumu çok daha dürüst anlatır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ortalama her zaman en doğru ölçüdür" diye düşünmek.</strong> Ortalama matematik olarak en çok kullanılan ölçüdür, ama uç değere karşı en hassas olandır. Soru "hangi ölçü bu grubu daha iyi temsil eder" diye soruyorsa önce uç değer var mı diye bak; varsa cevap çoğu zaman ortancadır. Tersine, uç değer yokken ortancayı seçmek de gereksiz yere bilgi atmaktır.</p></div>
+
+<h2 class="s">5. Bütün verilere aynı işlemi yapmak</h2>
+
+<p>Öğretmen sınav kâğıtlarını okuduktan sonra herkese 10 puan eklemeye karar verirse ortalama, ortanca ve standart sapma ne olur? Hesabı yeniden yapmadan cevaplayabilirsin. Bütün verilere aynı sayıyı eklemek, sayı doğrusundaki bütün noktaları birlikte aynı miktar sağa kaydırmaktır. Yığının yeri değişir, biçimi değişmez: ortadaki nokta yine ortadadır (10 sağda), en sık tekrar eden yine en sık tekrar eder, ama noktalar arasındaki uzaklıklar hiç değişmez. Bu yüzden konumu anlatan ölçüler kayar, dağınıklığı anlatan ölçüler aynı kalır.</p>
+
+<p>Bütün verileri aynı pozitif k sayısıyla çarpmak ise ölçeği değiştirir: her nokta sıfırdan k kat uzağa gider, iki nokta arasındaki her uzaklık da k katına çıkar. Bu kez hem konum hem dağınıklık ölçüleri k ile çarpılır.</p>
+
+<div class="tablo"><table>
+<tr><th>Ölçü</th><th>Her veriye c eklenirse</th><th>Her veri k ile çarpılırsa (k &gt; 0)</th></tr>
+<tr><td>Aritmetik ortalama</td><td>c artar</td><td>k ile çarpılır</td></tr>
+<tr><td>Ortanca</td><td>c artar</td><td>k ile çarpılır</td></tr>
+<tr><td>Tepe değer</td><td>c artar</td><td>k ile çarpılır</td></tr>
+<tr><td>Açıklık</td><td>değişmez</td><td>k ile çarpılır</td></tr>
+<tr><td>Çeyrekler açıklığı</td><td>değişmez</td><td>k ile çarpılır</td></tr>
+<tr><td>Standart sapma</td><td>değişmez</td><td>k ile çarpılır</td></tr>
+</table></div>
+
+<p>k negatifse konum ölçüleri yine k ile çarpılır, ama uzaklıklar negatif olamayacağı için yayılım ölçüleri |k| ile çarpılır (Parça 20'deki mutlak değer). İki işlem birlikte yapılırsa sırayla uygularsın; eklenen sayı yayılım ölçülerine hiçbir zaman girmez.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Bir sınavda puanların ortalaması 62, ortancası 60, standart sapması 8'dir. Öğretmen her puanı 1,2 ile çarpıp sonra 5 ekliyor. Yeni ortalama, ortanca ve standart sapma kaçtır?</p>
+<p><strong>Adım 1.</strong> Ortalama önce 1,2 ile çarpılır, sonra 5 artar.</p>
+<span class="mat">62 · 1,2 + 5 = 74,4 + 5 = 79,4 <span class="g">(konum ölçüsü: çarpma ve ekleme ikisi de etkiler)</span></span>
+<p><strong>Adım 2.</strong> Ortanca da aynı işlemi görür.</p>
+<span class="mat">60 · 1,2 + 5 = 72 + 5 = 77 <span class="g">(sıralama korunduğu için ortadaki veri yine ortadadır)</span></span>
+<p><strong>Adım 3.</strong> Standart sapma yalnızca çarpmadan etkilenir.</p>
+<span class="mat">8 · 1,2 = 9,6 <span class="g">(eklenen 5 uzaklıkları değiştirmez)</span></span>
+<p><strong>Kontrol yolu.</strong> Uydurma iki puanla dene: 54 ve 70 (ortalama 62, aralarındaki fark 16). Dönüşümden sonra 69,8 ve 89; ortalama 79,4, aralarındaki fark 19,2 = 16 · 1,2. Fark 1,2 katına çıktı, 5 eklemek farkı etkilemedi.</p>
+<p><strong>Sonuç:</strong> Ortalama 79,4; ortanca 77; standart sapma 9,6.</p></div>
+
+<h2 class="s">6. Yayılım ölçüleri: veriler ne kadar dağınık?</h2>
+
+<p>Şimdi parçanın sorusuna dönebiliriz. Ayşe'nin netleri 29, 31, 30, 29, 31; Bora'nınkiler 24, 40, 16, 38, 32. İkisinin de toplamı 150, ortalaması 30. Bora'nın ortancası da 32, Ayşe'ninki 30; birbirine yakın. Merkezî eğilim ölçüleri bu iki öğrenciyi neredeyse aynı gösteriyor, oysa Ayşe her denemede 30'un bir net yakınında, Bora ise 16 ile 40 arasında savruluyor. Aradaki farkı yakalayan ölçülere <strong>yayılım ölçüleri</strong> denir.</p>
+
+<h3>Açıklık (ranj)</h3>
+
+<p>En basit yayılım ölçüsü en büyük veri ile en küçük veri arasındaki farktır. Ayşe'de 31 − 29 = 2, Bora'da 40 − 16 = 24. Fark hemen görünüyor. Ama açıklığın ciddi bir zayıflığı var: yalnızca iki veriye, üstelik en uçtaki iki veriye bakar. Tek bir uç değer açıklığı şişirir. Kargo örneğinde açıklık 20 − 3 = 17'dir, oysa verilerin altısı 3 ile 7 arasındadır.</p>
+
+<h3>Çeyrekler ve çeyrekler açıklığı</h3>
+
+<p>Uç değerden kurtulmanın yolu, verilerin ortadaki yarısına bakmaktır. Ortanca veriyi iki yarıya ayırıyordu; her yarının da ortancasını alırsan veriyi dört eşit parçaya bölen noktalar elde edersin.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Sıralı verinin alt yarısının ortancasına <strong>alt çeyrek (Q<sub>1</sub>)</strong>, üst yarısının ortancasına <strong>üst çeyrek (Q<sub>3</sub>)</strong> denir. Verilerin yaklaşık dörtte biri Q<sub>1</sub>'in altında, dörtte biri Q<sub>3</sub>'ün üstündedir. <strong>Çeyrekler açıklığı</strong> Q<sub>3</sub> − Q<sub>1</sub>'dir ve verilerin ortadaki yarısının ne kadar yere yayıldığını gösterir. Veri sayısı tekse ortanca iki yarının hiçbirine katılmaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Bir otobüs durağında 10 ayrı seferde ölçülen bekleme süreleri (dakika): 13, 4, 16, 8, 28, 11, 7, 19, 10, 14. Ortanca, Q<sub>1</sub>, Q<sub>3</sub>, çeyrekler açıklığı ve açıklık kaçtır?</p>
+<p><strong>Adım 1.</strong> Verileri sıralarım.</p>
+<span class="mat">4, 7, 8, 10, 11, 13, 14, 16, 19, 28 <span class="g">(n = 10)</span></span>
+<p><strong>Adım 2.</strong> n çift; ortanca 5. ve 6. verinin ortalamasıdır.</p>
+<span class="mat">ortanca = <span class="kes"><span>11 + 13</span><span>2</span></span> = 12 <span class="g">(ortadaki iki veri)</span></span>
+<p><strong>Adım 3.</strong> Alt yarı ilk beş veridir; ortancası 3. veri.</p>
+<span class="mat">4, 7, <strong>8</strong>, 10, 11 → Q<sub>1</sub> = 8 <span class="g">(alt yarının ortancası)</span></span>
+<p><strong>Adım 4.</strong> Üst yarı son beş veridir; ortancası yine ortadaki.</p>
+<span class="mat">13, 14, <strong>16</strong>, 19, 28 → Q<sub>3</sub> = 16 <span class="g">(üst yarının ortancası)</span></span>
+<p><strong>Adım 5.</strong> İki açıklığı hesaplarım.</p>
+<span class="mat">Q<sub>3</sub> − Q<sub>1</sub> = 16 − 8 = 8 <span class="g">(çeyrekler açıklığı)</span></span>
+<span class="mat">28 − 4 = 24 <span class="g">(açıklık)</span></span>
+<p><strong>Kontrol yolu.</strong> Sırayla 4, 8, 12, 16, 28 büyümeli; büyüyor. Q<sub>1</sub>'in altında 2, Q<sub>1</sub> ile ortanca arasında 3, ortanca ile Q<sub>3</sub> arasında 3, Q<sub>3</sub>'ün üstünde 2 veri var; yaklaşık dörde bölündü.</p>
+<p><strong>Sonuç:</strong> Ortanca 12, Q<sub>1</sub> = 8, Q<sub>3</sub> = 16, çeyrekler açıklığı 8, açıklık 24. 28 dakikalık uç değer açıklığı şişirdi; çeyrekler açıklığı ondan etkilenmedi.</p></div>
+
+<p>Tek sayıda veride ortanca alt ya da üst yarıya katılmaz: 2, 4, 5, 7, 9, 10, 12 verilerinde ortanca 7'dir; alt yarı 2, 4, 5 (Q<sub>1</sub> = 4), üst yarı 9, 10, 12 (Q<sub>3</sub> = 10) olur.</p>
+
+<h3>Kutu grafiği: beş sayıda bütün veri</h3>
+
+<p>En küçük değer, Q<sub>1</sub>, ortanca, Q<sub>3</sub> ve en büyük değer birlikte <strong>beş sayı özeti</strong> adını alır. Bu beş sayıyı bir sayı doğrusu üstünde gösteren şekle <strong>kutu grafiği</strong> denir: Q<sub>1</sub>'den Q<sub>3</sub>'e bir kutu çizilir, ortanca kutunun içine bir çizgiyle işaretlenir, kutunun iki yanından en küçük ve en büyük değere birer çizgi (bıyık) uzatılır.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 186" role="img" aria-label="Bekleme sürelerinin kutu grafiği: en küçük 4, alt çeyrek 8, ortanca 12, üst çeyrek 16, en büyük 28">
+  <line class="sv-c" x1="40" y1="140" x2="610" y2="140"/>
+  <line class="sv-c" x1="40" y1="134" x2="40" y2="146"/>
+  <line class="sv-c" x1="135" y1="134" x2="135" y2="146"/>
+  <line class="sv-c" x1="230" y1="134" x2="230" y2="146"/>
+  <line class="sv-c" x1="325" y1="134" x2="325" y2="146"/>
+  <line class="sv-c" x1="420" y1="134" x2="420" y2="146"/>
+  <line class="sv-c" x1="515" y1="134" x2="515" y2="146"/>
+  <line class="sv-c" x1="610" y1="134" x2="610" y2="146"/>
+  <text class="sv-s" x="40" y="160" text-anchor="middle">0</text>
+  <text class="sv-s" x="135" y="160" text-anchor="middle">5</text>
+  <text class="sv-s" x="230" y="160" text-anchor="middle">10</text>
+  <text class="sv-s" x="325" y="160" text-anchor="middle">15</text>
+  <text class="sv-s" x="420" y="160" text-anchor="middle">20</text>
+  <text class="sv-s" x="515" y="160" text-anchor="middle">25</text>
+  <text class="sv-s" x="610" y="160" text-anchor="middle">30</text>
+  <text class="sv-s" x="325" y="180" text-anchor="middle">bekleme süresi (dakika)</text>
+  <line class="sv-c" x1="116" y1="86" x2="192" y2="86"/>
+  <line class="sv-c" x1="344" y1="86" x2="572" y2="86"/>
+  <line class="sv-c" x1="116" y1="74" x2="116" y2="98"/>
+  <line class="sv-c" x1="572" y1="74" x2="572" y2="98"/>
+  <rect class="sv-l" x="192" y="64" width="152" height="44"/>
+  <line class="sv-cl" x1="268" y1="64" x2="268" y2="108"/>
+  <text class="sv-b" x="268" y="26" text-anchor="middle">ortanca 12</text>
+  <text class="sv-t" x="192" y="52" text-anchor="middle">Q₁ = 8</text>
+  <text class="sv-t" x="344" y="52" text-anchor="middle">Q₃ = 16</text>
+  <text class="sv-t" x="116" y="64" text-anchor="middle">4</text>
+  <text class="sv-t" x="572" y="64" text-anchor="middle">28</text>
+  <text class="sv-s" x="268" y="126" text-anchor="middle">çeyrekler açıklığı 16 − 8 = 8</text>
+</svg>
+<figcaption>Ölçek gerçek: 1 dakika = 19 birim. Kutunun genişliği verilerin ortadaki yarısını, bıyıkların toplam uzunluğu açıklığı gösterir. Sağ bıyığın uzunluğu, tek bir uzun beklemenin (28 dakika) izidir. Kutu grafiğinden ortalama okunamaz; yalnızca beş sayı okunur.</figcaption>
+</figure>
+
+<p>Kutu grafiği soruları iki türlüdür: ya bir veri listesinden beş sayıyı bulup grafiği eşleştirmen istenir, ya da grafik verilir ve ondan ortanca, çeyrekler açıklığı ya da açıklık sorulur. İkincisinde hesap yoktur, okuma vardır: kutunun sol kenarı Q<sub>1</sub>, sağ kenarı Q<sub>3</sub>, içindeki çizgi ortanca, bıyıkların uçları en küçük ve en büyük değerdir. İki kutu grafiği yan yana verilirse, kutusu dar olan grubun ortadaki verileri birbirine daha yakındır.</p>
+
+<h3>Standart sapma: bütün verilerin ortalamadan uzaklığı</h3>
+
+<p>Açıklık iki veriye, çeyrekler açıklığı ortadaki verilere bakar. Bütün verileri hesaba katan bir yayılım ölçüsü istiyoruz. Akla gelen ilk fikir şudur: her verinin ortalamadan ne kadar uzak olduğunu bul, bu uzaklıkların ortalamasını al. Bora'nın verileriyle deneyelim; ortalama 30.</p>
+
+<span class="mat">24 − 30 = −6, &nbsp; 40 − 30 = 10, &nbsp; 16 − 30 = −14, &nbsp; 38 − 30 = 8, &nbsp; 32 − 30 = 2 <span class="g">(ortalamadan farklar)</span></span>
+<span class="mat">−6 + 10 − 14 + 8 + 2 = 0 <span class="g">(farkların toplamı)</span></span>
+
+<p>Farkların toplamı sıfır çıktı ve bu bir rastlantı değil. Ortalama, toplamı eşit paylaştıran değer olduğu için ortalamanın üstündeki fazlalıklar altındaki eksikleri her zaman tam olarak kapatır: farkların toplamı = verilerin toplamı − n · ortalama = toplam − toplam = 0. Ayşe için de, herhangi bir veri için de sıfır çıkar. Demek ki farkları doğrudan toplamak dağınıklık hakkında hiçbir şey söylemez; eksi işaretlerden kurtulmamız gerekir. İstatistikte bunun için farkların <strong>kareleri</strong> alınır: kare her zaman negatif olmayan bir sayıdır ve büyük sapmaları daha çok cezalandırır.</p>
+
+<p>Kareleri topladıktan sonra veri sayısına benzer bir sayıya böleriz. Ders kitabının kullandığı tanımda bölen n değil <strong>n − 1</strong>'dir. Bunun kesin gerekçesi lise programını aşar; sezgisi şudur: farkları gerçek bir ortalamadan değil, aynı verilerden hesaplanmış ortalamadan aldık ve bu ortalama verilere zaten olabildiğince yakın düşer, yani farklar olduğundan biraz küçük görünür. n − 1'e bölmek bu küçülmeyi telafi eder. Son olarak karekök alırız; çünkü kare alırken birim de karesine çıkmıştı ("net kare" anlamsız bir birim), kök alınca sonuç yeniden verilerle aynı birimde olur.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Ortalaması x̄ olan x<sub>1</sub>, x<sub>2</sub>, …, x<sub>n</sub> verilerinin standart sapması:</p>
+<span class="mat">s = √( <span class="kes"><span>(x<sub>1</sub> − x̄)<sup>2</sup> + (x<sub>2</sub> − x̄)<sup>2</sup> + … + (x<sub>n</sub> − x̄)<sup>2</sup></span><span>n − 1</span></span> ) <span class="g">(farkların karelerinin toplamı, n − 1'e bölünür, kökü alınır)</span></span>
+<p>Adımlar her zaman aynı sırada: ortalama → farklar → kareler → toplam → n − 1'e bölme → karekök. Küçük standart sapma, verilerin ortalama çevresinde toplandığını (tutarlı veri), büyük standart sapma dağınık olduğunu gösterir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Bora'nın netleri 24, 40, 16, 38, 32 ve Ayşe'nin netleri 29, 31, 30, 29, 31'dir. İkisinin standart sapmasını bulup karşılaştır.</p>
+<p><strong>Adım 1.</strong> Bora'nın ortalamasını bulurum.</p>
+<span class="mat">x̄ = <span class="kes"><span>24 + 40 + 16 + 38 + 32</span><span>5</span></span> = <span class="kes"><span>150</span><span>5</span></span> = 30 <span class="g">(toplam ÷ veri sayısı)</span></span>
+<p><strong>Adım 2.</strong> Farkları ve karelerini bir tabloda yazarım.</p>
+<div class="tablo"><table>
+<tr><th>x</th><th>x − 30</th><th>(x − 30)<sup>2</sup></th></tr>
+<tr><td>24</td><td>−6</td><td>36</td></tr>
+<tr><td>40</td><td>10</td><td>100</td></tr>
+<tr><td>16</td><td>−14</td><td>196</td></tr>
+<tr><td>38</td><td>8</td><td>64</td></tr>
+<tr><td>32</td><td>2</td><td>4</td></tr>
+<tr><td><strong>Toplam</strong></td><td><strong>0</strong></td><td><strong>400</strong></td></tr>
+</table></div>
+<p><strong>Adım 3.</strong> Kareler toplamını n − 1 = 4'e bölerim.</p>
+<span class="mat"><span class="kes"><span>400</span><span>4</span></span> = 100 <span class="g">(n = 5, bölen 5 − 1 = 4)</span></span>
+<p><strong>Adım 4.</strong> Karekök alırım.</p>
+<span class="mat">s<sub>Bora</sub> = √100 = 10 <span class="g">(birim yeniden "net")</span></span>
+<p><strong>Adım 5.</strong> Ayşe için aynı adımlar: ortalama 30; farklar −1, 1, 0, −1, 1; kareler 1, 1, 0, 1, 1.</p>
+<span class="mat">1 + 1 + 0 + 1 + 1 = 4 → <span class="kes"><span>4</span><span>4</span></span> = 1 → s<sub>Ayşe</sub> = √1 = 1 <span class="g">(aynı sıra)</span></span>
+<p><strong>Kontrol yolu.</strong> Farklar sütununun toplamı 0 çıktı; çıkmasaydı ortalamada ya da bir farkta hata olurdu. Ayrıca standart sapma açıklıktan büyük olamaz: Bora'da 10 &lt; 24, Ayşe'de 1 &lt; 2.</p>
+<p><strong>Sonuç:</strong> Bora'nın standart sapması 10, Ayşe'ninki 1. Ortalamalar eşitken Ayşe'nin netleri çok daha tutarlı; yarınki sınav için 30 civarı tahmini Ayşe'de güvenilir, Bora'da değil.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Ayşe ve Bora'nın netlerinin nokta grafiği; Ayşe'nin noktaları 30'un hemen yanında, Bora'nınkiler 16 ile 40 arasında; Bora'nın ortalamadan farkları çizgilerle gösterilmiş">
+  <line class="sv-c" x1="230" y1="34" x2="230" y2="232"/>
+  <text class="sv-s" x="236" y="30">ortalama 30</text>
+  <text class="sv-b" x="20" y="40">Ayşe · s = 1</text>
+  <line class="sv-c" x1="30" y1="72" x2="380" y2="72"/>
+  <circle class="sv-m" cx="220" cy="64" r="4"/>
+  <circle class="sv-m" cx="220" cy="54" r="4"/>
+  <circle class="sv-m" cx="230" cy="64" r="4"/>
+  <circle class="sv-m" cx="240" cy="64" r="4"/>
+  <circle class="sv-m" cx="240" cy="54" r="4"/>
+  <text class="sv-b" x="20" y="112">Bora · s = 10</text>
+  <line class="sv-c" x1="30" y1="148" x2="380" y2="148"/>
+  <circle class="sv-a" cx="90" cy="140" r="5"/>
+  <circle class="sv-a" cx="170" cy="140" r="5"/>
+  <circle class="sv-a" cx="250" cy="140" r="5"/>
+  <circle class="sv-a" cx="310" cy="140" r="5"/>
+  <circle class="sv-a" cx="330" cy="140" r="5"/>
+  <line class="sv-cl" x1="90" y1="164" x2="230" y2="164"/><text class="sv-s" x="84" y="168" text-anchor="end">−14</text>
+  <line class="sv-cl" x1="170" y1="178" x2="230" y2="178"/><text class="sv-s" x="164" y="182" text-anchor="end">−6</text>
+  <line class="sv-cl" x1="230" y1="192" x2="250" y2="192"/><text class="sv-s" x="256" y="196">+2</text>
+  <line class="sv-cl" x1="230" y1="206" x2="310" y2="206"/><text class="sv-s" x="316" y="210">+8</text>
+  <line class="sv-cl" x1="230" y1="220" x2="330" y2="220"/><text class="sv-s" x="336" y="224">+10</text>
+  <line class="sv-c" x1="30" y1="240" x2="380" y2="240"/>
+  <line class="sv-c" x1="30" y1="236" x2="30" y2="244"/>
+  <line class="sv-c" x1="80" y1="236" x2="80" y2="244"/>
+  <line class="sv-c" x1="130" y1="236" x2="130" y2="244"/>
+  <line class="sv-c" x1="180" y1="236" x2="180" y2="244"/>
+  <line class="sv-c" x1="230" y1="236" x2="230" y2="244"/>
+  <line class="sv-c" x1="280" y1="236" x2="280" y2="244"/>
+  <line class="sv-c" x1="330" y1="236" x2="330" y2="244"/>
+  <line class="sv-c" x1="380" y1="236" x2="380" y2="244"/>
+  <text class="sv-s" x="30" y="260" text-anchor="middle">10</text>
+  <text class="sv-s" x="80" y="260" text-anchor="middle">15</text>
+  <text class="sv-s" x="130" y="260" text-anchor="middle">20</text>
+  <text class="sv-s" x="180" y="260" text-anchor="middle">25</text>
+  <text class="sv-s" x="230" y="260" text-anchor="middle">30</text>
+  <text class="sv-s" x="280" y="260" text-anchor="middle">35</text>
+  <text class="sv-s" x="330" y="260" text-anchor="middle">40</text>
+  <text class="sv-s" x="380" y="260" text-anchor="middle">45</text>
+</svg>
+<figcaption>İki öğrencinin netleri aynı ölçekte (1 net = 10 birim). Ortalama çizgisi ikisinde de 30'da. Bora'nın farkları (mor çizgiler) solda −14 ve −6, sağda +2, +8, +10; sol ve sağ toplamları eşit (20), bu yüzden farkların toplamı sıfır. Standart sapma bu çizgilerin "tipik uzunluğudur".</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Adımların sırasını karıştırmak.</strong> Farkları toplayıp sonra karesini almak (0<sup>2</sup> = 0) her zaman sıfır verir. Önce her farkın karesini al, sonra topla. Bir başka hata kareler toplamını n'ye bölmektir; Bora'da <span class="kes"><span>400</span><span>5</span></span> = 80 ve √80 = 4√5 bulunur. Ders kitabının tanımında bölen n − 1'dir. Son olarak kökü unutmak: 100 standart sapma değildir, standart sapmanın karesidir.</p></div>
+
+<h2 class="s">7. İki veri grubunu karşılaştırmak</h2>
+
+<p>İki grubu karşılaştırırken iki soruyu ayrı ayrı sorarsın: "Hangisinin değerleri genel olarak daha yüksek?" (ortalama ya da ortanca) ve "Hangisi daha tutarlı?" (standart sapma ya da çeyrekler açıklığı). İki sorunun cevabı farklı gruplar olabilir ve sınav tam bunu yoklar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> İki fabrika 1000 gramlık şeker paketi dolduruyor. Her fabrikadan alınan paketlerin ağırlıkları için A fabrikasında ortalama 1001 g, standart sapma 3 g; B fabrikasında ortalama 1000 g, standart sapma 14 g bulunmuş. Hangi fabrikanın paketleri etiketteki ağırlığa daha güvenilir biçimde uyar?</p>
+<p><strong>Adım 1.</strong> Ortalamalara bakarım: ikisi de 1000 g'a çok yakın (fark 1 g). Ortalama tek başına bir ayrım yapmıyor.</p>
+<p><strong>Adım 2.</strong> Standart sapmalara bakarım: A'da 3 g, B'de 14 g. B'nin paketleri ortalamadan tipik olarak 14 g sapıyor; bu, bazı paketlerin 980'li gramlarda kalabileceğini gösteriyor.</p>
+<p><strong>Adım 3.</strong> Soru "güvenilir biçimde uyma" yani tutarlılık soruyor; tutarlılığı standart sapma ölçer.</p>
+<p><strong>Kontrol yolu.</strong> Ortalaması tam 1000 olan B'yi seçmek cazip gelir, ama ortalama, eksik dolu paketlerin fazla dolu paketlerle dengelendiğini gizleyebilir. Ayşe ile Bora'nın ortalamaları da eşitti.</p>
+<p><strong>Sonuç:</strong> A fabrikası: ortalaması hedefe yakın ve standart sapması çok daha küçük.</p></div>
+
+<p>Standart sapmayı karşılaştırırken birimlerin ve büyüklüklerin aynı olmasına dikkat et. Gram cinsinden 3 ile kilogram cinsinden 3 aynı şey değildir; ayrıca ortalaması 10 olan bir grupta 3 büyük bir sapmadır, ortalaması 1000 olan grupta küçüktür. Sınav soruları genellikle aynı birimdeki ve benzer büyüklükteki grupları karşılaştırır.</p>
+
+<h2 class="s">8. Grafik türleri ve hangi veriye uygun oldukları</h2>
+
+<p>Parça 32'de sütun, çizgi ve daire grafiklerini okumayı, kesik eksen tuzağını görmüştün. Burada her grafiğin hangi soruya cevap verdiğini toplu olarak koyuyoruz ve üç yeni grafiği ekliyoruz: histogram, kutu grafiği ve serpme grafiği. Grafik seçmenin ilkesi basittir: önce verinin türüne (sayı mı, kategori mi; kesikli mi, sürekli mi; tek değişken mi, iki değişken mi) bak, sonra ne göstermek istediğine (karşılaştırma, değişim, pay, dağılım, ilişki).</p>
+
+<div class="tablo"><table>
+<tr><th>Grafik</th><th>Uygun veri</th><th>Neyi gösterir</th></tr>
+<tr><td>Sütun (çubuk)</td><td>Kategoriler ya da az sayıda kesikli değer</td><td>Frekansları, miktarları karşılaştırma</td></tr>
+<tr><td>Çizgi</td><td>Zamana göre ölçülen bir nicelik</td><td>Artış-azalış ve eğilim</td></tr>
+<tr><td>Daire (pasta)</td><td>Bir bütünün parçaları</td><td>Her parçanın bütündeki payı (360° = %100)</td></tr>
+<tr><td>Histogram</td><td>Sürekli ya da çok değerli sayısal veri, gruplanmış</td><td>Dağılımın biçimi: nerede yığıldığı, ne kadar yayıldığı</td></tr>
+<tr><td>Kutu grafiği</td><td>Sayısal veri</td><td>Beş sayı özeti, yayılım, uç değer; grupları karşılaştırma</td></tr>
+<tr><td>Serpme (saçılım)</td><td>Her birey için iki sayısal ölçüm (eşleştirilmiş veri)</td><td>İki değişken arasındaki ilişkinin yönü ve gücü</td></tr>
+</table></div>
+
+<h3>Histogram: sürekli veriyi gruplamak</h3>
+
+<p>20 öğrencinin kilogram cinsinden ağırlıkları 42 ile 75 arasında değişsin. Her değer için ayrı sütun çizersen 30'dan fazla sütun olur ve çoğunun yüksekliği 1 ya da 0 çıkar; dağılımın biçimi görünmez. Bunun yerine değerleri eşit genişlikte aralıklara, yani <strong>gruplara (sınıf aralıklarına)</strong> toplarsın ve her grubun frekansını bitişik sütunlarla gösterirsin. Sütunlar bitişiktir, çünkü veri süreklidir: bir grubun bittiği yerde öbürü başlar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Histogram kurarken: (1) açıklığı bul; (2) grup sayısına karar ver (soru genellikle verir); (3) <strong>grup genişliği = açıklık ÷ grup sayısı</strong> işlemini yap ve sonuçtan büyük olan en küçük doğal sayıyı grup genişliği olarak al; (4) ilk grubu en küçük veriden başlat, gruplara verileri say; (5) frekansları bitişik sütunlarla çiz.</p></div>
+
+<p>3. adımdaki yukarı yuvarlamanın nedeni, en büyük verinin son gruba girebilmesidir. Genişliği aşağı yuvarlarsan gruplar en büyük veriye ulaşmadan biter ve bir veri dışarıda kalır. Bölme tam çıksa bile bir büyük sayıyı alırsın: açıklık 30, grup sayısı 5 olsaydı genişlik 6 değil 7 alınır, çünkü 42'den başlayan 6 genişlikli 5 grup (42–47, 48–53, …, 66–71) 72'yi dışarıda bırakırdı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> 20 öğrencinin ağırlıkları (kg): 42, 45, 47, 50, 51, 53, 54, 55, 57, 58, 58, 60, 61, 62, 64, 66, 67, 70, 72, 75. Bu verilerle 5 gruplu bir histogram için grupları ve frekanslarını bul.</p>
+<p><strong>Adım 1.</strong> Açıklığı bulurum.</p>
+<span class="mat">75 − 42 = 33 <span class="g">(en büyük − en küçük)</span></span>
+<p><strong>Adım 2.</strong> Grup genişliğini bulurum.</p>
+<span class="mat">33 ÷ 5 = 6,6 → grup genişliği 7 <span class="g">(6,6'dan büyük en küçük doğal sayı)</span></span>
+<p><strong>Adım 3.</strong> İlk grubu 42'den başlatıp her grupta 7 tam sayı değer alırım.</p>
+<span class="mat">42–48, 49–55, 56–62, 63–69, 70–76 <span class="g">(son grup 75'i içeriyor)</span></span>
+<p><strong>Adım 4.</strong> Her gruba düşen verileri sayarım.</p>
+<span class="mat">42–48: 3 &nbsp; 49–55: 5 &nbsp; 56–62: 6 &nbsp; 63–69: 3 &nbsp; 70–76: 3 <span class="g">(sırayla sayıldı)</span></span>
+<p><strong>Kontrol yolu.</strong> 3 + 5 + 6 + 3 + 3 = 20; bütün veriler bir gruba girdi, hiçbiri iki kez sayılmadı.</p>
+<p><strong>Sonuç:</strong> Gruplar ve frekanslar yukarıdaki gibidir; histogram aşağıdadır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 252" role="img" aria-label="Yirmi öğrencinin ağırlıklarının histogramı: 42–48 kg 3, 49–55 kg 5, 56–62 kg 6, 63–69 kg 3, 70–76 kg 3 öğrenci">
+  <text class="sv-s" x="50" y="24">öğrenci sayısı</text>
+  <line class="sv-c" x1="50" y1="36" x2="50" y2="210"/>
+  <line class="sv-c" x1="50" y1="210" x2="390" y2="210"/>
+  <text class="sv-s" x="42" y="214" text-anchor="end">0</text>
+  <text class="sv-s" x="42" y="164" text-anchor="end">2</text>
+  <text class="sv-s" x="42" y="114" text-anchor="end">4</text>
+  <text class="sv-s" x="42" y="64" text-anchor="end">6</text>
+  <line class="sv-c" x1="46" y1="160" x2="54" y2="160"/>
+  <line class="sv-c" x1="46" y1="110" x2="54" y2="110"/>
+  <line class="sv-c" x1="46" y1="60" x2="54" y2="60"/>
+  <rect class="sv-m" x="60" y="135" width="64" height="75"/>
+  <rect class="sv-m" x="124" y="85" width="64" height="125"/>
+  <rect class="sv-m" x="188" y="60" width="64" height="150"/>
+  <rect class="sv-m" x="252" y="135" width="64" height="75"/>
+  <rect class="sv-m" x="316" y="135" width="64" height="75"/>
+  <text class="sv-b" x="92" y="128" text-anchor="middle">3</text>
+  <text class="sv-b" x="156" y="78" text-anchor="middle">5</text>
+  <text class="sv-b" x="220" y="53" text-anchor="middle">6</text>
+  <text class="sv-b" x="284" y="128" text-anchor="middle">3</text>
+  <text class="sv-b" x="348" y="128" text-anchor="middle">3</text>
+  <text class="sv-s" x="92" y="228" text-anchor="middle">42–48</text>
+  <text class="sv-s" x="156" y="228" text-anchor="middle">49–55</text>
+  <text class="sv-s" x="220" y="228" text-anchor="middle">56–62</text>
+  <text class="sv-s" x="284" y="228" text-anchor="middle">63–69</text>
+  <text class="sv-s" x="348" y="228" text-anchor="middle">70–76</text>
+  <text class="sv-s" x="220" y="248" text-anchor="middle">ağırlık (kg)</text>
+</svg>
+<figcaption>Sütunlar bitişik ve hepsi aynı genişlikte (7 kg). Yükseklikler gerçek ölçüyle (1 öğrenci = 25 birim). Veri ortada (56–62) yığılmış, sağa doğru biraz uzamış. Histogramdan verilerin tek tek değeri okunamaz; yalnızca hangi grupta kaç veri olduğu okunur.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Histogramdan kesin ortalama, ortanca ya da açıklık çıkarmaya çalışmak.</strong> Gruplanmış veride grubun içindeki değerler kaybolmuştur: 42–48 grubundaki üç öğrencinin 42, 45, 47 mi yoksa 48, 48, 48 mi olduğunu grafikten bilemezsin. Histogramdan güvenle söylenebilenler şunlardır: hangi grupta kaç veri var, ortanca hangi gruba düşüyor (burada 10. ve 11. veri 56–62 grubunda), en kalabalık grup hangisi. Kesin değer isteyen soru, verilerin kendisini ya da bir frekans tablosunu vermek zorundadır.</p></div>
+
+<h3>Serpme (saçılım) grafiği: iki değişken arasındaki ilişki</h3>
+
+<p>Şimdiye kadar her öğrenci için tek bir ölçüm vardı. Bazen her birey için iki ölçüm yaparız: bir öğrencinin haftalık çalışma saati ve deneme neti gibi. Her öğrenciyi koordinat düzleminde bir nokta olarak işaretleriz: yatay eksende birinci, düşey eksende ikinci ölçüm. Bu, Parça 35'teki sıralı ikililerin düzlemdeki gösterimiyle aynı fikirdir.</p>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Sekiz öğrencinin haftalık çalışma saati ile deneme netinin serpme grafiği; noktalar sağa doğru yükseliyor">
+  <text class="sv-s" x="56" y="30">net</text>
+  <line class="sv-c" x1="50" y1="36" x2="50" y2="220"/>
+  <line class="sv-c" x1="50" y1="220" x2="380" y2="220"/>
+  <text class="sv-s" x="42" y="224" text-anchor="end">0</text>
+  <text class="sv-s" x="42" y="172" text-anchor="end">20</text>
+  <text class="sv-s" x="42" y="120" text-anchor="end">40</text>
+  <text class="sv-s" x="42" y="68" text-anchor="end">60</text>
+  <line class="sv-c" x1="46" y1="168" x2="54" y2="168"/>
+  <line class="sv-c" x1="46" y1="116" x2="54" y2="116"/>
+  <line class="sv-c" x1="46" y1="64" x2="54" y2="64"/>
+  <line class="sv-c" x1="130" y1="216" x2="130" y2="224"/>
+  <line class="sv-c" x1="210" y1="216" x2="210" y2="224"/>
+  <line class="sv-c" x1="290" y1="216" x2="290" y2="224"/>
+  <line class="sv-c" x1="370" y1="216" x2="370" y2="224"/>
+  <text class="sv-s" x="50" y="238" text-anchor="middle">0</text>
+  <text class="sv-s" x="130" y="238" text-anchor="middle">5</text>
+  <text class="sv-s" x="210" y="238" text-anchor="middle">10</text>
+  <text class="sv-s" x="290" y="238" text-anchor="middle">15</text>
+  <text class="sv-s" x="370" y="238" text-anchor="middle">20</text>
+  <text class="sv-s" x="215" y="256" text-anchor="middle">haftalık çalışma (saat)</text>
+  <circle class="sv-l" cx="130" cy="129" r="5"/>
+  <circle class="sv-l" cx="162" cy="134" r="5"/>
+  <circle class="sv-l" cx="178" cy="106" r="5"/>
+  <circle class="sv-l" cx="210" cy="111" r="5"/>
+  <circle class="sv-l" cx="242" cy="85" r="5"/>
+  <circle class="sv-l" cx="258" cy="93" r="5"/>
+  <circle class="sv-l" cx="290" cy="69" r="5"/>
+  <circle class="sv-l" cx="338" cy="56" r="5"/>
+</svg>
+<figcaption>Noktalar: (5, 35), (7, 33), (8, 44), (10, 42), (12, 52), (13, 49), (15, 58), (18, 63). Ölçek gerçek: yatayda 1 saat = 16 birim, düşeyde 1 net = 2,6 birim. Noktalar sağa gittikçe yükseliyor: pozitif yönlü bir ilişki. Tam bir doğru üstünde değiller; ilişki var ama kesin değil.</figcaption>
+</figure>
+
+<p>Serpme grafiğinde üç durum görürsün. Noktalar sağa doğru yükseliyorsa <strong>pozitif yönlü</strong> ilişki vardır (biri artarken öbürü de artma eğiliminde). Sağa doğru alçalıyorsa <strong>negatif yönlü</strong> ilişki vardır (arabanın yaşı arttıkça satış fiyatı düşer). Noktalar belirli bir yöne gitmeden dağılmışsa belirgin bir ilişki yoktur (ayakkabı numarası ile matematik neti). Noktalar bir doğruya ne kadar yakınsa ilişki o kadar güçlüdür. Bir uyarı: ilişki, neden-sonuç demek değildir. Yazın dondurma satışı ile boğulma vakaları birlikte artar; ikisinin ortak nedeni sıcak havadır, dondurma boğulmaya yol açmaz.</p>
+
+<h3>Yanıltıcı grafikler</h3>
+
+<p>Parça 32'de düşey ekseni sıfırdan başlatmayan (kesik eksenli) grafiğin küçük farkları büyük gösterdiğini görmüştün. İstatistikte bunun yanına üç tuzak daha ekle. Birincisi resimli grafik: bir şeyin iki katına çıktığını göstermek için resmin hem enini hem boyunu iki katına çıkarırsan alanı 4 katına çıkar (Parça 23'teki alan ölçeği) ve göz farkı olduğundan büyük algılar. İkincisi eşit olmayan aralıklar: yatay eksende yıllar 2010, 2015, 2020, 2021, 2022 diye yazılmışsa çizginin eğimi yanıltır. Üçüncüsü tek ölçüyle özet: "ortalama maaş 50 bin" gibi yalnızca ortalamayı veren, yayılımı ve uç değeri gizleyen anlatım. Bir grafiğe bakınca ilk otuz saniyede eksenleri, birimleri, ölçeği ve başlangıç noktasını oku.</p>
+
+<h2 class="s">Hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Varsayılan ortalama.</strong> 47, 52, 49, 55, 47 gibi birbirine yakın sayıların ortalamasını bulmak için hepsini toplamak zorunda değilsin. Ortalamanın yakınında bir sayı seç (50), her verinin bu sayıdan farkını yaz: −3, 2, −1, 5, −3. Farkların toplamı 0, ortalaması da 0; o hâlde ortalama 50 + 0 = 50. Farklar toplamı 10 çıksaydı ortalama 50 + 10 ÷ 5 = 52 olurdu. Bu yöntem standart sapma hesabına da hazırlık yapar.</p>
+
+<p><strong>Ortalama sınır denetimi.</strong> Ortalama ve ortanca her zaman en küçük ile en büyük veri arasındadır. Dışında çıkan sonuç yanlıştır.</p>
+
+<p><strong>Farklar toplamı sıfır.</strong> Standart sapma hesabında ortalamadan farkların toplamı 0 çıkmalıdır. Bu tek toplama hem ortalamayı hem bütün farkları denetler.</p>
+
+<p><strong>Standart sapmanın sınırları.</strong> Standart sapma negatif olamaz; bütün veriler eşitse 0'dır, değilse 0'dan büyüktür ve açıklıktan küçüktür. Seçeneklerde açıklıktan büyük bir standart sapma görürsen ele.</p>
+
+<p><strong>Ortanca yeri.</strong> n tekse <span class="kes"><span>n + 1</span><span>2</span></span>. sıra; n çiftse <span class="kes"><span>n</span><span>2</span></span>. ve bir sonraki. Frekans tablosunda birikimli frekansları yan yana yazarak sırayı bulursun; 20 veriyi tek tek yazmana gerek yoktur.</p>
+
+<p><strong>Değişim sorularında toplam.</strong> Ekleme, çıkarma ve düzeltme sorularında önce toplam = ortalama × veri sayısı yaz; ortalamalarla doğrudan işlem yapma.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 23'e:</strong> Aritmetik ortalama, toplam = ortalama × adet ilişkisi ve ağırlıklı ortalama buradaki frekans tablosu hesabının temelidir. Frekanslar, ağırlıklı ortalamadaki ağırlıklardır.</p>
+<p><strong>Parça 32'ye:</strong> Sütun, çizgi ve daire grafiğini okuma, kesik eksen ve "grafikten çıkarılabilen yargı" soruları orada; burada aynı grafiklere ölçü hesabı ve histogram, kutu, serpme grafikleri eklendi.</p>
+<p><strong>Parça 46 ve 47'ye:</strong> Bir zarı çok kez atıp sonuçları bir frekans tablosuna yazarsan, her yüzün bağıl sıklığı deneme sayısı arttıkça olasılığı olan <span class="kes"><span>1</span><span>6</span></span>'ya yaklaşır. Olasılık "ne olması beklenir", istatistik "ne oldu" sorusunu cevaplar.</p>
+<p><strong>Parça 12 ve 20'ye:</strong> Standart sapmadaki karekök ve "hangi iki tam sayı arasında" tahmini Parça 12'den; ortalamadan uzaklık fikri Parça 20'deki |a − b| uzaklığından gelir.</p>
+<p><strong>Öbür derslere:</strong> Fizik ve kimya deneylerinde bir ölçüm birkaç kez tekrarlanıp ortalaması alınır, dağınıklığı ölçümün güvenilirliğini gösterir. Coğrafyada iklim grafikleri (aylık sıcaklık çizgisi, yağış sütunları) ve nüfus piramitleri okunur. İktisatta gelir dağılımı neredeyse her zaman ortanca ile anlatılır, çünkü çok yüksek gelirler ortalamayı yukarı çeker.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Ortalamaya göre ortanca neden uç değerden daha az etkilenir?</summary><p>Ortalama bütün verilerin toplamını kullanır; bir verinin büyümesi toplamı ve dolayısıyla ortalamayı doğrudan büyütür. Ortanca ise yalnızca sıralı listenin ortasındaki veriye bakar. En büyük veri ne kadar büyürse büyüsün, sırası değişmedikçe ortadaki veri aynı kalır.</p></details>
+<details><summary>Bir veri grubunun tepe değeri hangi durumda yoktur, hangi durumda birden fazladır?</summary><p>Bütün değerler eşit sayıda tekrar ediyorsa (örneğin her biri bir kez geçiyorsa) tepe değer yoktur. Birden çok değer aynı en yüksek sayıda tekrar ediyorsa hepsi tepe değerdir; 2, 3, 3, 5, 5, 8 verilerinde 3 ve 5 gibi.</p></details>
+<details><summary>Bütün verilere 7 eklenirse standart sapma neden değişmez?</summary><p>Standart sapma verilerin ortalamadan uzaklıklarıyla hesaplanır. 7 eklemek hem her veriyi hem ortalamayı 7 artırır; her verinin ortalamadan farkı aynı kalır. Farklar değişmeyince kareleri, toplamları ve kökleri de değişmez.</p></details>
+<details><summary>Standart sapma hesabının adımları hangi sırayla yapılır ve farklar neden doğrudan toplanmaz?</summary><p>Ortalama, her verinin ortalamadan farkı, farkların kareleri, karelerin toplamı, n − 1'e bölme, karekök. Farklar doğrudan toplanmaz, çünkü ortalamanın tanımı gereği toplamları her zaman sıfırdır; kare almak eksi işaretlerinden kurtarır.</p></details>
+<details><summary>Histogramda grup genişliği nasıl bulunur, bölme tam çıkarsa ne yapılır?</summary><p>Açıklık grup sayısına bölünür ve sonuçtan büyük olan en küçük doğal sayı grup genişliği olarak alınır. Bölme tam çıksa bile bir büyük sayı alınır, yoksa en küçük veriden başlayan gruplar en büyük veriye ulaşamaz ve o veri dışarıda kalır.</p></details>
+<details><summary>Beş sayı özeti nedir ve kutu grafiğinde nereye karşılık gelir?</summary><p>En küçük değer, alt çeyrek Q1, ortanca, üst çeyrek Q3 ve en büyük değer. Kutu Q1'den Q3'e uzanır, içindeki çizgi ortancadır, bıyıkların uçları en küçük ve en büyük değeri gösterir. Kutunun genişliği çeyrekler açıklığıdır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Veri türü:</strong> kesikli (sayılır) ya da sürekli (ölçülür). Frekans = bir değerin kaç kez geçtiği.</li>
+<li><strong>Ortalama:</strong> toplam ÷ veri sayısı; frekans tablosunda Σ(değer × frekans) ÷ Σ frekans.</li>
+<li><strong>Ortanca:</strong> önce sırala. n tek → <span class="kes"><span>n + 1</span><span>2</span></span>. veri; n çift → ortadaki iki verinin ortalaması.</li>
+<li><strong>Tepe değer:</strong> en çok tekrar eden değer; olmayabilir, birden çok olabilir. Frekans değil, değerdir.</li>
+<li><strong>Değişim soruları:</strong> toplam = ortalama × veri sayısı ile çalış.</li>
+<li><strong>Uç değer:</strong> ortalamayı kendine çeker, ortancayı az etkiler. Uç değer varsa ortanca, kategori varsa tepe değer.</li>
+<li><strong>Her veriye c ekle:</strong> konum ölçüleri c artar, yayılım ölçüleri aynı. <strong>k ile çarp:</strong> hepsi k katı (yayılım |k| katı).</li>
+<li><strong>Açıklık</strong> = en büyük − en küçük. <strong>Q1, Q3:</strong> alt ve üst yarının ortancası; çeyrekler açıklığı Q3 − Q1.</li>
+<li><strong>Standart sapma:</strong> ortalama → farklar (toplamı 0) → kareler → toplam → ÷ (n − 1) → √. Küçükse tutarlı.</li>
+<li><strong>Grafik seçimi:</strong> karşılaştırma sütun, zaman çizgi, pay daire, dağılım histogram, beş sayı kutu, iki değişken serpme.</li>
+<li><strong>Histogram:</strong> genişlik = açıklık ÷ grup sayısı → bundan büyük en küçük doğal sayı; sütunlar bitişik.</li>
+<li><strong>Kontrol:</strong> ortalama ve ortanca en küçük ile en büyük arasında; 0 ≤ s &lt; açıklık.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-48">
+<h3>Quiz 48</h3>
+<p class="qa">Yirmi dört soru: 8'i bu parçadan, 16'sı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">12, 7, 15, 9, 20, 3 verilerinin ortancası kaçtır?</p>
+<ul class="sec"><li>9</li><li>10,5</li><li>11</li><li>12</li><li>17</li></ul>
+<div class="coz"><p>Önce sıralanır: 3, 7, 9, 12, 15, 20. Veri sayısı 6 (çift) olduğu için ortanca 3. ve 4. verinin ortalamasıdır: <span class="kes"><span>9 + 12</span><span>2</span></span> = 10,5 (B). A, çift sayıda veride yalnızca 3. veriyi almaktır. C aritmetik ortalamadır (66 ÷ 6); ortanca ile ortalama ayrı ölçülerdir. D, listeyi sıralamadan ortadaki iki sayıyı (15 ve 9) almaktır. E açıklıktır (20 − 3).</p></div></li>
+
+<li data-c="D"><p class="q">Bir grup öğrencinin bir haftada okuduğu kitap sayıları aşağıdaki tabloda verilmiştir.<br>Kitap sayısı: 0 · 1 · 2 · 3<br>Öğrenci sayısı: 2 · 5 · 8 · 5<br>Buna göre öğrencilerin okuduğu kitap sayılarının aritmetik ortalaması kaçtır?</p>
+<ul class="sec"><li>2</li><li>5</li><li>1,5</li><li>1,8</li><li>9</li></ul>
+<div class="coz"><p>Öğrenci sayısı 2 + 5 + 8 + 5 = 20. Okunan kitapların toplamı 0 · 2 + 1 · 5 + 2 · 8 + 3 · 5 = 0 + 5 + 16 + 15 = 36. Ortalama <span class="kes"><span>36</span><span>20</span></span> = 1,8 (D). A, bu verilerin ortancası ve tepe değeridir. B, frekansların ortalamasıdır (20 ÷ 4); frekansın ortalaması bir anlam taşımaz. C, değerleri frekanslarıyla çarpmadan ortalamaktır ((0 + 1 + 2 + 3) ÷ 4). E, toplamı öğrenci sayısına değil satır sayısına bölmektir (36 ÷ 4).</p></div></li>
+
+<li data-c="A"><p class="q">Aritmetik ortalaması 14 olan 6 sayıya bir sayı daha ekleniyor ve 7 sayının aritmetik ortalaması 15 oluyor. Eklenen sayı kaçtır?</p>
+<ul class="sec"><li>21</li><li>1</li><li>15</li><li>20</li><li>105</li></ul>
+<div class="coz"><p>Eski toplam 6 · 14 = 84, yeni toplam 7 · 15 = 105. Eklenen sayı 105 − 84 = 21'dir (A). Kontrol: eklenen sayı yeni ortalamanın (15) kendisi olsaydı ortalamayı değiştirmezdi; ama eski altı sayının her birini 1 yukarı taşıyacak 6 birim de getirmeli: 15 + 6 = 21. B ortalamadaki artıştır. C yeni ortalamadır. D, 6 birimi eski ortalamaya eklemektir (14 + 6). E yeni toplamdır.</p></div></li>
+
+<li data-c="C"><p class="q">Bir veri grubunun aritmetik ortalaması 20, standart sapması 4'tür. Gruptaki her veri 3 ile çarpılıp sonra 5 eklenirse elde edilen yeni grubun aritmetik ortalaması ile standart sapmasının toplamı kaç olur?</p>
+<ul class="sec"><li>29</li><li>69</li><li>77</li><li>72</li><li>82</li></ul>
+<div class="coz"><p>Ortalama önce 3 ile çarpılır, sonra 5 artar: 3 · 20 + 5 = 65. Standart sapma uzaklıkları ölçtüğü için yalnızca çarpmadan etkilenir: 3 · 4 = 12. Toplam 65 + 12 = 77 (C). A, çarpmayı unutup yalnızca 5 eklemektir (25 + 4). B, standart sapmanın değişmediğini sanmaktır (65 + 4). D, ortalamaya 5 eklemeyi unutmaktır (60 + 12). E, 5'i standart sapmaya da eklemektir (65 + 17).</p></div></li>
+
+<li data-c="E"><p class="q">4, 6, 8, 10, 12 verilerinin standart sapması kaçtır?</p>
+<ul class="sec"><li>0</li><li>2√2</li><li>10</li><li>2√10</li><li>√10</li></ul>
+<div class="coz"><p>Ortalama 40 ÷ 5 = 8. Farklar −4, −2, 0, 2, 4; kareleri 16, 4, 0, 4, 16; toplamı 40. n − 1 = 4'e bölünür: 40 ÷ 4 = 10. Karekök: √10 (E). A, farkları kare almadan toplamaktır; farkların toplamı her zaman 0'dır. B, n'ye bölmektir (√8 = 2√2). C kökü almayı unutmaktır. D bölmeyi unutmaktır (√40 = 2√10). Kontrol: √10 ≈ 3,2; açıklık 8'den küçük, akla yatkın.</p></div></li>
+
+<li data-c="B"><p class="q">14, 3, 9, 21, 6, 11, 17, 8, 25, 12 verilerinin çeyrekler açıklığı kaçtır?</p>
+<ul class="sec"><li>22</li><li>9</li><li>11,5</li><li>5,5</li><li>3</li></ul>
+<div class="coz"><p>Sıralanır: 3, 6, 8, 9, 11, 12, 14, 17, 21, 25. Alt yarı 3, 6, 8, 9, 11; ortancası Q1 = 8. Üst yarı 12, 14, 17, 21, 25; ortancası Q3 = 17. Çeyrekler açıklığı 17 − 8 = 9 (B). A açıklıktır (25 − 3). C ortancadır ((11 + 12) ÷ 2). D, üst çeyrekten ortancayı çıkarmaktır (17 − 11,5). E, listeyi sıralamadan ikiye bölüp yarıların ortadaki sayılarını (9 ve 12) almaktır.</p></div></li>
+
+<li data-c="A"><p class="q">7 veriden oluşan bir veri grubunda en büyük veri 10 artırılıyor; verilerin sıralaması değişmiyor. Buna göre<br>I. Ortanca değişmez.<br>II. Açıklık 10 artar.<br>III. Aritmetik ortalama değişmez.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>I ve II</li><li>Yalnız I</li><li>Yalnız II</li><li>I ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>I doğru: 7 veride ortanca 4. veridir; en büyük veri (7. veri) değişince 4. veri aynı kalır. II doğru: açıklık en büyük − en küçük olduğundan, en küçük değişmezken en büyük 10 artınca açıklık da tam 10 artar. III yanlış: toplam 10 arttığı için ortalama <span class="kes"><span>10</span><span>7</span></span> artar. Doğru cevap I ve II'dir (A). Örnekle dene: 1, 2, 3, 4, 5, 6, 7 ile 1, 2, 3, 4, 5, 6, 17; ortanca ikisinde de 4, açıklık 6'dan 16'ya çıktı, ortalama 4'ten yaklaşık 5,43'e çıktı. D ve E, ortalamanın da uç değerden etkilenmediğini sanmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">Beş pozitif tam sayıdan oluşan bir veri grubunun aritmetik ortalaması 7, ortancası 6'dır. Grubun tek bir tepe değeri vardır ve bu değer 4'tür. Buna göre gruptaki en büyük sayı <strong>en çok</strong> kaçtır?</p>
+<ul class="sec"><li>13</li><li>15</li><li>17</li><li>14</li><li>21</li></ul>
+<div class="coz"><p>Sıralı sayılar a ≤ b ≤ 6 ≤ d ≤ e olsun; toplam 5 · 7 = 35. Tepe değer 4 olduğu için 4 en az iki kez geçmeli ve ortancadan küçük olduğundan a = b = 4'tür. Buradan d + e = 35 − 14 = 21. e'yi büyütmek için d'yi küçültürüz; ama d = 6 olursa 6 da iki kez geçer ve iki tepe değer olur, d = 7 en küçük uygun değerdir. e = 21 − 7 = 14 (D); grup 4, 4, 6, 7, 14. B, d = 6 alıp tekliği bozmaktır (4, 4, 6, 6, 15 iki tepe değerlidir). C, 4'ü bir kez alıp a = 1 yazmaktır (1, 4, 6, 7, 17); bu grupta tepe değer yoktur. A, d = 8 ile bulunan uygun ama en büyük olmayan değerdir. E, d + e toplamını en büyük sayı sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="mat-4"><p class="q">ab ve ba iki basamaklı sayılardır. ab + ba = 121 ve ab − ba = 27 olduğuna göre ab sayısı kaçtır?</p>
+<ul class="sec"><li>47</li><li>65</li><li>74</li><li>83</li><li>92</li></ul>
+<div class="coz"><p>Çözümlemeyle ab + ba = 11(a + b) = 121, yani a + b = 11; ab − ba = 9(a − b) = 27, yani a − b = 3. Taraf tarafa toplanırsa 2a = 14, a = 7, b = 4; ab = 74 (C). Seçeneklerin hepsinin rakamları toplamı 11'dir; bu yüzden yalnızca toplam koşulu yetmez. A ters çevrilmiş sayıdır (a − b = −3; fark −27 olur). B'de fark 9, D'de 45, E'de 63'tür.</p></div></li>
+
+<li data-c="E" data-k="mat-9"><p class="q">0,2<span class="ust">3</span> + 0,<span class="ust">6</span> işleminin sonucu kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>7</span><span>30</span></span></li><li><span class="kes"><span>5</span><span>6</span></span></li><li><span class="kes"><span>83</span><span>90</span></span></li><li><span class="kes"><span>89</span><span>99</span></span></li><li><span class="kes"><span>9</span><span>10</span></span></li></ul>
+<div class="coz"><p>Devirli ondalık kuralıyla 0,2<span class="ust">3</span> = <span class="kes"><span>23 − 2</span><span>90</span></span> = <span class="kes"><span>21</span><span>90</span></span> = <span class="kes"><span>7</span><span>30</span></span> ve 0,<span class="ust">6</span> = <span class="kes"><span>6</span><span>9</span></span> = <span class="kes"><span>2</span><span>3</span></span> = <span class="kes"><span>20</span><span>30</span></span>. Toplam <span class="kes"><span>27</span><span>30</span></span> = <span class="kes"><span>9</span><span>10</span></span> (E). A yalnızca birinci terimdir. B, 0,<span class="ust">6</span>'yı 0,6 = <span class="kes"><span>6</span><span>10</span></span> sanmaktır. C, devretmeyen 2'yi paydan çıkarmayı unutmaktır (<span class="kes"><span>23</span><span>90</span></span>). D, 2'yi de devreden sanıp 0,<span class="ust">23</span> = <span class="kes"><span>23</span><span>99</span></span> yazmaktır.</p></div></li>
+
+<li data-c="A" data-k="mat-13"><p class="q">√(9 − 2√14) ifadesinin eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>√7 − √2</li><li>√2 − √7</li><li>√7 + √2</li><li>√5</li><li>3 − √14</li></ul>
+<div class="coz"><p>Toplamı 9, çarpımı 14 olan iki sayı 7 ve 2'dir: 9 − 2√14 = (√7 − √2)<sup>2</sup>. Karekök negatif olmadığı için büyük olan önce yazılır: √7 − √2 (A). B negatif bir sayıdır (√2 &lt; √7); karekökün sonucu olamaz. C, içerideki eksiyi artı yapmaktır; (√7 + √2)<sup>2</sup> = 9 + 2√14. D, sayıları toplayacak yerde çıkarmaktır (√(7 − 2)). E, kökü terimlere dağıtmaktır (√9 − √(… )); üstelik 3 − √14 negatiftir.</p></div></li>
+
+<li data-c="D" data-k="mat-18"><p class="q">x + y = 9, y + z = 13, x + z = 12 olduğuna göre x kaçtır?</p>
+<ul class="sec"><li>5</li><li>8</li><li>17</li><li>4</li><li>34</li></ul>
+<div class="coz"><p>Üç denklem taraf tarafa toplanırsa 2(x + y + z) = 34, x + y + z = 17. x'i bulmak için y + z'yi çıkarırız: x = 17 − 13 = 4 (D). Denetim: y = 17 − 12 = 5, z = 17 − 9 = 8; 4 + 5 = 9, 5 + 8 = 13, 4 + 8 = 12. A y'nin, B z'nin değeridir. C x + y + z toplamıdır. E, toplamı 2'ye bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="mat-22"><p class="q"><span class="kes"><span>a</span><span>b</span></span> = <span class="kes"><span>2</span><span>3</span></span>, <span class="kes"><span>b</span><span>c</span></span> = <span class="kes"><span>4</span><span>5</span></span> ve a + b + c = 70 olduğuna göre c kaçtır?</p>
+<ul class="sec"><li>16</li><li>30</li><li>24</li><li>35</li><li>21</li></ul>
+<div class="coz"><p>İki oranda ortak olan b'yi eşitleriz: a : b = 2 : 3 = 8 : 12 ve b : c = 4 : 5 = 12 : 15. Böylece a : b : c = 8 : 12 : 15; a = 8k, b = 12k, c = 15k ve 35k = 70, k = 2. c = 30 (B). A a'nın, C b'nin değeridir. D ve E, b'yi eşitlemeden oranları 2 : 3 : 5 diye yan yana yazmaktır; o zaman 10k = 70 ve c = 35, b = 21 bulunur, ama b : c = 3 : 5 olur, 4 : 5 değil.</p></div></li>
+
+<li data-c="E" data-k="mat-26"><p class="q">Bir anne ile kızının bugünkü yaşları toplamı 48'dir. 4 yıl sonra annenin yaşı kızının yaşının 3 katı olacaktır. Annenin bugünkü yaşı kaçtır?</p>
+<ul class="sec"><li>10</li><li>35</li><li>36</li><li>42</li><li>38</li></ul>
+<div class="coz"><p>4 yıl sonra iki kişi de 4 yaş büyür, toplam 48 + 2 · 4 = 56 olur. O zaman kızın yaşı k, annenin 3k ise 4k = 56, k = 14; anne 4 yıl sonra 42, bugün 38 yaşındadır (E). Denetim: bugün kız 10, anne 38; toplam 48. A kızın bugünkü yaşıdır. B, toplamın yalnızca 4 arttığını sanmaktır (4k = 52). C, toplamın hiç artmadığını sanmaktır (4k = 48, 3k = 36). D annenin 4 yıl sonraki yaşıdır; soru bugünü soruyor.</p></div></li>
+
+<li data-c="C" data-k="mat-31"><p class="q">Şeker oranı %30 olan 40 kilogramlık şekerli su karışımından kaç kilogram su buharlaştırılırsa karışımın şeker oranı %40 olur?</p>
+<ul class="sec"><li>4</li><li>12</li><li>10</li><li>28</li><li>30</li></ul>
+<div class="coz"><p>Buharlaşan su olduğu için şeker miktarı korunur: 40 · 0,30 = 12 kg. Yeni karışımda bu 12 kg %40 olmalı: yeni karışım 12 ÷ 0,40 = 30 kg. Buharlaşan su 40 − 30 = 10 kg (C). A, oran farkını (10 puan) toplam karışıma uygulamaktır (40 · 0,10). B şeker miktarıdır. D, karışımdaki suyun ilk miktarıdır. E yeni karışımın kütlesidir; soru buharlaşanı soruyor.</p></div></li>
+
+<li data-c="A" data-k="mat-35"><p class="q">40 kişilik bir sınıfta 25 öğrenci İngilizce, 18 öğrenci Almanca bilmektedir. 7 öğrenci bu iki dilden hiçbirini bilmediğine göre yalnız Almanca bilen kaç öğrenci vardır?</p>
+<ul class="sec"><li>8</li><li>10</li><li>15</li><li>11</li><li>18</li></ul>
+<div class="coz"><p>En az bir dil bilen 40 − 7 = 33 kişidir. s(İ ∪ A) = s(İ) + s(A) − s(İ ∩ A) ile 33 = 25 + 18 − s(İ ∩ A), yani ikisini de bilen 10 kişi. Yalnız Almanca bilen 18 − 10 = 8 (A). B ikisini de bilenlerdir. C yalnız İngilizce bilenlerdir (25 − 10). D, hiçbirini bilmeyenleri Almanca bilenlerden çıkarmaktır (18 − 7). E Almanca bilenlerin tamamıdır; "yalnız" sözcüğü kesişimin çıkarılmasını ister.</p></div></li>
+
+<li data-c="D" data-k="mat-40"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + mx + 4 polinomunun x − 2 ile bölümünden kalan 10 olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>−11</li><li>−2</li><li>5</li><li>3</li><li>7</li></ul>
+<div class="coz"><p>Kalan teoremine göre x − 2 ile bölümden kalan P(2)'dir: 8 − 8 + 2m + 4 = 2m + 4 = 10, m = 3 (D). A, x yerine −2 koymaktır (P(−2) = −12 − 2m = 10). B, kalanı 0 sanmaktır (2m + 4 = 0). C, sabit terimi unutmaktır (2m = 10). E, +4'ü −4 yazmaktır (2m − 4 = 10).</p></div></li>
+
+<li data-c="B" data-k="mat-44"><p class="q">Bir ızgarada A noktasından B noktasına yalnızca sağa ve yukarı doğru birim adımlarla gidiliyor. Yol 4 sağa ve 3 yukarı adımdan oluştuğuna göre A'dan B'ye kaç farklı en kısa yol vardır?</p>
+<ul class="sec"><li>12</li><li>35</li><li>7</li><li>210</li><li>5040</li></ul>
+<div class="coz"><p>Her en kısa yol, 4 tane S (sağ) ve 3 tane Y (yukarı) harfinin bir dizilişidir (SSYSYSY gibi). Tekrarlı permütasyonla <span class="kes"><span>7!</span><span>4! · 3!</span></span> = <span class="kes"><span>5040</span><span>24 · 6</span></span> = 35 (B). A, adım sayılarını çarpmaktır. C toplam adım sayısıdır. D, yalnızca S'lerin tekrarına bölüp Y'lerinkine bölmeyi unutmaktır (<span class="kes"><span>7!</span><span>4!</span></span>). E, adımları birbirinden farklı sanmaktır (7!).</p></div></li>
+
+<li data-c="E" data-k="mat-45"><p class="q">5 kız ve 4 erkek öğrenci arasından 2 kız ve 2 erkekten oluşan 4 kişilik bir ekip kaç farklı biçimde seçilebilir?</p>
+<ul class="sec"><li>10</li><li>16</li><li>126</li><li>240</li><li>60</li></ul>
+<div class="coz"><p>Kızlar için C(5, 2) = 10, erkekler için C(4, 2) = 6 seçim vardır. İkisi birlikte yapıldığı için çarpılır: 10 · 6 = 60 (E). A yalnızca kızların seçimidir. B, iki seçimi çarpmak yerine toplamaktır; "ve" durumunda çarpılır. C, kız-erkek koşulunu yok sayıp 9 kişiden 4 seçmektir. D, seçimleri sıralı yapmaktır (P(5, 2) · P(4, 2) = 20 · 12); ekipte sıra yoktur.</p></div></li>
+
+<li data-c="C" data-k="mat-45"><p class="q">Bir düzgün onikigenin köşegen sayısı kaçtır?</p>
+<ul class="sec"><li>12</li><li>66</li><li>54</li><li>108</li><li>9</li></ul>
+<div class="coz"><p>12 köşeden ikisini seçmenin C(12, 2) = 66 yolu var; bunların 12'si kenardır, kalanlar köşegendir: 66 − 12 = 54. Formülle <span class="kes"><span>n(n − 3)</span><span>2</span></span> = <span class="kes"><span>12 · 9</span><span>2</span></span> = 54 (C). A kenar sayısıdır. B kenarları çıkarmamaktır. D 2'ye bölmeyi unutmaktır; her köşegen iki ucundan birer kez sayılır. E, bir köşeden çıkan köşegen sayısıdır (n − 3).</p></div></li>
+
+<li data-c="A" data-k="mat-46"><p class="q">52 kartlık bir desteden rastgele bir kart çekiliyor. Çekilen kartın kupa veya as olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>4</span><span>13</span></span></li><li><span class="kes"><span>17</span><span>52</span></span></li><li><span class="kes"><span>1</span><span>4</span></span></li><li><span class="kes"><span>1</span><span>13</span></span></li><li><span class="kes"><span>1</span><span>52</span></span></li></ul>
+<div class="coz"><p>13 kupa ve 4 as vardır, ama kupa ası ikisinde de sayılmıştır: P(K ∪ A) = <span class="kes"><span>13</span><span>52</span></span> + <span class="kes"><span>4</span><span>52</span></span> − <span class="kes"><span>1</span><span>52</span></span> = <span class="kes"><span>16</span><span>52</span></span> = <span class="kes"><span>4</span><span>13</span></span> (A). B kesişimi çıkarmayı unutmaktır. C yalnızca kupa olma, D yalnızca as olma olasılığıdır. E, kupa ası olma (kesişim) olasılığıdır.</p></div></li>
+
+<li data-c="D" data-k="mat-46"><p class="q">İki zar birlikte atılıyor. Zarlardan en az birinin 6 gelme olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>6</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>25</span><span>36</span></span></li><li><span class="kes"><span>11</span><span>36</span></span></li><li><span class="kes"><span>1</span><span>36</span></span></li></ul>
+<div class="coz"><p>Tümleyenle: hiçbir zarın 6 gelmemesi 5 · 5 = 25 durumdur; 36 − 25 = 11 durumda en az bir 6 vardır. Olasılık <span class="kes"><span>11</span><span>36</span></span> (D). B, birinci zarda 6 (6 durum) ve ikinci zarda 6 (6 durum) sayıp (6, 6)'yı iki kez saymaktır. C hiç 6 gelmeme olasılığıdır. A tek bir zarın 6 gelme olasılığıdır. E iki zarın da 6 gelmesidir.</p></div></li>
+
+<li data-c="B" data-k="mat-47"><p class="q">Bir torbada 5 beyaz ve 3 siyah top vardır. Torbadan aynı anda 3 top çekiliyor. Çekilen toplardan en az birinin siyah olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>5</span><span>28</span></span></li><li><span class="kes"><span>23</span><span>28</span></span></li><li><span class="kes"><span>15</span><span>28</span></span></li><li><span class="kes"><span>3</span><span>8</span></span></li><li><span class="kes"><span>387</span><span>512</span></span></li></ul>
+<div class="coz"><p>Bütün seçimler C(8, 3) = 56. Hiç siyah olmaması, üçünün de beyaz olmasıdır: C(5, 3) = 10. En az biri siyah: 1 − <span class="kes"><span>10</span><span>56</span></span> = <span class="kes"><span>46</span><span>56</span></span> = <span class="kes"><span>23</span><span>28</span></span> (B). A hiç siyah çıkmama olasılığıdır; tümleyeni almayı unutan onu işaretler. C tam bir siyah olasılığıdır (C(3, 1) · C(5, 2) = 30). D tek bir topun siyah olma olasılığıdır. E, topları geri koyarak çekmektir (1 − (<span class="kes"><span>5</span><span>8</span></span>)<sup>3</sup>); aynı anda çekim geri koymadan çekimle eşdeğerdir.</p></div></li>
+
+<li data-c="C" data-k="mat-47"><p class="q">Ali'nin bir hedefi vurma olasılığı <span class="kes"><span>2</span><span>3</span></span>, Burak'ın <span class="kes"><span>3</span><span>4</span></span>'tür. İkisi birbirinden bağımsız olarak hedefe birer atış yapıyor. Hedefin yalnız biri tarafından vurulma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>1</span><span>12</span></span></li><li><span class="kes"><span>5</span><span>12</span></span></li><li><span class="kes"><span>11</span><span>12</span></span></li><li><span class="kes"><span>17</span><span>12</span></span></li></ul>
+<div class="coz"><p>İki yol var: Ali vurur, Burak vuramaz: <span class="kes"><span>2</span><span>3</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>2</span><span>12</span></span>; Ali vuramaz, Burak vurur: <span class="kes"><span>1</span><span>3</span></span> · <span class="kes"><span>3</span><span>4</span></span> = <span class="kes"><span>3</span><span>12</span></span>. Toplam <span class="kes"><span>5</span><span>12</span></span> (C). A ikisinin de vurma olasılığıdır. B ikisinin de vuramama olasılığıdır. D en az birinin vurma olasılığıdır (1 − <span class="kes"><span>1</span><span>12</span></span>). E olasılıkları toplamaktır; 1'den büyük olduğu için hemen elenir. Denetim: <span class="kes"><span>6</span><span>12</span></span> + <span class="kes"><span>5</span><span>12</span></span> + <span class="kes"><span>1</span><span>12</span></span> = 1.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-47">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-48">Bu bölümü okudum</button>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"aritmetik ortalama ortanca tepe değer frekans tablosu konu anlatımı"</li>
+  <li>"standart sapma nasıl hesaplanır 9. sınıf veri"</li>
+  <li>"çeyrekler açıklığı kutu grafiği beş sayı özeti"</li>
+  <li>"histogram grup genişliği serpme grafiği TYT"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve terimler (aritmetik ortalama, ortanca, tepe değer, açıklık, alt-üst çeyrek, çeyrekler açıklığı, standart sapma, histogram, kutu grafiği, serpme grafiği) 2018 Ortaöğretim Matematik Öğretim Programı'nın 9. sınıf "Veri" ünitesindeki yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li><strong>Standart sapmada bölen:</strong> MEB ders kitabının n − 1'e böldüğünü hatırlıyorum ve metni buna göre yazdım; güncel ders kitabından doğrulayamadım. Bazı kaynaklar (ve bazı hesap makineleri) n'ye böler; ÖSYM sorularında hangisinin esas alındığından emin olmak için çıkmış bir soruya bakmanı öneririm. Quizdeki standart sapma sorusunda n'ye bölmenin sonucu çeldirici olarak var.</li>
+  <li><strong>Çeyreklerin bulunuşu:</strong> tek sayıda veride ortancanın alt ve üst yarılara katılmadığı yöntemi kullandım. Kaynaklar arasında farklı yöntemler var (ortancayı iki yarıya da katan, ya da sıra numarasından ara değer hesaplayan); bu yüzden çözümlü örnekleri ve quiz sorusunu, yöntemlerin aynı sonucu verdiği çift sayıda (10) veriyle kurdum.</li>
+  <li><strong>Histogramda grup genişliği:</strong> "açıklık ÷ grup sayısının sonucundan büyük en küçük doğal sayı" kuralını, en büyük verinin son gruba girmesi gerekçesiyle yazdım. Bazı kaynaklar yalnızca "tam sayı değilse yukarı yuvarla" der ve bölme tam çıkınca farklı sonuç verir; örnekte bölmenin tam çıkmadığı bir veri (6,6 → 7) seçtim, iki kural orada aynı sonucu verir.</li>
+  <li>Serpme grafiğinde ilişkinin yönü ve gücü yalnızca sözel olarak anlatıldı; korelasyon katsayısı ve regresyon doğrusu programda olmadığı için yazılmadı.</li>
+  <li>Python ile denetlenenler: frekans tablosu ve sütun grafiğindeki sayılar (20 verinin ham listesi sayılarak), sekiz çözümlü örneğin bütün sonuçları (ortalama, ortanca, tepe değer, çeyrekler, Ayşe ve Bora'nın standart sapmaları 1 ve 10, histogram frekansları 3, 5, 6, 3, 3), x'in alabileceği değerler (bütün olası x denenerek), kargo ve maaş örneklerindeki ölçüler; standart sapmanın açıklıktan küçük olduğu (rastgele denemelerle oranın en çok yaklaşık 0,71 çıktığı); 24 quiz sorusunun doğru cevapları ve her çeldiricinin, çözümde yazan hatanın gerçekten verdiği sonuç olduğu. Quiz 8'deki "en büyük sayı en çok 14" sonucu bütün olası beşliler taranarak bulundu.</li>
+  <li>Şekillerdeki koordinatlar verilerden hesaplandı; ölçekler şekil altlarında yazıyor.</li>
+  <li>Tekrar soruları Parça 4, 9, 13, 18, 22, 26, 31, 35, 40, 44'ten birer, Parça 45, 46, 47'den ikişer tanedir (toplam 16 sınırı; daha eski 44 parçadan 10'u eşit aralıklarla seçildi). Tekrar sorularını kapsam listesindeki konulara ve terimlere göre yazdım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

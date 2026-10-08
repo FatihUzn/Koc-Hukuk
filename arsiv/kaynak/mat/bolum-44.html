@@ -1,0 +1,613 @@
+<article class="chapter ders" id="c-mat-44">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 44 · Sayma 2</div>
+<h1>Permütasyon: sıranın önemli olduğu seçim</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 8 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Altı arkadaş bir fotoğraf için yan yana dizilecek. İkisi küs, yan yana durmak istemiyor. Kaç farklı fotoğraf çekilebilir? Bir de şu: "ANKARA" sözcüğünün altı harfini her seferinde farklı bir sırayla yazarsan 6! = 720 farklı dizi bekliyorsun, ama yalnızca 120 tane çıkıyor. Öbür 600 dizi nereye gitti? Bu iki soru aynı fikirle çözülür: sıralamayı say, sonra fazla saydığını at.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 43 (çarpma kuralı, kutu yöntemi, faktöriyel, "kısıtlı adımı önce doldur" ilkesi, tümleyenden sayma), Parça 36 (fonksiyon sayısı s(B)<sup>s(A)</sup>), Parça 37 (bire bir fonksiyon). Yanında kâğıt kalem olsun; her örnekte kutuları kendin çiz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 43'te bir işi adım adım yapıyorsak her adımdaki seçenek sayılarını çarptığımızı gördük ve bunu "kutu yöntemi" diye uyguladık. Permütasyon yeni bir yöntem değildir; kutu yönteminin en sık kullanılan bir durumuna verilmiş addır: <strong>farklı nesneleri sıraya dizmek</strong>. Nesneleri dizdiğin anda "kim önde, kim arkada", "kim başkan, kim yardımcı" önemli hâle gelir. İşte bu parçanın bütün konusu sıranın önemli olduğu seçimlerdir.</p>
+
+<p>Sınav bu konuda formülü doğrudan pek sormaz; asıl sorulan <strong>koşullu</strong> dizilişlerdir: "şu iki kişi yan yana olsun", "hiçbir iki kız yan yana gelmesin", "Ali başta olmasın", "sesli harfle başlasın", "rakamların tamamı kullanılsın". Her koşul türünün bir çözüm kalıbı var ve kalıbı bir kez nedeniyle anlarsan soruların büyük bölümü iki üç satırda biter. İkinci büyük soru ailesi de tekrarlı harfler ya da özdeş nesneler içeren dizilişlerdir: ANKARA, KELEBEK, 1, 1, 2, 2, 2 rakamları, ızgarada en kısa yollar.</p>
+
+<p>Sıramız şöyle: sıranın ne zaman önemli olduğu, n nesnenin bütün dizilişleri (n!), r'li permütasyon P(n, r) ve formülün kutu yönteminden çıkışı, özel değerler, bire bir fonksiyon sayısı, koşullu sıralamalar (başta-sonda, yan yana, yan yana gelmeme, dönüşümlü, arada tam k kişi), koltuk ve fotoğraf soruları, harflerden sözcük yazma, tekrarlı permütasyon, ızgarada yol sayma ve son olarak yuvarlak masa. Kombinasyon, yani sıranın önemsiz olduğu seçim, bir sonraki parçanın konusu; burada yalnızca yeri geldikçe ona işaret edeceğiz.</p>
+
+<h2 class="s">1. Sıra ne zaman önemlidir?</h2>
+
+<p>Aynı insan grubundan iki ayrı seçim yapalım. Beş kişilik bir kulüpten <strong>bir başkan ve bir yardımcı</strong> seçiliyor. Ayşe başkan, Berk yardımcı olursa bu bir sonuçtur; Berk başkan, Ayşe yardımcı olursa bambaşka bir sonuçtur, çünkü yetkiler farklıdır. Şimdi aynı kulüpten <strong>bir yarışmaya gidecek iki temsilci</strong> seçilsin. "Ayşe ile Berk" ile "Berk ile Ayşe" aynı ekiptir; ikisi de temsilci olarak gider ve aralarında bir fark yoktur.</p>
+
+<p>Bu iki durumu ayıran şey seçilenlere <strong>farklı görev, yer ya da rol</strong> verilip verilmediğidir. Kişileri farklı koltuklara, farklı makamlara, farklı basamaklara koyuyorsan yer değiştirmeleri yeni bir sonuç doğurur ve sıra önemlidir. Kişileri aynı torbaya atıyorsan sıra önemsizdir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Permütasyon</strong>, birbirinden farklı nesnelerin tamamını ya da bir kısmını <strong>belirli bir sırayla</strong> dizmektir. n farklı nesneden r tanesinin her bir sıralı dizilişine "n'nin r'li permütasyonu" denir ve bu dizilişlerin sayısı <strong>P(n, r)</strong> ile gösterilir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Sıra önemli mi?</th><th>Neden</th></tr>
+<tr><td>Başkan, yardımcı, sayman seçmek</td><td>Evet: permütasyon</td><td>Her seçilenin rolü farklı</td></tr>
+<tr><td>Koşuda ilk üç dereceyi belirlemek</td><td>Evet</td><td>Birinci ile üçüncü aynı şey değil</td></tr>
+<tr><td>Rakamları farklı üç basamaklı sayı yazmak</td><td>Evet</td><td>123 ile 321 farklı sayılar</td></tr>
+<tr><td>Rafa beş kitap dizmek</td><td>Evet</td><td>Her kitabın yeri farklı</td></tr>
+<tr><td>Bir şifrenin rakamlarını belirlemek</td><td>Evet</td><td>Rakamların yeri değişince şifre değişir</td></tr>
+<tr><td>Sınıftan iki temsilci seçmek</td><td>Hayır: kombinasyon (Parça 45)</td><td>İkisi de aynı rolde</td></tr>
+<tr><td>Bir torbadan üç top birden almak</td><td>Hayır</td><td>Elindeki üç topun sırası yok</td></tr>
+</table></div>
+
+<p>Karar vermekte zorlanırsan küçük bir deney yap: seçtiğin iki kişinin yerini değiştir. Ortaya <strong>başka bir sonuç</strong> çıkıyorsa sıra önemlidir. "Ayşe başkan, Berk yardımcı" ile "Berk başkan, Ayşe yardımcı" farklı haberlerdir; "temsilciler Ayşe ve Berk" ile "temsilciler Berk ve Ayşe" aynı haberdir.</p>
+
+<h2 class="s">2. n farklı nesnenin bütün dizilişleri: n!</h2>
+
+<p>Beş farklı kitabı (A, B, C, D, E) bir rafa yan yana dizeceğiz. Parça 43'teki kutu yöntemini uygula: rafta beş yer var, her yer bir kutu. Birinci yere beş kitaptan herhangi birini koyabilirsin: 5 seçenek. Birinci yeri doldurduktan sonra elinde dört kitap kalır; ikinci yere 4 seçenek. Üçüncüye 3, dördüncüye 2, sonuncuya kalan tek kitap: 1 seçenek. Adımlar art arda yapıldığı için seçenek sayıları çarpılır.</p>
+
+<span class="mat">5 · 4 · 3 · 2 · 1 = 120 <span class="g">(her yerde bir öncekinden bir eksik seçenek)</span></span>
+
+<p>Bu çarpım Parça 43'teki faktöriyelin ta kendisidir: 5! = 120. Aynı akıl yürütme her n için geçerlidir: ilk yere n, sonrakine n − 1, … en sonuncuya 1 seçenek kalır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Birbirinden farklı n nesne, bir sıraya <strong>n!</strong> farklı biçimde dizilir. Nedeni: her yere konan nesne bir sonraki yer için seçenekleri bir azaltır ve çarpma kuralı n · (n − 1) · … · 2 · 1 = n! verir.</p></div>
+
+<p>Bu sayılar çok hızlı büyür ve sınavda çoğu zaman sadeleşme yoluyla küçülür; ama ilk yedi sekizini ezbere bilmek zaman kazandırır: 1! = 1, 2! = 2, 3! = 6, 4! = 24, 5! = 120, 6! = 720, 7! = 5040, 8! = 40320. Sınav hesap makinesiz olduğu için büyük faktöriyelleri hiç açmamaya çalış; Parça 43'te gördüğün gibi n! = n · (n − 1)! yazımıyla bölmeleri sadeleştir.</p>
+
+<h2 class="s">3. r'li permütasyon: P(n, r)</h2>
+
+<p>Şimdi beş kitabın hepsini değil, yalnızca üçünü rafa dizeceğiz. Rafta üç yer var. Kutu yöntemi yine aynı: birinci yere 5, ikinciye 4, üçüncüye 3 seçenek. Dördüncü ve beşinci kutular <strong>yok</strong>; o kitaplar rafa girmiyor.</p>
+
+<span class="mat">P(5, 3) = 5 · 4 · 3 = 60 <span class="g">(üç kutu, her biri bir öncekinden bir eksik)</span></span>
+
+<p>Formül buradan çıkar. 5 · 4 · 3 çarpımı, 5!'in başı gibidir; eksik olan 2 · 1 kısmıdır. 5!'i yazıp kullanmadığımız kutuların çarpımına bölersek tam olarak 5 · 4 · 3 kalır:</p>
+
+<span class="mat">5 · 4 · 3 = <span class="kes"><span>5 · 4 · 3 · 2 · 1</span><span>2 · 1</span></span> = <span class="kes"><span>5!</span><span>2!</span></span> = <span class="kes"><span>5!</span><span>(5 − 3)!</span></span> <span class="g">(kullanılmayan son iki kutuyu bölerek atıyoruz)</span></span>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Beş kutulu çarpım: ilk üç kutuda 5, 4, 3 seçenek, son iki kutu kullanılmıyor; P(5,3) eşittir 5 faktöriyel bölü 2 faktöriyel eşittir 60">
+  <text class="sv-s" x="48" y="32" text-anchor="middle">1. yer</text>
+  <text class="sv-s" x="124" y="32" text-anchor="middle">2. yer</text>
+  <text class="sv-s" x="200" y="32" text-anchor="middle">3. yer</text>
+  <text class="sv-s" x="314" y="32" text-anchor="middle">rafta yer yok</text>
+  <rect class="sv-l" x="20" y="40" width="56" height="56" rx="8" />
+  <rect class="sv-l" x="96" y="40" width="56" height="56" rx="8" />
+  <rect class="sv-l" x="172" y="40" width="56" height="56" rx="8" />
+  <rect class="sv-k" x="248" y="40" width="56" height="56" rx="8" />
+  <rect class="sv-k" x="324" y="40" width="56" height="56" rx="8" />
+  <text class="sv-b" x="48" y="74" text-anchor="middle">5</text>
+  <text class="sv-b" x="124" y="74" text-anchor="middle">4</text>
+  <text class="sv-b" x="200" y="74" text-anchor="middle">3</text>
+  <text class="sv-s" x="276" y="74" text-anchor="middle">2</text>
+  <text class="sv-s" x="352" y="74" text-anchor="middle">1</text>
+  <text class="sv-t" x="86" y="73" text-anchor="middle">×</text>
+  <text class="sv-t" x="162" y="73" text-anchor="middle">×</text>
+  <text class="sv-s" x="238" y="73" text-anchor="middle">×</text>
+  <text class="sv-s" x="314" y="73" text-anchor="middle">×</text>
+  <path class="sv-cl" d="M20 108V116H228V108" />
+  <path class="sv-c" d="M248 108V116H380V108" />
+  <text class="sv-b" x="124" y="138" text-anchor="middle">5 · 4 · 3 = 60</text>
+  <text class="sv-s" x="314" y="138" text-anchor="middle">2 · 1 = (5 − 3)!</text>
+  <text class="sv-t" x="200" y="176" text-anchor="middle">5! = 5 · 4 · 3 · 2 · 1 = 120</text>
+  <text class="sv-t" x="200" y="198" text-anchor="middle">P(5, 3) = 5! ÷ (5 − 3)! = 120 ÷ 2 = 60</text>
+  <text class="sv-s" x="200" y="220" text-anchor="middle">Bölmek, kullanılmayan kutuların çarpımını atmak demektir.</text>
+</svg>
+<figcaption>Mor kutular dolduruluyor, gri kutular yok. Formüldeki (n − r)!, doldurmadığımız kutuların çarpımıdır; onu bölerek atınca geriye tam olarak kutu yönteminin çarpımı kalır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Formül</span>
+<p>0 ≤ r ≤ n olmak üzere n farklı nesneden r tanesinin sıralı dizilişlerinin sayısı:</p>
+<p>P(n, r) = n · (n − 1) · … · (n − r + 1) = <span class="kes"><span>n!</span><span>(n − r)!</span></span></p>
+<p>Ortadaki çarpım tam olarak r çarpandan oluşur: n'den başlayıp birer azalarak r tane sayı. Formül ile kutu yöntemi aynı şeydir; formül yalnızca onun kısa yazılışıdır.</p></div>
+
+<p><strong>Hızlı yol.</strong> Sınavda P(n, r)'yi faktöriyel kesriyle değil, doğrudan "n'den aşağı doğru r tane sayı" diye hesapla: P(9, 2) = 9 · 8 = 72, P(7, 3) = 7 · 6 · 5 = 210, P(10, 4) = 10 · 9 · 8 · 7 = 5040. Faktöriyel kesri yalnızca n bilinmiyorken, denklem kurarken işe yarar.</p>
+
+<p><strong>Kontrol yolu.</strong> Çarpan sayısını say: P(n, r) tam olarak r çarpanlı olmalı. P(7, 3) için 7 · 6 · 5 üç çarpandır; 7 · 6 · 5 · 4 yazdıysan bir kutu fazla doldurmuşsundur.</p>
+
+<h3>Özel değerler: P(n, n), P(n, 1), P(n, 0)</h3>
+
+<p><strong>P(n, n) = n!</strong>: n nesnenin hepsini diziyorsan bütün kutular doludur. Formülle: n!/(n − n)! = n!/0! = n!/1 = n!. Parça 43'te 0! = 1 tanımının nedenini gördük; burada bir kez daha işe yarıyor, yoksa formül P(n, n) için çalışmazdı.</p>
+
+<p><strong>P(n, 1) = n</strong>: tek kutu var, ona n nesneden birini koyarsın. Formülle: n!/(n − 1)! = n.</p>
+
+<p><strong>P(n, 0) = 1</strong>: hiçbir şey dizmemenin tek bir yolu vardır: rafı boş bırakmak. Formülle: n!/n! = 1. Bu değeri 0 sanmak sık yapılan bir hatadır; "hiç yol yok" ile "tek yol: hiçbir şey yapmamak" aynı şey değildir.</p>
+
+<div class="tablo"><table>
+<tr><th>n</th><th>P(n, 0)</th><th>P(n, 1)</th><th>P(n, 2)</th><th>P(n, 3)</th><th>P(n, n) = n!</th></tr>
+<tr><td>3</td><td>1</td><td>3</td><td>6</td><td>6</td><td>6</td></tr>
+<tr><td>4</td><td>1</td><td>4</td><td>12</td><td>24</td><td>24</td></tr>
+<tr><td>5</td><td>1</td><td>5</td><td>20</td><td>60</td><td>120</td></tr>
+<tr><td>6</td><td>1</td><td>6</td><td>30</td><td>120</td><td>720</td></tr>
+<tr><td>7</td><td>1</td><td>7</td><td>42</td><td>210</td><td>5040</td></tr>
+</table></div>
+
+<p>Tabloda bir ayrıntıya dikkat et: P(n, n − 1) = P(n, n). Örneğin P(5, 4) = 5 · 4 · 3 · 2 = 120 = 5!. Nedeni: n − 1 kutuyu doldurduğunda son nesne zaten tek başına kalmıştır; onu koysan da koymasan da dizilişler bir bire eşleşir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> P(n, 2) = 56 olduğuna göre n kaçtır?</p>
+<p><strong>Adım 1.</strong> P(n, 2), n'den başlayan iki ardışık sayının çarpımıdır.</p>
+<span class="mat">P(n, 2) = n · (n − 1) <span class="g">(iki kutu: n ve n − 1 seçenek)</span></span>
+<p><strong>Adım 2.</strong> Denklemi kur.</p>
+<span class="mat">n · (n − 1) = 56 <span class="g">(verilen eşitlik)</span></span>
+<p><strong>Adım 3.</strong> 56'yı ardışık iki doğal sayının çarpımı olarak yaz.</p>
+<span class="mat">56 = 8 · 7 <span class="g">(büyük çarpan n, küçük çarpan n − 1)</span></span>
+<span class="mat">n = 8 <span class="g">(n bir nesne sayısı, doğal sayı olmalı)</span></span>
+<p><strong>Sonuç:</strong> n = 8. Kontrol yolu: P(8, 2) = 8 · 7 = 56. Denklemi Parça 41'deki gibi n<sup>2</sup> − n − 56 = 0 yazıp (n − 8)(n + 7) = 0 diye de çözebilirsin; n = −7 kökü atılır, çünkü nesne sayısı negatif olamaz. Ardışık çarpım olarak görmek çok daha hızlıdır.</p></div>
+
+<h2 class="s">4. Bire bir fonksiyon sayısı: Parça 37'ye dönüş</h2>
+
+<p>Parça 36'da A'dan B'ye yazılabilecek bütün fonksiyonların sayısının s(B)<sup>s(A)</sup> olduğunu gördük: A'nın her elemanı, B'nin herhangi bir elemanına gidebiliyordu ve aynı elemana gitmek serbestti. Parça 37'de bire bir fonksiyonu tanımladık: A'nın farklı elemanları B'nin farklı elemanlarına gider. Bu "farklı olsun" koşulu, sorunu permütasyona çevirir.</p>
+
+<p>A = {a, b, c} ve B altı elemanlı olsun. a için 6 seçenek var. b, a'nın gittiği yere gidemez: 5 seçenek. c, ikisinin de gittiği yere gidemez: 4 seçenek. A'nın elemanları kutular, B'nin elemanları kutulara konan nesnelerdir ve her nesne en çok bir kez kullanılır. Bu tam olarak P(6, 3)'tür.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>s(A) = r ve s(B) = n olsun. A'dan B'ye tanımlı bire bir fonksiyon sayısı, r ≤ n ise <strong>P(n, r)</strong>, r &gt; n ise 0'dır. Nedeni: A'nın her elemanı B'den, daha önce kullanılmamış bir eleman seçer. r = n ise bire bir fonksiyonlar aynı zamanda örtendir ve sayıları n!'dir (Parça 37).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> s(A) = 3 ve s(B) = 6 olduğuna göre A'dan B'ye tanımlı fonksiyonlardan kaç tanesi bire bir <strong>değildir</strong>?</p>
+<p><strong>Adım 1.</strong> Bütün fonksiyonların sayısı (Parça 36).</p>
+<span class="mat">6<sup>3</sup> = 216 <span class="g">(her eleman 6 yerden birine gidebilir)</span></span>
+<p><strong>Adım 2.</strong> Bire bir olanların sayısı.</p>
+<span class="mat">P(6, 3) = 6 · 5 · 4 = 120 <span class="g">(her eleman kullanılmamış bir yere gider)</span></span>
+<p><strong>Adım 3.</strong> Tümleyenden say (Parça 43).</p>
+<span class="mat">216 − 120 = 96 <span class="g">(bütün fonksiyonlar − bire bir olanlar)</span></span>
+<p><strong>Sonuç:</strong> 96 fonksiyon bire bir değildir. Kontrol: 96, "en az iki eleman aynı yere gidiyor" demektir; bu durumu doğrudan saymak çok daha uzun sürer. Tümleyen, "değildir" ve "en az bir" sorularının hızlı yoludur.</p></div>
+
+<h2 class="s">5. Koşullu sıralamalar</h2>
+
+<p>Gerçek soruların çoğu "şu koşulla kaç farklı diziliş" diye sorar. Bütün koşullu sorularda Parça 43'teki ilke geçerlidir: <strong>kısıtlı olanı önce yerleştir</strong>, sonra serbest kalanları dağıt. Aşağıdaki her koşul türü için hep aynı altı kişiyi kullanacağız: Ali, Berk, Can, Deniz, Ece ve Fatma. Kısıtsız dizilişlerin sayısı 6! = 720'dir; bütün sonuçları bu sayıyla karşılaştırarak akla yatkınlığını denetleyebilirsin.</p>
+
+<h3>a) Belirli kişi başta, sonda ya da uçlarda</h3>
+
+<p>"Ali en başta olsun" dersen birinci kutuya seçenek kalmaz: orada yalnızca Ali olabilir, 1 seçenek. Kalan beş kişi kalan beş yere serbestçe dizilir: 5!. Koşulu önce yerleştirmenin anlamı budur: önce kısıtlı kutuyu doldur, sonra öbürlerini.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Ali, Berk, Can, Deniz, Ece ve Fatma düz bir sıraya diziliyor. (a) Ali başta, (b) Ali başta ve Berk sonda, (c) Ali uçlardan birinde, (d) Ali uçlarda olmamak koşuluyla kaç farklı diziliş vardır?</p>
+<p><strong>Adım 1.</strong> (a) Birinci kutuyu Ali'ye ver, kalanları diz.</p>
+<span class="mat">1 · 5! = 120 <span class="g">(baş Ali'nin; beş kişi beş yere)</span></span>
+<p><strong>Adım 2.</strong> (b) İki kısıtlı kutu var: birinci Ali'nin, altıncı Berk'in.</p>
+<span class="mat">1 · 4! · 1 = 24 <span class="g">(ortadaki dört yere dört kişi)</span></span>
+<p><strong>Adım 3.</strong> (c) Ali için önce yer seç: başta ya da sonda, 2 seçenek.</p>
+<span class="mat">2 · 5! = 240 <span class="g">(Ali'nin yeri 2 türlü, kalan beş kişi 5! türlü)</span></span>
+<p><strong>Adım 4.</strong> (d) Doğrudan: Ali ortadaki dört yerden birine gider.</p>
+<span class="mat">4 · 5! = 480 <span class="g">(Ali'ye 4 yer, kalanlara 5!)</span></span>
+<p><strong>Adım 5.</strong> (d) Tümleyenle denetle.</p>
+<span class="mat">720 − 240 = 480 <span class="g">(tümü − Ali'nin uçta olduğu dizilişler)</span></span>
+<p><strong>Sonuç:</strong> (a) 120, (b) 24, (c) 240, (d) 480. Kontrol: (c) + (d) = 240 + 480 = 720 = 6!; Ali ya uçtadır ya değildir, ikisi birlikte bütün dizilişleri vermelidir.</p></div>
+
+<p>Bu son denetim çok değerlidir: bir koşul ile o koşulun olumsuzu birlikte her zaman toplamı verir. Hesap makinesiz bir sınavda bir sonucu iki ayrı yoldan bulup karşılaştırmanın en ucuz yolu budur.</p>
+
+<h3>b) Yan yana olsunlar: paket yöntemi</h3>
+
+<p>"Ece ile Can yan yana olsun" koşulu nasıl sayılır? İkisini bir iple birbirine bağladığını düşün. Artık sırada altı ayrı kişi değil, beş <strong>birim</strong> var: bir paket (Ece-Can) ve dört tek kişi. Bu beş birim 5! türlü dizilir. Ama iş bitmedi: paketin içi de iki türlü olabilir, Ece solda Can sağda ya da Can solda Ece sağda. Her dış dizilişin iki iç dizilişi vardır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Paket yöntemi.</strong> k kişi yan yana olacaksa onları tek bir birim say. Birim sayısı n − k + 1 olur ve bunlar (n − k + 1)! türlü dizilir. Sonra paketin kendi içindeki dizilişlerle çarp: k!. Toplam: (n − k + 1)! · k!. Nedeni: yan yana olan her diziliş, bir dış sıralama ile bir iç sıralamanın birleşimidir ve bu ikisi bağımsız adımlardır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Üstte paket yöntemi: Ece ile Can bir pakette, yanında dört kişi, toplam beş birim. Altta aralara yerleştirme: üç erkek arasında ve iki ucunda dört boşluk">
+  <text class="sv-b" x="200" y="22" text-anchor="middle">Paket yöntemi: Ece ile Can yan yana</text>
+  <rect class="sv-a" x="48" y="38" width="80" height="48" rx="10" />
+  <circle class="sv-l" cx="68" cy="62" r="16" />
+  <circle class="sv-l" cx="108" cy="62" r="16" />
+  <text class="sv-b" x="68" y="67" text-anchor="middle">E</text>
+  <text class="sv-b" x="108" y="67" text-anchor="middle">C</text>
+  <circle class="sv-k" cx="164" cy="62" r="20" />
+  <circle class="sv-k" cx="220" cy="62" r="20" />
+  <circle class="sv-k" cx="276" cy="62" r="20" />
+  <circle class="sv-k" cx="332" cy="62" r="20" />
+  <text class="sv-b" x="164" y="67" text-anchor="middle">A</text>
+  <text class="sv-b" x="220" y="67" text-anchor="middle">B</text>
+  <text class="sv-b" x="276" y="67" text-anchor="middle">D</text>
+  <text class="sv-b" x="332" y="67" text-anchor="middle">F</text>
+  <text class="sv-t" x="200" y="110" text-anchor="middle">5 birim dizilir: 5! = 120 · paketin içi: 2! = 2</text>
+  <text class="sv-b" x="200" y="132" text-anchor="middle">5! · 2! = 240</text>
+  <line class="sv-c" x1="20" y1="148" x2="380" y2="148" />
+  <text class="sv-b" x="200" y="170" text-anchor="middle">Aralara yerleştirme: önce erkekler</text>
+  <rect class="sv-m" x="44" y="180" width="36" height="32" rx="6" />
+  <rect class="sv-m" x="136" y="180" width="36" height="32" rx="6" />
+  <rect class="sv-m" x="228" y="180" width="36" height="32" rx="6" />
+  <rect class="sv-m" x="320" y="180" width="36" height="32" rx="6" />
+  <text class="sv-s" x="62" y="201" text-anchor="middle">1</text>
+  <text class="sv-s" x="154" y="201" text-anchor="middle">2</text>
+  <text class="sv-s" x="246" y="201" text-anchor="middle">3</text>
+  <text class="sv-s" x="338" y="201" text-anchor="middle">4</text>
+  <circle class="sv-l" cx="108" cy="196" r="18" />
+  <circle class="sv-l" cx="200" cy="196" r="18" />
+  <circle class="sv-l" cx="292" cy="196" r="18" />
+  <text class="sv-b" x="108" y="201" text-anchor="middle">E</text>
+  <text class="sv-b" x="200" y="201" text-anchor="middle">E</text>
+  <text class="sv-b" x="292" y="201" text-anchor="middle">E</text>
+  <text class="sv-t" x="200" y="238" text-anchor="middle">3 erkek: 3! · 4 aralığa 3 kız: P(4, 3) = 24</text>
+</svg>
+<figcaption>Üstte: yan yana olması istenenler tek birim sayılır, sonra birimin içi ayrıca sıralanır. Altta: yan yana gelmemesi istenenler en sona bırakılır; önce öbürleri dizilir, yeşil boşluklar (aralar ve iki uç) sayılır, sonra her boşluğa en çok bir kişi konur.</figcaption>
+</figure>
+
+<h3>c) Yan yana olmasınlar: tümünden çıkarma ya da aralara yerleştirme</h3>
+
+<p>"Ece ile Can yan yana <strong>olmasın</strong>" sorusunun iki yolu var. Birincisi tümleyendir: bütün dizilişlerden yan yana olanları çıkar. 720 − 240 = 480. Bu yol iki kişi için en hızlısıdır.</p>
+
+<p>Üç ya da daha çok kişinin "hiçbiri yan yana gelmesin" koşulunda tümleyen işe yaramaz hâle gelir, çünkü "yan yana olanlar" artık tek bir durum değildir: ikisi yan yana, üçü yan yana, ikisi bir yerde ve öbürü başka yerde… Bunun yerine <strong>aralara yerleştirme</strong> kullanılır. Önce kısıtsız kişileri diz; onların arasında ve iki ucunda boşluklar oluşur. Yan yana gelmemesi istenenleri bu boşluklara, her boşluğa en çok bir kişi olacak biçimde koy. İki kız aynı boşluğa düşmediği sürece aralarında en az bir erkek bulunur, yani yan yana gelemezler.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Aralara yerleştirme.</strong> m kişi serbestçe dizilir: m!. Bunların arasında ve iki ucunda m + 1 boşluk vardır. Yan yana gelmemesi istenen k kişi bu boşluklara sıralı biçimde yerleşir: P(m + 1, k). Toplam: m! · P(m + 1, k). Koşul: k ≤ m + 1; daha fazla kişi varsa böyle bir diziliş yoktur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 3 erkek ve 3 kız düz bir sıraya diziliyor. (a) Hiçbir iki kız yan yana gelmemek koşuluyla, (b) erkekler ve kızlar dönüşümlü (bir erkek, bir kız) olmak koşuluyla kaç farklı diziliş vardır?</p>
+<p><strong>Adım 1.</strong> (a) Önce erkekleri diz.</p>
+<span class="mat">3! = 6 <span class="g">(üç erkek kendi aralarında)</span></span>
+<p><strong>Adım 2.</strong> Boşlukları say: _ E _ E _ E _</p>
+<span class="mat">3 + 1 = 4 boşluk <span class="g">(iki ara ve iki uç)</span></span>
+<p><strong>Adım 3.</strong> Üç kızı dört boşluğa, her boşluğa en çok bir kız olacak biçimde sırayla yerleştir.</p>
+<span class="mat">P(4, 3) = 4 · 3 · 2 = 24 <span class="g">(birinci kıza 4, ikinciye 3, üçüncüye 2 boşluk)</span></span>
+<span class="mat">6 · 24 = 144 <span class="g">(erkeklerin dizilişi × kızların yerleşimi)</span></span>
+<p><strong>Adım 4.</strong> (b) Dönüşümlü dizilişin iki kalıbı var: EKEKEK ya da KEKEKE.</p>
+<span class="mat">2 · 3! · 3! = 2 · 6 · 6 = 72 <span class="g">(kalıp seçimi × erkekler × kızlar)</span></span>
+<p><strong>Sonuç:</strong> (a) 144, (b) 72. Kontrol: dönüşümlü her diziliş, kızların yan yana olmadığı bir diziliştir; o yüzden (b) sonucunun (a)'dan küçük çıkması gerekir. Gerçekten 72 &lt; 144. (a)'da fazladan sayılanlar, iki erkeğin yan yana durduğu dizilişlerdir (örneğin K E E K E K).</p></div>
+
+<p>Dönüşümlü dizilişte sayılar eşit değilse kalıp tek kalır. 4 erkek ve 3 kız için E K E K E K E dışında bir kalıp yoktur, çünkü sırada erkekler bir fazladır ve iki ucu da onlar tutmak zorundadır: 4! · 3! = 144. 4 erkek ve 2 kız dönüşümlü dizilemez; kişi sayıları en çok bir farklı olmalıdır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Üç kız yan yana gelmesin" ile "hiçbir iki kız yan yana gelmesin" koşullarını aynı sanmak.</strong> Birincisi yalnızca üçünün birden bitişik olmasını yasaklar; iki kızın yan yana, üçüncünün başka yerde olması serbesttir. Bu yüzden tümleyenle sayılır: 3 erkek ve 3 kız için 6! − 4! · 3! = 720 − 144 = 576. İkincisi her iki kızın bitişik olmasını yasaklar ve aralara yerleştirmeyle sayılır: 144. Soru kökünde "hiçbir iki", "herhangi ikisi" ya da "üçü birden" sözlerini mutlaka işaretle.</p>
+<p><strong>Paketin içini unutmak.</strong> "Ece ile Can yan yana" sorusunda 5! = 120 yazıp bırakmak, Ece'nin hep solda durduğunu varsaymaktır. Paketteki k kişinin k! iç dizilişi vardır; iki kişi için 2, üç kişi için 6.</p></div>
+
+<h3>d) İki kişi arasında tam k kişi</h3>
+
+<p>"Ali ile Berk arasında tam iki kişi olsun" koşulunu paket yöntemine benzeterek çözersin: Ali, araya girecek iki kişi ve Berk birlikte dört kişilik bir blok oluşturur. Bloğun içinde uçlar Ali ile Berk'indir (2 türlü: Ali solda ya da sağda), ortadaki iki yere kalan kişilerden ikisi sırayla seçilir. Sonra blok, dışarıda kalanlarla birlikte dizilir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Aralarında Ali ile Berk'in de bulunduğu 7 kişi düz bir sıraya diziliyor. Ali ile Berk arasında tam 2 kişi olacak biçimde kaç farklı diziliş vardır?</p>
+<p><strong>Adım 1.</strong> Aradaki iki yeri doldur: kalan 5 kişiden 2'si sırayla.</p>
+<span class="mat">P(5, 2) = 5 · 4 = 20 <span class="g">(aradaki ilk yere 5, ikinciye 4 seçenek)</span></span>
+<p><strong>Adım 2.</strong> Bloğun uçları: Ali solda Berk sağda ya da tersi.</p>
+<span class="mat">2! = 2 <span class="g">(uçlardaki iki kişi yer değiştirebilir)</span></span>
+<p><strong>Adım 3.</strong> Bloğu tek birim say; dışarıda 7 − 4 = 3 kişi kaldı.</p>
+<span class="mat">1 + 3 = 4 birim, 4! = 24 <span class="g">(blok ve üç kişi diziliyor)</span></span>
+<p><strong>Adım 4.</strong> Çarp.</p>
+<span class="mat">20 · 2 · 24 = 960 <span class="g">(aradakiler × uçlar × dış diziliş)</span></span>
+<p><strong>Sonuç:</strong> 960. Kontrol yolu (konumlarla): Ali ile Berk'in yerleri (1, 4), (2, 5), (3, 6), (4, 7) çiftlerinden biri olabilir, yani 4 konum çifti var; her çiftte ikisi 2 türlü yerleşir ve kalan 5 kişi kalan 5 yere 5! = 120 türlü dizilir: 4 · 2 · 120 = 960. İki yol aynı sonucu verdi.</p></div>
+
+<h3>e) Koltuk ve fotoğraf soruları</h3>
+
+<p>Sıra koltuk soruları iki biçimde gelir. Birincisinde kişi sayısı koltuk sayısına eşittir ve soru düz bir dizilişe döner. İkincisinde koltuk fazladır: "5 koltuklu bir sıraya 3 kişi kaç türlü oturur?" Burada kutular kişilerdir: birinci kişi 5 koltuktan birini, ikinci kalan 4'ten birini, üçüncü kalan 3'ten birini seçer. P(5, 3) = 60. Boş kalan iki koltuk birbirinin aynısıdır; onları ayrıca sıralamazsın.</p>
+
+<p>Fotoğraf soruları da çoğu zaman uç koşulu taşır. Örneğin anne, baba ve dört çocuktan oluşan bir aile, anne ile baba uçlarda olmak üzere yan yana fotoğraf çektirecek. Önce kısıtlıları yerleştir: anne ile baba iki uca 2! = 2 türlü geçer. Dört çocuk ortadaki dört yere 4! = 24 türlü dizilir. Toplam 2 · 24 = 48. Fotoğrafta iki sıra varsa (öndekiler oturuyor, arkadakiler ayakta) her sırayı ayrı bir kutu grubu gibi düşün: önce kim hangi sıraya gidecek, sonra her sıra kendi içinde nasıl dizilecek.</p>
+
+<div class="tablo"><table>
+<tr><th>Koşul</th><th>Yöntem</th><th>6 kişi için sonuç</th></tr>
+<tr><td>Kısıt yok</td><td>n!</td><td>720</td></tr>
+<tr><td>Ali başta</td><td>Kısıtlı kutuyu doldur: 1 · 5!</td><td>120</td></tr>
+<tr><td>Ali uçlardan birinde</td><td>Ali'ye yer seç: 2 · 5!</td><td>240</td></tr>
+<tr><td>Ali uçlarda değil</td><td>4 · 5! ya da tümleyen</td><td>480</td></tr>
+<tr><td>Ece ile Can yan yana</td><td>Paket: 5! · 2!</td><td>240</td></tr>
+<tr><td>Ece ile Can yan yana değil</td><td>Tümleyen: 720 − 240</td><td>480</td></tr>
+<tr><td>3 erkek, 3 kız; hiçbir iki kız yan yana değil</td><td>Aralara yerleştirme: 3! · P(4, 3)</td><td>144</td></tr>
+<tr><td>3 erkek, 3 kız dönüşümlü</td><td>2 kalıp · 3! · 3!</td><td>72</td></tr>
+</table></div>
+
+<h2 class="s">6. Harflerden sözcük yazmak</h2>
+
+<p>Sınavın sık kullandığı bir kalıp: "KALEM sözcüğünün harfleri kullanılarak anlamlı ya da anlamsız beş harfli kaç sözcük yazılabilir?" "Anlamlı ya da anlamsız" sözü, sözlükte olup olmamasına bakmadan <strong>her harf dizisini</strong> saydığımızı söyler. Yani bu bir sözcük bilgisi sorusu değil, düpedüz bir diziliş sorusudur. KALEM'in beş harfi birbirinden farklıdır: 5! = 120 dizi. Üç harfli sözcük istenirse (her harf en çok bir kez kullanılarak) P(5, 3) = 60.</p>
+
+<p>Koşullar yine "kısıtlı kutuyu önce doldur" ilkesiyle çözülür. Sesli harfle başlama koşulu birinci kutuyu kısıtlar; sessizle bitme koşulu sonuncuyu.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> KALEM sözcüğünün harflerinin tamamı birer kez kullanılarak yazılan anlamlı ya da anlamsız beş harfli sözcüklerden kaç tanesi sesli harfle başlayıp sessiz harfle biter?</p>
+<p><strong>Adım 1.</strong> Harfleri ayır: sesliler A ve E (2 tane), sessizler K, L, M (3 tane).</p>
+<p><strong>Adım 2.</strong> Birinci kutu kısıtlı: bir sesli.</p>
+<span class="mat">1. kutu: 2 seçenek <span class="g">(A ya da E)</span></span>
+<p><strong>Adım 3.</strong> Beşinci kutu kısıtlı: bir sessiz.</p>
+<span class="mat">5. kutu: 3 seçenek <span class="g">(K, L ya da M)</span></span>
+<p><strong>Adım 4.</strong> Kalan üç harf ortadaki üç kutuya.</p>
+<span class="mat">3! = 6 <span class="g">(geriye kalan üç harf kendi arasında)</span></span>
+<span class="mat">2 · 3 · 6 = 36 <span class="g">(çarpma kuralı)</span></span>
+<p><strong>Sonuç:</strong> 36. Kontrol: yalnızca sesliyle başlayanlar 2 · 4! = 48'dir. Bunların içinde sesliyle bitenler, öbür sesliyi sona koyanlardır: 2 · 1 · 3! = 12. 48 − 12 = 36; aynı sonuç.</p></div>
+
+<h2 class="s">7. Tekrarlı permütasyon: özdeşleri ayırt etmeyiz</h2>
+
+<p>Şimdi parçanın başındaki ANKARA sorusuna dönelim. Altı harfte üç tane A var. Bir an için bu üç A'yı farklı renklere boyadığını düşün: A<sub>1</sub>, A<sub>2</sub>, A<sub>3</sub>. Artık altı harfin hepsi farklıdır ve 6! = 720 dizi vardır. Ama renkleri sildiğinde, örneğin A<sub>1</sub>NKA<sub>2</sub>RA<sub>3</sub> ile A<sub>3</sub>NKA<sub>1</sub>RA<sub>2</sub> aynı "ANKARA" yazısına döner. Üç A kendi aralarında 3! = 6 türlü yer değiştirebilir ve bu altı yer değiştirmenin hepsi aynı yazıyı verir. Yani 720 dizinin içinde her gerçek sözcük tam olarak 6 kez sayılmıştır.</p>
+
+<span class="mat"><span class="kes"><span>6!</span><span>3!</span></span> = <span class="kes"><span>720</span><span>6</span></span> = 120 <span class="g">(her sözcük 3! kez sayılmıştı)</span></span>
+
+<p>Parçanın sorusundaki "kayıp 600 dizi" işte buydu: onlar kaybolmadı, aynı sözcüğün renkli kopyalarıydı.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n nesnenin n<sub>1</sub> tanesi bir türden, n<sub>2</sub> tanesi başka bir türden, …, n<sub>k</sub> tanesi bir başka türden ve her türün kendi içindekiler özdeş olsun (n<sub>1</sub> + n<sub>2</sub> + … + n<sub>k</sub> = n). Bu nesnelerin farklı dizilişlerinin sayısı:</p>
+<p><span class="kes"><span>n!</span><span>n<sub>1</sub>! · n<sub>2</sub>! · … · n<sub>k</sub>!</span></span></p>
+<p>Nedeni: özdeşleri geçici olarak farklı sayarsak n! dizi bulunur; her gerçek dizilişin içinde birinci türün n<sub>1</sub>!, ikinci türün n<sub>2</sub>! … iç yer değiştirmesi vardır ve bunlar bağımsız olduğu için çarpılır. Fazla sayma çarpanını bölerek atarız. Tek olan harflerin 1! = 1 olduğu için paydada yazılmasına gerek yoktur.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Sözcük ya da nesneler</th><th>Tekrarlar</th><th>Diziliş sayısı</th></tr>
+<tr><td>ANKARA</td><td>A: 3</td><td>6! / 3! = 120</td></tr>
+<tr><td>KELEBEK</td><td>K: 2, E: 3</td><td>7! / (2! · 3!) = 420</td></tr>
+<tr><td>MATEMATİK</td><td>M: 2, A: 2, T: 2 (E, İ, K birer)</td><td>9! / (2! · 2! · 2!) = 45360</td></tr>
+<tr><td>3 kırmızı, 2 mavi, 1 beyaz bayrak</td><td>K: 3, M: 2</td><td>6! / (3! · 2!) = 60</td></tr>
+<tr><td>1, 1, 2, 2, 2 rakamları</td><td>1: 2, 2: 3</td><td>5! / (2! · 3!) = 10</td></tr>
+</table></div>
+
+<p>MATEMATİK sözcüğünde dikkat: Türkçede "İ" ile "I" ayrı harflerdir ve sözcükte yalnızca bir "İ" vardır; tekrar eden harfler M, A ve T'dir. Harfleri saymadan önce sözcüğü kâğıda tek tek yaz ve her harfin kaç kez geçtiğini altına not et; bu, soruların yarısındaki hatayı önler.</p>
+
+<p><strong>Özdeş nesnelerin dizilişi</strong> aynı formülle sayılır. Üç kırmızı, iki mavi ve bir beyaz bayrak bir direğe sırayla asılırsa kırmızılar birbirinden ayırt edilemez; "kırmızı-mavi-kırmızı…" gibi bir dizilişte iki kırmızının yer değiştirmesi yeni bir işaret oluşturmaz. Sonuç 60'tır. Kutuya konan özdeş toplar, aynı renkli boncuklar, rafa dizilen aynı kitabın kopyaları hep bu türden sorulardır.</p>
+
+<h3>Tekrarlı rakamlarla sayı yazmak</h3>
+
+<p>Rakamlarla sayı yazarken Parça 43'teki kuralı unutma: sayı <strong>sıfırla başlayamaz</strong>. Rakamlar arasında sıfır varsa en kolay yol tümleyendir: bütün dizilişleri tekrarlı permütasyonla say, sonra sıfırla başlayanları (onlar da tekrarlı permütasyondur) çıkar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> 0, 0, 1, 2, 2 rakamlarının tamamı kullanılarak beş basamaklı kaç farklı doğal sayı yazılabilir?</p>
+<p><strong>Adım 1.</strong> Bütün dizilişleri say: iki 0 ve iki 2 özdeş.</p>
+<span class="mat"><span class="kes"><span>5!</span><span>2! · 2!</span></span> = <span class="kes"><span>120</span><span>4</span></span> = 30 <span class="g">(tekrarlı permütasyon)</span></span>
+<p><strong>Adım 2.</strong> Sıfırla başlayanları say: başa bir 0 koy, geriye 0, 1, 2, 2 kalır.</p>
+<span class="mat"><span class="kes"><span>4!</span><span>2!</span></span> = <span class="kes"><span>24</span><span>2</span></span> = 12 <span class="g">(kalan dört rakamda yalnızca 2'ler özdeş)</span></span>
+<p><strong>Adım 3.</strong> Çıkar.</p>
+<span class="mat">30 − 12 = 18 <span class="g">(tümü − sıfırla başlayanlar)</span></span>
+<p><strong>Sonuç:</strong> 18 sayı. Kontrol yolu (doğrudan): ilk basamak 1 ise kalan 0, 0, 2, 2 rakamları 4!/(2! · 2!) = 6 türlü dizilir; ilk basamak 2 ise kalan 0, 0, 1, 2 rakamları 4!/2! = 12 türlü dizilir. 6 + 12 = 18. Başta hangi rakam olduğuna göre ayrık durumlar toplanır (Parça 43'teki toplama kuralı).</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Sıfırla başlayanları çıkarırken tekrarı unutmak.</strong> Örnek 7'de sıfırla başlayanları 4! = 24 diye saymak, kalan 0, 1, 2, 2 rakamlarındaki iki 2'nin özdeş olduğunu gözden kaçırmaktır. Çıkardığın parça da aynı kurala uyar: kalan nesneler arasında özdeş olanlar varsa onların faktöriyeliyle böl.</p>
+<p><strong>Özdeşlerin sayılarını toplayıp faktöriyel almak.</strong> KELEBEK için paydaya (2 + 3)! = 120 yazmak yanlıştır; K'lerin kendi aralarındaki yer değiştirmesi ile E'lerin kendi aralarındaki yer değiştirmesi ayrı ayrı olur ve çarpılır: 2! · 3! = 12.</p></div>
+
+<h2 class="s">8. Izgarada en kısa yol sayma</h2>
+
+<p>Birim karelerden oluşan bir ızgarada, sol alt köşedeki A noktasından sağ üst köşedeki B noktasına yalnızca çizgiler üzerinde ve en kısa yoldan gitmek istiyorsun. En kısa yol, hiç geri dönmeyen yoldur: yalnızca sağa ve yukarı adım atarsın. Izgara 4 birim geniş ve 3 birim yüksekse, hangi yolu seçersen seç tam olarak 4 sağ (S) ve 3 yukarı (Y) adım atarsın. Farklı yollar yalnızca bu adımların <strong>sırasında</strong> ayrılır.</p>
+
+<p>Demek ki her en kısa yol, S S S S Y Y Y harflerinin bir dizilişidir ve her diziliş de bir yoldur. Bu, ANKARA sorusunun aynısıdır: 7 harf, dördü özdeş S, üçü özdeş Y.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="4 birime 3 birimlik ızgara; A sol alt, B sağ üst köşe, C noktası A'dan 2 birim sağda 1 birim yukarıda; C'den geçen bir en kısa yol çizili ve adımları S S Y S Y S Y">
+  <line class="sv-c" x1="60" y1="30" x2="60" y2="240" />
+  <line class="sv-c" x1="130" y1="30" x2="130" y2="240" />
+  <line class="sv-c" x1="200" y1="30" x2="200" y2="240" />
+  <line class="sv-c" x1="270" y1="30" x2="270" y2="240" />
+  <line class="sv-c" x1="340" y1="30" x2="340" y2="240" />
+  <line class="sv-c" x1="60" y1="30" x2="340" y2="30" />
+  <line class="sv-c" x1="60" y1="100" x2="340" y2="100" />
+  <line class="sv-c" x1="60" y1="170" x2="340" y2="170" />
+  <line class="sv-c" x1="60" y1="240" x2="340" y2="240" />
+  <polyline class="sv-cl" points="60,240 130,240 200,240 200,170 270,170 270,100 340,100 340,30" />
+  <circle class="sv-a" cx="60" cy="240" r="6" />
+  <circle class="sv-a" cx="340" cy="30" r="6" />
+  <circle class="sv-m" cx="200" cy="170" r="6" />
+  <text class="sv-b" x="50" y="262" text-anchor="end">A</text>
+  <text class="sv-b" x="352" y="24">B</text>
+  <text class="sv-b" x="192" y="160" text-anchor="end">C</text>
+  <text class="sv-s" x="95" y="258" text-anchor="middle">S</text>
+  <text class="sv-s" x="165" y="258" text-anchor="middle">S</text>
+  <text class="sv-s" x="212" y="210">Y</text>
+  <text class="sv-s" x="235" y="188" text-anchor="middle">S</text>
+  <text class="sv-s" x="282" y="140">Y</text>
+  <text class="sv-s" x="305" y="118" text-anchor="middle">S</text>
+  <text class="sv-s" x="352" y="70">Y</text>
+  <text class="sv-t" x="200" y="288" text-anchor="middle">S S Y S Y S Y: 4 S ve 3 Y → 7! ÷ (4! · 3!) = 35 yol</text>
+</svg>
+<figcaption>Çizili yol C'den geçen 18 yoldan biridir. Her en kısa yol, 4 sağ ve 3 yukarı adımın bir sıralamasıdır; yollar adımların sırasıyla ayrılır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Formül</span>
+<p>a birim sağa ve b birim yukarı gidilen bir ızgarada en kısa yol sayısı:</p>
+<p><span class="kes"><span>(a + b)!</span><span>a! · b!</span></span></p>
+<p>Nedeni: her yol a tane özdeş S ile b tane özdeş Y'nin bir dizilişidir; yollar ile dizilişler bire bir eşleşir.</p></div>
+
+<p>"C noktasından geçen yollar" sorusunda yolu ikiye böl: A'dan C'ye bir parça, C'den B'ye bir parça. Bir yolu seçmek, iki parçayı art arda seçmektir; çarpma kuralıyla çarpılır. "C'den geçmeyen yollar" ise tümleyendir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Şekildeki 4 × 3'lük ızgarada A'dan B'ye en kısa yollardan kaç tanesi C noktasından geçer, kaç tanesi geçmez? (C, A'nın 2 birim sağında ve 1 birim yukarısındadır.)</p>
+<p><strong>Adım 1.</strong> Bütün en kısa yollar: 4 S, 3 Y.</p>
+<span class="mat"><span class="kes"><span>7!</span><span>4! · 3!</span></span> = <span class="kes"><span>7 · 6 · 5</span><span>3 · 2 · 1</span></span> = 35 <span class="g">(4!'ü sadeleştirdik)</span></span>
+<p><strong>Adım 2.</strong> A'dan C'ye: 2 S, 1 Y.</p>
+<span class="mat"><span class="kes"><span>3!</span><span>2! · 1!</span></span> = 3 <span class="g">(SSY, SYS, YSS)</span></span>
+<p><strong>Adım 3.</strong> C'den B'ye: 4 − 2 = 2 S ve 3 − 1 = 2 Y.</p>
+<span class="mat"><span class="kes"><span>4!</span><span>2! · 2!</span></span> = <span class="kes"><span>24</span><span>4</span></span> = 6 <span class="g">(kalan adımların dizilişi)</span></span>
+<p><strong>Adım 4.</strong> İki parça art arda: çarp.</p>
+<span class="mat">3 · 6 = 18 <span class="g">(C'den geçen yollar)</span></span>
+<p><strong>Adım 5.</strong> Tümleyen.</p>
+<span class="mat">35 − 18 = 17 <span class="g">(C'den geçmeyen yollar)</span></span>
+<p><strong>Sonuç:</strong> 18 yol C'den geçer, 17 yol geçmez. Kontrol: 18 + 17 = 35. Parçaları toplamak (3 + 6 = 9) yanlıştır; birinci parçadaki her seçim ikinci parçadaki her seçimle birleşir, yani adımlar "ve" ile bağlıdır.</p></div>
+
+<p>Izgarada bir kenar ya da nokta kapalıysa (örneğin bir yol yapım altındaysa) yine tümleyen kullanılır: bütün yollardan o kenarı kullananları çıkar. O kenarı kullananlar, kenarın bir ucuna kadar giden yollarla öbür ucundan B'ye giden yolların çarpımıdır.</p>
+
+<h2 class="s">9. Dairesel permütasyon: yuvarlak masa</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir</strong>; 2018 öğretim programında açık bir kazanım olarak bulunduğundan emin değiliz. Yine de sorularda zaman zaman karşına çıkabileceği için fikrini kısaca görelim.</p>
+
+<p>Dört kişi (A, B, C, D) yuvarlak bir masaya oturuyor. Düz sırada 4! = 24 diziliş olurdu. Ama yuvarlak masada başı ve sonu olan bir sıra yoktur; önemli olan yalnızca <strong>herkesin sağında ve solunda kimin oturduğudur</strong>. Masayı bütün olarak çevirirsen herkes yer değiştirir ama komşular aynı kalır; bu, yeni bir oturuş sayılmaz.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="İki yuvarlak masa: solda saat yönünde A, B, C, D; sağda aynı düzen 90 derece döndürülmüş hâlde D, A, B, C. İkisi aynı oturuştur">
+  <circle class="sv-k" cx="100" cy="100" r="40" />
+  <circle class="sv-k" cx="300" cy="100" r="40" />
+  <circle class="sv-l" cx="100" cy="34" r="17" />
+  <circle class="sv-l" cx="166" cy="100" r="17" />
+  <circle class="sv-l" cx="100" cy="166" r="17" />
+  <circle class="sv-l" cx="34" cy="100" r="17" />
+  <text class="sv-b" x="100" y="39" text-anchor="middle">A</text>
+  <text class="sv-b" x="166" y="105" text-anchor="middle">B</text>
+  <text class="sv-b" x="100" y="171" text-anchor="middle">C</text>
+  <text class="sv-b" x="34" y="105" text-anchor="middle">D</text>
+  <circle class="sv-l" cx="300" cy="34" r="17" />
+  <circle class="sv-l" cx="366" cy="100" r="17" />
+  <circle class="sv-l" cx="300" cy="166" r="17" />
+  <circle class="sv-l" cx="234" cy="100" r="17" />
+  <text class="sv-b" x="300" y="39" text-anchor="middle">D</text>
+  <text class="sv-b" x="366" y="105" text-anchor="middle">A</text>
+  <text class="sv-b" x="300" y="171" text-anchor="middle">B</text>
+  <text class="sv-b" x="234" y="105" text-anchor="middle">C</text>
+  <path class="sv-cl" d="M188 100H210" />
+  <path class="sv-cl" d="M204 94L211 100L204 106" />
+  <text class="sv-s" x="200" y="64" text-anchor="middle">90° çevir</text>
+  <text class="sv-t" x="200" y="204" text-anchor="middle">Herkesin sağındaki ve solundaki kişi aynı:</text>
+  <text class="sv-t" x="200" y="224" text-anchor="middle">iki çizim tek bir oturuştur.</text>
+</svg>
+<figcaption>Düz sıradaki 4 farklı diziliş (ABCD, BCDA, CDAB, DABC) yuvarlak masada aynı oturuşa döner. Bu yüzden düz diziliş sayısı kişi sayısına bölünür.</figcaption>
+</figure>
+
+<p>Her yuvarlak oturuş, düz sırada tam olarak n kez sayılmıştır (masayı n farklı konuma çevirebilirsin). O hâlde n!/n = (n − 1)!. Bunu şöyle de düşünebilirsin: bir kişiyi bir sandalyeye oturt ve onu sabit "başlangıç" say; geriye kalan n − 1 kişi onun sağından başlayarak düz bir sıraya dizilir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>n farklı kişi yuvarlak bir masaya <strong>(n − 1)!</strong> farklı biçimde oturur. Nedeni: döndürmeyle birbirine dönüşen n düz diziliş tek bir oturuş sayılır; n!/n = (n − 1)!.</p></div>
+
+<p>Yan yana koşulu burada da paketle çözülür. 5 kişi yuvarlak masada, A ile B yan yana: A-B paketi ve üç kişi, toplam 4 birim yuvarlak dizilir: (4 − 1)! = 6; paketin içi 2! = 2. Sonuç 6 · 2 = 12. Kontrol: 5 kişinin bütün yuvarlak oturuşları 4! = 24'tür; A'nın iki komşusu, kalan dört kişiden ikisidir ve B'nin bunlardan biri olma payı yarı yarıyadır. 24'ün yarısı 12; sonuç akla yatkın.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 43'e:</strong> P(n, r) formülü kutu yönteminin kısaltmasıdır; koşullu bütün sorular "kısıtlı kutuyu önce doldur" ve "tümleyenden say" ilkeleriyle çözüldü. 0! = 1 tanımı P(n, n) = n! olsun diye gerekliydi.</p>
+<p><strong>Parça 36 ve 37'ye:</strong> Bütün fonksiyonların sayısı s(B)<sup>s(A)</sup>, bire bir olanların sayısı P(n, r); ikisinin farkı bire bir olmayan fonksiyonlardır.</p>
+<p><strong>Parça 45'e:</strong> Kombinasyon, sıranın önemsiz olduğu seçimdir. Buradaki tekrarlı permütasyon mantığı (fazla sayılanı bölerek atmak) oraya doğrudan taşınır: r kişiyi seçip sıralamanın P(n, r) yolu var, her seçim r! kez sıralandığı için seçim sayısı P(n, r)/r! olacak. Izgara yollarını da orada kombinasyonla yeniden yazacağız.</p>
+<p><strong>Parça 46 ve 47'ye:</strong> Olasılıkta "yan yana gelme olasılığı", "sesliyle başlama olasılığı" gibi sorular, bu parçadaki sayıyı bütün dizilişlerin sayısına bölmekten ibarettir.</p>
+<p><strong>Öbür derslere:</strong> Kimyada ve biyolojide dizilim sayılarını (örneğin DNA'da baz sıralamaları) sayarken aynı çarpma ve "özdeşleri böl" mantığı kullanılır; ileri matematikte binom açılımının katsayıları da bu sayılardan gelir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir seçimde sıranın önemli olup olmadığını hangi deneyle anlarsın?</summary><p>Seçilen iki kişinin yerini değiştiririm. Ortaya başka bir sonuç çıkıyorsa (başkan ile yardımcının yer değiştirmesi gibi) sıra önemlidir ve permütasyon kullanılır; aynı sonuç çıkıyorsa (iki temsilcinin yer değiştirmesi gibi) sıra önemsizdir.</p></details>
+<details><summary>P(n, r) = n!/(n − r)! formülündeki (n − r)! neyi temsil eder?</summary><p>Doldurulmayan kutuların çarpımını. n!, n kutunun hepsini doldurmanın çarpımıdır; yalnızca r kutu doldurulacaksa son n − r kutunun çarpımı olan (n − r)! bölünerek atılır ve geriye n · (n − 1) · … · (n − r + 1) kalır.</p></details>
+<details><summary>P(n, 0) neden 0 değil de 1'dir?</summary><p>Hiçbir şey dizmemenin tam olarak bir yolu vardır: rafı boş bırakmak. Formül de bunu verir: n!/n! = 1. "Hiç yol yok" ile "tek yol, hiçbir şey yapmamak" farklı şeylerdir.</p></details>
+<details><summary>Yan yana olması istenen k kişi için paket yönteminde neden k! ile çarparsın?</summary><p>Çünkü paket tek birim sayılıp dış dizilişler bulunduktan sonra, paketin içindeki k kişi de kendi aralarında k! türlü sıralanabilir. Her dış diziliş için bu iç dizilişlerin her biri ayrı bir sonuçtur.</p></details>
+<details><summary>"Hiçbir iki kız yan yana gelmesin" koşulunda neden tümleyen değil de aralara yerleştirme kullanılır?</summary><p>Çünkü "en az iki kız yan yana" durumu tek parça değildir: ikisi yan yana, üçü yan yana gibi birbirine karışan alt durumlar vardır ve bunları saymak zordur. Önce erkekleri dizip aralardaki ve uçlardaki boşluklara kızları birer birer koymak, kızların hiçbirinin bitişik olmamasını doğrudan sağlar.</p></details>
+<details><summary>ANKARA sözcüğünde 6! sayısı neden 3!'e bölünür?</summary><p>Üç A özdeştir. Onları geçici olarak farklı sayarsak 720 dizi bulunur, ama her gerçek sözcük, üç A'nın kendi aralarındaki 3! = 6 yer değiştirmesi kadar, yani 6 kez sayılmıştır. Fazla saymayı atmak için 6'ya böleriz: 120.</p></details>
+<details><summary>Izgarada en kısa yol sayısı neden tekrarlı permütasyondur?</summary><p>Her en kısa yol aynı sayıda sağ ve yukarı adımdan oluşur; yollar yalnızca bu adımların sırasında ayrılır. a tane S ve b tane Y harfinin her dizilişi bir yola, her yol bir dizilişe karşılık gelir; bu yüzden yol sayısı (a + b)!/(a! · b!) olur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Permütasyon:</strong> farklı nesneleri sıraya dizmek. Yer değiştirince yeni sonuç çıkıyorsa sıra önemlidir.</li>
+<li><strong>n farklı nesne:</strong> n! diziliş.</li>
+<li><strong>P(n, r) = n!/(n − r)! = n · (n − 1) · … (r çarpan).</strong> Kutu yöntemiyle aynı şey. P(n, n) = n!, P(n, 1) = n, P(n, 0) = 1.</li>
+<li><strong>Bire bir fonksiyon sayısı:</strong> s(A) = r, s(B) = n ise P(n, r). Bütün fonksiyonlar n<sup>r</sup>.</li>
+<li><strong>Kısıtlı kutuyu önce doldur.</strong> Başta: 1 · (n − 1)!; uçlardan birinde: 2 · (n − 1)!.</li>
+<li><strong>Yan yana (paket):</strong> (n − k + 1)! · k!. İçini unutma.</li>
+<li><strong>Yan yana değil:</strong> iki kişi için tümleyen; "hiçbir ikisi" için aralara yerleştirme: m! · P(m + 1, k).</li>
+<li><strong>Dönüşümlü:</strong> sayılar eşitse 2 · m! · m!, bir fazlaysa tek kalıp.</li>
+<li><strong>Arada tam k kişi:</strong> aradakileri sırayla seç, uçları 2 ile çarp, bloğu tek birim say.</li>
+<li><strong>Tekrarlı permütasyon:</strong> n!/(n<sub>1</sub>! · n<sub>2</sub>! · …). Özdeşleri farklı sayıp fazlayı böl.</li>
+<li><strong>Sıfırlı rakamlar:</strong> tümü − sıfırla başlayanlar; ikisinde de tekrarları böl.</li>
+<li><strong>Izgara:</strong> (a + b)!/(a! · b!). Noktadan geçen: parçaları çarp. Geçmeyen: tümleyen.</li>
+<li><strong>Yuvarlak masa (kapsam dışı olabilir):</strong> (n − 1)!.</li>
+<li><strong>Kontrol:</strong> koşul + koşulun olumsuzu = tümü; ikinci bir yoldan say.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="mat-44">
+<h3>Quiz 44</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">7 kişilik bir kulüpte bir başkan, bir başkan yardımcısı ve bir sayman seçilecektir. Bir kişi birden fazla görev alamayacağına göre bu seçim kaç farklı biçimde yapılabilir?</p>
+<ul class="sec"><li>35</li><li>210</li><li>343</li><li>840</li><li>5040</li></ul>
+<div class="coz"><p>Görevler farklı olduğu için sıra önemlidir: başkana 7, yardımcıya kalan 6, saymana kalan 5 aday. P(7, 3) = 7 · 6 · 5 = 210. 35, görevleri önemsemeden yalnızca üç kişilik bir grup seçenin sonucudur (her grup 3! = 6 türlü görevlendirilir: 35 · 6 = 210). 343 = 7<sup>3</sup>, bir kişinin birden çok görev alabildiğini varsayanın; 840, bir kutu fazla dolduranın (7 · 6 · 5 · 4); 5040 ise yedi kişinin hepsini sıralayanın (7!) bulduğudur.</p></div></li>
+
+<li data-c="B"><p class="q">P(n, 2) = 30 olduğuna göre n kaçtır?</p>
+<ul class="sec"><li>5</li><li>6</li><li>7</li><li>15</li><li>30</li></ul>
+<div class="coz"><p>P(n, 2) = n · (n − 1), yani n'den başlayan iki ardışık sayının çarpımıdır. 30 = 6 · 5 olduğundan n = 6. Kontrol: P(6, 2) = 6 · 5 = 30. 5, ardışık çarpanlardan küçük olanı cevap sanan ya da n · (n + 1) = 30 kuranın sonucudur. 15, P(n, 2)'yi 2n sanıp 30'u 2'ye bölenin; 30 ise P(n, 1) = n ile karıştıranın bulduğudur. 7, çarpanları 6 ve 5 bulduktan sonra bir fazlasını alanın sonucudur.</p></div></li>
+
+<li data-c="D"><p class="q">A = {a, b, c} ve B = {1, 2, 3, 4, 5} olduğuna göre A'dan B'ye tanımlı fonksiyonlardan kaç tanesi bire birdir?</p>
+<ul class="sec"><li>10</li><li>15</li><li>20</li><li>60</li><li>125</li></ul>
+<div class="coz"><p>Bire bir fonksiyonda A'nın farklı elemanları B'nin farklı elemanlarına gider: a için 5, b için kalan 4, c için kalan 3 seçenek. P(5, 3) = 5 · 4 · 3 = 60. 125 = 5<sup>3</sup>, bire bir koşulunu unutup bütün fonksiyonları sayanın sonucudur (Parça 36). 10, görüntüleri sırasız bir küme gibi seçenin (hangi elemanın nereye gittiği önemlidir); 15, eleman sayılarını çarpanın (3 · 5); 20, bir kutuyu eksik doldurup 5 · 4'te duranın sonucudur.</p></div></li>
+
+<li data-c="C"><p class="q">Aralarında Ece ile Can'ın da bulunduğu 6 kişi düz bir sıraya dizilecektir. Ece ile Can yan yana olmak koşuluyla kaç farklı diziliş vardır?</p>
+<ul class="sec"><li>48</li><li>120</li><li>240</li><li>480</li><li>720</li></ul>
+<div class="coz"><p>Paket yöntemi: Ece ile Can'ı tek birim say. Sırada 5 birim olur ve bunlar 5! = 120 türlü dizilir. Paketin içi de 2! = 2 türlüdür (Ece solda ya da sağda): 120 · 2 = 240. 120, paketin içini unutanın; 480, soruyu tersten okuyup yan yana <em>olmayanları</em> sayanın (720 − 240); 720 kısıtı hiç kullanmayanın sonucudur. 48, paketi dört birimle birlikte yanlış sayıp 4! · 2 yapanın bulduğudur; paket ve dört kişi beş birimdir.</p></div></li>
+
+<li data-c="C"><p class="q">4 erkek ve 3 kız düz bir sıraya dizilecektir. Hiçbir iki kız yan yana gelmemek koşuluyla kaç farklı diziliş vardır?</p>
+<ul class="sec"><li>144</li><li>240</li><li>1440</li><li>4320</li><li>5040</li></ul>
+<div class="coz"><p>Aralara yerleştirme: önce 4 erkeği diz, 4! = 24. Erkeklerin arasında ve iki ucunda 5 boşluk oluşur. 3 kızı bu 5 boşluğa, her boşluğa en çok bir kız olacak biçimde sırayla koy: P(5, 3) = 5 · 4 · 3 = 60. Toplam 24 · 60 = 1440. 144, yalnızca E K E K E K E dönüşümlü dizilişini sayanın sonucudur (iki erkeğin yan yana durduğu dizilişleri kaçırır). 240, boşlukları seçip kızları kendi aralarında sıralamayı unutanın (24 · 10); 4320, "üç kız birden yan yana olmasın" diye okuyup 7! − 5! · 3! yapanın; 5040 ise kısıtsız 7!'dir.</p></div></li>
+
+<li data-c="B"><p class="q">KELEBEK sözcüğünün harflerinin tamamı kullanılarak anlamlı ya da anlamsız yedi harfli kaç farklı sözcük yazılabilir?</p>
+<ul class="sec"><li>42</li><li>420</li><li>840</li><li>2520</li><li>5040</li></ul>
+<div class="coz"><p>Harfleri say: K iki kez, E üç kez, L ve B birer kez; toplam 7 harf. Tekrarlı permütasyon: 7!/(2! · 3!) = 5040/12 = 420. 5040, harfleri hep farklı sanan; 840, yalnızca E'lerin tekrarını hesaba katıp 3!'e bölen; 2520, yalnızca K'lerin tekrarını görüp 2!'ye bölen kişinin sonucudur. 42 ise paydaya (2 + 3)! = 120 yazanın bulduğudur; özdeşlerin faktöriyelleri toplanmaz, ayrı ayrı alınıp çarpılır.</p></div></li>
+
+<li data-c="C"><p class="q">Birim karelerden oluşan 5 birim genişliğinde ve 3 birim yüksekliğinde bir ızgarada A sol alt köşe, B sağ üst köşedir. C noktası, A'nın 2 birim sağında ve 1 birim yukarısındaki ızgara noktasıdır. Izgaranın çizgileri üzerinden A'dan B'ye giden en kısa yollardan kaç tanesi C noktasından geçer?</p>
+<ul class="sec"><li>13</li><li>26</li><li>30</li><li>56</li><li>336</li></ul>
+<div class="coz"><p>Yolu C'de ikiye böl. A'dan C'ye 2 sağ, 1 yukarı: 3!/(2! · 1!) = 3 yol. C'den B'ye 5 − 2 = 3 sağ, 3 − 1 = 2 yukarı: 5!/(3! · 2!) = 10 yol. İki parça art arda seçildiği için çarpılır: 3 · 10 = 30. 13, parçaları toplayanın (3 + 10); 56, C koşulunu yok sayıp bütün yolları sayanın (8!/(5! · 3!)); 26, soruyu tersten okuyup C'den geçmeyenleri sayanın (56 − 30) sonucudur. 336, 8!'i yalnızca 5!'e bölüp yukarı adımların özdeşliğini unutanın bulduğudur.</p></div></li>
+
+<li data-c="A"><p class="q">0, 1, 1, 2, 2, 2 rakamlarının tamamı kullanılarak altı basamaklı kaç farklı doğal sayı yazılabilir?</p>
+<ul class="sec"><li>50</li><li>60</li><li>100</li><li>600</li><li>720</li></ul>
+<div class="coz"><p>Bütün dizilişler: iki 1 ve üç 2 özdeş, 6!/(2! · 3!) = 720/12 = 60. Sıfırla başlayanlar sayı değildir: başa 0 koyunca kalan 1, 1, 2, 2, 2 rakamları 5!/(2! · 3!) = 10 türlü dizilir. 60 − 10 = 50. 60, sıfırla başlayanları çıkarmayı unutanın; 720, tekrarları hiç hesaba katmayanın; 600, tekrarları yok sayıp 6! − 5! yapanın sonucudur. 100, yalnızca 2'lerin tekrarını görüp 6!/3! − 5!/3! = 120 − 20 yapanın bulduğudur.</p></div></li>
+
+<li data-c="D" data-k="mat-4"><p class="q">15 ile 87 arasındaki (15 ve 87 dahil) tek sayıların kaç tanesi vardır?</p>
+<ul class="sec"><li>18</li><li>35</li><li>36</li><li>37</li><li>72</li></ul>
+<div class="coz"><p>Ardışık tek sayılarda artış 2'dir. Terim sayısı = (son − ilk)/artış + 1 = (87 − 15)/2 + 1 = 36 + 1 = 37. "+1" gereklidir, çünkü (son − ilk)/artış aralık sayısını verir; terim sayısı aralık sayısından bir fazladır (Parça 24'teki direk-aralık farkı). 36, +1'i unutanın; 35, iki ucu da dışarıda bırakanın; 72, farkı artışa bölmeyi unutanın; 18, farkı bir kez daha ikiye bölenin sonucudur.</p></div></li>
+
+<li data-c="B" data-k="mat-8"><p class="q">(<span class="kes"><span>2</span><span>3</span></span> + <span class="kes"><span>1</span><span>4</span></span>) ÷ <span class="kes"><span>11</span><span>6</span></span> işleminin sonucu kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>18</span><span>77</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>11</span><span>12</span></span></li><li><span class="kes"><span>121</span><span>72</span></span></li><li>2</li></ul>
+<div class="coz"><p>Önce parantez: paydaları 12'de eşitle, 8/12 + 3/12 = 11/12. Bölme, ikinci kesri ters çevirip çarpmaktır: 11/12 · 6/11 = 6/12 = 1/2. 121/72, ters çevirmeden çarpanın; 2, bölmeyi tersten yapıp (11/6) ÷ (11/12) hesaplayanın; 11/12, bölme adımını unutanın sonucudur. 18/77, kesirleri toplarken payları ve paydaları ayrı ayrı toplayıp 3/7 bulanın sonucudur; bu, Parça 8'deki en yaygın hatadır.</p></div></li>
+
+<li data-c="C" data-k="mat-12"><p class="q">√12 + √27 − √3 işleminin sonucu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>6</li><li>3√3</li><li>4√3</li><li>5√3</li><li>6√3</li></ul>
+<div class="coz"><p>Her kökü dışarı çıkar: √12 = √(4 · 3) = 2√3, √27 = √(9 · 3) = 3√3. Benzer kökler katsayılarıyla toplanır: 2√3 + 3√3 − 1√3 = 4√3. 6, kök içlerini doğrudan toplayıp çıkaranın (√(12 + 27 − 3) = √36) sonucudur; √a + √b ≠ √(a + b). 6√3, son terimin işaretini artı alanın; 5√3, √3'ü katsayısı yokmuş gibi atlayanın; 3√3, √12 ile √3'ü birbirini götürür sanıp yalnızca √27'yi bırakanın bulduğudur.</p></div></li>
+
+<li data-c="E" data-k="mat-16"><p class="q"><span class="kes"><span>x<sup>2</sup> − 9</span><span>x<sup>2</sup> + x − 6</span></span> ifadesinin en sade hâli aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>x + 3</span><span>x + 2</span></span></li><li><span class="kes"><span>x + 3</span><span>x − 2</span></span></li><li><span class="kes"><span>x − 3</span><span>x + 2</span></span></li><li><span class="kes"><span>−9</span><span>x − 6</span></span></li><li><span class="kes"><span>x − 3</span><span>x − 2</span></span></li></ul>
+<div class="coz"><p>Pay iki kare farkıdır: x<sup>2</sup> − 9 = (x − 3)(x + 3). Payda için çarpımı −6, toplamı +1 olan iki sayı: 3 ve −2, yani x<sup>2</sup> + x − 6 = (x + 3)(x − 2). Ortak çarpan (x + 3) sadeleşir: (x − 3)/(x − 2). A, paydayı yanlışlıkla (x − 3)(x + 2) diye ayırıp (x − 3)'ü sadeleştirenin; B, paydayı doğru ayırıp paydan yanlış çarpanı sadeleştirenin; C, paydadaki işaretleri karıştıranın sonucudur. D, x<sup>2</sup> terimlerini birbirini götürür sanıp terim sadeleştirenin bulduğudur; yalnızca çarpanlar sadeleşir.</p></div></li>
+
+<li data-c="E" data-k="mat-20"><p class="q">a &lt; b &lt; 0 olduğuna göre aşağıdakilerden hangisi <strong>daima</strong> doğrudur?</p>
+<ul class="sec"><li>a<sup>2</sup> &lt; b<sup>2</sup></li><li><span class="kes"><span>1</span><span>a</span></span> &lt; <span class="kes"><span>1</span><span>b</span></span></li><li>a · b &lt; 0</li><li>a + b &gt; 0</li><li>|a| &gt; |b|</li></ul>
+<div class="coz"><p>Değer ver: a = −3, b = −1. |a| = 3 &gt; |b| = 1; genel olarak da a ile b negatif olduğundan |a| = −a ve |b| = −b'dir, a &lt; b eşitsizliğini −1 ile çarpınca −a &gt; −b, yani |a| &gt; |b| olur. A yanlış: 9 &gt; 1; sıfırdan daha uzak olanın karesi büyüktür. B yanlış: 1/a = −1/3 ile 1/b = −1 karşılaştırılınca 1/a daha büyüktür; aynı işaretli sayılarda ters alınca sıra döner. C yanlış: iki negatifin çarpımı pozitiftir. D yanlış: iki negatifin toplamı negatiftir.</p></div></li>
+
+<li data-c="C" data-k="mat-24"><p class="q">Bir sırada Ayşe baştan 12., sondan 9. sıradadır. Bu sırada kaç kişi vardır?</p>
+<ul class="sec"><li>18</li><li>19</li><li>20</li><li>21</li><li>22</li></ul>
+<div class="coz"><p>Ayşe'nin önünde 11, arkasında 8 kişi vardır; Ayşe ile birlikte 11 + 1 + 8 = 20 kişi. Kısa yol: baştan sıra + sondan sıra − 1 = 12 + 9 − 1 = 20. 1 çıkarılır, çünkü iki sayımda da Ayşe sayılmıştır. 21, Ayşe'yi iki kez sayanın; 19, iki kez çıkaranın sonucudur. 18 ve 22, önündekileri ya da arkasındakileri bir eksik veya bir fazla sayanın bulduğudur.</p></div></li>
+
+<li data-c="A" data-k="mat-28"><p class="q">Aralarında 360 km uzaklık bulunan iki kentten aynı anda, birbirine doğru saatte 50 km ve saatte 70 km sabit hızlarla iki araç yola çıkıyor. Araçlar yola çıktıktan kaç saat sonra karşılaşır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>5</li><li>6</li><li>18</li></ul>
+<div class="coz"><p>Karşılıklı harekette araçlar arasındaki uzaklık her saat iki hızın toplamı kadar kapanır: 50 + 70 = 120 km. Süre = yol / hız = 360/120 = 3 saat. Kontrol: 3 saatte birinci araç 150, ikinci araç 210 km gider; 150 + 210 = 360. 18, hızları çıkarıp aynı yönde yetişme gibi hesaplayanın (360/20) sonucudur. 6, hızların ortalamasını (60) kullananın; 4 ve 5 ise yolu yanlış hızla bölüp yuvarlayanın bulduğudur.</p></div></li>
+
+<li data-c="D" data-k="mat-32"><p class="q">Bir telefon şirketinin A tarifesinde aylık sabit ücret 60 lira ve dakika başına 1,5 lira, B tarifesinde aylık sabit ücret 30 lira ve dakika başına 2 liradır. Aylık kaç dakikalık konuşmada iki tarifenin ücreti eşit olur?</p>
+<ul class="sec"><li>15</li><li>30</li><li>45</li><li>60</li><li>90</li></ul>
+<div class="coz"><p>x dakika için ücretler A: 60 + 1,5x ve B: 30 + 2x. Grafikte iki doğrunun kesiştiği nokta, ücretlerin eşitlendiği yerdir: 60 + 1,5x = 30 + 2x, 30 = 0,5x, x = 60. Kontrol: 60 + 90 = 150 ve 30 + 120 = 150. 30, sabit ücretlerin farkını cevap sanıp 0,5'e bölmeyi unutanın; 15, 0,5'e bölmek yerine 0,5 ile çarpanın sonucudur. 90, sabit ücretleri toplayanın; 45 ise birim ücret farkını yanlış alanın bulduğudur.</p></div></li>
+
+<li data-c="A" data-k="mat-36"><p class="q">f(2x − 1) = 4x + 3 olduğuna göre f(5) kaçtır?</p>
+<ul class="sec"><li>15</li><li>19</li><li>23</li><li>27</li><li>43</li></ul>
+<div class="coz"><p>f'nin içinin 5 olmasını sağlayan x'i bul: 2x − 1 = 5, 2x = 6, x = 3. Bu x'i sağ tarafa koy: 4 · 3 + 3 = 15. 23, x yerine doğrudan 5 koyanın (4 · 5 + 3) sonucudur; fonksiyonun içi 2x − 1'dir, x değil. 19, x'i 5 − 1 = 4 alanın; 27, x'i 5 + 1 = 6 alanın; 43, x'i 2 · 5 = 10 alanın bulduğudur. Doğru yol her zaman "içi verilen değere eşitle, x'i çöz, yerine koy" sırasıdır.</p></div></li>
+
+<li data-c="D" data-k="mat-40"><p class="q">P(x) = x<sup>3</sup> − 2x<sup>2</sup> + 4x − 5 polinomunun x − 2 ile bölümünden kalan kaçtır?</p>
+<ul class="sec"><li>−29</li><li>−13</li><li>−5</li><li>3</li><li>4</li></ul>
+<div class="coz"><p>Kalan teoremi: x − a ile bölümden kalan P(a)'dır; burada a = 2. P(2) = 8 − 8 + 8 − 5 = 3. −29, x − 2'nin kökünü −2 sanıp P(−2) hesaplayanın sonucudur. −5, P(0)'ı, yani sabit terimi kalan sananın; −13, 4x teriminin işaretini yanlış alıp 8 − 8 − 8 − 5 yapanın sonucudur. 4 ise uzun bölmede bölümün (x<sup>2</sup> + 4) sabit terimini kalanla karıştıranın bulduğudur.</p></div></li>
+
+<li data-c="D" data-k="mat-41"><p class="q">x<sup>2</sup> − 6x + m = 0 denkleminin eşit (çakışık) iki kökü olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>−9</li><li>3</li><li>6</li><li>9</li><li>36</li></ul>
+<div class="coz"><p>Çakışık kök için diskriminant sıfır olmalıdır: Δ = b<sup>2</sup> − 4ac = 36 − 4m = 0, m = 9. Kontrol: x<sup>2</sup> − 6x + 9 = (x − 3)<sup>2</sup>, tek kök x = 3. 36, b<sup>2</sup>'yi doğrudan m sanıp 4'e bölmeyi unutanın; −9, işareti ters çevirenin; 6, b'nin kendisini alanın; 3, kökün değerini m sananın sonucudur.</p></div></li>
+
+<li data-c="E" data-k="mat-41"><p class="q">x<sup>2</sup> + 4x + k = 0 denkleminin gerçek kökü olmadığına göre k'nin alabileceği en küçük tam sayı değeri kaçtır?</p>
+<ul class="sec"><li>−5</li><li>−4</li><li>3</li><li>4</li><li>5</li></ul>
+<div class="coz"><p>Gerçek kök yoksa Δ &lt; 0: 16 − 4k &lt; 0, 16 &lt; 4k, k &gt; 4. 4'ten büyük en küçük tam sayı 5'tir. 4, eşitsizliği ≥ sanıp sınır değeri alanın sonucudur; k = 4'te Δ = 0 olur ve çakışık bir gerçek kök vardır. 3, eşitsizliğin yönünü ters çevirip k &lt; 4'ün en büyük tam sayısını alanın; −4 ve −5, diskriminantta 4ac'nin işaretini yanlış alıp 16 + 4k &lt; 0 kuranın bulduğu değerlerdir.</p></div></li>
+
+<li data-c="B" data-k="mat-42"><p class="q">x<sup>2</sup> − 5x + 3 = 0 denkleminin kökleri x<sub>1</sub> ve x<sub>2</sub> olduğuna göre x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> kaçtır?</p>
+<ul class="sec"><li>13</li><li>19</li><li>22</li><li>28</li><li>31</li></ul>
+<div class="coz"><p>Kök-katsayı bağıntıları: x<sub>1</sub> + x<sub>2</sub> = 5, x<sub>1</sub> · x<sub>2</sub> = 3. Parça 15'teki özdeşlik: x<sub>1</sub><sup>2</sup> + x<sub>2</sub><sup>2</sup> = (x<sub>1</sub> + x<sub>2</sub>)<sup>2</sup> − 2x<sub>1</sub>x<sub>2</sub> = 25 − 6 = 19. 31, 2ab'yi çıkarmak yerine ekleyenin; 22, 2 çarpanını unutup yalnızca 3 çıkaranın; 28, hem 2'yi unutup hem ekleyenin sonucudur. 13, (a − b)<sup>2</sup> = (a + b)<sup>2</sup> − 4ab özdeşliğini yanlış yerde kullananın bulduğudur (25 − 12).</p></div></li>
+
+<li data-c="A" data-k="mat-42"><p class="q">Kökleri 3 ve −5 olan, baş katsayısı 1 olan ikinci dereceden denklem aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>x<sup>2</sup> + 2x − 15 = 0</li><li>x<sup>2</sup> − 2x − 15 = 0</li><li>x<sup>2</sup> + 2x + 15 = 0</li><li>x<sup>2</sup> − 2x + 15 = 0</li><li>x<sup>2</sup> + 8x − 15 = 0</li></ul>
+<div class="coz"><p>Kökleri verilen denklem x<sup>2</sup> − (toplam)x + (çarpım) = 0 biçimindedir. Toplam 3 + (−5) = −2, çarpım 3 · (−5) = −15: x<sup>2</sup> − (−2)x − 15 = x<sup>2</sup> + 2x − 15 = 0. Kontrol: (x − 3)(x + 5) = x<sup>2</sup> + 2x − 15. B, toplamın önündeki eksiyi unutanın; C ve D çarpımın işaretini yanlış alanın; E, toplam yerine farkı (3 − (−5) = 8) kullananın sonucudur.</p></div></li>
+
+<li data-c="A" data-k="mat-43"><p class="q">0, 1, 2, 3, 4, 5 rakamları kullanılarak rakamları birbirinden farklı üç basamaklı kaç doğal sayı yazılabilir?</p>
+<ul class="sec"><li>100</li><li>120</li><li>125</li><li>180</li><li>216</li></ul>
+<div class="coz"><p>Kısıtlı kutuyu önce doldur: yüzler basamağı 0 olamaz, 5 seçenek. Onlar basamağına kalan 5 rakam (artık 0 da kullanılabilir), birler basamağına kalan 4 rakam: 5 · 5 · 4 = 100. 120, sıfırın başa gelebildiğini varsayıp 6 · 5 · 4 yapanın; 180, rakamların tekrar edebildiğini sanıp 5 · 6 · 6 yapanın; 216, hem sıfır kısıtını hem farklılık koşulunu unutanın (6<sup>3</sup>) sonucudur. 125, sıfırı hiç kullanmayıp kalan beş rakamı tekrarlı kullananın bulduğudur.</p></div></li>
+
+<li data-c="E" data-k="mat-43"><p class="q">4 farklı gömleği, 3 farklı pantolonu ve 2 farklı ceketi olan biri bir gömlek ve bir pantolon giyecek, ceketlerinden birini de giyebilir ya da hiç ceket giymeyebilir. Bu kişi kaç farklı biçimde giyinebilir?</p>
+<ul class="sec"><li>9</li><li>10</li><li>12</li><li>24</li><li>36</li></ul>
+<div class="coz"><p>Ceket adımında 3 seçenek vardır: birinci ceket, ikinci ceket ya da ceketsiz. Adımlar art arda olduğu için çarpılır: 4 · 3 · 3 = 36. 24, ceketi zorunlu sayıp "giymeme" seçeneğini unutanın (4 · 3 · 2); 12, ceketi hiç hesaba katmayanın; 9, çarpma yerine toplama kuralını kullananın (4 + 3 + 2) sonucudur. 10, toplamaya bir de "ceketsiz" seçeneğini ekleyenin bulduğudur; "ve" ile bağlı adımlarda çarpılır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#mat-43">← Önceki parça</a>
+  <button class="btn ok" data-done="mat-44">Bu bölümü okudum</button>
+  <a class="btn" href="#mat-45">Sonraki parça: kombinasyon</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"permütasyon konu anlatımı TYT P(n, r)"</li>
+  <li>"permütasyon yan yana olma olmama aralara yerleştirme soruları"</li>
+  <li>"tekrarlı permütasyon harflerle sözcük yazma rakamlarla sayı yazma"</li>
+  <li>"en kısa yol sayısı ızgara permütasyon"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam ve gösterimler 2018 Ortaöğretim Matematik Öğretim Programı'nın 10. sınıf "Sayma ve Olasılık" ünitesindeki yerleşik kullanıma göre yazıldı (P(n, r) gösterimi, "anlamlı ya da anlamsız sözcük" kalıbı); bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Python ile denetlenenler: metindeki bütün sayısal sonuçlar ve çözümlü örnek 1–8 (koşullu dizilişler, KALEM, ANKARA, KELEBEK, MATEMATİK, 0, 0, 1, 2, 2 sayıları, bayraklar, ızgara yolları, yuvarlak masa) bütün dizilişler tek tek üretilip sayılarak; P(n, r) tablosu; bire bir fonksiyon sayıları bütün fonksiyonlar üretilerek; 24 quiz sorusunun doğru cevapları ve çeldiricilerin gerçekten yanlış olduğu (a &lt; b &lt; 0 sorusunda 10 000 rastgele değerle de).</li>
+  <li><strong>Dairesel permütasyon:</strong> kapsam listesinde "2018 programında açık kazanım değil, kısa tutulur" notu var; bu yüzden metinde kısa tuttum ve "sınav kapsamında olmayabilir" diye işaretledim. Quizde dairesel soru yok.</li>
+  <li>Bazı kaynaklar P(n, r) yerine P<sub>r</sub><sup>n</sup>, <sub>n</sub>P<sub>r</sub> ya da "n'nin r'li permütasyonu" için başka gösterimler kullanır; anlamı aynıdır. Tekrarlı permütasyonun formülü için de "tekrarlı permütasyon" ve "özdeş nesnelerin permütasyonu" adlarının ikisi de görülür.</li>
+  <li>"Üç kız yan yana gelmesin" ile "hiçbir iki kız yan yana gelmesin" ayrımı soru yazımına bağlıdır; sınav sorularında anlam her zaman bu kadar açık yazılmayabilir. Belirsiz bir kök görürsen "hiçbir ikisi" okuması daha yaygındır, ama bunu bir kaynakla doğrulamadım.</li>
+  <li>Tekrar soruları Parça 4, 8, 12, 16, 20, 24, 28, 32, 36, 40'tan birer, Parça 41, 42, 43'ten ikişer tanedir (toplam 16 sınırı). Parça 35–43'ün metinleri bu parça yazılırken depoda yoktu; o parçalardan gelen tekrar sorularını kapsam listesindeki konulara ve terimlere göre yazdım, metinleriyle karşılaştıramadım.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

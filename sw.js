@@ -1,6 +1,6 @@
 /* 275 — service worker. Kabuk önbellekte, çevrimdışı açılır.
    Değişiklik yayınlarken SURUM'u artır. */
-const SURUM = "275-v23";
+const SURUM = "275-v24";
 const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./esitle.js","./kasa.js","./bloklar.js","./spor.js","./okuma.js","./katalog.js","./manifest.webmanifest","./fonts/arsiv.css",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-64.png"];
 
@@ -18,8 +18,18 @@ self.addEventListener("fetch", e => {
     e.respondWith(fetch(e.request).then(r => { if (r.ok || r.type === "opaque") { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); } return r; }).catch(() => caches.match(e.request)));
     return;
   }
-  // kabuk: önce ağ (güncel kalsın), düşerse önbellek
-  e.respondWith(fetch(e.request).then(r => { if (r.ok || r.type === "opaque") { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); } return r; }).catch(() => caches.match(e.request).then(m => m || caches.match("./index.html"))));
+  // Önce ağ (güncel kalsın); ağ yavaşsa (zayıf mobil bağlantı) bir süre sonra önbellekten ver, ağdan gelen yine önbelleğe yazılır.
+  // Sayfa dışındaki dosyalara (js, css) asla index.html verme: yanlış dosya betiği bozar, ekran boş kalır.
+  const sayfa = e.request.mode === "navigate";
+  const ag = fetch(e.request).then(r => { if (r.ok || r.type === "opaque") { const c = r.clone(); caches.open(SURUM).then(x => x.put(e.request, c)); } return r; });
+  const sure = sayfa ? 4000 : 6000;
+  e.respondWith(new Promise(cevap => {
+    let bitti = false;
+    const onbellek = () => caches.match(e.request).then(m => m || (sayfa ? caches.match("./index.html") : null));
+    const t = setTimeout(() => onbellek().then(m => { if (m && !bitti) { bitti = true; cevap(m); } }), sure);
+    ag.then(r => { clearTimeout(t); if (!bitti) { bitti = true; cevap(r); } })
+      .catch(() => { clearTimeout(t); onbellek().then(m => { if (!bitti) { bitti = true; cevap(m || Response.error()); } }); });
+  }));
 });
 
 /* ---- anlık bildirim ---- */

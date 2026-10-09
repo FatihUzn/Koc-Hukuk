@@ -1605,7 +1605,9 @@ function okunduYap(p,v){ var d=yerelOku("dni-done",{})||{}; if(v) d[p]=anahtar(b
 var dersOnYuklenen={};
 function dersOnYukle(liste){
   if(!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
-  liste.forEach(function(o){ var u="arsiv/ders-"+parcaDers(o.p)+".html"; if(dersOnYuklenen[u]) return; dersOnYuklenen[u]=1; try{ fetch(u).catch(function(){}); }catch(e){} });
+  // Yalnızca önbellekte olmayan sayfaları indir (ders sayfaları büyük; her açılışta yeniden indirmek mobil veriyi ve hızı yer).
+  liste.forEach(function(o){ var u="arsiv/ders-"+parcaDers(o.p)+".html"; if(dersOnYuklenen[u]) return; dersOnYuklenen[u]=1;
+    try{ (window.caches ? caches.match(u) : Promise.resolve(null)).then(function(m){ if(!m) fetch(u).catch(function(){}); }).catch(function(){}); }catch(e){} });
 }
 function tikDugme(p, ok){
   var b=el("button","dtik"); b.type="button"; b.setAttribute("aria-pressed",ok?"true":"false"); b.setAttribute("aria-label",ok?"Okundu, geri al":"Okudum");
@@ -1724,8 +1726,21 @@ function okKitap(kapak, ad, alt, opt){
   if(opt.tik===undefined && opt.click) a.addEventListener("click",opt.click); else if(opt.click) a.addEventListener("click",opt.click);
   return a;
 }
+var katalogDenendi=false;
+function okuHata(metin){
+  var rl=$("okRaflar"); if(!rl) return; rl.innerHTML="";
+  var k=el("div","okhata"); k.appendChild(el("b",null,metin));
+  var b=el("button","btn sm","Yenile"); b.type="button"; b.addEventListener("click",function(){ location.reload(); });
+  k.appendChild(b); rl.appendChild(k);
+}
 function okuAnaCiz(){
-  if(typeof KATALOG==="undefined") return;
+  if(typeof KATALOG==="undefined"){
+    // katalog.js gelmemiş (zayıf bağlantı ya da güncelleme arası): bir kez yeniden yüklemeyi dene.
+    $("okDevamKutu").hidden=true; $("okYakin").hidden=true;
+    okuHata("Liste yüklenemedi. İnternet bağlantını kontrol edip yenile.");
+    if(!katalogDenendi){ katalogDenendi=true; var sc=document.createElement("script"); sc.src="katalog.js?t="+Date.now(); sc.onload=function(){ okuAnaCiz(); }; document.body.appendChild(sc); }
+    return;
+  }
   var done=yerelOku("dni-done",{})||{}, kitap=okuSeg==="kitap";
   document.querySelectorAll("#okSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-k")===okuSeg?"true":"false"); });
   // TYT / AYT durumu
@@ -1817,6 +1832,10 @@ function okuDosyaCiz(id){
   ic.appendChild(li);
 }
 function cizDers(){
+  try{ cizDersIc(); }
+  catch(e){ try{ $("okuAna").hidden=false; $("okuDetay").hidden=true; $("okuDosya").hidden=true; okuHata("Oku ekranında bir hata oldu: "+(e&&e.message||e)+". Yenilemeyi dene; sürerse bu yazının ekran görüntüsünü at."); }catch(_){} if(window.console) console.error(e); }
+}
+function cizDersIc(){
   if(!$("okuAna")) return;
   var dosya = okuGor.indexOf("d:")===0 && typeof KATALOG!=="undefined" && KATALOG.dosyalar[okuGor.slice(2)] ? okuGor.slice(2) : null;
   var detay = !dosya && (okuGor==="tyt" || okuGor==="ayt") && okumaVar();

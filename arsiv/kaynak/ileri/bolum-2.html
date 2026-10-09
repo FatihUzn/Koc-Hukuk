@@ -1,0 +1,607 @@
+<article class="chapter ders" id="c-ileri-2">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 2 · Bileşke ve ters fonksiyonun ileri kullanımı</div>
+<h1>Bileşke ve tersin ileri kullanımı: zincirler, döngüler, parçalı kurallar ve daraltılmış tanım kümesi</h1>
+<p class="time">Okuma ve çözme yaklaşık 45 dakika · Yazım 9 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Hesap makinende "1 bölü (1 − x)" işini yapan bir tuş olsun. 2 yazıp bir kez basınca −1 çıkıyor, bir daha basınca <span class="kes"><span>1</span><span>2</span></span>, bir daha basınca yeniden 2. Bu tuşa 101 kez basarsan ekranda ne görürsün? Bir de kare alma tuşunu düşün: 3'ün karesi 9, −3'ün karesi de 9. Ekranda 9 görünce "geri al" tuşu hangisini vermeli? Birinci soru tekrarlanan bileşkenin, ikincisi bire bir olmayan bir fonksiyonun tersini kurmanın sorusudur.</p></div>
+<p class="hint">Önce bilmen gerekenler: Matematik temel dersinden Parça 36 (fonksiyon, f(x + 1) verilip f(x) bulma), Parça 37 (bire bir, örten, birim ve doğrusal fonksiyon), Parça 38 (bileşke ve ters fonksiyon; bu parçanın temeli), Parça 15 (özdeşlikler), Parça 19 (eşitsizlik ve aralıklar); bu dersin Parça 1'i (grafik okuma, artan-azalan fonksiyon). Yanında kâğıt kalem olsun; her sonucu bir sayı koyarak denetle.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Temel derste bileşkeyi "iki makineyi art arda bağlamak", tersi de "yapılanı geri almak" diye kurdun. AYT bu iki fikri yeniden tanımlatmaz; onları birleştirip daha uzun zincirlerde kullanmanı ister. Soru kalıpları şunlardır: "(f∘g∘h)(x) = … ve f, h verildiğine göre g(x) nedir?", "f(2x + 1) = 6x − 4 olduğuna göre f<sup>−1</sup>(11) kaçtır?", "f∘f∘…∘f (101 tane) ifadesinin 2'deki değeri kaçtır?", "parçalı tanımlı f fonksiyonunun tersi hangisidir?", "grafiği verilen f için (f∘f)(x) = 0 denkleminin kaç kökü vardır?", "f ile f<sup>−1</sup>'in grafikleri hangi noktada kesişir?", "f∘g = g∘f ise m kaçtır?" ve fiyat-vergi ya da birim dönüştürme gibi bir durumu bileşkeyle kurdurup geri çözdüren modelleme soruları.</p>
+
+<p>Bu kalıpların hepsi üç alışkanlığa dayanır. Birincisi, her bileşkeyi iç içe parantezle yazıp <strong>içten dışa</strong> çalışmak. İkincisi, f(a) = b ile f<sup>−1</sup>(b) = a'nın aynı bilgi olduğunu görüp, tersi çoğu zaman <strong>hiç bulmadan</strong> kullanmak. Üçüncüsü, her adımda <strong>tanım kümesine</strong> bakmak: bileşke nerede tanımlı, parçalı fonksiyonun hangi parçası çalışıyor, ters alınacak fonksiyon nerede bire bir? Bu parçadaki yeni bilgilerin çoğu, üçüncü alışkanlığın sonuçlarıdır.</p>
+
+<h2 class="s">Temel dersten kısa hatırlatma: elindeki araçlar</h2>
+
+<p>Bu parçanın her sorusu, temel dersin Parça 38'inde kurduğun aşağıdaki araçlarla çözülür. Yeni bir formül öğrenmeyeceğiz; bu araçları yeni durumlara uygulayacağız. Tabloyu bir kez dikkatle oku, sonra her bölümde hangisinin işe yaradığını fark etmeye çalış.</p>
+
+<div class="tablo"><table>
+<tr><th>Araç</th><th>Ne söyler?</th><th>Nerede işe yarar?</th></tr>
+<tr><td>(f∘g)(x) = f(g(x))</td><td>Önce g, sonra f çalışır; içten dışa hesaplanır.</td><td>Her bileşke sorusunun ilk satırı</td></tr>
+<tr><td>(f∘g)∘h = f∘(g∘h), ama genelde f∘g ≠ g∘f</td><td>Parantez önemsiz, sıra önemli.</td><td>Uzun zincirler, "sandviç" yöntemi</td></tr>
+<tr><td>f∘I = I∘f = f</td><td>Birim fonksiyon I(x) = x, bileşkede etkisizdir.</td><td>Ters ile sadeleştirme</td></tr>
+<tr><td>f(a) = b ⇔ f<sup>−1</sup>(b) = a</td><td>Tersin değeri, "hangi girdi bu çıktıyı verir?" sorusunun cevabıdır.</td><td>Tersi bulmadan değer hesabı, ters içeren denklemler</td></tr>
+<tr><td>f∘f<sup>−1</sup> = f<sup>−1</sup>∘f = I</td><td>Bir fonksiyon ile tersi birbirini yok eder.</td><td>Bilinmeyen fonksiyonu yalnız bırakma</td></tr>
+<tr><td>(f∘g)<sup>−1</sup> = g<sup>−1</sup>∘f<sup>−1</sup></td><td>Son yapılan ilk geri alınır.</td><td>Modelleme, ters içeren denklemler</td></tr>
+<tr><td><span class="kes"><span>ax + b</span><span>cx + d</span></span> → <span class="kes"><span>−dx + b</span><span>cx − a</span></span></td><td>Kesirli doğrusal fonksiyonun tersi: a ile d yer ve işaret değiştirir.</td><td>Tersi kendisine eşit fonksiyonlar</td></tr>
+<tr><td>(a, b) f'de ise (b, a) f<sup>−1</sup>'de</td><td>Grafikler y = x doğrusuna göre simetriktir.</td><td>Grafikten ters okuma, kesişim noktaları</td></tr>
+</table></div>
+
+<h2 class="s">Bileşkenin tanım kümesi</h2>
+
+<p>Bir makine zinciri düşün: g'nin çıktısı borudan f'ye akıyor. Bir x sayısının bu zincirden geçebilmesi için iki engeli aşması gerekir. Önce g'ye girebilmelidir: x, g'nin tanım kümesinde olmalı. Sonra g'nin ürettiği sayı f'ye girebilmelidir: g(x), f'nin tanım kümesinde olmalı. İkinci engel unutulursa f'ye, işleyemeyeceği bir sayı verilmiş olur; örneğin karekökün içine negatif sayı.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>(f∘g)(x) yalnızca şu iki koşulun ikisini birden sağlayan x'ler için tanımlıdır: <strong>x, g'nin tanım kümesindedir</strong> ve <strong>g(x), f'nin tanım kümesindedir</strong>. Bileşkenin tanım kümesi, sadeleştirilmiş son kurala bakılarak değil, bu iki koşul ayrı ayrı yazılarak bulunur.</p></div>
+
+<p>Neden sadeleşmiş kurala bakılmaz? Çünkü sadeleşme, aradaki engeli gözden saklayabilir. f(x) = x<sup>2</sup> ve g(x) = √x olsun. (f∘g)(x) = (√x)<sup>2</sup> = x yazınca her gerçek sayı için tanımlıymış gibi görünür. Ama x = −4 zincire hiç giremez, çünkü önce g çalışır ve √(−4) gerçek sayı değildir. Doğru tanım kümesi x ≥ 0'dır; "= x" yazısı yalnızca bu aralıkta geçerlidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = √(x − 2) ve g(x) = 6 − x<sup>2</sup> olduğuna göre (f∘g)(x) ve (g∘f)(x) fonksiyonlarının en geniş tanım kümelerini bulunuz.</p>
+<p><strong>Adım 1.</strong> (f∘g) için birinci koşul: g her gerçek sayıda tanımlı, x üzerinde kısıt yok.</p>
+<span class="mat">x ∈ R <span class="g">(g bir polinom)</span></span>
+<p><strong>Adım 2.</strong> İkinci koşul: g(x), f'nin tanım kümesinde olmalı; f'de kök içi negatif olamaz.</p>
+<span class="mat">g(x) − 2 ≥ 0 <span class="g">(f'nin kök içi)</span></span>
+<p><strong>Adım 3.</strong> g(x) yerine kuralını yazarım.</p>
+<span class="mat">6 − x<sup>2</sup> − 2 ≥ 0 <span class="g">(g(x) = 6 − x<sup>2</sup>)</span></span>
+<p><strong>Adım 4.</strong> Sadeleştiririm.</p>
+<span class="mat">x<sup>2</sup> ≤ 4 <span class="g">(4 − x<sup>2</sup> ≥ 0)</span></span>
+<p><strong>Adım 5.</strong> Karesi 4'ü geçmeyen sayılar −2 ile 2 arasındadır.</p>
+<span class="mat">−2 ≤ x ≤ 2 <span class="g">(|x| ≤ 2)</span></span>
+<p><strong>Adım 6.</strong> (g∘f) için birinci koşul: x, f'ye girebilmeli.</p>
+<span class="mat">x − 2 ≥ 0 ⇒ x ≥ 2 <span class="g">(önce f çalışır)</span></span>
+<p><strong>Adım 7.</strong> İkinci koşul: f'nin çıktısı g'ye girebilmeli; g her yerde tanımlı olduğundan yeni kısıt gelmez. Kuralı yazarım.</p>
+<span class="mat">(g∘f)(x) = 6 − (√(x − 2))<sup>2</sup> = 8 − x <span class="g">(x ≥ 2 iken)</span></span>
+<p><strong>Denetim.</strong> x = 2 için (f∘g)(2) = f(2) = 0, tanımlı. x = 3 için g(3) = −3 ve f(−3) = √(−5) tanımsız; aralığın dışında olduğu için doğru. (g∘f)(6) = g(2) = 2 ve 8 − 6 = 2.</p>
+<p><strong>Sonuç:</strong> (f∘g)'nin tanım kümesi [−2, 2]; (g∘f)'nin tanım kümesi [2, ∞). (g∘f)(x) = 8 − x kuralı her yerde tanımlı gibi görünse de yalnızca x ≥ 2 için geçerlidir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Bileşkenin tanım kümesini son kurala bakarak yazmak.</strong> Örnek 1'de (g∘f)(x) = 8 − x bulunca "tanım kümesi R" demek yanlıştır; x = 0 zincirin ilk makinesi f'ye giremez. Ayrıca yalnızca dıştaki fonksiyonun tanım kümesini almak da yanlıştır: (f∘g) için "f'nin tanım kümesi x ≥ 2" deyip [2, ∞) yazan, koşulun x'e değil g(x)'e konduğunu kaçırmıştır.</p></div>
+
+<h2 class="s">Üç ve daha çok fonksiyonun bileşkesi</h2>
+
+<p>Zincir uzadığında yöntem değişmez: (f∘g∘h)(x) = f(g(h(x))). x'e en yakın makine (h) önce çalışır, en soldaki (f) en son. Birleşme özelliği sayesinde parantezleri nereye koyduğun önemli değildir; değişme özelliği olmadığından sırayı ise asla bozamazsın. Değer soruluyorsa sayıyla içten dışa yürü: f(x) = 2x + 1, g(x) = x<sup>2</sup>, h(x) = x − 3 için (f∘g∘h)(5) = f(g(2)) = f(4) = 9.</p>
+
+<p>Asıl yeni soru tipi, zincirin <strong>ortasındaki</strong> fonksiyonun bilinmemesidir. Burada ters fonksiyon, sayılardaki bölmenin yerini tutar. 3 · a · 5 = 45 eşitliğinde a'yı yalnız bırakmak için iki yanı 3'e ve 5'e bölersin. Bileşkede bölme yoktur, ama "etkisini yok etme" vardır: f<sup>−1</sup>∘f = I ve I etkisizdir. Bir farkla: değişme özelliği olmadığı için f<sup>−1</sup>'i f'nin durduğu tarafa, yani <strong>sola</strong>, h<sup>−1</sup>'i de h'nin durduğu tarafa, yani <strong>sağa</strong> eklemen gerekir.</p>
+
+<div class="kural"><span class="et">Yöntem: sandviç</span>
+<p>f∘g∘h = k ve f, h bilinip g aranıyorsa iki yanı soldan f<sup>−1</sup> ile, sağdan h<sup>−1</sup> ile bileşke yaparsın: f<sup>−1</sup>∘f∘g∘h∘h<sup>−1</sup> = f<sup>−1</sup>∘k∘h<sup>−1</sup>. Sol yanda f<sup>−1</sup>∘f = I ve h∘h<sup>−1</sup> = I yok olur: <strong>g = f<sup>−1</sup>∘k∘h<sup>−1</sup></strong>. Her ters, kendi fonksiyonunun bulunduğu tarafa eklenir; yer değiştirirse sadeleşme olmaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> f(x) = 2x + 1, h(x) = x − 3 ve (f∘g∘h)(x) = 6x − 5 olduğuna göre g(x) nedir?</p>
+<p><strong>Adım 1.</strong> Zinciri iç içe yazarım.</p>
+<span class="mat">f(g(h(x))) = 6x − 5 <span class="g">(içten dışa)</span></span>
+<p><strong>Adım 2.</strong> En dıştaki f'nin kuralını uygularım: f, kendisine geleni 2 ile çarpıp 1 ekler.</p>
+<span class="mat">2 · g(x − 3) + 1 = 6x − 5 <span class="g">(h(x) = x − 3)</span></span>
+<p><strong>Adım 3.</strong> g'li terimi yalnız bırakırım.</p>
+<span class="mat">g(x − 3) = 3x − 3 <span class="g">(1'i karşıya at, 2'ye böl)</span></span>
+<p><strong>Adım 4.</strong> İçerideki ifadeye t derim ve x'i t cinsinden yazarım.</p>
+<span class="mat">t = x − 3 ⇒ x = t + 3 <span class="g">(değişken değiştirme)</span></span>
+<p><strong>Adım 5.</strong> Yerine koyarım.</p>
+<span class="mat">g(t) = 3(t + 3) − 3 = 3t + 6 <span class="g">(9 − 3 = 6)</span></span>
+<p><strong>Adım 6 (ikinci yol, sandviç).</strong> f<sup>−1</sup>(x) = <span class="kes"><span>x − 1</span><span>2</span></span> ve h<sup>−1</sup>(x) = x + 3. Önce sağdan h<sup>−1</sup>: k(h<sup>−1</sup>(x)) = 6(x + 3) − 5 = 6x + 13. Sonra soldan f<sup>−1</sup>:</p>
+<span class="mat">g(x) = <span class="kes"><span>6x + 13 − 1</span><span>2</span></span> = 3x + 6 <span class="g">(iki yol aynı sonucu verdi)</span></span>
+<p><strong>Denetim.</strong> x = 3: h(3) = 0, g(0) = 6, f(6) = 13; 6 · 3 − 5 = 13. Tuttu.</p>
+<p><strong>Sonuç:</strong> g(x) = 3x + 6.</p></div>
+
+<h2 class="s">f(g(x)) = h(x) eşitliğinden f ya da g'yi bulmak</h2>
+
+<p>Bileşkeden parça bulmayı temel derste gördün. Burada iki yolu yan yana koyup ne zaman hangisinin daha kısa olduğunu göreceğiz; çünkü AYT soruları çoğu zaman yollardan birini uzun, öbürünü kısa olacak biçimde kurar.</p>
+
+<h3>Bilinmeyen dışta: f(g(x)) = h(x), f aranıyor</h3>
+
+<p><strong>Değişken değiştirme yolu.</strong> İçerideki g(x)'e t de, x'i t cinsinden yaz, sağ tarafa koy. f(3x − 2) = 6x + 1 için t = 3x − 2, x = <span class="kes"><span>t + 2</span><span>3</span></span> ve f(t) = 2(t + 2) + 1 = 2t + 5.</p>
+
+<p><strong>Ters fonksiyon yolu.</strong> f∘g = h eşitliğinin iki yanını sağdan g<sup>−1</sup> ile bileşke yaparsan f = h∘g<sup>−1</sup> olur. Burada g(x) = 3x − 2, g<sup>−1</sup>(x) = <span class="kes"><span>x + 2</span><span>3</span></span>; h'nin x'ine bunu koyunca yine 2x + 5 çıkar. Dikkat edersen iki yol aslında aynı işlemdir: "x'i t cinsinden yazmak", g'nin tersini bulmaktır. Ters fonksiyon gözüyle bakmanın yararı, ne yaptığını bir formül olarak görmendir: dıştaki bilinmiyorsa <strong>sağdan</strong> g<sup>−1</sup>.</p>
+
+<h3>Bilinmeyen içte: f(g(x)) = h(x), g aranıyor</h3>
+
+<p>Bu kez iki yanı <strong>soldan</strong> f<sup>−1</sup> ile bileşke yaparsın: g = f<sup>−1</sup>∘h. Öbür yol, f'nin kuralına g(x) koyup g(x)'i yalnız bırakmaktır. f basitse ikisi de kısadır; ama f'nin tersi kolay, kuralı karışıksa ters yolu belirgin biçimde kısalır. f(x) = x<sup>3</sup> + 1 ve f(g(x)) = 8x<sup>3</sup> + 12x<sup>2</sup> + 6x + 2 olsun. Yerleştirme yolu [g(x)]<sup>3</sup> = 8x<sup>3</sup> + 12x<sup>2</sup> + 6x + 1 verir ve sağ tarafın bir küp olduğunu görmen gerekir. Ters yolu aynı yere daha bilinçli götürür: f<sup>−1</sup>(x) = ∛(x − 1), dolayısıyla g(x) = ∛(8x<sup>3</sup> + 12x<sup>2</sup> + 6x + 1) = ∛((2x + 1)<sup>3</sup>) = 2x + 1. Küp açılımı (a + b)<sup>3</sup> = a<sup>3</sup> + 3a<sup>2</sup>b + 3ab<sup>2</sup> + b<sup>3</sup>, temel dersin Parça 15'inden.</p>
+
+<p><strong>Kontrol yolu.</strong> Bulduğun parçayı zincire geri koy ve x = 0 ile x = 1 için iki tarafın eşit çıktığını gör. g(x) = 2x + 1 için x = 1: g(1) = 3, f(3) = 28; sağ taraf 8 + 12 + 6 + 2 = 28.</p>
+
+<h2 class="s">f(ax + b) verilip f<sup>−1</sup> istenince</h2>
+
+<p>"f(2x + 1) = 6x − 4 olduğuna göre f<sup>−1</sup>(11) kaçtır?" sorusunda çoğu kişi önce f'yi bulur, sonra tersini alır, sonra 11'i koyar: üç iş. Oysa verilen eşitliği bir cümle olarak oku: "f, 2x + 1 sayısını 6x − 4 sayısına götürür." Ters fonksiyon tam tersini yapar: 6x − 4 sayısını 2x + 1 sayısına götürür. Tek satırda f<sup>−1</sup>(6x − 4) = 2x + 1.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>f(A(x)) = B(x) ise f<sup>−1</sup>(B(x)) = A(x)'tir.</strong> Nedeni f(a) = b ⇔ f<sup>−1</sup>(b) = a denkliğidir; burada a'nın yerinde A(x), b'nin yerinde B(x) vardır. f<sup>−1</sup>'in bir değeri sorulursa B(x)'i o değere eşitleyip x'i bulur, A(x)'e koyarsın.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> f(2x + 1) = 6x − 4 olduğuna göre f<sup>−1</sup>(11) kaçtır? f<sup>−1</sup>(x) nedir?</p>
+<p><strong>Adım 1.</strong> Eşitliği ters yönde yazarım.</p>
+<span class="mat">f<sup>−1</sup>(6x − 4) = 2x + 1 <span class="g">(f(A) = B ⇔ f<sup>−1</sup>(B) = A)</span></span>
+<p><strong>Adım 2.</strong> Tersin içine 11 girmesi için 6x − 4 = 11 olmalı.</p>
+<span class="mat">6x = 15 ⇒ x = <span class="kes"><span>5</span><span>2</span></span> <span class="g">(4'ü karşıya at, 6'ya böl)</span></span>
+<p><strong>Adım 3.</strong> Bu x'i sağ tarafa koyarım.</p>
+<span class="mat">f<sup>−1</sup>(11) = 2 · <span class="kes"><span>5</span><span>2</span></span> + 1 = 6 <span class="g">(A(x) = 2x + 1)</span></span>
+<p><strong>Adım 4.</strong> Kuralı istersem f<sup>−1</sup>'in içine t derim.</p>
+<span class="mat">t = 6x − 4 ⇒ x = <span class="kes"><span>t + 4</span><span>6</span></span> <span class="g">(x'i yalnız bırak)</span></span>
+<p><strong>Adım 5.</strong> Sağ tarafa koyar, sadeleştiririm.</p>
+<span class="mat">f<sup>−1</sup>(t) = <span class="kes"><span>t + 4</span><span>3</span></span> + 1 = <span class="kes"><span>t + 7</span><span>3</span></span> <span class="g">(2 · <span class="kes"><span>t + 4</span><span>6</span></span> = <span class="kes"><span>t + 4</span><span>3</span></span>)</span></span>
+<p><strong>Denetim (kontrol yolu).</strong> f<sup>−1</sup>(11) = <span class="kes"><span>18</span><span>3</span></span> = 6, Adım 3 ile aynı. Ayrıca f'nin kendisi f(t) = 3t − 7'dir (t = 2x + 1 koyarak bulunur) ve f(6) = 11. Tuttu.</p>
+<p><strong>Sonuç:</strong> f<sup>−1</sup>(11) = 6 ve f<sup>−1</sup>(x) = <span class="kes"><span>x + 7</span><span>3</span></span>.</p></div>
+
+<p><strong>Hızlı yol.</strong> Sadece değer soruluyorsa Adım 2 ve 3 yeter; f'yi de f<sup>−1</sup>'i de yazmazsın. Bu soruda en sık yapılan hata, 2x + 1 = 11 deyip x = 5 bulmaktır: bu, f(11) değil, hiçbir şey değildir. 11, tersin <em>içine</em> giren sayıdır; tersin içinde 6x − 4 vardır.</p>
+
+<h2 class="s">Ters fonksiyon içeren denklemler</h2>
+
+<p>İçinde f<sup>−1</sup> geçen bir denklemle karşılaşınca tersi bulmak zorunda değilsin. f<sup>−1</sup>(A) = B ile A = f(B) aynı bilgidir; ters fonksiyonu denklemin öbür yanına f olarak taşıyabilirsin. f(x) = 2x + 3 iken f<sup>−1</sup>(5x + 1) = x + 2 denklemi, 5x + 1 = f(x + 2) = 2x + 7 demektir; buradan 3x = 6 ve x = 2. Denetim: f<sup>−1</sup>(11) = 4, çünkü f(4) = 11; sağ taraf da 2 + 2 = 4.</p>
+
+<p>Bileşkenin tersi geçen denklemlerde de aynı iki seçenek vardır. (f∘g)<sup>−1</sup>(a) = 2 eşitliği, (f∘g)(2) = a demektir; f(x) = 3x − 1 ve g(x) = x + 4 ise a = f(6) = 17. Denklemin iki yanında farklı ters fonksiyonlar varsa genellikle her birinin kuralını bulmak gerekir:</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> f(x) = 2x + 1 ve g(x) = x − 3 olduğuna göre (f∘g)<sup>−1</sup>(x) = f<sup>−1</sup>(x) + g(x) denklemini sağlayan x kaçtır?</p>
+<p><strong>Adım 1.</strong> Bileşkeyi bulurum.</p>
+<span class="mat">(f∘g)(x) = 2(x − 3) + 1 = 2x − 5 <span class="g">(g'yi f'nin x'ine koy)</span></span>
+<p><strong>Adım 2.</strong> Bileşkenin tersini doğrusal kısa yolla yazarım.</p>
+<span class="mat">(f∘g)<sup>−1</sup>(x) = <span class="kes"><span>x + 5</span><span>2</span></span> <span class="g">(ax + b → <span class="kes"><span>x − b</span><span>a</span></span>)</span></span>
+<p><strong>Adım 3.</strong> f'nin tersini yazarım.</p>
+<span class="mat">f<sup>−1</sup>(x) = <span class="kes"><span>x − 1</span><span>2</span></span> <span class="g">(aynı kısa yol)</span></span>
+<p><strong>Adım 4.</strong> Denklemi kurarım.</p>
+<span class="mat"><span class="kes"><span>x + 5</span><span>2</span></span> = <span class="kes"><span>x − 1</span><span>2</span></span> + x − 3 <span class="g">(verilen eşitlik)</span></span>
+<p><strong>Adım 5.</strong> İki yanı 2 ile çarparım.</p>
+<span class="mat">x + 5 = x − 1 + 2x − 6 <span class="g">(paydadan kurtul)</span></span>
+<p><strong>Adım 6.</strong> Toplar, x'i yalnız bırakırım.</p>
+<span class="mat">5 = 2x − 7 ⇒ x = 6 <span class="g">(x'ler sadeleşti)</span></span>
+<p><strong>Denetim.</strong> Sol: <span class="kes"><span>11</span><span>2</span></span>. Sağ: <span class="kes"><span>5</span><span>2</span></span> + 3 = <span class="kes"><span>11</span><span>2</span></span>. Tuttu. Ayrıca Adım 2'yi g<sup>−1</sup>∘f<sup>−1</sup> ile denetleyebilirsin: f<sup>−1</sup>(x) + 3 = <span class="kes"><span>x + 5</span><span>2</span></span>.</p>
+<p><strong>Sonuç:</strong> x = 6.</p></div>
+
+<h2 class="s">Tekrarlı bileşke: örüntü ve döngü</h2>
+
+<p>Bir fonksiyonu kendisiyle art arda bileşke yapmak, aynı tuşa tekrar tekrar basmaktır. Bazı kaynaklar f∘f∘f'yi kısaca f<sup>3</sup> diye yazar; bu yazım [f(x)]<sup>3</sup> ile karışabileceği için biz açık yazacağız ve sınavda bu yazımı görürsen hangisinin kastedildiğini soru kökünden anlamaya çalışacaksın. Soru "100 kez" dediğinde 100 bileşke hesaplanmaz; ilk birkaç adımda bir <strong>örüntü</strong> ya da bir <strong>döngü</strong> aranır.</p>
+
+<h3>Doğrusal fonksiyonda kapalı formül</h3>
+
+<p>f(x) = x + 3 her basışta 3 ekler; n kez basınca x + 3n. f(x) = 2x her basışta ikiye katlar; n kez basınca 2<sup>n</sup>x. İkisinin karışımı f(x) = 2x + 1 biraz daha ilginçtir: (f∘f)(x) = 2(2x + 1) + 1 = 4x + 3, (f∘f∘f)(x) = 2(4x + 3) + 1 = 8x + 7. Katsayılar 2, 4, 8; sabitler 1, 3, 7, yani her seferinde katsayıdan bir eksik. Bunun nedeni şudur: f(x) + 1 = 2x + 2 = 2(x + 1). Yani f, "x + 1" niceliğini her basışta ikiye katlar. n basıştan sonra x + 1, 2<sup>n</sup>(x + 1) olur; bir çıkarınca 2<sup>n</sup>x + 2<sup>n</sup> − 1.</p>
+
+<h3>Kendisinin tersi olan fonksiyonlar: iki adımda başa dönmek</h3>
+
+<p>Bazı fonksiyonlarda f(f(x)) = x olur: tuşa iki kez basınca başladığın yere dönersin. f(x) = −x (işaret değiştir), f(x) = 10 − x (10'a tamamla), f(x) = <span class="kes"><span>1</span><span>x</span></span> (ters çevir) bunun örnekleridir. f∘f = I demek, f'nin kendi yaptığını geri aldığını, yani <strong>f<sup>−1</sup> = f</strong> olduğunu söyler. Böyle bir fonksiyonu n kez uyguladığında n çiftse x'e, tekse f(x)'e varırsın. Bu ailenin sınavda en sık görülen üyesi kesirli doğrusal biçimdir; ona aşağıda ayrı bir başlık açacağız.</p>
+
+<h3>Periyotlu bileşke: k adımda başa dönmek</h3>
+
+<p>Parçanın başındaki tuş f(x) = <span class="kes"><span>1</span><span>1 − x</span></span> idi. Kuralla hesaplayalım (x ≠ 0, x ≠ 1):</p>
+<span class="mat">(f∘f)(x) = <span class="kes"><span>1</span><span>1 − <span class="kes"><span>1</span><span>1 − x</span></span></span></span> = <span class="kes"><span>1 − x</span><span>−x</span></span> = <span class="kes"><span>x − 1</span><span>x</span></span> <span class="g">(paydayı 1 − x ile genişlet)</span></span>
+<span class="mat">(f∘f∘f)(x) = <span class="kes"><span>1</span><span>1 − <span class="kes"><span>x − 1</span><span>x</span></span></span></span> = <span class="kes"><span>1</span><span><span class="kes"><span>1</span><span>x</span></span></span></span> = x <span class="g">(üçüncü basışta başa dönüldü)</span></span>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Döngü şeması: f fonksiyonu 2 sayısını −1e, −1i 1/2ye, 1/2yi yeniden 2ye götürüyor; üç adımda başa dönülüyor">
+  <circle class="sv-a" cx="200" cy="50" r="26" />
+  <text class="sv-b" x="200" y="55" text-anchor="middle">2</text>
+  <circle class="sv-m" cx="320" cy="190" r="26" />
+  <text class="sv-b" x="320" y="195" text-anchor="middle">−1</text>
+  <circle class="sv-l" cx="80" cy="190" r="26" />
+  <text class="sv-b" x="80" y="195" text-anchor="middle">1/2</text>
+  <line class="sv-c" x1="220.2" y1="73.5" x2="293.3" y2="158.9" />
+  <polygon class="sv-l" points="299.8,166.5 289.9,161.8 296.7,155.9" />
+  <text class="sv-b" x="276.8" y="118.5" text-anchor="middle">f</text>
+  <line class="sv-c" x1="289" y1="190" x2="121" y2="190" />
+  <polygon class="sv-l" points="111,190 121,185.5 121,194.5" />
+  <text class="sv-b" x="200" y="213" text-anchor="middle">f</text>
+  <line class="sv-c" x1="100.2" y1="166.5" x2="173.3" y2="81.1" />
+  <polygon class="sv-l" points="179.8,73.5 176.7,84.1 169.9,78.2" />
+  <text class="sv-b" x="123.2" y="118.5" text-anchor="middle">f</text>
+  <text class="sv-b" x="200" y="140" text-anchor="middle">f∘f∘f = I</text>
+  <text class="sv-s" x="200" y="160" text-anchor="middle">üç adımda başa döner</text>
+  <text class="sv-t" x="200" y="240" text-anchor="middle">f(2) = −1 · f(−1) = 1/2 · f(1/2) = 2</text>
+</svg>
+<figcaption>Tuşa her basış bir ok. 2'den başlayan yol üç okta başa dönüyor; bu yüzden f∘f∘f birim fonksiyondur ve 101 basış, 101'in 3'e bölümünden kalan kadar, yani 2 basış sonra varılan yere götürür.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural: döngü</span>
+<p>f∘f∘…∘f (k tane) = I oluyorsa, k'lık her grup birim fonksiyon gibi davranır ve yok olur (birleşme özelliği ve I'nın etkisizliği). Bu yüzden f'yi n kez uygulamak, <strong>n'nin k'ye bölümünden kalan kadar</strong> uygulamakla aynıdır. Kalan 0 ise sonuç x'tir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>f(x)</th><th>f∘f</th><th>f∘f∘f</th><th>n kez uygulanınca</th></tr>
+<tr><td>x + 3</td><td>x + 6</td><td>x + 9</td><td>x + 3n</td></tr>
+<tr><td>2x + 1</td><td>4x + 3</td><td>8x + 7</td><td>2<sup>n</sup>x + 2<sup>n</sup> − 1</td></tr>
+<tr><td>10 − x</td><td>x</td><td>10 − x</td><td>n çiftse x, tekse 10 − x</td></tr>
+<tr><td><span class="kes"><span>1</span><span>1 − x</span></span></td><td><span class="kes"><span>x − 1</span><span>x</span></span></td><td>x</td><td>n'nin 3'e bölümünden kalana bak</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f(x) = <span class="kes"><span>1</span><span>1 − x</span></span> olmak üzere, f'nin kendisiyle 101 kez bileşkesinin 2'deki değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Döngü uzunluğunu bulurum: yukarıda f∘f∘f = I çıktı.</p>
+<span class="mat">k = 3 <span class="g">(üç adımda başa dönüş)</span></span>
+<p><strong>Adım 2.</strong> 101'i 3'e bölerim.</p>
+<span class="mat">101 = 3 · 33 + 2 <span class="g">(kalan 2)</span></span>
+<p><strong>Adım 3.</strong> 33 tane üçlü grup I olur ve yok olur; geriye iki uygulama kalır.</p>
+<span class="mat">sonuç = (f∘f)(2) <span class="g">(kalan kadar uygula)</span></span>
+<p><strong>Adım 4.</strong> İçten dışa hesaplarım.</p>
+<span class="mat">f(2) = <span class="kes"><span>1</span><span>1 − 2</span></span> = −1 <span class="g">(birinci basış)</span></span>
+<span class="mat">f(−1) = <span class="kes"><span>1</span><span>1 + 1</span></span> = <span class="kes"><span>1</span><span>2</span></span> <span class="g">(ikinci basış)</span></span>
+<p><strong>Denetim.</strong> Kuralla: (f∘f)(2) = <span class="kes"><span>2 − 1</span><span>2</span></span> = <span class="kes"><span>1</span><span>2</span></span>. Aynı.</p>
+<p><strong>Sonuç:</strong> <span class="kes"><span>1</span><span>2</span></span>. Parçanın başındaki soruda tuşa 101 kez basınca ekranda <span class="kes"><span>1</span><span>2</span></span> görürsün.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"n tekse f, çiftse x" kuralını her fonksiyona uygulamak.</strong> Bu kural yalnızca f∘f = I olan fonksiyonlar içindir. Döngü uzunluğunu görmeden 101 tek diye f(2) = −1 yazan, yukarıdaki soruyu kaçırır. Önce f∘f'yi, gerekirse f∘f∘f'yi gerçekten hesapla; döngü uzunluğu ancak böyle ortaya çıkar. Kalanı bulurken de kalanın 0 çıkmasına dikkat et: kalan 0 ise sonuç f(x) değil, x'tir.</p></div>
+
+<h2 class="s">Tersi kendisine eşit kesirli fonksiyonlar</h2>
+
+<p>Temel derste f(x) = <span class="kes"><span>ax + b</span><span>cx + d</span></span> fonksiyonunun tersinin <span class="kes"><span>−dx + b</span><span>cx − a</span></span> olduğunu gördün: a ile d yer değiştirip işaret değiştirir, b ve c yerinde kalır. Tersin f'ye eşit olması için iki kesrin aynı olması gerekir. b ve c zaten aynı yerde; paydalarda cx + d ile cx − a'nın eşitliği d = −a demektir; paylarda ax ile −dx'in eşitliği de yine a = −d demektir. Tek koşul çıkar:</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>f(x) = <span class="kes"><span>ax + b</span><span>cx + d</span></span> (sabit olmayan) fonksiyonu için <strong>f<sup>−1</sup> = f ⇔ a + d = 0</strong>, yani fonksiyon <span class="kes"><span>ax + b</span><span>cx − a</span></span> biçimindedir. Böyle bir f için f∘f = I olur; grafiği y = x doğrusuna göre kendi kendisinin simetriğidir. c = 0 durumu, eğimi −1 olan doğruları (f(x) = −x + k) verir.</p></div>
+
+<p>Bir örnekle sına: f(x) = <span class="kes"><span>3x + 5</span><span>2x − 3</span></span>'te a = 3, d = −3, toplam 0. f(1) = <span class="kes"><span>8</span><span>−1</span></span> = −8 ve f(−8) = <span class="kes"><span>−24 + 5</span><span>−16 − 3</span></span> = <span class="kes"><span>−19</span><span>−19</span></span> = 1. Gerçekten iki adımda başa döndük. Parametreli soru tipi de buradan çıkar: f(x) = <span class="kes"><span>mx + 4</span><span>2x + 5</span></span> fonksiyonunun tersi kendisine eşitse m + 5 = 0, yani m = −5. <strong>Hızlı yol:</strong> paydadaki x'in yanındaki sayıya değil, paydanın sabit terimine bak; paydaki x'in katsayısı onun ters işaretlisi olmalı. <strong>Kontrol yolu:</strong> bir sayı seç, f'yi iki kez uygula, başa dönüyor musun?</p>
+
+<p>Bu fonksiyonlarda tanım kümesinden atılan sayı (−<span class="kes"><span>d</span><span>c</span></span>) ile değer kümesinden atılan sayı (<span class="kes"><span>a</span><span>c</span></span>) aynıdır, çünkü d = −a iken −<span class="kes"><span>d</span><span>c</span></span> = <span class="kes"><span>a</span><span>c</span></span> olur. Tersin tanım kümesinin, f'nin değer kümesi olduğunu düşünürsen bu, f = f<sup>−1</sup> olmasının doğal bir sonucudur.</p>
+
+<h2 class="s">Parçalı fonksiyonların bileşkesi ve tersi</h2>
+
+<p>Parçalı tanımlı bir fonksiyon, girdiye göre farklı kural uygulayan bir makinedir: önce girdinin hangi aralıkta olduğuna bakar, sonra o aralığın kuralını çalıştırır. Örneğin:</p>
+<span class="mat">f(x) = x + 2 (x &lt; 1 iken), f(x) = 3x (x ≥ 1 iken) <span class="g">(iki parçalı kural)</span></span>
+
+<h3>Bileşke: parçayı her adımda yeniden seç</h3>
+
+<p>(f∘f)(0) için önce f(0): 0 &lt; 1 olduğundan birinci parça, f(0) = 2. Şimdi bu 2 makineye yeni bir girdi olarak giriyor ve makine yeniden bakıyor: 2 ≥ 1, ikinci parça, f(2) = 6. Sonuç 6. Parça seçimini her adımda <strong>o adımın girdisine</strong> göre yaparsın; ilk x'e göre değil. Aynı şekilde (f∘f)(−3): f(−3) = −1, sonra −1 &lt; 1 olduğundan f(−1) = 1.</p>
+
+<p>Kural olarak bileşke istenirse koşulu da içeriye taşırsın. g(x) = 2x − 3 için f(g(x)), "g(x) &lt; 1 iken g(x) + 2, g(x) ≥ 1 iken 3g(x)" demektir. Koşulları x'e çevirince 2x − 3 &lt; 1 ⇔ x &lt; 2 bulunur: f(g(x)) = 2x − 1 (x &lt; 2 iken), 6x − 9 (x ≥ 2 iken). Görüyorsun ki parçaların sınırı 1'den 2'ye kaydı; çünkü sınır artık g(x) için değil, x için yazılıyor.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>İç adımın sonucunda parçayı ilk x'e göre seçmek.</strong> (f∘f)(0) hesabında "0 &lt; 1, demek ki iki kez de x + 2 kullanırım" deyip 0 → 2 → 4 yazmak. İkinci adımda makineye giren sayı 0 değil 2'dir ve 2 ikinci parçaya düşer. Doğru sonuç 6'dır.</p></div>
+
+<h3>Ters: her parçayı ayrı ters çevir, aralıkları da çevir</h3>
+
+<p>Parçalı fonksiyonun tersi için her parçayı ayrı ayrı ters çevirirsin. Ama bir parçanın tersi, o parçanın <strong>tanım aralığında</strong> değil, <strong>görüntü aralığında</strong> çalışır; çünkü tersin girdileri f'nin çıktılarıdır. Bu yüzden her parça için önce "bu parça hangi y değerlerini üretiyor?" sorusunu cevaplaman gerekir. Ayrıca parçaların görüntü aralıkları üst üste binmemelidir; binerse aynı y'yi iki parça birden üretiyor demektir, f bire bir değildir ve tersi yoktur.</p>
+
+<div class="tablo"><table>
+<tr><th>Parça</th><th>f'de tanım aralığı</th><th>Ürettiği y değerleri</th><th>Tersin kuralı</th><th>Tersin çalıştığı aralık</th></tr>
+<tr><td>y = x + 2</td><td>x &lt; 1</td><td>y &lt; 3</td><td>x − 2</td><td>x &lt; 3</td></tr>
+<tr><td>y = 3x</td><td>x ≥ 1</td><td>y ≥ 3</td><td><span class="kes"><span>x</span><span>3</span></span></td><td>x ≥ 3</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Yöntem: parçalı fonksiyonun tersi</span>
+<p>1) Her parçanın ürettiği y aralığını bul (artan parçada uç değerleri koyarak). 2) Bu aralıklar üst üste biniyorsa ters yoktur. 3) Her parçanın kuralını ayrı ters çevir. 4) Her ters kuralın yanına, o parçanın <strong>ürettiği y aralığını</strong> yaz. Tanım ve görüntü aralıkları yer değiştirir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> f(x) = x + 2 (x &lt; 1 iken), f(x) = 3x (x ≥ 1 iken) olarak tanımlanan f: R → R fonksiyonu için f<sup>−1</sup>(2) + f<sup>−1</sup>(12) kaçtır?</p>
+<p><strong>Adım 1.</strong> Birinci parçanın üretimi: x &lt; 1 iken x + 2 &lt; 3.</p>
+<span class="mat">y &lt; 3 <span class="g">(iki yana 2 ekle)</span></span>
+<p><strong>Adım 2.</strong> İkinci parçanın üretimi: x ≥ 1 iken 3x ≥ 3.</p>
+<span class="mat">y ≥ 3 <span class="g">(iki yanı 3 ile çarp)</span></span>
+<p><strong>Adım 3.</strong> Aralıklar ayrık ve birleşimleri R; ters vardır. Tersin kuralını yazarım.</p>
+<span class="mat">f<sup>−1</sup>(x) = x − 2 (x &lt; 3), f<sup>−1</sup>(x) = <span class="kes"><span>x</span><span>3</span></span> (x ≥ 3) <span class="g">(aralıklar yer değiştirdi)</span></span>
+<p><strong>Adım 4.</strong> 2 &lt; 3, birinci ters parça çalışır.</p>
+<span class="mat">f<sup>−1</sup>(2) = 2 − 2 = 0 <span class="g">(x &lt; 3 parçası)</span></span>
+<p><strong>Adım 5.</strong> 12 ≥ 3, ikinci ters parça çalışır.</p>
+<span class="mat">f<sup>−1</sup>(12) = <span class="kes"><span>12</span><span>3</span></span> = 4 <span class="g">(x ≥ 3 parçası)</span></span>
+<p><strong>Adım 6.</strong> Toplarım.</p>
+<span class="mat">0 + 4 = 4 <span class="g">(iki değer)</span></span>
+<p><strong>Denetim.</strong> f(0) = 2 (0 &lt; 1, birinci parça) ve f(4) = 12 (4 ≥ 1, ikinci parça). Tuttu.</p>
+<p><strong>Sonuç:</strong> 4. Aralıkları çevirmeyip tersi "x &lt; 1 iken x − 2, x ≥ 1 iken <span class="kes"><span>x</span><span>3</span></span>" yazan, 2 ≥ 1 diye f<sup>−1</sup>(2) = <span class="kes"><span>2</span><span>3</span></span> bulur; f(<span class="kes"><span>2</span><span>3</span></span>) = <span class="kes"><span>8</span><span>3</span></span> ≠ 2 olduğu için bu yanlıştır.</p></div>
+
+<p>Parçalı grafiklerin çizimini ve sürekliliğini Parça 3'te ayrıntılı işleyeceğiz. Şimdilik şunu bil: tersin parçalarının sınır noktası, f'nin sınır noktasındaki <em>değerdir</em>. Burada f'nin sınırı x = 1, oradaki değer f(1) = 3; tersin sınırı da 3 oldu.</p>
+
+<h2 class="s">Grafikle verilen fonksiyonda bileşke ve çözüm sayısı</h2>
+
+<p>Grafikten f(a) okumayı ve f<sup>−1</sup>(b) okumayı temel derste gördün; Parça 1'de de "f(x) = k denkleminin kökleri, grafik ile y = k yatay doğrusunun kesişim noktalarıdır" fikrini kurduk. Bileşke soruları bu iki okumayı art arda yapar. Aşağıdaki f, [−3, 3] aralığında tanımlı ve dört köşe noktasını doğru parçalarıyla birleştiriyor. Değer okuma: (f∘f)(−2) için önce f(−2) = 1 (birinci parçanın ortası), sonra f(1) = 1; sonuç 1. (f∘f∘f)(3) için f(3) = −1, f(−1) = −1, f(−1) = −1; sonuç −1.</p>
+
+<figure>
+<svg viewBox="0 0 400 310" role="img" aria-label="f fonksiyonunun grafiği: (−3, 3), (−1, −1), (1, 1), (3, −1) noktalarını birleştiren kırık çizgi. x ekseni grafiği x = −1,5, 0 ve 2de kesiyor; y = 2 doğrusu grafiği yalnızca x = −2,5te kesiyor; y = −1,5 doğrusu grafiği hiç kesmiyor">
+  <line class="sv-c" x1="50" y1="295" x2="50" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="100" y1="295" x2="100" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="150" y1="295" x2="150" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="250" y1="295" x2="250" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="300" y1="295" x2="300" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="350" y1="295" x2="350" y2="25" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="295" x2="380" y2="295" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="245" x2="380" y2="245" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="145" x2="380" y2="145" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="95" x2="380" y2="95" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="45" x2="380" y2="45" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="20" y1="195" x2="380" y2="195" />
+  <line class="sv-c" x1="200" y1="305" x2="200" y2="15" />
+  <text class="sv-s" x="50" y="211" text-anchor="middle">−3</text>
+  <text class="sv-s" x="100" y="211" text-anchor="middle">−2</text>
+  <text class="sv-s" x="150" y="211" text-anchor="middle">−1</text>
+  <text class="sv-s" x="250" y="211" text-anchor="middle">1</text>
+  <text class="sv-s" x="350" y="211" text-anchor="middle">3</text>
+  <text class="sv-s" x="294" y="211" text-anchor="middle">2</text>
+  <text class="sv-s" x="194" y="299" text-anchor="end">−2</text>
+  <text class="sv-s" x="194" y="249" text-anchor="end">−1</text>
+  <text class="sv-s" x="194" y="149" text-anchor="end">1</text>
+  <text class="sv-s" x="194" y="49" text-anchor="end">3</text>
+  <line class="sv-c" x1="20" y1="95" x2="380" y2="95" stroke-dasharray="5 4" />
+  <line class="sv-c" x1="20" y1="270" x2="380" y2="270" stroke-dasharray="5 4" />
+  <polyline class="sv-cl" points="50,45 150,245 250,145 350,245" />
+  <circle class="sv-l" cx="50" cy="45" r="3.5" />
+  <circle class="sv-l" cx="150" cy="245" r="3.5" />
+  <circle class="sv-l" cx="250" cy="145" r="3.5" />
+  <circle class="sv-l" cx="350" cy="245" r="3.5" />
+  <circle class="sv-a" cx="125" cy="195" r="5" />
+  <circle class="sv-a" cx="200" cy="195" r="5" />
+  <circle class="sv-a" cx="300" cy="195" r="5" />
+  <circle class="sv-m" cx="75" cy="95" r="5" />
+  <text class="sv-t" x="392" y="89" text-anchor="end">y = 2</text>
+  <text class="sv-t" x="392" y="264" text-anchor="end">y = −1,5</text>
+  <text class="sv-b" x="60" y="49">f</text>
+</svg>
+<figcaption>f'nin köşe noktaları (−3, 3), (−1, −1), (1, 1), (3, −1). x ekseni (y = 0) grafiği üç turuncu noktada keser: x = −1,5, 0 ve 2. Kesikli y = 2 doğrusu grafiği yalnızca yeşil noktada (x = −2,5) keser; kesikli y = −1,5 doğrusu grafiğin tamamen altında kalır.</figcaption>
+</figure>
+
+<p>Şimdi zor soru: (f∘f)(x) = 0 denkleminin kaç kökü var? İç içe iki fonksiyonu tek seferde düşünmek zordur; bu yüzden içeriye bir ad veririz. t = f(x) dersen denklem f(t) = 0 olur. Önce bu dış denklemi çözer, bulduğun her t için iç denklem f(x) = t'yi ayrı ayrı çözersin.</p>
+
+<div class="kural"><span class="et">Yöntem: (f∘f)(x) = a denkleminin kök sayısı</span>
+<p>1) Dış denklem: f(t) = a'yı çöz; y = a doğrusunun grafiği kestiği her noktanın apsisi bir t değeridir. 2) Her t için iç denklem: f(x) = t'nin kök sayısını, y = t doğrusunun grafiği kaç kez kestiğine bakarak bul. 3) Sayıları topla (farklı t'ler farklı kökler verir, çünkü bir x'in tek bir f(x) değeri vardır). Nedeni: (f∘f)(x) = a ancak ve ancak f(x), f'nin a'ya götürdüğü sayılardan biri olduğunda doğrudur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Grafiği şekilde verilen f: [−3, 3] → R fonksiyonu için (f∘f)(x) = 0 denkleminin kaç gerçek kökü vardır?</p>
+<p><strong>Adım 1.</strong> Dış denklem f(t) = 0: grafik x eksenini üç noktada kesiyor. Birinci parçada eğim −2 olduğundan 3'ten 0'a inmek için 1,5 birim sağa gidilir; ikinci parça y = x doğrusudur; üçüncü parça y = 2 − x doğrusudur.</p>
+<span class="mat">t ∈ {−1,5; 0; 2} <span class="g">(turuncu noktalar)</span></span>
+<p><strong>Adım 2.</strong> f(x) = −1,5: grafiğin en küçük değeri −1 olduğundan y = −1,5 doğrusu grafiği kesmez.</p>
+<span class="mat">0 kök <span class="g">(y = −1,5 grafiğin altında)</span></span>
+<p><strong>Adım 3.</strong> f(x) = 0: Adım 1'deki üç nokta.</p>
+<span class="mat">3 kök <span class="g">(x = −1,5; 0; 2)</span></span>
+<p><strong>Adım 4.</strong> f(x) = 2: y = 2 doğrusu yalnızca birinci parçayı keser; ikinci ve üçüncü parçanın en büyük değeri 1'dir.</p>
+<span class="mat">1 kök <span class="g">(x = −2,5, yeşil nokta)</span></span>
+<p><strong>Adım 5.</strong> Toplarım.</p>
+<span class="mat">0 + 3 + 1 = 4 <span class="g">(farklı t'lerden gelen kökler farklıdır)</span></span>
+<p><strong>Denetim.</strong> x = −2,5: f(−2,5) = 2, f(2) = 0. x = 2: f(2) = 0, f(0) = 0. İki kök de denklemi sağlıyor.</p>
+<p><strong>Sonuç:</strong> 4 kök.</p></div>
+
+<p><strong>Hızlı yol.</strong> Dış denklemin köklerini (t'leri) bulduktan sonra her biri için yalnızca yatay bir çizgi hayal edip kesişim sayarsın; hesap gerekmez. <strong>Kontrol yolu.</strong> En az bir kökü (f∘f)'ye geri koy. En sık hata, t değerlerinin sayısını (burada 3) cevap sanmaktır; o sayı dış denklemin kök sayısıdır, bileşkenin değil.</p>
+
+<h2 class="s">Tanım kümesini daraltarak ters almak</h2>
+
+<p>Parçanın başındaki kare tuşu sorusuna dönelim. f(x) = x<sup>2</sup>, R'den R'ye bire bir değildir: f(3) = f(−3) = 9. Ters makine 9'u görünce 3 mü −3 mü vereceğini bilemez; bir girdiye iki çıktı veren şey fonksiyon değildir. Üstelik örten de değildir: −4 hiçbir sayının karesi olmadığından ters makine −4'e hiçbir şey veremez.</p>
+
+<p>Çözüm, fonksiyonu <strong>kısıtlamaktır</strong>. Tanım kümesini, fonksiyonun yalnızca artan (ya da yalnızca azalan) olduğu bir parçaya daraltırsan her y değeri bir kez üretilir; değer kümesini de gerçekten üretilen değerlere daraltırsan örtenlik sağlanır. f: [0, ∞) → [0, ∞), f(x) = x<sup>2</sup> bire bir ve örtendir; tersi f<sup>−1</sup>(x) = √x'tir. √ işaretinin her zaman negatif olmayan kökü vermesinin nedeni tam olarak bu seçimdir. Sol kolu seçseydin, yani f: (−∞, 0] → [0, ∞) alsaydın, tersi −√x olurdu.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y = x² parabolünün sağ kolu ve noktalı çizilmiş atılan sol kolu, y = √x eğrisi ve kesikli y = x doğrusu; (2, 4) ve (4, 2) noktaları birbirinin yansıması; eğriler (0, 0) ve (1, 1) noktalarında kesişiyor">
+  <line class="sv-c" x1="30" y1="278.5" x2="30" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="85" y1="278.5" x2="85" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="195" y1="278.5" x2="195" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="250" y1="278.5" x2="250" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="305" y1="278.5" x2="305" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="360" y1="278.5" x2="360" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="19" y1="196" x2="376.5" y2="196" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="19" y1="141" x2="376.5" y2="141" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="19" y1="86" x2="376.5" y2="86" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="19" y1="31" x2="376.5" y2="31" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="19" y1="251" x2="376.5" y2="251" />
+  <line class="sv-c" x1="140" y1="281.2" x2="140" y2="14.5" />
+  <text class="sv-s" x="30" y="267" text-anchor="middle">−2</text>
+  <text class="sv-s" x="85" y="267" text-anchor="middle">−1</text>
+  <text class="sv-s" x="195" y="267" text-anchor="middle">1</text>
+  <text class="sv-s" x="250" y="267" text-anchor="middle">2</text>
+  <text class="sv-s" x="305" y="267" text-anchor="middle">3</text>
+  <text class="sv-s" x="360" y="267" text-anchor="middle">4</text>
+  <text class="sv-s" x="134" y="200" text-anchor="end">1</text>
+  <text class="sv-s" x="134" y="145" text-anchor="end">2</text>
+  <text class="sv-s" x="134" y="90" text-anchor="end">3</text>
+  <text class="sv-s" x="134" y="35" text-anchor="end">4</text>
+  <polyline class="sv-c" points="28,22.7 30.8,34 33.6,45 36.4,55.7 39.2,66.1 42,76.2 44.8,86.1 47.6,95.6 50.4,104.9 53.2,113.9 56,122.6 58.8,131 61.6,139.2 64.4,147 67.2,154.6 70,161.8 72.8,168.8 75.6,175.5 78.4,182 81.2,188.1 84,193.9 86.8,199.5 89.6,204.8 92.4,209.8 95.2,214.5 98,218.9 100.8,223 103.6,226.9 106.4,230.5 109.2,233.7 112,236.7 114.8,239.4 117.6,241.9 120.4,244 123.2,245.9 126,247.4 128.8,248.7 131.6,249.7 134.4,250.4 137.2,250.9 140,251" stroke-dasharray="2 4" />
+  <polyline class="sv-cl" points="140,251 142.8,250.9 145.6,250.4 148.4,249.7 151.2,248.7 154,247.4 156.8,245.9 159.6,244 162.4,241.9 165.2,239.4 168,236.7 170.8,233.7 173.6,230.5 176.4,226.9 179.2,223 182,218.9 184.8,214.5 187.6,209.8 190.4,204.8 193.2,199.5 196,193.9 198.8,188.1 201.6,182 204.4,175.5 207.2,168.8 210,161.8 212.8,154.6 215.6,147 218.4,139.2 221.2,131 224,122.6 226.8,113.9 229.6,104.9 232.4,95.6 235.2,86.1 238,76.2 240.8,66.1 243.6,55.7 246.4,45 249.2,34 252,22.7" />
+  <polyline class="sv-cl" points="140,251 140.1,249.1 140.3,247.2 140.6,245.3 141,243.4 141.6,241.6 142.3,239.7 143.2,237.8 144.2,235.9 145.3,234 146.5,232.1 147.9,230.2 149.3,228.3 151,226.4 152.7,224.5 154.6,222.7 156.6,220.8 158.8,218.9 161,217 163.4,215.1 166,213.2 168.6,211.3 171.4,209.4 174.3,207.5 177.4,205.6 180.6,203.8 183.9,201.9 187.3,200 190.9,198.1 194.6,196.2 198.4,194.3 202.4,192.4 206.5,190.5 210.7,188.6 215.1,186.7 219.5,184.9 224.2,183 228.9,181.1 233.8,179.2 238.8,177.3 243.9,175.4 249.1,173.5 254.5,171.6 260.1,169.7 265.7,167.9 271.5,166 277.4,164.1 283.4,162.2 289.6,160.3 295.9,158.4 302.3,156.5 308.9,154.6 315.6,152.7 322.4,150.8 329.3,149 336.4,147.1 343.6,145.2 351,143.3 358.4,141.4 366,139.5 373.8,137.6" stroke-dasharray="8 5" />
+  <line class="sv-c" x1="112.5" y1="278.5" x2="365.5" y2="25.5" stroke-dasharray="5 4" />
+  <circle class="sv-a" cx="250" cy="31" r="4.5" />
+  <circle class="sv-a" cx="360" cy="141" r="4.5" />
+  <circle class="sv-m" cx="140" cy="251" r="4.5" />
+  <circle class="sv-m" cx="195" cy="196" r="4.5" />
+  <text class="sv-t" x="259" y="36">(2, 4)</text>
+  <text class="sv-t" x="352" y="163" text-anchor="middle">(4, 2)</text>
+  <text class="sv-t" x="203" y="212">(1, 1)</text>
+  <text class="sv-b" x="238" y="100">y = x²</text>
+  <text class="sv-b" x="300" y="190">y = √x</text>
+  <text class="sv-s" x="125" y="290">y = x</text>
+  <text class="sv-s" x="60" y="70">atılan kol</text>
+</svg>
+<figcaption>Düz çizgi y = x²'nin tutulan sağ kolu, noktalı çizgi atılan sol kolu, uzun kesikli çizgi tersi y = √x, kısa kesikli çizgi y = x. Sağ koldaki (2, 4) noktası tersin üzerinde (4, 2) olarak görünür. Sağ kol artan olduğu için iki grafik yalnızca y = x üzerinde, (0, 0) ve (1, 1)'de kesişir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural: daraltma</span>
+<p>Bire bir olmayan bir fonksiyonun tersini almak için tanım kümesini, fonksiyonun <strong>tek yönde değiştiği</strong> (hep artan ya da hep azalan) bir aralığa, değer kümesini de bu aralıkta üretilen değerlere daraltırsın. Parabolde bu aralık tepe noktasının bir yanıdır. Kökü alırken işareti, seçilen kol belirler: tepe noktasının sağı +√, solu −√.</p></div>
+
+<p>Örnekle: f: [2, ∞) → [2, ∞), f(x) = x<sup>2</sup> − 4x + 6. Önce tam kareye tamamlarım: f(x) = (x − 2)<sup>2</sup> + 2. y = (x − 2)<sup>2</sup> + 2 yazıp x'i yalnız bırakırım: (x − 2)<sup>2</sup> = y − 2, x − 2 = √(y − 2) (x ≥ 2 olduğu için x − 2 negatif değil, artı kök). Tersi f<sup>−1</sup>(x) = 2 + √(x − 2). Denetim: f(3) = 3 ve f<sup>−1</sup>(3) = 2 + 1 = 3. Aynı fonksiyonu (−∞, 2] üzerinde tanımlasaydın x − 2 ≤ 0 olacağından f<sup>−1</sup>(x) = 2 − √(x − 2) bulurdun: f(0) = 6 ve 2 − √4 = 0.</p>
+
+<p>Bu fikir ileride iki kez karşına çıkacak. Parça 10'da sinüs fonksiyonu, her değeri sonsuz kez aldığı için bire bir değildir; tanım kümesi tek yönde değiştiği bir aralığa daraltılarak ters trigonometrik fonksiyonlar kurulacak. Parça 14'te üstel fonksiyon zaten bire bir olduğu için daraltmaya gerek kalmayacak, yalnızca değer kümesi gerçekten üretilen pozitif sayılara indirilecek ve tersi logaritma olarak tanımlanacak.</p>
+
+<h2 class="s">f ile f<sup>−1</sup>'in grafikleri nerede kesişir?</h2>
+
+<p>(a, b) noktası iki grafiğin de üzerindeyse b = f(a) ve b = f<sup>−1</sup>(a), yani f(b) = a olur. Bu iki eşitliği birleştirince f(f(a)) = a çıkar. Tersi de doğrudur: f(f(a)) = a ise b = f(a) için f(b) = a olur ve (a, b) iki grafikte birden bulunur. Demek ki kesişim noktalarının apsisleri, tam olarak <strong>(f∘f)(x) = x</strong> denkleminin çözümleridir.</p>
+
+<p>Bu denklem çoğu zaman kısalır. f artan ise ve f(a) &gt; a olsaydı, f'yi iki yana uygulayınca f(f(a)) &gt; f(a) &gt; a olurdu; f(f(a)) = a ile çelişir. f(a) &lt; a da aynı yolla çelişir. Geriye f(a) = a kalır. Yani <strong>artan</strong> fonksiyonda kesişimler y = x doğrusu üzerindedir ve f(x) = x çözülerek bulunur. Az önceki f(x) = (x − 2)<sup>2</sup> + 2, [2, ∞) üzerinde artandır: x<sup>2</sup> − 4x + 6 = x, x<sup>2</sup> − 5x + 6 = 0, x = 2 ya da x = 3. İki çözüm de tanım kümesinde; kesişim noktaları (2, 2) ve (3, 3). Kökleri bulduktan sonra tanım kümesinde olup olmadıklarını mutlaka denetle; dışarıda kalan kök kesişim vermez.</p>
+
+<div class="kural"><span class="et">Kural: kesişim</span>
+<p>f ile f<sup>−1</sup>'in grafiklerinin kesişim noktalarının apsisleri (f∘f)(x) = x denkleminin çözümleridir. <strong>f artan ise</strong> bu denklem f(x) = x denklemine denktir ve bütün kesişimler y = x doğrusu üzerindedir. f azalan ise y = x dışında da kesişim olabilir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="Azalan y = −x³ eğrisi ile tersi y = −∛x eğrisi ve kesikli y = x doğrusu; iki eğri (0, 0), (1, −1) ve (−1, 1) noktalarında kesişiyor; son ikisi y = x doğrusunun üzerinde değil">
+  <line class="sv-c" x1="40" y1="348" x2="40" y2="12" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="16" y1="340" x2="384" y2="340" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="120" y1="348" x2="120" y2="12" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="16" y1="260" x2="384" y2="260" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="280" y1="348" x2="280" y2="12" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="16" y1="100" x2="384" y2="100" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="360" y1="348" x2="360" y2="12" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="16" y1="20" x2="384" y2="20" stroke-dasharray="1 5" />
+  <line class="sv-c" x1="16" y1="180" x2="384" y2="180" />
+  <line class="sv-c" x1="200" y1="356" x2="200" y2="4" />
+  <text class="sv-s" x="40" y="196" text-anchor="middle">−2</text>
+  <text class="sv-s" x="192" y="344" text-anchor="end">−2</text>
+  <text class="sv-s" x="120" y="196" text-anchor="middle">−1</text>
+  <text class="sv-s" x="192" y="264" text-anchor="end">−1</text>
+  <text class="sv-s" x="280" y="196" text-anchor="middle">1</text>
+  <text class="sv-s" x="192" y="104" text-anchor="end">1</text>
+  <text class="sv-s" x="360" y="196" text-anchor="middle">2</text>
+  <text class="sv-s" x="192" y="24" text-anchor="end">2</text>
+  <polyline class="sv-cl" points="100,23.8 103.3,38.9 106.7,53 110,66.1 113.3,78.3 116.7,89.6 120,100 123.3,109.6 126.7,118.4 130,126.4 133.3,133.7 136.7,140.3 140,146.2 143.3,151.6 146.7,156.3 150,160.5 153.3,164.1 156.7,167.3 160,170 163.3,172.3 166.7,174.2 170,175.8 173.3,177 176.7,178 180,178.8 183.3,179.3 186.7,179.6 190,179.8 193.3,180 196.7,180 200,180 203.3,180 206.7,180 210,180.2 213.3,180.4 216.7,180.7 220,181.2 223.3,182 226.7,183 230,184.2 233.3,185.8 236.7,187.7 240,190 243.3,192.7 246.7,195.9 250,199.5 253.3,203.7 256.7,208.4 260,213.8 263.3,219.7 266.7,226.3 270,233.6 273.3,241.6 276.7,250.4 280,260 283.3,270.4 286.7,281.7 290,293.9 293.3,307 296.7,321.1 300,336.2" />
+  <polyline class="sv-cl" points="16,74.4 33.8,77.9 50.4,81.4 65.9,85 80.2,88.5 93.5,92 105.8,95.5 117.1,99 127.4,102.6 136.9,106.1 145.5,109.6 153.3,113.1 160.3,116.6 166.5,120.2 172.1,123.7 177,127.2 181.3,130.7 185,134.2 188.2,137.8 190.9,141.3 193.2,144.8 195,148.3 196.5,151.8 197.7,155.4 198.5,158.9 199.1,162.4 199.6,165.9 199.8,169.4 199.9,173 200,176.5 200,180 200,183.5 200.1,187 200.2,190.6 200.4,194.1 200.9,197.6 201.5,201.1 202.3,204.6 203.5,208.2 205,211.7 206.8,215.2 209.1,218.7 211.8,222.2 215,225.8 218.7,229.3 223,232.8 227.9,236.3 233.5,239.8 239.7,243.4 246.7,246.9 254.5,250.4 263.1,253.9 272.6,257.4 282.9,261 294.2,264.5 306.5,268 319.8,271.5 334.1,275 349.6,278.6 366.2,282.1 384,285.6" stroke-dasharray="8 5" />
+  <line class="sv-c" x1="32" y1="348" x2="368" y2="12" stroke-dasharray="5 4" />
+  <circle class="sv-a" cx="280" cy="260" r="5" />
+  <circle class="sv-a" cx="120" cy="100" r="5" />
+  <circle class="sv-a" cx="200" cy="180" r="5" />
+  <text class="sv-t" x="272" y="282" text-anchor="end">(1, −1)</text>
+  <text class="sv-t" x="128" y="88" text-anchor="start">(−1, 1)</text>
+  <text class="sv-b" x="112" y="36">y = −x³</text>
+  <text class="sv-b" x="384" y="312" text-anchor="end">y = −∛x</text>
+  <text class="sv-s" x="300" y="30">y = x</text>
+</svg>
+<figcaption>Düz çizgi y = −x³, uzun kesikli çizgi tersi y = −∛x, kısa kesikli çizgi y = x. İki eğri üç noktada kesişir: (0, 0), (1, −1) ve (−1, 1). Son ikisi y = x üzerinde değildir; birbirlerinin y = x'e göre yansımasıdır.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"f ile tersi her zaman y = x üzerinde kesişir" sanmak.</strong> f(x) = −x<sup>3</sup> azalandır; tersi −∛x'tir. f(x) = x çözülürse yalnızca x = 0 bulunur. Oysa (f∘f)(x) = −(−x<sup>3</sup>)<sup>3</sup> = x<sup>9</sup> ve x<sup>9</sup> = x denkleminin çözümleri 0, 1, −1'dir. f(1) = −1 ve f<sup>−1</sup>(1) = −∛1 = −1; (1, −1) noktası iki grafikte de var ama y = x üzerinde değil. Azalan fonksiyonda kısa yolu kullanma; (f∘f)(x) = x'i çöz. Uç bir örnek olarak f(x) = 10 − x kendisinin tersidir; grafikler her noktada çakışır.</p></div>
+
+<h2 class="s">Doğrusal fonksiyonlarda f∘g = g∘f koşulu</h2>
+
+<p>Bileşkenin genelde değişmeli olmadığını biliyorsun. Ama sınav, belirli iki doğrusal fonksiyonun sıra fark etmeyecek biçimde seçildiği soruları sever. f(x) = ax + b ve g(x) = cx + d olsun. İki sırayı da açalım:</p>
+<span class="mat">(f∘g)(x) = a(cx + d) + b = acx + ad + b <span class="g">(f'nin x'ine g)</span></span>
+<span class="mat">(g∘f)(x) = c(ax + b) + d = acx + bc + d <span class="g">(g'nin x'ine f)</span></span>
+<p>x'li terimler her zaman aynıdır (ac = ca). Fark yalnızca sabitlerdedir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f(x) = ax + b ve g(x) = cx + d için <strong>f∘g = g∘f ⇔ ad + b = bc + d</strong>. Akılda tutma yolu: her fonksiyonun eğimi, öbürünün sabit terimiyle çarpılır ve kendi sabit terimi eklenir; iki taraf eşit olmalıdır.</p></div>
+
+<p>Örnek: f(x) = 2x + 3 ve g(x) = mx − 1 için 2 · (−1) + 3 = 3m + (−1), yani 1 = 3m − 1 ve m = <span class="kes"><span>2</span><span>3</span></span>. Denetim: f(g(x)) = 2(<span class="kes"><span>2</span><span>3</span></span>x − 1) + 3 = <span class="kes"><span>4</span><span>3</span></span>x + 1; g(f(x)) = <span class="kes"><span>2</span><span>3</span></span>(2x + 3) − 1 = <span class="kes"><span>4</span><span>3</span></span>x + 1. Eşit.</p>
+
+<p>Bu koşulun güzel bir yorumu var. Eğimi 1 olmayan doğrusal bir fonksiyonun, kendisine giren sayıyı değiştirmeden bıraktığı tek bir nokta vardır: f(p) = p. f(x) = 2x + 3 için 2p + 3 = p, p = −3. g(x) = <span class="kes"><span>2</span><span>3</span></span>x − 1 için de p = −3. İki fonksiyon da aynı noktanın çevresinde esnetme yapıyor; bu yüzden hangisinin önce yapıldığı fark etmiyor. Eğimleri 1'den farklı iki doğrusal fonksiyon için koşul tam olarak budur: sabit noktaları aynı olmalı. İkisi de x + k biçimindeyse (yalnız öteleme) her zaman değişmelidirler. Bu yorum <strong>kontrol yolu</strong> olarak işe yarar.</p>
+
+<h2 class="s">Bileşke ile modelleme: işlemleri sırayla kurmak, ters sırayla çözmek</h2>
+
+<p>Gerçek hayattaki pek çok süreç, art arda uygulanan işlemlerdir: indirim, kupon, vergi; ya da birimden birime dönüştürme. Her işlemi ayrı bir fonksiyon yaparsan süreç bir bileşke olur. Sıra değişince sonuç değişir (değişme yok); sonuçtan başa dönmek için de işlemleri ters sırayla geri alırsın ((f∘g)<sup>−1</sup> = g<sup>−1</sup>∘f<sup>−1</sup>).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Bir mağaza, etiket fiyatına önce %25 indirim uyguluyor, sonra 20 TL'lik kuponu düşüyor, en son kalan tutara %20 vergi ekliyor. Kasada 336 TL ödeyen bir müşterinin aldığı ürünün etiket fiyatı kaç TL'dir?</p>
+<p><strong>Adım 1.</strong> Her işlemi bir fonksiyon yaparım.</p>
+<span class="mat">i(x) = 0,75x · k(x) = x − 20 · v(x) = 1,2x <span class="g">(indirim, kupon, vergi)</span></span>
+<p><strong>Adım 2.</strong> Sırayı bileşkeye çeviririm: önce i, sonra k, en son v.</p>
+<span class="mat">T(x) = (v∘k∘i)(x) = 1,2(0,75x − 20) <span class="g">(ilk işlem en içte)</span></span>
+<p><strong>Adım 3.</strong> Açarım.</p>
+<span class="mat">T(x) = 0,9x − 24 <span class="g">(1,2 · 0,75 = 0,9; 1,2 · 20 = 24)</span></span>
+<p><strong>Adım 4.</strong> T(x) = 336 denklemini çözerim.</p>
+<span class="mat">0,9x = 360 ⇒ x = 400 <span class="g">(24'ü karşıya at, 0,9'a böl)</span></span>
+<p><strong>Adım 5 (ikinci yol: ters sırayla geri al).</strong> Önce son yapılanı, vergiyi geri alırım: 336 ÷ 1,2 = 280. Sonra kuponu geri eklerim: 280 + 20 = 300. En son indirimi geri alırım: 300 ÷ 0,75 = 400.</p>
+<span class="mat">(i<sup>−1</sup>∘k<sup>−1</sup>∘v<sup>−1</sup>)(336) = 400 <span class="g">(son giren ilk çıkar)</span></span>
+<p><strong>Denetim.</strong> 400'ün %75'i 300, kupondan sonra 280, vergiyle 336. Tuttu.</p>
+<p><strong>Sonuç:</strong> 400 TL. Kupon indirimden önce düşülseydi ödenecek tutar 1,2 · 0,75 · (400 − 20) = 342 TL olurdu; aynı üç işlem, farklı sıra, 6 TL fark.</p></div>
+
+<p>Birim dönüştürmede de aynı yapı vardır. Fahrenheit'tan Celsius'a C(F) = <span class="kes"><span>F − 32</span><span>1,8</span></span>, Celsius'tan Kelvin'e K(C) = C + 273 (sınavlarda genellikle 273 alınır). Fahrenheit'tan Kelvin'e geçmek K∘C bileşkesidir: 212 °F → 100 °C → 373 K. Ters yönde Kelvin'den Fahrenheit'a geçmek için önce K'yi, sonra C'yi geri alırsın: 300 K → 27 °C → 1,8 · 27 + 32 = 80,6 °F.</p>
+
+<h2 class="s">Hızlı yol ve kontrol yolu: sınav masasında</h2>
+
+<p><strong>Önce zinciri iç içe yaz.</strong> f∘g∘h gördüğün an f(g(h(x))) yaz; bilinmeyen dıştaysa sağdan, içteyse soldan ters ekle.</p>
+
+<p><strong>Ters değer soruluyorsa ters kural yazma.</strong> f<sup>−1</sup>(b) için f(x) = b'yi çöz; f(A(x)) = B(x) verilmişse B(x) = b'den x'i bul, A(x)'e koy.</p>
+
+<p><strong>Tekrarlı bileşkede ilk üç adımı gerçekten hesapla.</strong> Doğrusalsa örüntüyü, kesirliyse döngüyü ara; döngü uzunluğunu bulmadan "tek-çift" kuralına atlama.</p>
+
+<p><strong>Parçalı fonksiyonda her adımda girdiye bak.</strong> Bileşkede ara sonucun hangi parçaya düştüğünü yeniden sor; terste aralıkları çevir.</p>
+
+<p><strong>Tanım kümesini son kurala bırakma.</strong> Bileşkede iki koşulu, daraltmada kolu, kesişimde köklerin tanım kümesinde olup olmadığını denetle.</p>
+
+<p><strong>Kontrol yolu her soruda aynıdır:</strong> bulduğun değeri ya da kuralı zincire geri koy ve bir sayıyla iki tarafı karşılaştır. Bu, hesap makinesiz bir sınavda yanlış seçeneği eleyen en hızlı yöntemdir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1'e:</strong> Grafikten f(x) = k çözümünü yatay doğruyla kesiştirerek bulmayı orada kurduk; (f∘f)(x) = a sorusu bu okumanın iki kez yapılmasıdır. Artan fonksiyon tanımı, f ile f<sup>−1</sup>'in kesişiminin y = x üzerinde olduğunu kanıtlarken kullandığımız asıl araç oldu.</p>
+<p><strong>Parça 3 ve 4'e:</strong> Parçalı fonksiyonların çizimi ve |f(x)|, f(|x|) gibi yapılar Parça 3'te gelecek; bunlar da birer bileşkedir (mutlak değer fonksiyonu ile f'nin bileşkesi). Parça 4'teki y = f(x − 2) + 1 gibi dönüşümler, f'nin önüne ve arkasına doğrusal fonksiyonlar eklenmiş bileşkelerdir; sıranın neden önemli olduğu orada yine karşına çıkacak.</p>
+<p><strong>Parça 10, 14 ve 23'e:</strong> Daraltarak ters alma, ters trigonometrik fonksiyonların ve logaritmanın kuruluş fikridir. Türevde zincir kuralı bileşkenin türevidir; ters fonksiyonun türevi de f(a) = b ⇔ f<sup>−1</sup>(b) = a denkliğine dayanır.</p>
+<p><strong>Öbür derslere:</strong> Fizikte birim dönüştürme ve kimyada sıcaklık ölçekleri art arda uygulanan fonksiyonlardır; ters yöndeki dönüşüm, işlemleri ters sırayla geri almaktır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>(f∘g)(x)'in tanım kümesi hangi iki koşulla bulunur ve neden sadeleşmiş kurala bakılmaz?</summary><p>x, g'nin tanım kümesinde olmalı ve g(x), f'nin tanım kümesinde olmalıdır. Sadeleşme aradaki engeli saklayabilir: f(x) = x<sup>2</sup>, g(x) = √x için (f∘g)(x) = x görünür ama x &lt; 0 sayılar önce g'ye giremediği için tanım kümesi yalnızca x ≥ 0'dır.</p></details>
+<details><summary>f∘g∘h = k ve f ile h biliniyorsa g'yi nasıl yalnız bırakırsın? Tersler neden o taraflara eklenir?</summary><p>Soldan f<sup>−1</sup>, sağdan h<sup>−1</sup> ile bileşke yaparım: g = f<sup>−1</sup>∘k∘h<sup>−1</sup>. Bileşke değişmeli olmadığı için bir ters ancak kendi fonksiyonunun hemen yanına gelirse onunla birleşip I olur ve yok olur.</p></details>
+<details><summary>f(2x + 1) = 6x − 4 ise f<sup>−1</sup> için hangi eşitliği hemen yazarsın?</summary><p>f<sup>−1</sup>(6x − 4) = 2x + 1. Çünkü f, 2x + 1'i 6x − 4'e götürüyorsa tersi 6x − 4'ü 2x + 1'e götürür (f(a) = b ⇔ f<sup>−1</sup>(b) = a).</p></details>
+<details><summary>f'yi kendisiyle 3 adımda bileşke yapınca birim fonksiyon çıkıyorsa, 50 kez bileşke neye eşittir?</summary><p>50 = 3 · 16 + 2; on altı üçlü grup birim fonksiyon olup yok olur, geriye iki uygulama kalır. Sonuç f∘f'dir.</p></details>
+<details><summary>Parçalı bir fonksiyonun tersini yazarken aralıkları neden değiştirirsin?</summary><p>Çünkü tersin girdileri f'nin çıktılarıdır. Her ters parça, o parçanın f'de ürettiği y değerleri için çalışır; bu yüzden ters kuralın yanına tanım aralığı değil, görüntü aralığı yazılır.</p></details>
+<details><summary>f(x) = <span class="kes"><span>ax + b</span><span>cx + d</span></span> fonksiyonunun tersinin kendisine eşit olma koşulu nedir?</summary><p>a + d = 0. Tersi <span class="kes"><span>−dx + b</span><span>cx − a</span></span> olduğundan iki kesrin eşitliği d = −a demektir.</p></details>
+<details><summary>f ile f<sup>−1</sup>'in kesişim noktaları her zaman y = x üzerinde midir?</summary><p>Hayır. Kesişim apsisleri (f∘f)(x) = x denkleminin çözümleridir. Yalnızca f artan ise bu, f(x) = x'e denk olur ve kesişimler y = x üzerindedir. Azalan f(x) = −x<sup>3</sup>, tersiyle (1, −1) noktasında da kesişir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Bileşkenin tanım kümesi:</strong> x ∈ T(g) ve g(x) ∈ T(f). Son kurala bakma.</li>
+<li><strong>Uzun zincir:</strong> f∘g∘h = f(g(h(x))), içten dışa. Ortadaki bilinmiyorsa g = f<sup>−1</sup>∘k∘h<sup>−1</sup> (ters, kendi fonksiyonunun yanına).</li>
+<li><strong>f(g(x)) = h(x):</strong> dıştaki aranıyorsa f = h∘g<sup>−1</sup> (değişken değiştirme ile aynı); içteki aranıyorsa g = f<sup>−1</sup>∘h.</li>
+<li><strong>f(A(x)) = B(x) ⇒ f<sup>−1</sup>(B(x)) = A(x).</strong> Değer için B(x) = b çöz, A(x)'e koy.</li>
+<li><strong>Ters içeren denklem:</strong> f<sup>−1</sup>(A) = B ⇔ A = f(B).</li>
+<li><strong>Tekrarlı bileşke:</strong> 2x + 1 → 2<sup>n</sup>x + 2<sup>n</sup> − 1. k adımda I oluyorsa n'nin k'ye bölümünden kalana bak; kalan 0 ise x.</li>
+<li><strong><span class="kes"><span>ax + b</span><span>cx + d</span></span> kendi tersi ⇔ a + d = 0.</strong> f∘f = I.</li>
+<li><strong>Parçalı:</strong> bileşkede her adımda girdinin parçasını yeniden seç; terste her parçayı çevir ve ürettiği y aralığını yaz.</li>
+<li><strong>(f∘f)(x) = a:</strong> önce f(t) = a'nın t'lerini bul, sonra her t için f(x) = t'nin kök sayısını topla.</li>
+<li><strong>Daraltma:</strong> tek yönde değiştiği aralığa indir. x<sup>2</sup> → √x (sağ kol), −√x (sol kol).</li>
+<li><strong>Kesişim:</strong> (f∘f)(x) = x. Artan f'de f(x) = x yeter; azalanda y = x dışı kesişim olabilir.</li>
+<li><strong>ax + b ile cx + d değişmeli ⇔ ad + b = bc + d</strong> (sabit noktaları aynı).</li>
+<li><strong>Modelleme:</strong> işlemleri içten dışa sırayla kur; geri dönerken son yapılanı ilk geri al.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-2">
+<h3>Quiz 2</h3>
+<p class="qa">Sekiz yeni soru ve Parça 1'den iki tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="E"><p class="q">f(x) = √(x − 1) ve g(x) = 5 − x olduğuna göre (f∘g)(x) fonksiyonunun en geniş tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[1, ∞)</li><li>[4, ∞)</li><li>(−∞, 5]</li><li>R</li><li>(−∞, 4]</li></ul>
+<div class="coz"><p>(f∘g)(x) = f(5 − x) = √(4 − x). g her yerde tanımlı; ikinci koşul g(x)'in f'ye girebilmesidir: 5 − x − 1 ≥ 0, yani x ≤ 4. A, koşulu g(x)'e değil x'e koyup yalnızca f'nin tanım kümesini yazmaktır. B, 4 − x ≥ 0 eşitsizliğinde −x'i karşıya atarken yönü yanlış çevirmektir. C, kök içini g(x) − 1 yerine g(x) sanıp 5 − x ≥ 0 yazmaktır. D, yalnızca g'nin tanım kümesine bakmaktır. Denetim: x = 4 için √0 = 0 tanımlı, x = 5 için √(−1) tanımsız.</p></div></li>
+
+<li data-c="A"><p class="q">f: (−∞, 1] → [2, ∞), f(x) = x<sup>2</sup> − 2x + 3 fonksiyonu bire bir ve örtendir. Buna göre f<sup>−1</sup>(x) aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>1 − √(x − 2)</li><li>1 + √(x − 2)</li><li>1 − √(x + 2)</li><li>√(x − 2) − 1</li><li><span class="kes"><span>1</span><span>x<sup>2</sup> − 2x + 3</span></span></li></ul>
+<div class="coz"><p>Tam kareye tamamlarım: y = (x − 1)<sup>2</sup> + 2, buradan (x − 1)<sup>2</sup> = y − 2. Tanım kümesi x ≤ 1 olduğundan x − 1 ≤ 0; bu yüzden negatif kök alınır: x − 1 = −√(y − 2), x = 1 − √(y − 2). Denetim: f(0) = 3 ve 1 − √1 = 0. B, sağ kolun tersidir; 3'ü 2'ye götürür, oysa 2 tanım kümesinde bile değil. C, (x − 1)<sup>2</sup> = y + 2 yazıp 2'yi karşıya geçirirken işareti çevirmemektir. D, 1'i karşıya yanlış işaretle atmaktır. E, f<sup>−1</sup>'i <span class="kes"><span>1</span><span>f</span></span> sanmaktır.</p></div></li>
+
+<li data-c="B"><p class="q">f(3x − 1) = 6x + 5 olduğuna göre f<sup>−1</sup>(11) kaçtır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>4</li><li>29</li><li>71</li></ul>
+<div class="coz"><p>Eşitliği ters yönde okurum: f<sup>−1</sup>(6x + 5) = 3x − 1. İçeriye 11 girmesi için 6x + 5 = 11, x = 1; o hâlde f<sup>−1</sup>(11) = 3 · 1 − 1 = 2. Denetim: f(t) = 2t + 7 bulunur ve f(2) = 11. A, x'i bulup A(x)'e koymayı unutmaktır. C, 11'i yanlış yere koyup 3x − 1 = 11 çözmektir. D, tersi değil f(11)'i hesaplamaktır. E, 11'i doğrudan sağ taraftaki x'e koymaktır.</p></div></li>
+
+<li data-c="A"><p class="q">f: R → R, f(x) = x + 3 (x &lt; 2 iken), f(x) = 2x + 1 (x ≥ 2 iken) fonksiyonu veriliyor. Buna göre f<sup>−1</sup>(4) + f<sup>−1</sup>(11) toplamı kaçtır?</p>
+<ul class="sec"><li>6</li><li><span class="kes"><span>13</span><span>2</span></span></li><li>9</li><li><span class="kes"><span>19</span><span>2</span></span></li><li>32</li></ul>
+<div class="coz"><p>Birinci parça x &lt; 2 iken y &lt; 5 üretir; ikinci parça x ≥ 2 iken y ≥ 5 üretir. Tersin parçaları bu y aralıklarında çalışır. 4 &lt; 5: birinci parça, x + 3 = 4, x = 1. 11 ≥ 5: ikinci parça, 2x + 1 = 11, x = 5. Toplam 6. Denetim: f(1) = 4 (1 &lt; 2), f(5) = 11 (5 ≥ 2). B, parçayı tersin girdisini 2 ile karşılaştırarak seçmektir (aralıkları çevirmemek): 4 ≥ 2 diye <span class="kes"><span>3</span><span>2</span></span> alınır. C, iki değer için de birinci parçanın tersini kullanmaktır (1 + 8). D, parçaları ters eşleştirmektir. E, ters yerine f(4) + f(11) hesaplamaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = <span class="kes"><span>x + 1</span><span>1 − x</span></span> olmak üzere, f fonksiyonunun kendisiyle 2027 kez bileşkesinin x = 2 için değeri kaçtır?</p>
+<ul class="sec"><li>−3</li><li>−<span class="kes"><span>1</span><span>2</span></span></li><li>−<span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li>2</li></ul>
+<div class="coz"><p>İlk adımları hesaplarım: f(2) = −3, f(−3) = <span class="kes"><span>−2</span><span>4</span></span> = −<span class="kes"><span>1</span><span>2</span></span>, f(−<span class="kes"><span>1</span><span>2</span></span>) = <span class="kes"><span>1</span><span>3</span></span>, f(<span class="kes"><span>1</span><span>3</span></span>) = 2. Dört adımda başa dönülüyor (kuralla: f∘f = −<span class="kes"><span>1</span><span>x</span></span>, dört kez uygulayınca x). 2027 = 4 · 506 + 3, kalan 3: üçüncü adımdaki değer <span class="kes"><span>1</span><span>3</span></span>. A, "2027 tek, sonuç f(2)" diye döngüyü 2 sanmaktır. B, kalanı 2 bulmaktır. E, kalanı 0 sanmaktır. C, üç adımın f<sup>−1</sup> olduğunu görüp f<sup>−1</sup>'i <span class="kes"><span>1</span><span>f</span></span> sanmaktır: <span class="kes"><span>1</span><span>f(2)</span></span> = −<span class="kes"><span>1</span><span>3</span></span>.</p></div></li>
+
+<li data-c="B"><p class="q">f(x) = 3x − 2 ve g(x) = mx + 4 fonksiyonları için f∘g = g∘f olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>−7</li><li>−3</li><li>0</li><li><span class="kes"><span>1</span><span>3</span></span></li><li>3</li></ul>
+<div class="coz"><p>f(g(x)) = 3mx + 12 − 2 = 3mx + 10; g(f(x)) = m(3x − 2) + 4 = 3mx − 2m + 4. x'li terimler eşit; sabitler eşitlenir: 10 = −2m + 4, m = −3. Denetim: f'nin sabit noktası 3p − 2 = p'den p = 1; g(x) = −3x + 4'ün sabit noktası −3p + 4 = p'den p = 1. Aynı nokta, değişme var. A, g(f(x))'in sabitini −2m − 4 diye işaret hatasıyla yazmaktır. C, eğimleri ve sabitleri yanlış eşleştirip 3 · (−2) + 4 = 4m − 2 yazmaktır. D, değişmeli olmayı ters fonksiyon olmakla karıştırıp eğimleri birbirinin tersi sanmaktır. E, −2m'yi karşıya atarken işaret hatası yapmaktır (ya da eğimler eşit olmalı sanmaktır).</p></div></li>
+
+<li data-c="E"><p class="q">f(x) = <span class="kes"><span>2x + 5</span><span>x + m</span></span> fonksiyonunun tersi kendisine eşit olduğuna göre (f∘f∘f)(3) kaçtır?</p>
+<ul class="sec"><li>−2</li><li><span class="kes"><span>1</span><span>11</span></span></li><li><span class="kes"><span>11</span><span>5</span></span></li><li>3</li><li>11</li></ul>
+<div class="coz"><p>Tersi kendisine eşit olma koşulu a + d = 0: 2 + m = 0, m = −2. Böyle bir f için f∘f = I olduğundan f∘f∘f = f. (f∘f∘f)(3) = f(3) = <span class="kes"><span>6 + 5</span><span>3 − 2</span></span> = 11. Denetim: f(11) = <span class="kes"><span>27</span><span>9</span></span> = 3, gerçekten iki adımda başa dönülüyor. A, istenen değer yerine m'yi vermektir. B, f<sup>−1</sup>'i <span class="kes"><span>1</span><span>f</span></span> sanmaktır. C, koşulu a = d sanıp m = 2 almaktır. D, tek sayıda uygulamayı da birim fonksiyon sanmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = x<sup>2</sup> − 2x olduğuna göre (f∘f)(x) = 3 denkleminin kaç farklı gerçek kökü vardır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>
+<div class="coz"><p>t = f(x) derim: f(t) = 3, t<sup>2</sup> − 2t − 3 = 0, (t − 3)(t + 1) = 0, t = 3 ya da t = −1. İç denklemler: x<sup>2</sup> − 2x = 3 iki kök verir (x = 3, x = −1). x<sup>2</sup> − 2x = −1, yani (x − 1)<sup>2</sup> = 0, tek kök verir (x = 1, çift katlı). Farklı kök sayısı 2 + 1 = 3. Denetim: f(1) = −1 ve f(−1) = 3. C, dış denklemin kök sayısını (t'leri) cevap sanmaktır. E, çift katlı kökü iki kez saymaktır. B, yalnızca x<sup>2</sup> − 2x = −1 denklemini çözmektir. A'yı veren tutarlı bir hesap yoktur; f(3) = 3 olduğundan (f∘f)(3) = f(3) = 3 olduğunu, yani x = 3'ün bir kök olduğunu görmek bu seçeneği hemen eler.</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 3x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>−2</li><li>1</li><li>2</li><li>4</li><li>6</li></ul>
+<div class="coz"><p>Ortalama değişim hızı <span class="kes"><span>f(4) − f(1)</span><span>4 − 1</span></span> oranıdır; (1, f(1)) ile (4, f(4)) noktalarını birleştiren kirişin eğimidir. f(4) = 16 − 12 = 4, f(1) = 1 − 3 = −2. Oran <span class="kes"><span>4 − (−2)</span><span>3</span></span> = 2. A, payda çıkarma sırasını ters alıp f(1) − f(4) yazmaktır. B, f(4)'ü 4'e bölmektir. D, yalnızca f(4)'ü vermektir. E, değişimi aralık uzunluğuna bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">f tek fonksiyon, g çift fonksiyondur. f(3) = 4 ve g(−3) = 7 olduğuna göre f(−3) + g(3) + f(0) toplamı kaçtır?</p>
+<ul class="sec"><li>−11</li><li>−3</li><li>3</li><li>7</li><li>11</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x): f(−3) = −4. Çift fonksiyonda g(−x) = g(x): g(3) = 7. Tek fonksiyon 0'da tanımlıysa f(0) = −f(0), yani f(0) = 0. Toplam −4 + 7 + 0 = 3. E, f'yi de çift sanıp f(−3) = 4 almaktır. A, g'yi tek sanıp g(3) = −7 almaktır. B, ikisini birden karıştırmaktır (4 − 7). D, f'li terimlerin hepsini sıfır sanmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-1">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-2">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-3">Sonraki parça: parçalı ve mutlak değerli fonksiyonların grafikleri</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"bileşke fonksiyon ters fonksiyon AYT zor sorular"</li>
+  <li>"parçalı fonksiyonun tersi ve bileşkesi"</li>
+  <li>"fof(x) = a denkleminin kök sayısı grafik"</li>
+  <li>"tersi kendisine eşit fonksiyon ve tekrarlı bileşke"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu dersin kapsam listesindeki 2. satıra göre yazıldı; kavramlar 2018 ortaöğretim matematik programının 11. sınıf fonksiyonlarda uygulamalar ünitesindeki yerleşik anlatıma dayanıyor. Bu oturumda bir ders kitabıyla satır satır karşılaştırmadım.</li>
+  <li>Bütün çözümlü örneklerin, tabloların ve quiz cevaplarının sayısal sonuçları Python ile (kesirli sayılarla tam hesap ve değer koyma denetimi) doğrulandı; çeldiricilerin her birinin hangi hatadan çıktığı ayrıca hesaplanarak denetlendi. Şekillerdeki koordinatlar da hesaplanarak çizildi.</li>
+  <li>"f∘f∘f" için f<sup>3</sup> yazımının kullanılıp kullanılmadığı kaynaktan kaynağa değişiyor; sınavlarda açık yazım ya da soru kökünde tanım verilmesi beklenir, ama bundan kesin olarak emin değilim.</li>
+  <li>"Eğimi 1'den farklı iki doğrusal fonksiyon ancak sabit noktaları aynıysa değişmelidir" yorumu ve (f∘f)(x) = x kesişim ölçütü programda ayrı kazanım olarak geçmeyebilir; sorularda kontrol yolu olarak işe yaradıkları için kondu, kanıtları metinde verildi.</li>
+  <li>Kelvin dönüşümünde gerçek değer 273,15'tir; metinde sınavlarda yaygın olan 273 kullanıldı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

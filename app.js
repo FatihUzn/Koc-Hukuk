@@ -1902,3 +1902,6 @@ function cizDersKart(){
 }
 
 })();
+
+/* iOS: iki parmak / çift dokunma ile büyütmeyi kapat */
+document.addEventListener("gesturestart",function(e){e.preventDefault();},{passive:false});

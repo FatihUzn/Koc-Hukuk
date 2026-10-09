@@ -115,7 +115,7 @@ bolum("Arşiv");
 { const html=oku("arsiv/index.html"), d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
   let n=0;
   d.forEach(x=>x.bolumler.forEach((ad,i)=>{ const f="arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"; if(!varMi(f)) return; n++;
-    const kaynak=oku(f);
+    const kaynak=oku(f), html=x.ders ? oku("arsiv/ders-"+x.id+".html") : oku("arsiv/index.html");
     T(x.id+"-"+(i+1)+" derlenmiş sayfada", html.includes('id="c-'+x.id+"-"+(i+1)+'"'));
     T(x.id+"-"+(i+1)+" derleme güncel", html.includes(kaynak.trim().slice(-400)), "arsiv/build.py çalıştırılmamış");
     T(x.id+"-"+(i+1)+" kaynak ve doğrulama bölümü var", /Kaynak ve doğrulama/.test(kaynak));
@@ -124,6 +124,25 @@ bolum("Arşiv");
   T("en az 11 bölüm", n>=11, String(n));
   T("pano kartları derlenmiş", pano.kartlar.every(k=>html.includes(k.deger)&&html.includes(k.baslik)), "pano.json değişmiş, build.py çalıştırılmamış");
   T("pano kartlarında güven düzeyi var", pano.kartlar.every(k=>/^[dkh]$/.test(k.guven)));
+  T("ders bölümleri ana sayfada değil (sayfalara bölündü)", !/class="chapter ders"/.test(html));
+  d.filter(x=>x.ders).forEach(x=>{ const s=oku("arsiv/ders-"+x.id+".html");
+    T("ders-"+x.id+".html kilitsiz", /var DERS_SAYFASI=true;/.test(s));
+    T("ders-"+x.id+".html yönlendirme bilgisi", s.includes('"bu": "ders-'+x.id+'.html"')); });
+  T("arşiv ana sayfası kilitli", /var DERS_SAYFASI=false;/.test(html));
+}
+
+/* ---------- 5b. okuma planı ---------- */
+bolum("Okuma planı");
+{ const src=oku("okuma.js"), O=new Function(src+";return OKUMA;")(), d=JSON.parse(oku("arsiv/kaynak/dosyalar.json"));
+  const tum=[].concat(...Object.values(O.gunler)).map(x=>x[0]);
+  T("planda her parça bir kez", new Set(tum).size===tum.length, tum.length+" satır");
+  const beklenen=Object.entries(O.dersler).reduce((a,[k,v])=>a+v.n,0);
+  T("planda bütün TYT parçaları", tum.length===beklenen, tum.length+"/"+beklenen);
+  T("plan son günü 29 Ekim", O.son==="2026-10-29");
+  Object.keys(O.dersler).forEach(k=>{ const sira=tum.filter(p=>p.startsWith(k+"-")).map(p=>+p.split("-").pop());
+    T(k+" parçaları sırayla", sira.every((v,i)=>v===i+1)); });
+  Object.keys(O.gunler).forEach(g=>{ const s=O.gunler[g].map(x=>x[1]).filter(x=>x!=="—"); T(g+" saatleri artan", s.every((v,i)=>!i||v>s[i-1])); });
+  T("okuma.js panelde yükleniyor", oku("index.html").includes('<script src="okuma.js"></script>'));
 }
 
 /* ---------- 6. bağlantılar ve sürüm ---------- */

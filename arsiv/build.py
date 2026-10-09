@@ -50,7 +50,7 @@ def dersler_html():
         top = len(d["bolumler"])
         durum = f"{top} parça hazır · dosya tamam" if len(hazir) == top else (f"{len(hazir)} parça hazır · {top - len(hazir)} sırada" if hazir else f"Sırada · {top} parça")
         ic = f'<b>{d["baslik"]}</b><span>{d.get("aciklama", "")}</span><span class="st">{durum}</span>'
-        kart.append(f'      <a class="file" href="#{d["id"]}-{hazir[0]}">{ic}</a>' if hazir else f'      <div class="file">{ic}</div>')
+        kart.append(f'      <a class="file" href="ders-{d["id"]}.html#{d["id"]}-{hazir[0]}">{ic}</a>' if hazir else f'      <div class="file">{ic}</div>')
     return '''  <div class="shelf">
     <h2>Dersler</h2>
     <p class="sub">Sıfırdan, en küçük ayrıntısına kadar. Her parça tek oturumda biter; sonunda öncekileri de kapsayan bir quiz var. Bu raf kilidin ve günlük okuma süresinin dışındadır.</p>
@@ -60,7 +60,10 @@ def dersler_html():
   </div>
 '''
 
-govde = [oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html()), pano_html()]
+DERS_IDS = [x["id"] for x in dosyalar if x.get("ders")]
+kutup = oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html())
+sayfa_govde = {"index.html": [kutup, pano_html()]}
+for _i in DERS_IDS: sayfa_govde[f"ders-{_i}.html"] = [kutup]
 files, names, guven = {}, {}, {}
 for d in dosyalar:
     i, t = d["id"], d["baslik"]
@@ -76,7 +79,8 @@ for d in dosyalar:
             bol.append(yol.read_text(encoding="utf-8"))
         else:
             li.append(f'    <li><span>{html.escape(ad, quote=False)}<i class="later">sırada</i></span></li>')
-    govde.append(f'''
+    hedef = f"ders-{i}.html" if d.get("ders") else "index.html"
+    sayfa_govde[hedef].append(f'''
 <!-- =================== DOSYA: {t} =================== -->
 <div class="view" id="v-{i}" data-title="{t}">
 <div class="book">
@@ -94,23 +98,35 @@ for d in dosyalar:
 </div><!-- /book -->
 </div><!-- /view {i} -->
 ''')
-govde.append("\n</div><!-- /shell -->\n")
-govde.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps([x["id"] for x in dosyalar if x.get("ders")])))
-betik = oku("betik.html")
-betik = betik.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
-betik = betik.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
-govde.append(betik)
-govde.append(oku("ek.html").replace("/*GUVEN*/{}", json.dumps(guven)))
-stil, govde = oku("stil.html"), "".join(govde)
-# Site derlemesinde yazı tipleri depodan (../fonts); --tek kopyasında Google Fonts bağlantısı kalır.
 import re as _re
+def yonlendir(metin, bu):
+    """href="#x-N" başka sayfadaysa o sayfaya yönlendirir."""
+    def f(m):
+        h = m.group(1); kok = _re.match(r"([a-z]+)", h).group(1)
+        hedef = f"ders-{kok}.html" if kok in DERS_IDS else "index.html"
+        return m.group(0) if hedef == bu else f'href="{hedef}#{h}"'
+    return _re.sub(r'href="#([a-z]+(?:-\d+)?)"', f, metin)
+def kuyruk(bu):
+    k = ["\n</div><!-- /shell -->\n"]
+    k.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps(DERS_IDS)).replace("/*DERS_SAYFASI*/false", "true" if bu != "index.html" else "false"))
+    b = oku("betik.html")
+    b = b.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
+    b = b.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
+    b = b.replace("/*SAYFA*/{}", json.dumps({"bu": bu, "ders": DERS_IDS}))
+    k.append(b)
+    k.append(oku("ek.html").replace("/*GUVEN*/{}", json.dumps(guven)))
+    return "".join(k)
+# Site derlemesinde yazı tipleri depodan (../fonts); --tek kopyasında Google Fonts bağlantısı kalır.
+stil = oku("stil.html")
 stil_site = _re.sub(r'<link rel="preconnect"[^>]*>\n<link rel="stylesheet" href="https://fonts.googleapis.com[^>]*>\n', '<link rel="stylesheet" href="../fonts/arsiv.css">\n', stil)
 assert "../fonts/arsiv.css" in stil_site
 
-tam = f'''<!doctype html>
+def sayfa(bu, govde, baslik):
+    tam = f'''<!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
+<title>{baslik}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#f6f7fb">
@@ -127,7 +143,17 @@ tam = f'''<!doctype html>
 </body>
 </html>
 '''
-(Path(__file__).parent / "index.html").write_text(tam, encoding="utf-8")
-print("index.html yazıldı:", len(tam) // 1024, "KB,", len(names), "bölüm")
+    (Path(__file__).parent / bu).write_text(tam, encoding="utf-8")
+    return tam
+toplam = 0
+for bu, parcalar in sayfa_govde.items():
+    govde = yonlendir("".join(parcalar), bu) + kuyruk(bu)
+    tam = sayfa(bu, govde, "Arşiv")
+    toplam += len(tam)
+    if bu == "index.html": tek_govde = govde
+    print(f"  {bu}: {len(tam)//1024} KB")
+for eski in Path(__file__).parent.glob("ders-*.html"):
+    if eski.name not in sayfa_govde: eski.unlink()
+print("arşiv yazıldı:", len(sayfa_govde), "sayfa,", toplam // 1024, "KB,", len(names), "bölüm")
 if "--tek" in sys.argv:
-    Path(sys.argv[sys.argv.index("--tek") + 1]).write_text(stil + govde, encoding="utf-8")
+    Path(sys.argv[sys.argv.index("--tek") + 1]).write_text(stil + tek_govde, encoding="utf-8")

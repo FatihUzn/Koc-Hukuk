@@ -124,3 +124,10 @@ Baktıkları: eşitleme birleştirmesi (iki cihaz benzetimi), blok listeleri, **
 ## Spor
 
 Ben → Spor. Program `spor.js` içinde (ev ve salon için ayrı; hareket, set ve tekrar aralıklarını oradan değiştirirsin; hareketin `id` alanına dokunma, kayıtlar ona bağlı). Günün antrenmanı açılır, her set için ağırlık ve tekrar yazılır, geçen seferki rakam kutuda soluk görünür. "Antrenmanı bitir" o günün Spor bloğunu işaretler. Kayıtlar eşitlenir ve yedeğe girer.
+
+## Ekim okuma planı ve ders sayfaları (9 Ekim)
+
+- Arşiv artık sayfalara bölünüyor: `arsiv/index.html` (kütüphane, pano, ekonomi dosyaları) ve her ders için `arsiv/ders-<id>.html`. `python arsiv/build.py` hepsini yazar. Başka sayfadaki bir bölüme giden bağlantı otomatik o sayfaya gider; ders sayfalarında kilit ve süre sayacı yok.
+- Panelde **Oku → Dersler**: 9–29 Ekim TYT planı (137 parça), bugünün parçaları saatleriyle, geride kalanlar, ders ilerlemesi, gün gün liste. Okundu bilgisi arşivle ortak (`dni-done`), eşitlenir. Bugün ekranının üstünde de özet kartı var.
+- Plan `araclar/okuma_plani.py` ile üretilir (`okuma.js`). Gün başına parça sayısı ve saat dilimleri betiğin başında; değiştirip yeniden çalıştır.
+- Bugünün ders sayfaları Dersler ekranı açılınca telefona kaydedilir; metroda internetsiz açılır.

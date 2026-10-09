@@ -4,6 +4,22 @@
   var root=document.documentElement; root.classList.add('js');
   var files=/*DOSYALAR*/{};
   var names=/*BOLUMLER*/{};
+  var SAYFA=/*SAYFA*/{};
+  /* Arşiv sayfalara bölündü: her ders kendi dosyasında (ders-<id>.html), geri kalanı index.html'de.
+     Başka sayfadaki bir yere giden adres o sayfaya aktarılır. */
+  function sayfaYonlendir(){
+    if(!SAYFA.bu) return false;
+    var h=(location.hash||'').slice(1), dersSay=SAYFA.bu!=='index.html';
+    if(!h){
+      if(!dersSay) return false;
+      var id=SAYFA.bu.slice(5,-5), son=null; try{son=JSON.parse(localStorage.getItem('dni-last')||'null')}catch(e){}
+      location.replace('#'+((son&&son.indexOf(id+'-')===0)?son:id+'-1')); return true;
+    }
+    var m=h.match(/^([a-z]+)(?:-\d+)?$/), kok=m?m[1]:'';
+    var hedef=(SAYFA.ders||[]).indexOf(kok)>=0?'ders-'+kok+'.html':'index.html';
+    if(hedef!==SAYFA.bu){ location.replace(hedef+'#'+h); return true; }
+    return false;
+  }
 
   /* ---- kelime açıklamaları: [ad, kök (düzenli ifade), açıklama] ---- */
   var G=[
@@ -169,6 +185,7 @@
     if(last&&names[last]){r.innerHTML='Kaldığın yer: <a href="#'+last+'">'+names[last]+'</a>';r.classList.add('on')}
   }
   function route(){
+    if(sayfaYonlendir()) return;
     var h=(location.hash||'#ev').slice(1), m=h.match(/^([a-z]+)-(\d+)$/);
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
     var crumb=document.getElementById('crumb'); box.hidden=true;

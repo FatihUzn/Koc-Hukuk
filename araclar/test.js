@@ -115,7 +115,7 @@ bolum("Arşiv");
 { const html=oku("arsiv/index.html"), d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
   let n=0;
   d.forEach(x=>x.bolumler.forEach((ad,i)=>{ const f="arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"; if(!varMi(f)) return; n++;
-    const kaynak=oku(f), html=x.ders ? oku("arsiv/ders-"+x.id+".html") : oku("arsiv/index.html");
+    const kaynak=oku(f), html=oku("arsiv/"+(x.ders?"ders-":"dosya-")+x.id+".html");
     T(x.id+"-"+(i+1)+" derlenmiş sayfada", html.includes('id="c-'+x.id+"-"+(i+1)+'"'));
     T(x.id+"-"+(i+1)+" derleme güncel", html.includes(kaynak.trim().slice(-400)), "arsiv/build.py çalıştırılmamış");
     T(x.id+"-"+(i+1)+" kaynak ve doğrulama bölümü var", /Kaynak ve doğrulama/.test(kaynak));
@@ -129,6 +129,10 @@ bolum("Arşiv");
     T("ders-"+x.id+".html kilitsiz", /var DERS_SAYFASI=true;/.test(s));
     T("ders-"+x.id+".html yönlendirme bilgisi", s.includes('"bu": "ders-'+x.id+'.html"')); });
   T("arşiv ana sayfası kilitli", /var DERS_SAYFASI=false;/.test(html));
+  T("arşiv ana sayfası hafif (dosyalar ayrı sayfada)", html.length<300000, Math.round(html.length/1024)+" KB");
+  d.filter(x=>!x.ders && x.bolumler.some((_,i)=>varMi("arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"))).forEach(x=>{ const s=oku("arsiv/dosya-"+x.id+".html");
+    T("dosya-"+x.id+".html kilitli", /var DERS_SAYFASI=false;/.test(s));
+    T("dosya-"+x.id+".html katalogda", oku("katalog.js").includes('"sayfa":"dosya-'+x.id+'.html"')); });
 }
 
 /* ---------- 5b. okuma planı ---------- */

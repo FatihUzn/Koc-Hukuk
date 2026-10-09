@@ -66,6 +66,8 @@ for i, d in dosyalar.items():
         if i not in var:
             continue
     cikti[i] = {"ad": d.get("_ad") or d["baslik"], "acik": d.get("_acik", ""), "raf": d.get("_raf", "Diğer"), "bolumler": bl}
+    if any(x[1] for x in bl):
+        cikti[i]["sayfa"] = f"dosya-{i}.html"  # arsiv/build.py ile aynı kural
 
 # Yalnızca yakında olan (hiç bölümü yazılmamış) dosyalar rafta değil "Yakında"da dursun
 for r in raflar:

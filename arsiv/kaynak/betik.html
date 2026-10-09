@@ -10,14 +10,14 @@ document.addEventListener("gesturestart",function(e){e.preventDefault();},{passi
      Başka sayfadaki bir yere giden adres o sayfaya aktarılır. */
   function sayfaYonlendir(){
     if(!SAYFA.bu) return false;
-    var h=(location.hash||'').slice(1), dersSay=SAYFA.bu!=='index.html';
+    var h=(location.hash||'').slice(1), kendi=SAYFA.bu!=='index.html', harita=SAYFA.harita||{};
     if(!h){
-      if(!dersSay) return false;
-      var id=SAYFA.bu.slice(5,-5), son=null; try{son=JSON.parse(localStorage.getItem('dni-last')||'null')}catch(e){}
+      if(!kendi) return false;
+      var id=SAYFA.bu.replace(/^(ders|dosya)-/,'').slice(0,-5), son=null; try{son=JSON.parse(localStorage.getItem('dni-last')||'null')}catch(e){}
       location.replace('#'+((son&&son.indexOf(id+'-')===0)?son:id+'-1')); return true;
     }
     var m=h.match(/^([a-z]+)(?:-\d+)?$/), kok=m?m[1]:'';
-    var hedef=(SAYFA.ders||[]).indexOf(kok)>=0?'ders-'+kok+'.html':'index.html';
+    var hedef=harita[kok]||((SAYFA.ders||[]).indexOf(kok)>=0?'ders-'+kok+'.html':'index.html');
     if(hedef!==SAYFA.bu){ location.replace(hedef+'#'+h); return true; }
     return false;
   }
@@ -739,10 +739,11 @@ document.addEventListener("gesturestart",function(e){e.preventDefault();},{passi
   ];
   function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function wrapTerms(scope){
-    var used=[];
+    var used=[], hepsi=scope.textContent, ps=null;
     G.forEach(function(g,gi){
       var o=g[3]||''; var re; try{re=new RegExp('(^|[^\\p{L}])('+g[1]+(o.indexOf('e')>-1?')(?![\\p{L}])':'[\\p{L}]*)'),(o.indexOf('c')>-1?'u':'iu'))}catch(e){return}
-      var ps=scope.querySelectorAll('p, li');
+      if(!re.test(hepsi)) return; /* bölümde hiç geçmiyorsa paragrafları gezme */
+      if(!ps) ps=scope.querySelectorAll('p, li');
       for(var i=0;i<ps.length;i++){
         var el=ps[i]; if(el.closest('.fine,.side,details,.sum,.nav')) continue;
         var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null), n;
@@ -767,7 +768,9 @@ document.addEventListener("gesturestart",function(e){e.preventDefault();},{passi
     var box=document.createElement('div'); box.innerHTML=h+'</dl>';
     var nav=end.querySelector('.nav'); end.insertBefore(box,nav);
   }
-  document.querySelectorAll('.chapter:not(.ders)').forEach(function(ch){addWordList(ch,wrapTerms(ch))});
+  /* Kelimeler yalnızca açılan bölümde işaretlenir; hepsini açılışta yapmak telefonda saniyelerce donduruyordu */
+  function terimle(ch){ if(!ch||ch.dataset.terim||ch.classList.contains('ders')) return; ch.dataset.terim='1';
+    setTimeout(function(){ addWordList(ch,wrapTerms(ch)); },60); /* önce sayfa görünsün, kelimeler ardından */ }
   var pano=document.querySelector('.pano'); if(pano) wrapTerms(pano);
 
   var box=document.getElementById('defbox');
@@ -801,6 +804,7 @@ document.addEventListener("gesturestart",function(e){e.preventDefault();},{passi
     if(m&&files[m[1]]&&document.getElementById('c-'+h)){
       document.getElementById('v-'+m[1]).classList.add('on');
       document.querySelectorAll('#v-'+m[1]+' .chapter').forEach(function(c){c.style.display=(c.id==='c-'+h)?'block':'none'});
+      terimle(document.getElementById('c-'+h));
       document.querySelectorAll('.side a[data-ch]').forEach(function(a){a.classList.toggle('cur',a.dataset.ch===h)});
       crumb.textContent=files[m[1]].title+' · Bölüm '+m[2];
       set('dni-last',h);

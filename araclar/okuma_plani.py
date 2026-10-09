@@ -56,12 +56,22 @@ adlar = {}
 for d, a, b in [x for l in KOLLAR.values() for x in l]:
     for n in range(a, b + 1):
         adlar[f"{d}-{n}"] = dosyalar[d]["bolumler"][n - 1]
-KISA = {"mat": "Matematik"}
-dersler = {d: {"ad": KISA.get(d, dosyalar[d]["baslik"]), "n": b} for d, a, b in [x for l in KOLLAR.values() for x in l]}
-
+KISA = {"mat": "Matematik", "ileri": "Matematik"}
+def ders_listesi(sira):
+    return [{"id": d, "ad": KISA.get(d, dosyalar[d]["baslik"]), "p": [f"{d}-{n}" for n in range(a, b + 1)]} for d, a, b in sira]
+# Panelde görünen sıra (sınavdaki sıra). AYT'nin planı TYT bitince kurulacak.
+TYT = ders_listesi([("turkce", 1, 23), ("mat", 1, 48), ("geo", 1, 13), ("fizik", 1, 12), ("kimya", 1, 10), ("biyo", 1, 9), ("sosyal", 1, 22)])
+AYT = ders_listesi([("ileri", 1, 34), ("geo", 14, 26), ("fizik", 13, 32), ("kimya", 11, 26), ("biyo", 10, 24)])
+adlar, hazir = {}, []
+for x in TYT + AYT:
+    for p in x["p"]:
+        d, n = p.rsplit("-", 1)
+        adlar[p] = dosyalar[d]["bolumler"][int(n) - 1]
+        if (KOK / "arsiv/kaynak" / d / f"bolum-{n}.html").exists(): hazir.append(p)
+assert sorted(sum((x["p"] for x in TYT), [])) == sorted(p for g in plan.values() for p, *_ in g)
 js = ("/* Ekim okuma planı — araclar/okuma_plani.py üretir, elle düzenleme. */\n"
-      "var OKUMA = " + json.dumps({"bas": BAS.isoformat(), "son": SON.isoformat(), "dersler": dersler,
-                                   "adlar": adlar, "gunler": plan}, ensure_ascii=False, separators=(",", ":")) + ";\n")
+      "var OKUMA = " + json.dumps({"bas": BAS.isoformat(), "son": SON.isoformat(), "tyt": TYT, "ayt": AYT,
+                                   "adlar": adlar, "hazir": hazir, "gunler": plan}, ensure_ascii=False, separators=(",", ":")) + ";\n")
 (KOK / "okuma.js").write_text(js, encoding="utf-8")
 print("okuma.js:", toplam, "parça,", len(gunler), "gün,", len(js) // 1024, "KB")
 if __name__ == "__main__":

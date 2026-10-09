@@ -1431,7 +1431,7 @@ function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); 
 var GRUPLAR=[
   {id:"bugun",   ad:"Bugün",   alt:[["bugun","Bugün"]]},
   {id:"calisma", ad:"Çalışma", alt:[["netler","Netler"],["defter","Defter"],["hafta","Hafta"],["yil","Yıl"]]},
-  {id:"oku",     ad:"Oku",     alt:[["ders","Dersler"],["gundem","Gündem"]]},
+  {id:"oku",     ad:"Oku",     alt:[["ders","Oku"],["gundem","Gündem"]]},
   {id:"ben",     ad:"Ben",     alt:[["plan","Düzen","duzen"],["spor","Spor"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
 ];
 var GIKON={
@@ -1559,15 +1559,30 @@ document.addEventListener("visibilitychange",function(){ if(document.visibilityS
 zilKur();
 (function(){ var o=$("raporOnce"); if(o) o.addEventListener("click",function(){ raporHafta = raporHafta===0 ? -1 : 0; o.textContent = raporHafta===0 ? "Geçen hafta" : "Bu hafta"; cizRapor(); }); })();
 var rsz; window.addEventListener("resize",function(){ clearTimeout(rsz); rsz=setTimeout(function(){ if(aktif==="netler") cizGrafik(); },180); });
-/* ============ Ders okuma planı (okuma.js · araclar/okuma_plani.py) ============
+/* ============ Oku: Arşiv · TYT · AYT (okuma.js · araclar/okuma_plani.py) ============
    Okundu bilgisi arşivle ortak: dni-done (bölüm sonundaki "Bu bölümü okudum" da aynı yere yazar). */
 var GUN_AD=["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"], AY_AD=["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+var okuGor=yerelOku("oku_gor","");      // "" (ana) | "tyt" | "ayt"
 function okumaVar(){ return typeof OKUMA!=="undefined" && OKUMA && OKUMA.gunler; }
 function parcaDers(p){ return p.replace(/-\d+$/,""); }
 function parcaNo(p){ return +p.split("-").pop(); }
 function parcaAdres(p){ return "arsiv/ders-"+parcaDers(p)+".html#"+p; }
+function dersAdi(p){ var d=parcaDers(p), l=(OKUMA.tyt||[]).concat(OKUMA.ayt||[]); for(var i=0;i<l.length;i++) if(l[i].id===d) return l[i].ad; return d; }
+function hazirMi(p){ return !OKUMA.hazir || OKUMA.hazir.indexOf(p)>=0; }
 function isoTarih(iso){ var a=iso.split("-"); return new Date(+a[0],+a[1]-1,+a[2]); }
 function gunEtiket(iso){ var d=isoTarih(iso); return GUN_AD[d.getDay()]+" "+d.getDate()+" "+AY_AD[d.getMonth()]; }
+function esc(t){ return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+function dkSay(hhmm){ var a=hhmm.split(":"); return (+a[0])*60+(+a[1]); }
+function dkYaz(n){ return pad(Math.floor(n/60)%24)+":"+pad(n%60); }
+function araliklar(liste){   // ["mat-1","mat-2","mat-3","turkce-1"] → "Matematik 1–3 · Türkçe 1"
+  var g={}, sira=[];
+  liste.forEach(function(p){ var d=parcaDers(p); if(!g[d]){ g[d]=[]; sira.push(d); } g[d].push(parcaNo(p)); });
+  return sira.map(function(d){
+    var n=g[d].sort(function(a,b){return a-b;}), par=[], bas=n[0], onc=n[0];
+    for(var i=1;i<=n.length;i++){ if(i<n.length && n[i]===onc+1){ onc=n[i]; continue; } par.push(bas===onc? String(bas) : bas+"–"+onc); if(i<n.length){ bas=onc=n[i]; } }
+    return dersAdi(d+"-1")+" "+par.join(", ");
+  }).join(" · ");
+}
 function okumaDurum(){
   var done=yerelOku("dni-done",{})||{}, bug=anahtar(bugunTarih()), gunler=Object.keys(OKUMA.gunler).sort();
   var hepsi=[], geride=[], bugun=[];
@@ -1576,70 +1591,156 @@ function okumaDurum(){
     if(g<bug && !o.ok) geride.push(o); if(g===bug) bugun.push(o);
   }); });
   var kalan=hepsi.filter(function(o){return !o.ok;}).length;
-  var gunKalan=Math.max(0, gunler.filter(function(g){return g>=bug;}).length);
+  var gunKalan=gunler.filter(function(g){return g>=bug;}).length;
   return {done:done,bug:bug,gunler:gunler,hepsi:hepsi,geride:geride,bugun:bugun,kalan:kalan,gunKalan:gunKalan,
           gereken: gunKalan? Math.ceil(kalan/gunKalan) : kalan};
 }
 function okunduYap(p,v){ var d=yerelOku("dni-done",{})||{}; if(v) d[p]=true; else delete d[p]; yerelYaz("dni-done",d); cizDers(); cizDersKart(); }
 var dersOnYuklenen={};
 function dersOnYukle(liste){
-  if(!("caches" in window) || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+  if(!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
   liste.forEach(function(o){ var u="arsiv/ders-"+parcaDers(o.p)+".html"; if(dersOnYuklenen[u]) return; dersOnYuklenen[u]=1; try{ fetch(u).catch(function(){}); }catch(e){} });
+}
+function tikDugme(p, ok){
+  var b=el("button","dtik"); b.type="button"; b.setAttribute("aria-pressed",ok?"true":"false"); b.setAttribute("aria-label",ok?"Okundu, geri al":"Okudum");
+  b.innerHTML=ok?'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.5 8.5l3 3 6-7"/></svg>':"";
+  b.addEventListener("click",function(e){ e.preventDefault(); e.stopPropagation(); okunduYap(p,!ok); });
+  return b;
 }
 function dersSatir(o, gerideMi){
   var r=el("div","dsat"+(o.ok?" ok":"")+(gerideMi?" geri":""));
-  var sa=el("span","dsaat", gerideMi ? gunEtiket(o.gun).replace(/^\S+ /,"") : (o.s==="—" ? "serbest" : o.s));
+  r.appendChild(el("span","dsaat", gerideMi ? gunEtiket(o.gun).replace(/^\S+ /,"") : (o.s==="—" ? "serbest" : o.s)));
   var ic=el("a","dic"); ic.href=parcaAdres(o.p);
-  var dd=OKUMA.dersler[parcaDers(o.p)];
-  ic.appendChild(el("b",null,(dd?dd.ad:parcaDers(o.p))+" "+parcaNo(o.p)));
+  ic.appendChild(el("b",null,dersAdi(o.p)+" "+parcaNo(o.p)));
   ic.appendChild(el("span",null,OKUMA.adlar[o.p]||""));
   ic.appendChild(el("i",null,(gerideMi?"geride kaldı · ":"")+(o.blok||"")+" · ~"+o.dk+" dk"));
-  var b=el("button","dtik"); b.type="button"; b.setAttribute("aria-pressed",o.ok?"true":"false"); b.setAttribute("aria-label",o.ok?"Okundu, geri al":"Okudum");
-  b.innerHTML=o.ok?'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.5 8.5l3 3 6-7"/></svg>':"";
-  b.addEventListener("click",function(){ okunduYap(o.p,!o.ok); });
-  r.appendChild(sa); r.appendChild(ic); r.appendChild(b); return r;
+  r.appendChild(ic); r.appendChild(tikDugme(o.p,o.ok)); return r;
+}
+/* "Şu an saat şu; şu dersin şu parçalarını oku" */
+function tytBilgi(D){
+  var k=$("dersBilgi"); k.innerHTML="";
+  var simdi=new Date(), sdk=simdi.getHours()*60+simdi.getMinutes(), saat=pad(simdi.getHours())+":"+pad(simdi.getMinutes());
+  var b1=el("p","db1"), b2=el("p","db2");
+  if(D.bug<OKUMA.bas){ b1.textContent="Plan "+gunEtiket(OKUMA.bas)+" günü başlıyor."; k.appendChild(b1); return; }
+  var kalanBugun=D.bugun.filter(function(o){return !o.ok;});
+  if(D.bug>OKUMA.son){
+    b1.textContent = D.kalan ? "Plan süresi bitti; "+D.kalan+" parça okunmadı." : "TYT'nin bütün parçaları okundu.";
+    k.appendChild(b1);
+    if(D.kalan){ b2.textContent="Kalanlar: "+araliklar(D.hepsi.filter(function(o){return !o.ok;}).map(function(o){return o.p;})); k.appendChild(b2); }
+    return;
+  }
+  var su=null, sonra=null;
+  D.bugun.forEach(function(o){ if(o.s==="—") return; var a=dkSay(o.s), z=a+o.dk;
+    if(sdk>=a && sdk<z && !su) su=o; if(a>sdk && !o.ok && !sonra) sonra=o; });
+  var acik=null;
+  // Aynı derste daha önceki okunmamış parça varsa önce o (quizler birikimli; sıra bozulmasın).
+  function enErken(o){ if(!o) return o; var d=parcaDers(o.p); for(var i=0;i<D.hepsi.length;i++){ var x=D.hepsi[i]; if(x.gun<=D.bug && !x.ok && parcaDers(x.p)===d) return x; } return o; }
+  if(su && !su.ok && enErken(su)!==su){
+    var e1=enErken(su);
+    b1.innerHTML="Saat <b>"+saat+"</b>. Bu blok "+esc(dersAdi(su.p))+" saati ("+su.s+"–"+dkYaz(dkSay(su.s)+su.dk)+"). Geride kaldığın için önce <b>"+esc(dersAdi(e1.p)+" "+parcaNo(e1.p))+"</b>: "+esc(OKUMA.adlar[e1.p]||"");
+    acik=e1;
+  } else if(su && !su.ok){
+    b1.innerHTML="Saat <b>"+saat+"</b>. Şimdi <b>"+esc(dersAdi(su.p)+" "+parcaNo(su.p))+"</b> okuma zamanı: "+esc(OKUMA.adlar[su.p]||"")+" <span>("+su.s+"–"+dkYaz(dkSay(su.s)+su.dk)+", "+esc(su.blok)+")</span>";
+    acik=su;
+  } else {
+    var ilk=enErken(kalanBugun.length ? (sonra || kalanBugun.filter(function(o){return o.s==="—"||dkSay(o.s)<=sdk;})[0] || kalanBugun[0]) : D.geride[0]);
+    if(!ilk) b1.innerHTML="Saat <b>"+saat+"</b>. Bugünün parçaları bitti. Yarın: "+esc(araliklar(D.hepsi.filter(function(o){return o.gun>D.bug && !o.ok;}).slice(0,7).map(function(o){return o.p;})));
+    else if(D.geride.indexOf(ilk)>=0) b1.innerHTML="Saat <b>"+saat+"</b>. Önce geride kalanı bitir: <b>"+esc(dersAdi(ilk.p)+" "+parcaNo(ilk.p))+"</b> · "+esc(OKUMA.adlar[ilk.p]||"");
+    else if(ilk.s!=="—" && dkSay(ilk.s)>sdk) b1.innerHTML="Saat <b>"+saat+"</b>"+(su&&su.ok?", bu bloğun parçası bitti":"")+". Sıradaki <b>"+esc(dersAdi(ilk.p)+" "+parcaNo(ilk.p))+"</b>, "+ilk.s+"'te ("+esc(ilk.blok)+"): "+esc(OKUMA.adlar[ilk.p]||"");
+    else b1.innerHTML="Saat <b>"+saat+"</b>. Şimdi <b>"+esc(dersAdi(ilk.p)+" "+parcaNo(ilk.p))+"</b>: "+esc(OKUMA.adlar[ilk.p]||"")+(ilk.s==="—"?" <span>(akşam ya da yolda)</span>":" <span>(saati geçti, sıra sende)</span>");
+    acik=ilk;
+  }
+  k.appendChild(b1);
+  if(kalanBugun.length || D.geride.length){
+    b2.innerHTML="Bugün okunacak: <b>"+esc(araliklar(D.bugun.map(function(o){return o.p;})))+"</b> · "+kalanBugun.length+"/"+D.bugun.length+" kaldı"+(D.geride.length?"<br>Geride: <b>"+esc(araliklar(D.geride.map(function(o){return o.p;})))+"</b>":"");
+    k.appendChild(b2);
+  }
+  if(acik){ var a=el("a","btn dac","Aç: "+dersAdi(acik.p)+" "+parcaNo(acik.p)); a.href=parcaAdres(acik.p); k.appendChild(a); }
+}
+function dersIlerlemeCiz(liste, done){
+  var il=$("dersIlerleme"); il.innerHTML="";
+  liste.forEach(function(x){
+    var n=x.p.length, ok=0, sonraki=null, hz=0;
+    x.p.forEach(function(p){ if(hazirMi(p)) hz++; if(done[p]) ok++; else if(!sonraki && hazirMi(p)) sonraki=p; });
+    var det=el("details","dders"), sm=el("summary");
+    var ust=el("span","dd1"); ust.appendChild(el("b",null,x.ad)); ust.appendChild(el("em",null,ok+"/"+n)); sm.appendChild(ust);
+    var bar=el("span","dbar"), ic=el("i"); ic.style.width=Math.round(ok*100/n)+"%"; bar.appendChild(ic);
+    if(hz<n){ var hzi=el("u"); hzi.style.width=Math.round(hz*100/n)+"%"; bar.appendChild(hzi); }
+    sm.appendChild(bar);
+    var alt = ok===n ? "Hepsi okundu." : sonraki ? "Sıradaki: "+parcaNo(sonraki)+" · "+(OKUMA.adlar[sonraki]||"") : "Parçalar hazırlanıyor.";
+    if(hz<n) alt+=" · "+hz+"/"+n+" parça hazır";
+    sm.appendChild(el("span","dd2",alt)); det.appendChild(sm);
+    x.p.forEach(function(p){
+      var r=el("div","dpar"+(done[p]?" ok":"")+(hazirMi(p)?"":" yok"));
+      var a=el(hazirMi(p)?"a":"span","dic"); if(hazirMi(p)) a.href=parcaAdres(p);
+      a.appendChild(el("b",null,String(parcaNo(p)))); a.appendChild(el("span",null,OKUMA.adlar[p]||""));
+      r.appendChild(a); if(hazirMi(p)) r.appendChild(tikDugme(p,!!done[p])); else r.appendChild(el("i",null,"sırada"));
+      det.appendChild(r);
+    });
+    il.appendChild(det);
+  });
+}
+function okuAnaCiz(){
+  if(!okumaVar()) return;
+  var D=okumaDurum(), ok=D.hepsi.length-D.kalan, bugunOk=D.bugun.filter(function(o){return o.ok;}).length;
+  $("okuTytAlt").textContent = D.bug<OKUMA.bas ? "Plan "+gunEtiket(OKUMA.bas)+" başlıyor" : D.bug>OKUMA.son ? (D.kalan? D.kalan+" parça kaldı" : "Hepsi okundu") :
+    "Bugün "+bugunOk+"/"+D.bugun.length+(D.geride.length?" · "+D.geride.length+" geride":"")+" · günde "+D.gereken+" gerekiyor";
+  $("okuTytSag").textContent=ok+"/"+D.hepsi.length;
+  var at=0, ah=0, aok=0; (OKUMA.ayt||[]).forEach(function(x){ x.p.forEach(function(p){ at++; if(hazirMi(p)) ah++; if(D.done[p]) aok++; }); });
+  $("okuAytAlt").textContent="Plan TYT bitince kurulacak · "+ah+"/"+at+" parça hazır";
+  $("okuAytSag").textContent=aok+"/"+at;
 }
 function cizDers(){
-  if(!okumaVar() || !$("dersBugun")) return;
-  var D=okumaDurum(), son=OKUMA.son, okunan=D.hepsi.length-D.kalan;
-  $("dersAlt").textContent="TYT, "+gunEtiket(OKUMA.bas)+" – "+gunEtiket(son)+". Her gün sabah matematik, gün içinde Türkçe, fen ve sosyal.";
+  if(!okumaVar() || !$("okuAna")) return;
+  okuAnaCiz();
+  var detay = okuGor==="tyt" || okuGor==="ayt";
+  $("okuAna").hidden=detay; $("okuDetay").hidden=!detay;
+  if(!detay) return;
+  var D=okumaDurum(), tyt=okuGor==="tyt";
+  $("okuBaslik").textContent=tyt?"TYT":"AYT";
+  ["dersBugunKart","dersGunKart","dersOzet"].forEach(function(id){ $(id).hidden=!tyt; });
+  if(!tyt){
+    $("dersAlt").textContent="Matematik, Geometri, Fizik, Kimya, Biyoloji.";
+    var kb=$("dersBilgi"); kb.innerHTML="";
+    kb.appendChild(el("p","db1","AYT'nin okuma planı TYT bitince (29 Ekim'den sonra) kurulacak. Hazır olan parçaları şimdiden açabilirsin; işaretlediklerin plana sayılır."));
+    dersIlerlemeCiz(OKUMA.ayt||[], D.done); return;
+  }
+  var son=OKUMA.son, okunan=D.hepsi.length-D.kalan;
+  $("dersAlt").textContent=gunEtiket(OKUMA.bas)+" – "+gunEtiket(son)+" · her sabah matematik, gün içinde Türkçe, fen ve sosyal.";
   $("dersAralik").textContent=gunEtiket(OKUMA.bas)+" – "+gunEtiket(son);
+  tytBilgi(D);
   var oz=$("dersOzet"); oz.innerHTML="";
   [[okunan+"/"+D.hepsi.length,"parça okundu"],[D.gunKalan,"gün kaldı"],[D.gunKalan?D.gereken:"—","günde gereken"]].forEach(function(x,i){
     var k=el("div","dk"+(i===2 && D.gunKalan && D.gereken>7?" uyar":"")); k.appendChild(el("b",null,String(x[0]))); k.appendChild(el("span",null,x[1])); oz.appendChild(k);
   });
   var bl=$("dersBugun"); bl.innerHTML="";
   var bugunOk=D.bugun.filter(function(o){return o.ok;}).length;
-  $("dersGunBas").textContent = D.bug<OKUMA.bas ? "Plan "+gunEtiket(OKUMA.bas)+"'da başlıyor" : D.bug>son ? "Plan bitti" : "Bugün · "+gunEtiket(D.bug);
+  $("dersGunBas").textContent = D.bug<OKUMA.bas ? "Plan "+gunEtiket(OKUMA.bas)+" başlıyor" : D.bug>son ? "Plan bitti" : "Bugün · "+gunEtiket(D.bug);
   $("dersGunSay").textContent = D.bugun.length ? bugunOk+"/"+D.bugun.length : "";
   D.bugun.forEach(function(o){ bl.appendChild(dersSatir(o,false)); });
   if(D.geride.length){ bl.appendChild(el("div","dara","Geride kalanlar · "+D.geride.length)); D.geride.forEach(function(o){ bl.appendChild(dersSatir(o,true)); }); }
-  if(!D.bugun.length && !D.geride.length) bl.appendChild(el("p","dbos", D.bug>son ? (D.kalan? D.kalan+" parça okunmadı; yukarıdaki listeden devam." : "Hepsi okundu.") : "Bugün için parça yok."));
+  if(!D.bugun.length && !D.geride.length) bl.appendChild(el("p","dbos", D.bug>son ? (D.kalan? D.kalan+" parça okunmadı; aşağıdaki derslerden devam." : "Hepsi okundu.") : "Bugün için parça yok."));
   dersOnYukle(D.bugun.concat(D.geride));
-  // ders ilerlemesi
-  var il=$("dersIlerleme"); il.innerHTML="";
-  Object.keys(OKUMA.dersler).forEach(function(d){
-    var n=OKUMA.dersler[d].n, ok=0, sonraki=null;
-    for(var i=1;i<=n;i++){ if(D.done[d+"-"+i]) ok++; else if(!sonraki) sonraki=d+"-"+i; }
-    var a=el("a","dil"); a.href=parcaAdres(sonraki||d+"-1");
-    a.appendChild(el("b",null,OKUMA.dersler[d].ad));
-    var bar=el("span","dbar"); var ic=el("i"); ic.style.width=Math.round(ok*100/n)+"%"; bar.appendChild(ic); a.appendChild(bar);
-    a.appendChild(el("em",null,ok+"/"+n)); il.appendChild(a);
-  });
-  // günler
+  dersIlerlemeCiz(OKUMA.tyt||[], D.done);
   var gl=$("dersGunler"); gl.innerHTML="";
   D.gunler.forEach(function(g){
     var l=D.hepsi.filter(function(o){return o.gun===g;}), ok=l.filter(function(o){return o.ok;}).length;
     var det=el("details","dgun"+(g===D.bug?" bu":"")+(g<D.bug?" gecti":""));
     var sm=el("summary"); sm.appendChild(el("b",null,gunEtiket(g)));
-    var ozet={}; l.forEach(function(o){ var ad=OKUMA.dersler[parcaDers(o.p)].ad; ozet[ad]=(ozet[ad]||0)+1; });
-    sm.appendChild(el("span",null,Object.keys(ozet).map(function(k){return k+(ozet[k]>1?" ×"+ozet[k]:"");}).join(" · ")));
+    sm.appendChild(el("span",null,araliklar(l.map(function(o){return o.p;}))));
     sm.appendChild(el("em",null,ok+"/"+l.length)); det.appendChild(sm);
     l.forEach(function(o){ det.appendChild(dersSatir(o,false)); });
-    if(g===D.bug) det.open=false;
     gl.appendChild(det);
   });
 }
+function okuAc(g){ okuGor=g; yerelYaz("oku_gor",g); if(aktif!=="ders") git("ders"); else cizDers(); window.scrollTo(0,0); }
+(function(){
+  var t=$("okuTyt"), a=$("okuAyt"), g=$("okuGeri");
+  if(t) t.addEventListener("click",function(){ okuAc("tyt"); });
+  if(a) a.addEventListener("click",function(){ okuAc("ayt"); });
+  if(g) g.addEventListener("click",function(){ okuAc(""); });
+  setInterval(function(){ if(aktif==="ders" && okuGor==="tyt" && document.visibilityState==="visible" && okumaVar()) tytBilgi(okumaDurum()); },60000);
+})();
 function cizDersKart(){
   var k=$("dersKart"); if(!k) return;
   if(!okumaVar()){ k.hidden=true; return; }
@@ -1648,11 +1749,10 @@ function cizDersKart(){
   var l=D.geride.concat(D.bugun), ok=D.bugun.filter(function(o){return o.ok;}).length, sir=null;
   for(var i=0;i<l.length;i++){ if(!l[i].ok){ sir=l[i]; break; } }
   k.hidden=false; k.innerHTML="";
-  var sol=el("span","dk1"); sol.appendChild(el("b",null,"Ders okuma · "+ok+"/"+D.bugun.length));
-  sol.appendChild(el("i",null, sir ? "Sıradaki: "+OKUMA.dersler[parcaDers(sir.p)].ad+" "+parcaNo(sir.p)+" · "+(OKUMA.adlar[sir.p]||"") : "Bugünün parçaları bitti."));
-  var sag=el("em",null, D.kalan+" parça kaldı"+(D.geride.length?" · "+D.geride.length+" geride":""));
-  k.appendChild(sol); k.appendChild(sag);
-  k.onclick=function(){ git("ders"); grupGuncelle(); };
+  var sol=el("span","dk1"); sol.appendChild(el("b",null,"TYT okuma · "+ok+"/"+D.bugun.length));
+  sol.appendChild(el("i",null, sir ? "Sıradaki: "+dersAdi(sir.p)+" "+parcaNo(sir.p)+" · "+(OKUMA.adlar[sir.p]||"") : "Bugünün parçaları bitti."));
+  k.appendChild(sol); k.appendChild(el("em",null, D.kalan+" parça kaldı"+(D.geride.length?" · "+D.geride.length+" geride":"")));
+  k.onclick=function(){ okuAc("tyt"); };
 }
 
 })();

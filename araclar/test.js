@@ -136,11 +136,14 @@ bolum("Okuma planı");
 { const src=oku("okuma.js"), O=new Function(src+";return OKUMA;")(), d=JSON.parse(oku("arsiv/kaynak/dosyalar.json"));
   const tum=[].concat(...Object.values(O.gunler)).map(x=>x[0]);
   T("planda her parça bir kez", new Set(tum).size===tum.length, tum.length+" satır");
-  const beklenen=Object.entries(O.dersler).reduce((a,[k,v])=>a+v.n,0);
+  const beklenen=O.tyt.reduce((a,x)=>a+x.p.length,0);
   T("planda bütün TYT parçaları", tum.length===beklenen, tum.length+"/"+beklenen);
   T("plan son günü 29 Ekim", O.son==="2026-10-29");
-  Object.keys(O.dersler).forEach(k=>{ const sira=tum.filter(p=>p.startsWith(k+"-")).map(p=>+p.split("-").pop());
-    T(k+" parçaları sırayla", sira.every((v,i)=>v===i+1)); });
+  O.tyt.forEach(x=>{ const sira=tum.filter(p=>p.startsWith(x.id+"-"));
+    T(x.id+" parçaları sırayla", sira.join()===x.p.join()); });
+  T("AYT listesi var", Array.isArray(O.ayt) && O.ayt.length===5);
+  O.ayt.concat(O.tyt).forEach(x=>x.p.forEach(p=>{ if(!O.adlar[p]) T(p+" adı var", false); }));
+  T("hazır listesi dosyalarla uyumlu", O.hazir.every(p=>varMi("arsiv/kaynak/"+p.replace(/-(\d+)$/,"/bolum-$1.html"))));
   Object.keys(O.gunler).forEach(g=>{ const s=O.gunler[g].map(x=>x[1]).filter(x=>x!=="—"); T(g+" saatleri artan", s.every((v,i)=>!i||v>s[i-1])); });
   T("okuma.js panelde yükleniyor", oku("index.html").includes('<script src="okuma.js"></script>'));
 }

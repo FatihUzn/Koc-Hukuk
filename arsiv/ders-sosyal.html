@@ -6289,6 +6289,9 @@ Buradan: <strong>Gerçek uzunluk = Haritadaki uzunluk × ölçek paydası</stron
   function ozet(){
     var o=oku('bugun_ozet',null); if(!o) return null;
     if(o.gun!==bugun()) return {gun:bugun(),yapilan:0,toplam:o.toplam||9};
+    /* Ekim okuma planı: bugün okunan ders parçaları Odak bloğu yerine geçer (panel aynısını hesaplar; burada ders sayfasından dönünce de güncel kalsın). */
+    if(o.odakTop){ var d=oku('dni-done',{})||{}, n=0; for(var p in d){ if(d[p]===o.gun) n++; }
+      o.yapilan=Math.max(o.yapilan, Math.min(o.toplam, o.blok-o.odak+Math.max(o.odak, Math.min(n, o.odakTop)))); }
     return o;
   }
   function istisnalar(){var l=oku('dni-istisna',[]);return Array.isArray(l)?l:[]}
@@ -6562,7 +6565,7 @@ Buradan: <strong>Gerçek uzunluk = Haritadaki uzunluk × ölçek paydası</stron
     }
     paint(); window.scrollTo(0,0);
   }
-  document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done[k]=!done[k];set('dni-done',done);paint()});
+  document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done=get('dni-done')||{};if(done[k])delete done[k];else{var t=new Date();if(t.getHours()<4)t.setDate(t.getDate()-1);done[k]=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)}set('dni-done',done);paint()});
   window.addEventListener('hashchange',route); route();
 })();
 </script>

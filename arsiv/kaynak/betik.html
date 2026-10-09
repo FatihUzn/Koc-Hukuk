@@ -204,7 +204,7 @@
     }
     paint(); window.scrollTo(0,0);
   }
-  document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done[k]=!done[k];set('dni-done',done);paint()});
+  document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done=get('dni-done')||{};if(done[k])delete done[k];else{var t=new Date();if(t.getHours()<4)t.setDate(t.getDate()-1);done[k]=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)}set('dni-done',done);paint()});
   window.addEventListener('hashchange',route); route();
 })();
 </script>

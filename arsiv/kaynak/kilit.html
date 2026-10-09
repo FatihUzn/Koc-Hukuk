@@ -54,6 +54,9 @@
   function ozet(){
     var o=oku('bugun_ozet',null); if(!o) return null;
     if(o.gun!==bugun()) return {gun:bugun(),yapilan:0,toplam:o.toplam||9};
+    /* Ekim okuma planı: bugün okunan ders parçaları Odak bloğu yerine geçer (panel aynısını hesaplar; burada ders sayfasından dönünce de güncel kalsın). */
+    if(o.odakTop){ var d=oku('dni-done',{})||{}, n=0; for(var p in d){ if(d[p]===o.gun) n++; }
+      o.yapilan=Math.max(o.yapilan, Math.min(o.toplam, o.blok-o.odak+Math.max(o.odak, Math.min(n, o.odakTop)))); }
     return o;
   }
   function istisnalar(){var l=oku('dni-istisna',[]);return Array.isArray(l)?l:[]}

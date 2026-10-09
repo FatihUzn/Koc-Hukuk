@@ -442,7 +442,11 @@ function cizBugun(){
   $("cnt-bugun").textContent="%"+pct;
   cizSoz(pct);
   // arşiv kilidi bu özeti okur (arsiv/ — aynı adres, aynı localStorage)
-  yerelYaz("bugun_ozet",{gun:k,yapilan:yap,toplam:say.length});
+  // Ekim okuma planı süresince bugün okunan her ders parçası bir Odak bloğu yerine geçer (aynı iş iki kez sayılmaz).
+  var odakYap=say.filter(function(x){return x.tur==="Odak" && v[x.id];}).length, odakTop=say.filter(function(x){return x.tur==="Odak";}).length;
+  var parca=bugunOkunanParca(k), yapA=Math.min(say.length, yap-odakYap+Math.max(odakYap, Math.min(parca, odakTop)));
+  yerelYaz("bugun_ozet",{gun:k,yapilan:yapA,toplam:say.length,blok:yap,odak:odakYap,odakTop:odakTop,parca:parca});
+  yap=yapA;
   var gerek=Math.ceil(say.length*ARSIV_ORAN), ad=$("arsivDurum"), al=$("arsivLink");
   if(ad&&al){
     var acik = yap>=gerek;
@@ -1563,6 +1567,8 @@ var rsz; window.addEventListener("resize",function(){ clearTimeout(rsz); rsz=set
    Okundu bilgisi arşivle ortak: dni-done (bölüm sonundaki "Bu bölümü okudum" da aynı yere yazar). */
 var GUN_AD=["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"], AY_AD=["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
 var okuGor=yerelOku("oku_gor","");      // "" (ana) | "tyt" | "ayt"
+/* dni-done değeri okunduğu gün ("2026-10-09"); eski kayıtlarda true. */
+function bugunOkunanParca(k){ if(typeof OKUMA==="undefined"||!OKUMA||k<OKUMA.bas||k>OKUMA.son) return 0; var d=yerelOku("dni-done",{})||{}, n=0; for(var p in d){ if(d[p]===k && /^(turkce|mat|geo|fizik|kimya|biyo|sosyal|ileri)-\d+$/.test(p)) n++; } return n; }
 function okumaVar(){ return typeof OKUMA!=="undefined" && OKUMA && OKUMA.gunler; }
 function parcaDers(p){ return p.replace(/-\d+$/,""); }
 function parcaNo(p){ return +p.split("-").pop(); }
@@ -1595,7 +1601,7 @@ function okumaDurum(){
   return {done:done,bug:bug,gunler:gunler,hepsi:hepsi,geride:geride,bugun:bugun,kalan:kalan,gunKalan:gunKalan,
           gereken: gunKalan? Math.ceil(kalan/gunKalan) : kalan};
 }
-function okunduYap(p,v){ var d=yerelOku("dni-done",{})||{}; if(v) d[p]=true; else delete d[p]; yerelYaz("dni-done",d); cizDers(); cizDersKart(); }
+function okunduYap(p,v){ var d=yerelOku("dni-done",{})||{}; if(v) d[p]=anahtar(bugunTarih()); else delete d[p]; yerelYaz("dni-done",d); cizBugun(); cizDers(); cizDersKart(); }
 var dersOnYuklenen={};
 function dersOnYukle(liste){
   if(!navigator.serviceWorker || !navigator.serviceWorker.controller) return;

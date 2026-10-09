@@ -5,7 +5,7 @@
    arşiv derlemesinin güncelliği, dosya bağlantıları, sözdizimi. */
 "use strict";
 const fs=require("fs"), path=require("path"), kok=path.join(__dirname,"..");
-const oku=p=>fs.readFileSync(path.join(kok,p),"utf8"), varMi=p=>fs.existsSync(path.join(kok,p));
+const oku=p=>fs.readFileSync(path.join(kok,p),"utf8").replace(/\r\n/g,"\n"), /* Windows satır sonları (CRLF) karşılaştırmayı bozmasın */ varMi=p=>fs.existsSync(path.join(kok,p));
 let gecen=0, kalan=[];
 const T=(ad,kosul,ek)=>{ if(kosul){ gecen++; } else { kalan.push(ad+(ek?" — "+ek:"")); console.log("✗",ad,ek||""); } };
 const bolum=ad=>console.log("\n"+ad);
@@ -146,6 +146,10 @@ bolum("Okuma planı");
   T("hazır listesi dosyalarla uyumlu", O.hazir.every(p=>varMi("arsiv/kaynak/"+p.replace(/-(\d+)$/,"/bolum-$1.html"))));
   Object.keys(O.gunler).forEach(g=>{ const s=O.gunler[g].map(x=>x[1]).filter(x=>x!=="—"); T(g+" saatleri artan", s.every((v,i)=>!i||v>s[i-1])); });
   T("okuma.js panelde yükleniyor", oku("index.html").includes('<script src="okuma.js"></script>'));
+  const K=new Function(oku("katalog.js")+";return KATALOG;")();
+  T("katalog.js panelde yükleniyor", oku("index.html").includes('<script src="katalog.js"></script>'));
+  T("katalogda raf var", K.raflar.length>0);
+  Object.entries(K.dosyalar).forEach(([id,x])=>{ T(id+" katalogda güncel", x.bolumler.every((b,i)=>!!b[1]===varMi("arsiv/kaynak/"+id+"/bolum-"+(i+1)+".html")), "arsiv/build.py çalıştırılmamış"); });
 }
 
 /* ---------- 6. bağlantılar ve sürüm ---------- */

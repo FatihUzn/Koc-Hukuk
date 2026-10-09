@@ -157,3 +157,6 @@ for eski in Path(__file__).parent.glob("ders-*.html"):
 print("arşiv yazıldı:", len(sayfa_govde), "sayfa,", toplam // 1024, "KB,", len(names), "bölüm")
 if "--tek" in sys.argv:
     Path(sys.argv[sys.argv.index("--tek") + 1]).write_text(stil + tek_govde, encoding="utf-8")
+# Paneldeki Oku ekranının kataloğu (katalog.js)
+import subprocess
+subprocess.run([sys.executable, str(Path(__file__).resolve().parent.parent / "araclar" / "katalog.py")], check=True)

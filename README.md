@@ -131,3 +131,9 @@ Ben → Spor. Program `spor.js` içinde (ev ve salon için ayrı; hareket, set v
 - Panelde **Oku**: Arşiv, TYT, AYT. TYT: o an hangi parçanın okunacağını söyleyen bilgi kutusu, ders ders ilerleme, 9–29 Ekim planı (137 parça), bugünün parçaları saatleriyle, geride kalanlar, ders ilerlemesi, gün gün liste. Okundu bilgisi arşivle ortak (`dni-done`), eşitlenir. Bugün ekranının üstünde de özet kartı var.
 - Plan `araclar/okuma_plani.py` ile üretilir (`okuma.js`). Gün başına parça sayısı ve saat dilimleri betiğin başında; değiştirip yeniden çalıştır.
 - Bugünün ders sayfaları Dersler ekranı açılınca telefona kaydedilir; metroda internetsiz açılır.
+
+## Oku ekranı (9 Ekim)
+
+- Panelde **Oku**: Storytel düzeni. Üstte "Kitaplığım / Tümü", kategori düğmeleri, "Devam et" satırı (TYT'nin sıradaki parçası ve yarım kalan dosyalar), yana kayan raflar, en altta "Yakında". Dosyaya dokununca dosya sayfası: kapak, süre, devam düğmesi, bölüm listesi (daireye basınca okundu işaretlenir).
+- Raflar ve sıra `arsiv/kaynak/kutuphane.html`'den, bölümler `dosyalar.json`'dan okunur; `araclar/katalog.py` bunlardan `katalog.js` üretir. `arsiv/build.py` bunu kendisi çalıştırır.
+- Kapak rengi ve simgesi `app.js` içindeki `OK_KAPAK`'ta; yeni dosya eklenince tanımlı değilse sırayla renk alır.

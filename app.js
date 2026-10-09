@@ -1686,22 +1686,143 @@ function dersIlerlemeCiz(liste, done){
     il.appendChild(det);
   });
 }
+/* ---- Oku ana sayfası: Storytel düzeni (katalog.js · araclar/katalog.py) ---- */
+var okuSeg=yerelOku("oku_seg","tum"), okuCip=yerelOku("oku_cip","tum");
+var OK_IKON={
+  cek:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M6 10h7M6 14h4M16 13h2"/>',
+  banka:'<path d="M3 10l9-5 9 5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+  kisi:'<circle cx="12" cy="8" r="3.2"/><path d="M5 20c1-3.6 3.8-5.4 7-5.4s6 1.8 7 5.4"/>',
+  el:'<path d="M4 13l4-4 3 2 3-3 6 5M4 13v5h16v-5"/>',
+  ag:'<circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 8.5l2.8 7.5M16 8.5l-2.8 7.5M8.4 7h7.2"/>',
+  para:'<circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c0-1.2 1.1-2 2.5-2s2.5.8 2.5 2-1.1 1.7-2.5 2.2-2.5 1-2.5 2.3 1.1 2 2.5 2 2.5-.8 2.5-2"/>',
+  kalkan:'<path d="M12 3l8 4v5c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V7z"/><path d="M9 12l2 2 4-4"/>',
+  grafik:'<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>',
+  kitap:'<path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M8 9h6M8 12h6"/>',
+  dag:'<path d="M5 19l5-14 4 9 2-4 3 9"/>',
+  link:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',
+  dosya:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>'
+};
+var OK_KAPAK={tahsilat:["c1","cek"],banka:["c2","banka"],sirket:["c9","kisi"],pazarlik:["c4","el"],ortaklik:["c7","ag"],para:["c5","para"],kara:["c6","kalkan"],_pano:["c4","grafik"],_tyt:["c3","kitap"],_ayt:["c8","dag"],_link:["c7","link"]};
+function okKapak(anahtar, i, buyuk){
+  var k=OK_KAPAK[anahtar] || ["c"+(1+(i||0)%9),"dosya"];
+  var d=el("div","kp "+k[0]+(buyuk?" buyuk":""));
+  d.innerHTML='<svg viewBox="0 0 24 24">'+(OK_IKON[k[1]]||OK_IKON.dosya)+'</svg>';
+  return d;
+}
+function okDosyaDurum(id){
+  var D=KATALOG.dosyalar[id], done=yerelOku("dni-done",{})||{}, hz=0, ok=0, sonraki=0, son="", dk=0;
+  D.bolumler.forEach(function(b,i){ var k=id+"-"+(i+1); if(b[1]){ hz++; dk+=b[2]; if(done[k]){ ok++; if(typeof done[k]==="string" && done[k]>son) son=done[k]; } else if(!sonraki) sonraki=i+1; } });
+  return {d:D, hz:hz, ok:ok, n:D.bolumler.length, sonraki:sonraki, son:son, dk:dk, bitti: hz>0 && ok>=hz && hz===D.bolumler.length};
+}
+function okSure(dk){ return dk>=60 ? "~"+(Math.round(dk/30)/2).toString().replace(".",",")+" sa" : "~"+dk+" dk"; }
+function okKitap(kapak, ad, alt, opt){
+  var a=el(opt.href?"a":"button","okkitap"); if(opt.href){ a.href=opt.href; if(opt.yeni) { a.target="_blank"; a.rel="noopener"; } } else a.type="button";
+  if(opt.tik){ var t=el("span","tik"); t.innerHTML='<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7"/></svg>'; kapak.appendChild(t); }
+  if(opt.rozet) kapak.appendChild(el("span","rozet",opt.rozet));
+  if(opt.oran!=null){ var b=el("span","alt"), i=el("i"); i.style.width=Math.round(opt.oran*100)+"%"; b.appendChild(i); kapak.appendChild(b); }
+  a.appendChild(kapak); a.appendChild(el("b",null,ad)); if(alt) a.appendChild(el("span",null,alt));
+  if(opt.tik===undefined && opt.click) a.addEventListener("click",opt.click); else if(opt.click) a.addEventListener("click",opt.click);
+  return a;
+}
 function okuAnaCiz(){
-  if(!okumaVar()) return;
-  var D=okumaDurum(), ok=D.hepsi.length-D.kalan, bugunOk=D.bugun.filter(function(o){return o.ok;}).length;
-  $("okuTytAlt").textContent = D.bug<OKUMA.bas ? "Plan "+gunEtiket(OKUMA.bas)+" başlıyor" : D.bug>OKUMA.son ? (D.kalan? D.kalan+" parça kaldı" : "Hepsi okundu") :
-    "Bugün "+bugunOk+"/"+D.bugun.length+(D.geride.length?" · "+D.geride.length+" geride":"")+" · günde "+D.gereken+" gerekiyor";
-  $("okuTytSag").textContent=ok+"/"+D.hepsi.length;
-  var at=0, ah=0, aok=0; (OKUMA.ayt||[]).forEach(function(x){ x.p.forEach(function(p){ at++; if(hazirMi(p)) ah++; if(D.done[p]) aok++; }); });
-  $("okuAytAlt").textContent="Plan TYT bitince kurulacak · "+ah+"/"+at+" parça hazır";
-  $("okuAytSag").textContent=aok+"/"+at;
+  if(typeof KATALOG==="undefined") return;
+  var done=yerelOku("dni-done",{})||{}, kitap=okuSeg==="kitap";
+  document.querySelectorAll("#okSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-k")===okuSeg?"true":"false"); });
+  // TYT / AYT durumu
+  var D=okumaVar()?okumaDurum():null, tytOk=D?D.hepsi.length-D.kalan:0, tytToplam=D?D.hepsi.length:0, bugunOk=D?D.bugun.filter(function(o){return o.ok;}).length:0;
+  var at=0, ah=0, aok=0; if(okumaVar()) (OKUMA.ayt||[]).forEach(function(x){ x.p.forEach(function(p){ at++; if(hazirMi(p)) ah++; if(done[p]) aok++; }); });
+  var tytAktif = D && D.bug>=OKUMA.bas && (D.bug<=OKUMA.son || D.kalan);
+  // kategori düğmeleri
+  var cips=[["tum","Tümü"],["dersler","Dersler"]].concat(KATALOG.raflar.map(function(r){ return [r.ad, r.ad.split(" ")[0]]; }));
+  if(!cips.some(function(c){return c[0]===okuCip;})) okuCip="tum";
+  var cl=$("okCips"); cl.innerHTML="";
+  cips.forEach(function(c){ var b=el("button",null,c[1]); b.type="button"; b.setAttribute("aria-pressed",c[0]===okuCip?"true":"false"); b.addEventListener("click",function(){ okuCip=c[0]; yerelYaz("oku_cip",okuCip); okuAnaCiz(); }); cl.appendChild(b); });
+  // devam et
+  var dv=[], dl=$("okDevam"); dl.innerHTML="";
+  if(tytAktif && D.kalan){
+    var sir=null, l=D.geride.concat(D.bugun); for(var i=0;i<l.length;i++){ if(!l[i].ok){ sir=l[i]; break; } }
+    if(!sir) for(var j=0;j<D.hepsi.length;j++){ if(!D.hepsi[j].ok){ sir=D.hepsi[j]; break; } }
+    if(sir) dv.push({son:"9999", ad:"TYT · "+dersAdi(sir.p)+" "+parcaNo(sir.p), alt:OKUMA.adlar[sir.p]||"", oran:tytOk/tytToplam, em:D.bugun.length?"Bugün "+bugunOk+"/"+D.bugun.length:tytOk+"/"+tytToplam+" parça", kapak:"_tyt", git:function(){ okuAc("tyt"); }});
+  }
+  Object.keys(KATALOG.dosyalar).forEach(function(id,i){
+    var s=okDosyaDurum(id); if(!s.ok || !s.sonraki) return;
+    dv.push({son:s.son||"0", ad:s.d.ad, alt:"Bölüm "+s.sonraki+" · "+s.d.bolumler[s.sonraki-1][0], oran:s.ok/s.n, em:s.ok+"/"+s.n+" bölüm", kapak:id, i:i, git:function(){ okuAc("d:"+id); }});
+  });
+  dv.sort(function(a,b){ return a.son<b.son?1:a.son>b.son?-1:0; });
+  dv.forEach(function(x){
+    var c=el("button","okdevam"); c.type="button"; c.appendChild(okKapak(x.kapak,x.i));
+    var ic=el("div"); ic.appendChild(el("b",null,x.ad)); ic.appendChild(el("span",null,x.alt));
+    var bar=el("div","okbar"), bi=el("i"); bi.style.width=Math.round(x.oran*100)+"%"; bar.appendChild(bi); ic.appendChild(bar); ic.appendChild(el("em",null,x.em));
+    c.appendChild(ic); c.addEventListener("click",x.git); dl.appendChild(c);
+  });
+  $("okDevamKutu").hidden = !dv.length || (okuCip!=="tum");
+  // raflar
+  var rl=$("okRaflar"); rl.innerHTML=""; var gosterilen=0;
+  function raf(ad, ogeler){
+    if(!ogeler.length) return;
+    var k=el("section","okraf"); k.appendChild(el("h3","okh",ad));
+    var r=el("div","oksira"); ogeler.forEach(function(o){ r.appendChild(o); }); k.appendChild(r); rl.appendChild(k); gosterilen+=ogeler.length;
+  }
+  function katalogRafi(r){
+    var o=[];
+    r.ogeler.forEach(function(x,i){
+      if(x.tip==="dosya"){
+        var s=okDosyaDurum(x.id); if(kitap && !s.ok) return;
+        o.push(okKitap(okKapak(x.id,i), s.d.ad, s.bitti ? "Bitti · "+s.n+" bölüm" : s.ok ? s.ok+"/"+s.n+" bölüm" : s.hz+" bölüm · "+okSure(s.dk),
+          {tik:s.bitti, oran:s.ok&&!s.bitti?s.ok/s.n:null, click:function(){ okuAc("d:"+x.id); }}));
+      } else if(x.tip==="pano"){ if(!kitap) o.push(okKitap(okKapak("_pano",i), x.ad, "Aylık", {href:"arsiv/index.html#pano"})); }
+      else if(x.tip==="link"){ if(!kitap) o.push(okKitap(okKapak("_link",i), x.ad, x.acik, {href:x.url, yeni:true})); }
+    });
+    raf(r.ad, o);
+  }
+  function derslerRafi(){
+    var o=[];
+    if(okumaVar() && (!kitap || tytAktif || tytOk)) o.push(okKitap(okKapak("_tyt"), "TYT", tytOk+"/"+tytToplam+" parça", {rozet: tytAktif && D.bugun.length ? "Bugün "+bugunOk+"/"+D.bugun.length : null, oran:tytOk?tytOk/tytToplam:null, click:function(){ okuAc("tyt"); }}));
+    if(okumaVar() && (!kitap || aok)) o.push(okKitap(okKapak("_ayt"), "AYT", aok ? aok+"/"+at+" parça" : ah+"/"+at+" parça hazır", {oran:aok?aok/at:null, click:function(){ okuAc("ayt"); }}));
+    raf("Dersler", o);
+  }
+  KATALOG.raflar.forEach(function(r,i){
+    if(i===1 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
+    if(okuCip==="tum" || okuCip===r.ad) katalogRafi(r);
+  });
+  if(KATALOG.raflar.length<2 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
+  if(!gosterilen) rl.appendChild(el("p","okbos", kitap ? "Burada başladığın dosyalar görünür. Hepsini görmek için Tümü'ne geç." : "Bu rafta henüz dosya yok."));
+  // yakında
+  var y=KATALOG.yakinda.filter(function(x){ return okuCip==="tum" || okuCip===x.raf; });
+  $("okYakin").hidden = kitap || !y.length;
+  $("okYakinBas").textContent="Yakında · "+y.length+" dosya";
+  $("okYakinAlt").textContent=y.slice(0,3).map(function(x){return x.ad;}).join(", ")+(y.length>3?"…":"");
+  var yl=$("okYakinListe"); yl.innerHTML="";
+  y.forEach(function(x){ var r=el("div","okyk"); r.appendChild(el("b",null,x.ad)); r.appendChild(el("span",null,x.raf+(x.acik?" · "+x.acik:""))); yl.appendChild(r); });
+}
+function okuDosyaCiz(id){
+  var s=okDosyaDurum(id), done=yerelOku("dni-done",{})||{}, ic=$("okDosyaIc"); ic.innerHTML="";
+  var ust=el("div","okdkap"), ki=Object.keys(KATALOG.dosyalar).indexOf(id); ust.appendChild(okKapak(id,ki,true));
+  var yz=el("div"); yz.appendChild(el("p","okraf-ad",s.d.raf)); yz.appendChild(el("h3",null,s.d.ad)); ust.appendChild(yz); ic.appendChild(ust);
+  var et=el("div","oketik"); [s.n+" bölüm", okSure(s.dk), s.ok+"/"+s.n+" okundu"].forEach(function(t){ et.appendChild(el("span",null,t)); }); ic.appendChild(et);
+  if(s.d.acik) ic.appendChild(el("p","okacik",s.d.acik));
+  var hedef=s.sonraki||1, dg=el("a","okdugme"); dg.href="arsiv/index.html#"+id+"-"+hedef;
+  dg.appendChild(document.createTextNode(s.bitti ? "Baştan oku" : (s.ok ? "Devam et · Bölüm "+hedef : "Okumaya başla")));
+  dg.appendChild(el("small",null,s.d.bolumler[hedef-1][0]+(s.d.bolumler[hedef-1][2]?" · "+s.d.bolumler[hedef-1][2]+" dk":"")));
+  ic.appendChild(dg);
+  var li=el("div","okliste");
+  s.d.bolumler.forEach(function(b,i){
+    var k=id+"-"+(i+1), ok=!!done[k], r=el("div","okbl"+(ok?" ok":"")+(i+1===s.sonraki?" su":"")+(b[1]?"":" yok"));
+    var no=el("button","no",ok?"✓":String(i+1)); no.type="button";
+    if(b[1]) no.addEventListener("click",function(){ okunduYap(k,!ok); }); else no.disabled=true;
+    var t=el(b[1]?"a":"div","okbt"); if(b[1]) t.href="arsiv/index.html#"+k;
+    t.appendChild(el("b",null,b[0]));
+    r.appendChild(no); r.appendChild(t); r.appendChild(el("em",null,b[1]?b[2]+" dk":"sırada")); li.appendChild(r);
+  });
+  ic.appendChild(li);
 }
 function cizDers(){
-  if(!okumaVar() || !$("okuAna")) return;
-  okuAnaCiz();
-  var detay = okuGor==="tyt" || okuGor==="ayt";
-  $("okuAna").hidden=detay; $("okuDetay").hidden=!detay;
-  if(!detay) return;
+  if(!$("okuAna")) return;
+  var dosya = okuGor.indexOf("d:")===0 && typeof KATALOG!=="undefined" && KATALOG.dosyalar[okuGor.slice(2)] ? okuGor.slice(2) : null;
+  var detay = !dosya && (okuGor==="tyt" || okuGor==="ayt") && okumaVar();
+  $("okuAna").hidden = !!(detay || dosya); $("okuDetay").hidden = !detay; $("okuDosya").hidden = !dosya;
+  if(dosya){ okuDosyaCiz(dosya); return; }
+  if(!detay){ okuAnaCiz(); return; }
   var D=okumaDurum(), tyt=okuGor==="tyt";
   $("okuBaslik").textContent=tyt?"TYT":"AYT";
   ["dersBugunKart","dersGunKart","dersOzet"].forEach(function(id){ $(id).hidden=!tyt; });
@@ -1741,10 +1862,10 @@ function cizDers(){
 }
 function okuAc(g){ okuGor=g; yerelYaz("oku_gor",g); if(aktif!=="ders") git("ders"); else cizDers(); window.scrollTo(0,0); }
 (function(){
-  var t=$("okuTyt"), a=$("okuAyt"), g=$("okuGeri");
-  if(t) t.addEventListener("click",function(){ okuAc("tyt"); });
-  if(a) a.addEventListener("click",function(){ okuAc("ayt"); });
+  var g=$("okuGeri"), g2=$("okDosyaGeri");
   if(g) g.addEventListener("click",function(){ okuAc(""); });
+  if(g2) g2.addEventListener("click",function(){ okuAc(""); });
+  document.querySelectorAll("#okSeg button").forEach(function(b){ b.addEventListener("click",function(){ okuSeg=b.getAttribute("data-k"); yerelYaz("oku_seg",okuSeg); okuAnaCiz(); }); });
   setInterval(function(){ if(aktif==="ders" && okuGor==="tyt" && document.visibilityState==="visible" && okumaVar()) tytBilgi(okumaDurum()); },60000);
 })();
 function cizDersKart(){

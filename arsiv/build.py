@@ -62,8 +62,14 @@ def dersler_html():
 
 DERS_IDS = [x["id"] for x in dosyalar if x.get("ders")]
 kutup = oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html())
+def _yazili(d):
+    return any((K / d["id"] / f"bolum-{n}.html").exists() for n in range(1, len(d["bolumler"]) + 1))
+# Her dosyanın kendi sayfası var: dersler ders-<id>.html, öbürleri dosya-<id>.html.
+# index.html yalnızca kütüphane + pano; telefonda tek sayfa çok büyüyünce açılış donuyordu.
+HARITA = {d["id"]: (f"ders-{d['id']}.html" if d.get("ders") else f"dosya-{d['id']}.html") for d in dosyalar if d.get("ders") or _yazili(d)}
 sayfa_govde = {"index.html": [kutup, pano_html()]}
-for _i in DERS_IDS: sayfa_govde[f"ders-{_i}.html"] = [kutup]
+for _s in HARITA.values(): sayfa_govde[_s] = [kutup]
+tek_ek = []  # --tek kopyası: ders olmayan dosyalar tek sayfada
 files, names, guven = {}, {}, {}
 for d in dosyalar:
     i, t = d["id"], d["baslik"]
@@ -79,8 +85,8 @@ for d in dosyalar:
             bol.append(yol.read_text(encoding="utf-8"))
         else:
             li.append(f'    <li><span>{html.escape(ad, quote=False)}<i class="later">sırada</i></span></li>')
-    hedef = f"ders-{i}.html" if d.get("ders") else "index.html"
-    sayfa_govde[hedef].append(f'''
+    hedef = HARITA.get(i, "index.html")
+    parca = f'''
 <!-- =================== DOSYA: {t} =================== -->
 <div class="view" id="v-{i}" data-title="{t}">
 <div class="book">
@@ -97,22 +103,26 @@ for d in dosyalar:
 </div><!-- /chap -->
 </div><!-- /book -->
 </div><!-- /view {i} -->
-''')
+'''
+    sayfa_govde[hedef].append(parca)
+    if not d.get("ders"): tek_ek.append(parca)
 import re as _re
-def yonlendir(metin, bu):
+def yonlendir(metin, bu, harita=None):
     """href="#x-N" başka sayfadaysa o sayfaya yönlendirir."""
+    harita = HARITA if harita is None else harita
     def f(m):
         h = m.group(1); kok = _re.match(r"([a-z]+)", h).group(1)
-        hedef = f"ders-{kok}.html" if kok in DERS_IDS else "index.html"
+        hedef = harita.get(kok, "index.html")
         return m.group(0) if hedef == bu else f'href="{hedef}#{h}"'
     return _re.sub(r'href="#([a-z]+(?:-\d+)?)"', f, metin)
-def kuyruk(bu):
+def kuyruk(bu, harita=None):
+    harita = HARITA if harita is None else harita
     k = ["\n</div><!-- /shell -->\n"]
-    k.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps(DERS_IDS)).replace("/*DERS_SAYFASI*/false", "true" if bu != "index.html" else "false"))
+    k.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps(DERS_IDS)).replace("/*DERS_SAYFASI*/false", "true" if bu.startswith("ders-") else "false"))
     b = oku("betik.html")
     b = b.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
     b = b.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))
-    b = b.replace("/*SAYFA*/{}", json.dumps({"bu": bu, "ders": DERS_IDS}))
+    b = b.replace("/*SAYFA*/{}", json.dumps({"bu": bu, "ders": DERS_IDS, "harita": harita}))
     k.append(b)
     k.append(oku("ek.html").replace("/*GUVEN*/{}", json.dumps(guven)))
     return "".join(k)
@@ -150,12 +160,14 @@ for bu, parcalar in sayfa_govde.items():
     govde = yonlendir("".join(parcalar), bu) + kuyruk(bu)
     tam = sayfa(bu, govde, "Arşiv")
     toplam += len(tam)
-    if bu == "index.html": tek_govde = govde
     print(f"  {bu}: {len(tam)//1024} KB")
-for eski in Path(__file__).parent.glob("ders-*.html"):
-    if eski.name not in sayfa_govde: eski.unlink()
+for kalip in ("ders-*.html", "dosya-*.html"):
+    for eski in Path(__file__).parent.glob(kalip):
+        if eski.name not in sayfa_govde: eski.unlink()
 print("arşiv yazıldı:", len(sayfa_govde), "sayfa,", toplam // 1024, "KB,", len(names), "bölüm")
 if "--tek" in sys.argv:
+    _h = {i: s for i, s in HARITA.items() if s.startswith("ders-")}
+    tek_govde = yonlendir("".join(sayfa_govde["index.html"] + tek_ek), "index.html", _h) + kuyruk("index.html", _h)
     Path(sys.argv[sys.argv.index("--tek") + 1]).write_text(stil + tek_govde, encoding="utf-8")
 # Paneldeki Oku ekranının kataloğu (katalog.js)
 import subprocess

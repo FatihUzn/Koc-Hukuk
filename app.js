@@ -1810,13 +1810,14 @@ function okuAnaCiz(){
   var yl=$("okYakinListe"); yl.innerHTML="";
   y.forEach(function(x){ var r=el("div","okyk"); r.appendChild(el("b",null,x.ad)); r.appendChild(el("span",null,x.raf+(x.acik?" · "+x.acik:""))); yl.appendChild(r); });
 }
+function arsivAdres(id,n){ var d=KATALOG.dosyalar[id]; return "arsiv/"+((d&&d.sayfa)||"index.html")+"#"+id+(n?"-"+n:""); }
 function okuDosyaCiz(id){
   var s=okDosyaDurum(id), done=yerelOku("dni-done",{})||{}, ic=$("okDosyaIc"); ic.innerHTML="";
   var ust=el("div","okdkap"), ki=Object.keys(KATALOG.dosyalar).indexOf(id); ust.appendChild(okKapak(id,ki,true));
   var yz=el("div"); yz.appendChild(el("p","okraf-ad",s.d.raf)); yz.appendChild(el("h3",null,s.d.ad)); ust.appendChild(yz); ic.appendChild(ust);
   var et=el("div","oketik"); [s.n+" bölüm", okSure(s.dk), s.ok+"/"+s.n+" okundu"].forEach(function(t){ et.appendChild(el("span",null,t)); }); ic.appendChild(et);
   if(s.d.acik) ic.appendChild(el("p","okacik",s.d.acik));
-  var hedef=s.sonraki||1, dg=el("a","okdugme"); dg.href="arsiv/index.html#"+id+"-"+hedef;
+  var hedef=s.sonraki||1, dg=el("a","okdugme"); dg.href=arsivAdres(id,hedef);
   dg.appendChild(document.createTextNode(s.bitti ? "Baştan oku" : (s.ok ? "Devam et · Bölüm "+hedef : "Okumaya başla")));
   dg.appendChild(el("small",null,s.d.bolumler[hedef-1][0]+(s.d.bolumler[hedef-1][2]?" · "+s.d.bolumler[hedef-1][2]+" dk":"")));
   ic.appendChild(dg);
@@ -1825,7 +1826,7 @@ function okuDosyaCiz(id){
     var k=id+"-"+(i+1), ok=!!done[k], r=el("div","okbl"+(ok?" ok":"")+(i+1===s.sonraki?" su":"")+(b[1]?"":" yok"));
     var no=el("button","no",ok?"✓":String(i+1)); no.type="button";
     if(b[1]) no.addEventListener("click",function(){ okunduYap(k,!ok); }); else no.disabled=true;
-    var t=el(b[1]?"a":"div","okbt"); if(b[1]) t.href="arsiv/index.html#"+k;
+    var t=el(b[1]?"a":"div","okbt"); if(b[1]) t.href=arsivAdres(id,i+1);
     t.appendChild(el("b",null,b[0]));
     r.appendChild(no); r.appendChild(t); r.appendChild(el("em",null,b[1]?b[2]+" dk":"sırada")); li.appendChild(r);
   });
@@ -1905,3 +1906,15 @@ function cizDersKart(){
 
 /* iOS: iki parmak / çift dokunma ile büyütmeyi kapat */
 document.addEventListener("gesturestart",function(e){e.preventDefault();},{passive:false});
+
+/* Arşive geçerken hemen "Açılıyor" göster: sayfa yüklenene kadar ekran donmuş gibi durmasın */
+(function(){
+  function kapat(){ var o=document.getElementById("acilis"); if(o) o.remove(); }
+  document.addEventListener("click",function(e){
+    var a=e.target.closest&&e.target.closest("a[href]"); if(!a||a.target==="_blank") return;
+    var h=a.getAttribute("href")||""; if(h.indexOf("arsiv/")!==0) return;
+    kapat(); var o=document.createElement("div"); o.id="acilis"; o.innerHTML='<div><i></i><span>Açılıyor…</span></div>'; document.body.appendChild(o);
+    setTimeout(kapat,20000);
+  });
+  window.addEventListener("pageshow",kapat);
+})();

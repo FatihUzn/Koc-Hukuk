@@ -10256,8 +10256,14 @@ document.addEventListener("gesturestart",function(e){e.preventDefault();},{passi
     } else {
       document.getElementById('v-ev').classList.add('on'); crumb.textContent='Kütüphane';
     }
-    paint(); window.scrollTo(0,0);
+    paint(); bolumBasi(m&&document.getElementById('c-'+h));
   }
+  /* Bölüm açılınca metnin başına in (telefonda bölüm listesi üstte kalıyordu); kaldığın yer varsa ek.html oraya götürür. */
+  function bolumBasi(c){ window.scrollTo(0, c ? Math.max(0,Math.round(c.getBoundingClientRect().top+window.scrollY-12)) : 0); }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('.side a[data-ch]'); if(!a||('#'+a.dataset.ch)!==location.hash) return;
+    e.preventDefault(); bolumBasi(document.getElementById('c-'+a.dataset.ch)); /* açık bölüme yeniden dokununca da metne in */
+  });
   document.addEventListener('click',function(e){var b=e.target.closest('button[data-done]');if(!b)return;var k=b.dataset.done;done=get('dni-done')||{};if(done[k])delete done[k];else{var t=new Date();if(t.getHours()<4)t.setDate(t.getDate()-1);done[k]=t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2)}set('dni-done',done);paint()});
   window.addEventListener('hashchange',route); route();
 })();
@@ -10457,19 +10463,21 @@ mark.vurgu{background:rgba(242,185,107,.38);color:inherit;border-radius:3px;padd
   var tost=document.getElementById('tost'), tostZ;
   function tostGoster(m,b,fn){document.getElementById('tost-m').textContent=m;var d=document.getElementById('tost-b');d.textContent=b;d.onclick=function(){tost.hidden=true;fn()};tost.hidden=false;clearTimeout(tostZ);tostZ=setTimeout(function(){tost.hidden=true},6000)}
   function bolum(){var h=(location.hash||'').slice(1);return /^[a-z]+-\d+$/.test(h)&&document.getElementById('c-'+h)?h:null}
-  function boy(){return Math.max(1,document.documentElement.scrollHeight-window.innerHeight)}
+  /* Konum bölümün kendi içinde tutulur (0 = bölüm başı, 1 = sonu): telefonda bölüm listesi metnin üstünde durduğu için sayfa oranı yanıltıyordu. */
+  function bas(h){var c=document.getElementById('c-'+h);return c?Math.max(0,Math.round(c.getBoundingClientRect().top+window.scrollY-12)):0}
+  function boy(h){var c=document.getElementById('c-'+h);return Math.max(1,(c?c.offsetHeight:document.documentElement.scrollHeight)-window.innerHeight)}
   var kayZ;
   window.addEventListener('scroll',function(){
     clearTimeout(kayZ);kayZ=setTimeout(function(){
-      var h=bolum(); if(!h) return; var y=oku('dni-yer',{})||{}, o=window.scrollY/boy();
-      if(window.scrollY<300) delete y[h]; else y[h]=Math.round(o*1000)/1000;
+      var h=bolum(); if(!h) return; var y=oku('dni-yer',{})||{}, ic=window.scrollY-bas(h);
+      if(ic<300) delete y[h]; else y[h]=Math.min(1,Math.round(ic/boy(h)*1000)/1000);
       yaz('dni-yer',y);
     },400);
   },{passive:true});
   function yereDon(){
     var h=bolum(); if(!h) return; var o=(oku('dni-yer',{})||{})[h];
     if(!o||o<0.03||o>0.97) return;
-    setTimeout(function(){window.scrollTo(0,Math.round(o*boy()));tostGoster('Kaldığın yerden devam.','Başa dön',function(){window.scrollTo(0,0)})},90);
+    setTimeout(function(){window.scrollTo(0,bas(h)+Math.round(o*boy(h)));tostGoster('Kaldığın yerden devam.','Başa dön',function(){window.scrollTo(0,bas(h))})},90);
   }
 
   /* ---------- sözlük ---------- */

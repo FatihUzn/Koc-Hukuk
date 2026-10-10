@@ -3,11 +3,14 @@
 Kaynaklar kaynak/ altında. Yeni bölüm: kaynak/<dosya>/bolum-N.html yaz,
 kaynak/dosyalar.json içine başlığını ekle, bu betiği çalıştır.
 Çıktı: index.html (bu klasörde). --tek YOL verilirse <head> olmadan ikinci bir kopya da yazar."""
-import json, sys, html
+import json, sys, html, re
 from pathlib import Path
 K = Path(__file__).parent / "kaynak"
 oku = lambda p: (K / p).read_text(encoding="utf-8")
 dosyalar = json.loads(oku("dosyalar.json"))
+# kaynak/yayin.json → "sadece_yks": true ise yalnız dersler yayınlanır; öbür dosyalar kaynakta kalır, sayfaları üretilmez.
+SADECE_YKS = json.loads(oku("yayin.json")).get("sadece_yks", False) if (K / "yayin.json").exists() else False
+if SADECE_YKS: dosyalar = [d for d in dosyalar if d.get("ders")]
 
 GUVEN_AD = {"d": "doğrulandı", "k": "kısmen doğrulandı", "h": "hafızadan"}
 def pano_html():
@@ -62,12 +65,15 @@ def dersler_html():
 
 DERS_IDS = [x["id"] for x in dosyalar if x.get("ders")]
 kutup = oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html())
+if SADECE_YKS:
+    # Dersler rafı dışındaki raflar kalkar (Dersler rafı DERSLER yerine geldi, "Dersler" başlığıyla tanınır)
+    kutup = re.sub(r'\n  <div class="shelf">\n    <h2>(?!Dersler<).*?\n  </div>\n', "\n", kutup, flags=re.S)
 def _yazili(d):
     return any((K / d["id"] / f"bolum-{n}.html").exists() for n in range(1, len(d["bolumler"]) + 1))
 # Her dosyanın kendi sayfası var: dersler ders-<id>.html, öbürleri dosya-<id>.html.
 # index.html yalnızca kütüphane + pano; telefonda tek sayfa çok büyüyünce açılış donuyordu.
 HARITA = {d["id"]: (f"ders-{d['id']}.html" if d.get("ders") else f"dosya-{d['id']}.html") for d in dosyalar if d.get("ders") or _yazili(d)}
-sayfa_govde = {"index.html": [kutup, pano_html()]}
+sayfa_govde = {"index.html": [kutup] if SADECE_YKS else [kutup, pano_html()]}
 for _s in HARITA.values(): sayfa_govde[_s] = [kutup]
 tek_ek = []  # --tek kopyası: ders olmayan dosyalar tek sayfada
 files, names, guven = {}, {}, {}
@@ -118,7 +124,7 @@ def yonlendir(metin, bu, harita=None):
 def kuyruk(bu, harita=None):
     harita = HARITA if harita is None else harita
     k = ["\n</div><!-- /shell -->\n"]
-    k.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps(DERS_IDS)).replace("/*DERS_SAYFASI*/false", "true" if bu.startswith("ders-") else "false"))
+    k.append(oku("kilit.html").replace("/*DERSLER*/[]", json.dumps(DERS_IDS)).replace("/*DERS_SAYFASI*/false", "true" if (bu.startswith("ders-") or SADECE_YKS) else "false"))
     b = oku("betik.html")
     b = b.replace("/*DOSYALAR*/{}", json.dumps(files, ensure_ascii=False))
     b = b.replace("/*BOLUMLER*/{}", json.dumps(names, ensure_ascii=False))

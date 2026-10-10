@@ -112,7 +112,11 @@ const esitlemeTesti=(async()=>{
 
 /* ---------- 5. arşiv ---------- */
 bolum("Arşiv");
-{ const html=oku("arsiv/index.html"), d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+{ const html=oku("arsiv/index.html"), yks=varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).sadece_yks,
+    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>!yks||x.ders), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+  if(yks){ T("yalnız YKS: ders dışı dosya sayfası yok", !fs.readdirSync(path.join(kok,"arsiv")).some(f=>/^dosya-/.test(f)));
+    T("yalnız YKS: kütüphanede tek raf (Dersler)", (html.match(/class="shelf"/g)||[]).length===1 && html.includes("<h2>Dersler</h2>"));
+    T("yalnız YKS: katalog boş", /"sadeceYks":true/.test(oku("katalog.js")) && /"dosyalar":\{\}/.test(oku("katalog.js"))); }
   let n=0;
   d.forEach(x=>x.bolumler.forEach((ad,i)=>{ const f="arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"; if(!varMi(f)) return; n++;
     const kaynak=oku(f), html=oku("arsiv/"+(x.ders?"ders-":"dosya-")+x.id+".html");
@@ -122,13 +126,13 @@ bolum("Arşiv");
     T(x.id+"-"+(i+1)+" güven düzeyi tanımlı", /^[dkh]$/.test((x.guven||[])[i]||""));
   }));
   T("en az 11 bölüm", n>=11, String(n));
-  T("pano kartları derlenmiş", pano.kartlar.every(k=>html.includes(k.deger)&&html.includes(k.baslik)), "pano.json değişmiş, build.py çalıştırılmamış");
+  if(!yks) T("pano kartları derlenmiş", pano.kartlar.every(k=>html.includes(k.deger)&&html.includes(k.baslik)), "pano.json değişmiş, build.py çalıştırılmamış");
   T("pano kartlarında güven düzeyi var", pano.kartlar.every(k=>/^[dkh]$/.test(k.guven)));
   T("ders bölümleri ana sayfada değil (sayfalara bölündü)", !/class="chapter ders"/.test(html));
   d.filter(x=>x.ders).forEach(x=>{ const s=oku("arsiv/ders-"+x.id+".html");
     T("ders-"+x.id+".html kilitsiz", /var DERS_SAYFASI=true;/.test(s));
     T("ders-"+x.id+".html yönlendirme bilgisi", s.includes('"bu": "ders-'+x.id+'.html"')); });
-  T("arşiv ana sayfası kilitli", /var DERS_SAYFASI=false;/.test(html));
+  T("arşiv ana sayfası kilitli (yalnız YKS iken kilitsiz)", (yks?/var DERS_SAYFASI=true;/:/var DERS_SAYFASI=false;/).test(html));
   T("arşiv ana sayfası hafif (dosyalar ayrı sayfada)", html.length<300000, Math.round(html.length/1024)+" KB");
   d.filter(x=>!x.ders && x.bolumler.some((_,i)=>varMi("arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"))).forEach(x=>{ const s=oku("arsiv/dosya-"+x.id+".html");
     T("dosya-"+x.id+".html kilitli", /var DERS_SAYFASI=false;/.test(s));
@@ -152,7 +156,7 @@ bolum("Okuma planı");
   T("okuma.js panelde yükleniyor", oku("index.html").includes('<script src="okuma.js"></script>'));
   const K=new Function(oku("katalog.js")+";return KATALOG;")();
   T("katalog.js panelde yükleniyor", oku("index.html").includes('<script src="katalog.js"></script>'));
-  T("katalogda raf var", K.raflar.length>0);
+  T("katalogda raf var (ya da yalnız YKS)", K.raflar.length>0 || K.sadeceYks===true);
   Object.entries(K.dosyalar).forEach(([id,x])=>{ T(id+" katalogda güncel", x.bolumler.every((b,i)=>!!b[1]===varMi("arsiv/kaynak/"+id+"/bolum-"+(i+1)+".html")), "arsiv/build.py çalıştırılmamış"); });
 }
 

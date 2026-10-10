@@ -123,7 +123,7 @@ IKON.spor='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-wid
   var ab=el("button",null); ab.type="button"; ab.setAttribute("data-b","arsiv");
   ab.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5c2-.8 3.8-.8 5.5.4 1.7-1.2 3.500-1.2 5.500-.4v9c-2-.8-3.800-.8-5.500.4-1.700-1.200-3.500-1.200-5.500-.4zM8 3.900v9"/></svg><span class="uzun">Arşiv</span><span class="kisa">Arşiv</span><em class="cnt" id="cnt-arsiv"></em>';
   ab.addEventListener("click",function(){ location.href="arsiv/"; });
-  nav.appendChild(ab);
+  if(!(typeof KATALOG!=="undefined" && KATALOG.sadeceYks)) nav.appendChild(ab);
   var son=yerelOku("bolum","bugun");
   try{ var qb=new URLSearchParams(location.search).get("b"); if(qb) son=qb; }catch(e){}
   if(BOLUMLER.some(function(b){return b.id===son;})) aktif=son;
@@ -448,6 +448,7 @@ function cizBugun(){
   yerelYaz("bugun_ozet",{gun:k,yapilan:yapA,toplam:say.length,blok:yap,odak:odakYap,odakTop:odakTop,parca:parca});
   yap=yapA;
   var gerek=Math.ceil(say.length*ARSIV_ORAN), ad=$("arsivDurum"), al=$("arsivLink");
+  if(al) al.hidden = typeof KATALOG!=="undefined" && !!KATALOG.sadeceYks; // yalnız YKS: arşiv bağlantısı gizli
   if(ad&&al){
     var acik = yap>=gerek;
     al.classList.toggle("acik",acik);
@@ -1741,6 +1742,10 @@ function okuAnaCiz(){
     if(!katalogDenendi){ katalogDenendi=true; var sc=document.createElement("script"); sc.src="katalog.js?t="+Date.now(); sc.onload=function(){ okuAnaCiz(); }; document.body.appendChild(sc); }
     return;
   }
+  // Yalnız YKS (arsiv/kaynak/yayin.json): kitaplık, kategori ve arşiv bağlantısı gizli; TYT ile AYT kalır.
+  var yalnizYks=!!KATALOG.sadeceYks;
+  if(yalnizYks) okuSeg="tum";
+  $("okSeg").hidden=yalnizYks; $("okCips").hidden=yalnizYks; document.querySelector(".okkilit").hidden=yalnizYks;
   var done=yerelOku("dni-done",{})||{}, kitap=okuSeg==="kitap";
   document.querySelectorAll("#okSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-k")===okuSeg?"true":"false"); });
   // TYT / AYT durumu

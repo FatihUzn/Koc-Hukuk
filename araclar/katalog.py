@@ -80,7 +80,13 @@ for r in raflar:
     r["ogeler"] = kalan
 raflar = [r for r in raflar if r["ogeler"]]
 
+yayin = K / "yayin.json"
+if yayin.exists() and json.loads(yayin.read_text(encoding="utf-8")).get("sadece_yks"):
+    # YKS dışındaki dosyalar panelde gösterilmez (kaynak/yayin.json)
+    veri = {"raflar": [], "yakinda": [], "dosyalar": {}, "sadeceYks": True}
+else:
+    veri = {"raflar": raflar, "yakinda": yakinda, "dosyalar": cikti}
 js = ("/* Oku ekranının kataloğu — araclar/katalog.py üretir (arsiv/build.py çağırır), elle düzenleme. */\n"
-      "var KATALOG = " + json.dumps({"raflar": raflar, "yakinda": yakinda, "dosyalar": cikti}, ensure_ascii=False, separators=(",", ":")) + ";\n")
+      "var KATALOG = " + json.dumps(veri, ensure_ascii=False, separators=(",", ":")) + ";\n")
 (KOK / "katalog.js").write_text(js, encoding="utf-8")
-print("katalog.js:", len(raflar), "raf,", sum(len(r["ogeler"]) for r in raflar), "öge,", len(yakinda), "yakında,", len(js) // 1024, "KB")
+print("katalog.js:", len(veri["raflar"]), "raf,", len(veri["dosyalar"]), "dosya,", len(veri["yakinda"]), "yakında" + (" (yalnız YKS)" if veri.get("sadeceYks") else ""))

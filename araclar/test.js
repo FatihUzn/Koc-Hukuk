@@ -113,7 +113,11 @@ const esitlemeTesti=(async()=>{
 /* ---------- 5. arşiv ---------- */
 bolum("Arşiv");
 { const html=oku("arsiv/index.html"), yks=varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).sadece_yks,
-    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>!yks||x.ders), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+    gizli=(varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).gizli_dersler)||[],
+    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>(!yks||x.ders)&&gizli.indexOf(x.id)<0), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+  gizli.forEach(g=>{ T("gizli ders "+g+": sayfası yok", !varMi("arsiv/ders-"+g+".html"));
+    T("gizli ders "+g+": okuma planında yok", !new RegExp('"'+g+'-\\d+"').test(oku("okuma.js")));
+    T("gizli ders "+g+": kütüphanede yok", !html.includes('href="ders-'+g+'.html')); });
   if(yks){ T("yalnız YKS: ders dışı dosya sayfası yok", !fs.readdirSync(path.join(kok,"arsiv")).some(f=>/^dosya-/.test(f)));
     T("yalnız YKS: kütüphanede tek raf (Dersler)", (html.match(/class="shelf"/g)||[]).length===1 && html.includes("<h2>Dersler</h2>"));
     T("yalnız YKS: katalog boş", /"sadeceYks":true/.test(oku("katalog.js")) && /"dosyalar":\{\}/.test(oku("katalog.js"))); }

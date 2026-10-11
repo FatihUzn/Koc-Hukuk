@@ -89,7 +89,7 @@ def ders_listesi(sira):
     return [{"id": d, "ad": KISA.get(d, dosyalar[d]["baslik"]), "p": [f"{d}-{n}" for n in range(a, b + 1)]} for d, a, b in sira]
 # Panelde görünen sıra (sınavdaki sıra). AYT'nin planı TYT bitince kurulacak.
 TYT = ders_listesi([x for x in [("turkce", 1, 23), ("mat", 1, 48), ("geo", 1, 13), ("fizik", 1, 12), ("kimya", 1, 10), ("biyo", 1, 9), ("sosyal", 1, 22)] if x[0] not in GIZLI])
-AYT = ders_listesi([("ileri", 1, 34), ("geo", 14, 26), ("fizik", 13, 32), ("kimya", 11, 26), ("biyo", 10, 24)])
+AYT = ders_listesi([x for x in [("ileri", 1, 34), ("geo", 14, 26), ("fizik", 13, 32), ("kimya", 11, 26), ("biyo", 10, 24)] if x[0] not in GIZLI])
 adlar, hazir = {}, []
 for x in TYT + AYT:
     for p in x["p"]:

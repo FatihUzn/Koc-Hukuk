@@ -153,7 +153,7 @@ bolum("Okuma planı");
   T("plan son günü 29 Ekim", O.son==="2026-10-29");
   O.tyt.forEach(x=>{ const sira=tum.filter(p=>p.startsWith(x.id+"-"));
     T(x.id+" parçaları sırayla", sira.join()===x.p.join()); });
-  T("AYT listesi var", Array.isArray(O.ayt) && O.ayt.length===5);
+  T("AYT listesi var", Array.isArray(O.ayt) && O.ayt.length>=3);
   O.ayt.concat(O.tyt).forEach(x=>x.p.forEach(p=>{ if(!O.adlar[p]) T(p+" adı var", false); }));
   T("hazır listesi dosyalarla uyumlu", O.hazir.every(p=>varMi("arsiv/kaynak/"+p.replace(/-(\d+)$/,"/bolum-$1.html"))));
   Object.keys(O.gunler).forEach(g=>{ const s=O.gunler[g].map(x=>x[1]).filter(x=>x!=="—"); T(g+" saatleri artan", s.every((v,i)=>!i||v>s[i-1])); });

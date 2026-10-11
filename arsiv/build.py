@@ -11,6 +11,9 @@ dosyalar = json.loads(oku("dosyalar.json"))
 # kaynak/yayin.json → "sadece_yks": true ise yalnız dersler yayınlanır; öbür dosyalar kaynakta kalır, sayfaları üretilmez.
 SADECE_YKS = json.loads(oku("yayin.json")).get("sadece_yks", False) if (K / "yayin.json").exists() else False
 if SADECE_YKS: dosyalar = [d for d in dosyalar if d.get("ders")]
+# kaynak/yayin.json → "gizli_dersler": yayından kaldırılan dersler (kaynakta durur, sayfası üretilmez)
+GIZLI_DERS = set(json.loads(oku("yayin.json")).get("gizli_dersler", [])) if (K / "yayin.json").exists() else set()
+dosyalar = [d for d in dosyalar if d["id"] not in GIZLI_DERS]
 
 GUVEN_AD = {"d": "doğrulandı", "k": "kısmen doğrulandı", "h": "hafızadan"}
 def pano_html():

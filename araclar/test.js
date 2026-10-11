@@ -113,7 +113,11 @@ const esitlemeTesti=(async()=>{
 /* ---------- 5. arşiv ---------- */
 bolum("Arşiv");
 { const html=oku("arsiv/index.html"), yks=varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).sadece_yks,
-    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>!yks||x.ders), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+    gizli=(varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).gizli_dersler)||[],
+    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>(!yks||x.ders)&&gizli.indexOf(x.id)<0), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+  gizli.forEach(g=>{ T("gizli ders "+g+": sayfası yok", !varMi("arsiv/ders-"+g+".html"));
+    T("gizli ders "+g+": okuma planında yok", !new RegExp('"'+g+'-\\d+"').test(oku("okuma.js")));
+    T("gizli ders "+g+": kütüphanede yok", !html.includes('href="ders-'+g+'.html')); });
   if(yks){ T("yalnız YKS: ders dışı dosya sayfası yok", !fs.readdirSync(path.join(kok,"arsiv")).some(f=>/^dosya-/.test(f)));
     T("yalnız YKS: kütüphanede tek raf (Dersler)", (html.match(/class="shelf"/g)||[]).length===1 && html.includes("<h2>Dersler</h2>"));
     T("yalnız YKS: katalog boş", /"sadeceYks":true/.test(oku("katalog.js")) && /"dosyalar":\{\}/.test(oku("katalog.js"))); }
@@ -149,7 +153,7 @@ bolum("Okuma planı");
   T("plan son günü 29 Ekim", O.son==="2026-10-29");
   O.tyt.forEach(x=>{ const sira=tum.filter(p=>p.startsWith(x.id+"-"));
     T(x.id+" parçaları sırayla", sira.join()===x.p.join()); });
-  T("AYT listesi var", Array.isArray(O.ayt) && O.ayt.length===5);
+  T("AYT listesi var", Array.isArray(O.ayt) && O.ayt.length>=3);
   O.ayt.concat(O.tyt).forEach(x=>x.p.forEach(p=>{ if(!O.adlar[p]) T(p+" adı var", false); }));
   T("hazır listesi dosyalarla uyumlu", O.hazir.every(p=>varMi("arsiv/kaynak/"+p.replace(/-(\d+)$/,"/bolum-$1.html"))));
   Object.keys(O.gunler).forEach(g=>{ const s=O.gunler[g].map(x=>x[1]).filter(x=>x!=="—"); T(g+" saatleri artan", s.every((v,i)=>!i||v>s[i-1])); });

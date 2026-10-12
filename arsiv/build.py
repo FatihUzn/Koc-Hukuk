@@ -10,7 +10,8 @@ oku = lambda p: (K / p).read_text(encoding="utf-8")
 dosyalar = json.loads(oku("dosyalar.json"))
 # kaynak/yayin.json → "sadece_yks": true ise yalnız dersler yayınlanır; öbür dosyalar kaynakta kalır, sayfaları üretilmez.
 SADECE_YKS = json.loads(oku("yayin.json")).get("sadece_yks", False) if (K / "yayin.json").exists() else False
-if SADECE_YKS: dosyalar = [d for d in dosyalar if d.get("ders")]
+ACIK = set(json.loads(oku("yayin.json")).get("acik_dosyalar", [])) if (K / "yayin.json").exists() else set()
+if SADECE_YKS: dosyalar = [d for d in dosyalar if d.get("ders") or d["id"] in ACIK]   # acik_dosyalar: kurala istisna (mola okumaları)
 # kaynak/yayin.json → "gizli_dersler": yayından kaldırılan dersler (kaynakta durur, sayfası üretilmez)
 GIZLI_DERS = set(json.loads(oku("yayin.json")).get("gizli_dersler", [])) if (K / "yayin.json").exists() else set()
 dosyalar = [d for d in dosyalar if d["id"] not in GIZLI_DERS]
@@ -70,7 +71,12 @@ DERS_IDS = [x["id"] for x in dosyalar if x.get("ders")]
 kutup = oku("kutuphane.html").replace("<!--DERSLER-->", dersler_html())
 if SADECE_YKS:
     # Dersler rafı dışındaki raflar kalkar (Dersler rafı DERSLER yerine geldi, "Dersler" başlığıyla tanınır)
+    _ham = oku("kutuphane.html")
+    _mola = [m.group(0) for i in ACIK for m in [re.search(r'      <a class="file" href="#' + i + r'-1">.*?</a>', _ham)] if m]
     kutup = re.sub(r'\n  <div class="shelf">\n    <h2>(?!Dersler<).*?\n  </div>\n', "\n", kutup, flags=re.S)
+    if _mola:
+        _raf = '\n  <div class="shelf">\n    <h2>Mola</h2>\n    <p class="sub">5–10 dakikalık okumalar; kafa dağıtmak için.</p>\n    <div class="files">\n' + "\n".join(_mola) + '\n    </div>\n  </div>\n'
+        kutup = kutup.replace('\n    </div>\n  </div>\n', '\n    </div>\n  </div>\n' + _raf, 1)
 def _yazili(d):
     return any((K / d["id"] / f"bolum-{n}.html").exists() for n in range(1, len(d["bolumler"]) + 1))
 # Her dosyanın kendi sayfası var: dersler ders-<id>.html, öbürleri dosya-<id>.html.

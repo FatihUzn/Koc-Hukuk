@@ -1,2 +1,2 @@
 /* Oku ekranının kataloğu — araclar/katalog.py üretir (arsiv/build.py çağırır), elle düzenleme. */
-var KATALOG = {"raflar":[],"yakinda":[],"dosyalar":{},"sadeceYks":true};
+var KATALOG = {"raflar":[{"ad":"Mola","acik":"5–10 dakikalık okumalar","ogeler":[{"tip":"dosya","id":"luks"}]}],"yakinda":[],"dosyalar":{"luks":{"ad":"Lüksün haritası","acik":"Succession gözüyle tier list'ler: saat, kıyafet, çanta, araba, seyahat, servet seviyeleri, eski ve yeni para; Beymen'de beş seviyede klasik kombinler ve özel dikim. İki bölüm.","raf":"İşletme ve ticaret","bolumler":[["Tier list'ler: saatten servete",1,16],["Klasik kombinler ve özel dikim",1,7]],"sayfa":"dosya-luks.html"}},"sadeceYks":true};

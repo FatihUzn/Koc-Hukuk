@@ -83,7 +83,10 @@ raflar = [r for r in raflar if r["ogeler"]]
 yayin = K / "yayin.json"
 if yayin.exists() and json.loads(yayin.read_text(encoding="utf-8")).get("sadece_yks"):
     # YKS dışındaki dosyalar panelde gösterilmez (kaynak/yayin.json)
-    veri = {"raflar": [], "yakinda": [], "dosyalar": {}, "sadeceYks": True}
+    acik = json.loads(yayin.read_text(encoding="utf-8")).get("acik_dosyalar", [])
+    mola = [o for r in raflar for o in r["ogeler"] if o["tip"] == "dosya" and o["id"] in acik]
+    veri = {"raflar": [{"ad": "Mola", "acik": "5–10 dakikalık okumalar", "ogeler": mola}] if mola else [],
+            "yakinda": [], "dosyalar": {i: x for i, x in cikti.items() if i in acik}, "sadeceYks": True}
 else:
     veri = {"raflar": raflar, "yakinda": yakinda, "dosyalar": cikti}
 js = ("/* Oku ekranının kataloğu — araclar/katalog.py üretir (arsiv/build.py çağırır), elle düzenleme. */\n"

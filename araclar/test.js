@@ -114,13 +114,14 @@ const esitlemeTesti=(async()=>{
 bolum("Arşiv");
 { const html=oku("arsiv/index.html"), yks=varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).sadece_yks,
     gizli=(varMi("arsiv/kaynak/yayin.json")&&JSON.parse(oku("arsiv/kaynak/yayin.json")).gizli_dersler)||[],
-    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>(!yks||x.ders)&&gizli.indexOf(x.id)<0), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
+    d=JSON.parse(oku("arsiv/kaynak/dosyalar.json")).filter(x=>(!yks||x.ders||((JSON.parse(oku("arsiv/kaynak/yayin.json")).acik_dosyalar||[]).indexOf(x.id)>=0))&&gizli.indexOf(x.id)<0), pano=JSON.parse(oku("arsiv/kaynak/pano.json"));
   gizli.forEach(g=>{ T("gizli ders "+g+": sayfası yok", !varMi("arsiv/ders-"+g+".html"));
     T("gizli ders "+g+": okuma planında yok", !new RegExp('"'+g+'-\\d+"').test(oku("okuma.js")));
     T("gizli ders "+g+": kütüphanede yok", !html.includes('href="ders-'+g+'.html')); });
-  if(yks){ T("yalnız YKS: ders dışı dosya sayfası yok", !fs.readdirSync(path.join(kok,"arsiv")).some(f=>/^dosya-/.test(f)));
-    T("yalnız YKS: kütüphanede tek raf (Dersler)", (html.match(/class="shelf"/g)||[]).length===1 && html.includes("<h2>Dersler</h2>"));
-    T("yalnız YKS: katalog boş", /"sadeceYks":true/.test(oku("katalog.js")) && /"dosyalar":\{\}/.test(oku("katalog.js"))); }
+  if(yks){ const acik=JSON.parse(oku("arsiv/kaynak/yayin.json")).acik_dosyalar||[];
+    T("yalnız YKS: ders dışı sayfa yalnız istisnalar için", fs.readdirSync(path.join(kok,"arsiv")).filter(f=>/^dosya-/.test(f)).every(f=>acik.indexOf(f.slice(6,-5))>=0));
+    T("yalnız YKS: kütüphanede Dersler (+ Mola)", (html.match(/class="shelf"/g)||[]).length===(acik.length?2:1) && html.includes("<h2>Dersler</h2>"));
+    T("yalnız YKS: katalog boş", /"sadeceYks":true/.test(oku("katalog.js")) && Object.keys(new Function(oku("katalog.js")+";return KATALOG;")().dosyalar).every(i=>acik.indexOf(i)>=0)); }
   let n=0;
   d.forEach(x=>x.bolumler.forEach((ad,i)=>{ const f="arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"; if(!varMi(f)) return; n++;
     const kaynak=oku(f), html=oku("arsiv/"+(x.ders?"ders-":"dosya-")+x.id+".html");
@@ -139,7 +140,7 @@ bolum("Arşiv");
   T("arşiv ana sayfası kilitli (yalnız YKS iken kilitsiz)", (yks?/var DERS_SAYFASI=true;/:/var DERS_SAYFASI=false;/).test(html));
   T("arşiv ana sayfası hafif (dosyalar ayrı sayfada)", html.length<300000, Math.round(html.length/1024)+" KB");
   d.filter(x=>!x.ders && x.bolumler.some((_,i)=>varMi("arsiv/kaynak/"+x.id+"/bolum-"+(i+1)+".html"))).forEach(x=>{ const s=oku("arsiv/dosya-"+x.id+".html");
-    T("dosya-"+x.id+".html kilitli", /var DERS_SAYFASI=false;/.test(s));
+    T("dosya-"+x.id+".html kilit ayarı (yalnız YKS iken kilitsiz)", (yks?/var DERS_SAYFASI=true;/:/var DERS_SAYFASI=false;/).test(s));
     T("dosya-"+x.id+".html katalogda", oku("katalog.js").includes('"sayfa":"dosya-'+x.id+'.html"')); });
 }
 

@@ -1801,11 +1801,14 @@ function okuAnaCiz(){
     if(okumaVar() && (!kitap || aok)) o.push(okKitap(okKapak("_ayt"), "AYT", aok ? aok+"/"+at+" parça" : ah+"/"+at+" parça hazır", {oran:aok?aok/at:null, click:function(){ okuAc("ayt"); }}));
     raf("Dersler", o);
   }
-  KATALOG.raflar.forEach(function(r,i){
-    if(i===1 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
-    if(okuCip==="tum" || okuCip===r.ad) katalogRafi(r);
-  });
-  if(KATALOG.raflar.length<2 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
+  if(yalnizYks){ derslerRafi(); KATALOG.raflar.forEach(katalogRafi); }   // önce dersler, altında Mola
+  else {
+    KATALOG.raflar.forEach(function(r,i){
+      if(i===1 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
+      if(okuCip==="tum" || okuCip===r.ad) katalogRafi(r);
+    });
+    if(KATALOG.raflar.length<2 && (okuCip==="tum"||okuCip==="dersler")) derslerRafi();
+  }
   if(!gosterilen) rl.appendChild(el("p","okbos", kitap ? "Burada başladığın dosyalar görünür. Hepsini görmek için Tümü'ne geç." : "Bu rafta henüz dosya yok."));
   // yakında
   var y=KATALOG.yakinda.filter(function(x){ return okuCip==="tum" || okuCip===x.raf; });

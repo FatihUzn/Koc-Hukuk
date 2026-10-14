@@ -195,6 +195,15 @@ function cizSimdi(r){
   var k=$("simdi"); if(!k) return;
   var ss=$("simdiSpor"); if(ss){ var sb=(r.simdi&&r.simdi.id==="b9")?r.simdi:((!r.simdi&&r.sonraki&&r.sonraki.id==="b9")?r.sonraki:null), sp=sb&&window.Spor?Spor.gun(sporMod(),bugunTarih().getDay()):null; ss.hidden=!sp; if(sp) ss.textContent="Bugünkü antrenman: "+sp.ad+" →"; }
   var ad=$("simdiAd"), et=$("simdiEt"), bar=$("simdiBar"), kal=$("simdiKalan"), son=$("simdiSonra");
+  /* "X bitti" düğmesi: şu anki sayılan blok; o yoksa yalnız az önce biten blok (işaretlenmemişse). Atlanan eski bloklar için ısrar etmez. */
+  var bt=$("simdiBit");
+  if(bt){
+    var gk=anahtar(bugunTarih()), gv=gunVerisi(gk), hedef=null;
+    if(r.simdi && r.simdi.say && !gv[r.simdi.id]) hedef=r.simdi;
+    else { var son=null; gunlukListe().forEach(function(x){ if(x.say && dkDan(x.s)+(x.dk||0)<=r.dk) son=x; }); if(son && !gv[son.id]) hedef=son; }
+    bt.hidden=!hedef;
+    if(hedef){ bt.textContent="✓  "+hedef.ad+" bitti"; bt.onclick=function(){ blokAc(gk,hedef.id); cizBugun(); cizHafta(); cizMast(); }; }
+  }
   if(r.simdi){
     var bas=dkDan(r.simdi.s), sure=r.simdi.dk||1, gecen=r.dk-bas, kalan=bas+sure-r.dk;
     et.textContent="Şu an"; ad.textContent=r.simdi.ad; $("simdiIs").textContent=r.simdi.is||"";
@@ -972,15 +981,14 @@ function cizPlan(){
 
    '<div class="rule"><h3>Hedef kalibrasyonu</h3>',
    '<p>Plan <b>Koç bandı</b> üzerine kurulu (TYT 105–112 · AYT 62–70); ilk 100 üst senaryo. <b>Yükseltme eşiği:</b> Şubat sonunda TYT ≥ 110 ve AYT ≥ 72.</p>',
-   '<p>SAY\'da bir AYT neti ≈ 2,25 TYT neti. AYT\'deki 12 netlik açık, TYT\'deki 20 netlik açıktan değerli. Program dengeli. (Katsayılar yaklaşık; ÖSYM kılavuzundan teyit edilmeli.)</p></div>',
-
-   '<div class="rule"><h3>Veri</h3>',
-   '<p>Kayıt bu cihazın tarayıcısında. JSON yedeği indir; başka cihaza aynı dosyayı yükle. Tarayıcı verisi temizlenirse yedek olmayan kayıt gider — <b>haftada bir yedek al.</b></p>',
-   '<div class="iorow"><button class="btn sm" type="button" id="planYedekAl">Yedek indir</button><button class="btn sm ghost" type="button" id="planYedekYukle">Yedek yükle</button></div></div>'
+   '<p>SAY\'da bir AYT neti ≈ 2,25 TYT neti. AYT\'deki 12 netlik açık, TYT\'deki 20 netlik açıktan değerli. Program dengeli. (Katsayılar yaklaşık; ÖSYM kılavuzundan teyit edilmeli.)</p></div>'
   ].join("");
-  var ya=$("planYedekAl"), yy=$("planYedekYukle");
-  if(ya) ya.addEventListener("click",yedekAl);
-  if(yy) yy.addEventListener("click",function(){ $("ioFile").click(); });
+  /* sade: her kural başlık olarak kapalı durur, dokununca açılır */
+  c.querySelectorAll("div.rule").forEach(function(r){
+    var d=document.createElement("details"), sm=document.createElement("summary"), h=r.querySelector("h3");
+    d.className="rule"; sm.textContent=h?h.textContent:""; if(h) h.remove(); d.appendChild(sm);
+    while(r.firstChild) d.appendChild(r.firstChild); r.parentNode.replaceChild(d,r);
+  });
 }
 
 /* ============ başlat ============ */
@@ -1137,7 +1145,7 @@ function yedekKontrol(){
   u.hidden = !gerek;
   if(gerek) $("yedekMetin").textContent = g===null ? "Henüz hiç yedek almadın. Kayıt yalnızca bu tarayıcıda duruyor." : ("Son yedek "+g+" gün önce. Haftalık yedek zamanı.");
 }
-$("yedekSimdi").addEventListener("click",function(){ yedekAl(); setTimeout(yedekKontrol,300); });
+/* yedek uyarı kutusu kaldırıldı (14 Ekim): eşitleme var, yedek Ayarlar'da */
 /* ============ spor: günün antrenmanı, set kaydı, dinlenme sayacı ============ */
 var sporGun=null, sporSayac=null, sporBitis=0;
 function sporMod(){ return yerelOku("spor_mod","ev")==="salon" ? "salon" : "ev"; }
@@ -1481,16 +1489,6 @@ function grupGuncelle(){
 (function(){
   var n=$("gnav"); if(!n) return;
   GRUPLAR.forEach(function(g,i){
-    if(i===2){
-      var f=el("button","fab"); f.type="button"; f.id="fab"; f.setAttribute("aria-label","Şu anki bloğu tamamla");
-      f.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.500 4.500L19 7.500"/></svg>';
-      f.addEventListener("click",function(){
-        var r=suAnkiBlok(), k=anahtar(bugunTarih());
-        if(aktif!=="bugun") git("bugun");
-        if(r.simdi && r.simdi.say && !gunVerisi(k)[r.simdi.id]){ blokAc(k,r.simdi.id); cizBugun(); cizHafta(); cizMast(); f.classList.add("oldu"); setTimeout(function(){ f.classList.remove("oldu"); },900); }
-      });
-      n.appendChild(f);
-    }
     var b=el("button",null); b.type="button"; b.setAttribute("data-g",g.id);
     b.innerHTML=GIKON[g.id]+'<span>'+g.ad+'</span>';
     b.addEventListener("click",function(){ gitGrup(g.id); });

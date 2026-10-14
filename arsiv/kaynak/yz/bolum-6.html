@@ -1,0 +1,572 @@
+<article class="chapter ders" id="c-yz-6">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 6 · Yapay nöron ve katmanlı ağ</div>
+<h1>Çarp, topla, bük: yapay nörondan katmanlı ağa</h1>
+<p class="time">Okuma ve çözme yaklaşık 55 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir sohbet modeli için "70 milyar parametreli" deniyor. Bu 70 milyar sayı tam olarak nerede duruyor, ne iş yapıyor? Bunlar beyindeki nöronlar gibi bir şey mi? Parçanın sonunda küçük bir sinir ağının içinden bir sayının nasıl geçtiğini kâğıt kalemle izleyebilecek, bir ağın parametresini kendin sayabilecek ve "sinir ağı her şeyi öğrenebilir" cümlesinin neresinin doğru, neresinin abartı olduğunu söyleyebileceksin.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (model, parametre, eğitim, çıkarım), Parça 3 (vektör, ağırlıklı toplam, matris çarpımı, float16 ve niceleme), Parça 4 (doğrusal regresyon, lojistik regresyon ve sigmoid, karar ağacı). Python denemesi isteğe bağlıdır; atlarsan konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 4'te üç model gördük: noktalara doğru uyduran doğrusal regresyon, sonucu olasılığa çeviren lojistik regresyon ve evet/hayır sorularıyla dallanan karar ağacı. Üçü de birer <strong>kalıptı</strong>: kalıbın biçimi baştan belliydi, eğitim yalnızca kalıbın içindeki sayıları (parametreleri) ayarlıyordu. Doğrusal regresyon ne kadar eğitilirse eğitilsin, eğri bir ilişkiyi düz bir çizgiyle anlatmaya çalışır; kalıbı buna izin vermez.</p>
+
+<p>Sinir ağı da bir kalıptır, ama çok esnek bir kalıp. Esnekliği tek bir fikirden gelir: <strong>çok basit bir hesap biriminin (yapay nöronun) binlerce, milyonlarca, milyarlarca kopyasını katmanlar hâlinde art arda dizmek.</strong> Her birim çok basittir: birkaç sayıyı çarpar, toplar ve sonucu bir fonksiyondan geçirir. Ama bu birimler üst üste konunca ağ çok karmaşık ilişkileri temsil edebilir; resimdeki kediyi bulan ya da bir sonraki kelimeyi tahmin eden sistemlerin içinde bu birimler vardır.</p>
+
+<p>Bu parçada yalnızca <strong>yapıyı</strong> kuracağız: tek nöron ne hesaplar, aktivasyon fonksiyonu neden şarttır, katman ne demektir, bir sayı ağın içinden nasıl geçer (ileri besleme), parametreler nasıl sayılır, bir ağ teorik olarak neyi temsil edebilir (evrensel yaklaşım) ve neden içi "kara kutu" sayılır. Ağırlıkları kimin, nasıl bulduğu, yani <strong>öğrenme</strong>, Parça 7'nin konusu. Burada ağırlıklar hazır verilmiş gibi davranacağız: eğitimi bitmiş bir ağın içine bakıyoruz.</p>
+
+<h2 class="s">Esin kaynağı: biyolojik nöron ve benzetmenin bittiği yer</h2>
+
+<p>"Sinir ağı" adı beyinden gelir; önce o benzetmeyi kuralım, sonra nerede bittiğini açıkça görelim. Beyindeki bir sinir hücresinin (nöronun) kabaca üç bölümü vardır. <strong>Dendritler</strong> dallanmış uzantılardır; öbür nöronlardan gelen sinyalleri toplar. <strong>Hücre gövdesi</strong> bu sinyallerin etkisini birleştirir. <strong>Akson</strong> ise uzun bir kablodur; hücre "ateşlerse" sinyali öbür nöronlara taşır. İki nöronun birleştiği noktaya <strong>sinaps</strong> denir. Her sinaps aynı güçte değildir: kimi gelen sinyali güçlü iletir, kimi zayıf, kimi de karşıdaki hücreyi ateşlemekten alıkoyar. Gelen etkilerin toplamı belli bir eşiği aşarsa hücre bir elektrik atımı (aksiyon potansiyeli) üretir; aşmazsa sessiz kalır.</p>
+
+<p>1943'te Warren McCulloch ve Walter Pitts bu tabloyu bir matematik modeline indirdi: girdiler gelir, ağırlıklarla toplanır, toplam eşiği aşarsa birim 1, aşmazsa 0 verir. 1958'de Frank Rosenblatt bu fikirden <strong>algılayıcı</strong> (perceptron) adını verdiği, ağırlıklarını örneklerden ayarlayabilen bir sistem yayımladı. Bugünkü yapay nöronun kökü bu iki çalışmadır.</p>
+
+<p>Benzetme buraya kadar işe yarar; ötesinde yanıltır. Gerçek nöron zaman içinde atımlar gönderir ve bilginin bir kısmı atımların zamanlamasında taşınır; yapay nöron tek bir sayı verir ve zamanı yoktur. Gerçek sinapsta onlarca kimyasal madde rol oynar; dendritin kendisi bile hesap yapabilir. Beynin nasıl öğrendiği hâlâ büyük ölçüde açık bir araştırma sorusudur ve Parça 7'de göreceğimiz yöntemin beyinde aynen işlediğine dair yerleşik bir kanıt yoktur. Sayılar da kıyaslanamaz: insan beyninde yaygın kabul gören tahminle yaklaşık 86 milyar nöron ve kabaca 100 trilyon sinaps vardır, ama bir yapay ağın "parametresi" bir sinapsın karşılığı sayılamaz, çünkü ikisi çok farklı işler yapar.</p>
+
+<div class="tablo"><table>
+<tr><th>Öge</th><th>Biyolojik nöron</th><th>Yapay nöron</th></tr>
+<tr><td>Girdi</td><td>Dendritlere gelen kimyasal ve elektriksel sinyaller</td><td>Birkaç sayı (bir vektör)</td></tr>
+<tr><td>Bağlantı gücü</td><td>Sinapsın gücü; zamanla değişir</td><td>Ağırlık: tek bir ondalık sayı</td></tr>
+<tr><td>Birleştirme</td><td>Hücre gövdesinde karmaşık, zamana bağlı birleşme</td><td>Ağırlıklı toplam artı sapma</td></tr>
+<tr><td>Çıktı</td><td>Zaman içinde dizilen elektrik atımları</td><td>Tek bir sayı</td></tr>
+<tr><td>Öğrenme</td><td>Mekanizması tam bilinmiyor</td><td>Ağırlıkların matematiksel yöntemle ayarlanması (Parça 7)</td></tr>
+<tr><td>Ölçek</td><td>Yaklaşık 86 milyar nöron (tahmin)</td><td>Birkaç taneden milyarlarca parametreye</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Yapay sinir ağı beyni taklit eder; 70 milyar parametreli model 70 milyar nöronlu bir beyindir."</strong> Yanlış. Yapay nöron beyinden yalnızca kaba bir fikir ödünç alır: "girdileri ağırlıklı topla, bir eşiğe göre tepki ver." Ötesi düz matematiktir. Parametre de nöron değildir: aşağıda göreceğin gibi her nöronun birçok parametresi vardır. "Nöron" adı tarihî bir adlandırmadır; onu "küçük hesap birimi" diye okumak daha doğrudur.</p></div>
+
+<h2 class="s">Yapay nöron: üç adımlı küçük bir hesap</h2>
+
+<p>Parça 3'te ağırlıklı toplamı görmüştük: her sayıyı önemine göre bir katsayıyla çarpıp toplamak. Yapay nöron tam olarak bunu yapar, üstüne iki küçük ekleme yapar.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Yapay nöron</strong> şu üç adımı yapan bir hesap birimidir:</p>
+<p>1. Her girdiyi (x<sub>1</sub>, x<sub>2</sub>, …, x<sub>n</sub>) kendi <strong>ağırlığıyla</strong> (w<sub>1</sub>, w<sub>2</sub>, …, w<sub>n</sub>) çarpar.</p>
+<p>2. Çarpımları toplar ve buna <strong>sapma</strong> (bias) denen tek bir sayı (b) ekler: z = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + … + w<sub>n</sub>x<sub>n</sub> + b.</p>
+<p>3. Sonucu bir <strong>aktivasyon fonksiyonundan</strong> (f) geçirir: a = f(z). Nöronun çıktısı a'dır.</p>
+<p>Ağırlıklar ve sapma, nöronun <strong>parametreleridir</strong>; eğitim bunları ayarlar. Girdiler ise her seferinde dışarıdan gelir.</p></div>
+
+<p>Her parçanın neden orada olduğuna bak. <strong>Ağırlık</strong> bir girdinin ne kadar önemli olduğunu ve hangi yönde etki ettiğini söyler. Büyük bir ağırlık "bu girdi çok önemli" demektir; sıfıra yakın bir ağırlık "bunu neredeyse görmezden gel"; <strong>negatif</strong> bir ağırlık ise "bu girdi arttıkça sonucu aşağı çek" demektir. Biyolojideki güçlü sinaps, zayıf sinaps ve engelleyici sinaps ayrımının karşılığı budur.</p>
+
+<p><strong>Sapma</strong> nöronun "başlangıç eğilimidir". Bütün girdiler sıfır olsa bile z sapmaya eşit olur. Sapma büyükse nöron kolay tepki verir, negatifse tepki vermesi için girdilerin daha güçlü olması gerekir. Yani sapma, biyolojideki eşiği sayısal olarak kaydırır. Sapma olmasaydı, Parça 4'teki doğrunun kesişimi (y eksenini kestiği yer) hep sıfıra mecbur kalırdı; bütün doğrular başlangıç noktasından geçmek zorunda olurdu. Sapma bu zorunluluğu kaldırır.</p>
+
+<p>Bir uyarı: "bias" sözcüğü Parça 5'te başka bir anlamda geçti; orada modelin veriden aldığı <strong>yanlılık</strong> (belli gruplara haksız davranma) demekti. Burada ise nöronun içindeki tek bir sayı, <strong>sapma</strong> terimidir. Aynı İngilizce sözcük, iki ayrı kavram; bağlamdan ayırt et.</p>
+
+<p><strong>Aktivasyon fonksiyonu</strong> ise toplanan sayıyı "büker". Neden bükmek gerektiği bu parçanın en önemli sorusu; bir sonraki başlıkta ayrıntısıyla göreceğiz. Önce somut bir hesap yapalım.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Tek bir yapay nöron: üç girdi ağırlıklarıyla çarpılıp toplanıyor, sapma ekleniyor, sonuç sigmoid aktivasyonundan geçip çıktı veriyor">
+  <text class="sv-s" x="30" y="26" text-anchor="middle">x₁</text>
+  <circle class="sv-m" cx="30" cy="50" r="16" /><text class="sv-b" x="30" y="55" text-anchor="middle">2</text>
+  <text class="sv-s" x="30" y="93" text-anchor="middle">x₂</text>
+  <circle class="sv-m" cx="30" cy="115" r="16" /><text class="sv-b" x="30" y="120" text-anchor="middle">1</text>
+  <text class="sv-s" x="30" y="158" text-anchor="middle">x₃</text>
+  <circle class="sv-m" cx="30" cy="180" r="16" /><text class="sv-b" x="30" y="185" text-anchor="middle">3</text>
+  <line class="sv-c" x1="46" y1="54" x2="156" y2="104" />
+  <line class="sv-c" x1="46" y1="115" x2="154" y2="115" />
+  <line class="sv-c" x1="46" y1="176" x2="156" y2="126" />
+  <text class="sv-s" x="98" y="68" text-anchor="middle">w₁ = 0,5</text>
+  <text class="sv-s" x="100" y="108" text-anchor="middle">w₂ = −1</text>
+  <text class="sv-s" x="98" y="172" text-anchor="middle">w₃ = 0,25</text>
+  <text class="sv-s" x="190" y="30" text-anchor="middle">sapma b = 0,1</text>
+  <line class="sv-c" x1="190" y1="38" x2="190" y2="79" />
+  <circle class="sv-l" cx="190" cy="115" r="36" />
+  <text class="sv-b" x="190" y="111" text-anchor="middle">Σ + b</text>
+  <text class="sv-s" x="190" y="130" text-anchor="middle">z = 0,85</text>
+  <line class="sv-c" x1="226" y1="115" x2="250" y2="115" />
+  <rect class="sv-a" x="250" y="93" width="72" height="44" rx="10" />
+  <text class="sv-t" x="286" y="112" text-anchor="middle">sigmoid</text>
+  <text class="sv-s" x="286" y="128" text-anchor="middle">f(z)</text>
+  <line class="sv-cl" x1="322" y1="115" x2="392" y2="115" />
+  <text class="sv-b" x="357" y="105" text-anchor="middle">a ≈ 0,70</text>
+  <text class="sv-s" x="357" y="134" text-anchor="middle">çıktı</text>
+  <text class="sv-s" x="98" y="216" text-anchor="middle">1. çarp</text>
+  <text class="sv-s" x="190" y="216" text-anchor="middle">2. topla, sapmayı ekle</text>
+  <text class="sv-s" x="300" y="216" text-anchor="middle">3. aktivasyon</text>
+</svg>
+<figcaption>Tek bir yapay nöron. Soldaki üç sayı girdidir; çizgilerin üstündeki sayılar ağırlıklardır. Ortadaki daire çarpımları toplayıp sapmayı ekler, turuncu kutu sonucu büker. Aşağıdaki çözümlü örnek bu şekildeki sayıların hesabıdır.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1 · Tek nöronun hesabı</span>
+<p><strong>Soru:</strong> Bir e-postanın istenmeyen (spam) olup olmadığına bakan tek bir nöron düşün. Girdiler: x<sub>1</sub> = 2 (e-postadaki bağlantı sayısı), x<sub>2</sub> = 1 (gönderen rehberde kayıtlı: 1 evet, 0 hayır), x<sub>3</sub> = 3 ("kazandınız" gibi şüpheli kelime sayısı). Eğitimden gelmiş ağırlıklar w<sub>1</sub> = 0,5, w<sub>2</sub> = −1, w<sub>3</sub> = 0,25; sapma b = 0,1. Aktivasyon sigmoid. Nöronun çıktısı nedir ve ne anlama gelir?</p>
+<p><strong>Adım 1.</strong> Her girdiyi ağırlığıyla çarp:</p>
+<span class="mat">w<sub>1</sub>x<sub>1</sub> = 0,5 × 2 = 1 <span class="g">(bağlantılar spam yönüne itiyor)</span></span>
+<span class="mat">w<sub>2</sub>x<sub>2</sub> = −1 × 1 = −1 <span class="g">(rehberde kayıtlı gönderen spam olasılığını düşürüyor)</span></span>
+<span class="mat">w<sub>3</sub>x<sub>3</sub> = 0,25 × 3 = 0,75 <span class="g">(şüpheli kelimeler spam yönüne itiyor)</span></span>
+<p><strong>Adım 2.</strong> Çarpımları topla, sapmayı ekle:</p>
+<span class="mat">z = 1 + (−1) + 0,75 + 0,1 = 0,85 <span class="g">(ağırlıklı toplam artı sapma)</span></span>
+<p><strong>Adım 3.</strong> Sigmoidden geçir. Sigmoid, aşağıda tanımı verilecek olan ve her sayıyı 0 ile 1 arasına sıkıştıran fonksiyondur; σ(0,85) değerini hesap makinesi ya da Python verir:</p>
+<span class="mat">a = σ(0,85) ≈ 0,7006 <span class="g">(Python ile hesaplandı)</span></span>
+<p><strong>Sonuç:</strong> Nöron yaklaşık 0,70 verir; bunu "bu e-posta yüzde 70 olasılıkla spam" diye okuruz. Şimdi Parça 4'e dön: lojistik regresyon da tam olarak "ağırlıklı toplam + kesişim, sonra sigmoid" idi. Demek ki <strong>sigmoid aktivasyonlu tek bir nöron, lojistik regresyonun ta kendisidir.</strong> Sinir ağı yabancı bir şey değil; zaten bildiğin modelin çok sayıda kopyasının birbirine bağlanmasıdır.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Tek nöron, bildiğin modellerin bir genellemesidir.</strong> Aktivasyonu olmayan (z'yi olduğu gibi veren) tek nöron doğrusal regresyondur; sigmoid aktivasyonlu tek nöron lojistik regresyondur. Bu yüzden tek bir nöron, Parça 4'teki modellerin yapabildiğinden fazlasını yapamaz: girdiler uzayını <strong>tek bir düz sınırla</strong> ikiye böler. Yeni güç, nöronları çoğaltıp katman katman bağlamaktan gelir.</p></div>
+
+<h2 class="s">Aktivasyon fonksiyonu neden şart?</h2>
+
+<p>Akla gelen ilk soru şu: Madem güç nöronları çoğaltmaktan geliyor, aktivasyonla uğraşmadan, yalnızca ağırlıklı toplam yapan nöronları üst üste koysak olmaz mı? Olmaz, ve nedeni sinir ağlarını anlamanın anahtarıdır.</p>
+
+<p>Ağırlıklı toplam <strong>doğrusal</strong> bir işlemdir: girdiyi iki katına çıkarırsan (sapmanın etkisi dışında) çıktı da iki katına çıkar, grafiği düz bir çizgi ya da düz bir yüzeydir. İki doğrusal işlemi art arda yaparsan sonuç yine doğrusaldır. En basit hâliyle dene: ilk "katman" f(x) = 2x + 1, ikinci "katman" g(y) = 3y − 4 olsun. İkisini art arda uygula:</p>
+
+<span class="mat">g(f(x)) = 3 × (2x + 1) − 4 <span class="g">(f'nin çıktısı g'ye girdi oldu)</span></span>
+<span class="mat">g(f(x)) = 6x + 3 − 4 = 6x − 1 <span class="g">(parantezi dağıttım, sabitleri topladım)</span></span>
+
+<p>İki katmanlık zahmetin sonunda elimizde tek bir doğru kaldı: 6x − 1. Bunu zaten tek bir katmanla yapabilirdik. Matrislerle de aynısı olur: Parça 3'te gördüğün matris çarpımında, iki matrisi art arda uygulamak tek bir matrisi (ikisinin çarpımını) uygulamakla aynı şeydir. Yüz katman da koysan, aktivasyon yoksa ağ tek bir doğrusal katmana <strong>çöker</strong>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Doğrusal katmanlar üst üste konunca tek bir doğrusal katmana eşdeğer olur.</strong> Ağa derinliğin gücünü veren, katman sayısı değil, katmanların arasına konan <strong>doğrusal olmayan</strong> aktivasyon fonksiyonudur. Aktivasyon, her katmanda düz çizgiyi bir yerinden "büker"; bükülmüş parçalar üst üste binince eğri, kıvrımlı ilişkiler ortaya çıkar.</p></div>
+
+<p>Gerçek dünya neden doğrusal değil? Birkaç örnek: Bir evin fiyatı metrekareyle artar ama sonsuza kadar aynı hızla artmaz. Bir ilacın etkisi dozla artar, belli bir dozdan sonra zarara döner. Bir resimde kedi olup olmadığını piksellerin tek bir ağırlıklı toplamı söyleyemez; kedi resmin sağında da olabilir solunda da, karanlıkta da aydınlıkta da. Bu ilişkilerin hiçbiri tek bir düz çizgiyle ya da düz bir sınırla anlatılamaz.</p>
+
+<p>En ünlü küçük örnek <strong>XOR</strong> (dışlayıcı veya) problemidir. Bir koridorun iki ucunda iki anahtar var ve lamba yalnızca anahtarlardan <em>tam biri</em> açıkken yanıyor: ikisi kapalıyken söner, biri açıkken yanar, ikisi açıkken yine söner. Dört durumu bir kâğıda nokta olarak koyarsan, "yanar" noktaları (1,0) ve (0,1) çaprazda, "söner" noktaları (0,0) ve (1,1) öbür çaprazda durur. Tek bir düz çizgiyle bu ikisini ayıramazsın; dene, hangi çizgiyi çizersen çiz bir nokta yanlış tarafta kalır. Tek nöron tek düz sınır çizdiği için XOR'u çözemez. Marvin Minsky ile Seymour Papert'in 1969 tarihli <em>Perceptrons</em> kitabı tek katmanlı algılayıcının bu tür sınırlarını gösterdi ve bu, sinir ağlarına ilginin uzun süre azalmasında rol oynadı (Parça 1'deki "YZ kışları"nı hatırla). Çözüm ise basit: araya bir katman ve aktivasyon koymak. Aşağıda göreceğiz.</p>
+
+<h3>ReLU: negatifi sıfırla, pozitifi bırak</h3>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>ReLU</strong> (rectified linear unit, "doğrultulmuş doğrusal birim"): ReLU(z) = max(0, z). Yani z negatifse çıktı 0, z sıfır ya da pozitifse çıktı z'nin kendisidir.</p>
+<p><strong>Sigmoid</strong>: σ(z) = <span class="kes"><span>1</span><span>1 + e<sup>−z</sup></span></span> (e ≈ 2,718). Her z'yi 0 ile 1 arasına sıkıştırır; z = 0 iken tam 0,5 verir, z büyüdükçe 1'e, küçüldükçe 0'a yaklaşır ama ikisine de hiç ulaşmaz.</p></div>
+
+<p>ReLU, hayal edilebilecek en basit bükmedir: düz çizgiyi sıfır noktasında bir kez kırar. Sol tarafı yere yapıştırır, sağ tarafı olduğu gibi bırakır. Bu kadar basit bir kırık neden yetiyor? Çünkü kırık noktası her nöronda farklı yere düşer (her nöronun ağırlığı ve sapması farklıdır) ve çok sayıda kırık doğru toplanınca istediğin kadar kıvrımlı bir şekil çıkar. Bunu evrensel yaklaşım başlığında somut olarak yapacağız.</p>
+
+<p>ReLU'nun iki pratik avantajı var. Birincisi <strong>ucuzdur</strong>: tek bir karşılaştırma ("sıfırdan büyük mü?") yeter; milyarlarca kez yapılacak bir işlemde bu önemlidir. İkincisi <strong>pozitif tarafta doymaz</strong>: girdi büyüdükçe çıktı da büyümeye devam eder. Sigmoid ise iki ucunda düzleşir (doyar): z = 10 ile z = 20 arasında sigmoid neredeyse hiç değişmez, ikisi de 1'e çok yakındır. Bu düzleşmenin öğrenmeyi neden yavaşlattığını Parça 7'de "kaybolan gradyan" adıyla göreceğiz; şimdilik bilmen gereken, bu yüzden 2010'lardan itibaren gizli katmanlarda ReLU ve ona benzeyen fonksiyonların yaygınlaştığıdır. Sigmoid ise bugün daha çok <strong>çıkış katmanında</strong>, bir olasılık gerektiğinde ("spam olma olasılığı") kullanılır.</p>
+
+<p>ReLU'nun bir zayıf noktası da var: Bir nöronun z değeri hangi girdi gelirse gelsin hep negatif kalırsa, nöron hep 0 verir ve ağa hiçbir katkı yapmaz. Buna "ölü nöron" denir. Tek bir girdi için 0 vermek ise sorun değildir, tersine olağandır: nöron "bu girdide benim aradığım şey yok" demektedir.</p>
+
+<div class="tablo"><table>
+<tr><th>z</th><th>ReLU(z)</th><th>σ(z) (sigmoid)</th></tr>
+<tr><td>−3</td><td>0</td><td>≈ 0,0474</td></tr>
+<tr><td>−1</td><td>0</td><td>≈ 0,2689</td></tr>
+<tr><td>0</td><td>0</td><td>0,5</td></tr>
+<tr><td>0,5</td><td>0,5</td><td>≈ 0,6225</td></tr>
+<tr><td>1</td><td>1</td><td>≈ 0,7311</td></tr>
+<tr><td>3</td><td>3</td><td>≈ 0,9526</td></tr>
+</table></div>
+
+<p>Tabloyu sütun sütun oku. ReLU sütunu negatif her şeyi sıfırlıyor, pozitifleri hiç değiştirmiyor. Sigmoid sütunu hiçbir zaman 0'a ya da 1'e değmiyor ve sıfırın çevresinde hızlı, uçlarda yavaş değişiyor: −3'ten −1'e giderken 0,22 artıyor, 1'den 3'e giderken ancak 0,22 artıyor ama 3'ten sonra artış neredeyse durur. Sigmoid değerleri Python ile hesaplandı; elle hesaplaman beklenmez.</p>
+
+<figure>
+<svg viewBox="0 0 400 220" role="img" aria-label="Solda ReLU grafiği: negatif tarafta sıfır, pozitif tarafta eğimi bir olan doğru. Sağda sigmoid grafiği: sıfır ile bir arasında S biçimli eğri">
+  <text class="sv-b" x="20" y="28">ReLU</text>
+  <line class="sv-c" x1="20" y1="170" x2="180" y2="170" />
+  <line class="sv-c" x1="100" y1="40" x2="100" y2="180" />
+  <polyline class="sv-cl" points="20,170 100,170 180,50" />
+  <text class="sv-s" x="20" y="192" text-anchor="middle">−3</text>
+  <text class="sv-s" x="100" y="192" text-anchor="middle">0</text>
+  <text class="sv-s" x="180" y="192" text-anchor="middle">3</text>
+  <text class="sv-s" x="94" y="54" text-anchor="end">3</text>
+  <text class="sv-s" x="56" y="158" text-anchor="middle">z ≤ 0 ise 0</text>
+  <text class="sv-s" x="150" y="140" text-anchor="middle">z &gt; 0 ise z</text>
+  <text class="sv-b" x="220" y="28">sigmoid</text>
+  <line class="sv-c" x1="220" y1="170" x2="380" y2="170" />
+  <line class="sv-c" x1="300" y1="40" x2="300" y2="180" />
+  <line class="sv-c" x1="220" y1="60" x2="380" y2="60" />
+  <polyline class="sv-cl" points="220.0,169.7 226.7,169.6 233.3,169.3 240.0,168.8 246.7,168.0 253.3,166.8 260.0,164.8 266.7,161.7 273.3,156.9 280.0,149.9 286.7,140.4 293.3,128.5 300.0,115.0 306.7,101.5 313.3,89.6 320.0,80.1 326.7,73.1 333.3,68.3 340.0,65.2 346.7,63.2 353.3,62.0 360.0,61.2 366.7,60.7 373.3,60.4 380.0,60.3" />
+  <circle class="sv-a" cx="300" cy="115" r="4" />
+  <text class="sv-s" x="220" y="192" text-anchor="middle">−6</text>
+  <text class="sv-s" x="300" y="192" text-anchor="middle">0</text>
+  <text class="sv-s" x="380" y="192" text-anchor="middle">6</text>
+  <text class="sv-s" x="294" y="54" text-anchor="end">1</text>
+  <text class="sv-s" x="294" y="119" text-anchor="end">0,5</text>
+  <text class="sv-s" x="250" y="155" text-anchor="middle">doyar</text>
+  <text class="sv-s" x="355" y="84" text-anchor="middle">doyar</text>
+  <text class="sv-s" x="200" y="214" text-anchor="middle">yatay eksen: z · dikey eksen: aktivasyonun çıktısı</text>
+</svg>
+<figcaption>İki aktivasyon. ReLU düz çizgiyi sıfırda bir kez kırar; sağ tarafı sınırsız büyür. Sigmoid S biçimindedir: ortada (z = 0'da 0,5) hızlı değişir, uçlarda düzleşir ("doyar") ve hiçbir zaman 0'a ya da 1'e değmez.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Aktivasyon fonksiyonu yalnızca çıktıyı 0 ile 1 arasına sıkıştırmak içindir."</strong> Bu, sigmoidin bir yan özelliğini aktivasyonun amacı sanmaktır. ReLU hiçbir şeyi sıkıştırmaz, pozitif değerleri olduğu gibi bırakır; yine de en yaygın aktivasyonlardan biridir. Aktivasyonun asıl işi <strong>doğrusallığı kırmaktır</strong>; o olmasa katmanlar tek bir doğrusal katmana çökerdi. 0 ile 1 arasına sıkıştırma ancak çıktının olasılık olarak okunması gerektiğinde, genellikle son katmanda istenir.</p></div>
+
+<h2 class="s">Katmanlar: nöronları yan yana ve art arda dizmek</h2>
+
+<p>Tek nöronun sınırını gördük. Şimdi nöronları iki yönde çoğaltalım. <strong>Yan yana</strong> dizilen nöronlar aynı girdileri alır ama her birinin kendi ağırlıkları ve sapması vardır; dolayısıyla her biri girdiye farklı bir açıdan bakar. Aynı girdiyi alan bu nöron grubuna <strong>katman</strong> denir. <strong>Art arda</strong> dizmek ise bir katmanın çıktılarını bir sonraki katmanın girdisi yapmaktır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Girdi katmanı:</strong> Verinin kendisidir (bir evin özellikleri, bir resmin pikselleri). Hesap yapmaz, parametresi yoktur; sayıları içeri taşır.</p>
+<p><strong>Gizli katman:</strong> Girdi ile çıkış arasındaki her katman. "Gizli" denmesinin nedeni, ara değerlerinin veride bir karşılığının olmamasıdır: eğitim verisinde girdiler ve doğru cevaplar yazar, gizli katmanın ne üretmesi gerektiği hiçbir yerde yazmaz; ağ bunu kendisi belirler.</p>
+<p><strong>Çıkış katmanı:</strong> Ağın cevabını veren son katman. Bir sayı tahmini için tek nöron, on sınıftan birini seçmek için on nöron gibi.</p>
+<p><strong>Tam bağlı (dense) katman:</strong> Katmandaki her nöronun bir önceki katmanın <em>her</em> çıktısına bağlı olduğu katman. Bu tür katmanlardan oluşan ağa <strong>çok katmanlı algılayıcı</strong> (multilayer perceptron, MLP) denir.</p></div>
+
+<p>"Algılayıcı" adı tarihseldir ve biraz yanıltıcıdır: Rosenblatt'ın algılayıcısı 0 ya da 1 veren bir basamak fonksiyonu kullanırdı; bugünkü MLP'lerde ise ReLU gibi aktivasyonlar kullanılır. Ad kalmış, içerik değişmiştir. "Derin" sözcüğü de birden çok gizli katmanı olan ağlar için kullanılır; kaç katmandan sonra "derin" denileceğine dair kesin bir sınır yoktur. Parça 1'deki iç içe halkalarda "derin öğrenme" halkası, bu tür çok katmanlı ağlarla yapılan makine öğrenmesidir.</p>
+
+<figure>
+<svg viewBox="0 0 400 264" role="img" aria-label="Üç girdili, dört gizli nöronlu, iki çıkışlı tam bağlı bir ağ: her girdi her gizli nörona, her gizli nöron her çıkış nöronuna bağlı">
+  <text class="sv-s" x="130" y="16" text-anchor="middle">3 × 4 + 4 = 16 parametre</text>
+  <text class="sv-s" x="270" y="16" text-anchor="middle">4 × 2 + 2 = 10 parametre</text>
+  <line class="sv-c" x1="76" y1="70" x2="184" y2="40" /><line class="sv-c" x1="76" y1="70" x2="184" y2="100" /><line class="sv-c" x1="76" y1="70" x2="184" y2="160" /><line class="sv-c" x1="76" y1="70" x2="184" y2="220" />
+  <line class="sv-c" x1="76" y1="130" x2="184" y2="40" /><line class="sv-c" x1="76" y1="130" x2="184" y2="100" /><line class="sv-c" x1="76" y1="130" x2="184" y2="160" /><line class="sv-c" x1="76" y1="130" x2="184" y2="220" />
+  <line class="sv-c" x1="76" y1="190" x2="184" y2="40" /><line class="sv-c" x1="76" y1="190" x2="184" y2="100" /><line class="sv-c" x1="76" y1="190" x2="184" y2="160" /><line class="sv-c" x1="76" y1="190" x2="184" y2="220" />
+  <line class="sv-c" x1="216" y1="40" x2="324" y2="100" /><line class="sv-c" x1="216" y1="40" x2="324" y2="160" />
+  <line class="sv-c" x1="216" y1="100" x2="324" y2="100" /><line class="sv-c" x1="216" y1="100" x2="324" y2="160" />
+  <line class="sv-c" x1="216" y1="160" x2="324" y2="100" /><line class="sv-c" x1="216" y1="160" x2="324" y2="160" />
+  <line class="sv-c" x1="216" y1="220" x2="324" y2="100" /><line class="sv-c" x1="216" y1="220" x2="324" y2="160" />
+  <circle class="sv-m" cx="60" cy="70" r="16" /><circle class="sv-m" cx="60" cy="130" r="16" /><circle class="sv-m" cx="60" cy="190" r="16" />
+  <circle class="sv-l" cx="200" cy="40" r="16" /><circle class="sv-l" cx="200" cy="100" r="16" /><circle class="sv-l" cx="200" cy="160" r="16" /><circle class="sv-l" cx="200" cy="220" r="16" />
+  <circle class="sv-a" cx="340" cy="100" r="16" /><circle class="sv-a" cx="340" cy="160" r="16" />
+  <text class="sv-s" x="60" y="75" text-anchor="middle">x₁</text><text class="sv-s" x="60" y="135" text-anchor="middle">x₂</text><text class="sv-s" x="60" y="195" text-anchor="middle">x₃</text>
+  <text class="sv-s" x="340" y="105" text-anchor="middle">y₁</text><text class="sv-s" x="340" y="165" text-anchor="middle">y₂</text>
+  <text class="sv-b" x="60" y="256" text-anchor="middle">girdi</text>
+  <text class="sv-b" x="200" y="256" text-anchor="middle">gizli katman</text>
+  <text class="sv-b" x="340" y="256" text-anchor="middle">çıkış</text>
+</svg>
+<figcaption>Tam bağlı küçük bir ağ (3–4–2). Her çizgi bir ağırlıktır; her mor ve turuncu dairenin ayrıca bir sapması vardır. Girdi katmanında hesap ve parametre yoktur. Bu ağın toplam parametresi 16 + 10 = 26'dır; sayma yöntemi aşağıda.</figcaption>
+</figure>
+
+<p>Bir katmanın yaptığı iş, Parça 3'teki matris çarpımının ta kendisidir. Orada matris çarpımını "birçok ağırlıklı toplamı aynı anda yapmak" diye tanımlamıştık. Bir katmanda her nöron bir ağırlıklı toplam yapar; nöronların ağırlıklarını alt alta satırlar olarak yazarsan bir <strong>ağırlık matrisi</strong> (W) elde edersin. Satır sayısı katmandaki nöron sayısı, sütun sayısı girdi sayısıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Bir katmanın hesabı:</strong> z = W·x + b, ardından h = f(z). Burada x girdi vektörü, W ağırlık matrisi, b her nöronun sapmasını tutan vektör, f aktivasyon fonksiyonudur ve z'nin <em>her elemanına ayrı ayrı</em> uygulanır. Çıkan h vektörü bir sonraki katmanın x'i olur. Bütün ağ bu satırın art arda tekrarıdır.</p></div>
+
+<p>XOR'a geri dönelim. İki gizli ReLU nöronu ve bir çıkış nöronu yeter. Ağırlıkları şöyle seçelim (bunlar elle seçildi; bir ağ eğitimle benzer bir çözüm bulabilir): birinci gizli nöron h<sub>1</sub> = ReLU(x<sub>1</sub> + x<sub>2</sub>), ikinci gizli nöron h<sub>2</sub> = ReLU(x<sub>1</sub> + x<sub>2</sub> − 1), çıkış y = h<sub>1</sub> − 2h<sub>2</sub>. Birinci nöron "kaç anahtar açık" sayar; ikincisi yalnızca ikisi birden açıkken uyanır. Çıkış, birincinin söylediğinden ikincinin iki katını çıkarır.</p>
+
+<div class="tablo"><table>
+<tr><th>x<sub>1</sub></th><th>x<sub>2</sub></th><th>h<sub>1</sub> = ReLU(x<sub>1</sub> + x<sub>2</sub>)</th><th>h<sub>2</sub> = ReLU(x<sub>1</sub> + x<sub>2</sub> − 1)</th><th>y = h<sub>1</sub> − 2h<sub>2</sub></th><th>Lamba</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>ReLU(−1) = 0</td><td>0</td><td>söner</td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>ReLU(0) = 0</td><td>1</td><td>yanar</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>ReLU(0) = 0</td><td>1</td><td>yanar</td></tr>
+<tr><td>1</td><td>1</td><td>2</td><td>ReLU(1) = 1</td><td>2 − 2 = 0</td><td>söner</td></tr>
+</table></div>
+
+<p>Tek bir düz çizginin yapamadığını, iki kırık doğrunun farkı yaptı. Burada dikkat etmen gereken şey ReLU'nun ilk satırdaki rolü: h<sub>2</sub>'nin içindeki toplam −1'di; ReLU onu 0'a çevirdi. ReLU olmasaydı ilk satırda y = 0 − 2 × (−1) = 2 çıkardı ve lamba yanlışlıkla yanardı. Aktivasyonun "bükmesi" tam olarak budur.</p>
+
+<h2 class="s">İleri besleme: bir sayının ağın içinden geçişi</h2>
+
+<p>Bir girdinin ağa verilip katman katman işlenerek çıkışa ulaşmasına <strong>ileri besleme</strong> (forward pass) denir. Sayılar soldan sağa akar, hiçbir yerde geri dönmez. Parça 2'deki <strong>çıkarım</strong> (inference), yani eğitilmiş modelin yeni bir girdiye cevap vermesi, tam olarak bir ileri beslemedir. Sohbet modeline bir soru yazdığında arka planda olan şeyin çekirdeği de budur (ama çok daha büyük ölçekte ve Parça 10–11'de göreceğimiz ek düzeneklerle).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2 · İleri besleme (2–3–1 ağ)</span>
+<p><strong>Soru:</strong> İki girdili, üç gizli nöronlu (ReLU), tek çıkışlı (sigmoid) bir ağ var. Girdi x = (1, 2). Gizli nöronların ağırlıkları ve sapmaları: n<sub>1</sub>: (0,5; −1), b = 1 · n<sub>2</sub>: (1; 1), b = −1 · n<sub>3</sub>: (−0,5; 0,5), b = 0. Çıkış nöronunun ağırlıkları (1; 0,5; −2), sapması 0,5. Ağın çıktısı nedir?</p>
+<p><strong>Adım 1.</strong> Birinci gizli nöronun ağırlıklı toplamı:</p>
+<span class="mat">z<sub>1</sub> = 0,5 × 1 + (−1) × 2 + 1 = 0,5 − 2 + 1 = −0,5 <span class="g">(girdiler ağırlıklarla çarpıldı, sapma eklendi)</span></span>
+<span class="mat">h<sub>1</sub> = ReLU(−0,5) = 0 <span class="g">(negatif olduğu için sıfırlandı)</span></span>
+<p><strong>Adım 2.</strong> İkinci gizli nöron:</p>
+<span class="mat">z<sub>2</sub> = 1 × 1 + 1 × 2 + (−1) = 2 <span class="g">(aynı işlem, kendi ağırlıklarıyla)</span></span>
+<span class="mat">h<sub>2</sub> = ReLU(2) = 2 <span class="g">(pozitif, olduğu gibi kaldı)</span></span>
+<p><strong>Adım 3.</strong> Üçüncü gizli nöron:</p>
+<span class="mat">z<sub>3</sub> = (−0,5) × 1 + 0,5 × 2 + 0 = −0,5 + 1 = 0,5 <span class="g">(sapma sıfır)</span></span>
+<span class="mat">h<sub>3</sub> = ReLU(0,5) = 0,5 <span class="g">(pozitif, değişmedi)</span></span>
+<p><strong>Adım 4.</strong> Gizli katmanın çıktısı artık bir vektör: h = (0; 2; 0,5). Bu, çıkış nöronunun girdisidir. Çıkışın ağırlıklı toplamı:</p>
+<span class="mat">z<sub>çıkış</sub> = 1 × 0 + 0,5 × 2 + (−2) × 0,5 + 0,5 = 0 + 1 − 1 + 0,5 = 0,5 <span class="g">(çıkış nöronunun ağırlıkları ve sapması)</span></span>
+<p><strong>Adım 5.</strong> Çıkışta sigmoid:</p>
+<span class="mat">y = σ(0,5) ≈ 0,6225 <span class="g">(tablodaki değer)</span></span>
+<p><strong>Sonuç:</strong> Ağın çıktısı yaklaşık 0,62. Bu bir sınıflandırma ağıysa "olumlu sınıf olasılığı yüzde 62" diye okunur. Dikkat: n<sub>1</sub> bu girdi için 0 verdi, yani bu girdide "sustu"; başka bir girdide konuşabilir. Ayrıca bu hesabın tamamı yalnızca çarpma, toplama ve ReLU/sigmoid'den ibaret; ağın içinde başka hiçbir "akıl" yok.</p></div>
+
+<p>Bu örnekten üç genel ders çıkar. Birincisi, ileri beslemede her girdi için ağın bütün ağırlıkları aynı sırayla kullanılır. İkincisi, aynı ağırlıklarla aynı girdi her seferinde aynı çıktıyı verir; sohbet modellerinin aynı soruya farklı cevap vermesi, çıkıştaki olasılıklardan nasıl seçim yapıldığından gelir (Parça 11). Üçüncüsü, eğitimde de her adım bir ileri beslemeyle başlar: ağ önce tahmin eder, hata ölçülür, ağırlıklar düzeltilir. O düzeltmenin adı geri yayılımdır (Parça 7).</p>
+
+<h2 class="s">Parametre saymak: "70 milyar parametre" ne demek?</h2>
+
+<p>Bir ağın büyüklüğü genellikle <strong>parametre sayısıyla</strong> anlatılır. Parametre, eğitimin ayarladığı her bir sayıdır: her ağırlık ve her sapma. Saymak için şeklin üstündeki çizgileri ve daireleri saymak yeter, ama büyük ağlarda bir formül gerekir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Tam bağlı bir katmanın parametre sayısı = (girdi sayısı × nöron sayısı) + nöron sayısı.</p>
+<p>İlk terim ağırlıklardır: her nöron, önceki katmanın her çıktısı için bir ağırlık tutar. İkinci terim sapmalardır: her nöronun bir sapması vardır. Ağın toplam parametresi, bütün katmanların parametrelerinin toplamıdır. Girdi katmanının parametresi yoktur.</p></div>
+
+<p>Yukarıdaki 2–3–1 ağı sayalım: gizli katman 2 × 3 + 3 = 9 (6 ağırlık, 3 sapma), çıkış katmanı 3 × 1 + 1 = 4. Toplam 13. Çözümlü örnek 2'de kullandığımız sayıları say: gizli nöronların altı ağırlığı ve üç sapması, çıkışın üç ağırlığı ve bir sapması; gerçekten 13 sayı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3 · Bir rakam tanıma ağının parametreleri</span>
+<p><strong>Soru:</strong> El yazısı rakamları tanıyan bir ağ, 28 × 28 piksellik gri tonlu resimleri girdi olarak alıyor. Ağda 128 ve 64 nöronlu iki gizli katman ve 10 nöronlu bir çıkış katmanı var (0'dan 9'a her rakam için bir nöron). Ağın toplam parametresi kaçtır?</p>
+<p><strong>Adım 1.</strong> Girdi sayısını bul. Resmi satır satır açıp tek bir sayı listesine çeviriyoruz (Parça 3'teki "resmi sayılarla temsil etme" fikri):</p>
+<span class="mat">28 × 28 = 784 girdi <span class="g">(her piksel bir sayı)</span></span>
+<p><strong>Adım 2.</strong> Birinci gizli katman: 784 girdi, 128 nöron.</p>
+<span class="mat">784 × 128 + 128 = 100.352 + 128 = 100.480 <span class="g">(ağırlıklar + sapmalar)</span></span>
+<p><strong>Adım 3.</strong> İkinci gizli katman: girdisi birinci katmanın 128 çıktısı, 64 nöron.</p>
+<span class="mat">128 × 64 + 64 = 8.192 + 64 = 8.256 <span class="g">(önceki katmanın nöron sayısı burada girdi sayısı)</span></span>
+<p><strong>Adım 4.</strong> Çıkış katmanı: 64 girdi, 10 nöron.</p>
+<span class="mat">64 × 10 + 10 = 640 + 10 = 650 <span class="g">(aynı formül)</span></span>
+<p><strong>Adım 5.</strong> Topla:</p>
+<span class="mat">100.480 + 8.256 + 650 = 109.386 <span class="g">(Python ile de doğrulandı)</span></span>
+<p><strong>Sonuç:</strong> Bu küçük ağın 109.386 parametresi var, ama yalnızca 128 + 64 + 10 = 202 nöronu. Parametrelerin yüzde 90'ından fazlası ilk katmanda; çünkü o katman en çok girdiye bağlanıyor. Genel ders: parametre sayısı nöron sayısıyla değil, <strong>bağlantı sayısıyla</strong> büyür; iki katmanın büyüklüklerinin çarpımı kadar ağırlık vardır.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Katman</th><th>Girdi</th><th>Nöron</th><th>Ağırlık</th><th>Sapma</th><th>Parametre</th></tr>
+<tr><td>Gizli 1</td><td>784</td><td>128</td><td>100.352</td><td>128</td><td>100.480</td></tr>
+<tr><td>Gizli 2</td><td>128</td><td>64</td><td>8.192</td><td>64</td><td>8.256</td></tr>
+<tr><td>Çıkış</td><td>64</td><td>10</td><td>640</td><td>10</td><td>650</td></tr>
+<tr><td><strong>Toplam</strong></td><td>—</td><td>202</td><td>109.184</td><td>202</td><td><strong>109.386</strong></td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Sapmaları unutmak ya da girdi katmanına parametre yazmak.</strong> 784–128–64–10 ağı için yalnız ağırlıkları sayan 109.184 bulur, sapmaları unuttuğu için 202 eksik kalır. Tersine, girdi katmanının 784 "nöronuna" da sapma ekleyen fazladan 784 sayar; oysa girdi katmanı hesap yapmaz, yalnızca veriyi taşır. Üçüncü hata da nöron sayısını (202) parametre sayısı sanmaktır. Doğrusu: her katman için "girdi × nöron + nöron", sonra topla.</p></div>
+
+<h3>Büyük modellerde parametre</h3>
+
+<p>Şimdi başlangıçtaki soruya dönebiliriz. "70 milyar parametreli model", içinde eğitimle ayarlanmış 70 milyar sayı bulunan model demektir. Örneğin Meta'nın Temmuz 2023'te yayımladığı Llama 2 ailesi 7, 13 ve 70 milyar parametreli sürümlerle gelmişti (yazıldığı tarih itibarıyla bu eski bir örnektir; amacımız kavramı göstermek). Bugünün en güçlü modellerinin pek çoğunda şirketler parametre sayısını açıklamamaktadır; dolaşan rakamların çoğu tahmindir.</p>
+
+<p>Bu sayılar nerede durur? Büyük dil modellerinin yapısını Parça 10'da göreceğiz, ama şimdiden şunu söyleyebiliriz: her katmanlarında bu parçada gördüğün türden <strong>tam bağlı MLP blokları</strong> bulunur ve standart düzende bir katmanın parametrelerinin kabaca üçte ikisi bu bloklardadır (geri kalanı Parça 10'daki dikkat mekanizmasının matrislerindedir). Yani bir sohbet modelinin içindeki sayıların büyük kısmı, çözümlü örnek 3'teki matrislerin çok daha büyük kardeşleridir.</p>
+
+<p>Parça 3'teki sayı biçimleriyle bir bellek hesabı yapalım. Her parametre float16 biçiminde saklanırsa 16 bit, yani 2 bayt tutar:</p>
+
+<span class="mat">70.000.000.000 × 2 bayt = 140.000.000.000 bayt ≈ 140 GB <span class="g">(float16)</span></span>
+<span class="mat">70.000.000.000 × 4 bayt ≈ 280 GB <span class="g">(float32, 32 bit = 4 bayt)</span></span>
+<span class="mat">70.000.000.000 × 1 bayt ≈ 70 GB <span class="g">(8 bit niceleme)</span></span>
+<span class="mat">70.000.000.000 × 0,5 bayt ≈ 35 GB <span class="g">(4 bit niceleme)</span></span>
+
+<p>Bu yalnızca ağırlıkları belleğe koymanın bedelidir; çalıştırırken ara sonuçlar için ayrıca yer gerekir. Parça 3'teki nicelemenin neden önemli olduğu burada görünür: aynı model 4 bitle saklanınca kabaca dörtte bir yer kaplar ve güçlü bir kişisel bilgisayara sığabilir hâle gelir; karşılığında bir miktar doğruluk kaybedilebilir. Bir de hız meselesi var: sıradan (tam bağlı, "yoğun") bir modelde her yeni token üretilirken parametrelerin hemen hepsi en az bir çarpma ve bir toplamaya girer. Parametre çoğaldıkça her cevap daha çok hesap ister; Parça 12'deki hesap maliyeti tartışmasının kökü budur. (Bazı modeller her token için parametrelerin yalnız bir bölümünü kullanan "uzman karışımı" düzenini kullanır; o ayrıntı bu parçanın konusu değil.)</p>
+
+<p>Son bir uyarı: parametre sayısı bir modelin <strong>kapasitesini</strong> anlatır, kalitesini değil. Aynı büyüklükte iki model, eğitim verisinin miktarına ve kalitesine göre çok farklı sonuç verebilir (Parça 12). "70 milyar" bir ölçüdür, başarının kendisi değil.</p>
+
+<h2 class="s">Evrensel yaklaşım: bir ağ neyi temsil edebilir?</h2>
+
+<p>ReLU'nun tek bir kırık doğru olduğunu söyledik. Kırık doğruları toplayınca ne olur? Üç ReLU nöronuyla bir "çadır" kuralım: c(x) = ReLU(x) − 2·ReLU(x − 1) + ReLU(x − 2). x 0'dan küçükken üçü de sıfırdır; c = 0. 0 ile 1 arasında yalnız ilki çalışır, c x ile birlikte 1'e kadar çıkar. 1'den sonra ikinci nöron devreye girer ve iki kat eğimle aşağı çeker; net eğim −1 olur, c 2'de tekrar 0'a iner. 2'den sonra üçüncü nöron eğimi sıfırlar; c sıfırda kalır. Değerler: c(0) = 0, c(0,5) = 0,5, c(1) = 1, c(1,5) = 0,5, c(2) = 0, c(3) = 0. Elinde, istediğin yere koyup istediğin yüksekliğe çekebileceğin bir tümsek var. Yeterince çok tümseği yan yana koyarsan hemen her eğrinin şeklini kabaca çizebilirsin. Evrensel yaklaşımın sezgisi budur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4 · ReLU nöronlarıyla bir eğriye yaklaşmak</span>
+<p><strong>Soru:</strong> 0 ile 2 arasında y = x<sup>2</sup> eğrisine ReLU nöronlarıyla yaklaşmak istiyoruz. Önce 2, sonra 4 nöronla bir ağ kur; en büyük hata ne olur?</p>
+<p><strong>Adım 1.</strong> Eğri üzerinde 0, 1 ve 2 noktalarını işaretle: y değerleri 0, 1, 4. Bu noktaları düz parçalarla birleştireceğiz. İlk parçanın (0'dan 1'e) eğimi (1 − 0) / 1 = 1, ikinci parçanın (1'den 2'ye) eğimi (4 − 1) / 1 = 3.</p>
+<p><strong>Adım 2.</strong> Eğimi 1 olan ilk parça için bir nöron: 1·ReLU(x). 1 noktasında eğim 1'den 3'e çıkmalı, yani 2 artmalı; bunun için 1'de kırılan ikinci bir nöron ekle: 2·ReLU(x − 1).</p>
+<span class="mat">g(x) = ReLU(x) + 2·ReLU(x − 1) <span class="g">(iki gizli nöron, çıkışta ağırlıkları 1 ve 2)</span></span>
+<p><strong>Adım 3.</strong> Denetle: g(0) = 0, g(1) = 1, g(2) = 2 + 2 × 1 = 4. Üç noktada eğriyle tam çakışıyor. Arada fark var: g(0,5) = 0,5 ama 0,5<sup>2</sup> = 0,25; g(1,5) = 1,5 + 1 = 2,5 ama 1,5<sup>2</sup> = 2,25. En büyük hata 0,25.</p>
+<p><strong>Adım 4.</strong> Şimdi kırılma noktalarını sıklaştır: 0; 0,5; 1; 1,5. Eğri üzerindeki değerler 0; 0,25; 1; 2,25; 4. Parçaların eğimleri 0,5; 1,5; 2,5; 3,5. İlk nöronun ağırlığı ilk eğim (0,5), sonrakilerin ağırlığı eğimin her kırılmada artış miktarı (her seferinde 1):</p>
+<span class="mat">g<sub>4</sub>(x) = 0,5·ReLU(x) + ReLU(x − 0,5) + ReLU(x − 1) + ReLU(x − 1,5) <span class="g">(dört gizli nöron)</span></span>
+<p><strong>Adım 5.</strong> Denetle: g<sub>4</sub>(2) = 1 + 1,5 + 1 + 0,5 = 4. Doğru. En büyük hata artık 0,0625 (Python ile 2001 noktada ölçüldü).</p>
+<p><strong>Sonuç:</strong> Nöron sayısını iki katına çıkarınca hata dörtte birine indi. Daha çok nöron, daha sık kırılma noktası, daha küçük hata. Ama bir bedeli var: hedef eğri ne kadar kıvrımlıysa, belli bir hatanın altına inmek için o kadar çok nöron gerekir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="0 ile 2 arasında x kare eğrisi ve ona iki ReLU nöronuyla yaklaşan iki parçalı kırık doğru">
+  <line class="sv-c" x1="40" y1="210" x2="372" y2="210" />
+  <line class="sv-c" x1="40" y1="20" x2="40" y2="214" />
+  <polyline class="sv-c" points="40.0,210.0 48.0,209.9 56.0,209.6 64.0,209.0 72.0,208.2 80.0,207.2 88.0,205.9 96.0,204.5 104.0,202.8 112.0,200.9 120.0,198.8 128.0,196.4 136.0,193.8 144.0,191.0 152.0,187.9 160.0,184.7 168.0,181.2 176.0,177.5 184.0,173.6 192.0,169.4 200.0,165.0 208.0,160.4 216.0,155.5 224.0,150.5 232.0,145.2 240.0,139.7 248.0,133.9 256.0,128.0 264.0,121.8 272.0,115.4 280.0,108.8 288.0,101.9 296.0,94.8 304.0,87.5 312.0,79.9 320.0,72.2 328.0,64.2 336.0,56.0 344.0,47.5 352.0,38.9 360.0,30.0" />
+  <polyline class="sv-cl" points="40,210 200,165 360,30" />
+  <circle class="sv-l" cx="40" cy="210" r="4" /><circle class="sv-l" cx="200" cy="165" r="4" /><circle class="sv-l" cx="360" cy="30" r="4" />
+  <line class="sv-c" x1="280" y1="97.5" x2="280" y2="108.8" />
+  <text class="sv-s" x="288" y="132">fark 0,25</text>
+  <text class="sv-s" x="40" y="228" text-anchor="middle">0</text>
+  <text class="sv-s" x="120" y="228" text-anchor="middle">0,5</text>
+  <text class="sv-s" x="200" y="228" text-anchor="middle">1</text>
+  <text class="sv-s" x="280" y="228" text-anchor="middle">1,5</text>
+  <text class="sv-s" x="360" y="228" text-anchor="middle">2</text>
+  <text class="sv-s" x="34" y="169" text-anchor="end">1</text>
+  <text class="sv-s" x="34" y="34" text-anchor="end">4</text>
+  <text class="sv-s" x="56" y="40">ince eğri: y = x²</text>
+  <text class="sv-s" x="56" y="58">kalın kırık doğru: ReLU(x) + 2·ReLU(x − 1)</text>
+  <text class="sv-s" x="56" y="76">kırılma noktası 1'de ikinci nöron devreye girer</text>
+  <text class="sv-s" x="206" y="246" text-anchor="middle">nöron sayısı iki katına çıkınca en büyük fark 0,0625'e iner</text>
+</svg>
+<figcaption>İki ReLU nöronu, x² eğrisini üç noktada tam tutturan iki parçalı bir kırık doğru çizer. Aradaki en büyük fark 0,25'tir (x = 0,5 ve x = 1,5'te). Kırılma noktası sıklaştıkça kırık doğru eğriye yapışır: evrensel yaklaşımın sezgisi.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Evrensel yaklaşım teoremi (sezgisel hâli):</strong> Tek bir gizli katmanı olan ve bu katmanda doğrusal olmayan uygun bir aktivasyon kullanan bir ağ, <strong>yeterince nöron verilirse</strong>, sınırlı bir bölgede tanımlı herhangi bir sürekli (kopuksuz) fonksiyona istediğin kadar yaklaşabilir.</p>
+<p>Tarihçe: George Cybenko 1989'da sigmoid türü aktivasyonlar için kanıtladı; aynı yıl Hornik, Stinchcombe ve White daha geniş bir aktivasyon sınıfına genişletti; Hornik 1991'de gücün belirli bir aktivasyondan değil çok katmanlı ileri beslemeli yapının kendisinden geldiğini savundu; Leshno ve arkadaşları 1993'te bu özelliğin, aktivasyon <strong>polinom olmadığı</strong> sürece geçerli olduğunu gösterdi. ReLU polinom değildir; teorem onu da kapsar.</p></div>
+
+<p>Teoremin söylediği güçlü bir şey: Sinir ağı kalıbı, Parça 4'teki doğrusal regresyon gibi baştan "yalnızca düz çizgi" diye kısıtlı değildir; ilke olarak her sürekli şekli alabilir. Ama teorem, en az söylediği kadar söylemedikleriyle önemlidir. Dört şeyi <strong>söylemez</strong>:</p>
+
+<p><strong>1. Kaç nöron gerektiğini söylemez.</strong> Teorem bir varlık teoremidir: "uygun bir ağ vardır" der. Gereken nöron sayısı astronomik olabilir; çözümlü örnek 4'te gördüğün gibi hatayı küçültmek nöron ister ve kıvrımlı fonksiyonlarda bu sayı hızla büyür.</p>
+
+<p><strong>2. Ağırlıkları nasıl bulacağını söylemez.</strong> Uygun ağırlıkların var olması, eğitimin onları bulacağı anlamına gelmez. Bir kütüphanede aradığın kitabın bulunması, rafların arasında onu bulabileceğin anlamına gelmez. Eğitimin ağırlıkları nasıl aradığı ve neden her zaman en iyisini bulamadığı Parça 7'nin konusu.</p>
+
+<p><strong>3. Sınırlı örnekten genellemeyi söylemez.</strong> Teorem hedef fonksiyonu bütünüyle bildiğimizi varsayar. Gerçekte elimizde yalnızca birkaç bin ya da birkaç milyon örnek nokta vardır. Çok esnek bir ağ bu noktaları ezberleyip aralarında saçmalayabilir; Parça 2'deki aşırı öğrenme tam olarak budur. Esneklik iki yanı keskin bir bıçaktır.</p>
+
+<p><strong>4. Bölgenin dışını söylemez.</strong> Yaklaşım yalnızca belirlenen sınırlı bölgede geçerlidir. Çözümlü örnek 4'teki dört nöronlu ağ 0 ile 2 arasında x<sup>2</sup>'yi 0,0625 hatayla izliyor; ama x = 3'te x<sup>2</sup> = 9 iken ağ 7,5 veriyor. Kırık doğru son kırılma noktasından sonra düz gider, eğri ise kıvrılmaya devam eder. Ağlar, eğitildikleri bölgenin dışında (görmedikleri türden girdilerde) çoğu zaman güvenilmezdir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Evrensel yaklaşım teoremi, sinir ağlarının her şeyi öğrenebileceğini kanıtlar."</strong> Yanlış. Teorem <em>temsil edebilme</em> hakkındadır, <em>öğrenebilme</em> hakkında değil. "Uygun ağırlıklara sahip bir ağ vardır" demek; "eğitim onu bulur", "az nöronla yeter", "az veriyle genelleşir" ya da "bölge dışında da doğru çalışır" demek değildir. Bir YZ haberinde bu teoreme dayanarak "her şeyi öğrenebilir" diye bir cümle görürsen, Parça 1'deki abartı ayıklama sorularını sor.</p></div>
+
+<p>Peki madem tek gizli katman ilke olarak yetiyor, neden "derin" ağlar kullanılıyor? Pratikteki gözlem şu: Birçok gerçek problemde, birkaç katmanı art arda dizmek, tek bir devasa gizli katmana göre aynı işi çok daha az nöronla görür. Sezgisi şöyle: Her katman bir öncekinin çıktısını yeniden büker; bükülmüş şekiller tekrar bükülünce kırılma noktalarının sayısı, katman sayısıyla katlanarak artabilir. Parça 8'de resim tanıyan ağlarda ilk katmanların kenarları, sonrakilerin şekilleri, en sondakilerin nesneleri yakaladığını göreceğiz; bu katman katman soyutlama derinliğin pratik faydasına iyi bir örnektir. Derinliğin üstünlüğüne dair teorik sonuçlar da vardır, ama ne zaman ve ne kadar üstün olduğu hâlâ araştırılan bir sorudur.</p>
+
+<h2 class="s">Ağın içi neden "kara kutu"?</h2>
+
+<p>Parça 4'teki karar ağacını hatırla: "Gelir 10.000'in üstünde mi? Evet. Borcu var mı? Hayır. → Kredi ver." Ağacın her düğümünü okuyabilir, bir kararın gerekçesini adım adım anlatabilirsin. Sinir ağında ise elindeki şey, çözümlü örnek 3'teki 109.386 ya da büyük bir modeldeki 70 milyar sayıdır. Bunların hepsini görebilirsin; hiçbiri gizli değildir. Sorun görmek değil, <strong>anlamaktır</strong>.</p>
+
+<p>Neden anlaşılmaz? Birincisi, bilgi tek tek ağırlıklarda değil, binlerce ağırlığın <strong>birlikte</strong> oluşturduğu desende durur. Tek bir ağırlığa bakıp "bu, kedinin kulağını temsil ediyor" diyemezsin; aynı bilgi birçok ağırlığa dağılmıştır ve aynı ağırlık birçok bilginin taşınmasına katkı yapar. İkincisi, tek bir nöron bile çoğu zaman tek bir kavrama karşılık gelmez; araştırmacılar birbiriyle ilgisiz birkaç şeye birden tepki veren nöronlar bulmuştur. Üçüncüsü, aktivasyonlar sayesinde ilişkiler doğrusal değildir: "bu girdi artarsa çıktı şu kadar artar" diye tek bir cümle kuramazsın, çünkü cevap öbür girdilerin değerine göre değişir. Çözümlü örnek 2'de n<sub>1</sub> nöronu bir girdide susuyordu; başka bir girdide konuşacak ve çıktıyı bambaşka etkileyecekti.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kara kutu</strong>, girdisi ve çıktısı gözlenebilen ama iç işleyişi insanın anlayabileceği bir gerekçeye çevrilemeyen sistemdir. Sinir ağları için "kara kutu" demek, ağırlıkların gizli olduğu anlamına gelmez; ağırlıklar tümüyle görülebilir olsa bile <strong>neden</strong> bu cevabın verildiğinin okunamadığı anlamına gelir. Ağırlıkları herkese açık yayımlanan modeller de bu anlamda kara kutudur.</p></div>
+
+<p>Bu neden önemli? Parça 5'te modellerin veride ne varsa onu, yanlılıklar dahil, öğrendiğini görmüştük. Bir kredi ya da işe alım modeli kara kutuysa, belli bir gruba haksızlık edip etmediğini içine bakarak anlayamazsın; ancak çıktılarını dikkatle ölçerek dolaylı olarak görebilirsin. Tıp gibi alanlarda bir hekim "model neden bu teşhisi koydu?" diye sorduğunda tatmin edici bir cevap alamaması güveni zedeler. Bazı düzenlemeler, insanları etkileyen otomatik kararlar için açıklama talep eder; bunu Parça 20'de göreceğiz. Bu sorunlar yüzünden ağların içini anlamaya çalışan bir araştırma alanı doğdu: <strong>yorumlanabilirlik</strong> (interpretability). Bu alanın ne bulduğunu ve neden güvenlik açısından önemli olduğunu Parça 19'da konuşacağız. Şimdilik pratik ders şu: Açıklanabilirliğin kritik olduğu ve verinin az, düzenli bir tablo olduğu işlerde Parça 4'teki basit modeller hâlâ çoğu zaman daha doğru tercihtir.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python ile ileri besleme ve parametre sayımı</span>
+<p>Kod bilmiyorsan bu kutuyu atla; anlatım buna dayanmıyor. Python ve NumPy kuruluysa bu iki küçük betik, parçadaki hesapları bilgisayara yaptırır. Betikler Python 3.13 ve NumPy 2.5 ile çalıştırıldı; başka sürümlerde sayıların yazılış biçimi (boşluklar, basamak sayısı) biraz farklı görünebilir.</p>
+<p><strong>Adım 1.</strong> Çözümlü örnek 2'deki ağı matrislerle kur. <code>W1 @ x</code> NumPy'da matris çarpımıdır: "Bir katmanın hesabı" kutusundaki W·x.</p>
+<pre class="kod" data-ad="python3 ileri.py">import numpy as np
+
+def relu(z):
+    return np.maximum(0, z)
+
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+# 2 girdi -&gt; 3 gizli nöron -&gt; 1 çıkış
+W1 = np.array([[ 0.5, -1.0],
+               [ 1.0,  1.0],
+               [-0.5,  0.5]])
+b1 = np.array([1.0, -1.0, 0.0])
+W2 = np.array([[1.0, 0.5, -2.0]])
+b2 = np.array([0.5])
+
+x = np.array([1.0, 2.0])
+z1 = W1 @ x + b1
+h = relu(z1)
+z2 = W2 @ h + b2
+y = sigmoid(z2)
+
+print("gizli z :", z1)
+print("ReLU    :", h)
+print("çıkış z :", z2)
+print("sigmoid :", y.round(4))
+
+def parametre(katmanlar):
+    return sum(a * b + b for a, b in zip(katmanlar, katmanlar[1:]))
+
+print("2-3-1 ağ        :", parametre([2, 3, 1]))
+print("784-128-64-10 ağ:", parametre([784, 128, 64, 10]))</pre>
+<pre class="cikti">gizli z : [-0.5  2.   0.5]
+ReLU    : [0.  2.  0.5]
+çıkış z : [0.5]
+sigmoid : [0.6225]
+2-3-1 ağ        : 13
+784-128-64-10 ağ: 109386</pre>
+<p><strong>Adım 2.</strong> Çıktıyı çözümlü örneklerle karşılaştır: gizli toplamlar −0,5; 2; 0,5, ReLU sonrası 0; 2; 0,5, çıkış 0,6225 ve parametre sayıları 13 ile 109.386. Kod, elle yaptığın hesabın aynısını yapıyor (Python ondalık ayırıcı olarak nokta kullanır).</p>
+<p><strong>Adım 3.</strong> Çözümlü örnek 4'teki yaklaşımı ölç ve bölge dışına çık:</p>
+<pre class="kod" data-ad="python3 yaklasim.py">import numpy as np
+
+def relu(z):
+    return np.maximum(0, z)
+
+x = np.linspace(0, 2, 2001)
+hedef = x ** 2
+
+# 2 ReLU nöronu: kırılma noktaları 0 ve 1
+g2 = relu(x) + 2 * relu(x - 1)
+# 4 ReLU nöronu: kırılma noktaları 0; 0,5; 1; 1,5
+g4 = 0.5 * relu(x) + relu(x - 0.5) + relu(x - 1) + relu(x - 1.5)
+
+print("2 nöron, en büyük hata:", round(float(np.max(np.abs(g2 - hedef))), 4))
+print("4 nöron, en büyük hata:", round(float(np.max(np.abs(g4 - hedef))), 4))
+print("x = 3'te x^2 =", 3 ** 2, " 4 nöronlu ağ =", float(0.5*relu(3) + relu(2.5) + relu(2) + relu(1.5)))</pre>
+<pre class="cikti">2 nöron, en büyük hata: 0.25
+4 nöron, en büyük hata: 0.0625
+x = 3'te x^2 = 9  4 nöronlu ağ = 7.5</pre>
+<p><strong>Sonuç:</strong> Nöron sayısı ikiye katlanınca hata dörtte birine iniyor; ama 0–2 bölgesinin dışında, x = 3'te, ağ 9 yerine 7,5 veriyor. İstersen kırılma noktalarını sıklaştırıp hatanın nasıl küçüldüğüne bak.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3 ve 4'e:</strong> Ağırlıklı toplam, matris çarpımı ve float16 burada nöronun, katmanın ve bellek hesabının dili oldu. Tek nöronun doğrusal ve lojistik regresyonun genellemesi olduğunu gördük.</p>
+<p><strong>Parça 7'ye:</strong> Ağırlıkları hazır kabul ettik. Bir sonraki parçada bu ağırlıkların nasıl bulunduğunu göreceğiz: kayıp, gradyan inişi ve hatayı sondan başa dağıtan geri yayılım. Sigmoidin uçlarda düzleşmesinin neden sorun olduğu da orada açılacak.</p>
+<p><strong>Parça 8, 10 ve 12'ye:</strong> Görüntü ağları bu katmanların özel bir türünü, transformer'lar ise MLP bloklarını dikkat mekanizmasıyla birlikte kullanır. "Parametre sayısı arttıkça ne olur" sorusu ölçekleme yasalarıyla Parça 12'de sürecek.</p>
+<p><strong>Parça 19'a:</strong> Kara kutu sorunu, yorumlanabilirlik araştırmasının çıkış noktasıdır.</p>
+<p><strong>Öbür raflara:</strong> Aktivasyonsuz katmanların çökmesi, matematikteki fonksiyon bileşkesinin (bir fonksiyonu öbürünün içine koymak) doğrudan bir sonucudur. Kod rafını okuduysan isteğe bağlı denemedeki NumPy dizileri ve listelerle döngü, oradaki temel veri yapılarının bir uygulamasıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir yapay nöronun yaptığı hesabı üç adımda anlat. Parametreleri hangileridir?</summary><p>Her girdiyi kendi ağırlığıyla çarpar, çarpımları toplayıp sapmayı ekler (z), sonucu aktivasyon fonksiyonundan geçirir (a = f(z)). Parametreleri ağırlıklar ve sapmadır; girdiler parametre değildir, her seferinde dışarıdan gelir.</p></details>
+<details><summary>Aktivasyon fonksiyonu olmasaydı on katmanlı bir ağ ne olurdu? Neden?</summary><p>Tek bir doğrusal katmana eşdeğer olurdu. Doğrusal işlemleri art arda uygulamak yine doğrusal bir işlem verir; örneğin 2x + 1'i 3y − 4'e sokarsan 6x − 1 çıkar. Ağa derinlik gücünü veren, katmanlar arasındaki doğrusal olmayan aktivasyondur.</p></details>
+<details><summary>ReLU(−2), ReLU(0,7) ve σ(0) kaçtır?</summary><p>ReLU(−2) = 0, çünkü ReLU negatifleri sıfırlar. ReLU(0,7) = 0,7, çünkü pozitifleri olduğu gibi bırakır. σ(0) = 0,5, çünkü sigmoid sıfırda tam ortadadır.</p></details>
+<details><summary>Tam bağlı bir katmanın parametre sayısı nasıl hesaplanır? 10 girdili, 4 nöronlu bir katmanınki kaçtır?</summary><p>Girdi sayısı × nöron sayısı (ağırlıklar) artı nöron sayısı (sapmalar). 10 × 4 + 4 = 44.</p></details>
+<details><summary>70 milyar parametreli bir modelin ağırlıkları float16 ile ve 4 bitle saklansa kabaca ne kadar yer tutar?</summary><p>float16'da her parametre 2 bayttır: 70 milyar × 2 = 140 GB. 4 bitte her parametre yarım bayttır: 70 milyar × 0,5 = 35 GB. Bu yalnızca ağırlıklar içindir; çalıştırmak için ayrıca yer gerekir.</p></details>
+<details><summary>Evrensel yaklaşım teoremi neyi söyler, neyi söylemez?</summary><p>Doğrusal olmayan (polinom olmayan) aktivasyonlu, tek gizli katmanlı bir ağın, yeterince nöronla, sınırlı bir bölgede her sürekli fonksiyona istendiği kadar yaklaşabileceğini söyler. Kaç nöron gerektiğini, eğitimin uygun ağırlıkları bulacağını, sınırlı örnekten genellemeyi ve bölge dışında doğru çalışmayı söylemez.</p></details>
+<details><summary>Ağırlıkları herkese açık bir model neden yine de "kara kutu" sayılır?</summary><p>Çünkü sorun ağırlıkları görmek değil, anlamaktır. Bilgi binlerce ağırlığa dağılmıştır, tek bir nöron çoğu zaman tek bir kavrama karşılık gelmez ve ilişkiler doğrusal olmadığı için bir kararın gerekçesi insanın okuyabileceği bir cümleye çevrilemez.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Biyolojiden esin, ötesi matematik:</strong> Yapay nöron "ağırlıklı topla, eşiğe göre tepki ver" fikrini alır; parametre ≠ nöron ≠ sinaps.</li>
+<li><strong>Yapay nöron:</strong> z = w<sub>1</sub>x<sub>1</sub> + … + w<sub>n</sub>x<sub>n</sub> + b, sonra a = f(z). Ağırlık: önem ve yön. Sapma: başlangıç eğilimi, eşik kaydırma.</li>
+<li><strong>Tek nöron = bildiğin model:</strong> aktivasyonsuz → doğrusal regresyon; sigmoid → lojistik regresyon. Tek düz sınır çizer; XOR'u çözemez.</li>
+<li><strong>Aktivasyon şart:</strong> Doğrusal katmanlar tek doğrusal katmana çöker. Aktivasyonun işi doğrusallığı kırmak.</li>
+<li><strong>ReLU</strong> = max(0, z): ucuz, pozitifte doymaz; gizli katmanlarda yaygın. <strong>Sigmoid</strong>: 0–1 arası, σ(0) = 0,5, uçlarda doyar; çoğunlukla çıkışta olasılık için.</li>
+<li><strong>Katmanlar:</strong> girdi (parametresiz) → gizli → çıkış. Tam bağlı katmanlardan oluşan ağ: MLP. Katman hesabı: z = W·x + b, h = f(z).</li>
+<li><strong>İleri besleme:</strong> sayıların soldan sağa akışı; çıkarım budur. Aynı ağırlık + aynı girdi = aynı çıktı.</li>
+<li><strong>Parametre:</strong> her katman için girdi × nöron + nöron; topla. 784–128–64–10 → 109.386.</li>
+<li><strong>70 milyar parametre:</strong> 70 milyar sayı; float16'da ≈ 140 GB, 8 bitte ≈ 70 GB, 4 bitte ≈ 35 GB. Kapasiteyi anlatır, kaliteyi değil.</li>
+<li><strong>Evrensel yaklaşım</strong> (Cybenko 1989, Hornik 1991, Leshno 1993): yeterli nöronla sınırlı bölgede her sürekli fonksiyona yaklaşılabilir. Temsil ≠ öğrenme; nöron sayısını, eğitimi, genellemeyi, bölge dışını garanti etmez.</li>
+<li><strong>Kara kutu:</strong> ağırlıklar görülür ama gerekçe okunamaz; bilgi dağınık, ilişkiler doğrusal değil. Açıklama gereken, az veri olan işte basit model düşün.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-6">
+<h3>Quiz 6</h3>
+<p class="qa">On altı soru: sekizi bu parçadan, sekizi önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir yapay nöronun yaptığı hesabın doğru sırası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Girdileri toplar, toplamı tek bir ağırlıkla çarpar, sonuçtan sapmayı çıkarır.</li><li>Önce her girdiye aktivasyon uygular, sonra sonuçların ortalamasını alır.</li><li>Her girdiyi kendi ağırlığıyla çarpar, çarpımları toplayıp sapmayı ekler, sonuca aktivasyon fonksiyonu uygular.</li><li>Girdilerin en büyüğünü seçer ve onu sapmayla çarpar.</li><li>Ağırlıkları toplar ve toplamı girdi sayısına böler.</li></ul>
+<div class="coz"><p>Yapay nöron üç adım yapar: her girdi kendi ağırlığıyla çarpılır, çarpımlar toplanıp sapma eklenir (z), sonra z aktivasyon fonksiyonundan geçer. A'da her girdinin kendi ağırlığı yok, oysa ağırlıkların işi her girdinin önemini ayrı ayrı belirlemektir. B sırayı ters çeviriyor: aktivasyon toplamadan sonra gelir. D ve E nöronun yaptığı hiçbir işlemi tarif etmiyor; E'de girdiler hesaba hiç girmiyor bile.</p></div></li>
+
+<li data-c="A"><p class="q">ReLU(−3) ve ReLU(2) değerleri sırasıyla aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>0 ve 2</li><li>−3 ve 2</li><li>3 ve 2</li><li>0 ve yaklaşık 0,88</li><li>Yaklaşık 0,05 ve yaklaşık 0,88</li></ul>
+<div class="coz"><p>ReLU(z) = max(0, z): negatif girdiyi sıfırlar, pozitif girdiyi olduğu gibi bırakır. Bu yüzden ReLU(−3) = 0, ReLU(2) = 2. B, ReLU'yu hiçbir şey yapmayan bir fonksiyon sanmaktır. C mutlak değer almaktır; ReLU negatifin işaretini çevirmez, onu sıfırlar. D ve E ReLU'yu sigmoidle karıştırır: σ(2) ≈ 0,88 ve σ(−3) ≈ 0,05'tir, ama soru ReLU'yu soruyor.</p></div></li>
+
+<li data-c="E"><p class="q">Sigmoid aktivasyon fonksiyonu için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Negatif her girdi için tam olarak 0 verir.</li><li>Çıktısı −1 ile 1 arasındadır.</li><li>Girdi büyüdükçe çıktısı da sınırsız büyür.</li><li>Doğrusal bir fonksiyondur; grafiği düz bir çizgidir.</li><li>Her girdiyi 0 ile 1 arasına sıkıştırır ve girdi 0 iken 0,5 verir.</li></ul>
+<div class="coz"><p>Sigmoid S biçimlidir: çıktısı hep 0 ile 1 arasındadır, hiçbirine değmez ve σ(0) = 0,5'tir. A, ReLU'nun özelliğidir; sigmoid negatif girdilerde 0'a yaklaşır ama tam 0 olmaz (σ(−3) ≈ 0,047). B, sigmoide benzeyen başka bir fonksiyonun (tanh) aralığıdır. C de ReLU'nun pozitif tarafını anlatır; sigmoid büyük girdilerde 1'e yaklaşıp düzleşir, buna doyma denir. D yanlıştır, çünkü sigmoid doğrusal olsaydı aktivasyon olarak işe yaramazdı.</p></div></li>
+
+<li data-c="B"><p class="q">Bir nöronun girdileri x = (2, 3), ağırlıkları w = (1,5; −0,5), sapması b = 0,5 ve aktivasyonu ReLU'dur. Nöronun çıktısı kaçtır?</p>
+<ul class="sec"><li>1,5</li><li>2</li><li>5</li><li>1</li><li>0</li></ul>
+<div class="coz"><p>z = 1,5 × 2 + (−0,5) × 3 + 0,5 = 3 − 1,5 + 0,5 = 2. z pozitif olduğu için ReLU(2) = 2. A, sapmayı eklemeyi unutanın bulduğu değerdir (3 − 1,5 = 1,5). C, ikinci ağırlığın eksi işaretini kaybedenin sonucudur (3 + 1,5 + 0,5). D, sapmayı eklemek yerine çıkaranın sonucudur (1,5 − 0,5). E, ReLU'nun her zaman sıfır verdiğini sanmaktır; ReLU yalnızca negatif z'yi sıfırlar.</p></div></li>
+
+<li data-c="D"><p class="q">On tam bağlı katmanı olan ama katmanları arasında hiçbir aktivasyon fonksiyonu kullanılmayan bir ağ için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Katman sayısı arttığı için XOR gibi problemleri tek katmandan daha kolay çözer.</li><li>Her katman bir öncekinden daha soyut özellikler öğrenir.</li><li>Evrensel yaklaşım teoremi bu ağ için de geçerlidir.</li><li>Tek bir doğrusal katmanın yapabileceğinden fazlasını yapamaz.</li><li>Parametre sayısı sıfırdır, çünkü aktivasyon yoktur.</li></ul>
+<div class="coz"><p>Doğrusal işlemler art arda uygulanınca sonuç yine doğrusaldır (2x + 1'i 3y − 4'e sokunca 6x − 1 çıkar); on katman tek bir doğrusal katmana çöker. Bu yüzden A yanlış: XOR doğrusal bir sınırla ayrılamaz, aktivasyonsuz ağ katman sayısı ne olursa olsun çözemez. B'deki katman katman soyutlama ancak aktivasyonlarla mümkün olur. C yanlış, çünkü teorem doğrusal olmayan (polinom olmayan) aktivasyon şartı koyar. E yanlış: ağırlıklar ve sapmalar yine vardır, aktivasyon parametre değildir.</p></div></li>
+
+<li data-c="C"><p class="q">4 girdili, 5 nöronlu bir gizli katmanı ve 3 nöronlu bir çıkış katmanı olan tam bağlı bir ağın toplam parametre sayısı kaçtır?</p>
+<ul class="sec"><li>35</li><li>12</li><li>43</li><li>60</li><li>47</li></ul>
+<div class="coz"><p>Gizli katman: 4 × 5 + 5 = 25 (20 ağırlık, 5 sapma). Çıkış katmanı: 5 × 3 + 3 = 18 (15 ağırlık, 3 sapma). Toplam 25 + 18 = 43. A, sapmaları unutup yalnız ağırlıkları (20 + 15) saymaktır. B, nöronları ve girdileri saymaktır (4 + 5 + 3); parametre bağlantı sayısıyla büyür. D, üç sayıyı birbiriyle çarpmaktır, anlamlı bir sayım değildir. E, girdi katmanına da 4 sapma ekler; girdi katmanının parametresi yoktur.</p></div></li>
+
+<li data-c="A"><p class="q">70 milyar parametreli bir modelin yalnızca ağırlıkları float16 biçiminde saklanırsa yaklaşık ne kadar bellek gerekir?</p>
+<ul class="sec"><li>140 GB</li><li>70 GB</li><li>280 GB</li><li>35 GB</li><li>140 MB</li></ul>
+<div class="coz"><p>float16 16 bittir, 8 bit 1 bayt ettiğine göre her parametre 2 bayt tutar: 70 milyar × 2 bayt = 140 milyar bayt ≈ 140 GB. B, parametre başına 1 bayt varsayar; bu 8 bit nicelemenin sonucudur. C, float32'nin (4 bayt) sonucudur. D, 4 bit (yarım bayt) nicelemenin sonucudur. E'de birim hatası var: 140 milyar bayt megabayt değil gigabayttır (1 GB ≈ 1 milyar bayt).</p></div></li>
+
+<li data-c="E"><p class="q">Evrensel yaklaşım teoremi ile ilgili aşağıdaki ifadelerden hangisi doğrudur?</p>
+<ul class="sec"><li>Yeterince büyük bir ağ eğitilirse her fonksiyonu kesin olarak öğrenir.</li><li>Bir fonksiyona yaklaşmak için kaç gizli nöron gerektiğini her durumda söyler.</li><li>Yalnızca ReLU kullanan çok katmanlı ağlar için kanıtlanmıştır.</li><li>Ağın, yaklaştığı bölgenin dışında da hedef fonksiyonu aynı doğrulukla izleyeceğini garanti eder.</li><li>Uygun ağırlıklara sahip bir ağın var olduğunu söyler; bu ağırlıkların eğitimle bulunacağını ya da az nöronla yetileceğini garanti etmez.</li></ul>
+<div class="coz"><p>Teorem bir varlık teoremidir: doğrusal olmayan aktivasyonlu, yeterince nöronlu bir ağın, sınırlı bölgede sürekli bir fonksiyona istenen kadar yaklaşabileceğini söyler; o kadar. A, "temsil edebilir"i "öğrenir" diye okur; eğitimin uygun ağırlıkları bulacağı garanti değildir. B yanlış: teorem gereken nöron sayısını vermez. C yanlış: Cybenko'nun 1989 kanıtı tek gizli katmanlı, sigmoid türü aktivasyonlu ağlar içindir; sonraki çalışmalar polinom olmayan her aktivasyona genişletti. D yanlış: yaklaşım yalnız seçilen bölgede geçerlidir; örnekteki ağ x = 3'te 9 yerine 7,5 veriyordu.</p></div></li>
+
+<li data-c="B" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince kastedilen alanların iç içe halkalar olarak <strong>dıştan içe</strong> doğru sıralanışı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Derin öğrenme → makine öğrenmesi → yapay zekâ → büyük dil modelleri</li><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li><li>Makine öğrenmesi → yapay zekâ → büyük dil modelleri → derin öğrenme</li><li>Yapay zekâ → derin öğrenme → makine öğrenmesi → büyük dil modelleri</li><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li></ul>
+<div class="coz"><p>En geniş halka yapay zekâdır (kural tabanlı sistemler de içindedir). Onun içinde örnekten öğrenen sistemler, yani makine öğrenmesi; onun içinde çok katmanlı sinir ağlarıyla yapılan derin öğrenme; onun da içinde büyük dil modelleri durur. E aynı zinciri içten dışa sıralar; soru kökündeki "dıştan içe" yönünü kaçıranlar onu seçer. D'de derin öğrenme ile makine öğrenmesi yer değiştirmiş; oysa her derin öğrenme bir makine öğrenmesidir, tersi değil. A ve C halkaların kapsama ilişkisini bozar.</p></div></li>
+
+<li data-c="D" data-k="yz-2"><p class="q">Bir mağaza, elindeki etiketsiz müşteri alışveriş kayıtlarından birbirine benzeyen müşteri grupları çıkarmak istiyor. Bu iş hangi öğrenme türüne örnektir?</p>
+<ul class="sec"><li>Denetimli öğrenme: sınıflandırma</li><li>Denetimli öğrenme: regresyon</li><li>Pekiştirmeli öğrenme</li><li>Denetimsiz öğrenme</li><li>Kural tabanlı uzman sistem</li></ul>
+<div class="coz"><p>Kayıtlarda doğru cevap (etiket) yok; model, veride kendiliğinden bulunan benzerliklere göre grupları kendisi çıkarıyor. Bu denetimsiz öğrenmedir ve müşteri gruplama onun klasik örneğidir. A ve B denetimli öğrenmedir; ikisi de her örnek için bilinen bir etiket (sınıf ya da sayı) ister. C, ödül ve cezayla davranış öğrenen bir ajanı anlatır; burada ajan ya da ödül yok. E, kuralları insanın yazdığı sistemdir; burada kurallar veriden çıkarılıyor.</p></div></li>
+
+<li data-c="A" data-k="yz-3"><p class="q">a = (1, 2), b = (2, 4) ve c = (2, −1) vektörleri veriliyor. Yönleri açısından aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>a ile b tam olarak aynı yöne bakar; a ile c birbirine dik durur.</li><li>a ile c aynı yöne bakar; a ile b birbirine diktir.</li><li>Üçü de aynı yöne bakar, çünkü hepsinde 2 sayısı geçer.</li><li>a ile b zıt yönlere bakar, çünkü b'nin uzunluğu daha fazladır.</li><li>Uzunlukları farklı olduğu için hiçbir ikisinin yönü karşılaştırılamaz.</li></ul>
+<div class="coz"><p>b, a'nın tam iki katıdır (2 × 1 = 2, 2 × 2 = 4); yani aynı doğrultuda, aynı yönde, yalnızca daha uzundur; aralarındaki açı 0°'dir. a ile c'nin karşılıklı elemanlarını çarpıp toplayınca 1 × 2 + 2 × (−1) = 0 çıkar; bu, iki vektörün dik (90°) olduğu anlamına gelir. D ve E, uzunluk ile yönü karıştırır; benzerliği açıyla ölçmenin amacı tam da uzunluktan bağımsız olarak yöne bakmaktır. C, sayıların görüntüsüne bakıp yönü hesaplamamaktır.</p></div></li>
+
+<li data-c="C" data-k="yz-3"><p class="q">Yapay zekâ modellerinin eğitimi ve çalıştırılması neden çoğunlukla ekran kartlarıyla (GPU) yapılır?</p>
+<ul class="sec"><li>GPU'lar tek bir karmaşık işlemi ana işlemciden çok daha akıllıca yapar.</li><li>GPU'lar verileri internetten daha hızlı indirir.</li><li>GPU'lar aynı basit işlemi (çarpma ve toplama) çok sayıda veri üzerinde aynı anda, paralel yapabilir.</li><li>GPU'lar yalnızca görüntüyle çalışan modeller için gereklidir.</li><li>GPU'lar sayıları her zaman float64 gibi daha hassas biçimlerde sakladığı için daha doğru sonuç verir.</li></ul>
+<div class="coz"><p>Sinir ağı hesabının büyük kısmı matris çarpımıdır: milyonlarca kez tekrarlanan basit çarpma ve toplama. GPU, binlerce küçük çekirdekle bu aynı işlemi aynı anda pek çok sayı üzerinde yapacak biçimde tasarlanmıştır. A tersini söyler; GPU'nun gücü karmaşık tek işte değil, basit işin paralel tekrarındadır. B ile GPU'nun ilgisi yoktur. D yanlış: dil modelleri de GPU'da çalışır. E de yanlıştır; YZ'de çoğu zaman tersine, float16 ya da daha düşük hassasiyet tercih edilir.</p></div></li>
+
+<li data-c="E" data-k="yz-4"><p class="q">Gradyan inişiyle bir model eğitilirken öğrenme oranı (adım boyu) çok büyük seçilirse en olası sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Model aynı sonuca daha yavaş ulaşır.</li><li>Model her zaman ezberlemeye (aşırı öğrenmeye) başlar.</li><li>Kayıp her adımda çok küçük miktarlarda azalır.</li><li>Model, veri kümesindeki eksik değerleri kendiliğinden doldurur.</li><li>Adımlar en dip noktanın üzerinden atlar; kayıp iki yana salınabilir ya da giderek büyüyebilir.</li></ul>
+<div class="coz"><p>Sisli dağ benzetmesinde öğrenme oranı adım boyudur. Adım çok büyükse vadinin dibini aşıp karşı yamaca çıkarsın; kayıp düşmek yerine bir aşağı bir yukarı salınır, hatta her adımda büyüyebilir. A ve C, öğrenme oranı çok <em>küçük</em> seçildiğinde olanı anlatır: her adım minicik olur, ilerleme yavaşlar. B'deki aşırı öğrenme adım boyunun doğrudan sonucu değildir; model karmaşıklığı ve veri miktarıyla ilgilidir. D'nin öğrenme oranıyla ilgisi yoktur.</p></div></li>
+
+<li data-c="B" data-k="yz-4"><p class="q">Birkaç yüz satırlık bir tablo verisiyle çalışılıyor ve her kararın gerekçesinin müşteriye açıklanması gerekiyor. Aşağıdakilerden hangisi genellikle en uygun başlangıçtır?</p>
+<ul class="sec"><li>Milyarlarca parametreli derin bir sinir ağı</li><li>Karar ağacı ya da lojistik regresyon gibi basit, açıklanabilir bir model</li><li>Hiç model kurmadan bütün kararları rastgele vermek</li><li>Yalnızca eğitim verisindeki başarıya bakılarak seçilen en karmaşık model</li><li>Veriyi büyütmek için tabloyu kopyalayıp üç katına çıkarmak</li></ul>
+<div class="coz"><p>Az veri, tablo biçiminde veri ve açıklanabilirlik ihtiyacı, basit modellerin çoğu zaman derin ağlara üstün geldiği durumlardır. Karar ağacının evet/hayır soruları ya da lojistik regresyonun ağırlıkları bir kararın gerekçesini anlatmaya elverir. A, az veride ezberlemeye yatkındır ve gerekçesi okunamaz (bu parçadaki kara kutu sorunu). D, eğitim başarısına bakarak seçmektir; modelin gördüğü verilerle değerlendirilmemesi gerektiğini Parça 2'de görmüştük. E yeni bilgi eklemez, yalnızca aynı satırları tekrarlar.</p></div></li>
+
+<li data-c="D" data-k="yz-5"><p class="q">1.000 kişilik bir veri kümesinde 10 kişi hastadır. Bir model hiç düşünmeden herkese "sağlıklı" diyor. Bu modelin doğruluğu (accuracy) ve hastaları yakalama oranı (duyarlılık, recall) sırasıyla nedir?</p>
+<ul class="sec"><li>%1 ve %100</li><li>%99 ve %99</li><li>%50 ve %50</li><li>%99 ve %0</li><li>%100 ve %1</li></ul>
+<div class="coz"><p>Model 990 sağlıklı kişiyi doğru, 10 hastayı yanlış bilir: doğruluk 990 / 1.000 = %99. Ama 10 hastanın hiçbirini yakalayamaz: duyarlılık 0 / 10 = %0. Dengesiz veride doğruluğun neden yanıltıcı olduğunun klasik örneği budur; hastalık taramasında asıl önemli olan duyarlılıktır. B, doğruluğun her şeyi anlattığını sanmaktır. A ve E oranları ters çevirir; C ise veriyi dengeli sanmaktır.</p></div></li>
+
+<li data-c="A" data-k="yz-5"><p class="q">Bir çağrı merkezinde başarı ölçütü "ortalama görüşme süresi" yapılınca çalışanlar müşterinin sorununu çözmeden görüşmeleri hızla kapatmaya başlıyor. Bu durum en iyi hangi kavramla açıklanır?</p>
+<ul class="sec"><li>Goodhart yasası</li><li>Veri sızıntısı</li><li>Çapraz doğrulama</li><li>Yetersiz öğrenme (underfitting)</li><li>Karışıklık matrisi</li></ul>
+<div class="coz"><p>Goodhart yasası: bir ölçüt hedef hâline gelince iyi bir ölçüt olmaktan çıkar. Kısa görüşme süresi başlangıçta verimliliğin bir işaretiydi; hedef yapılınca insanlar asıl amacı (sorunu çözmek) bırakıp ölçütü kovalamaya başladı. B, cevabın girdide gizlice bulunmasıdır. C bir değerlendirme yöntemi, E bir sonuç tablosudur; ikisi de bir bozulmayı anlatmaz. D, modelin veriyi yeterince öğrenememesidir; burada model bile yok.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-5">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-6">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-7">Sonraki parça: sinir ağı nasıl öğrenir</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"yapay nöron ağırlık sapma aktivasyon fonksiyonu nasıl çalışır"</li>
+  <li>"ReLU sigmoid activation function intuition"</li>
+  <li>"multilayer perceptron forward pass step by step"</li>
+  <li>"universal approximation theorem visual explanation"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Evrensel yaklaşım teoremi: Cybenko 1989 (<em>Mathematics of Control, Signals, and Systems</em>, sigmoid türü aktivasyon), Hornik, Stinchcombe ve White 1989 (<em>Neural Networks</em>), Hornik 1991 (<em>Neural Networks</em>, gücün mimariden geldiği), Leshno ve ark. 1993 (polinom olmayan aktivasyon şartı) bilgileri ile teoremin bir varlık sonucu olduğu, nöron sayısı vermediği, ağırlık bulma yöntemi sunmadığı ve yalnız sınırlı (kompakt) bölgede geçerli olduğu, 14 Ekim 2026'da İngilizce Vikipedi "Universal approximation theorem" maddesi üzerinden doğrulandı. Özgün makaleleri bu oturumda okumadım; ayrıntılar için onlara bakılmalı. Teoremin metindeki ifadesi matematiksel olarak tam değil, sezgisel bir özettir.</li>
+  <li>McCulloch–Pitts (1943), Rosenblatt'ın algılayıcısı (1957 benzetimi, 1958 makalesi) ve Minsky–Papert'in <em>Perceptrons</em> kitabı (1969, tek katmanlı algılayıcının XOR'u çözememesi) tarihleri İngilizce Vikipedi "Perceptron" maddesinden doğrulandı. "MLP adının yanıltıcı olduğu" bilgisi de aynı kaynakta geçer; terimi kimin ilk kullandığı belirtilmiyor.</li>
+  <li>İnsan beyninde yaklaşık 86 milyar nöron ve yaklaşık 100 trilyon sinaps: UCLA Brain Research Institute'un bilgi sayfasından; bunlar tahmindir ve 86 milyar rakamının kesinliği literatürde tartışılmaktadır (bu tartışmayı ele alan PMC makalesine ağ kısıtı yüzünden erişemedim).</li>
+  <li>Llama 2'nin 7, 13 ve 70 milyar parametreli sürümleri ve Temmuz 2023 tarihi: Meta'nın model kartını aktaran GitHub kopyası ve Vikipedi arşivi üzerinden doğrulandı. Güncel modellerin çoğunun parametre sayısını açıklamadığı genel bir gözlemdir; tek tek kontrol etmedim.</li>
+  <li>Bütün sayısal örnekler (tek nöron 0,85 → σ ≈ 0,7006; 2–3–1 ileri besleme → 0,6225; 13, 26, 43 ve 109.386 parametre; XOR tablosu; çadır fonksiyonu; x² yaklaşımında 0,25 ve 0,0625 hata, x = 3'te 7,5; sigmoid tablosu; bellek hesapları; quiz'deki hesap soruları ve çeldiricileri) Python ile hesaplanarak doğrulandı. İsteğe bağlı denemedeki iki betik Python 3.13.16 ve NumPy 2.5.3 ile <code>python3 -I</code> kullanılarak gerçekten çalıştırıldı; çıktılar birebir konuldu.</li>
+  <li>Hafızadan yazılan ve bu oturumda ayrıca kaynakla doğrulanmayanlar: ReLU'nun 2010'lardan itibaren yaygınlaşması (genellikle Nair ve Hinton 2010 ile Glorot ve ark. 2011'e bağlanır); standart transformer katmanında parametrelerin kabaca üçte ikisinin MLP bloğunda olması (dikkat 4d², MLP 8d² hesabına dayanır; model tasarımına göre değişir); birden çok kavrama tepki veren nöronlar bulgusu (yorumlanabilirlik literatürü, Parça 19'da kaynaklı ele alınmalı); derinliğin pratik verimliliği ve "uzman karışımı" modeller. Bunlar kavramsal düzeyde verildi ve kesin rakam içermiyor.</li>
+  <li>Biyolojik nöron anlatımı bilinçli olarak basitleştirildi; nörobilimde ayrıntılar (dendritik hesaplama, öğrenme mekanizmaları) çok daha karmaşık ve kısmen açık sorulardır.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,546 @@
+<article class="chapter ders" id="c-yz-3">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 3 · Matematiğin sezgisi</div>
+<h1>Sayılarla düşünen makine: vektör, matris, olasılık ve eğim</h1>
+<p class="time">Okuma ve çözme yaklaşık 55 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir bilgisayarın elinde yalnızca sayılar var. Buna rağmen bir dil modeli "kedi" ile "yavru kedi"nin birbirine yakın, "kedi" ile "borsa"nın uzak olduğunu biliyor; bir cümleden sonra hangi kelimenin geleceğini tahmin ediyor ve her gün biraz daha az hata yapacak biçimde kendini ayarlıyor. Sayılarla "yakınlık", "tahmin" ve "düzeltme" nasıl yapılır ve bütün bunlar neden oyun için yapılmış ekran kartlarında koşar?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (yapay zekâ, makine öğrenmesi, derin öğrenme ve büyük dil modellerinin iç içe halkaları), Parça 2 (özellik, etiket, model, parametre, eğitim, çıkarım). Formül bilgisi gerekmez; dört işlem yeter. Python kutuları isteğe bağlıdır, atlarsan konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neden var?</h2>
+
+<p>Parça 2'de makine öğrenmesini "kuralı yazmak yerine örnekten öğrenmek" diye tanımladık ve modelin içinde <strong>parametre</strong> denen ayarlanabilir sayılar olduğunu söyledik. O zaman bir soruyu açıkta bıraktık: bu sayılar neyi temsil ediyor, birbirleriyle nasıl işleniyor ve "öğrenme" sırasında nasıl değişiyor? Bu parça o sorunun matematik tarafını, formüle boğmadan, sezgiyle kurar.</p>
+
+<p>İyi haber şu: bugünkü yapay zekânın neredeyse tamamı birkaç basit fikrin çok büyük ölçekte tekrarından oluşur. Bir sohbet modeli tek bir cevap üretirken milyarlarca çarpma ve toplama yapar ama bunların her biri ilkokul düzeyinde bir işlemdir. Zor olan işlemin kendisi değil, <strong>ne kadar çok</strong> yapıldığıdır. Bu yüzden aşağıdaki altı fikri tanıyınca sonraki parçalarda göreceğin sinir ağı, transformer ve dil modeli anlatımlarının hepsi "aa, bu o" diye yerine oturacak.</p>
+
+<div class="tablo"><table>
+<tr><th>Fikir</th><th>Günlük benzetme</th><th>Yapay zekâda nerede karşına çıkar</th></tr>
+<tr><td>Vektör</td><td>Bir evi anlatan ilan satırı: metrekare, oda, yaş</td><td>Her girdi (kelime, resim, müşteri) bir sayı listesine çevrilir</td></tr>
+<tr><td>Benzerlik</td><td>İki kişinin film zevkinin aynı yöne bakması</td><td>Anlamca yakın belgeyi bulmak, öneri sistemleri, dikkat mekanizması</td></tr>
+<tr><td>Matris çarpımı</td><td>Birçok alışveriş sepetinin birçok marketteki tutarını tek seferde hesaplamak</td><td>Sinir ağının her katmanı; hesabın büyük çoğunluğu</td></tr>
+<tr><td>Olasılık dağılımı</td><td>Hava durumunda "yarın %70 yağmur"</td><td>Bir sonraki kelime için binlerce adayın her birinin olasılığı</td></tr>
+<tr><td>Eğim</td><td>Karanlıkta ayağınla yokuşun ne yöne indiğini yoklamak</td><td>Eğitimde her ağırlığın hangi yöne itileceğine karar vermek</td></tr>
+<tr><td>Sayı biçimi ve niceleme</td><td>Bir fotoğrafı daha az yer kaplasın diye sıkıştırmak</td><td>Modeli daha küçük bellekte, daha hızlı çalıştırmak</td></tr>
+</table></div>
+
+<h2 class="s">1. Vektör: bir şeyi sayı listesiyle anlatmak</h2>
+
+<p>Bilgisayar "ev", "kelime", "fotoğraf" diye bir şey bilmez; yalnızca sayıları toplar, çarpar, karşılaştırır. Bu yüzden yapay zekâda yapılan ilk iş, ilgilendiğimiz şeyi <strong>sayılara çevirmektir.</strong> Bir emlak ilanını düşün: "120 metrekare, 3 oda, 10 yaşında." Bu evi bir makineye anlatmak istiyorsan sırasını sabitlediğin üç sayı vermen yeter: [120, 3, 10]. İşte bu bir vektördür.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Vektör</strong>, sırası belli bir sayı listesidir. Listedeki her konum bir özelliğe karşılık gelir; bu konumların sayısına vektörün <strong>boyutu</strong> denir. [120, 3, 10] üç boyutlu bir vektördür: birinci sayı metrekare, ikincisi oda sayısı, üçüncüsü bina yaşı. Sıra değişirse anlam değişir: [3, 120, 10] artık "3 metrekarelik, 120 odalı" saçma bir ev olur.</p></div>
+
+<p>Bu fikir Parça 2'deki <strong>özellik</strong> kavramının matematikteki karşılığıdır. Orada bir örneğin özelliklerini (metrekare, oda, konum) saymıştık; şimdi bu özellikleri yan yana dizip tek bir nesne gibi ele alıyoruz. Bunun kazancı şudur: artık "iki ev ne kadar benzer?", "bu evin fiyatı ne olmalı?" gibi soruları sayılarla yapılan işlemlere çevirebiliriz.</p>
+
+<p>Aynı yöntem her türlü veriye uygulanır:</p>
+
+<p><strong>Resim.</strong> Siyah beyaz, 28 piksele 28 piksellik küçük bir resim, her pikselin parlaklığı 0 (siyah) ile 255 (beyaz) arasında bir sayı olmak üzere 28 × 28 = 784 sayıdan oluşur. Bu resim 784 boyutlu bir vektördür. Renkli resimde her piksel için kırmızı, yeşil ve mavi olmak üzere üç sayı tutulur; aynı boyuttaki renkli resim 2.352 sayı eder.</p>
+
+<p><strong>Ses.</strong> Mikrofon saniyede binlerce kez havanın basıncını ölçer; bir saniyelik ses, binlerce sayılık bir listedir.</p>
+
+<p><strong>Kelime.</strong> Kelimenin metrekaresi ya da parlaklığı yoktur; onu sayıya çevirmek daha zordur. Dil modellerinde her kelime (ya da kelime parçası) yüzlerce, hatta birkaç bin sayıdan oluşan bir vektörle temsil edilir. İşin ilginç yanı bu sayıların elle seçilmemesidir: model eğitilirken, benzer bağlamlarda geçen kelimelerin vektörleri birbirine benzeyecek biçimde kendiliğinden ayarlanır. Bunun nasıl olduğunu Parça 9'da "kelime gömmeleri" başlığıyla göreceğiz; şimdilik "kelime de bir sayı listesidir" demen yeterli.</p>
+
+<p>İki ya da üç boyutlu bir vektörü gözünde canlandırmak kolaydır: iki boyutlu vektör, kâğıt üzerinde başlangıç noktasından çıkan bir oktur. [4, 1] dersen, sağa 4, yukarı 1 birim git ve okun ucunu oraya koy. Okun iki özelliği vardır: <strong>yönü</strong> (nereye baktığı) ve <strong>uzunluğu</strong> (ne kadar uzandığı). 784 boyutu gözünde canlandıramazsın, kimse canlandıramaz; ama iyi haber şu ki iki boyutta kurduğun sezgi, yön ve uzunluk fikri, yüksek boyutlarda da aynen işler. Matematikçiler de böyle çalışır: iki boyutta düşünür, hesabı bilgisayara bırakır.</p>
+
+<h2 class="s">2. Benzerlik: uzaklık mı, açı mı?</h2>
+
+<p>Her şeyi vektöre çevirdikten sonra ilk sorulacak soru "hangisi hangisine benziyor?" sorusudur. Bir müzik uygulaması sana benzer şarkıyı, bir arama motoru sorunla anlamca örtüşen belgeyi, bir mağaza sitesi "bunu alanlar şunu da aldı" önerisini hep bu soruyla bulur. Benzerliği ölçmenin iki temel yolu vardır.</p>
+
+<h3>Birinci yol: uzaklık</h3>
+
+<p>İki okun uçları arasındaki mesafeyi cetvelle ölçmek gibidir. İki boyutta bunu Pisagor teoremiyle yaparsın: yatay farkın karesi artı dikey farkın karesi, sonra karekök. Yüksek boyutta da aynısıdır, yalnızca her boyuttaki farkın karesini toplarsın. Uzaklık küçükse iki şey benzer, büyükse farklıdır.</p>
+
+<h3>İkinci yol: açı</h3>
+
+<p>Uzaklık bazen yanıltır. Bir örnekle görelim. Üç kişinin film zevkini iki sayıyla anlatalım: geçen ay izlediği aksiyon filmi sayısı ve romantik film sayısı.</p>
+
+<p>A kişisi: [4, 1]. Dört aksiyon, bir romantik.<br>B kişisi: [8, 2]. Sekiz aksiyon, iki romantik.<br>C kişisi: [1, 4]. Bir aksiyon, dört romantik.</p>
+
+<p>Sezgin ne diyor? A ile B'nin zevki tıpatıp aynıdır: ikisi de aksiyonu romantik filmin dört katı seviyor; B yalnızca daha çok film izliyor. C ise bambaşka bir zevke sahip. Şimdi uzaklığa bak: A ile B arası √(4² + 1²) = √17 ≈ 4,12 birim; A ile C arası √(3² + 3²) = √18 ≈ 4,24 birim. Uzaklığa göre B ile C, A'ya neredeyse aynı derecede "benzer" çıktı. Uzaklık, B'nin daha çok film izlemesini zevk farkı sandı.</p>
+
+<p>Çözüm, okların <strong>uzunluğuna</strong> değil <strong>yönüne</strong> bakmaktır. A ile B'nin okları tam olarak aynı yöne bakar (biri öbürünün iki katı uzun ama aynı doğrunun üzerinde). C'nin oku ise A'dan yaklaşık 62 derece ayrılır. İki ok arasındaki açı küçüldükçe zevkler benzer, büyüdükçe farklıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="Üç film zevki vektörü: A ve B aynı doğrultuda, C yaklaşık 62 derece ayrı">
+  <line class="sv-c" x1="50" y1="280" x2="385" y2="280" />
+  <line class="sv-c" x1="50" y1="280" x2="50" y2="20" />
+  <text class="sv-s" x="385" y="316" text-anchor="end">aksiyon filmi sayısı</text>
+  <text class="sv-s" x="58" y="24">romantik film sayısı</text>
+  <text class="sv-s" x="162" y="298" text-anchor="middle">4</text>
+  <text class="sv-s" x="274" y="298" text-anchor="middle">8</text>
+  <text class="sv-s" x="40" y="172" text-anchor="end">4</text>
+  <line class="sv-c" x1="50" y1="280" x2="274" y2="224" />
+  <line class="sv-cl" x1="50" y1="280" x2="162" y2="252" />
+  <line class="sv-cl" x1="50" y1="280" x2="78" y2="168" />
+  <circle class="sv-l" cx="162" cy="252" r="5" />
+  <circle class="sv-k" cx="274" cy="224" r="5" />
+  <circle class="sv-a" cx="78" cy="168" r="5" />
+  <text class="sv-b" x="166" y="272">A [4, 1]</text>
+  <text class="sv-b" x="282" y="218">B [8, 2]</text>
+  <text class="sv-b" x="88" y="164">C [1, 4]</text>
+  <path class="sv-c" d="M98.5 267.9 A50 50 0 0 0 62.1 231.5" />
+  <text class="sv-s" x="76" y="256">62°</text>
+  <text class="sv-t" x="180" y="70">A ile B aynı yönde:</text>
+  <text class="sv-t" x="180" y="88">kosinüs benzerliği 1</text>
+  <text class="sv-t" x="180" y="118">A ile C arasında 62°:</text>
+  <text class="sv-t" x="180" y="136">kosinüs benzerliği 0,47</text>
+</svg>
+<figcaption>Uzaklığa bakarsan B ile C, A'ya hemen hemen eşit uzaklıktadır (4,12 ve 4,24). Yöne bakarsan tablo netleşir: B, A ile aynı doğrultudadır; yalnızca daha uzundur, yani daha çok film izler. C başka bir yöne bakar.</figcaption>
+</figure>
+
+<h3>Açıyı sayıyla ölçmek: nokta çarpım ve kosinüs benzerliği</h3>
+
+<p>Açıyı iletki ile ölçemeyeceğimiz için (784 boyutta iletki yok) onu sayılarla hesaplamanın bir yolu gerekir. Bu yol iki adımdan oluşur.</p>
+
+<p><strong>Nokta çarpım.</strong> İki vektörün aynı konumdaki sayılarını çarp, sonuçları topla. A = [4, 1] ve C = [1, 4] için: 4 × 1 + 1 × 4 = 8. Sezgisi şudur: iki vektör aynı özelliklerde büyükse çarpımlar büyük çıkar ve toplam yükselir; biri aksiyonda, öbürü romantikte büyükse büyük sayılar küçük sayılarla çarpılır ve toplam düşük kalır. Yani nokta çarpım "ne kadar aynı şeylerde güçlüyüz" sorusunun kaba cevabıdır.</p>
+
+<p><strong>Uzunluğa bölmek.</strong> Nokta çarpımın bir kusuru var: vektörler uzadıkça (B gibi çok film izleyen biri) kendiliğinden büyür. Bunu düzeltmek için sonucu iki vektörün uzunluklarının çarpımına böleriz. Böylece yalnızca yön kalır. Çıkan sayıya <strong>kosinüs benzerliği</strong> denir; adını, iki ok arasındaki açının kosinüsüne eşit olmasından alır. Kosinüsü bilmen gerekmiyor; aşağıdaki tablo yetiyor.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Kosinüs benzerliği</strong> = (nokta çarpım) ÷ (birinci vektörün uzunluğu × ikinci vektörün uzunluğu). Nokta çarpım: aynı konumdaki sayıları çarp, topla. Uzunluk: her sayının karesini topla, karekökünü al. Sonuç her zaman −1 ile 1 arasındadır ve yalnızca <strong>yönü</strong> karşılaştırır; vektörün büyüklüğü sonucu etkilemez.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Kosinüs benzerliği</th><th>Okların durumu</th><th>Anlamı</th></tr>
+<tr><td>1</td><td>Aynı yöne bakıyor (açı 0°)</td><td>Oranları birebir aynı; en yüksek benzerlik</td></tr>
+<tr><td>0,7 civarı</td><td>Yaklaşık 45°</td><td>Belirgin ortaklık var</td></tr>
+<tr><td>0</td><td>Dik (açı 90°)</td><td>Birbiriyle ilgisiz; ortak özellik yok</td></tr>
+<tr><td>−1</td><td>Tam ters yöne bakıyor (180°)</td><td>Biri neyde güçlüyse öbürü onun tersinde</td></tr>
+</table></div>
+
+<p>Film örneğinde sayılar pozitif olduğu için sonuç 0'ın altına inmez. Kelime vektörlerinde ise sayıların bir kısmı negatiftir, bu yüzden negatif benzerlik de görülebilir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> A = [4, 1] ile C = [1, 4] ve A ile B = [8, 2] arasındaki kosinüs benzerliğini hesapla.</p>
+<p><strong>Adım 1.</strong> A ile C'nin nokta çarpımı:</p>
+<span class="mat">4 × 1 + 1 × 4 = 8 <span class="g">(aynı konumdakileri çarp, topla)</span></span>
+<p><strong>Adım 2.</strong> Uzunluklar:</p>
+<span class="mat">A: √(4² + 1²) = √17 ≈ 4,123 <span class="g">(karelerin toplamının karekökü)</span></span>
+<span class="mat">C: √(1² + 4²) = √17 ≈ 4,123 <span class="g">(aynı sayılar, yer değiştirmiş)</span></span>
+<p><strong>Adım 3.</strong> Böl:</p>
+<span class="mat">8 ÷ (√17 × √17) = 8 ÷ 17 ≈ 0,47 <span class="g">(√17 × √17 = 17)</span></span>
+<p><strong>Adım 4.</strong> Şimdi A ile B. Nokta çarpım 4 × 8 + 1 × 2 = 34. B'nin uzunluğu √(64 + 4) = √68 ≈ 8,246, yani A'nın tam iki katı.</p>
+<span class="mat">34 ÷ (4,123 × 8,246) = 34 ÷ 34 = 1 <span class="g">(√17 × √68 = √1156 = 34)</span></span>
+<p><strong>Sonuç:</strong> A ile B'nin benzerliği 1 (aynı yön), A ile C'ninki yaklaşık 0,47. Uzaklığın ayırt edemediği farkı kosinüs benzerliği açıkça gösterdi. 0,47'nin karşılığı olan açı yaklaşık 62 derecedir; şekildeki yay odur.</p></div>
+
+<p>Bu hesap yapay zekânın her yerinde karşına çıkacak. Parça 16'da göreceğin "anlamca arama" (bir soruya en uygun belge parçasını bulmak) tam olarak, sorunun vektörü ile binlerce belge vektörü arasındaki kosinüs benzerliğini hesaplayıp en yükseklerini seçmektir. Parça 10'daki dikkat mekanizması da özünde, bir kelimenin vektörüyle öbür kelimelerin vektörleri arasında nokta çarpım alıp "hangisine ne kadar bakayım" diye karar vermektir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Farklı birimdeki özellikleri olduğu gibi karşılaştırmak.</strong> Evleri [fiyat (TL), oda sayısı] diye anlattığını düşün. A evi [4.000.000, 2], B evi [4.050.000, 5], C evi [4.300.000, 2]. Uzaklığı hesaplarsan B'nin A'ya çok daha yakın çıktığını görürsün (yaklaşık 50.000'e karşı 300.000), çünkü 3 odalık fark, 50.000 TL'lik farkın yanında görünmez kalır. Oysa 2 odalı bir evle 5 odalı bir ev bambaşka evlerdir. <strong>Doğrusu:</strong> karşılaştırmadan önce her özelliği benzer bir ölçeğe getirmek (örneğin her özelliği kendi tipik aralığına bölmek). Bu adıma <strong>ölçekleme</strong> ya da normalleştirme denir; atlanırsa model büyük sayılı özelliğe körü körüne ağırlık verir.</p></div>
+
+<h2 class="s">3. Matris: birçok ağırlıklı toplamı aynı anda yapmak</h2>
+
+<p>Önce <strong>ağırlıklı toplam</strong> fikrini netleştirelim, çünkü matris onun toplu hâlidir. Markette sepetinde 3 ekmek, 2 süt ve 1 koli yumurta var. Ekmek 15 TL, süt 40 TL, yumurta 90 TL ise ödeyeceğin tutar 3 × 15 + 2 × 40 + 1 × 90 = 215 TL'dir. Her miktar, kendi fiyatıyla "ağırlıklandırılmış" ve sonra toplanmış. (Fiyatlar örnek için uydurulmuştur.) Nokta çarpımı hatırladın mı? Bu tam olarak sepet vektörü [3, 2, 1] ile fiyat vektörü [15, 40, 90] arasındaki nokta çarpımdır.</p>
+
+<p>Şimdi işi büyüt: iki kişi (Ali ve Elif) iki farklı markette (X ve Y) alışveriş yapmayı düşünüyor ve her biri iki marketteki toplam tutarı merak ediyor. Dört ayrı ağırlıklı toplam gerekiyor. Bunları tek tek yapmak yerine sayıları iki tabloya dizebiliriz. İşte bu sayı tablolarına <strong>matris</strong> denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Matris</strong>, satır ve sütunlara dizilmiş bir sayı tablosudur; "2 × 3'lük matris" 2 satır ve 3 sütun demektir. <strong>Matris çarpımı</strong>, birinci matrisin her satırı ile ikinci matrisin her sütunu arasında bir nokta çarpım (ağırlıklı toplam) yapar ve sonucu, o satır ile o sütunun kesiştiği hücreye yazar. Yani matris çarpımı, <strong>birçok ağırlıklı toplamın aynı anda yapılmasıdır.</strong></p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Sepet matrisinde her satır bir kişi, her sütun bir ürün (ekmek, süt, yumurta): Ali [3, 2, 1], Elif [1, 0, 2]. Fiyat matrisinde her satır bir ürün, her sütun bir market: ekmek [15, 12], süt [40, 45], yumurta [90, 85] (birinci sayı X, ikinci Y marketi). Her kişinin her marketteki toplam tutarını bul.</p>
+<p><strong>Adım 1.</strong> Boyutları kontrol et. Sepet 2 × 3 (2 kişi, 3 ürün), fiyat 3 × 2 (3 ürün, 2 market). Ortadaki sayılar (3 ve 3) aynı: birincinin sütunları da ikincinin satırları da "ürün". Çarpım yapılabilir; sonuç 2 × 2 olacak (kişi × market).</p>
+<p><strong>Adım 2.</strong> Ali'nin satırı ile X'in sütunu:</p>
+<span class="mat">3 × 15 + 2 × 40 + 1 × 90 = 45 + 80 + 90 = 215 <span class="g">(Ali, X marketi)</span></span>
+<p><strong>Adım 3.</strong> Ali'nin satırı ile Y'nin sütunu:</p>
+<span class="mat">3 × 12 + 2 × 45 + 1 × 85 = 36 + 90 + 85 = 211 <span class="g">(Ali, Y marketi)</span></span>
+<p><strong>Adım 4.</strong> Elif'in satırı ile iki sütun:</p>
+<span class="mat">1 × 15 + 0 × 40 + 2 × 90 = 195 <span class="g">(Elif, X marketi)</span></span>
+<span class="mat">1 × 12 + 0 × 45 + 2 × 85 = 182 <span class="g">(Elif, Y marketi)</span></span>
+<p><strong>Adım 5.</strong> Sonuç matrisini yaz: birinci satır Ali [215, 211], ikinci satır Elif [195, 182].</p>
+<p><strong>Sonuç:</strong> İkisi de Y marketinde daha az öder. Toplam 4 hücre × 3 çarpma = 12 çarpma yapıldı ve her hücrenin hesabı öbürlerinden <strong>bağımsızdı</strong>; bu bağımsızlık birazdan GPU'yu anlatırken önemli olacak.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Üç girdi kutusundan iki çıktı kutusuna giden ağırlıklı çizgiler; her çıktı, girdilerin ağırlıklı toplamı">
+  <line class="sv-cl" x1="120" y1="60" x2="280" y2="90" />
+  <line class="sv-cl" x1="120" y1="130" x2="280" y2="90" />
+  <line class="sv-cl" x1="120" y1="200" x2="280" y2="90" />
+  <line class="sv-c" x1="120" y1="60" x2="280" y2="170" />
+  <line class="sv-c" x1="120" y1="130" x2="280" y2="170" />
+  <line class="sv-c" x1="120" y1="200" x2="280" y2="170" />
+  <rect class="sv-k" x="15" y="40" width="105" height="40" rx="8" />
+  <text class="sv-t" x="67" y="65" text-anchor="middle">ekmek: 3</text>
+  <rect class="sv-k" x="15" y="110" width="105" height="40" rx="8" />
+  <text class="sv-t" x="67" y="135" text-anchor="middle">süt: 2</text>
+  <rect class="sv-k" x="15" y="180" width="105" height="40" rx="8" />
+  <text class="sv-t" x="67" y="205" text-anchor="middle">yumurta: 1</text>
+  <rect class="sv-l" x="280" y="68" width="110" height="44" rx="8" />
+  <text class="sv-b" x="335" y="88" text-anchor="middle">X: 215</text>
+  <text class="sv-s" x="335" y="104" text-anchor="middle">×15 ×40 ×90</text>
+  <rect class="sv-m" x="280" y="148" width="110" height="44" rx="8" />
+  <text class="sv-b" x="335" y="168" text-anchor="middle">Y: 211</text>
+  <text class="sv-s" x="335" y="184" text-anchor="middle">×12 ×45 ×85</text>
+  <text class="sv-t" x="200" y="245" text-anchor="middle">215 = 3×15 + 2×40 + 1×90</text>
+</svg>
+<figcaption>Ali'nin sepetinin iki marketteki tutarı. Soldaki her sayı, bir çizgi boyunca o çizginin ağırlığıyla (kutunun altında yazan fiyatla) çarpılıp sağdaki kutuda toplanır; kalın çizgiler X, ince çizgiler Y marketine gider. Sinir ağının bir katmanı tam olarak bu resimdir: soldakiler girdiler, çizgilerdeki sayılar öğrenilen ağırlıklar, sağdakiler nöronlar.</figcaption>
+</figure>
+
+<p>Bu şekle iyi bak, çünkü Parça 6'da aynısını "yapay nöron katmanı" adıyla göreceksin. Sinir ağında soldaki kutular girdinin özellikleridir, çizgilerdeki sayılar modelin <strong>parametreleri</strong> (ağırlıklar), sağdaki kutular da bir sonraki katmanın nöronlarıdır. Fiyatları market belirliyordu; ağırlıkları ise eğitim belirler. "Modelin 7 milyar parametresi var" demek, kabaca, bu çizgilerden milyarlarcasının üzerinde birer sayı durduğunu söylemektir.</p>
+
+<p>Ölçeği hissetmek için bir hesap: bir dil modelinde girdisi de çıktısı da 4.096 sayı olan tek bir katmanın, tek bir kelime parçası için yaptığı çarpma sayısı 4.096 × 4.096 = 16.777.216'dır. Modelde bunun gibi onlarca katman, her katmanda birkaç böyle matris vardır ve cevaptaki her kelime parçası için hepsi yeniden hesaplanır. Yapay zekâ hesabının büyük kısmının matris çarpımı olduğu söylenir; sebebi budur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Boyut kuralı:</strong> (a × b)'lik bir matris ile (b × c)'lik bir matris çarpılabilir ve sonuç (a × c) olur. Ortadaki iki sayı eşit olmak zorundadır, çünkü birincinin her satırı ile ikincinin her sütunu aynı uzunlukta olmalı ki eşleşen sayılar çarpılabilsin. Sepet örneğinde ortadaki boyut "ürün"dü: her ürünün hem miktarı hem fiyatı olmalıydı.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Matris çarpımında sıra fark etmez" sanmak.</strong> Sayılarda 3 × 5 = 5 × 3'tür ama matrislerde böyle değildir. 2 × 3'lük sepet matrisi ile 3 × 2'lik fiyat matrisini çarpınca 2 × 2'lik "kişi × market" tablosu çıkar. Sırayı ters çevirirsen (fiyat × sepet) boyut kuralı yine işler ama 3 × 3'lük bir tablo çıkar ve hücrelerindeki sayıların alışverişle hiçbir anlamlı ilgisi kalmaz. <strong>Doğrusu:</strong> her zaman ortadaki boyutun neyi temsil ettiğini sor; o boyut iki tarafta aynı şeyi göstermiyorsa çarpım anlamsızdır.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme: benzerlik ve matris çarpımı</span>
+<p>Kod bilmiyorsan bu kutuyu atla. Python'un <code>numpy</code> kütüphanesi vektör ve matris işlemleri için yazılmıştır; yukarıdaki iki örneği onunla doğrulayalım. <code>np.dot</code> nokta çarpımı, <code>np.linalg.norm</code> uzunluğu hesaplar; <code>@</code> işareti matris çarpımıdır.</p>
+<pre class="kod" data-ad="python3 benzerlik.py">import numpy as np
+
+A = np.array([4, 1])   # aksiyon, romantik
+B = np.array([8, 2])
+C = np.array([1, 4])
+
+def kosinus(u, v):
+    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+
+print("uzaklik A-B:", round(float(np.linalg.norm(A - B)), 2))
+print("uzaklik A-C:", round(float(np.linalg.norm(A - C)), 2))
+print("kosinus A-B:", round(float(kosinus(A, B)), 2))
+print("kosinus A-C:", round(float(kosinus(A, C)), 2))
+
+sepet = np.array([[3, 2, 1],     # Ali: ekmek, sut, yumurta
+                  [1, 0, 2]])    # Elif
+fiyat = np.array([[15, 12],      # ekmek: X, Y marketi
+                  [40, 45],      # sut
+                  [90, 85]])     # yumurta
+print(sepet @ fiyat)</pre>
+<pre class="cikti">uzaklik A-B: 4.12
+uzaklik A-C: 4.24
+kosinus A-B: 1.0
+kosinus A-C: 0.47
+[[215 211]
+ [195 182]]</pre>
+<p><strong>Okuma.</strong> İlk iki satır uzaklığın neden yanılttığını, sonraki iki satır kosinüsün farkı nasıl yakaladığını gösteriyor. Son çıktı, elle bulduğumuz 2 × 2'lik tablonun aynısı. Python ondalık ayırıcı olarak nokta kullanır. Dene: <code>sepet @ fiyat</code> yerine <code>fiyat @ sepet</code> yaz; 3 × 3'lük anlamsız tabloyu kendi gözünle gör.</p></div>
+
+<h2 class="s">4. Olasılık ve olasılık dağılımı</h2>
+
+<p>Hava durumu "yarın yağmur olasılığı %70" dediğinde ne söylüyor? Yarın kesin yağacak demiyor; buna benzer koşulların yaşandığı 10 günün yaklaşık 7'sinde yağmur yağdığını söylüyor. <strong>Olasılık</strong>, bir şeyin olma ihtimalini 0 (asla) ile 1 (kesin) arasında bir sayıyla anlatır. %70 ile 0,7 aynı şeydir. Hilesiz bir zarda 6 gelme olasılığı 1/6, yani yaklaşık 0,167'dir: çok sayıda atışta atışların altıda biri 6 gelir.</p>
+
+<p>Tek bir olayın olasılığı yetmez; çoğu zaman <strong>bütün</strong> seçeneklerin olasılıklarını birlikte bilmek isteriz. Zarın altı yüzünün her birinin olasılığı 1/6'dır ve bunların toplamı 1'dir, çünkü atışta mutlaka bir yüz gelir. Seçeneklerin hepsine olasılık dağıtan bu listeye <strong>olasılık dağılımı</strong> denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Olasılık dağılımı</strong>, olabilecek her sonuca bir olasılık atayan listedir. İki şartı vardır: her olasılık 0 ile 1 arasındadır ve bütün olasılıkların toplamı tam olarak 1'dir. Toplamın 1 olmasının nedeni basittir: sonuçlardan biri mutlaka gerçekleşir, "hiçbiri" diye bir seçenek kalmaz.</p></div>
+
+<p>Bir dil modelinin yaptığı işin özü budur. "Bu sabah hava çok" metnini verdiğinde model tek bir kelime söylemez; sözlüğündeki on binlerce adayın <strong>her biri</strong> için bir olasılık hesaplar. Aşağıdaki şekil bunun nasıl görünebileceğini gösteriyor (sayılar anlatım için uydurulmuştur, gerçek bir modelden alınmamıştır).</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Bir sonraki kelime için olasılık dağılımı: soğuk 0,31, güzel 0,24, sıcak 0,18, bulutlu 0,09, kapalı 0,06, öbür binlerce aday 0,12">
+  <text class="sv-b" x="200" y="24" text-anchor="middle">"Bu sabah hava çok ___"</text>
+  <text class="sv-t" x="94" y="60" text-anchor="end">soğuk</text>
+  <rect class="sv-l" x="100" y="45" width="155" height="22" rx="4" />
+  <text class="sv-t" x="262" y="61">0,31</text>
+  <text class="sv-t" x="94" y="95" text-anchor="end">güzel</text>
+  <rect class="sv-l" x="100" y="80" width="120" height="22" rx="4" />
+  <text class="sv-t" x="227" y="96">0,24</text>
+  <text class="sv-t" x="94" y="130" text-anchor="end">sıcak</text>
+  <rect class="sv-l" x="100" y="115" width="90" height="22" rx="4" />
+  <text class="sv-t" x="197" y="131">0,18</text>
+  <text class="sv-t" x="94" y="165" text-anchor="end">bulutlu</text>
+  <rect class="sv-l" x="100" y="150" width="45" height="22" rx="4" />
+  <text class="sv-t" x="152" y="166">0,09</text>
+  <text class="sv-t" x="94" y="200" text-anchor="end">kapalı</text>
+  <rect class="sv-l" x="100" y="185" width="30" height="22" rx="4" />
+  <text class="sv-t" x="137" y="201">0,06</text>
+  <text class="sv-t" x="94" y="228" text-anchor="end">öbür</text>
+  <text class="sv-s" x="94" y="243" text-anchor="end">binlerce aday</text>
+  <rect class="sv-a" x="100" y="220" width="60" height="22" rx="4" />
+  <text class="sv-t" x="167" y="236">0,12 (hepsi birlikte)</text>
+  <line class="sv-c" x1="100" y1="38" x2="100" y2="252" />
+  <text class="sv-s" x="200" y="276" text-anchor="middle">toplam: 0,31 + 0,24 + 0,18 + 0,09 + 0,06 + 0,12 = 1,00</text>
+</svg>
+<figcaption>Model tek bir cevap değil, bütün adaylara yayılmış bir dağılım üretir. Hangi kelimenin seçileceği bu dağılımdan nasıl çekildiğine bağlıdır; o kısmı Parça 11'de "sıcaklık" ve "örnekleme" adıyla göreceğiz.</figcaption>
+</figure>
+
+<p>Burada iki önemli ayrıntı var.</p>
+
+<p><strong>Dağılım bağlama bağlıdır.</strong> "Ağustosta Antalya'da hava çok" yazarsan "sıcak" büyük olasılıkla birinci sıraya çıkar; "Ocakta Erzurum'da hava çok" yazarsan "soğuk" yükselir. Matematikte buna <strong>koşullu olasılık</strong> denir: "önceki metin buyken, sıradaki kelimenin olasılığı". Dil modelinin öğrendiği şey, her bağlam için bu koşullu dağılımı tahmin etmektir.</p>
+
+<p><strong>Bir cümlenin olasılığı, adımların olasılıklarının çarpımıdır.</strong> "soğuk" kelimesinin olasılığı 0,31 ise ve "Bu sabah hava çok soğuk" bağlamından sonra "ve"nin olasılığı 0,5 ise, "soğuk ve" ikilisinin birlikte gelme olasılığı 0,31 × 0,5 = 0,155'tir. Her yeni kelimede çarpım küçülür; uzun bir cümlenin olasılığı çok küçük bir sayıdır ama bu sorun değil, çünkü model hep adayları <strong>birbiriyle</strong> karşılaştırır.</p>
+
+<h3>Puanlar nasıl olasılığa dönüşür?</h3>
+
+<p>Modelin içindeki matris çarpımları önce her aday için sınırsız bir <strong>puan</strong> üretir; bu puan negatif de olabilir, 30 da. Puanları olasılığa çevirmek için iki şart sağlanmalı: hepsi pozitif olmalı ve toplamları 1 etmeli. Bunu yapan yaygın yönteme <strong>softmax</strong> denir: her puan üstel fonksiyondan geçirilerek pozitif yapılır (büyük puan çok daha büyük, küçük puan çok küçük bir sayıya dönüşür), sonra hepsi toplama bölünür. Örneğin üç adayın puanları 2, 1 ve 0 ise:</p>
+<span class="mat">üstel değerler: 7,39 · 2,72 · 1,00 <span class="g">(e² , e¹ , e⁰; e ≈ 2,718)</span></span>
+<span class="mat">toplam: 7,39 + 2,72 + 1,00 = 11,11</span>
+<span class="mat">olasılıklar: 0,665 · 0,245 · 0,090 <span class="g">(her biri ÷ 11,11; toplamları 1)</span></span>
+<p>Puan farkı yalnızca 1 olsa bile olasılıklar arasında yaklaşık 2,7 kat fark doğdu. Bu yöntemin ayrıntısını bilmen gerekmiyor; aklında kalması gereken şu: modelin son adımı "puanları, toplamı 1 olan bir olasılık listesine çevirmek"tir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"En yüksek olasılıklı kelime doğru kelimedir" sanmak.</strong> Model, eğitim metinlerinde bu bağlamdan sonra en sık neyin geldiğini öğrenir; neyin <strong>doğru</strong> olduğunu değil. "Bu ilacın yan etkisi" diye başlayan bir cümlenin en olası devamı, o ilacın gerçek yan etkisi olmayabilir; sadece benzer metinlerde sık geçen bir ifade olabilir. <strong>Doğrusu:</strong> olasılığı "akıcılık ve yaygınlık ölçüsü" olarak oku, "gerçeklik garantisi" olarak değil. Bu ayrım, Parça 14'te göreceğimiz uydurma (halüsinasyon) sorununun matematiksel kökenidir.</p></div>
+
+<h2 class="s">5. Fonksiyon ve eğim: hatayı azaltmak için hangi yöne itmeliyim?</h2>
+
+<p><strong>Fonksiyon</strong>, içine bir sayı koyduğunda dışarı bir sayı veren bir makine gibi düşünülebilir. Musluk düğmesini ne kadar çevirdiğin girdi, akan suyun miktarı çıktıdır. Makine öğrenmesinde en önemli fonksiyon şudur: girdi olarak modelin ağırlıklarını alır, çıktı olarak modelin ne kadar <strong>hata</strong> yaptığını verir. Eğitimin bütün amacı bu hatayı küçültmektir. Hatanın nasıl tek bir sayıya çevrildiğini (kayıp fonksiyonu) Parça 4'te ayrıntılı göreceğiz; burada yalnızca sezgiyi kuruyoruz.</p>
+
+<p>Gece, zifiri karanlıkta bir tepenin yamacında durduğunu ve vadinin dibine inmek istediğini düşün. Haritan yok, önünü göremiyorsun. Ne yaparsın? Ayağınla yeri yoklarsın: sağa doğru zemin aşağı mı iniyor, yukarı mı çıkıyor? Aşağı iniyorsa o yöne bir adım atarsın. Yokuşun ne kadar dik olduğu da sana bir şey söyler: dikse vadinin dibinden hâlâ uzaksın, düzleşiyorsa yaklaşıyorsun. İşte bu "ayakla yoklanan dikliğe" matematikte <strong>eğim</strong> ya da <strong>türev</strong> denir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Eğim</strong>, girdiyi çok az değiştirdiğinde çıktının ne kadar ve hangi yönde değiştiğini söyler. Pratikte: girdiyi küçük bir miktar dürt, çıktıdaki değişimi dürtme miktarına böl. Eğim <strong>pozitifse</strong> girdiyi artırmak hatayı artırır, demek ki girdiyi <strong>azalt</strong>. Eğim <strong>negatifse</strong> girdiyi artırmak hatayı azaltır, demek ki girdiyi <strong>artır</strong>. Kısaca: <strong>eğimin tersi yönüne git.</strong> Eğim sıfıra yaklaşıyorsa bir dibe yaklaşıyorsun.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Çok basit bir modelimiz var: tahmin = w × girdi. Tek ağırlığı w. Elimizde tek bir örnek var: girdi 2, doğru cevap 6. Hatayı "(tahmin − doğru cevap)²" diye ölçüyoruz (farkın karesi; neden kare alındığını Parça 4'te göreceğiz). Şu an w = 1. Ağırlığı hangi yöne değiştirmeliyiz?</p>
+<p><strong>Adım 1.</strong> Şimdiki hata:</p>
+<span class="mat">tahmin = 1 × 2 = 2 → hata = (2 − 6)² = 16 <span class="g">(w = 1)</span></span>
+<p><strong>Adım 2.</strong> Ağırlığı çok az dürt: w = 1,01.</p>
+<span class="mat">tahmin = 1,01 × 2 = 2,02 → hata = (2,02 − 6)² = 15,8404 <span class="g">(w = 1,01)</span></span>
+<p><strong>Adım 3.</strong> Değişimi dürtmeye böl:</p>
+<span class="mat">(15,8404 − 16) ÷ 0,01 = −15,96 ≈ −16 <span class="g">(eğim negatif)</span></span>
+<p><strong>Adım 4.</strong> Eğim negatif: w'yi artırmak hatayı azaltıyor. Ayrıca büyüklüğü 16; yokuş dik, dibe daha çok yol var.</p>
+<p><strong>Adım 5.</strong> Karşılaştırma için w = 4'te aynı işi yap: hata (8 − 6)² = 4; w = 4,01'de hata (8,02 − 6)² = 4,0804; eğim (4,0804 − 4) ÷ 0,01 ≈ +8. Pozitif: bu kez w'yi azaltmak gerekiyor.</p>
+<p><strong>Sonuç:</strong> w = 1'de eğim −16 (w'yi büyüt), w = 4'te +8 (w'yi küçült). Dip ikisinin arasında, w = 3'te: orada tahmin 3 × 2 = 6, hata 0, eğim de 0'dır. Eğim hem yönü hem de dibe ne kadar uzak olduğumuzu kabaca söyledi.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Hata eğrisi: w eksenine göre çanak biçimli eğri, w eşittir 1'de eğim eksi 16, w eşittir 4'te eğim artı 8, dip w eşittir 3'te">
+  <line class="sv-c" x1="40" y1="248" x2="380" y2="248" />
+  <line class="sv-c" x1="50" y1="255" x2="50" y2="30" />
+  <text class="sv-s" x="58" y="34">hata</text>
+  <text class="sv-s" x="380" y="270" text-anchor="end">ağırlık w</text>
+  <polyline class="sv-c" points="50,42 75,102.5 100,152 125,190.5 150,218 175,234.5 200,240 225,234.5 250,218 275,190.5 300,152 325,102.5 350,42" />
+  <line class="sv-cl" x1="80" y1="116.8" x2="120" y2="187.2" />
+  <line class="sv-cl" x1="230" y1="235.6" x2="270" y2="200.4" />
+  <circle class="sv-a" cx="100" cy="152" r="5" />
+  <circle class="sv-a" cx="250" cy="218" r="5" />
+  <circle class="sv-m" cx="200" cy="240" r="5" />
+  <text class="sv-t" x="140" y="118">w = 1: eğim −16</text>
+  <text class="sv-t" x="140" y="136">→ w'yi büyüt</text>
+  <text class="sv-t" x="290" y="222">w = 4: eğim +8</text>
+  <text class="sv-t" x="290" y="240">← w'yi küçült</text>
+  <text class="sv-s" x="200" y="282" text-anchor="middle">dip: w = 3, hata 0</text>
+  <text class="sv-s" x="100" y="262" text-anchor="middle">1</text>
+  <text class="sv-s" x="250" y="262" text-anchor="middle">4</text>
+</svg>
+<figcaption>Örnek 3'ün hata eğrisi. Kalın kısa çizgiler, o noktadaki eğimi (yokuşun dikliğini) gösterir. Soldaki nokta aşağı-sağa eğik bir yokuşta: sağa gitmek iniş demek. Sağdaki nokta yukarı-sağa eğik bir yokuşta: sola gitmek iniş demek.</figcaption>
+</figure>
+
+<p>Gerçek bir modelde tek ağırlık yoktur; milyonlarca, milyarlarca vardır. Bu durumda her ağırlık için ayrı bir eğim hesaplanır: "bu ağırlığı biraz artırırsam, öbürleri sabitken, hata ne kadar değişir?" Bütün bu eğimlerin listesine <strong>gradyan</strong> denir; gradyan da bir vektördür ve "hatanın en hızlı arttığı yönü" gösterir. Eğitim, ağırlıkların hepsini gradyanın tersi yönünde küçük bir adım itmek ve bunu binlerce kez tekrarlamaktır. Adımın ne büyüklükte olacağı (öğrenme oranı) ve bu yöntemin adı (gradyan inişi) Parça 4'ün konusudur.</p>
+
+<p>Bir soru akla gelebilir: milyarlarca ağırlığın her birini tek tek dürtüp hatayı yeniden hesaplamak inanılmaz yavaş olmaz mı? Olurdu. Bu yüzden sinir ağları dürtme yöntemini kullanmaz; bütün eğimleri tek bir geriye doğru hesapla birlikte bulan <strong>geri yayılım</strong> adlı bir yöntem kullanır. Onu Parça 7'de göreceğiz. Dürtme yöntemi ise eğimin ne <strong>anlama</strong> geldiğini kavramanın en dürüst yoludur ve geri yayılımın doğru çalıştığını sınamak için bugün de kullanılır.</p>
+
+<h2 class="s">6. Neden ekran kartı (GPU)?</h2>
+
+<p>Bir bilgisayarın ana işlemcisi (CPU) birkaç ile birkaç düzine arası çok güçlü çekirdekten oluşur. Her çekirdek karmaşık, dallı budaklı, "şu olursa bunu yap, olmazsa şuna dön" türünden işlerde çok hızlıdır. Ekran kartı (GPU) ise başka bir amaçla doğdu: ekrandaki milyonlarca pikselin her biri için <strong>aynı</strong> hesabı (bu pikselin rengi ne olmalı?) aynı anda yapmak. Bu yüzden GPU, tek tek daha basit ama sayıca binlerce çekirdekle donatıldı.</p>
+
+<p>Bir benzetme: CPU, her yemeği baştan sona yapabilen birkaç usta aşçının çalıştığı bir mutfaktır. GPU ise yalnızca soğan doğrayabilen ama binlerce kişiden oluşan bir ordudur. Bir düğün yemeği için on bin soğan doğranacaksa ordu kazanır; karmaşık tek bir tabak hazırlanacaksa usta aşçılar.</p>
+
+<p>Örnek 2'yi hatırla: matris çarpımında her hücrenin hesabı öbürlerinden <strong>bağımsızdı.</strong> Ali'nin X marketindeki tutarını hesaplamak için Elif'in Y'deki tutarını beklemen gerekmiyordu. 16,7 milyon çarpmalık bir katman da aynı şekilde binlerce parçaya bölünüp aynı anda yapılabilir. Yapay zekânın hesabı tam olarak GPU'nun sevdiği türdendir: basit, aynı türden ve birbirinden bağımsız işlemler, çok büyük sayıda.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>CPU (ana işlemci)</th><th>GPU (ekran kartı)</th></tr>
+<tr><td>Çekirdek sayısı</td><td>Birkaç ile birkaç düzine</td><td>Binlerce; veri merkezi kartlarında on binin üstünde</td></tr>
+<tr><td>Her çekirdeğin yeteneği</td><td>Çok güçlü, karmaşık mantıkta hızlı</td><td>Daha basit, aynı işlemi tekrarlamada verimli</td></tr>
+<tr><td>Güçlü olduğu iş</td><td>Sıralı, her adımı öncekine bağlı işler; işletim sistemi, tarayıcı</td><td>Aynı anda yapılabilen çok sayıda bağımsız işlem; grafik, matris çarpımı</td></tr>
+<tr><td>Yapay zekâdaki rolü</td><td>Veriyi hazırlamak, işi yönetmek</td><td>Eğitimde ve çalıştırmada hesabın büyük kısmı</td></tr>
+</table></div>
+
+<p>Somut bir örnek (yazıldığı tarih itibarıyla): NVIDIA'nın veri merkezleri için ürettiği H100 kartının SXM sürümünde 16.896 adet 32 bitlik hesap çekirdeği ve bunlara ek olarak yalnızca matris çarpımı için tasarlanmış 528 "tensor çekirdeği" bulunur. Bu özel birimler küçük matris parçalarını tek hamlede çarpar ve aşağıda göreceğimiz 16 ve 8 bitlik sayı biçimlerinde çok daha hızlı çalışır. Ürünler hızla değişir; kalıcı olan fikir şudur: <strong>yapay zekâ donanımı, matris çarpımını olabildiğince çok ve olabildiğince küçük sayılarla yapmak üzere tasarlanır.</strong></p>
+
+<p>Tarih notu: derin öğrenmenin 2012'deki geri dönüşünde (Parça 1'de andığımız AlexNet) GPU'nun büyük payı vardı; o modeli eğitenler iki oyun kartı kullanmıştı. Ayrıntısı Parça 8'de.</p>
+
+<p>Hız tek başına hesap gücünden de gelmez. Model ağırlıklarının her adımda bellekten çekirdeklere taşınması gerekir ve büyük modellerde darboğaz çoğu zaman çarpmanın kendisi değil, bu <strong>taşıma</strong>dır. İşte bu noktada sayıların kaç bitle tutulduğu önem kazanır.</p>
+
+<h2 class="s">7. Bit, kayan nokta ve niceleme</h2>
+
+<h3>Bit ve tam sayılar</h3>
+
+<p>Bilgisayar her şeyi <strong>bit</strong> denen, yalnızca 0 ya da 1 olabilen en küçük birimlerle tutar. Bir bit 2 farklı durum, iki bit 4 durum (00, 01, 10, 11), üç bit 8 durum anlatabilir; her yeni bit durum sayısını ikiye katlar. 8 bit (1 bayt) 2⁸ = 256 farklı değer demektir; örneğin −128 ile 127 arasındaki tam sayılar. 4 bit ise yalnızca 16 farklı değer tutabilir.</p>
+
+<h3>Kayan noktalı sayılar</h3>
+
+<p>Ağırlıklar 0,0371 ya da −1,2648 gibi ondalıklı sayılardır. Bilgisayar bunları <strong>kayan nokta</strong> (floating point, kısaca float) denen bir biçimde tutar. Fikir, fen derslerinden bildiğin bilimsel gösterime benzer: 6,02 × 10²³ yazarken bir "anlamlı basamaklar" kısmı (6,02) ve bir "üs" kısmı (23) vardır. Üs, virgülün nerede duracağını söyler; virgül sayının büyüklüğüne göre "kayar", adı buradan gelir. Bilgisayar aynı şeyi ikilik sistemde yapar ve elindeki bitleri üç parçaya böler: işaret (artı mı eksi mi), üs (sayının büyüklük mertebesi) ve kesir (anlamlı basamaklar).</p>
+
+<p>Üse ayrılan bit sayısı <strong>aralığı</strong> (ne kadar büyük ve küçük sayılar tutulabileceğini), kesre ayrılan bit sayısı <strong>hassasiyeti</strong> (kaç anlamlı basamak tutulabileceğini) belirler.</p>
+
+<div class="tablo"><table>
+<tr><th>Biçim</th><th>Toplam bit (işaret · üs · kesir)</th><th>Yaklaşık hassasiyet</th><th>En büyük değer</th><th>Tipik kullanım</th></tr>
+<tr><td>float32</td><td>32 (1 · 8 · 23)</td><td>yaklaşık 7 anlamlı basamak</td><td>yaklaşık 3,4 × 10³⁸</td><td>Klasik hesaplama; eğitimde hassas toplamlar</td></tr>
+<tr><td>float16</td><td>16 (1 · 5 · 10)</td><td>yaklaşık 3 anlamlı basamak</td><td>65.504</td><td>Hızlı hesap; dar aralığı yüzünden taşma riski</td></tr>
+<tr><td>bfloat16</td><td>16 (1 · 8 · 7)</td><td>yaklaşık 2–3 anlamlı basamak</td><td>yaklaşık 3,4 × 10³⁸</td><td>Büyük modellerin eğitiminde yaygın</td></tr>
+<tr><td>8 bit tam sayı</td><td>8</td><td>256 farklı değer</td><td>127 (ölçekle çarpılarak kullanılır)</td><td>Niceleme ile çalıştırma</td></tr>
+<tr><td>4 bit</td><td>4</td><td>16 farklı değer</td><td>ölçekle çarpılarak kullanılır</td><td>Güçlü niceleme; küçük cihazlarda çalıştırma</td></tr>
+</table></div>
+
+<p>bfloat16'nın hikâyesi öğreticidir: float16 ile aynı 16 biti kullanır ama üse float32 kadar (8) bit ayırır, kesirden kısar. Yani daha az hassastır ama float32 kadar geniş bir aralığı vardır. Sinir ağlarının eğitiminde çok büyük ya da çok küçük ara değerler çıkabildiği için taşmamak, son basamağı tutturmaktan daha önemli çıkmıştır. Bu biçim ilk olarak Google tarafından önerilip kullanıldı, sonra başka üreticiler de destekledi.</p>
+
+<p>Sonlu sayıda bitle her sayı tam tutulamaz. 1/3'ü ondalık olarak yazmaya çalışınca 0,3333… diye sonsuza gider ve bir yerde kesmek zorunda kalırsın; ikilik sistemde 0,1 sayısının durumu da aynıdır. Hassasiyet azaldıkça bu yuvarlama hatası büyür. Sinir ağları bu küçük hatalara şaşırtıcı derecede dayanıklıdır, çünkü tek bir ağırlık değil milyarlarcasının toplu etkisi önemlidir; ama sınırsız dayanıklı değildir.</p>
+
+<h3>Niceleme (quantization)</h3>
+
+<p>Eğitilmiş bir modeli çalıştırmak için önce bütün ağırlıklarını belleğe sığdırman gerekir. Bit sayısını küçültmek bu yüzden doğrudan para, hız ve "bu model benim bilgisayarımda çalışır mı?" sorusudur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 7 milyar parametreli bir modelin yalnızca ağırlıkları, farklı biçimlerde ne kadar bellek kaplar?</p>
+<p><strong>Adım 1.</strong> Bit sayısını bayta çevir: 8 bit = 1 bayt. float32 = 4 bayt, 16 bit = 2 bayt, 8 bit = 1 bayt, 4 bit = 0,5 bayt.</p>
+<p><strong>Adım 2.</strong> Parametre sayısıyla çarp:</p>
+<span class="mat">7.000.000.000 × 4 bayt = 28 GB <span class="g">(float32)</span></span>
+<span class="mat">7.000.000.000 × 2 bayt = 14 GB <span class="g">(float16 / bfloat16)</span></span>
+<span class="mat">7.000.000.000 × 1 bayt = 7 GB <span class="g">(8 bit)</span></span>
+<span class="mat">7.000.000.000 × 0,5 bayt = 3,5 GB <span class="g">(4 bit)</span></span>
+<p><strong>Adım 3.</strong> Yorumla: 16 GB belleği olan bir kart float32 hâlini hiç alamaz, 16 bitlik hâli kıl payı ve çalışma alanı bırakmadan sığar, 8 bitlik ve 4 bitlik hâli ise rahatça sığar.</p>
+<p><strong>Sonuç:</strong> Bit sayısını yarıya indirmek belleği yarıya indirir. Burada 1 GB = 1 milyar bayt aldık; bilgisayarların bir kısmı belleği 2'nin kuvvetleriyle gösterdiği için ekranda biraz daha küçük sayılar (örneğin 28 GB yerine yaklaşık 26) görebilirsin. Ayrıca bu yalnızca ağırlıklardır; modeli çalıştırırken ara sonuçlar ve sohbet geçmişi için ek bellek gerekir.</p></div>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Niceleme</strong>, ağırlıkları daha az bitle, yani daha az sayıda "basamakla" tutmaktır. En yaygın yöntem şudur: bir grup ağırlığın en büyük mutlak değeri bulunur, bu değer kullanılabilecek en büyük tam sayıya (8 bitte 127, 4 bitte 7) eşlenir ve aradaki her ağırlık en yakın tam sayıya yuvarlanır. Saklanan şey tam sayılar ve grubun tek bir <strong>ölçek</strong> sayısıdır; kullanırken tam sayı ölçekle çarpılarak ağırlık yaklaşık olarak geri elde edilir.</p></div>
+
+<p>Bir cetvel benzetmesi: 8 bit, milimetre çizgili bir cetvel gibidir; 4 bit ise yalnızca santimetre çizgileri olan bir cetvel. İkisiyle de ölçebilirsin ama ikincisinde her ölçümü en yakın santimetreye yuvarlarsın. Somut sayılarla: beş ağırlık 0,123; −0,537; 0,981; −1,270; 0,402 olsun. En büyük mutlak değer 1,270.</p>
+
+<p><strong>8 bitte</strong> ölçek 1,270 ÷ 127 = 0,01'dir. Ağırlıklar 12, −54, 98, −127, 40 tam sayılarına yuvarlanır; geri çevrilince 0,12; −0,54; 0,98; −1,27; 0,40 olur. En büyük hata 0,003.</p>
+
+<p><strong>4 bitte</strong> ölçek 1,270 ÷ 7 ≈ 0,181'dir. Tam sayılar 1, −3, 5, −7, 2 olur; geri çevrilince 0,181; −0,544; 0,907; −1,270; 0,363. En büyük hata 0,074, yani 8 bitin yaklaşık 25 katı.</p>
+
+<p>Bir tuzak daha var: <strong>aykırı değer</strong>. Grupta ağırlıklar 0,02; −0,03; 0,05 ve bir tane de 8,0 olsun. 4 bitte ölçek 8 ÷ 7 ≈ 1,14 olur ve küçük üç ağırlığın hepsi 0'a yuvarlanıp kaybolur. Bu yüzden pratikte ağırlıklar bütün model için tek ölçekle değil, küçük gruplar hâlinde nicelenir: her grubun kendi ölçeği olur ve bir aykırı değer yalnızca kendi grubunu bozar. Örneğin NVIDIA'nın 2025'te duyurduğu 4 bitlik NVFP4 biçimi, her 16 değerlik blok için ayrı bir ölçek saklar.</p>
+
+<p>Niceleme genelde eğitimden <strong>sonra</strong> yapılır: model 16 ya da 32 bitle eğitilir, sonra çalıştırılmak üzere 8 ya da 4 bite sıkıştırılır. 8 bitte kalite kaybı çoğu zaman küçüktür; 4 bit ve altında kayıp modele ve yönteme göre belirginleşebilir. Hangi düzeyde ne kadar kayıp olduğu tek bir kuralla söylenemez, denenip ölçülür.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Niceleme modeli küçültür ama hiçbir şey kaybettirmez" ya da tam tersi "nicelenmiş model işe yaramaz" sanmak.</strong> İkisi de yanlış. Niceleme, yukarıdaki cetvel örneğindeki gibi bir yuvarlamadır: bit azaldıkça yuvarlama hatası büyür. Kayıp 8 bitte genellikle fark edilmeyecek kadar küçük, 4 bitte çoğu iş için kabul edilebilir, daha aşağıda ise belirgin olabilir. <strong>Doğrusu:</strong> nicelenmiş bir modeli kendi işinde, nicelenmemiş hâliyle karşılaştırarak dene; "kaç bit" sorusunu genel bir kurala değil ölçüme bırak.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme: sayı biçimleri ve niceleme</span>
+<p>Kod bilmiyorsan bu kutuyu atla. Aşağıdaki betik yuvarlama hatasını ve yukarıdaki niceleme hesabını gösterir. <code>np.float16</code> ve <code>np.float32</code> bir sayıyı o biçimde saklar; <code>float(...)</code> ile içinde gerçekte ne tutulduğunu görürüz.</p>
+<pre class="kod" data-ad="python3 sayilar.py">import numpy as np
+
+print(0.1 + 0.2)
+print(float(np.float32(0.1)))
+print(float(np.float16(0.1)))
+print(int(np.float32(16777216) + np.float32(1)))
+print(int(np.float16(2048) + np.float16(1)))
+print(np.finfo(np.float16).max, np.finfo(np.float32).max)
+
+w = np.array([0.123, -0.537, 0.981, -1.270, 0.402])
+
+def nicele(w, en_buyuk_tam):
+    olcek = np.abs(w).max() / en_buyuk_tam
+    q = np.round(w / olcek).astype(int)
+    return q, q * olcek
+
+for ad, m in [("8 bit", 127), ("4 bit", 7)]:
+    q, geri = nicele(w, m)
+    print(ad, q, np.round(geri, 3), "en buyuk hata:", round(float(np.abs(w - geri).max()), 3))</pre>
+<pre class="cikti">0.30000000000000004
+0.10000000149011612
+0.0999755859375
+16777216
+2048
+6.55e+04 3.4028235e+38
+8 bit [  12  -54   98 -127   40] [ 0.12 -0.54  0.98 -1.27  0.4 ] en buyuk hata: 0.003
+4 bit [ 1 -3  5 -7  2] [ 0.181 -0.544  0.907 -1.27   0.363] en buyuk hata: 0.074</pre>
+<p><strong>Adım adım okuma.</strong> Birinci satır: Python'un varsayılan 64 bitlik sayılarında bile 0,1 + 0,2 tam 0,3 etmez, çünkü 0,1 ikilik sistemde tam yazılamaz. İkinci ve üçüncü satır: 0,1 float32'de 0,10000000149…, float16'da 0,09997… olarak saklanır; bit azaldıkça sapma büyür. Dördüncü ve beşinci satır: float32'de 16.777.216'ya, float16'da 2.048'e 1 eklemek hiçbir şey değiştirmez; o büyüklükte ardışık iki sayı arasındaki boşluk 1'den büyüktür ve sonuç en yakın tutulabilen sayıya, yani kendisine yuvarlanır. Altıncı satır iki biçimin en büyük değerlerini verir (65.504 ve yaklaşık 3,4 × 10³⁸). Son iki satır, metindeki niceleme hesabının aynısıdır. Bu çıktılar Python 3.13 ve numpy 2.5 ile alındı; sürüm farkında yazım biçimi (boşluklar) değişebilir ama sayılar değişmez.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2'ye:</strong> Oradaki "özellik" burada vektörün bir konumu oldu; "parametre" ise matris çarpımındaki ağırlıklara ve niceleme hesabındaki bellek miktarına dönüştü.</p>
+<p><strong>Parça 4'e:</strong> Eğim fikri orada "gradyan inişi"ne, hatayı tek sayıya çevirme fikri "kayıp fonksiyonu"na dönüşecek; doğrusal regresyondaki eğim ve kesişim de bu parçadaki ağırlıklı toplamın en basit hâli.</p>
+<p><strong>Parça 6 ve 7'ye:</strong> İkinci şekildeki çizgiler bir nöron katmanı olacak; milyarlarca eğimi bir seferde bulan yöntem geri yayılım olacak.</p>
+<p><strong>Parça 9, 10, 11 ve 16'ya:</strong> Kelime vektörleri ve benzerlik (Parça 9), nokta çarpımla çalışan dikkat (Parça 10), bir sonraki kelimenin olasılık dağılımı ve sıcaklık (Parça 11), kosinüs benzerliğiyle belge arama (Parça 16).</p>
+<p><strong>Parça 12 ve 20'ye:</strong> GPU kümelerinin ve hesap gücünün eğitim maliyetini nasıl belirlediği; çip tedarikinin neden ekonomik ve siyasi bir mesele olduğu.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Vektör nedir ve [120, 3, 10] ile [3, 120, 10] neden aynı ev değildir?</summary><p>Vektör, sırası belli bir sayı listesidir; her konum bir özelliğe karşılık gelir. Birinci listede birinci sayı metrekare, ikinci sayı oda sayısıdır. Sıra değişince sayılar başka özelliklere düşer ve "3 metrekare, 120 oda" gibi bambaşka (ve saçma) bir ev ortaya çıkar.</p></details>
+<details><summary>Film zevki örneğinde uzaklık neden yanılttı, kosinüs benzerliği neyi düzeltti?</summary><p>B kişisi A ile aynı oranda ama iki kat çok film izliyordu; uzaklık bu fazlalığı zevk farkı sandı ve B'yi, zevki tamamen farklı C kadar uzak gösterdi. Kosinüs benzerliği vektörleri uzunluklarına bölerek yalnızca yönü karşılaştırır; A ile B için 1, A ile C için yaklaşık 0,47 verdi.</p></details>
+<details><summary>Matris çarpımına neden "birçok ağırlıklı toplamı aynı anda yapmak" denir?</summary><p>Sonuç matrisinin her hücresi, birinci matrisin bir satırı ile ikincinin bir sütunu arasındaki ağırlıklı toplamdır (eşleşenleri çarp, topla). Sepet örneğinde dört hücre, dört ayrı alışveriş tutarıydı ve hepsi tek bir çarpımla, birbirinden bağımsız olarak hesaplandı.</p></details>
+<details><summary>Bir olasılık dağılımının iki şartı nedir ve dil modelinde neye karşılık gelir?</summary><p>Her olasılık 0 ile 1 arasındadır ve hepsinin toplamı 1'dir. Dil modelinde bu dağılım, verilen metinden sonra gelebilecek her aday kelime parçasına atanan olasılıklardır; bağlam değişince dağılım da değişir.</p></details>
+<details><summary>Bir ağırlığın eğimi +8 çıktıysa ağırlığı hangi yöne değiştirirsin? Neden?</summary><p>Azaltırım. Pozitif eğim, ağırlığı artırınca hatanın arttığı anlamına gelir; hatayı azaltmak için eğimin tersi yönüne, yani ağırlığı küçülten yöne gidilir.</p></details>
+<details><summary>Yapay zekâ hesabı neden CPU'dan çok GPU'ya uygundur?</summary><p>Hesabın büyük kısmı matris çarpımıdır; bu da birbirinden bağımsız, aynı türden çok sayıda basit çarpma ve toplamadan oluşur. GPU binlerce basit çekirdekle bu işlemleri aynı anda yapabilir; CPU'nun az sayıdaki güçlü çekirdeği ise sıralı, karmaşık işlerde avantajlıdır.</p></details>
+<details><summary>7 milyar parametreli bir modelin ağırlıkları 4 bitte kabaca kaç GB tutar ve bunun bedeli nedir?</summary><p>7 milyar × 0,5 bayt = 3,5 GB. Bedeli hassasiyettir: 4 bit yalnızca 16 farklı değer tutabildiği için her ağırlık daha kaba yuvarlanır; örnekte en büyük hata 8 bitteki 0,003'e karşı 0,074 oldu.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Vektör:</strong> sırası belli sayı listesi; her konum bir özellik. Ev, resim, ses, kelime hepsi vektöre çevrilir.</li>
+<li><strong>Uzaklık:</strong> okların uçları arası mesafe; büyüklük farkına duyarlıdır.</li>
+<li><strong>Nokta çarpım:</strong> eşleşenleri çarp, topla. <strong>Kosinüs benzerliği:</strong> nokta çarpım ÷ uzunlukların çarpımı; yalnız yönü ölçer, −1 ile 1 arasıdır.</li>
+<li><strong>Ölçekleme:</strong> farklı birimdeki özellikleri karşılaştırmadan önce benzer aralığa getir.</li>
+<li><strong>Matris çarpımı:</strong> birçok ağırlıklı toplam aynı anda. (a × b)·(b × c) = (a × c); sıra önemlidir.</li>
+<li><strong>Sinir ağı katmanı</strong> = girdi vektörü × ağırlık matrisi.</li>
+<li><strong>Olasılık dağılımı:</strong> her seçenek 0–1 arası, toplam 1. Dil modeli her adımda bütün adaylar için bir dağılım üretir; bağlama göre değişir. Olası ≠ doğru.</li>
+<li><strong>Softmax:</strong> puanları pozitif yapıp toplama böler; toplamı 1 olan olasılık listesi verir.</li>
+<li><strong>Eğim:</strong> girdiyi biraz dürtünce çıktı ne kadar değişir. Eğimin tersi yönüne git. Bütün eğimlerin listesi = gradyan.</li>
+<li><strong>GPU:</strong> binlerce basit çekirdek; bağımsız, aynı türden işlemleri aynı anda yapar.</li>
+<li><strong>Biçimler:</strong> float32 (4 bayt), float16 ve bfloat16 (2 bayt), 8 bit (1 bayt), 4 bit (0,5 bayt). Üs bitleri aralığı, kesir bitleri hassasiyeti belirler.</li>
+<li><strong>Niceleme:</strong> ağırlıkları ölçek + küçük tam sayı olarak tutmak; bellek azalır, yuvarlama hatası artar. Aykırı değere karşı grup grup yapılır.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-3">
+<h3>Quiz 3</h3>
+<p class="qa">On iki soru: sekizi bu parçadan, dördü önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir emlak modeli evleri [metrekare, oda sayısı, bina yaşı] biçiminde temsil ediyor. [95, 2, 30] vektörü hakkında aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Üç ayrı evi anlatır: 95, 2 ve 30 numaralı evler.</li><li>Sayıların sırası önemsizdir; [2, 30, 95] aynı evi anlatır.</li><li>95 metrekarelik, 2 odalı, 30 yaşındaki tek bir evi anlatan üç boyutlu bir vektördür.</li><li>Bir vektör yalnızca iki sayıdan oluşabileceği için geçersizdir.</li><li>Bu vektör evin fiyatını gösterir.</li></ul>
+<div class="coz"><p>Vektör, sırası belli bir sayı listesidir ve her konum bir özelliğe karşılık gelir; bu yüzden [95, 2, 30] tek bir evin üç özelliğidir ve vektör üç boyutludur (C). A, listeyi ayrı nesneler sanıyor. B yanlıştır, çünkü sıra değişince sayılar başka özelliklere düşer ve "2 metrekare, 30 oda" gibi başka bir ev çıkar. D yanlıştır; vektör istenen sayıda boyuta sahip olabilir (küçük bir resim 784 boyutludur). E yanlıştır; fiyat bu listede yoktur, modelin tahmin etmeye çalışacağı ayrı bir şeydir (Parça 2'deki etiket).</p></div></li>
+
+<li data-c="D"><p class="q">A = [2, 1] ve B = [6, 3] vektörleri arasındaki kosinüs benzerliği kaçtır?</p>
+<ul class="sec"><li>0</li><li>yaklaşık 4,47</li><li>3</li><li>1</li><li>−1</li></ul>
+<div class="coz"><p>Nokta çarpım 2 × 6 + 1 × 3 = 15. Uzunluklar √5 ≈ 2,236 ve √45 ≈ 6,708; çarpımları √225 = 15. 15 ÷ 15 = 1 (D). B, A'nın tam üç katıdır, yani aynı yöne bakar; kosinüs benzerliği uzunluğu değil yönü ölçtüğü için en yüksek değeri verir. 4,47 iki uç arasındaki <em>uzaklıktır</em> (√20), benzerlik değil. 3 uzunluklar oranıdır. 0 dik, −1 ters yönlü vektörler için çıkar. Ayrıca kosinüs benzerliği hiçbir zaman 1'den büyük olamaz; 3 ve 4,47 bu yüzden de elenir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir kişi 2 paket çay ve 1 paket şeker alacak. Çayın fiyatı X marketinde 100 TL, Y marketinde 90 TL; şekerin fiyatı X'te 40 TL, Y'de 50 TL. Sepet [2, 1] ile fiyat matrisi (satırlar: çay [100, 90], şeker [40, 50]; sütunlar: X, Y) çarpılınca çıkan sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[240, 230]</li><li>[290, 130]</li><li>[140, 140]</li><li>[480, 460]</li><li>[200, 180]</li></ul>
+<div class="coz"><p>Her sonuç hücresi, sepet satırı ile bir market sütununun ağırlıklı toplamıdır. X: 2 × 100 + 1 × 40 = 240. Y: 2 × 90 + 1 × 50 = 230. Sonuç [240, 230] (A). B, sepeti matrisin satırlarıyla eşleştirme hatasıdır (2 × 100 + 1 × 90 = 290: çayın iki fiyatını toplamak). C, miktarları yok sayıp fiyatları düz toplamaktır. D her şeyi gereksiz yere iki katına çıkarır. E şekeri unutur, yalnızca çayı hesaplar.</p></div></li>
+
+<li data-c="E"><p class="q">4 × 3'lük bir matris ile 3 × 5'lik bir matris (bu sırayla) çarpılırsa sonuç ne olur?</p>
+<ul class="sec"><li>3 × 3'lük bir matris</li><li>4 × 3'lük bir matris</li><li>3 × 5'lik bir matris</li><li>Bu iki matris çarpılamaz.</li><li>4 × 5'lik bir matris</li></ul>
+<div class="coz"><p>Boyut kuralı: (a × b)·(b × c) = (a × c). Ortadaki iki sayı (3 ve 3) eşit olduğu için çarpım yapılabilir; sonuç dıştaki sayılardan oluşur: 4 × 5 (E). D, kuralı yanlış hatırlayıp "boyutlar aynı olmalı" sananların seçeneğidir; eşit olması gereken yalnızca ortadaki boyuttur. A, B ve C dış ve iç boyutları karıştırır. Sepet örneğinde de 2 × 3 ile 3 × 2'nin çarpımı 2 × 2 olmuştu.</p></div></li>
+
+<li data-c="B"><p class="q">Bir model, bir cümlenin sonuna gelebilecek kelime için yalnızca dört aday görüyor ve olasılıklarını 0,45; 0,25; 0,15 ve x olarak veriyor. Bu bir olasılık dağılımıysa x kaçtır?</p>
+<ul class="sec"><li>0,25</li><li>0,15</li><li>0,85</li><li>1</li><li>Bilinemez; olasılıkların toplamının 1 olması gerekmez.</li></ul>
+<div class="coz"><p>Olasılık dağılımında bütün seçeneklerin olasılıkları toplamı 1'dir, çünkü seçeneklerden biri mutlaka gerçekleşir. 0,45 + 0,25 + 0,15 = 0,85; geriye 1 − 0,85 = 0,15 kalır (B). C, bilinen üçün toplamını cevap sanır. D, tek bir adayın kesin olduğunu varsayar ki bu, öbürlerinin olasılığının 0 olmasını gerektirir. E dağılımın temel şartını inkâr eder. A herhangi bir hesaba dayanmaz; aynı sayının tekrarı olduğu için çekici görünür.</p></div></li>
+
+<li data-c="C"><p class="q">Bir modelde bir ağırlık 2'den 2,01'e çıkarıldığında hata 9,00'dan 9,05'e çıkıyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Eğim yaklaşık 0,05'tir; hatayı azaltmak için ağırlık artırılmalıdır.</li><li>Eğim yaklaşık 5'tir; hatayı azaltmak için ağırlık artırılmalıdır.</li><li>Eğim yaklaşık 5'tir; hatayı azaltmak için ağırlık biraz azaltılmalıdır.</li><li>Eğim yaklaşık −5'tir; hatayı azaltmak için ağırlık azaltılmalıdır.</li><li>Eğim 9'dur; ağırlığı değiştirmeye gerek yoktur.</li></ul>
+<div class="coz"><p>Eğim, çıktıdaki değişimin dürtme miktarına bölümüdür: (9,05 − 9,00) ÷ 0,01 = 5. Pozitif eğim, ağırlığı artırınca hatanın arttığını gösterir; bu yüzden eğimin tersi yönüne gidilir, yani ağırlık azaltılır (C). A, değişimi dürtmeye bölmeyi unutur. B işareti doğru bulup yönü ters çevirir. D işareti yanlış hesaplar. E, hatanın kendisini (9) eğim sanır; hata değeri ile eğim farklı şeylerdir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki işlerden hangisi GPU'nun binlerce çekirdeğinden <strong>en az</strong> yararlanır?</p>
+<ul class="sec"><li>Her adımın bir önceki adımın sonucuna bağlı olduğu, uzun bir hesap zinciri</li><li>Bir fotoğraftaki milyonlarca pikselin parlaklığını aynı oranda artırmak</li><li>İki büyük matrisi çarpmak</li><li>Bir soru vektörünün bir milyon belge vektörüyle kosinüs benzerliğini hesaplamak</li><li>Bir sinir ağı katmanındaki binlerce nöronun ağırlıklı toplamını bulmak</li></ul>
+<div class="coz"><p>GPU, birbirinden bağımsız ve aynı türden çok sayıda işlemi aynı anda yaparak hızlanır. A'da her adım bir öncekinin sonucunu beklediği için işlemler aynı anda yapılamaz; binlerce çekirdeğin çoğu boş bekler (A). B'de her pikselin hesabı bağımsızdır. C ve E'de sonuç matrisinin her hücresi bağımsız bir ağırlıklı toplamdır. D'de bir milyon benzerlik birbirinden bağımsız hesaplanabilir. Bu dördü GPU'nun en sevdiği işlerdir.</p></div></li>
+
+<li data-c="D"><p class="q">13 milyar parametreli bir modelin ağırlıkları 4 bitle nicelenirse yalnızca ağırlıklar yaklaşık ne kadar bellek tutar? (1 GB = 1 milyar bayt alınız.)</p>
+<ul class="sec"><li>52 GB</li><li>26 GB</li><li>13 GB</li><li>6,5 GB</li><li>3,25 GB</li></ul>
+<div class="coz"><p>4 bit yarım bayttır: 13 milyar × 0,5 bayt = 6,5 milyar bayt = 6,5 GB (D). A float32 (4 bayt), B 16 bit (2 bayt), C 8 bit (1 bayt) için doğru olurdu; seçenekleri bit sayısını bayta çevirmeyi karıştıranlar işaretler. E ise 2 bitin karşılığıdır. Unutma: bu yalnızca ağırlıklardır, çalıştırırken ara sonuçlar için ek bellek gerekir.</p></div></li>
+
+<li data-c="B" data-k="yz-1"><p class="q">1997'de dünya şampiyonunu yenen ama satranç dışında hiçbir iş yapamayan Deep Blue aşağıdakilerden hangisine örnektir?</p>
+<ul class="sec"><li>Genel yapay zekâ (AGI)</li><li>Dar yapay zekâ</li><li>Büyük dil modeli</li><li>Transformer tabanlı derin öğrenme</li><li>Turing'in taklit oyununu kazanmış bir sistem</li></ul>
+<div class="coz"><p>Dar yapay zekâ, tek bir işte (burada satranç) çok iyi olan ama o işin dışına çıkamayan sistemdir; Deep Blue bunun klasik örneğidir (B). Genel yapay zekâ ise birçok farklı işte insan düzeyinde esneklik hedefler ve tanımı hâlâ tartışmalıdır. Büyük dil modelleri ve transformer 2017 sonrasının gelişmeleridir; 1997'deki Deep Blue ikisi de değildir. Taklit oyunu bir makinenin yazışmada insandan ayırt edilememesiyle ilgilidir; satranç oynamakla değil.</p></div></li>
+
+<li data-c="E" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince çoğunlukla kastedilen iç içe halkalar, <strong>en dıştan en içe</strong> doğru hangi sırayla dizilir?</p>
+<ul class="sec"><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li><li>Makine öğrenmesi → yapay zekâ → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → derin öğrenme → makine öğrenmesi → büyük dil modelleri</li><li>Derin öğrenme → yapay zekâ → büyük dil modelleri → makine öğrenmesi</li><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li></ul>
+<div class="coz"><p>En geniş halka yapay zekâdır (kural tabanlı sistemleri de kapsar). Onun içinde örnekten öğrenen sistemler, yani makine öğrenmesi; onun içinde çok katmanlı sinir ağlarıyla yapılan derin öğrenme; en içte de derin öğrenmenin bir türü olan büyük dil modelleri durur (E). A aynı zincirin tersidir, soru kökündeki "dıştan içe" yönünü kaçıranlar onu seçer. C derin öğrenme ile makine öğrenmesinin yerini karıştırır; B ve D halkaların kapsama ilişkisini bozar.</p></div></li>
+
+<li data-c="A" data-k="yz-2"><p class="q">Geleneksel programlama ile makine öğrenmesi arasındaki farkı en iyi anlatan seçenek hangisidir?</p>
+<ul class="sec"><li>Geleneksel programlamada kural ve veriden cevap çıkar; makine öğrenmesinde veri ve cevaplardan kural çıkarılır.</li><li>Geleneksel programlama veri kullanmaz; makine öğrenmesi kural kullanmaz.</li><li>Makine öğrenmesinde programcı her kuralı elle yazar; geleneksel programlamada bilgisayar kuralı kendisi bulur.</li><li>İkisi aynı şeydir; yalnızca makine öğrenmesi daha hızlı çalışır.</li><li>Makine öğrenmesi yalnızca resim tanımada, geleneksel programlama yalnızca hesaplamada kullanılır.</li></ul>
+<div class="coz"><p>Geleneksel programlamada programcı kuralı yazar, program bu kuralı veriye uygular ve cevap üretir. Makine öğrenmesinde ise elimizde örnek veriler ve bunların doğru cevapları (etiketler) vardır; kuralı model bu örneklerden çıkarır (A). Spam filtresi örneğinde kuralı elle yazmak yerine binlerce "spam / spam değil" etiketli e-postadan öğreniriz. C ilişkiyi tersine çevirir. B ve D iki yaklaşımı yanlış sadeleştirir; E ise kullanım alanlarını keyfî biçimde ayırır.</p></div></li>
+
+<li data-c="C" data-k="yz-2"><p class="q">Bir model eğitim verisinde %99 doğruluk, daha önce hiç görmediği test verisinde ise %62 doğruluk elde ediyor. Bu durum en çok aşağıdakilerden hangisini düşündürür?</p>
+<ul class="sec"><li>Yetersiz öğrenme (underfitting)</li><li>Denetimsiz öğrenme kullanılmış olması</li><li>Aşırı öğrenme (overfitting)</li><li>Problemin sınıflandırma değil regresyon olması</li><li>Pekiştirmeli öğrenme kullanılmış olması</li></ul>
+<div class="coz"><p>Eğitimde çok başarılı olup görmediği veride sert biçimde düşen model, örnekleri ezberlemiş ama genelleyememiştir: aşırı öğrenme (C). Yetersiz öğrenmede model eğitim verisinde de başarısız olurdu; burada eğitim başarısı %99. Denetimsiz ve pekiştirmeli öğrenme öğrenme türleridir, bu tablonun açıklaması değildir. Sınıflandırma ile regresyon ayrımı da tahmin edilen şeyin türüyle ilgilidir, eğitim–test farkıyla değil. Test verisinin ayrı tutulmasının amacı tam olarak bu ezberi ortaya çıkarmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-2">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-3">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-4">Sonraki parça: ilk modeller</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"vektör ve kosinüs benzerliği sezgisel anlatım makine öğrenmesi"</li>
+  <li>"matris çarpımı görsel anlatım sinir ağı katmanı"</li>
+  <li>"türev eğim sezgisi gradyan inişi görselleştirme"</li>
+  <li>"float16 bfloat16 int8 quantization explained"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bütün sayısal örnekler (uzaklıklar 4,12 ve 4,24; kosinüs 1 ve 0,47; açı yaklaşık 62°; sepet matrisi 215/211/195/182; 4.096² = 16.777.216; dürtme eğimleri −15,96 ve +8,04; softmax 0,665/0,245/0,090; bellek 28/14/7/3,5 GB; niceleme hataları 0,003 ve 0,074; aykırı değer örneği) Python 3.13.16 ve numpy 2.5.3 ile hesaplanarak doğrulandı. İki "isteğe bağlı deneme" betiği <code>python3 -I</code> ile gerçekten çalıştırıldı ve çıktılar birebir kondu; ortamda eksik araç yoktu.</li>
+  <li>Quiz'deki sayısal cevaplar (kosinüs 1 ve uzaklık 4,47; sepet [240, 230]; eksik olasılık 0,15; eğim 5; 13 milyar parametre 4 bitte 6,5 GB) Python ile hesaplandı.</li>
+  <li>float16 (1 · 5 · 10 bit, en büyük değer 65.504) ve float32 (1 · 8 · 23 bit, yaklaşık 3,4 × 10³⁸) değerleri numpy'nin <code>finfo</code> çıktısıyla; bfloat16'nın 1 · 8 · 7 bit düzeni, float32 ile aynı aralığa sahip olması ve Google tarafından önerilmiş olması WikiChip'in BF16 sayfasından doğrulandı. "Yaklaşık 7 / 3 / 2–3 anlamlı basamak" yuvarlak ifadelerdir.</li>
+  <li>H100 SXM'deki 16.896 FP32 çekirdeği ve 528 tensor çekirdeği sayısı ikincil bir teknik kaynaktan (glennklockwood.com, NVIDIA belgelerini aktaran) alındı; NVIDIA'nın kendi teknik belgesini bu oturumda açamadım. NVFP4'ün Blackwell mimarisiyle geldiği ve her 16 değerlik blok için ayrı ölçek tuttuğu NVIDIA geliştirici blogundan (24 Haziran 2025) doğrulandı. Ürün bilgileri 14 Ekim 2026 itibarıyla yazılmıştır ve hızla eskir.</li>
+  <li>AlexNet'in iki oyun kartıyla (NVIDIA GTX 580, 3 GB) beş-altı günde eğitildiği bilgisi, özgün makaleyi özetleyen bir üniversite ders notundan (ISTA, AlexNet slaytları) doğrulandı; özgün makalenin kendisini bu oturumda açmadım.</li>
+  <li>Hafızadan yazılan genel ifadeler: büyük modellerin eğitiminde çoğunlukla 16 bitlik biçimlerin (özellikle bfloat16) kullanıldığı ve bazı toplamların 32 bitte tutulduğu; büyük modellerde darboğazın çoğu zaman bellekten veri taşıma olduğu; 8 bit nicelemede kaybın genelde küçük, 4 bit ve altında modele göre belirgin olabileceği. Bunlar alanda yaygın kabul görür ama modele ve yönteme göre değişir; kesin oran verilmedi.</li>
+  <li>Film zevki, sepet, hava durumu kelime dağılımı ve ağırlık sayıları anlatım için uydurulmuştur; gerçek bir modelden ya da gerçek fiyatlardan alınmamıştır.</li>
+</ul>
+</div>
+</div>
+</article>

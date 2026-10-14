@@ -1,0 +1,858 @@
+<article class="chapter ders" id="c-yz-8">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 8 · Görüntüyü anlayan ağlar</div>
+<h1>Pencereden bakan ağ: evrişim, havuzlama ve resmi tanıyan modeller</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir kedi fotoğrafını bir piksel sağa kaydırırsan sen hâlâ aynı kediyi görürsün. Ama bilgisayar için resim yüz binlerce sayıdan oluşan bir listedir ve kaydırınca o listedeki sayıların neredeyse hepsi yer değiştirir. Parça 6'daki katmanlı ağ bu listeye bakarak neden zorlanır, ve 2012'den beri bilgisayarların resimde kediyi, tümörü, çiziği bulabilmesini sağlayan fikir nedir?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (vektör, matris, ağırlıklı toplam, GPU'nun neden kullanıldığı), Parça 6 (yapay nöron, ağırlık, sapma, ReLU, katman, parametre sayısı), Parça 7 (gradyan inişi, geri yayılım, dropout, veri artırma, aşırı öğrenme). Parça 1'de AlexNet'i tarihte bir dönüm noktası olarak anmıştık; burada neden öyle olduğunu göreceğiz. Python kutuları isteğe bağlıdır, atlarsan konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 6 ve 7'de bir sinir ağının nasıl kurulduğunu ve nasıl öğrendiğini gördük: girdiler ağırlıklarla çarpılıp toplanıyor, aktivasyondan geçiyor, katman katman ilerliyor; hata geri yayılımla ağırlıklara dağıtılıyor. Bu parçada aynı malzemeyle, yani ağırlık, toplam, ReLU ve gradyan inişiyle, görüntüye özel bir mimari kuracağız: <strong>evrişimli sinir ağı</strong> (convolutional neural network, kısaca CNN).</p>
+
+<p>Sırası şöyle: resmin bilgisayar için ne olduğu (bir sayı tablosu); onu düz ağa vermenin neden kötü olduğu; çözümün iki parçası, <strong>evrişim</strong> ve <strong>havuzlama</strong>, elle hesaplanarak; kenardan nesneye soyutlama merdiveni; 2012'de ImageNet'te ne olduğu; transfer öğrenme; bugünkü kullanımlar ve yüz tanıma tartışması; son olarak resim üreten modellerin dayandığı <strong>difüzyon</strong> fikrine kısa bir köprü.</p>
+
+<h2 class="s">Bilgisayar için resim: bir sayı tablosu</h2>
+
+<p>Ekrandaki her resim küçük karelerden oluşur; bunlara <strong>piksel</strong> denir. Telefonda bir fotoğrafı sonuna kadar büyütürsen bu kareleri görürsün. Her pikselin bir parlaklığı vardır ve bilgisayar bu parlaklığı bir sayıyla tutar. Siyah-beyaz (gri tonlu) bir resimde en yaygın düzen 0 ile 255 arasıdır: 0 tam siyah, 255 tam beyaz, aradakiler gri tonları. Neden 255? Çünkü bir piksel 8 bitle saklanır ve 8 bit 2<sup>8</sup> = 256 farklı değer tutabilir (Parça 3'teki bit fikri).</p>
+
+<p>Renkli resimde her piksel için üç sayı vardır: kırmızı, yeşil ve mavi ışığın miktarı (RGB). Bu yüzden renkli bir resmi üç katmanlı bir tablo gibi düşün: aynı boyda üç tablo üst üste, biri kırmızının, biri yeşilin, biri mavinin. Bu katmanların her birine <strong>kanal</strong> denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Piksel</strong> resmin en küçük karesidir ve parlaklığı bir sayıyla tutulur. <strong>Kanal</strong>, resmin aynı boydaki sayı tablolarından biridir: gri tonlu resimde 1, renkli resimde 3 (kırmızı, yeşil, mavi). Bir resmin boyutu <em>yükseklik × genişlik × kanal</em> diye yazılır; 224×224×3, 224 satır, 224 sütun ve 3 kanal demektir.</p></div>
+
+<p>Bu tanım bize hemen bir sorun gösterir: resimler çok sayı içerir. Aşağıdaki tabloya bak.</p>
+
+<div class="tablo"><table>
+<tr><th>Resim</th><th>Boyut</th><th>Toplam sayı</th></tr>
+<tr><td>Küçük el yazısı rakam (deneme kutusunda kullanacağız)</td><td>8×8×1</td><td>64</td></tr>
+<tr><td>Klasik el yazısı rakam veri kümesi boyu</td><td>28×28×1</td><td>784</td></tr>
+<tr><td>AlexNet'in girdi boyu (renkli)</td><td>224×224×3</td><td>150.528</td></tr>
+<tr><td>Sıradan bir Full HD fotoğraf</td><td>1080×1920×3</td><td>6.220.800</td></tr>
+</table></div>
+
+<h2 class="s">Düz ağ neden yetmez?</h2>
+
+<p>Parça 6'daki çok katmanlı algılayıcıyı (MLP) hatırla: girdi bir sayı listesidir ve ilk katmandaki her nöron, girdideki <strong>her</strong> sayıya bir ağırlıkla bağlıdır. Resmi bu ağa vermek için tabloyu satır satır uç uca ekleyip uzun bir listeye çevirmen gerekir; buna düzleştirme denir. Üç sorun çıkar.</p>
+
+<p><strong>Birinci sorun: parametre patlaması.</strong> 224×224×3'lük bir resim 150.528 sayıdır. İlk katmanda yalnızca 1000 nöron olsa bile her nöron 150.528 ağırlık ve 1 sapma ister: 150.528 × 1000 + 1000 = 150.529.000 parametre, yani yalnız ilk katmanda yaklaşık 150 milyon sayı. Parça 7'den bildiğin gibi parametre çoğaldıkça ağın ezberleme (aşırı öğrenme) eğilimi artar ve eğitmek için çok daha fazla veri gerekir.</p>
+
+<p><strong>İkinci sorun: komşuluk kaybolur.</strong> Resimde anlam komşulukta durur: bir kenar, yan yana iki pikselin parlaklık farkıdır; bir göz, birbirine yakın bir piksel öbeğidir. Düzleştirince bir pikselin sağ komşusu listede hemen yanında kalır ama alt komşusu 224 sıra (renkli resimde 672 sıra) uzağa düşer. Düz ağ "bu iki sayı resimde komşuydu" bilgisini hiç almaz; bunu, mümkünse, veriden kendisi keşfetmek zorundadır.</p>
+
+<p><strong>Üçüncü sorun: aynı şeyi her konumda yeniden öğrenmek.</strong> Kedinin kulağı resmin solunda da olabilir sağında da. Düz ağda sol üstteki kulağı tanıyan ağırlıklar ile sağ alttaki kulağı tanıyan ağırlıklar tamamen ayrı sayılardır; ağ aynı kulağı her konum için ayrı ayrı öğrenmek zorunda kalır. Bu, bu parçanın sorusundaki kayma meselesidir: resim bir piksel kayınca düz ağın gördüğü liste bambaşka bir listedir. Deneme kutusunda bunu ölçeceğiz: ham piksellere bakan basit bir model, 8×8'lik rakamlar bir piksel kaydırılınca doğruluğunun yarısından fazlasını kaybediyor.</p>
+
+<p>Bu üç sorunun ortak çözümü, resme <strong>küçük bir pencereyle</strong> bakmak ve aynı pencereyi resmin her yerinde kullanmaktır. İşte evrişim budur.</p>
+
+<h2 class="s">Evrişim: küçük bir pencereyle bütün resmi taramak</h2>
+
+<p>Bir el feneriyle karanlık bir duvardaki yazıyı okuduğunu düşün. Fener bir seferde yalnızca küçük bir alanı aydınlatır; sen feneri soldan sağa, yukarıdan aşağı kaydırarak bütün duvarı tararsın. Her konumda sorduğun soru aynıdır: "burada aradığım şey var mı?" Evrişimde fenerin yerinde küçük bir sayı tablosu, yani <strong>filtre</strong> vardır (çekirdek, kernel de denir). Sorduğun soru da filtrenin içindeki sayılarla belirlenir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Evrişim</strong> (convolution): küçük bir <strong>filtre</strong> (ör. 3×3 sayı) resmin üzerinde adım adım kaydırılır; her konumda filtrenin altında kalan piksellerle filtredeki sayılar hücre hücre çarpılır ve hepsi toplanır. Her konumdan çıkan tek sayı, yeni bir tabloya yazılır. Bu yeni tabloya <strong>özellik haritası</strong> (feature map) denir. Haritadaki büyük sayı, "filtrenin aradığı desen burada güçlü" demektir.</p></div>
+
+<p>Dikkat et: her konumda yapılan iş Parça 6'daki yapay nöronun işinin aynısıdır. Girdiler (penceredeki 9 piksel) ağırlıklarla (filtredeki 9 sayı) çarpılıp toplanıyor; istersek bir sapma ekleyip ReLU'dan geçiriyoruz. Fark yalnızca şurada: nöron bütün resme değil küçük bir pencereye bakıyor ve <strong>aynı ağırlıklar</strong> her pencerede yeniden kullanılıyor.</p>
+
+<p>Şimdi bir örnek resim kuralım. 6×6'lık gri bir resim; değerleri basit tutmak için 0'ı siyah, 9'u en parlak alalım. Ortada parlak bir kare var. Filtremiz de 3×3 ve her satırı "−1, 0, 1". Bu filtre ne arar? Sol sütundaki pikselleri eksiyle, sağ sütundakileri artıyla toplar; ortadakini yok sayar. Yani "pencerenin sağı solundan ne kadar parlak?" diye sorar. Soldan sağa doğru karanlıktan aydınlığa geçiş varsa büyük artı, aydınlıktan karanlığa geçiş varsa büyük eksi, düz bir bölgede sıfır verir. Buna <strong>dikey kenar filtresi</strong> denir, çünkü dikey uzanan kenarları yakalar.</p>
+
+<figure>
+<svg viewBox="0 0 420 300" role="img" aria-label="Evrişim: 6×6 piksellik resmin sol üst 3×3 penceresi filtreyle çarpılıp toplanıyor ve özellik haritasının ilk hücresi 18 çıkıyor">
+  <text class="sv-b" x="82" y="26" text-anchor="middle">resim (6×6)</text>
+  <text class="sv-b" x="216" y="62" text-anchor="middle">filtre (3×3)</text>
+  <text class="sv-b" x="346" y="44" text-anchor="middle">özellik haritası</text>
+  <text class="sv-s" x="346" y="58" text-anchor="middle">(4×4)</text>
+  <rect class="sv-a" x="10" y="40" width="24" height="24" />
+  <text class="sv-t" x="22" y="57" text-anchor="middle">0</text>
+  <rect class="sv-a" x="34" y="40" width="24" height="24" />
+  <text class="sv-t" x="46" y="57" text-anchor="middle">0</text>
+  <rect class="sv-a" x="58" y="40" width="24" height="24" />
+  <text class="sv-t" x="70" y="57" text-anchor="middle">0</text>
+  <rect class="sv-k" x="82" y="40" width="24" height="24" />
+  <text class="sv-t" x="94" y="57" text-anchor="middle">0</text>
+  <rect class="sv-k" x="106" y="40" width="24" height="24" />
+  <text class="sv-t" x="118" y="57" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="40" width="24" height="24" />
+  <text class="sv-t" x="142" y="57" text-anchor="middle">0</text>
+  <rect class="sv-a" x="10" y="64" width="24" height="24" />
+  <text class="sv-t" x="22" y="81" text-anchor="middle">0</text>
+  <rect class="sv-a" x="34" y="64" width="24" height="24" />
+  <text class="sv-t" x="46" y="81" text-anchor="middle">9</text>
+  <rect class="sv-a" x="58" y="64" width="24" height="24" />
+  <text class="sv-t" x="70" y="81" text-anchor="middle">9</text>
+  <rect class="sv-l" x="82" y="64" width="24" height="24" />
+  <text class="sv-t" x="94" y="81" text-anchor="middle">9</text>
+  <rect class="sv-k" x="106" y="64" width="24" height="24" />
+  <text class="sv-t" x="118" y="81" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="64" width="24" height="24" />
+  <text class="sv-t" x="142" y="81" text-anchor="middle">0</text>
+  <rect class="sv-a" x="10" y="88" width="24" height="24" />
+  <text class="sv-t" x="22" y="105" text-anchor="middle">0</text>
+  <rect class="sv-a" x="34" y="88" width="24" height="24" />
+  <text class="sv-t" x="46" y="105" text-anchor="middle">9</text>
+  <rect class="sv-a" x="58" y="88" width="24" height="24" />
+  <text class="sv-t" x="70" y="105" text-anchor="middle">9</text>
+  <rect class="sv-l" x="82" y="88" width="24" height="24" />
+  <text class="sv-t" x="94" y="105" text-anchor="middle">9</text>
+  <rect class="sv-k" x="106" y="88" width="24" height="24" />
+  <text class="sv-t" x="118" y="105" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="88" width="24" height="24" />
+  <text class="sv-t" x="142" y="105" text-anchor="middle">0</text>
+  <rect class="sv-k" x="10" y="112" width="24" height="24" />
+  <text class="sv-t" x="22" y="129" text-anchor="middle">0</text>
+  <rect class="sv-l" x="34" y="112" width="24" height="24" />
+  <text class="sv-t" x="46" y="129" text-anchor="middle">9</text>
+  <rect class="sv-l" x="58" y="112" width="24" height="24" />
+  <text class="sv-t" x="70" y="129" text-anchor="middle">9</text>
+  <rect class="sv-l" x="82" y="112" width="24" height="24" />
+  <text class="sv-t" x="94" y="129" text-anchor="middle">9</text>
+  <rect class="sv-k" x="106" y="112" width="24" height="24" />
+  <text class="sv-t" x="118" y="129" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="112" width="24" height="24" />
+  <text class="sv-t" x="142" y="129" text-anchor="middle">0</text>
+  <rect class="sv-k" x="10" y="136" width="24" height="24" />
+  <text class="sv-t" x="22" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="34" y="136" width="24" height="24" />
+  <text class="sv-t" x="46" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="58" y="136" width="24" height="24" />
+  <text class="sv-t" x="70" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="82" y="136" width="24" height="24" />
+  <text class="sv-t" x="94" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="106" y="136" width="24" height="24" />
+  <text class="sv-t" x="118" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="136" width="24" height="24" />
+  <text class="sv-t" x="142" y="153" text-anchor="middle">0</text>
+  <rect class="sv-k" x="10" y="160" width="24" height="24" />
+  <text class="sv-t" x="22" y="177" text-anchor="middle">0</text>
+  <rect class="sv-k" x="34" y="160" width="24" height="24" />
+  <text class="sv-t" x="46" y="177" text-anchor="middle">0</text>
+  <rect class="sv-k" x="58" y="160" width="24" height="24" />
+  <text class="sv-t" x="70" y="177" text-anchor="middle">0</text>
+  <rect class="sv-k" x="82" y="160" width="24" height="24" />
+  <text class="sv-t" x="94" y="177" text-anchor="middle">0</text>
+  <rect class="sv-k" x="106" y="160" width="24" height="24" />
+  <text class="sv-t" x="118" y="177" text-anchor="middle">0</text>
+  <rect class="sv-k" x="130" y="160" width="24" height="24" />
+  <text class="sv-t" x="142" y="177" text-anchor="middle">0</text>
+  <rect class="sv-cl" x="10" y="40" width="72" height="72" />
+  <rect class="sv-m" x="180" y="76" width="24" height="24" />
+  <text class="sv-t" x="192" y="93" text-anchor="middle">−1</text>
+  <rect class="sv-m" x="204" y="76" width="24" height="24" />
+  <text class="sv-t" x="216" y="93" text-anchor="middle">0</text>
+  <rect class="sv-m" x="228" y="76" width="24" height="24" />
+  <text class="sv-t" x="240" y="93" text-anchor="middle">1</text>
+  <rect class="sv-m" x="180" y="100" width="24" height="24" />
+  <text class="sv-t" x="192" y="117" text-anchor="middle">−1</text>
+  <rect class="sv-m" x="204" y="100" width="24" height="24" />
+  <text class="sv-t" x="216" y="117" text-anchor="middle">0</text>
+  <rect class="sv-m" x="228" y="100" width="24" height="24" />
+  <text class="sv-t" x="240" y="117" text-anchor="middle">1</text>
+  <rect class="sv-m" x="180" y="124" width="24" height="24" />
+  <text class="sv-t" x="192" y="141" text-anchor="middle">−1</text>
+  <rect class="sv-m" x="204" y="124" width="24" height="24" />
+  <text class="sv-t" x="216" y="141" text-anchor="middle">0</text>
+  <rect class="sv-m" x="228" y="124" width="24" height="24" />
+  <text class="sv-t" x="240" y="141" text-anchor="middle">1</text>
+  <rect class="sv-a" x="290" y="68" width="28" height="28" />
+  <text class="sv-s" x="304" y="86" text-anchor="middle">18</text>
+  <rect class="sv-k" x="318" y="68" width="28" height="28" />
+  <text class="sv-s" x="332" y="86" text-anchor="middle">0</text>
+  <rect class="sv-k" x="346" y="68" width="28" height="28" />
+  <text class="sv-s" x="360" y="86" text-anchor="middle">−18</text>
+  <rect class="sv-k" x="374" y="68" width="28" height="28" />
+  <text class="sv-s" x="388" y="86" text-anchor="middle">−18</text>
+  <rect class="sv-k" x="290" y="96" width="28" height="28" />
+  <text class="sv-s" x="304" y="114" text-anchor="middle">27</text>
+  <rect class="sv-k" x="318" y="96" width="28" height="28" />
+  <text class="sv-s" x="332" y="114" text-anchor="middle">0</text>
+  <rect class="sv-k" x="346" y="96" width="28" height="28" />
+  <text class="sv-s" x="360" y="114" text-anchor="middle">−27</text>
+  <rect class="sv-k" x="374" y="96" width="28" height="28" />
+  <text class="sv-s" x="388" y="114" text-anchor="middle">−27</text>
+  <rect class="sv-k" x="290" y="124" width="28" height="28" />
+  <text class="sv-s" x="304" y="142" text-anchor="middle">18</text>
+  <rect class="sv-k" x="318" y="124" width="28" height="28" />
+  <text class="sv-s" x="332" y="142" text-anchor="middle">0</text>
+  <rect class="sv-k" x="346" y="124" width="28" height="28" />
+  <text class="sv-s" x="360" y="142" text-anchor="middle">−18</text>
+  <rect class="sv-k" x="374" y="124" width="28" height="28" />
+  <text class="sv-s" x="388" y="142" text-anchor="middle">−18</text>
+  <rect class="sv-k" x="290" y="152" width="28" height="28" />
+  <text class="sv-s" x="304" y="170" text-anchor="middle">9</text>
+  <rect class="sv-k" x="318" y="152" width="28" height="28" />
+  <text class="sv-s" x="332" y="170" text-anchor="middle">0</text>
+  <rect class="sv-k" x="346" y="152" width="28" height="28" />
+  <text class="sv-s" x="360" y="170" text-anchor="middle">−9</text>
+  <rect class="sv-k" x="374" y="152" width="28" height="28" />
+  <text class="sv-s" x="388" y="170" text-anchor="middle">−9</text>
+  <path class="sv-c" d="M82 76H172" />
+  <polygon class="sv-cl" points="172,71 180,76 172,81" />
+  <path class="sv-c" d="M252 112H270V82H282" />
+  <polygon class="sv-cl" points="282,77 290,82 282,87" />
+  <text class="sv-t" x="210" y="216" text-anchor="middle">Pencereyi filtreyle hücre hücre çarp ve topla:</text>
+  <text class="sv-s" x="210" y="238" text-anchor="middle">1. satır: 0·(−1) + 0·0 + 0·1 = 0</text>
+  <text class="sv-s" x="210" y="256" text-anchor="middle">2. satır: 0·(−1) + 9·0 + 9·1 = 9</text>
+  <text class="sv-s" x="210" y="274" text-anchor="middle">3. satır: 0·(−1) + 9·0 + 9·1 = 9</text>
+  <text class="sv-b" x="210" y="294" text-anchor="middle">toplam = 18 → haritanın sol üst hücresi</text>
+</svg>
+<figcaption>Turuncu 3×3 pencere resmin sol üst köşesinde. Penceredeki 9 piksel, filtredeki 9 sayıyla karşılıklı çarpılıp toplanınca 18 çıkıyor ve özellik haritasının sol üst hücresine yazılıyor. Sonra pencere bir sütun sağa kayıyor ve işlem tekrarlanıyor.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: evrişimi elle hesaplamak</span>
+<p><strong>Soru:</strong> Şekildeki resme dikey kenar filtresini adım 1 ile uygula. Özellik haritası kaç satır, kaç sütundur? Sol üst hücre ile 2. satır 3. sütundaki hücre kaçtır ve bu sayılar ne anlatır?</p>
+<p><strong>Adım 1.</strong> Haritanın boyunu bul. 3 genişlikteki pencere 6 genişlikteki resimde sığdığı sürece kayar: başlangıç sütunu 1, 2, 3 ya da 4 olabilir (5. sütundan başlarsa pencere resmin dışına taşar). Satırlar için de aynısı. Harita 4×4'tür (6 − 3 + 1 = 4).</p>
+<p><strong>Adım 2.</strong> Sol üst hücre: pencere 1–3. satırlar ve 1–3. sütunlar. Pencere satırları: (0, 0, 0), (0, 9, 9), (0, 9, 9).</p>
+<p><strong>Adım 3.</strong> Her satırı filtrenin satırıyla (−1, 0, 1) çarp ve topla: birinci satır 0·(−1) + 0·0 + 0·1 = 0; ikinci satır 0·(−1) + 9·0 + 9·1 = 9; üçüncü satır yine 9.</p>
+<p><strong>Adım 4.</strong> Üç satırın toplamı 0 + 9 + 9 = 18. Bu, pencerenin sağ tarafının sol tarafından parlak olduğunu söylüyor: karenin <em>sol kenarı</em> buradan geçiyor.</p>
+<p><strong>Adım 5.</strong> 2. satır 3. sütundaki hücre: pencere 2–4. satırlar, 3–5. sütunlar. Pencerenin her satırı (9, 9, 0): sol ve orta parlak, sağ siyah. Her satır için 9·(−1) + 9·0 + 0·1 = −9; üç satırda −27.</p>
+<p><strong>Adım 6.</strong> Eksi işaret ters yönde bir geçişi gösteriyor: soldan sağa aydınlıktan karanlığa. Burası karenin <em>sağ kenarı</em>.</p>
+<p><strong>Sonuç:</strong> Harita 4×4'tür; sol üst hücre 18 (karanlıktan aydınlığa geçen kenar), 2. satır 3. sütun −27 (aydınlıktan karanlığa geçen kenar). Bütün harita, deneme kutusunda bilgisayarla da hesaplandığı gibi, ilk sütunda artı değerler, ikinci sütunda 0, son iki sütunda eksi değerler içerir. Karenin içi gibi düz bölgelerde filtre sıfır verir: düz bölgede "kenar" yoktur.</p></div>
+
+<p>Aynı filtreyi 90 derece çevirirsen, yani satırları "−1, −1, −1", "0, 0, 0", "1, 1, 1" yaparsan, filtre yukarıdan aşağı parlaklık değişimini arar: <strong>yatay kenarları</strong> bulur. Aynı resme uygulandığında karenin üst kenarında artı, alt kenarında eksi değerler verir. Bir filtre yalnızca kendi aradığı deseni görür; dikey filtre yatay kenara kördür, yatay filtre dikeye. Bu yüzden bir evrişim katmanında tek filtre değil, çok sayıda filtre bulunur ve her biri ayrı bir özellik haritası üretir.</p>
+
+<p>Küçük bir not: matematikteki evrişim filtreyi önce ters çevirir; derin öğrenme kütüphaneleri çoğunlukla çevirmeden uygular (çapraz ilinti). Filtreler öğrenildiği için bu fark sonucu değiştirmez.</p>
+
+<h3>Ağırlık paylaşımı ve neden işe yaradığı</h3>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir evrişim katmanında aynı filtre resmin <strong>her konumunda aynı ağırlıklarla</strong> kullanılır (ağırlık paylaşımı). Nedeni: bir kenar, bir köşe ya da bir doku resmin neresinde olursa olsun aynı desendir; onu aramak için her konumda ayrı ağırlık öğrenmenin anlamı yoktur. Sonuç: parametre sayısı resmin boyutundan bağımsız hâle gelir ve bir yerde öğrenilen desen her yerde tanınır.</p></div>
+
+<p>Bunun ikinci etkisi kaymayla ilgilidir. Resim bir piksel kayarsa, özellik haritası da bir piksel kayar ama içindeki değerler aynı kalır: kenar yine bulunur, yalnızca haritada başka bir yerde görünür. Buna kaymaya <strong>eş değişkenlik</strong> denir: girdi kayınca çıktı da aynı miktarda kayar. Düz ağda böyle bir garanti yoktur.</p>
+
+<h3>Adım, dolgu ve kanallar</h3>
+
+<p>Üç ayrıntı daha var; hepsinin ardında basit bir neden yatar.</p>
+
+<p><strong>Adım (stride):</strong> Pencerenin her seferinde kaç piksel kaydığıdır. Adım 2'de pencere birer atlar ve harita kabaca yarı boya iner: daha az hesap, daha az ayrıntı.</p>
+
+<p><strong>Dolgu (padding):</strong> Yukarıdaki örnekte 6×6 resim 4×4 haritaya indi, çünkü pencere kenarlardan taşamıyordu. Katmanlar dizildikçe bu küçülme birikir. Bunu önlemek için resmin çevresine bir sıra sıfır eklenir; 3×3 filtre ve 1 sıra dolguyla 6×6 resim yine 6×6 haritaya dönüşür.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Kare bir resimde kenar uzunluğu n, filtre f, adım s, her kenara eklenen dolgu p ise özellik haritasının kenarı: (n + 2p − f) ÷ s + 1. Bölme tam çıkmazsa aşağı yuvarlanır. Örnek: n = 6, f = 3, s = 1, p = 0 için (6 − 3) ÷ 1 + 1 = 4. Neden böyle: pencerenin başlayabileceği konumları sayıyoruz; son konum, pencerenin resmin sonuna tam dayandığı yerdir.</p></div>
+
+<p><strong>Kanallar:</strong> Renkli resimde filtre de üç katmanlıdır: 3×3 değil 3×3×3. Pencere her konumda kırmızı, yeşil ve mavi tablolardaki 27 sayıyı birden çarpıp toplar ve yine <strong>tek</strong> sayı üretir. Bir katmanda 64 filtre varsa 64 özellik haritası çıkar ve bir sonraki katman için girdi artık 64 kanallıdır. Sonraki katmanın filtreleri de 3×3×64 olur: "bu konumda hangi kenarlar, hangi renk geçişleri birlikte var?" diye sorar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: parametre saymak</span>
+<p><strong>Soru:</strong> 224×224×3'lük bir resme 64 tane 3×3 filtre uygulayan evrişim katmanının kaç parametresi vardır? Aynı resmi 1000 nöronlu tam bağlı bir katmana vermekle karşılaştır.</p>
+<p><strong>Adım 1.</strong> Bir filtrenin ağırlık sayısı: 3 × 3 × 3 = 27 (yükseklik × genişlik × girdi kanalı).</p>
+<p><strong>Adım 2.</strong> Her filtrenin bir de sapması (bias) vardır (Parça 6). Bir filtre: 27 + 1 = 28 parametre.</p>
+<p><strong>Adım 3.</strong> 64 filtre: 64 × 28 = 1.792 parametre.</p>
+<p><strong>Adım 4.</strong> Resmin 224×224 olması bu sayıya girmedi, çünkü aynı filtre her konumda yeniden kullanılıyor (ağırlık paylaşımı). Resim 1000×1000 olsaydı da parametre sayısı 1.792 kalırdı; yalnızca hesap süresi artardı.</p>
+<p><strong>Adım 5.</strong> Tam bağlı katman: her nöron 150.528 girdiye bağlı ve 1 sapması var. 1000 nöron: 150.528 × 1000 + 1000 = 150.529.000 parametre.</p>
+<p><strong>Sonuç:</strong> Evrişim katmanı 1.792, tam bağlı katman yaklaşık 150,5 milyon parametre. Fark yaklaşık 84 bin kat. Aynı hesapla AlexNet'in ilk katmanı (96 filtre, her biri 11×11×3) 96 × (363 + 1) = 34.944 parametredir; ağın toplam 60 milyon parametresinin büyük bölümü sondaki tam bağlı katmanlardadır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Filtreleri mühendisler tasarlar."</strong> Yukarıda dikey kenar filtresini elle yazdık, çünkü fikri görmek için en kolayı bu. Ama evrişimli ağda filtrelerdeki sayılar <strong>ağırlıktır</strong> ve Parça 7'deki gibi rastgele başlatılıp geri yayılımla öğrenilir. Eğitim bitince ilk katmandaki filtrelerin çoğu kendiliğinden kenar ve renk geçişi bulucularına benzer; kimse onlara "kenar ara" demez. Elle filtre tasarlamak 2012 öncesi bilgisayarla görmenin yöntemiydi; derin öğrenmenin farkı tam olarak bunu veriye bırakmasıdır.</p>
+<p><strong>"Bir filtre bir özellik haritası; renkli resimde de 3 harita çıkar."</strong> Hayır. Filtre girdinin bütün kanallarını birden kapsar ve her konumda tek sayı üretir. Çıkan harita sayısını girdinin kanal sayısı değil, katmandaki <strong>filtre sayısı</strong> belirler.</p></div>
+
+<h2 class="s">Katman katman soyutlama: kenardan nesneye</h2>
+
+<p>Tek bir evrişim katmanı yalnızca kenar gibi küçük desenleri bulur. Asıl güç katmanları üst üste dizmekten gelir. İkinci katman, birinci katmanın özellik haritalarına bakar. Onun girdisinde artık piksel değil "burada dikey kenar var, burada yatay kenar var" bilgisi vardır. Dikey ve yatay kenarın aynı yerde buluşması bir <strong>köşedir</strong>; ikinci katmanın filtreleri böyle birleşimleri öğrenir. Üçüncü katman köşelerin ve eğrilerin birleşiminden daire, göz, tekerlek gibi <strong>parçaları</strong> bulur. Daha üst katmanlar parçalardan <strong>nesneye</strong> ulaşır: iki göz, bir burun, tüylü doku ve üçgen kulaklar birlikteyse kedi.</p>
+
+<p>Bunun bir ölçülebilir nedeni var: her katmanın gördüğü alan büyür. Birinci katmandaki bir hücre resimde 3×3'lük bir alana bakar. İkinci katmandaki bir hücre birinci haritada 3×3'e bakar; o 9 hücrenin her biri de resimde 3×3'e baktığı ve pencereler üst üste bindiği için toplamda resimde 5×5'lik bir alanı görür. Bir hücrenin resimde "görebildiği" bu alana <strong>algı alanı</strong> (receptive field) denir. Araya havuzlama girince algı alanı çok daha hızlı büyür. Böylece en üst katmanlardaki hücreler resmin büyük bölümünü birden görür.</p>
+
+<figure>
+<svg viewBox="0 0 400 470" role="img" aria-label="Evrişimli ağda bilginin akışı: resim, evrişim ve havuzlama katmanları, tam bağlı katman ve sınıf olasılıkları">
+  <rect class="sv-k" x="20" y="8" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="28" text-anchor="middle">Resim: 224×224×3 sayı</text>
+  <text class="sv-s" x="165" y="46" text-anchor="middle">renkli fotoğraf</text>
+  <path class="sv-c" d="M165 54V66" />
+  <rect class="sv-l" x="20" y="66" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="86" text-anchor="middle">Evrişim + ReLU</text>
+  <text class="sv-s" x="165" y="104" text-anchor="middle">kenarlar, renk geçişleri</text>
+  <path class="sv-c" d="M165 112V124" />
+  <rect class="sv-m" x="20" y="124" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="144" text-anchor="middle">Havuzlama</text>
+  <text class="sv-s" x="165" y="162" text-anchor="middle">haritayı küçült</text>
+  <path class="sv-c" d="M165 170V182" />
+  <rect class="sv-l" x="20" y="182" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="202" text-anchor="middle">Evrişim + ReLU</text>
+  <text class="sv-s" x="165" y="220" text-anchor="middle">köşeler, dokular, desenler</text>
+  <path class="sv-c" d="M165 228V240" />
+  <rect class="sv-m" x="20" y="240" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="260" text-anchor="middle">Havuzlama</text>
+  <text class="sv-s" x="165" y="278" text-anchor="middle">haritayı küçült</text>
+  <path class="sv-c" d="M165 286V298" />
+  <rect class="sv-l" x="20" y="298" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="318" text-anchor="middle">Evrişim + ReLU (birkaç kez)</text>
+  <text class="sv-s" x="165" y="336" text-anchor="middle">göz, kulak, tekerlek gibi parçalar</text>
+  <path class="sv-c" d="M165 344V356" />
+  <rect class="sv-k" x="20" y="356" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="376" text-anchor="middle">Tam bağlı katman + softmax</text>
+  <text class="sv-s" x="165" y="394" text-anchor="middle">parçaları sınıf olasılığına çevir</text>
+  <path class="sv-c" d="M165 402V414" />
+  <rect class="sv-a" x="20" y="414" width="290" height="46" rx="10" />
+  <text class="sv-b" x="165" y="434" text-anchor="middle">kedi %92 · köpek %6 · …</text>
+  <text class="sv-s" x="165" y="452" text-anchor="middle">her sınıf için bir olasılık</text>
+  <path class="sv-cl" d="M330 70V390" />
+  <polygon class="sv-cl" points="325,382 330,394 335,382" />
+  <text class="sv-s" x="364" y="150" text-anchor="middle">harita</text>
+  <text class="sv-s" x="364" y="166" text-anchor="middle">küçülür</text>
+  <text class="sv-s" x="364" y="270" text-anchor="middle">anlam</text>
+  <text class="sv-s" x="364" y="286" text-anchor="middle">büyür</text>
+</svg>
+<figcaption>Tipik bir evrişimli ağda bilgi yukarıdan aşağı akar. Her evrişim katmanı bir öncekinin bulduklarını birleştirir; havuzlama haritayı küçültür. Aşağı indikçe haritalar küçülür ama her hücrenin anlattığı şey daha soyut ve daha anlamlı hâle gelir. Sonda tam bağlı katman ve softmax her sınıf için bir olasılık verir.</figcaption>
+</figure>
+
+<p>Bu katmanların gerçekten böyle bir merdiven öğrendiği, eğitilmiş ağların içi görselleştirilerek gösterildi: Zeiler ve Fergus'un 2014'te yayımlanan çalışmasında alt katmanların kenar ve renk lekelerine, orta katmanların doku ve desenlere, üst katmanların köpek yüzü, tekerlek gibi nesne parçalarına tepki verdiği görüldü. Bunu "ağın içi tamamen anlaşıldı" diye okuma: Parça 6'daki kara kutu sorunu büyük ölçüde sürüyor; görselleştirmeler bir fikir verir, tam bir açıklama vermez. Ağların içini anlamaya çalışan alanı (yorumlanabilirlik) Parça 19'da göreceğiz.</p>
+
+<p>Fikir yeni değil: Hubel ve Wiesel'in kedilerin görme korteksinde belirli yöndeki çizgilere tepki veren hücreleri bulması (1950'lerin sonu) bu mimariye esin kaynağı oldu; benzetme Parça 6'daki gibi bir yere kadar geçerlidir. Geri yayılımla eğitilen ilk evrişimli ağlardan biri, el yazısı posta kodlarını okuyan Yann LeCun ve arkadaşlarının 1989 çalışmasıdır. Eksik olan, birazdan göreceğimiz gibi, veri ve hesap gücüydü.</p>
+
+<h2 class="s">Havuzlama: özetle, küçült, biraz da kaymayı affet</h2>
+
+<p>Özellik haritası hâlâ büyüktür ve bir sorumuz var: kenarın <em>tam olarak</em> hangi pikselde olduğu önemli mi? Çoğu zaman değil. "Bu bölgede güçlü bir dikey kenar var" demek yeter. Havuzlama bu özeti yapar.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Havuzlama</strong> (pooling): özellik haritası küçük bloklara (çoğunlukla 2×2) bölünür ve her blok tek bir sayıyla özetlenir. <strong>En büyük havuzlama</strong> (max pooling) bloktaki en büyük değeri, <strong>ortalama havuzlama</strong> ortalamayı alır. Havuzlamanın öğrenilen bir ağırlığı yoktur; yalnızca sabit bir kuraldır. Neden yapılır: (1) harita küçülür, sonraki katmanların hesabı azalır; (2) her hücrenin algı alanı büyür; (3) desen bloğun içinde bir iki piksel kaysa da bloğun en büyük değeri çoğunlukla aynı kalır, yani küçük kaymalara biraz tolerans kazanılır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: ReLU ve en büyük havuzlama</span>
+<p><strong>Soru:</strong> Örnek 1'deki dikey kenar haritasını önce ReLU'dan, sonra 2×2 en büyük havuzlamadan (adım 2) geçir. Sonuç nedir ve ne anlatır?</p>
+<p><strong>Adım 1.</strong> Harita satır satır: (18, 0, −18, −18), (27, 0, −27, −27), (18, 0, −18, −18), (9, 0, −9, −9).</p>
+<p><strong>Adım 2.</strong> ReLU her eksi değeri 0 yapar, artıları olduğu gibi bırakır (Parça 6). Yeni harita: (18, 0, 0, 0), (27, 0, 0, 0), (18, 0, 0, 0), (9, 0, 0, 0). Artık harita yalnızca "karanlıktan aydınlığa" geçen kenarları gösteriyor; ters yöndeki kenar başka bir filtrenin işidir.</p>
+<p><strong>Adım 3.</strong> Haritayı dört 2×2 bloğa böl. Sol üst blok: 18, 0, 27, 0. En büyüğü 27.</p>
+<p><strong>Adım 4.</strong> Sağ üst blok: 0, 0, 0, 0 → 0. Sol alt blok: 18, 0, 9, 0 → 18. Sağ alt blok: 0, 0, 0, 0 → 0.</p>
+<p><strong>Sonuç:</strong> 2×2'lik özet: üst satır (27, 0), alt satır (18, 0). Bilgi şuna indi: "resmin sol yarısında, özellikle üst tarafta, güçlü bir sol kenar var; sağ yarıda yok." 16 sayı 4 sayıya indi ama asıl bilgi kaldı. Kenar bir piksel aşağı kaysaydı sol üst bloktaki en büyük değer yine 27 olabilirdi; havuzlamanın kaymaya toleransı buradan gelir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Havuzlama sayesinde ağ kaymaya tamamen duyarsızdır."</strong> Değildir. Tolerans yalnızca bloğun içinde kalan küçük kaymalar içindir; kayma blok sınırını aşınca değer başka bloğa geçer. Deneme kutusundaki ölçümde evrişim ve havuzlamayla kurulan basit özellikler, bir piksel kaymada ham piksellerden belirgin biçimde iyi ama yine de kusursuz değil. Gerçek ağlar kaymaya, dönmeye, ışık değişimine dayanıklılığı büyük ölçüde <strong>veri artırmayla</strong> (Parça 7: eğitim resimlerini kırparak, çevirerek, kaydırarak çoğaltmak) ve çok sayıda katmanla kazanır.</p></div>
+
+<p>Şimdiye kadar gördüğümüz katman türlerini bir arada toplayalım.</p>
+
+<div class="tablo"><table>
+<tr><th>Katman</th><th>Ne yapar</th><th>Öğrenilen ağırlık var mı?</th><th>Neden orada?</th></tr>
+<tr><td>Evrişim</td><td>Filtreyi resim boyunca kaydırıp özellik haritası çıkarır</td><td>Var (filtre sayıları ve sapma)</td><td>Yerel desenleri her konumda aynı ağırlıkla bulmak</td></tr>
+<tr><td>ReLU</td><td>Eksileri 0 yapar</td><td>Yok</td><td>Doğrusal olmayan ilişkileri yakalamak (Parça 6)</td></tr>
+<tr><td>Havuzlama</td><td>Blokları en büyük ya da ortalama değerle özetler</td><td>Yok</td><td>Küçültmek, algı alanını büyütmek, küçük kaymaya tolerans</td></tr>
+<tr><td>Tam bağlı</td><td>Her girdiyi her nörona bağlar</td><td>Var</td><td>Bulunan parçaları bir karara birleştirmek</td></tr>
+<tr><td>Softmax</td><td>Puanları toplamı 1 olan olasılıklara çevirir</td><td>Yok</td><td>"kedi %92" gibi bir olasılık dağılımı vermek (Parça 3)</td></tr>
+</table></div>
+
+<h2 class="s">ImageNet ve 2012: neden dönüm noktası?</h2>
+
+<p>Evrişim fikri 1989'da vardı. Peki derin öğrenmenin "dönüşü" neden 2012'de oldu? Cevap üç bileşenin aynı anda bir araya gelmesidir: <strong>büyük etiketli veri</strong>, <strong>GPU</strong> ve <strong>derin ağı eğitilebilir kılan birkaç teknik</strong>.</p>
+
+<h3>Veri: ImageNet</h3>
+
+<p>ImageNet, Fei-Fei Li'nin ekibinin kurduğu büyük bir etiketli resim veri kümesidir; ilk makalesi 2009'da yayımlandı (Deng ve arkadaşları). Kategoriler, İngilizce sözcükleri anlam ağacı hâlinde düzenleyen WordNet adlı sözlük veritabanının yapısına göre seçildi; resimler internetten toplandı ve Amazon Mechanical Turk adlı çevrim içi iş platformunda çalışan insanlar tarafından etiketlendi. AlexNet makalesinin (2012) verdiği rakamla ImageNet yaklaşık 22.000 kategoride 15 milyondan fazla etiketli resim içeriyordu.</p>
+
+<p>2010'dan itibaren her yıl düzenlenen ImageNet Büyük Ölçekli Görsel Tanıma Yarışması (ILSVRC), bunun bir alt kümesini kullandı: 1000 sınıf, yaklaşık 1,2 milyon eğitim resmi ve 50.000 doğrulama resmi. Sınıflar arasında yalnızca "kedi", "araba" gibi kaba kategoriler değil, onlarca köpek cinsi gibi ince ayrımlar da vardı.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İlk-5 hata oranı</strong> (top-5 error): model her resim için en olası gördüğü 5 sınıfı söyler; doğru sınıf bu 5'in içinde <strong>yoksa</strong> hata sayılır. Neden 5: bir resimde birden çok nesne olabilir ve bazı sınıflar (iki yakın köpek cinsi gibi) insanlar için bile zordur; tek tahmin istemek modeli haksız yere cezalandırabilirdi. İlk-1 hata oranı ise yalnız en olası tahmine bakar ve doğal olarak daha yüksektir.</p></div>
+
+<h3>2012'de ne oldu?</h3>
+
+<p>Toronto Üniversitesi'nden Alex Krizhevsky, Ilya Sutskever ve Geoffrey Hinton'ın evrişimli ağı (sonradan AlexNet diye anıldı) 2012 yarışmasını <strong>%15,3</strong> ilk-5 hata oranıyla kazandı; ikinci gelen yöntemin hatası <strong>%26,2</strong> idi. Fark yaklaşık 11 puandı. Kazananın hatası 2010'da %28,2, 2011'de %25,8 idi; bir yıllık ilerleme 2,4 puandı. 2012'de tek hamlede 10 puandan fazla düşüş geldi. İkinci gelen ekip, büyük ölçüde elle tasarlanmış özelliklere dayanan geleneksel yöntemleri kullanıyordu; bu yüzden sonuç "öğrenilen özellikler elle tasarlanandan iyi" diye okundu.</p>
+
+<p>Küçük bir ayrıntı: yarışmanın kendi özet makalesi (Russakovsky ve arkadaşları, 2015) AlexNet ekibinin yalnız yarışma verisiyle eğittiği giriş için %16,4 verir; %15,3, ek ImageNet verisiyle ön eğitim yapılmış giriştir. AlexNet makalesi kazanan sonuç olarak %15,3'ü yazar. İki rakamla da ikinciye fark 10 puanın üstündedir.</p>
+
+<p>Ağ şu özelliklere sahipti (makalenin kendi verdiği rakamlarla):</p>
+
+<div class="tablo"><table>
+<tr><th>Bileşen</th><th>AlexNet'te</th><th>Neden önemliydi</th></tr>
+<tr><td>Derinlik</td><td>8 öğrenen katman: 5 evrişim + 3 tam bağlı; yaklaşık 60 milyon parametre, 650.000 nöron</td><td>Kenar → parça → nesne merdivenini kuracak kadar katman</td></tr>
+<tr><td>Veri</td><td>1000 sınıf, yaklaşık 1,2 milyon etiketli eğitim resmi</td><td>60 milyon parametreyi ezberlemeden eğitecek kadar örnek (Parça 2: çöp girerse çöp çıkar, az girerse ezber çıkar)</td></tr>
+<tr><td>Donanım</td><td>2 adet NVIDIA GTX 580 GPU (her biri 3 GB bellek); eğitim 5–6 gün</td><td>Evrişimin milyonlarca çarp-topla işlemi paralel yapılabildi (Parça 3)</td></tr>
+<tr><td>ReLU</td><td>Her katmandan sonra</td><td>tanh ve sigmoid gibi doyan fonksiyonlara göre birkaç kat hızlı eğitim; kaybolan gradyan sorununu hafifletir (Parça 7)</td></tr>
+<tr><td>Dropout</td><td>İlk iki tam bağlı katmanda, 0,5 oranla</td><td>Aşırı öğrenmeyi azaltmak (Parça 7)</td></tr>
+<tr><td>Veri artırma</td><td>Rastgele 224×224 kırpma, yatay çevirme, renk oynatma</td><td>Eğitim verisini yapay olarak çoğaltmak, kaymaya dayanıklılık</td></tr>
+</table></div>
+
+<p>Bunların çoğu tek başına yeni değildi; yeni olan, hepsinin büyük ölçekte birlikte çalıştığının gösterilmesiydi. Bu yüzden 2012, Parça 1'deki zaman çizelgesinde "derin öğrenmenin dönüşü" diye yer alır: kısa süre içinde bilgisayarla görme araştırmacılarının büyük bölümü evrişimli ağlara geçti, GPU'lar YZ'nin temel donanımı oldu.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="ImageNet yarışmasında kazanan modelin ilk 5 hata oranı, 2010 ile 2015 arası; 2012 yılında AlexNet ile sert düşüş">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Kazananın ilk-5 hata oranı (%)</text>
+  <path class="sv-c" d="M44 240H392" />
+  <text class="sv-s" x="38" y="244" text-anchor="end">0</text>
+  <path class="sv-c" d="M44 173H392" />
+  <text class="sv-s" x="38" y="177" text-anchor="end">10</text>
+  <path class="sv-c" d="M44 107H392" />
+  <text class="sv-s" x="38" y="111" text-anchor="end">20</text>
+  <path class="sv-c" d="M44 40H392" />
+  <text class="sv-s" x="38" y="44" text-anchor="end">30</text>
+  <rect class="sv-k" x="58" y="52" width="36" height="188" />
+  <text class="sv-t" x="76" y="46" text-anchor="middle">28,2</text>
+  <text class="sv-s" x="76" y="258" text-anchor="middle">2010</text>
+  <rect class="sv-k" x="114" y="68" width="36" height="172" />
+  <text class="sv-t" x="132" y="62" text-anchor="middle">25,8</text>
+  <text class="sv-s" x="132" y="258" text-anchor="middle">2011</text>
+  <rect class="sv-a" x="170" y="138" width="36" height="102" />
+  <text class="sv-t" x="188" y="132" text-anchor="middle">15,3</text>
+  <text class="sv-s" x="188" y="258" text-anchor="middle">2012</text>
+  <rect class="sv-l" x="226" y="162" width="36" height="78" />
+  <text class="sv-t" x="244" y="156" text-anchor="middle">11,7</text>
+  <text class="sv-s" x="244" y="258" text-anchor="middle">2013</text>
+  <rect class="sv-l" x="282" y="195" width="36" height="45" />
+  <text class="sv-t" x="300" y="189" text-anchor="middle">6,7</text>
+  <text class="sv-s" x="300" y="258" text-anchor="middle">2014</text>
+  <rect class="sv-l" x="338" y="216" width="36" height="24" />
+  <text class="sv-t" x="356" y="210" text-anchor="middle">3,57</text>
+  <text class="sv-s" x="356" y="258" text-anchor="middle">2015</text>
+  <path class="sv-cl" d="M44 206H392" stroke-dasharray="5 4" />
+  <text class="sv-s" x="392" y="66" text-anchor="end">kesik çizgi: bir uzman açıklamacının</text>
+  <text class="sv-s" x="392" y="82" text-anchor="end">%5,1 hatası (sınırlı bir ölçüm)</text>
+  <text class="sv-s" x="200" y="282" text-anchor="middle">2012 AlexNet · 2014 GoogLeNet · 2015 ResNet</text>
+</svg>
+<figcaption>ILSVRC sınıflandırma görevinde kazanan girişin ilk-5 hata oranı. 2010 ve 2011 geleneksel yöntemler; 2012 AlexNet (ek veriyle ön eğitilmiş giriş); 2013 Clarifai; 2014 GoogLeNet; 2015 ResNet (152 katmanlı ağlardan oluşan bir topluluk, %3,57). Kesik çizgi, iki uzman açıklamacıdan iyisinin 1.500 resimlik örneklemde ölçülen %5,1 hatasıdır; bir "insan sınırı" değil, tek bir sınırlı ölçümdür.</figcaption>
+</figure>
+
+<p>Sonraki yıllarda hata hızla düştü ve 2015'te Microsoft Araştırma'dan bir ekibin "artık bağlantılı" (residual) ağları, ResNet, %3,57'ye indi. ResNet'in fikri Parça 7'deki kaybolan gradyan sorununa doğrudan bir çözümdü: katmanların arasına girdiyi birkaç katman atlatıp ileri taşıyan kısa yollar koymak. Böylece gradyan bu kısayollardan geriye rahatça akabildi ve 152 katmanlı ağlar eğitilebildi.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"2015'te makineler görmede insanı geçti."</strong> Bu cümle bir kıyaslama tablosunu (benchmark) dünyayla karıştırır; Parça 5'teki uyarı aynen geçerlidir. Birincisi, %5,1 bütün insanların değil, alıştırma yapmış iki açıklamacıdan iyisinin 1.500 resimdeki hatasıdır. İkincisi, ImageNet'in koşulları (tek ana nesne, belirli fotoğraf türleri, 1000 sabit sınıf) gerçek dünyayı temsil etmez; aynı modeller farklı kamerada, farklı ışıkta belirgin biçimde kötüleşebilir. Üçüncüsü, yıllarca aynı test kümesine göre ayar yapmak Parça 5'teki Goodhart sorununu davet eder. Doğru cümle: "Bu kıyaslamada, bu koşullarda, ölçülen hata bu düzeye indi."</p></div>
+
+<h2 class="s">Transfer öğrenme: başkasının öğrendiğini kendi işine uyarlamak</h2>
+
+<p>ImageNet'te eğitilmiş bir ağın ilk katmanları kenar, renk geçişi, doku gibi <strong>genel</strong> şeyler bulur. Bunlar kedi resmine de, akciğer filmine de, fabrikadaki vidanın fotoğrafına da uygulanabilir. Yalnız son katmanlar "bu bir golden retriever" gibi ImageNet'e özel kararlara yakındır. Bu gözlem çok değerli bir yöntemi doğurur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Transfer öğrenme</strong> (transfer learning): büyük bir veri kümesinde önceden eğitilmiş (pretrained) bir ağı alıp küçük, başka bir işe uyarlamak. İki yaygın yol vardır. (1) <strong>Özellik çıkarıcı olarak kullanmak:</strong> evrişim katmanları dondurulur (ağırlıkları değişmez), yalnız sondaki sınıflandırıcı katman atılıp yeni işe uygun olanla değiştirilir ve yalnız o eğitilir. (2) <strong>İnce ayar</strong> (fine-tuning): ardından üst katmanların da küçük bir öğrenme oranıyla biraz eğitilmesine izin verilir. Neden işe yarar: genel görsel desenleri öğrenmek milyonlarca resim ister; sen bunu sıfırdan yapmak yerine hazır bulursun ve elindeki az veriyi yalnızca kendi işine özgü kısmı öğrenmeye harcarsın.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: küçük bir fabrikada çizik tespiti</span>
+<p><strong>Soru:</strong> Bir atölyede üretilen metal kapakların 400 fotoğrafın var: 300'ü sağlam, 100'ü çizikli. Bir model kurmak istiyorsun. Nasıl ilerlersin?</p>
+<p><strong>Adım 1.</strong> Veriyi ayır (Parça 2): örneğin 280 eğitim, 60 doğrulama, 60 test. Sınıf oranlarını her kümede koru; test kümesine sona kadar dokunma.</p>
+<p><strong>Adım 2.</strong> Sıfırdan derin ağ eğitme. Milyonlarca parametreyi 280 resimle eğitmek neredeyse kesin ezberle sonuçlanır (Parça 7'deki aşırı öğrenme).</p>
+<p><strong>Adım 3.</strong> ImageNet'te önceden eğitilmiş bir evrişimli ağ al. Son katmanı 1000 sınıf içindir ve "çizik" diye bir sınıfı yoktur. Onu at, yerine 2 çıkışlı (sağlam, çizikli) yeni bir katman koy. Ağın son evrişim katmanı 512 sayılık bir özellik vektörü veriyorsa yeni katmanın parametresi 512 × 2 + 2 = 1.026'dır; eskisi 512 × 1000 + 1000 = 513.000 idi.</p>
+<p><strong>Adım 4.</strong> Evrişim katmanlarını dondur ve yalnız yeni katmanı eğit. 1.026 parametreyi 280 resimle eğitmek makul bir iştir. Eğitim resimlerini çevirerek, hafifçe döndürerek, ışığını değiştirerek çoğalt (veri artırma).</p>
+<p><strong>Adım 5.</strong> Doğrulama kümesinde ölç. Sonuç yetersizse üst evrişim katmanlarını küçük bir öğrenme oranıyla serbest bırak (ince ayar). Büyük öğrenme oranı önceden öğrenilmiş genel özellikleri bozar.</p>
+<p><strong>Adım 6.</strong> Ölçütü doğru seç (Parça 5). Çizikli ürünler azınlıkta; "her şey sağlam" diyen model %75 doğruluk alır ama işe yaramaz. Çizikli parçayı kaçırmak pahalıysa duyarlılığa (recall) bak, eşiği ona göre ayarla. En sonda test kümesinde bir kez ölç.</p>
+<p><strong>Sonuç:</strong> Genel görsel bilgi korunur, küçük veri yalnızca "çizik nasıl görünür" kısmına harcanır. Görüntüler doğal fotoğraflardan ne kadar farklıysa (röntgen, mikroskop, uydu) transferin faydası o kadar azalabilir; o zaman daha çok ince ayar ve veri gerekir.</p></div>
+
+<p>Transfer öğrenme bugün görüntü uygulamalarının varsayılan başlangıcıdır; dil modellerindeki karşılığı (ön eğitim, sonra ince ayar) Parça 12 ve 13'te.</p>
+
+<h2 class="s">Bugün nerede kullanılıyor?</h2>
+
+<p><strong>Tıbbi görüntü.</strong> Röntgen, tomografi, retina fotoğrafı, cilt lezyonu ve patoloji kesitlerinde şüpheli bölgeyi işaretlemek ya da önceliklendirmek için kullanılır. Burada ölçüt seçimi hayati önemdedir: tarama amaçlı bir modelde hastalığı kaçırmak (düşük duyarlılık) çoğu zaman yanlış alarmdan pahalıdır. Bir hastanenin cihazıyla eğitilmiş model başka cihazda kötüleşebilir; bu yüzden bu sistemler çoğunlukla hekime yardımcı olarak ve ayrı doğrulama süreçlerinden geçerek kullanılır.</p>
+
+<p><strong>Endüstride kalite kontrol.</strong> Üretim bandında çizik, çatlak, eksik parça, yanlış etiket arama. Görüntüler kontrollü ışık ve sabit kamerayla çekildiği için bu, görüntü tanımanın en başarılı ve en az tartışmalı uygulamalarından biridir.</p>
+
+<p><strong>Günlük kullanım.</strong> Fotoğraf arşivinde "plaj" araması, yazı tanıma, yaprak hastalığı tespiti, sürücü destek sistemlerinde yaya algılama. Sonuncusunda <em>ne</em> olduğu yetmez, <em>nerede</em> olduğu da gerekir (nesne tespiti); temel taş yine evrişimli özellik çıkarıcıdır.</p>
+
+<h3>Yüz tanıma: mahremiyet ve yanlılık</h3>
+
+<p>Yüz tanımada iki farklı iş vardır ve tartışma bu ayrıma göre değişir. <strong>Doğrulama</strong> (1:1): "bu kişi, iddia ettiği kişi mi?" Telefonunun kilidini yüzünle açmak böyledir; tek bir kayıtla karşılaştırma yapılır. <strong>Tanımlama</strong> (1:N): "bu yüz, binlerce ya da milyonlarca kişilik veritabanında kime ait?" Kalabalıkta kamera görüntüsünden kişi aramak böyledir.</p>
+
+<p><strong>Mahremiyet.</strong> Yüz, değiştirilemeyen bir biyometrik veridir: sızan parolayı değiştirirsin, yüzünü değiştiremezsin. Kamusal alanda yüz tanıma, insanların haberi olmadan izlenmesini mümkün kılar. İnternetten toplanan fotoğraflarla dev yüz veritabanları kurulması ciddi tepki aldı: Clearview AI adlı şirketin 30 milyardan fazla resimlik veritabanı nedeniyle Hollanda veri koruma kurumu Eylül 2024'te şirkete 30,5 milyon avro ceza verdi; İtalya, Yunanistan ve Fransa'nın veri koruma kurumları da daha önce ceza vermişti. Avrupa Birliği'nin Yapay Zekâ Yasası, 2 Şubat 2025'ten beri yüz tanıma veritabanı kurmak ya da genişletmek için internetten ve güvenlik kameralarından hedefsiz yüz resmi toplamayı yasaklıyor; kamusal alanda kolluk amacıyla gerçek zamanlı uzaktan biyometrik tanımlamayı da kayıp kişi arama, yakın terör tehdidi gibi dar istisnalar dışında yasaklıyor. Türkiye'de 6698 sayılı Kişisel Verilerin Korunması Kanunu biyometrik veriyi "özel nitelikli kişisel veri" sayar ve işlenmesini sıkı koşullara bağlar. Düzenlemenin genel çerçevesini Parça 20'de göreceğiz.</p>
+
+<p><strong>Yanlılık.</strong> Parça 5'te gördük: model veride ne varsa onu öğrenir. Yüz verileri belirli gruplardan ağırlıklıysa model başka gruplarda daha çok hata yapar. Bu tartışmanın iki önemli çalışmasını bilmekte fayda var:</p>
+
+<div class="tablo"><table>
+<tr><th>Çalışma</th><th>Ne ölçtü?</th><th>Ne buldu?</th></tr>
+<tr><td>Gender Shades (Buolamwini ve Gebru, 2018)</td><td>Microsoft, IBM ve Face++'ın ticari <strong>cinsiyet sınıflandırma</strong> sistemleri; 3 Afrika ve 3 Avrupa ülkesinin parlamenterlerinden oluşan, cinsiyet ve ten rengine göre dengeli 1.270 kişilik yeni bir veri kümesi</td><td>En çok hata koyu tenli kadınlarda: hata oranı %34,7'ye kadar; açık tenli erkeklerde en yüksek hata %0,8. Yaygın iki yüz veri kümesinin %79,6 ve %86,2'si açık tenli kişilerden oluşuyordu.</td></tr>
+<tr><td>NIST FRVT, demografik etkiler (Aralık 2019)</td><td>99 geliştiricinin 189 <strong>yüz tanıma</strong> algoritması; ABD kurumlarının veritabanlarından 8,49 milyon kişiye ait 18,27 milyon resim</td><td>Algoritmaların çoğunda gruplar arası fark vardı; 1:1 doğrulamada Asyalı ve Afrikalı Amerikalı yüzlerde yanlış eşleşme oranı, algoritmaya göre, beyaz yüzlere kıyasla 10 ila 100 kat yüksekti. Ama algoritmalar arasında büyük fark vardı: en adil olanlar en doğru olanlar arasındaydı.</td></tr>
+</table></div>
+
+<p>Bu iki çalışmadan çıkan dersler: (1) genel doğruluk tek başına yetmez; başarıyı <strong>alt gruplara ayırarak</strong> ölçmek gerekir. (2) Fark doğa yasası değildir; verinin bileşimi ve tasarım tercihleriyle büyür ya da küçülür. Gender Shades'in ardından IBM, çok daha dengeli bir veriyle yeni bir model geliştirdiğini açıkladı. (3) Hatanın bedeli kullanım yerine göre değişir: telefon kilidinde yanlış ret can sıkar, polis soruşturmasında yanlış eşleşme bir insanın hayatını etkileyebilir. Yanlılık tartışması, kullanımın <em>nerede</em> ve <em>hangi denetimle</em> yapılacağından ayrılamaz.</p>
+
+<h2 class="s">Difüzyona köprü: gürültüden resim çıkarmak</h2>
+
+<p>Buraya kadar resmi <em>anlayan</em> ağları gördük: resim girer, "kedi" çıkar. Son yıllarda bir cümleden resim <em>üreten</em> modeller yaygınlaştı. Bunların çoğunun dayandığı fikir <strong>difüzyondur</strong> ve sezgisi şaşırtıcı biçimde basittir.</p>
+
+<p>Eğitimde gerçek bir resim alınır ve üzerine adım adım biraz rastgele gürültü eklenir; yeterince adımdan sonra resimden geriye saf gürültü kalır, eski televizyonlardaki karıncalanma gibi. Bu kısım öğrenme gerektirmez, yalnızca bir kuraldır. Öğrenilen şey tersidir: model, gürültülü bir resme bakıp "bu gürültünün ne kadarı eklenmişti, bir adım öncesi nasıl görünüyordu?" sorusunu cevaplamayı öğrenir.</p>
+
+<p>Üretim sırasında model saf gürültüyle başlar ve bu "gürültüyü biraz azalt" adımını yüzlerce kez art arda uygular. Her adımda resim biraz daha belirginleşir ve sonunda hiç var olmamış ama gerçekçi bir resim ortaya çıkar. Metinle yönlendirmek için her adımda metnin sayısal temsili (Parça 9'daki gömme) de verilir; gürültü "kırmızı bir bisiklet" yönünde temizlenir. Gürültüyü temizleyen ağ çoğunlukla evrişim ya da dikkat (Parça 10) katmanlarından kurulur. Bu yaklaşımı yüksek kaliteli resim üretiminde gösteren etkili makale Ho, Jain ve Abbeel'in 2020'de yayımlanan "Denoising Diffusion Probabilistic Models" çalışmasıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Difüzyon: eğitimde resme adım adım gürültü eklenir, üretimde saf gürültüden adım adım gürültü çıkarılarak resim elde edilir">
+  <rect class="sv-k" x="14" y="70" width="80" height="80" rx="6" />
+  <circle class="sv-l" cx="35.0" cy="81.4" r="2" />
+  <circle class="sv-l" cx="46.5" cy="85.2" r="2" />
+  <circle class="sv-l" cx="22.8" cy="102.9" r="2" />
+  <circle class="sv-l" cx="84.1" cy="131.6" r="2" />
+  <circle class="sv-l" cx="73.1" cy="90.0" r="2" />
+  <circle class="sv-l" cx="56.6" cy="93.9" r="2" />
+  <circle class="sv-l" cx="30.4" cy="81.6" r="2" />
+  <circle class="sv-l" cx="33.4" cy="140.8" r="2" />
+  <circle class="sv-l" cx="77.7" cy="132.1" r="2" />
+  <circle class="sv-l" cx="75.6" cy="87.9" r="2" />
+  <circle class="sv-l" cx="40.3" cy="119.1" r="2" />
+  <circle class="sv-l" cx="70.7" cy="135.5" r="2" />
+  <circle class="sv-l" cx="81.4" cy="80.2" r="2" />
+  <circle class="sv-l" cx="61.6" cy="122.4" r="2" />
+  <circle class="sv-l" cx="54.4" cy="86.8" r="2" />
+  <circle class="sv-l" cx="52.1" cy="80.4" r="2" />
+  <circle class="sv-l" cx="85.3" cy="136.3" r="2" />
+  <circle class="sv-l" cx="57.4" cy="95.6" r="2" />
+  <circle class="sv-l" cx="83.4" cy="115.2" r="2" />
+  <circle class="sv-l" cx="81.5" cy="135.1" r="2" />
+  <circle class="sv-l" cx="54.6" cy="103.8" r="2" />
+  <circle class="sv-l" cx="61.1" cy="105.0" r="2" />
+  <circle class="sv-l" cx="29.6" cy="96.0" r="2" />
+  <circle class="sv-l" cx="76.5" cy="77.1" r="2" />
+  <circle class="sv-l" cx="21.3" cy="119.1" r="2" />
+  <circle class="sv-l" cx="38.2" cy="112.5" r="2" />
+  <circle class="sv-l" cx="51.9" cy="98.7" r="2" />
+  <circle class="sv-l" cx="89.8" cy="88.1" r="2" />
+  <circle class="sv-l" cx="47.7" cy="88.6" r="2" />
+  <circle class="sv-l" cx="63.6" cy="93.9" r="2" />
+  <circle class="sv-l" cx="43.6" cy="127.8" r="2" />
+  <circle class="sv-l" cx="41.1" cy="114.2" r="2" />
+  <circle class="sv-l" cx="83.1" cy="81.3" r="2" />
+  <circle class="sv-l" cx="22.4" cy="90.5" r="2" />
+  <circle class="sv-l" cx="73.1" cy="118.3" r="2" />
+  <circle class="sv-l" cx="35.1" cy="97.8" r="2" />
+  <circle class="sv-l" cx="30.8" cy="107.0" r="2" />
+  <circle class="sv-l" cx="21.1" cy="124.2" r="2" />
+  <circle class="sv-l" cx="82.5" cy="142.7" r="2" />
+  <circle class="sv-l" cx="70.9" cy="143.1" r="2" />
+  <circle class="sv-l" cx="19.3" cy="94.8" r="2" />
+  <circle class="sv-l" cx="87.6" cy="129.8" r="2" />
+  <circle class="sv-l" cx="47.6" cy="141.9" r="2" />
+  <circle class="sv-l" cx="62.7" cy="132.9" r="2" />
+  <circle class="sv-l" cx="39.1" cy="87.8" r="2" />
+  <circle class="sv-l" cx="50.0" cy="83.8" r="2" />
+  <circle class="sv-l" cx="45.5" cy="143.3" r="2" />
+  <circle class="sv-l" cx="41.9" cy="74.7" r="2" />
+  <circle class="sv-l" cx="21.2" cy="86.2" r="2" />
+  <circle class="sv-l" cx="74.4" cy="100.1" r="2" />
+  <circle class="sv-l" cx="38.9" cy="81.0" r="2" />
+  <circle class="sv-l" cx="88.7" cy="104.5" r="2" />
+  <circle class="sv-l" cx="33.0" cy="78.3" r="2" />
+  <circle class="sv-l" cx="22.0" cy="86.1" r="2" />
+  <circle class="sv-l" cx="66.7" cy="84.8" r="2" />
+  <circle class="sv-l" cx="20.9" cy="109.3" r="2" />
+  <circle class="sv-l" cx="35.9" cy="145.8" r="2" />
+  <circle class="sv-l" cx="26.8" cy="112.1" r="2" />
+  <circle class="sv-l" cx="73.7" cy="103.5" r="2" />
+  <circle class="sv-l" cx="89.1" cy="108.4" r="2" />
+  <rect class="sv-k" x="110" y="70" width="80" height="80" rx="6" />
+  <polygon class="sv-a" points="126,108 150,86 174,108" />
+  <rect class="sv-m" x="132" y="108" width="36" height="30" />
+  <circle class="sv-l" cx="131.4" cy="103.6" r="2" />
+  <circle class="sv-l" cx="116.7" cy="104.3" r="2" />
+  <circle class="sv-l" cx="131.9" cy="138.0" r="2" />
+  <circle class="sv-l" cx="173.8" cy="109.9" r="2" />
+  <circle class="sv-l" cx="116.3" cy="92.3" r="2" />
+  <circle class="sv-l" cx="131.5" cy="89.0" r="2" />
+  <circle class="sv-l" cx="130.7" cy="136.6" r="2" />
+  <circle class="sv-l" cx="124.2" cy="77.7" r="2" />
+  <circle class="sv-l" cx="180.8" cy="114.7" r="2" />
+  <circle class="sv-l" cx="185.3" cy="103.0" r="2" />
+  <circle class="sv-l" cx="178.9" cy="121.1" r="2" />
+  <circle class="sv-l" cx="170.9" cy="127.6" r="2" />
+  <circle class="sv-l" cx="149.6" cy="80.7" r="2" />
+  <circle class="sv-l" cx="129.2" cy="136.9" r="2" />
+  <circle class="sv-l" cx="178.8" cy="140.6" r="2" />
+  <circle class="sv-l" cx="138.2" cy="121.3" r="2" />
+  <circle class="sv-l" cx="171.6" cy="120.3" r="2" />
+  <circle class="sv-l" cx="172.7" cy="112.0" r="2" />
+  <circle class="sv-l" cx="161.1" cy="123.4" r="2" />
+  <circle class="sv-l" cx="133.3" cy="140.4" r="2" />
+  <circle class="sv-l" cx="182.9" cy="79.4" r="2" />
+  <circle class="sv-l" cx="183.9" cy="143.2" r="2" />
+  <circle class="sv-l" cx="162.1" cy="77.2" r="2" />
+  <circle class="sv-l" cx="178.7" cy="83.2" r="2" />
+  <circle class="sv-l" cx="183.7" cy="122.0" r="2" />
+  <circle class="sv-l" cx="118.4" cy="86.0" r="2" />
+  <circle class="sv-l" cx="159.7" cy="115.0" r="2" />
+  <circle class="sv-l" cx="167.7" cy="140.8" r="2" />
+  <circle class="sv-l" cx="129.7" cy="74.2" r="2" />
+  <circle class="sv-l" cx="180.4" cy="74.9" r="2" />
+  <circle class="sv-l" cx="177.1" cy="82.3" r="2" />
+  <circle class="sv-l" cx="172.3" cy="130.4" r="2" />
+  <circle class="sv-l" cx="177.2" cy="113.6" r="2" />
+  <circle class="sv-l" cx="177.3" cy="88.5" r="2" />
+  <circle class="sv-l" cx="162.3" cy="97.8" r="2" />
+  <rect class="sv-k" x="206" y="70" width="80" height="80" rx="6" />
+  <polygon class="sv-a" points="222,108 246,86 270,108" />
+  <rect class="sv-m" x="228" y="108" width="36" height="30" />
+  <circle class="sv-l" cx="274.2" cy="129.7" r="2" />
+  <circle class="sv-l" cx="243.9" cy="111.9" r="2" />
+  <circle class="sv-l" cx="211.9" cy="76.5" r="2" />
+  <circle class="sv-l" cx="252.8" cy="109.2" r="2" />
+  <circle class="sv-l" cx="272.3" cy="117.8" r="2" />
+  <circle class="sv-l" cx="220.0" cy="100.1" r="2" />
+  <circle class="sv-l" cx="265.3" cy="111.7" r="2" />
+  <circle class="sv-l" cx="210.8" cy="134.3" r="2" />
+  <circle class="sv-l" cx="269.6" cy="80.1" r="2" />
+  <circle class="sv-l" cx="249.1" cy="101.4" r="2" />
+  <circle class="sv-l" cx="266.7" cy="96.4" r="2" />
+  <circle class="sv-l" cx="226.8" cy="109.0" r="2" />
+  <circle class="sv-l" cx="279.6" cy="80.8" r="2" />
+  <circle class="sv-l" cx="218.2" cy="118.7" r="2" />
+  <circle class="sv-l" cx="273.7" cy="110.9" r="2" />
+  <rect class="sv-k" x="302" y="70" width="80" height="80" rx="6" />
+  <polygon class="sv-a" points="318,108 342,86 366,108" />
+  <rect class="sv-m" x="324" y="108" width="36" height="30" />
+  <text class="sv-s" x="54" y="166" text-anchor="middle">saf gürültü</text>
+  <text class="sv-s" x="150" y="166" text-anchor="middle">çok gürültü</text>
+  <text class="sv-s" x="246" y="166" text-anchor="middle">az gürültü</text>
+  <text class="sv-s" x="342" y="166" text-anchor="middle">resim</text>
+  <path class="sv-cl" d="M366 52H34" />
+  <polygon class="sv-cl" points="34,47 24,52 34,57" />
+  <text class="sv-t" x="200" y="40" text-anchor="middle">Eğitim: gerçek resme adım adım gürültü ekle</text>
+  <path class="sv-cl" d="M34 186H366" />
+  <polygon class="sv-cl" points="366,181 376,186 366,191" />
+  <text class="sv-t" x="200" y="210" text-anchor="middle">Üretim: model gürültüyü adım adım çıkarır</text>
+</svg>
+<figcaption>Difüzyonun iki yönü. Eğitimde gerçek resme adım adım gürültü eklenir (sağdan sola) ve model her adımın tersini yapmayı öğrenir. Üretimde saf gürültüyle başlanır ve model gürültüyü adım adım çıkararak (soldan sağa) yeni bir resim oluşturur.</figcaption>
+</figure>
+
+<p>Görüntü üreten modellerin telif, sahte görüntü (deepfake) ve dolandırıcılık tartışmalarını Parça 18'de, savunma tarafıyla birlikte ele alacağız.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme (Python): evrişimi bilgisayara yaptırmak ve kaymayı ölçmek</span>
+<p>Kodu hiç bilmiyorsan bu kutuyu atlayabilirsin. Gerekenler: Python 3, <code>numpy</code> ve <code>scikit-learn</code>. İnternetten veri indirilmez; ikinci denemedeki rakam veri kümesi scikit-learn'ün içinde gelir.</p>
+<p><strong>Birinci deneme</strong>, Çözümlü örnek 1 ve 3'teki elle hesabı tekrarlar: 6×6 resme dikey ve yatay kenar filtresi, ardından ReLU ve 2×2 en büyük havuzlama.</p>
+<pre class="kod" data-ad="python3 evrisim.py">import numpy as np
+
+# 6x6 gri tonlu resim: 0 siyah, 9 en parlak
+resim = np.array([
+    [0, 0, 0, 0, 0, 0],
+    [0, 9, 9, 9, 0, 0],
+    [0, 9, 9, 9, 0, 0],
+    [0, 9, 9, 9, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+])
+
+# soldan saga parlakligin artisini arayan 3x3 filtre
+dikey = np.array([
+    [-1, 0, 1],
+    [-1, 0, 1],
+    [-1, 0, 1],
+])
+yatay = dikey.T  # yukaridan asagi artisi arar
+
+def evrisim(r, f):
+    k = f.shape[0]
+    n = r.shape[0] - k + 1
+    m = r.shape[1] - k + 1
+    cikti = np.zeros((n, m), dtype=int)
+    for i in range(n):
+        for j in range(m):
+            pencere = r[i:i+k, j:j+k]
+            cikti[i, j] = (pencere * f).sum()
+    return cikti
+
+def havuzla(h, k=2):
+    n = h.shape[0] // k
+    m = h.shape[1] // k
+    sonuc = np.zeros((n, m), dtype=int)
+    for i in range(n):
+        for j in range(m):
+            sonuc[i, j] = h[i*k:(i+1)*k, j*k:(j+1)*k].max()
+    return sonuc
+
+d = evrisim(resim, dikey)
+print("Dikey kenar haritasi:")
+print(d)
+print("Yatay kenar haritasi:")
+print(evrisim(resim, yatay))
+d_relu = np.maximum(d, 0)
+print("ReLU sonrasi dikey harita:")
+print(d_relu)
+print("2x2 en buyuk havuzlama:")
+print(havuzla(d_relu))</pre>
+<pre class="cikti">Dikey kenar haritasi:
+[[ 18   0 -18 -18]
+ [ 27   0 -27 -27]
+ [ 18   0 -18 -18]
+ [  9   0  -9  -9]]
+Yatay kenar haritasi:
+[[ 18  27  18   9]
+ [  0   0   0   0]
+ [-18 -27 -18  -9]
+ [-18 -27 -18  -9]]
+ReLU sonrasi dikey harita:
+[[18  0  0  0]
+ [27  0  0  0]
+ [18  0  0  0]
+ [ 9  0  0  0]]
+2x2 en buyuk havuzlama:
+[[27  0]
+ [18  0]]</pre>
+<p>Elle bulduğumuz 18 ve −27 haritada duruyor; havuzlama sonucu Örnek 3'le aynı.</p>
+<p><strong>İkinci deneme</strong> kaymayı ölçer. 1.797 tane 8×8'lik el yazısı rakam eğitim (%70) ve test (%30) diye ayrılır. İki lojistik regresyon (Parça 4) kurulur: biri 64 ham piksele, öbürü 4 sabit kenar filtresiyle evrişim, ReLU ve 2×2 havuzlamadan çıkan 36 sayıya bakar. Test resimleri 0, 1 ve 2 piksel sağa kaydırılıp doğruluk ölçülür.</p>
+<pre class="kod" data-ad="python3 kayma.py">import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+X, y = load_digits(return_X_y=True)        # 1797 el yazisi rakam, 8x8 piksel
+resimler = X.reshape(-1, 8, 8)
+egt_r, test_r, egt_y, test_y = train_test_split(
+    resimler, y, test_size=0.3, random_state=0)
+
+def kaydir(r, adim):                        # resmi saga kaydir, soldan siyah doldur
+    k = np.zeros_like(r)
+    k[:, :, adim:] = r[:, :, :8-adim]
+    return k
+
+dikey = np.array([[-1, 0, 1]] * 3)
+filtreler = [dikey, dikey.T, -dikey, -dikey.T]   # 4 kenar yonu
+
+def ozellik(r):                             # evrisim + ReLU + 2x2 havuzlama
+    satirlar = []
+    for tek in r:
+        parca = []
+        for f in filtreler:
+            h = np.zeros((6, 6))
+            for i in range(6):
+                for j in range(6):
+                    h[i, j] = (tek[i:i+3, j:j+3] * f).sum()
+            h = np.maximum(h, 0)
+            for i in range(0, 6, 2):
+                for j in range(0, 6, 2):
+                    parca.append(h[i:i+2, j:j+2].max())
+        satirlar.append(parca)
+    return np.array(satirlar)
+
+ham = LogisticRegression(max_iter=5000).fit(egt_r.reshape(len(egt_r), -1), egt_y)
+evr = LogisticRegression(max_iter=5000).fit(ozellik(egt_r), egt_y)
+
+print("ozellik sayisi: ham", egt_r[0].size, "| evrisim", ozellik(egt_r[:1]).shape[1])
+for adim in (0, 1, 2):
+    t = kaydir(test_r, adim)
+    a = ham.score(t.reshape(len(t), -1), test_y)
+    b = evr.score(ozellik(t), test_y)
+    print(f"{adim} piksel kayma | ham piksel: {a:.3f} | evrisim+havuzlama: {b:.3f}")</pre>
+<pre class="cikti">ozellik sayisi: ham 64 | evrisim 36
+0 piksel kayma | ham piksel: 0.952 | evrisim+havuzlama: 0.954
+1 piksel kayma | ham piksel: 0.400 | evrisim+havuzlama: 0.565
+2 piksel kayma | ham piksel: 0.098 | evrisim+havuzlama: 0.130</pre>
+<p><strong>Yorum.</strong> Kayma yokken iki model aynı düzeyde (%95,2 ve %95,4). Bir piksel kaymada ham piksel modeli %40'a çöküyor, evrişimli özellikler %56,5'te kalıyor: belirgin fark, ama tam dayanıklılık değil. 2 piksel, 8×8'lik resimde genişliğin dörtte biridir; orada ikisi de rastgele tahmin düzeyine (%10) yaklaşıyor. Gerçek ağlar filtreleri öğrenir, çok katman kullanır ve veri artırmayla eğitilir. Sayılar scikit-learn 1.9.1 ve numpy 2.5.3 ile alındı; başka sürümde son basamaklar değişebilir.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3, 6 ve 7'ye:</strong> Evrişimin her hücresi bir nöronun ağırlıklı toplamıdır; filtreler geri yayılımla öğrenilir; AlexNet GPU paralelliğine, dropout'a ve veri artırmaya dayandı.</p>
+<p><strong>Parça 5'e:</strong> ImageNet'te "insanı geçmek" bir kıyaslama sonucudur, dünyayı tanımlamaz; yüz tanımadaki yanlılık, Parça 5'teki "model veride ne varsa onu öğrenir" ilkesinin en çok tartışılan örneğidir.</p>
+<p><strong>Parça 9–13'e:</strong> Transfer öğrenme, dil modellerindeki ön eğitim ve ince ayarın öncüsüdür; difüzyon modelleri metni Parça 9'daki gömmelerle alır.</p>
+<p><strong>Parça 18 ve 20'ye:</strong> Deepfake ve sahte görüntüyle dolandırıcılık Parça 18'de; yüz tanıma ve biyometrik veriye dair düzenlemeler Parça 20'de.</p>
+<p><strong>Öbür alanlara:</strong> Evrişim, sinyal işlemede (ses, sensör verisi) de temel araçtır; kalite kontrol örneği üretimdeki muayene süreçlerine bağlanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir resmi düzleştirip Parça 6'daki tam bağlı ağa vermenin üç sorunu nedir?</summary><p>Birincisi parametre patlaması: 224×224×3'lük resimde tek bir nöron 150.528 ağırlık ister ve ilk katman yüz milyonlarca parametreye çıkabilir. İkincisi komşuluk bilgisinin kaybolması: düzleştirince alt alta komşu pikseller listede birbirinden uzağa düşer. Üçüncüsü aynı deseni her konum için ayrı ağırlıklarla yeniden öğrenmek zorunda kalmak; bu da kaymaya karşı hassaslık demektir.</p></details>
+<details><summary>Ağırlık paylaşımı nedir ve neden mantıklıdır?</summary><p>Aynı filtrenin resmin her konumunda aynı ağırlıklarla kullanılmasıdır. Mantıklıdır çünkü bir kenar ya da doku resmin neresinde olursa olsun aynı desendir. Sonuçta parametre sayısı resmin boyutuna bağlı olmaz ve bir yerde öğrenilen desen her yerde tanınır.</p></details>
+<details><summary>AlexNet'i 2012'de başarılı kılan üç bileşen nedir?</summary><p>Büyük etiketli veri (ImageNet'in yaklaşık 1,2 milyon eğitim resmi), GPU ile paralel hesap (iki GTX 580, 5–6 günlük eğitim) ve derin ağı eğitilebilir kılan teknikler (ReLU, dropout, veri artırma). Fikirlerin çoğu daha önce de biliniyordu; yeni olan büyük ölçekte birlikte işe yaradıklarının gösterilmesiydi.</p></details>
+<details><summary>Transfer öğrenmede neden ilk katmanlar korunur da son katman değiştirilir?</summary><p>İlk katmanlar kenar, renk geçişi, doku gibi hemen her görüntü işinde işe yarayan genel desenleri öğrenmiştir. Son katman ise eski işin sınıflarına (ImageNet'te 1000 sınıf) özeldir ve yeni işin sınıflarını bilmez. Genel kısmı koruyup yalnız özel kısmı yeniden eğitmek, az veriyle iyi sonuç almayı sağlar.</p></details>
+<details><summary>Gender Shades çalışmasının asıl dersi nedir?</summary><p>Genel doğruluğu yüksek bir sistem bazı alt gruplarda çok daha kötü çalışabilir: üç ticari cinsiyet sınıflandırıcısında koyu tenli kadınlarda hata %34,7'ye kadar çıkarken açık tenli erkeklerde en çok %0,8 idi. Bu yüzden başarıyı alt gruplara ayırarak ölçmek gerekir.</p></details>
+<details><summary>Difüzyon modeli neyi öğrenir, resmi nasıl üretir?</summary><p>Eğitimde gerçek resimlere adım adım gürültü eklenir ve model gürültülü bir resimden bir adım öncesini tahmin etmeyi, yani gürültüyü biraz azaltmayı öğrenir. Üretimde saf gürültüyle başlanır ve bu azaltma adımı defalarca uygulanarak yeni bir resim ortaya çıkar; metin, her adımda yönlendirici olarak verilir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Resim = sayı tablosu:</strong> yükseklik × genişlik × kanal (gri 1, renkli 3). 224×224×3 = 150.528 sayı.</li>
+<li><strong>Düz ağın sorunu:</strong> parametre patlaması, komşuluk kaybı, her konumda yeniden öğrenme (kaymaya hassaslık).</li>
+<li><strong>Evrişim:</strong> küçük filtre resimde kayar; her konumda çarp-topla → özellik haritası. Büyük değer = desen burada.</li>
+<li><strong>Ağırlık paylaşımı:</strong> aynı filtre her yerde. Parametre = filtre sayısı × (f × f × girdi kanalı + 1); resim boyundan bağımsız.</li>
+<li><strong>Harita boyu:</strong> (n + 2p − f) ÷ s + 1. Dolgu boyu korur, büyük adım küçültür.</li>
+<li><strong>Filtreler öğrenilir</strong> (geri yayılım); elle tasarlanmaz.</li>
+<li><strong>Katman katman:</strong> kenar → köşe/doku → parça → nesne; algı alanı büyür.</li>
+<li><strong>Havuzlama:</strong> 2×2 blokta en büyük (ya da ortalama); ağırlığı yok; küçültür, küçük kaymayı affeder, tam dayanıklılık vermez.</li>
+<li><strong>ImageNet / AlexNet 2012:</strong> ilk-5 hata %15,3, ikinci %26,2. Veri + GPU + derin ağ (ReLU, dropout, veri artırma). 2015 ResNet %3,57.</li>
+<li><strong>"İnsanı geçti" dikkat:</strong> %5,1 tek bir sınırlı ölçüm; kıyaslama ≠ gerçek dünya.</li>
+<li><strong>Transfer öğrenme:</strong> önceden eğitilmiş ağı al, son katmanı değiştir, önce onu eğit, gerekirse küçük öğrenme oranıyla ince ayar.</li>
+<li><strong>Yüz tanıma:</strong> 1:1 doğrulama ve 1:N tanımlama. Biyometrik veri değiştirilemez. Yanlılık: başarıyı alt gruplara ayırarak ölç (Gender Shades 2018, NIST 2019).</li>
+<li><strong>Difüzyon:</strong> eğitimde gürültü ekle, model geri almayı öğrenir; üretimde saf gürültüden adım adım resim.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-8">
+<h3>Quiz 8</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Genişliği 200, yüksekliği 100 piksel olan renkli (RGB) bir resim bilgisayarda kaç sayıyla temsil edilir?</p>
+<ul class="sec"><li>20.000</li><li>60.000</li><li>300</li><li>600.000</li><li>40.000</li></ul>
+<div class="coz"><p>Renkli resimde her piksel için üç sayı vardır (kırmızı, yeşil, mavi kanalları). Piksel sayısı 200 × 100 = 20.000; kanal sayısıyla çarpınca 20.000 × 3 = 60.000. A, kanalları unutup yalnız piksel sayısını verir; bu gri tonlu bir resim için doğru olurdu. C, 200 ile 100'ü toplar; D bir basamak fazladır; E ise 3 yerine 2 kanal varsayar. Formül: yükseklik × genişlik × kanal.</p></div></li>
+
+<li data-c="D"><p class="q">Bir resimdeki 3×3'lük pencerenin satırları (1, 2, 0), (3, 1, 0), (4, 2, 1) ve filtrenin her satırı (−1, 0, 1) ise evrişim bu konumda hangi değeri üretir?</p>
+<ul class="sec"><li>14</li><li>7</li><li>−1</li><li>−7</li><li>0</li></ul>
+<div class="coz"><p>Her satırı filtrenin satırıyla hücre hücre çarpıp topla: birinci satır 1·(−1) + 2·0 + 0·1 = −1; ikinci satır 3·(−1) + 1·0 + 0·1 = −3; üçüncü satır 4·(−1) + 2·0 + 1·1 = −3. Toplam −1 − 3 − 3 = −7. Eksi işaret, pencerenin sol tarafının sağından parlak olduğunu, yani soldan sağa karanlığa giden bir kenarı gösterir. A, filtreyi yok sayıp pikselleri toplar; B işareti kaçırır; C yalnız ilk satırı hesaplar; E ise orta sütunun sıfır olmasından bütün sonucun sıfır olacağı sonucunu çıkarır.</p></div></li>
+
+<li data-c="B"><p class="q">10×10'luk gri bir resme 3×3'lük bir filtre, adım 1 ile ve dolgu <strong>olmadan</strong> uygulanıyor. Özellik haritasının boyutu nedir?</p>
+<ul class="sec"><li>10×10</li><li>8×8</li><li>7×7</li><li>9×9</li><li>4×4</li></ul>
+<div class="coz"><p>Formül (n + 2p − f) ÷ s + 1; burada n = 10, p = 0, f = 3, s = 1: (10 − 3) ÷ 1 + 1 = 8. Sezgisi: 3 genişlikteki pencerenin başlayabileceği sütunlar 1'den 8'e kadardır, 9. sütundan başlarsa resmin dışına taşar. A, 1 sıra dolgu eklenmiş olsaydı doğru olurdu. C, "+1"i unutur; D filtrenin yalnız bir kenar pikselini düşer; E adım 2 ile hesaplanmış gibidir ((10 − 3) ÷ 2 + 1 = 4,5 → 4).</p></div></li>
+
+<li data-c="E"><p class="q">Satırları (1, 5, 2, 0), (3, 2, 7, 1), (0, 4, 6, 8), (2, 9, 3, 5) olan 4×4'lük bir özellik haritasına 2×2 en büyük havuzlama (adım 2) uygulanıyor. Sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Üst satır (1, 0), alt satır (0, 3)</li><li>Üst satır (9, 8), alt satır (5, 7)</li><li>Üst satır (5, 7), alt satır (8, 9)</li><li>Üst satır (5, 7), alt satır (9, 9)</li><li>Üst satır (5, 7), alt satır (9, 8)</li></ul>
+<div class="coz"><p>Haritayı dört 2×2 bloğa böl ve her bloğun en büyüğünü al. Sol üst blok 1, 5, 3, 2 → 5. Sağ üst blok 2, 0, 7, 1 → 7. Sol alt blok 0, 4, 2, 9 → 9. Sağ alt blok 6, 8, 3, 5 → 8. Sonuç (5, 7) ve (9, 8). A en küçük değerleri alır; B üst ve alt satırı yer değiştirir; C alt bloklardaki değerleri karıştırır; D sağ alt blokta 9 varmış gibi davranır. Havuzlamada blokların konumu korunur: sol üst blok sonucun sol üst hücresine gider.</p></div></li>
+
+<li data-c="A"><p class="q">3 kanallı (renkli) bir girdiye 3×3 boyutunda 32 filtre uygulayan bir evrişim katmanının, sapmalar (bias) dahil, öğrenilen parametre sayısı kaçtır?</p>
+<ul class="sec"><li>896</li><li>864</li><li>320</li><li>288</li><li>Resmin boyutu bilinmeden hesaplanamaz</li></ul>
+<div class="coz"><p>Bir filtre girdinin üç kanalını birden kapsar: 3 × 3 × 3 = 27 ağırlık, artı 1 sapma = 28. 32 filtre: 32 × 28 = 896. B sapmaları unutur (32 × 27); C kanalları unutur (32 × (9 + 1)); D ikisini birden unutur (32 × 9). E ağırlık paylaşımını kaçırır: aynı filtre her konumda yeniden kullanıldığı için parametre sayısı resmin boyutuna bağlı değildir.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdakilerden hangisi AlexNet'in 2012 ImageNet yarışmasındaki başarısına katkı yapan unsurlardan biri <strong>değildir</strong>?</p>
+<ul class="sec"><li>Gizli katmanlarda ReLU aktivasyonu kullanılması</li><li>Eğitimin iki GPU üzerinde paralel yapılması</li><li>Filtrelerin uzmanlar tarafından elle kenar ve köşe bulucu olarak tasarlanması</li><li>Yaklaşık 1,2 milyon etiketli eğitim resmiyle eğitilmesi</li><li>Dropout ve veri artırmayla aşırı öğrenmenin azaltılması</li></ul>
+<div class="coz"><p>AlexNet'in filtreleri elle tasarlanmadı; rastgele başlatılıp geri yayılımla veriden öğrenildi. Elle tasarlanmış özellikler, AlexNet'in geride bıraktığı geleneksel yöntemlerin yaklaşımıydı; farkın kaynağı da tam buydu. A, B, D ve E makalede açıkça yer alan bileşenlerdir: ReLU eğitimi hızlandırdı, iki GTX 580 GPU hesabı mümkün kıldı, ImageNet'in büyük verisi 60 milyon parametreyi besledi, dropout ve veri artırma ezberi azalttı.</p></div></li>
+
+<li data-c="E"><p class="q">Bir atölyede iki sınıflık (sağlam / çizikli) yalnızca 400 ürün fotoğrafı var. Bir görüntü sınıflandırıcısı kurmak için aşağıdakilerden hangisi en uygun başlangıçtır?</p>
+<ul class="sec"><li>Derin bir evrişimli ağı 400 fotoğrafla sıfırdan, rastgele ağırlıklarla eğitmek</li><li>ImageNet'te eğitilmiş ağı hiç değiştirmeden kullanıp 1000 sınıftan birini "çizikli" saymak</li><li>Önceden eğitilmiş ağın bütün katmanlarını büyük bir öğrenme oranıyla baştan eğitmek</li><li>Fotoğrafları düzleştirip her pikseli ayrı bir özellik olarak bir karar ağacına vermek</li><li>Önceden eğitilmiş ağın evrişim katmanlarını dondurup son katmanı 2 çıkışlı yeni bir katmanla değiştirmek ve önce yalnız onu eğitmek</li></ul>
+<div class="coz"><p>E transfer öğrenmenin klasik başlangıcıdır: genel görsel özellikler korunur, az veri yalnızca yeni ve küçük son katmanı eğitmeye harcanır. A, milyonlarca parametreyi 400 resimle eğitmeye çalışır ve büyük olasılıkla ezberler. B'de ImageNet sınıfları arasında "çizikli kapak" yoktur; rastgele bir sınıfı ona eşlemek anlamsızdır. C'de büyük öğrenme oranı önceden öğrenilmiş özellikleri bozar. D ise piksel konumlarına bağlı kalır, komşuluk bilgisini kullanmaz ve kaymaya çok hassastır.</p></div></li>
+
+<li data-c="A"><p class="q">Gender Shades (2018) çalışmasında üç ticari cinsiyet sınıflandırıcısı, cinsiyet ve ten rengine göre dengeli bir veri kümesinde sınandı; koyu tenli kadınlarda hata oranı %34,7'ye kadar çıkarken açık tenli erkeklerde en çok %0,8 oldu. Bu bulgulardan aşağıdaki çıkarımlardan hangisi doğru biçimde yapılabilir?</p>
+<ul class="sec"><li>Genel doğruluğu yüksek bir sistem bazı alt gruplarda çok daha kötü çalışabilir; bu yüzden başarı alt gruplara ayrılarak ölçülmelidir.</li><li>Yüz analizinde bu tür farklar teknolojinin doğasından gelir ve hiçbir şekilde azaltılamaz.</li><li>Farkın tek nedeni, şirketlerin koda bilerek koyduğu ayrımcı kurallardır.</li><li>Hatalar gruplar arasında rastgele dağılmıştır; görülen fark tesadüftür.</li><li>Çalışma, yüz tanıma sistemlerinin polis kullanımında kaç yanlış gözaltıya yol açtığını ölçmüştür.</li></ul>
+<div class="coz"><p>Çalışmanın ana dersi A'dır: tek bir genel doğruluk sayısı, alt gruplardaki büyük farkları gizleyebilir. B yanlıştır; NIST'in 2019 çalışması algoritmalar arasında büyük fark olduğunu ve en adil olanların en doğrular arasında bulunduğunu gösterdi; fark verinin bileşimi ve tasarımla değişir. C'nin dayanağı yoktur; yanlılık çoğunlukla verinin bileşiminden ve tasarım tercihlerinden doğar, bilinçli bir kural gerekmez. D, sistematik ve büyük bir farkı tesadüf sayar. E ise ölçülen şeyi karıştırır: çalışma cinsiyet sınıflandırmasının hata oranını ölçtü, polis kullanımını değil.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince kastedilen alanların iç içe ilişkisi, en geniş olandan en dar olana doğru, aşağıdakilerin hangisinde doğru sıralanmıştır?</p>
+<ul class="sec"><li>Derin öğrenme → makine öğrenmesi → yapay zekâ → büyük dil modelleri</li><li>Makine öğrenmesi → yapay zekâ → büyük dil modelleri → derin öğrenme</li><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → derin öğrenme → büyük dil modelleri → makine öğrenmesi</li><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li></ul>
+<div class="coz"><p>En dış halka yapay zekâdır; kural tabanlı uzman sistemler de buna dahildir. Onun içinde örnekten öğrenen sistemler, yani makine öğrenmesi; onun içinde çok katmanlı sinir ağlarıyla yapılan derin öğrenme; onun içinde de büyük dil modelleri bulunur. E aynı zinciri tersten, darından genişine verir. A, B ve D halkaların yerini karıştırır; örneğin her derin öğrenme yöntemi bir makine öğrenmesi yöntemidir, tersi doğru değildir.</p></div></li>
+
+<li data-c="D" data-k="yz-2"><p class="q">Veri kümesini eğitim, doğrulama ve test diye ayırmanın amacı düşünüldüğünde, <strong>test</strong> kümesinin doğru kullanımı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin ağırlıklarını öğrenmek için eğitim kümesiyle birlikte kullanmak</li><li>Hangi öğrenme oranının daha iyi olduğunu seçmek için defalarca bakmak</li><li>Test başarısı düşük çıkınca test örneklerini eğitim kümesine ekleyip yeniden ölçmek</li><li>Bütün seçimler bittikten sonra, modelin hiç görmediği veride başarısını tahmin etmek için kullanmak</li><li>Eğitim kümesindeki etiket hatalarını düzeltmek için kullanmak</li></ul>
+<div class="coz"><p>Test kümesi, modelin hiç görmediği verideki gerçek başarısını tahmin etmek içindir; tüm kararlar verildikten sonra kullanılır. A, test verisini eğitime katar ve ölçümü anlamsızlaştırır. B, ayar seçimini test kümesine bakarak yapar; bu iş doğrulama kümesinindir, aksi hâlde test kümesine örtük olarak uyum sağlanır. C, modele cevap anahtarını önceden göstermek demektir. E, test kümesine bir amaç yükler ki bu onun işi değildir.</p></div></li>
+
+<li data-c="A" data-k="yz-3"><p class="q">Yapay zekâ modellerinin eğitiminde neden çoğunlukla ekran kartları (GPU) kullanılır?</p>
+<ul class="sec"><li>Çok sayıda basit çarpma-toplama işlemini aynı anda, paralel yapabildikleri için</li><li>Her bir işlemi ana işlemciden (CPU) çok daha akıllıca yaptıkları için</li><li>Modelin ağırlıklarını kalıcı olarak saklayan tek donanım oldukları için</li><li>Kayıp fonksiyonunu tek adımda en aza indirebildikleri için</li><li>Kesirli sayı yerine yalnızca tam sayılarla çalıştıkları için</li></ul>
+<div class="coz"><p>Sinir ağı hesabının büyük bölümü matris çarpımıdır, yani aynı basit işlemin, çarp ve topla, milyonlarca kez tekrarıdır. GPU'lar binlerce küçük çekirdekle bu tekrarları aynı anda yapar. B yanlıştır; tek bir işlemde GPU daha "akıllı" değildir, gücü paralellikten gelir. C'de saklama, belleğin ve diskin işidir. D'de hiçbir donanım kaybı tek adımda en aza indirmez; gradyan inişi adım adım ilerler. E de yanlıştır; GPU'lar float32, float16 gibi kesirli sayılarla da çalışır.</p></div></li>
+
+<li data-c="E" data-k="yz-4"><p class="q">Gradyan inişinde öğrenme oranı (adım boyu) gereğinden çok <strong>büyük</strong> seçilirse ne olması beklenir?</p>
+<ul class="sec"><li>Model dibe çok yavaş ama kesin olarak ulaşır.</li><li>Model eğitim verisini kusursuz ezberler.</li><li>Kayıp her adımda düzenli ve küçük miktarlarda azalır.</li><li>Parametre sayısı kendiliğinden artar.</li><li>Adımlar dibin üzerinden atlar; kayıp iner çıkar ya da büyüyerek dağılır.</li></ul>
+<div class="coz"><p>Sisli dağ benzetmesinde dev adımlar atan kişi vadinin dibini geçip karşı yamaca çıkar, oradan yine geri atlar; kayıp dalgalanır, en kötü durumda her adımda büyür. A, öğrenme oranı çok küçük olduğunda görülen durumdur. B öğrenme oranının değil, aşırı öğrenmenin konusudur. C makul bir öğrenme oranının davranışıdır. D'de parametre sayısını modelin yapısı belirler, öğrenme oranı değil.</p></div></li>
+
+<li data-c="B" data-k="yz-5"><p class="q">1.000 kişilik bir tarama veri kümesinde yalnızca 10 kişi hasta. Bir model herkese "sağlıklı" diyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Modelin doğruluğu %1'dir, bu yüzden açıkça kötü olduğu hemen anlaşılır.</li><li>Modelin doğruluğu %99'dur ama hastaları yakalama oranı (duyarlılık) 0'dır.</li><li>Modelin kesinliği (precision) %99'dur.</li><li>Doğruluğu %99 olduğu için bu model tarama için uygundur.</li><li>Duyarlılığı %100'dür, çünkü hiç yanlış alarm vermez.</li></ul>
+<div class="coz"><p>Model 990 sağlıklı kişiyi doğru bilir, 10 hastayı kaçırır: doğruluk 990 ÷ 1000 = %99. Ama 10 hastanın hiçbirini yakalamaz, yani duyarlılık 0 ÷ 10 = 0. Dengesiz veride doğruluğun yanıltıcılığının klasik örneğidir. A hesabı tersine çevirir. C'de model hiç "hasta" demediği için kesinlik tanımsızdır, %99 değildir. D tam da kaçınılması gereken çıkarımdır. E duyarlılığı yanlış alarmla karıştırır; duyarlılık gerçek hastaların ne kadarının yakalandığıdır.</p></div></li>
+
+<li data-c="C" data-k="yz-5"><p class="q">Bir hastalık tahmin modeline girdi olarak "hastaya bu hastalığın ilacı reçete edildi mi?" sütunu da veriliyor ve model test kümesinde neredeyse kusursuz sonuç alıyor. Bu durumun en olası açıklaması nedir?</p>
+<ul class="sec"><li>Model hastalığın biyolojik nedenlerini keşfetmiştir.</li><li>Model yetersiz öğrenmiştir (underfitting).</li><li>Veri sızıntısı vardır: cevap, teşhisten sonra oluşan bir bilgi üzerinden girdiye karışmıştır.</li><li>Test kümesi çok büyük seçilmiştir.</li><li>Goodhart yasası gereği ölçüt doğru çalışmaktadır.</li></ul>
+<div class="coz"><p>İlaç, teşhis konduktan sonra yazılır; dolayısıyla bu sütun cevabı gizlice taşır. Gerçek kullanımda, teşhis anında bu bilgi elde olmayacağı için model çöker: başarı sahtedir. Bu veri sızıntısıdır. A, sahte bir ilişkiyi keşif sanar. B'nin tersi söz konusudur; model çok iyi görünüyor. D'nin sonuçla bir ilgisi yoktur. E Goodhart yasasını ters okur; o yasa, ölçüt hedef olunca bozulduğunu söyler.</p></div></li>
+
+<li data-c="D" data-k="yz-6"><p class="q">4 girdili, 3 nöronlu tek gizli katmanı ve 2 nöronlu çıktı katmanı olan tam bağlı bir ağın, sapmalar (bias) dahil, toplam parametre sayısı kaçtır?</p>
+<ul class="sec"><li>18</li><li>9</li><li>20</li><li>23</li><li>21</li></ul>
+<div class="coz"><p>Gizli katman: her nöron 4 girdiye bağlı, 4 × 3 = 12 ağırlık, artı 3 sapma = 15. Çıktı katmanı: her nöron 3 gizli nörona bağlı, 3 × 2 = 6 ağırlık, artı 2 sapma = 8. Toplam 15 + 8 = 23. A bütün sapmaları unutur (12 + 6); B nöronları sayar (4 + 3 + 2), parametreleri değil. C gizli katmanın sapmalarını unutur (12 + 6 + 2); E çıktı katmanının sapmalarını unutur (15 + 6).</p></div></li>
+
+<li data-c="A" data-k="yz-6"><p class="q">Yapay nöronlarda aktivasyon fonksiyonu (ör. ReLU) kullanılmasaydı ne olurdu?</p>
+<ul class="sec"><li>Kaç katman üst üste dizilirse dizilsin ağ tek bir doğrusal fonksiyona eşdeğer olurdu ve eğri ilişkileri yakalayamazdı.</li><li>Ağ daha fazla parametreye sahip olurdu ve daha güçlü hâle gelirdi.</li><li>Ağ yalnızca sınıflandırma yapabilir, regresyon yapamazdı.</li><li>İleri besleme yapılamaz, sayılar katmanlar arasında akmazdı.</li><li>Ağın kara kutu olma sorunu tamamen ortadan kalkar ve her ağırlık kolayca açıklanırdı.</li></ul>
+<div class="coz"><p>Ağırlıklı toplam doğrusal bir işlemdir ve doğrusal işlemlerin art arda uygulanması yine doğrusal bir işlemdir. Aktivasyon olmadan derin bir ağ, tek katmanlı doğrusal bir modelden fazlasını yapamaz. B yanlıştır; aktivasyonun parametresi yoktur ve kaldırmak gücü azaltır. C'de durum tam tersi olurdu; doğrusal model en doğal olarak regresyon yapar. D yanlış: sayılar yine akar, yalnızca doğrusal kalır. E'de ise doğrusal olmak, milyonlarca ağırlığın anlamını kendiliğinden açıklamaz.</p></div></li>
+
+<li data-c="C" data-k="yz-7"><p class="q">Bir ağın eğitim eğrisinde eğitim kaybı her dönemde düşmeye devam ediyor, doğrulama kaybı ise 12. dönemden sonra yükselmeye başlıyor. Aşağıdakilerden hangisi bu durumu doğru yorumlar ve uygun bir önlem önerir?</p>
+<ul class="sec"><li>Model yetersiz öğreniyor; katman sayısını azaltmak gerekir.</li><li>Öğrenme oranı çok küçük; eğitime 100 dönem daha devam etmek gerekir.</li><li>Model 12. dönemden sonra ezberlemeye başlıyor; erken durdurma, dropout ya da veri artırma uygulanabilir.</li><li>Doğrulama kümesi bozuktur; doğrulama kaybı göz ardı edilmelidir.</li><li>Model en iyi hâline son dönemde ulaşmıştır; o dönemdeki ağırlıklar seçilmelidir.</li></ul>
+<div class="coz"><p>Eğitim kaybının düşüp doğrulama kaybının yükselmesi, aşırı öğrenmenin tipik işaretidir: model eğitim verisinin ayrıntılarını ezberliyor ve görmediği veride kötüleşiyor. Erken durdurma (en iyi doğrulama kaybının olduğu dönemde durmak), dropout ve veri artırma bunun ilaçlarıdır. A yetersiz öğrenmeyi anlatır; o durumda eğitim kaybı da yüksek kalırdı. B ezberi artırır. D asıl uyarı işaretini görmezden gelir. E, en düşük doğrulama kaybının 12. dönem civarında olduğunu atlar.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">10.000 örnekli bir eğitim kümesi, 100 örnekli mini-yığınlarla 5 dönem (epoch) boyunca eğitiliyor. Bu eğitimde ağırlıklar toplam kaç kez güncellenir?</p>
+<ul class="sec"><li>2.000</li><li>500</li><li>100</li><li>5</li><li>50.000</li></ul>
+<div class="coz"><p>Bir dönem, bütün eğitim kümesinin bir kez gözden geçirilmesidir. 10.000 örnek 100'lük yığınlara bölünürse bir dönemde 10.000 ÷ 100 = 100 yığın, yani 100 güncelleme olur. 5 dönemde 100 × 5 = 500. C bir dönemdeki güncelleme sayısıdır; D yalnız dönem sayısıdır; A örnek sayısını dönem sayısına böler (10.000 ÷ 5); E her örnekte ayrı güncelleme yapılıyormuş gibi örnek sayısını dönemle çarpar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-7">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-8">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-9">Sonraki parça: dil ve diziler, transformer'dan önce</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"convolutional neural network explained visually"</li>
+  <li>"evrişimli sinir ağı nasıl çalışır"</li>
+  <li>"AlexNet ImageNet 2012 why it mattered"</li>
+  <li>"diffusion models explained intuition"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Evrişim, havuzlama ve parametre sayısı örneklerinin bütün sayıları Python (numpy 2.5.3) ile hesaplanarak doğrulandı; deneme kutusundaki iki betik bu oturumda <code>python3 -I</code> ile gerçekten çalıştırıldı ve çıktılar birebir kondu. İkinci denemedeki doğruluk değerleri scikit-learn 1.9.1, sabit <code>random_state=0</code> ile alındı; başka sürümde son basamaklar değişebilir. Quiz'deki bütün sayısal cevaplar (−7, 8×8, havuzlama sonucu, 896, 23, 500, 60.000) Python ile yeniden hesaplandı.</li>
+  <li>AlexNet rakamları (1,2 milyon eğitim resmi, 1000 sınıf, ImageNet'in 22.000 kategoride 15 milyondan fazla resmi, %15,3 ve ikinci %26,2, 60 milyon parametre, 650.000 nöron, 5 evrişim + 3 tam bağlı katman, iki GTX 580 3 GB, 5–6 gün, ilk katmanda 96 adet 11×11×3 filtre, dropout 0,5, veri artırma) Krizhevsky, Sutskever ve Hinton'ın NIPS 2012 makalesinden (Duke Üniversitesi ders sayfasındaki PDF kopyası) doğrulandı.</li>
+  <li>Yıllara göre kazanan hata oranları (2010 NEC %28,2; 2011 XRCE %25,8; 2012 SuperVision %16,4, ek veriyle %15,3; 2013 Clarifai %11,7; 2014 GoogLeNet %6,7), ILSVRC'nin 2010'da başladığı ve 1.281.167 eğitim resmi Russakovsky ve ark., "ImageNet Large Scale Visual Recognition Challenge" (arXiv 1409.0575, IJCV 2015) metninden alındı. %5,1'lik insan hatası ve 1.500 resimlik örneklem bu makaleye dayanan AI Impacts özetinden alındı; makalenin ilgili bölümünü doğrudan okuyamadım. ResNet'in %3,57'si ve 152 katmanı He ve ark. 2015 (arXiv 1512.03385) özetinden doğrulandı. Doğrulama kümesinin 50.000 resim olduğu AlexNet makalesinden; test kümesi sayısı kaynaklar arasında farklı yıllar için farklı verildiğinden (150.000 ve 100.000) metne konmadı.</li>
+  <li>ImageNet'in kuruluşu (Deng, Dong, Socher, Li, Li, Fei-Fei; CVPR 2009; WordNet yapısı; Amazon Mechanical Turk ile etiketleme) makalenin Princeton'daki kopyasından doğrulandı.</li>
+  <li>Gender Shades: Buolamwini ve Gebru, FAT* 2018, PMLR 81. Özet (%34,7, %0,8, %79,6, %86,2, üç ticari sistem) PMLR sayfasından; şirket adları (Microsoft, IBM, Face++), Pilot Parliaments Benchmark'ın 1.270 kişi ve altı ülke (Ruanda, Senegal, Güney Afrika, İzlanda, Finlandiya, İsveç) olduğu makalenin PDF'inden doğrulandı. IBM'in daha dengeli veriyle yeni model açıklaması MIT News'ün 2018 haberine dayanır; öbür şirketlerin sonradan ne yaptığını ayrı ayrı doğrulamadım.</li>
+  <li>NIST bulguları (Aralık 2019, NISTIR 8280: 189 algoritma, 99 geliştirici, 8,49 milyon kişiden 18,27 milyon resim, 10–100 kat yanlış pozitif farkı, en adil algoritmaların en doğrular arasında olması) NIST'in kendi duyuru sayfasından alındı.</li>
+  <li>Düzenleme: AB YZ Yasası Madde 5 yasaklarının 2 Şubat 2025'ten beri uygulandığı ve kapsamı (hedefsiz yüz resmi toplama, kolluk amaçlı gerçek zamanlı uzaktan biyometrik tanımlama ve istisnaları) Almanya Federal Ağ Ajansı'nın (Bundesnetzagentur) açıklama sayfasından doğrulandı; AB Resmî Gazetesi metnini doğrudan okumadım. Clearview AI'ya Hollanda'nın 30,5 milyon avro cezası (Eylül 2024) ve 30 milyardan fazla resim JURIST haberinden; İtalya, Yunanistan, Fransa cezalarının varlığı aynı haberden, tutarları ve yılları metne konmadı. KVKK md. 6/1'in biyometrik ve genetik veriyi özel nitelikli saydığı Adalet Bakanlığı sitesindeki kanun metninden doğrulandı; 2024'teki 7499 sayılı Kanun değişikliğinin bu fıkrayı değiştirmediğini hafızadan biliyorum, bu oturumda güncel metinle karşılaştırmadım.</li>
+  <li>Difüzyon: Ho, Jain, Abbeel, "Denoising Diffusion Probabilistic Models", arXiv 2006.11239 (19 Haziran 2020) özetinden doğrulandı. Difüzyon fikrinin daha önceki kökeni (2015) ve metinle yönlendirmenin ayrıntıları burada sadeleştirildi.</li>
+  <li>LeCun ve ark. 1989 posta kodu çalışması (Neural Computation) arama sonuçlarından doğrulandı. Hubel ve Wiesel'in kedi görme korteksi çalışmaları (1950'lerin sonu) ve Zeiler ile Fergus'un 2014 görselleştirme çalışması hafızadan yazıldı, bu oturumda kaynağıyla karşılaştırılmadı. ResNet-18 gibi ağların son özellik vektörünün 512 sayı olması örnek olarak hafızadan verildi; hesap genel bir örnek olarak geçerlidir. 2012'de ikinci gelen ekibin elle tasarlanmış özelliklere dayanan geleneksel yöntemler kullandığı ve AlexNet'ten sonra alanın hızla evrişimli ağlara geçtiği bilgileri de hafızadandır (yaygın kabul görür, bu oturumda ayrıca kaynak açılmadı).</li>
+  <li>Bu metin 14 Ekim 2026 itibarıyla yazıldı; düzenleme ve ceza bilgileri değişebilir. Sorular bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

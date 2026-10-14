@@ -1,0 +1,580 @@
+<article class="chapter ders" id="c-yz-9">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 9 · Dil ve diziler</div>
+<h1>Kelimeden sayıya, sayıdan diziye: transformer'dan önce dil</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bilgisayar yalnızca sayılarla iş görür. Peki bir sayı listesi, "kedi"nin "köpek"e "araba"dan daha yakın olduğunu nasıl bilebilir? Ve bir program bir cümleyi okurken, cümlenin başında söyleneni sonuna kadar nasıl aklında tutar? Bugünün sohbet modellerinden önce bu iki soruya verilen cevaplar, hem neyin işe yaradığını hem de neden yeni bir mimariye ihtiyaç duyulduğunu gösterir.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (vektör, iki vektörün açıyla benzerliği, matris çarpımı), Parça 5 (yanlılık: model veride ne varsa onu öğrenir), Parça 6 (nöron, ağırlık, sigmoid), Parça 7 (gradyan inişi, geri yayılım, kaybolan ve patlayan gradyan). Kod bilmen gerekmiyor; Python kutuları isteğe bağlı.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 8'de görüntüyü anlayan ağları gördük. Resim baştan sayıdır: her piksel bir parlaklık değeri. Dil öyle değildir. "Kedi" kelimesinin içinde hiçbir sayı yoktur; dört harften oluşan bir semboldür ve sembolün biçimi anlamı hakkında neredeyse hiçbir şey söylemez. "Kedi" ile "kadı" harf olarak birbirine çok benzer ama anlamca alakasızdır; "kedi" ile "pisi" hiç benzemez ama aynı hayvandır. Demek ki dille çalışacak bir modelin önündeki <strong>ilk</strong> sorun şudur: kelimeyi, anlamını taşıyacak biçimde sayıya nasıl çeviririz?</p>
+
+<p>İkinci sorun sıradır. Bir resimde pikseller aynı anda oradadır. Dilde ise kelimeler birbiri ardına gelir ve sıra anlamı değiştirir. "Önce yağmur yağdı, sonra güneş açtı" ile "Önce güneş açtı, sonra yağmur yağdı" cümleleri <strong>aynı kelimelerden</strong> oluşur ama farklı hava anlatır. Demek ki modelin kelimeleri bir torbaya atıp karıştırması yetmez; sırayı izlemesi, okuduklarını bir yerde biriktirmesi gerekir.</p>
+
+<p>Bu parça bu iki soruya 2010'lu yılların ortasına kadar verilen cevapları kuruyor: kelime <strong>gömmeleri</strong> (birinci soruya) ve <strong>tekrarlayan ağlar</strong> (ikinci soruya). Sonra bu cevapların iki zayıf yerini göreceğiz: uzun metinde unutma ve sırayla işlemenin yavaşlığı. Bu iki zayıflık, Parça 10'daki transformer'ın neden ortaya çıktığını açıklar. Arada makine çevirisinin tarihine de bakacağız, çünkü bu fikirlerin çoğu çeviri problemi üzerinde sınandı.</p>
+
+<h2 class="s">1. En saf yol: her kelimeye bir numara</h2>
+
+<p>Kelimeyi sayıya çevirmenin en kolay yolu, sözlükteki her kelimeye bir sıra numarası vermektir: kedi 1, köpek 2, araba 3. Ama bu numaralar yanıltıcıdır. Model "3, 1'den büyüktür" ya da "1 ile 2 arasındaki fark, 2 ile 3 arasındakine eşittir" gibi ilişkiler çıkarabilir; oysa arabanın kediden "büyük" olduğu ya da köpeğin tam ortada durduğu anlamsızdır. Numara bir sıra iddia eder, kelimeler arasında böyle bir sıra yoktur.</p>
+
+<p>Bu sahte sırayı ortadan kaldırmak için her kelimeye kendi <strong>boyutunu</strong> veririz. Sözlükte kaç kelime varsa o kadar uzunlukta bir sayı listesi (Parça 3'teki vektör) kurarız; bir kelimenin vektöründe yalnız kendi sırasındaki yer 1, geri kalan her yer 0 olur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Tek sıcak (one-hot) gösterim:</strong> Sözlükteki her kelimenin, sözlük uzunluğunda bir vektörle temsil edilmesidir; vektörde yalnız o kelimeye ayrılmış konum 1 ("sıcak"), öbür bütün konumlar 0'dır. Böylece hiçbir kelime öbüründen "büyük" ya da "önce" olmaz.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Kelime</th><th>kedi</th><th>köpek</th><th>araba</th><th>elma</th><th>armut</th></tr>
+<tr><td>kedi</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>köpek</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>araba</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>elma</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>armut</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+</table></div>
+
+<p>Beş kelimelik oyuncak bir sözlükte bu çok düzenli görünür. Sorunlar sözlük büyüyünce ve benzerlik sormaya başlayınca ortaya çıkar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Yukarıdaki tek sıcak vektörlerle "kedi–köpek" ve "kedi–araba" benzerliklerini Parça 3'teki yöntemle (nokta çarpım ve açı) hesapla. Sonra sözlük 50 000 kelime olursa ne olacağını düşün.</p>
+<p><strong>Adım 1.</strong> Nokta çarpım, iki vektörün aynı sıradaki sayılarını çarpıp toplamaktır. kedi = (1, 0, 0, 0, 0), köpek = (0, 1, 0, 0, 0). Çarpımlar: 1×0, 0×1, 0×0, 0×0, 0×0. Hepsi 0, toplam 0.</p>
+<p><strong>Adım 2.</strong> kedi ile araba = (0, 0, 1, 0, 0): yine her konumda en az bir sıfır var, toplam 0.</p>
+<p><strong>Adım 3.</strong> Kosinüs benzerliği, nokta çarpımı iki vektörün uzunluklarının çarpımına bölmektir. Her tek sıcak vektörün uzunluğu √1 = 1'dir. İki benzerlik de 0 / (1 × 1) = 0 çıkar. Vektörler birbirine dik.</p>
+<p><strong>Adım 4.</strong> Sonucu yorumla: bu gösterime göre kedi, köpeğe tam olarak arabaya olduğu kadar uzaktır. Herhangi iki farklı kelime için cevap hep 0'dır. Gösterim, kelimeler arasında <em>hiçbir</em> benzerlik bilgisi taşımaz.</p>
+<p><strong>Adım 5.</strong> Sözlük 50 000 kelime olursa her kelime 50 000 sayılık bir vektördür ve bunun 49 999'u sıfırdır. Türkçede durum daha da ağırdır: "ev", "evler", "evlerimiz", "evlerimizden" ayrı kelime sayılırsa her biri ayrı bir boyut alır ve aralarındaki akrabalık da kaybolur (bu ek sorununa Parça 11'deki tokenleştirmede döneceğiz).</p>
+<p><strong>Sonuç:</strong> Tek sıcak gösterim sahte sırayı ortadan kaldırır ama iki bedel öder: vektörler çok uzun ve boştur, ve her kelime öbürlerinden eşit uzaklıktadır. Model "kedi" hakkında öğrendiğini "köpek"e hiç aktaramaz.</p></div>
+
+<p>Son cümle önemli. Model "kedi süt içer"i binlerce kez görmüş, "köpek süt içer"i hiç görmemiş olsun. İnsan ikinci cümleyi de makul bulur; tek sıcak gösterimle çalışan model bulamaz, çünkü onun gözünde "köpek" ile "kedi" arasında "köpek" ile "vergi" arasındakinden fazla ortaklık yoktur. Parça 2'deki genelleme, kelimeler arasında baştan imkânsızlaşır.</p>
+
+<h2 class="s">2. Bir kelimeyi arkadaşlarından tanımak</h2>
+
+<p>Benzerlik bilgisini nereden bulacağız? Dilbilimcilerin 1950'lerden beri dile getirdiği bir gözlem çıkış noktası oldu: <strong>benzer anlamlı kelimeler benzer bağlamlarda geçer.</strong> İngiliz dilbilimci J. R. Firth'ün 1957'de yazdığı ve sık alıntılanan cümle şöyledir: "Bir kelimeyi, tuttuğu arkadaşlıktan tanırsın." "Kedi" ve "köpek" metinlerde "besledi", "mama", "veteriner", "bahçede uyudu" gibi kelimelerin yanında görünür. "Araba" ise "benzin", "yol", "park", "sürdü" gibi kelimelerin yanında. Kimse modele kedinin hayvan olduğunu söylemese bile, komşu listelerine bakarak kedi ile köpeğin aynı "mahallede" yaşadığı görülebilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Dağılımsal varsayım:</strong> Bir kelimenin anlamı, büyük ölçüde hangi kelimelerle birlikte kullanıldığından çıkarılabilir. Bu yüzden iki kelimenin bağlamları (komşu kelimeleri) birbirine ne kadar benziyorsa, anlamlarının da o kadar yakın olduğu tahmin edilir. Neden işe yarar: dil, anlamca benzer şeyleri benzer cümle kalıplarına yerleştirir; kalıp, anlamın gölgesidir.</p></div>
+
+<p>Bu fikri sayıya çevirmenin en basit yolu saymaktır. Büyük bir metin yığınında her kelimenin solundaki ve sağındaki birkaç kelimeyi sayarsın. Her kelime için bir satır elde edersin: "kedi" satırında "mama" kaç kez geçti, "sut" kaç kez, "benzin" kaç kez. Sonra iki kelimenin satırlarını Parça 3'teki kosinüs benzerliğiyle karşılaştırırsın. Satırları benzeyen kelimeler, anlamca da yakın çıkar.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme 1: anlamı komşulardan saymak</span>
+<p>Bu kutuyu atlayabilirsin. Python ve numpy kuruluysa aşağıdaki küçük betik, elle yazılmış on üç cümlelik bir metin yığınında her kelimenin iki sağındaki ve iki solundaki kelimeleri sayar ve satırları karşılaştırır. Bu gerçek bir veri kümesi değil, fikri göstermek için kurulmuş bir oyuncaktır. Kodda Türkçe karakter kullanmadık (kedi, kopek, sut).</p>
+<pre class="kod" data-ad="python3 -I birlikte.py">import numpy as np
+
+# Kucuk, elle yazilmis bir metin yigini (gercek veri degil).
+cumleler = [
+    "kedi sut icti", "kopek sut icti", "kedi bahcede uyudu",
+    "kopek bahcede uyudu", "kedi mama yedi", "kopek mama yedi",
+    "araba yolda gitti", "otobus yolda gitti",
+    "araba benzin aldi", "otobus benzin aldi",
+    "kedi fare yakaladi", "kopek top getirdi", "kedi araba altinda uyudu",
+]
+kelimeler = sorted({k for c in cumleler for k in c.split()})
+sira = {k: i for i, k in enumerate(kelimeler)}
+M = np.zeros((len(kelimeler), len(kelimeler)))
+
+# Her kelime icin solundaki ve sagindaki 2 kelimeyi say.
+for c in cumleler:
+    k = c.split()
+    for i, w in enumerate(k):
+        for j in range(max(0, i - 2), min(len(k), i + 3)):
+            if j != i:
+                M[sira[w], sira[k[j]]] += 1
+
+def kosinus(a, b):
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+satir = lambda w: M[sira[w]]
+print("kedi satiri:", {w: int(x) for w, x in zip(kelimeler, satir("kedi")) if x})
+for a, b in [("kedi", "kopek"), ("araba", "otobus"), ("kedi", "araba")]:
+    print(f"{a}-{b}: {kosinus(satir(a), satir(b)):.3f}")</pre>
+<pre class="cikti">kedi satiri: {'altinda': 1, 'araba': 1, 'bahcede': 1, 'fare': 1, 'icti': 1, 'mama': 1, 'sut': 1, 'uyudu': 1, 'yakaladi': 1, 'yedi': 1}
+kedi-kopek: 0.671
+araba-otobus: 0.756
+kedi-araba: 0.239</pre>
+<p><strong>Yorum.</strong> Modele hiçbir yerde "kedi ve köpek hayvandır" demedik. Yalnız komşuları saydık; yine de kedi–köpek (0,671) ve araba–otobüs (0,756) benzerliği, kedi–araba (0,239) benzerliğinden belirgin biçimde yüksek çıktı. Kedi–araba sıfır değil, çünkü "kedi araba altinda uyudu" cümlesi iki kelimeyi bir kez yan yana getirdi. Gerçek metin yığınlarında satırlar on binlerce sütunluk ve çoğu sıfır olur; bu yüzden pratikte bu sayılar sıkıştırılır ya da doğrudan kısa vektörler öğrenilir. Sıradaki bölüm tam bunu yapar.</p></div>
+
+<h2 class="s">3. Kelime gömmeleri ve word2vec</h2>
+
+<p>Sayma yönteminin iki derdi var: satırlar sözlük kadar uzun ve neredeyse tamamen boş. Asıl istediğimiz şey, her kelime için <strong>kısa ve dolu</strong> bir vektör: diyelim 300 sayı, ve bu sayılar öyle ayarlanmış olsun ki benzer bağlamlarda geçen kelimelerin vektörleri birbirine yakın dursun.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kelime gömmesi (word embedding):</strong> Her kelimeye, genellikle birkaç yüz boyutlu, sıfırları değil gerçek sayıları dolu bir vektör karşılık getirilmesidir. Vektörler veriden öğrenilir; amaç, anlamca ya da kullanımca yakın kelimelerin bu uzayda birbirine yakın düşmesidir. "Gömme" adı, kelimelerin bu sayı uzayına yerleştirilmesinden gelir.</p></div>
+
+<p>Bu fikrin en çok bilinen uygulaması <strong>word2vec</strong>'tir. Tomas Mikolov ve Google'daki çalışma arkadaşları 2013'te yayımladıkları "Efficient Estimation of Word Representations in Vector Space" makalesinde iki basit ağ mimarisi önerdiler ve bunlarla milyarlarca kelimelik metinden gömme öğrenmenin hızlı olabileceğini gösterdiler. Makaleye göre 1,6 milyar kelimelik bir veri kümesinden yüksek kaliteli vektör öğrenmek bir günden kısa sürüyordu; asıl deneylerde yaklaşık 6 milyar tokenlik bir Google News metin yığını ve en sık 1 milyon kelimelik bir sözlük kullanıldı.</p>
+
+<h3>word2vec neyi öğrenir?</h3>
+
+<p>Burada bir püf noktası var ve anlaması önemli. word2vec'e "gömme öğren" diye doğrudan bir görev verilmez. Ona küçük bir <strong>tahmin oyunu</strong> oynatılır:</p>
+
+<p><strong>CBOW</strong> (sürekli kelime torbası) adlı mimaride ağ, bir kelimenin çevresindeki kelimelere bakıp ortadaki kelimeyi tahmin etmeye çalışır: "kedi ___ içti" → "süt". <strong>Skip-gram</strong> mimarisinde oyun tersine çevrilir: ortadaki kelimeden çevresindeki kelimeleri tahmin eder: "süt" → "kedi", "içti". İki durumda da her kelimenin bir vektörü vardır ve tahmin bu vektörlerden yapılır. Tahmin yanlış çıktıkça Parça 7'deki gradyan inişi ve geri yayılım vektörleri biraz düzeltir.</p>
+
+<p>Şimdi neden işe yaradığına bak. "Kedi" ile "köpek" aynı komşuları tahmin etmek zorunda kalır ("mama", "besledi", "veteriner"). Aynı komşuları tahmin etmenin en kolay yolu, iki kelimenin vektörlerinin benzer olmasıdır. Yani benzerlik bir hedef olarak konmaz; tahmin oyununu iyi oynamanın <strong>yan ürünü</strong> olarak ortaya çıkar. Eğitim bitince tahmin kısmı bir kenara bırakılır, öğrenilmiş vektörler alınıp başka işlerde kullanılır. Etiket gerekmez: metnin kendisi hem soruyu hem cevabı içerir. Parça 12'de büyük dil modellerinin ön eğitiminde aynı hilenin (metinden kendi kendine görev üretmek) çok daha büyük ölçekte kullanıldığını göreceksin.</p>
+
+<h3>Gömme tablosu, tek sıcak vektörle nasıl buluşur?</h3>
+
+<p>Pratikte bütün gömmeler tek bir büyük tabloda (matris) durur: her satır bir kelime, her sütun bir boyut. 50 000 kelimelik bir sözlük ve 300 boyutlu gömmeler için bu tabloda 50 000 × 300 = 15 000 000 sayı vardır; bunlar modelin <strong>parametreleridir</strong> ve Parça 6'daki parametre sayımına doğrudan eklenir. Parça 3'teki matris çarpımını hatırla: tek sıcak bir vektörü bu tabloyla çarparsan, 1 olan konum tablodan tam olarak o kelimenin satırını seçer, sıfırlar geri kalan her şeyi siler. Yani tek sıcak gösterim çöpe atılmaz; "tablodan hangi satırı alacağım" sorusunun cevabı olarak kalır.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Tek sıcak gösterim</th><th>Kelime gömmesi</th></tr>
+<tr><td>Vektör uzunluğu</td><td>Sözlük boyu (ör. 50 000)</td><td>Seçilen boyut (ör. 100–300)</td></tr>
+<tr><td>İçerik</td><td>Bir tane 1, gerisi 0</td><td>Her konumda gerçek sayı</td></tr>
+<tr><td>Nereden gelir?</td><td>Elle kurulur, öğrenilmez</td><td>Veriden öğrenilir</td></tr>
+<tr><td>İki farklı kelimenin benzerliği</td><td>Her zaman 0</td><td>Kullanıma göre değişir</td></tr>
+<tr><td>"kedi" hakkında öğrenilen "köpek"e geçer mi?</td><td>Hayır</td><td>Kısmen, vektörleri yakınsa</td></tr>
+<tr><td>Boyutların anlamı</td><td>Her boyut tek bir kelime</td><td>Adı yok; insan okuyamaz</td></tr>
+</table></div>
+
+<p>Tablonun son satırı bir uyarı taşıyor. Aşağıdaki örneklerde boyutlara "kraliyet", "erillik" gibi adlar vereceğim, çünkü elle hesap yapabilmek için anlaşılır sayılar gerekiyor. Bunlar <strong>öğretim amaçlı oyuncak vektörlerdir</strong>, gerçek word2vec vektörleri değil. Gerçek bir gömmenin 300 boyutunun hiçbirinin adı yoktur; "cinsiyet" gibi bir bilgi varsa da tek bir boyutta değil, birçok boyuta dağılmış bir <em>yön</em> olarak bulunur.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Oyuncak bir anlam haritası: hayvanlar, taşıtlar, meyveler ve kraliyet kelimeleri ayrı kümelerde; erkekten kadına ve kraldan kraliçeye giden oklar paralel">
+  <circle class="sv-l" cx="55" cy="55" r="6"/><text class="sv-t" x="67" y="50">kedi</text>
+  <circle class="sv-l" cx="95" cy="85" r="6"/><text class="sv-t" x="107" y="90">köpek</text>
+  <text class="sv-s" x="40" y="120">hayvanlar</text>
+  <circle class="sv-a" cx="55" cy="215" r="6"/><text class="sv-t" x="67" y="210">araba</text>
+  <circle class="sv-a" cx="100" cy="245" r="6"/><text class="sv-t" x="112" y="250">otobüs</text>
+  <text class="sv-s" x="40" y="280">taşıtlar</text>
+  <circle class="sv-m" cx="285" cy="245" r="6"/><text class="sv-t" x="297" y="250">elma</text>
+  <circle class="sv-m" cx="330" cy="215" r="6"/><text class="sv-t" x="342" y="210">armut</text>
+  <text class="sv-s" x="285" y="280">meyveler</text>
+  <circle class="sv-l" cx="215" cy="55" r="6"/><text class="sv-t" x="190" y="40">kral</text>
+  <circle class="sv-l" cx="325" cy="55" r="6"/><text class="sv-t" x="305" y="40">kraliçe</text>
+  <circle class="sv-l" cx="215" cy="145" r="6"/><text class="sv-t" x="180" y="170">erkek</text>
+  <circle class="sv-l" cx="325" cy="145" r="6"/><text class="sv-t" x="310" y="170">kadın</text>
+  <line class="sv-cl" x1="222" y1="55" x2="312" y2="55"/><polygon class="sv-l" points="318,55 308,50 308,60"/>
+  <line class="sv-cl" x1="222" y1="145" x2="312" y2="145"/><polygon class="sv-l" points="318,145 308,140 308,150"/>
+  <line class="sv-c" x1="215" y1="135" x2="215" y2="65"/>
+  <line class="sv-c" x1="325" y1="135" x2="325" y2="65"/>
+  <text class="sv-s" x="230" y="100">aynı yön:</text>
+  <text class="sv-s" x="230" y="116">"dişile doğru"</text>
+</svg>
+<figcaption>Oyuncak bir anlam haritası. Benzer bağlamlarda geçen kelimeler kümelenir. Sağ üstteki iki ok paralel: "erkek→kadın" farkı ile "kral→kraliçe" farkı yaklaşık aynı vektördür. Gerçek gömmeler yüzlerce boyutludur; iki boyuta indirilmiş her resim, bazı uzaklıkları bozarak gösterir.</figcaption>
+</figure>
+
+<h3>Benzerliği hesaplamak</h3>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Kosinüs benzerliği</strong> = (a · b) / (|a| × |b|). Üstte nokta çarpım (aynı sıradaki sayıları çarp, topla), altta iki vektörün uzunluklarının çarpımı (her vektörün sayılarının karelerini topla, karekökünü al). Sonuç −1 ile 1 arasındadır: 1 aynı yön, 0 dik, −1 tam ters. Neden uzunluğa bölüyoruz: sık geçen kelimelerin vektörleri daha uzun olabilir; biz "ne kadar çok" değil "hangi yöne" sorusunu sormak istiyoruz. Bölme, uzunluğun etkisini siler, yalnız açıyı bırakır (Parça 3).</p></div>
+
+<p>Oyuncak vektörlerimiz dört boyutlu: [kraliyet, erillik, insan, yiyecek]. Erillik boyutunda pozitif sayı erile, negatif sayı dişile doğru demek.</p>
+
+<div class="tablo"><table>
+<tr><th>Kelime</th><th>kraliyet</th><th>erillik</th><th>insan</th><th>yiyecek</th></tr>
+<tr><td>kral</td><td>0,9</td><td>0,5</td><td>0,8</td><td>0</td></tr>
+<tr><td>kraliçe</td><td>0,8</td><td>−0,5</td><td>0,8</td><td>0</td></tr>
+<tr><td>erkek</td><td>0,1</td><td>0,6</td><td>0,9</td><td>0</td></tr>
+<tr><td>kadın</td><td>0,1</td><td>−0,5</td><td>0,9</td><td>0</td></tr>
+<tr><td>elma</td><td>0</td><td>0</td><td>0,1</td><td>0,9</td></tr>
+<tr><td>armut</td><td>0</td><td>0</td><td>0</td><td>0,8</td></tr>
+</table></div>
+
+<p>Sayıları bilerek biraz "kusurlu" seçtim: kraliçenin kraliyet değeri kralınkinden az, erkeğin erilliği 0,6 iken kadınınki −0,5. Gerçek gömmeler de hiçbir zaman kusursuz simetrik değildir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Oyuncak vektörlerle "kral–kraliçe" ve "kral–elma" kosinüs benzerliklerini hesapla. Hangisi daha yakın?</p>
+<p><strong>Adım 1.</strong> kral · kraliçe: 0,9 × 0,8 = 0,72; 0,5 × (−0,5) = −0,25; 0,8 × 0,8 = 0,64; 0 × 0 = 0. Toplam 0,72 − 0,25 + 0,64 = 1,11.</p>
+<p><strong>Adım 2.</strong> Uzunluklar: |kral| = √(0,81 + 0,25 + 0,64 + 0) = √1,70 ≈ 1,304. |kraliçe| = √(0,64 + 0,25 + 0,64 + 0) = √1,53 ≈ 1,237.</p>
+<p><strong>Adım 3.</strong> Kosinüs: 1,11 / (1,304 × 1,237) = 1,11 / 1,613 ≈ 0,688.</p>
+<p><strong>Adım 4.</strong> kral · elma: 0,9 × 0 + 0,5 × 0 + 0,8 × 0,1 + 0 × 0,9 = 0,08. |elma| = √(0 + 0 + 0,01 + 0,81) = √0,82 ≈ 0,906.</p>
+<p><strong>Adım 5.</strong> Kosinüs: 0,08 / (1,304 × 0,906) = 0,08 / 1,181 ≈ 0,068.</p>
+<p><strong>Sonuç:</strong> Kral–kraliçe ≈ 0,688, kral–elma ≈ 0,068. Kral kraliçeye çok daha yakın. Dikkat et: kral ile kraliçe "erillik" boyutunda zıt işaretli olduğu halde yakın çıktılar, çünkü öbür iki boyutta güçlü biçimde örtüşüyorlar. Benzerlik bütün boyutların ortak sonucudur.</p></div>
+
+<h3>Ünlü örnek: kral − erkek + kadın ≈ kraliçe</h3>
+
+<p>Mikolov ve arkadaşları 2013'te gömmelerin şaşırtıcı bir özelliğini gösterdi: bazı ilişkiler <strong>yön</strong> olarak öğreniliyordu. "erkek"ten "kadın"a giden fark vektörü ile "kral"dan "kraliçe"ye giden fark vektörü yaklaşık aynıydı (şekildeki paralel oklar). O hâlde "kral"ın vektöründen "erkek"i çıkarıp "kadın"ı eklersen, "kraliçe"nin yakınına düşmen gerekir. Makalelerde aynı hilenin dil bilgisi ilişkileri için de işlediği gösterildi: "biggest − big + small" işleminin en yakın kelimesi "smallest" çıkmıştı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Oyuncak vektörlerle kral − erkek + kadın işlemini yap ve sonuca en yakın kelimeyi bul.</p>
+<p><strong>Adım 1.</strong> Her boyutu ayrı hesapla. Kraliyet: 0,9 − 0,1 + 0,1 = 0,9.</p>
+<p><strong>Adım 2.</strong> Erillik: 0,5 − 0,6 + (−0,5) = −0,6.</p>
+<p><strong>Adım 3.</strong> İnsan: 0,8 − 0,9 + 0,9 = 0,8. Yiyecek: 0 − 0 + 0 = 0. Sonuç vektörü r = (0,9; −0,6; 0,8; 0).</p>
+<p><strong>Adım 4.</strong> r ile kraliçe: nokta çarpım 0,72 + 0,30 + 0,64 + 0 = 1,66. |r| = √(0,81 + 0,36 + 0,64) = √1,81 ≈ 1,345. Kosinüs 1,66 / (1,345 × 1,237) = 1,66 / 1,664 ≈ 0,998.</p>
+<p><strong>Adım 5.</strong> Karşılaştırma için r ile kral: 0,81 − 0,30 + 0,64 = 1,15; 1,15 / (1,345 × 1,304) = 1,15 / 1,754 ≈ 0,656. r ile kadın: 0,09 + 0,30 + 0,72 = 1,11; |kadın| = √1,07 ≈ 1,034; 1,11 / (1,345 × 1,034) ≈ 0,798.</p>
+<p><strong>Sonuç:</strong> En yakın kelime kraliçe (≈ 0,998); ikinci kadın (≈ 0,798), üçüncü kral (≈ 0,656). Sonuç kraliçeye tam eşit değil, yalnız ona en yakın; işaret "≈" bu yüzden.</p></div>
+
+<p>Bu örnek o kadar etkileyicidir ki yıllarca gömmelerin vitrin cümlesi oldu. Ama gerçek gömmelerde nasıl hesaplandığına bakınca abartılmaması gerektiği görülür.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Gömmeler kelime aritmetiği yapabiliyor, demek ki model kavramları anlıyor" diye düşünmek.</strong> Üç nedenle yanlış. Birincisi, yaygın kullanılan kodlarda soruyu oluşturan üç kelime (kral, erkek, kadın) cevap olarak <em>seçilemez</em>; en yakın kelime aranırken dışarıda bırakılırlar. Malvina Nissim, Rik van Noord ve Rob van der Goot'un 2020'de Computational Linguistics dergisinde yayımladığı "Fair Is Better than Sensational" makalesi, orijinal word2vec kodunun, yaygın gensim kütüphanesinin ve Bolukbasi ve arkadaşlarının kodunun bu kısıtı koyduğunu belirtir; kısıt kaldırıldığında sonuç çoğu zaman girdi kelimelerinden biri (çoğunlukla ikincisi) olur. Yani "kraliçe" cevabı, kısmen en yakın aday olan "kral"ın listeden çıkarılmasıyla elde edilir. İkincisi, bu işlem yalnızca bazı ilişki türlerinde iyi çalışır; makalelerde bildirilen başarı oranları da %100'den uzaktır (Mikolov, Yih ve Zweig 2013'te dil bilgisi benzetmelerinde en iyi ayarla yaklaşık %40 doğruluk bildirdi). Üçüncüsü, gösterilen örnekler çoğu zaman işe yarayanlar arasından seçilir. <strong>Doğrusu:</strong> gömmeler kelimelerin kullanım istatistiğini sıkıştırır ve bu istatistikte bazı ilişkiler düzenli yönler olarak görünür; bu ilginç ve yararlıdır, ama "anlamak" ile aynı şey değildir.</p></div>
+
+<h2 class="s">4. Gömmeler dildeki yanlılığı da öğrenir</h2>
+
+<p>Parça 5'te modelin veride ne varsa onu öğrendiğini söylemiştik. Gömmeler bunun en açık örneklerinden biridir. Bir kelimenin vektörü, o kelimenin metinlerde hangi kelimelerle birlikte geçtiğinin özetidir. Eğer bir metin yığınında bazı meslekler sistemli biçimde erkek zamirleriyle, bazıları kadın zamirleriyle birlikte geçiyorsa, bu ilişki vektörlere de girer. Model toplumu "düzeltmez", yalnızca metni sıkıştırır.</p>
+
+<p>Tolga Bolukbasi ve arkadaşları 2016'da NeurIPS'te yayımladıkları, adı da bir benzetme sorusu olan "Man is to Computer Programmer as Woman is to Homemaker?" makalesinde Google News makaleleriyle eğitilmiş gömmelerin kadın–erkek kalıp yargılarını taşıdığını gösterdi. Bulgularından biri, cinsiyet bilgisinin uzayda bir <strong>yön</strong> olarak yakalandığıydı. Bunu kullanarak "resepsiyonist" ile "kadın" arasındaki kalıp ilişkiyi silmeyi, "kraliçe" ile "kadın" arasındaki doğal ilişkiyi korumayı önerdiler. Aylin Caliskan, Joanna Bryson ve Arvind Narayanan da 2017'de Science'ta yayımlanan çalışmalarında, metinden otomatik çıkarılan anlam temsillerinin insanlarda ölçülen önyargılara benzeyen ilişkiler içerdiğini bildirdi.</p>
+
+<p>Bu, Türkçe konuşan biri için soyut bir tartışma değil. Türkçede "o" zamiri cinsiyet belirtmez; İngilizceye çevirirken "he" ya da "she" seçmek gerekir. Google, Aralık 2018'deki duyurusunda çeviri sistemlerinin belirsiz durumlarda toplumsal asimetrileri yansıtan cinsiyet seçme eğiliminde olduğunu yazdı ve Türkçeden İngilizceye cümle çevirilerinde, örneğin "O bir doktor" için, hem "She is a doctor" hem "He is a doctor" seçeneğini göstermeye başladıklarını duyurdu. Makine, eğitildiği metinlerde hangi meslek hangi zamirle daha sık geçiyorsa o tarafa kayıyordu.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Yanlılığı bir kere 'silersen' sorun çözülür" sanmak.</strong> Hila Gonen ve Yoav Goldberg 2019'da yayımladıkları "Lipstick on a Pig" başlıklı çalışmada, cinsiyet yönünü silen yöntemlerin ölçülen yanlılığı azalttığını ama bilgiyi çoğunlukla <em>gizlediğini</em> gösterdi: güya cinsiyetten bağımsız kelimeler arasındaki uzaklıklarda cinsiyet izi kalıyor, kalıp yargıyla eşleşen meslekler yine birbirine yakın kümeleniyor ve bu bilgi oradan geri çıkarılabiliyordu. <strong>Doğrusu:</strong> yanlılık tek bir eksen değil, verinin her yerine sinmiş bir örüntüdür. Ölçmek, raporlamak ve uygulamanın gerçek kullanımında (ör. iş ilanı eşleştirme) sonuçları ayrıca denetlemek gerekir.</p>
+<p><strong>"Benzetme testleri yanlılığı ölçmenin en iyi yoludur" sanmak.</strong> Nissim ve arkadaşlarının yukarıdaki makalesi tam bu noktayı da eleştirir: girdi kelimelerini cevaptan dışlayan kural, bazı "çarpıcı" yanlı benzetmeleri yapay olarak üretebilir ya da büyütebilir; başka yanlılıkları ise gizleyebilir. Yazarlar gömmelerde insan yanlılıklarının bulunduğunu ve ele alınması gerektiğini açıkça kabul eder; itirazları, ölçüm aracınadır.</p></div>
+
+<p>Bu ikinci noktayı küçük bir oyuncak örnekle görmek mümkün. Aşağıdaki denemede "doktor" vektörüne bilerek küçük bir erillik değeri (0,1) verdim; bu, yanlı bir metin yığınının bırakabileceği izi temsil ediyor. "erkek : doktor :: kadın : ?" sorusunu iki kuralla soracağız.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme 2: oyuncak gömmelerle benzerlik ve benzetme</span>
+<p>Bu kutu da isteğe bağlı. İlk betik, yukarıda elle yaptığımız hesapları doğrular. Vektörler <strong>öğretim amaçlı oyuncak vektörlerdir</strong>; gerçek word2vec vektörü değildir ve internetten hiçbir model indirilmez.</p>
+<pre class="kod" data-ad="python3 -I gomme.py">import numpy as np
+
+# Ogretim amacli OYUNCAK vektorler: boyutlari biz sectik ve adlandirdik.
+# Gercek word2vec vektorleri 100-300 boyutludur ve boyutlarin adi yoktur.
+# Boyutlar: [kraliyet, erillik, insan, yiyecek]
+v = {
+    "kral":    np.array([0.9,  0.5, 0.8, 0.0]),
+    "kralice": np.array([0.8, -0.5, 0.8, 0.0]),
+    "erkek":   np.array([0.1,  0.6, 0.9, 0.0]),
+    "kadin":   np.array([0.1, -0.5, 0.9, 0.0]),
+    "elma":    np.array([0.0,  0.0, 0.1, 0.9]),
+    "armut":   np.array([0.0,  0.0, 0.0, 0.8]),
+}
+
+def kosinus(a, b):
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+print("kral-kralice:", round(kosinus(v["kral"], v["kralice"]), 3))
+print("kral-elma:   ", round(kosinus(v["kral"], v["elma"]), 3))
+print("elma-armut:  ", round(kosinus(v["elma"], v["armut"]), 3))
+
+hedef = v["kral"] - v["erkek"] + v["kadin"]
+print("kral - erkek + kadin =", hedef)
+sirali = sorted(v, key=lambda w: kosinus(hedef, v[w]), reverse=True)
+for w in sirali:
+    print(f"  {w:8s} {kosinus(hedef, v[w]):.3f}")</pre>
+<pre class="cikti">kral-kralice: 0.688
+kral-elma:    0.068
+elma-armut:   0.994
+kral - erkek + kadin = [ 0.9 -0.6  0.8  0. ]
+  kralice  0.998
+  kadin    0.798
+  kral     0.656
+  erkek    0.308
+  elma     0.066
+  armut    0.000</pre>
+<p>İkinci betik, benzetme sorusunda girdi kelimelerini dışlamanın sonucu nasıl değiştirdiğini gösterir.</p>
+<pre class="kod" data-ad="python3 -I yanlilik.py">import numpy as np
+
+# Yine OYUNCAK vektorler. "doktor"a verdigimiz kucuk erillik (0.1),
+# yanli bir metin yigininin birakabilecegi izi temsil ediyor.
+# Boyutlar: [tip, erillik, insan, bakim]
+v = {
+    "doktor":  np.array([0.9,  0.1, 0.8, 0.2]),
+    "hemsire": np.array([0.7, -0.3, 0.8, 0.8]),
+    "erkek":   np.array([0.0,  0.3, 0.9, 0.0]),
+    "kadin":   np.array([0.0, -0.3, 0.9, 0.0]),
+}
+
+def kosinus(a, b):
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+hedef = v["doktor"] - v["erkek"] + v["kadin"]
+print("doktor - erkek + kadin =", hedef)
+for w in v:
+    print(f"  {w:8s} {kosinus(hedef, v[w]):.3f}")
+
+girdiler = {"doktor", "erkek", "kadin"}
+hepsi = max(v, key=lambda w: kosinus(hedef, v[w]))
+dislayarak = max((w for w in v if w not in girdiler), key=lambda w: kosinus(hedef, v[w]))
+print("Girdiler dahil en yakin:   ", hepsi)
+print("Girdiler disarida en yakin:", dislayarak)</pre>
+<pre class="cikti">doktor - erkek + kadin = [ 0.9 -0.5  0.8  0.2]
+  doktor   0.891
+  hemsire  0.878
+  erkek    0.455
+  kadin    0.695
+Girdiler dahil en yakin:    doktor
+Girdiler disarida en yakin: hemsire</pre>
+<p><strong>Yorum.</strong> Girdiler dahil edildiğinde en yakın kelime "doktor"un kendisi (0,891): kadın için de doktor. "doktor" listeden çıkarılınca cevap "hemsire" (0,878) oluyor ve aradaki fark çok küçük. Aynı vektörlerden, yalnızca arama kuralı değiştiği için iki farklı "manşet" çıkıyor. Bu oyuncak örnek gerçek gömmeler hakkında bir ölçüm değildir; yalnızca Nissim ve arkadaşlarının işaret ettiği mekanizmayı görünür kılar. Sendeki numpy sürümüne göre vektörün yazılışında boşluklar farklı olabilir.</p></div>
+
+<h3>Gömmelerin kalıcı sınırı: her kelimeye tek vektör</h3>
+
+<p>word2vec türü gömmelerde bir kelimenin <strong>tek</strong> vektörü vardır; cümleden cümleye değişmez. Bu yüzden bu gömmelere <em>durağan</em> (statik) gömme denir. Türkçe rafının ilk parçasındaki çok anlamlılığı hatırla: "yüz" bir organdır, bir sayıdır, suda yüzmektir. Durağan gömme bu üç kullanımın hepsini tek bir vektörde ortalar; vektör hiçbirine tam benzemez. "Banka" kelimesinin para kurumu mu oturulan bank mı olduğu da ancak cümleye bakarak anlaşılır. Kelimenin anlamını bağlama göre yeniden hesaplamak Parça 10'daki dikkat mekanizmasının işi olacak.</p>
+
+<h2 class="s">5. Dizileri işlemek: tekrarlayan ağlar</h2>
+
+<p>Artık her kelimeyi anlamlı bir vektöre çevirebiliyoruz. Bir cümleyi nasıl temsil ederiz? İlk akla gelen, kelime vektörlerinin ortalamasını almaktır. Bu bazı işlerde şaşırtıcı derecede iyi çalışır, ama sırayı tamamen yok eder. "Önce yağmur yağdı, sonra güneş açtı" ile "Önce güneş açtı, sonra yağmur yağdı" aynı ortalamayı verir. "Film hiç kötü değildi, tersine çok iyiydi" ile "Film hiç iyi değildi, tersine çok kötüydü" de aynı kelimeleri içerir. Ortalama, kelime torbasıdır.</p>
+
+<p>Sırayı korumanın doğal yolu, insanın okuduğu gibi okumaktır: soldan sağa, kelime kelime, okuduklarını aklında tutarak. <strong>Tekrarlayan sinir ağı</strong> (recurrent neural network, RNN) tam bunu yapar. Ağın bir "hafıza" vektörü vardır; buna gizli durum (hidden state) denir. Her yeni kelimede ağ iki şeye bakar: o ana kadarki hafızası ve yeni kelimenin gömmesi. Bu ikisini Parça 6'daki gibi ağırlıklarla çarpıp toplar, bir aktivasyon fonksiyonundan geçirir ve <strong>yeni hafızayı</strong> üretir. Sonra sıradaki kelimeye geçer. Bu tür ağların erken ve çok alıntılanan örneklerinden biri Jeffrey Elman'ın 1990 tarihli "Finding Structure in Time" çalışmasıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Tekrarlayan ağ (RNN):</strong> Bir diziyi öğe öğe işleyen, her adımda önceki adımın gizli durumunu (hafızasını) ve o adımın girdisini birleştirerek yeni bir gizli durum üreten ağdır. Kabaca: yeni hafıza = aktivasyon(A × eski hafıza + B × yeni kelime + sapma). Önemli olan, <strong>aynı A ve B ağırlıklarının her adımda yeniden kullanılmasıdır</strong>. Neden: cümle 5 kelime de olsa 500 kelime de olsa aynı ağ çalışabilsin ve "kelimeyi okuma" becerisi cümlenin her yerinde aynı olsun.</p></div>
+
+<figure>
+<svg viewBox="0 0 410 240" role="img" aria-label="Zamana açılmış tekrarlayan ağ: dört kelime sırayla giriyor, her adımda hafıza bir sonraki adıma aktarılıyor">
+  <text class="sv-s" x="205" y="22" text-anchor="middle">aynı ağırlıklar (A, B) her adımda</text>
+  <rect class="sv-l" x="15" y="70" width="80" height="50" rx="10"/><text class="sv-b" x="55" y="100" text-anchor="middle">h1</text>
+  <rect class="sv-l" x="115" y="70" width="80" height="50" rx="10"/><text class="sv-b" x="155" y="100" text-anchor="middle">h2</text>
+  <rect class="sv-l" x="215" y="70" width="80" height="50" rx="10"/><text class="sv-b" x="255" y="100" text-anchor="middle">h3</text>
+  <rect class="sv-m" x="315" y="70" width="80" height="50" rx="10"/><text class="sv-b" x="355" y="100" text-anchor="middle">h4</text>
+  <line class="sv-cl" x1="95" y1="95" x2="110" y2="95"/><polygon class="sv-l" points="115,95 107,90 107,100"/>
+  <line class="sv-cl" x1="195" y1="95" x2="210" y2="95"/><polygon class="sv-l" points="215,95 207,90 207,100"/>
+  <line class="sv-cl" x1="295" y1="95" x2="310" y2="95"/><polygon class="sv-l" points="315,95 307,90 307,100"/>
+  <rect class="sv-k" x="20" y="170" width="70" height="34" rx="8"/><text class="sv-t" x="55" y="192" text-anchor="middle">Ali</text>
+  <rect class="sv-k" x="120" y="170" width="70" height="34" rx="8"/><text class="sv-t" x="155" y="192" text-anchor="middle">dün</text>
+  <rect class="sv-k" x="220" y="170" width="70" height="34" rx="8"/><text class="sv-t" x="255" y="192" text-anchor="middle">kitabı</text>
+  <rect class="sv-k" x="320" y="170" width="70" height="34" rx="8"/><text class="sv-t" x="355" y="192" text-anchor="middle">okudu</text>
+  <line class="sv-c" x1="55" y1="170" x2="55" y2="120"/><line class="sv-c" x1="155" y1="170" x2="155" y2="120"/>
+  <line class="sv-c" x1="255" y1="170" x2="255" y2="120"/><line class="sv-c" x1="355" y1="170" x2="355" y2="120"/>
+  <text class="sv-s" x="55" y="226" text-anchor="middle">1. adım</text><text class="sv-s" x="155" y="226" text-anchor="middle">2. adım</text>
+  <text class="sv-s" x="255" y="226" text-anchor="middle">3. adım</text><text class="sv-s" x="355" y="226" text-anchor="middle">4. adım</text>
+  <text class="sv-s" x="355" y="55" text-anchor="middle">cümlenin özeti</text>
+</svg>
+<figcaption>Aynı RNN'nin zamana "açılmış" hâli. Aslında tek bir hücre var; şekil onu her adım için yan yana çiziyor. Her kelimenin gömmesi aşağıdan girer, hafıza soldan sağa taşınır. h4, bütün cümleyi okumuş hafızadır ve cümlenin özeti olarak kullanılabilir.</figcaption>
+</figure>
+
+<p>Son hafıza (h4) bir sınıflandırıcıya verilip yorumun olumlu mu olumsuz mu olduğu tahmin edilebilir; her adımın hafızasından "sıradaki kelime ne?" tahmini de yapılabilir (Parça 11'deki oyunun RNN'deki hâli). Eğitim yine Parça 7'deki gibi kayıp ve geri yayılımla olur; tek fark, hata zamanda geriye doğru, adım adım dağıtılır. Bu yüzden RNN eğitimine "zamanda geri yayılım" denir.</p>
+
+<h3>Hafızanın sorunu: başta söylenen unutulur</h3>
+
+<p>Hafıza her adımda yeniden yazılır. İlk kelimenin bilgisi ikinci adımda bir kez ağırlıklarla çarpılır, üçüncüde bir kez daha, dördüncüde bir kez daha... Bir sayıyı 1'den küçük bir sayıyla tekrar tekrar çarparsan ne olacağını biliyorsun.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Çok basitleştirilmiş, tek sayılık bir hafıza düşün: yeni hafıza = w × eski hafıza + girdi. Başta hafıza 0. Birinci kelime 1 girdisini veriyor, sonraki bütün kelimeler 0 veriyor (yani yalnız ilk kelimenin izini takip ediyoruz). w = 0,5 iken 10. kelimeden sonra ilk kelimenin izi ne kadar kalır? w = 0,9 ve w = 1,1 için ne olur?</p>
+<p><strong>Adım 1.</strong> w = 0,5. 1. adım: 0,5 × 0 + 1 = 1. 2. adım: 0,5 × 1 + 0 = 0,5. 3. adım: 0,25. 4. adım: 0,125.</p>
+<p><strong>Adım 2.</strong> Her adımda iz yarıya iniyor. 10. adımda 0,5 dokuz kez çarpılmış olur: 0,5<sup>9</sup> ≈ 0,002. İlk kelime binde iki düzeyine inmiş.</p>
+<p><strong>Adım 3.</strong> w = 0,9. Her adımda %10 kaybediliyor: 10. adımda 0,9<sup>9</sup> ≈ 0,387. Daha iyi ama 50. kelimede 0,9<sup>49</sup> ≈ 0,006 kalıyor.</p>
+<p><strong>Adım 4.</strong> w = 1,1. Her adımda %10 büyüyor: 10. adımda 1,1<sup>9</sup> ≈ 2,358, 50. adımda 1,1<sup>49</sup> ≈ 107. İz sönmek yerine şişiyor; ilk kelime her şeyi bastırıyor.</p>
+<p><strong>Sonuç:</strong> Tekrar tekrar çarpma, izi ya söndürür ya da patlatır; tam 1'de durmak neredeyse imkânsızdır. Gerçek RNN'de w tek sayı değil bir matris ve arada bir aktivasyon fonksiyonu var, ama sezgi aynı. Üstelik eğitimde hata da aynı zincirden geriye doğru akar: Parça 7'deki <strong>kaybolan gradyan</strong> ve <strong>patlayan gradyan</strong> sorunları burada uzun cümlelerde kendini gösterir. Kaybolan gradyanda, 50. kelimedeki bir hatanın 1. kelimeyle ilgili ağırlıklara ulaşan payı neredeyse sıfırdır; ağ uzak bağlantıları öğrenemez.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Adım</th><th>w = 0,5</th><th>w = 0,9</th><th>w = 1,1</th></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>2</td><td>0,5</td><td>0,9</td><td>1,1</td></tr>
+<tr><td>4</td><td>0,125</td><td>0,729</td><td>1,331</td></tr>
+<tr><td>6</td><td>0,031</td><td>0,590</td><td>1,611</td></tr>
+<tr><td>10</td><td>0,002</td><td>0,387</td><td>2,358</td></tr>
+</table></div>
+
+<p>Bunun pratik anlamı şu: "Çocukken Ankara'da büyüdüğü için, yıllar sonra başka şehirlerde yaşasa da konuşurken bazı kelimeleri hep oraya özgü söylerdi" gibi bir cümlede "Ankara" ile cümlenin sonu arasındaki bağlantıyı kurmak, sade bir RNN için zordur.</p>
+
+<h2 class="s">6. LSTM: hafızaya ayrı bir bant</h2>
+
+<p>Sepp Hochreiter ve Jürgen Schmidhuber, 1997'de Neural Computation dergisinde yayımladıkları "Long Short-Term Memory" (uzun kısa süreli bellek, LSTM) makalesinde bu soruna özel bir yapı önerdi. Fikri bir benzetmeyle anlatalım. Sade RNN'de hafıza her kelimede baştan yeniden yazılan bir karalama kâğıdı gibidir. LSTM'de ise bunun yanına bir <strong>bant</strong> eklenir: hücre durumu (cell state). Bilgi bu bantta, her adımda yeniden çarpılıp ezilmeden, büyük ölçüde <strong>toplama</strong> yoluyla taşınır. Banta neyin yazılacağına ve banttan neyin okunacağına <strong>kapılar</strong> karar verir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>LSTM:</strong> Gizli durumun yanında ayrı bir hücre durumu taşıyan ve bu durumu kapılarla yöneten tekrarlayan ağ türüdür. Kapı, 0 ile 1 arasında sayılar üreten (Parça 6'daki sigmoid) küçük bir katmandır; bir bilgiyle çarpıldığında 0 "geçirme", 1 "tamamen geçir" demektir. <strong>Giriş kapısı</strong> yeni bilginin ne kadarının banta ekleneceğine, <strong>çıkış kapısı</strong> bantın ne kadarının o adımın çıktısına yansıyacağına karar verir. Bugünkü LSTM'lerin standart parçası olan <strong>unutma kapısı</strong> ise sonradan, 2000'de Felix Gers, Jürgen Schmidhuber ve Fred Cummins tarafından eklendi; banttaki eski bilginin ne kadarının silineceğine karar verir. Neden işe yarar: bant üzerindeki yol toplama ağırlıklı olduğu için hata sinyali geriye doğru akarken her adımda küçülmek zorunda kalmaz.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="LSTM hücresinin basitleştirilmiş şeması: üstte soldan sağa akan hücre durumu bandı, üzerinde unutma ve ekleme noktaları, altta kapılar">
+  <rect class="sv-m" x="10" y="30" width="380" height="36" rx="10"/>
+  <text class="sv-s" x="20" y="22">hücre durumu (bant): uzun süreli bilgi</text>
+  <circle class="sv-a" cx="130" cy="48" r="15"/><text class="sv-b" x="130" y="54" text-anchor="middle">×</text>
+  <circle class="sv-a" cx="250" cy="48" r="15"/><text class="sv-b" x="250" y="54" text-anchor="middle">+</text>
+  <rect class="sv-l" x="80" y="120" width="100" height="40" rx="8"/><text class="sv-t" x="130" y="145" text-anchor="middle">unutma kapısı</text>
+  <rect class="sv-l" x="200" y="120" width="100" height="40" rx="8"/><text class="sv-t" x="250" y="145" text-anchor="middle">giriş kapısı</text>
+  <rect class="sv-l" x="310" y="120" width="80" height="40" rx="8"/><text class="sv-t" x="350" y="145" text-anchor="middle">çıkış kapısı</text>
+  <line class="sv-c" x1="130" y1="120" x2="130" y2="63"/>
+  <line class="sv-c" x1="250" y1="120" x2="250" y2="63"/>
+  <line class="sv-c" x1="350" y1="66" x2="350" y2="120"/>
+  <rect class="sv-k" x="80" y="185" width="220" height="34" rx="8"/><text class="sv-t" x="190" y="207" text-anchor="middle">eski hafıza + yeni kelime</text>
+  <line class="sv-c" x1="130" y1="185" x2="130" y2="160"/><line class="sv-c" x1="250" y1="185" x2="250" y2="160"/>
+  <text class="sv-s" x="130" y="95" text-anchor="middle">neyi sileyim?</text>
+  <text class="sv-s" x="250" y="95" text-anchor="middle">neyi ekleyeyim?</text>
+  <text class="sv-s" x="350" y="200" text-anchor="middle">neyi göstereyim?</text>
+</svg>
+<figcaption>LSTM'nin basitleştirilmiş şeması. Bant soldan sağa akar; unutma kapısı bantı 0–1 arası bir sayıyla çarparak eski bilgiyi kısmen siler (×), giriş kapısı yeni bilgiyi ekler (+), çıkış kapısı o anda bantın ne kadarının dışarıya gösterileceğini seçer. Her kapı, eski hafızaya ve yeni kelimeye bakarak kararını kendisi öğrenir.</figcaption>
+</figure>
+
+<p>Örnek cümleye dönelim. LSTM "Ankara" kelimesini okuduğunda giriş kapısı bu bilgiyi banta yazmaya karar verebilir; araya giren "yıllar sonra", "başka şehirlerde" gibi kelimelerde unutma kapısı 1'e yakın kalırsa bilgi bantta yaşamaya devam eder; cümlenin sonunda "söylerdi"ye gelince çıkış kapısı onu tekrar kullanıma açar. Kapıların bu davranışı elle programlanmaz; eğitimde, kaybı düşürdüğü için öğrenilir.</p>
+
+<p>Özgün makale, LSTM'nin yapay test görevlerinde 1000'den fazla adımlık gecikmeleri köprüleyebildiğini bildirdi. 2014'te Kyunghyun Cho ve arkadaşlarının çeviri çalışmasında önerilen <strong>GRU</strong> (kapılı tekrarlayan birim) aynı fikrin daha az kapılı, daha sade bir türüdür. 2010'ların ortasına gelindiğinde LSTM, konuşma tanımadan makine çevirisine kadar dizi işleyen sistemlerin standart yapı taşı olmuştu.</p>
+
+<h3>LSTM'nin çözemediği iki şey</h3>
+
+<p><strong>Birincisi, unutma azaldı ama bitmedi.</strong> Bant uzun mesafeyi çok iyileştirdi, fakat bütün bilgi hâlâ sabit boyutlu tek bir vektörden geçmek zorunda. Yüzlerce kelimelik bir paragrafın her ayrıntısını birkaç yüz sayıya sığdırmak mümkün değil; bir şey feda edilir.</p>
+
+<p><strong>İkincisi, sıra bekleme.</strong> h3'ü hesaplamak için h2'nin, h2 için h1'in bitmiş olması gerekir. 1000 kelimelik bir metin için 1000 adım sırayla yapılır. Parça 3'te YZ'nin neden ekran kartlarıyla yapıldığını konuşmuştuk: GPU, aynı basit işlemi binlerce kez <strong>aynı anda</strong> yaptığında hızlıdır. RNN'nin zincir yapısı ise bir cümlenin içindeki adımları aynı anda yapmaya izin vermez. Farklı cümleleri yan yana işleyebilirsin, ama tek bir uzun metnin içinde beklemek zorundasın. Model ve veri büyüdükçe bu bekleme, eğitimin en pahalı darboğazı olur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"RNN ya da LSTM okuduğu metni kelimesi kelimesine saklar" sanmak.</strong> Hafıza bir kayıt defteri değil, sabit boyutlu bir özet vektörüdür. Metin uzadıkça yeni bilgi eskisinin üzerine karışır; ağ neyi tutacağını eğitimde öğrendiğine göre seçer. Bu yüzden "uzun bir metni okuyup sonra herhangi bir cümlesine birebir dönmek" bu ağlar için doğal bir iş değildir. <strong>Doğrusu:</strong> hafıza, metnin sıkıştırılmış ve kayıplı bir özetidir.</p></div>
+
+<h2 class="s">7. Makine çevirisinin kısa tarihi</h2>
+
+<p>Bu parçadaki fikirlerin büyük kısmı en zorlu uygulama alanlarından birinde, bir dilden öbürüne çeviride sınandı. Çeviri, hem kelime anlamını hem sırayı hem de iki dil arasındaki yapı farkını aynı anda ister. Tarihi üç döneme ayrılır.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 210" role="img" aria-label="Makine çevirisinin zaman çizgisi: 1954 Georgetown-IBM, 1966 ALPAC raporu, 1990'lar istatistiksel çeviri, 2006 Google Çeviri, 2014 diziden diziye, 2016 sinirsel çeviri, 2017 transformer">
+  <line class="sv-cl" x1="20" y1="110" x2="620" y2="110"/>
+  <rect class="sv-a" x="20" y="125" width="190" height="26" rx="6"/><text class="sv-t" x="115" y="143" text-anchor="middle">kural tabanlı</text>
+  <rect class="sv-l" x="215" y="125" width="210" height="26" rx="6"/><text class="sv-t" x="320" y="143" text-anchor="middle">istatistiksel</text>
+  <rect class="sv-m" x="430" y="125" width="190" height="26" rx="6"/><text class="sv-t" x="525" y="143" text-anchor="middle">sinirsel</text>
+  <circle class="sv-a" cx="40" cy="110" r="6"/><text class="sv-b" x="40" y="90" text-anchor="middle">1954</text><text class="sv-s" x="40" y="72" text-anchor="middle">Georgetown</text><text class="sv-s" x="40" y="58" text-anchor="middle">IBM</text>
+  <circle class="sv-a" cx="130" cy="110" r="6"/><text class="sv-b" x="130" y="90" text-anchor="middle">1966</text><text class="sv-s" x="130" y="72" text-anchor="middle">ALPAC</text>
+  <circle class="sv-l" cx="250" cy="110" r="6"/><text class="sv-b" x="250" y="90" text-anchor="middle">1990'lar</text><text class="sv-s" x="250" y="72" text-anchor="middle">IBM, paralel</text><text class="sv-s" x="250" y="58" text-anchor="middle">metin</text>
+  <circle class="sv-l" cx="370" cy="110" r="6"/><text class="sv-b" x="370" y="90" text-anchor="middle">2006</text><text class="sv-s" x="370" y="72" text-anchor="middle">Google Çeviri</text><text class="sv-s" x="370" y="58" text-anchor="middle">(öbek tabanlı)</text>
+  <circle class="sv-m" cx="455" cy="110" r="6"/><text class="sv-b" x="455" y="90" text-anchor="middle">2014</text><text class="sv-s" x="455" y="72" text-anchor="middle">seq2seq</text>
+  <circle class="sv-m" cx="530" cy="110" r="6"/><text class="sv-b" x="530" y="90" text-anchor="middle">2016</text><text class="sv-s" x="530" y="72" text-anchor="middle">GNMT</text>
+  <circle class="sv-m" cx="600" cy="110" r="6"/><text class="sv-b" x="600" y="90" text-anchor="middle">2017</text><text class="sv-s" x="600" y="72" text-anchor="middle">transformer</text>
+  <text class="sv-s" x="320" y="185" text-anchor="middle">kuralları insan yazar → kuralları sayımla öğren → bütün çeviriyi tek bir ağ öğrenir</text>
+</svg>
+<figcaption>Makine çevirisinin üç dönemi. Dönemler kesin sınırlarla ayrılmaz; kural tabanlı sistemler istatistiksel dönemde de kullanıldı. Transformer Parça 10'un konusu.</figcaption>
+</figure>
+
+<h3>Kural tabanlı dönem</h3>
+
+<p>İlk yaklaşım, bir insan çevirmenin bilgisini kurallara dökmekti: iki dilli bir sözlük ve dil bilgisi kuralları (bu kelime şu ekle gelirse şöyle çevir, sıfat isimden önce gelirse yer değiştir). Parça 1'deki kural tabanlı uzman sistemlerin dildeki karşılığıdır. 7 Ocak 1954'te New York'ta yapılan <strong>Georgetown–IBM gösterisinde</strong>, bir IBM 701 bilgisayarı altmışı biraz aşan Rusça cümleyi İngilizceye çevirdi. Sistemin sözlüğünde 250 kelime öğesi ve yalnızca 6 dil bilgisi kuralı vardı; cümleler özenle seçilmişti. Gösteriyi yöneten Leon Dostert, birkaç yıl içinde, "belki üç beş yıl" sonra büyük ilerleme beklendiğini söyledi. Beklenti tutmadı: 1966'da ABD'de hazırlanan ALPAC raporu, on yıllık araştırmanın beklentileri karşılamadığı sonucuna vardı ve alandaki kamu desteği sert biçimde azaldı. Parça 1'deki "abartılı vaat → hayal kırıklığı → YZ kışı" döngüsünün erken bir örneği.</p>
+
+<p>Kural tabanlı çevirinin sorunu ölçekti: her deyim, her çok anlamlı kelime, her yeni alan yeni kural ister ve kurallar birbiriyle çatışmaya başlar.</p>
+
+<h3>İstatistiksel dönem</h3>
+
+<p>1980'lerin sonu ve 1990'larda IBM'de Peter Brown ve arkadaşları yönü tersine çevirdi: kuralı yazma, <strong>veriden say</strong>. Elinde aynı metnin iki dildeki karşılığı (paralel metin) varsa, hangi kelimenin hangi kelimeyle ne sıklıkta eşleştiğini, kelimelerin cümlede nasıl yer değiştirdiğini olasılık olarak hesaplayabilirsin. Kullandıkları veri, Kanada parlamentosunun Fransızca ve İngilizce tutanaklarıydı; temel makaleleri 1993'te "The Mathematics of Statistical Machine Translation" adıyla yayımlandı. Çeviri artık "kaynak cümle verildiğinde en olası hedef cümle hangisi?" sorusuna dönüştü. Sonraki yıllarda tek tek kelime yerine kelime öbeklerini çeviren <strong>öbek tabanlı</strong> sistemler yaygınlaştı. Google Çeviri de 2006'da bu tür öbek tabanlı istatistiksel bir sistemle başladı. Bu, Parça 2'deki "kural yazmak yerine örnekten öğrenmek" fikrinin çeviriye taşınmasıdır.</p>
+
+<h3>Sinirsel dönem</h3>
+
+<p>2014'te iki önemli çalışma geldi. Ilya Sutskever, Oriol Vinyals ve Quoc Le'nin "Sequence to Sequence Learning with Neural Networks" makalesi, bu parçada kurduğumuz parçaları birleştirdi: bir LSTM kaynak cümleyi kelime kelime okuyup tek bir vektöre sıkıştırır (<strong>kodlayıcı</strong>), ikinci bir LSTM bu vektörden hedef cümleyi kelime kelime üretir (<strong>kod çözücü</strong>). İngilizce–Fransızca WMT'14 testinde bu sistem 34,8 BLEU puanı aldı; aynı veri kümesinde öbek tabanlı istatistiksel bir sistem 33,3 almıştı. (BLEU, makine çevirisinin insan çevirileriyle ne kadar örtüştüğünü ölçen otomatik bir puandır; Parça 5'teki gibi, her ölçüt gibi sınırları vardır.) İlginç bir ayrıntı: kaynak cümlenin kelime sırasını <em>ters çevirip</em> vermek sonucu belirgin biçimde iyileştirmişti; cümlenin başı, çevirinin başına daha yakın düşüyordu. Bu bile unutma sorununun ne kadar gerçek olduğunu gösterir.</p>
+
+<p>Aynı yıl Dzmitry Bahdanau, Kyunghyun Cho ve Yoshua Bengio darboğazı açıkça adlandırdı: kaynak cümlenin bütün bilgisini <strong>sabit uzunlukta tek bir vektöre</strong> sıkıştırmak zorunda kalmak, uzun cümlelerde başarıyı hızla düşürüyordu. Önerdikleri çözüm, kod çözücünün her kelimeyi üretirken kaynak cümlenin bütün adımlarına geri bakabilmesi ve hangisine ne kadar bakacağını öğrenmesiydi. Bu fikrin adı <strong>dikkattir</strong> ve Parça 10'un konusudur.</p>
+
+<p>Google, 27 Eylül 2016'da Google Sinirsel Makine Çevirisi (GNMT) sistemini duyurdu; LSTM tabanlı bu sistem ilk olarak Çince–İngilizce çeviride kullanıma alındı. Şirketin kendi insan değerlendiricileriyle yaptığı ölçüme göre, birkaç büyük dil çiftinde çeviri hataları önceki öbek tabanlı sisteme kıyasla %55–85 azalmıştı. Parça 1'deki soru listesini hatırla: ne ölçüldü (Wikipedia ve haber sitelerinden seçilmiş cümleler), kim ölçtü (Google'ın kendisi), neyle kıyaslandı (kendi eski sistemi).</p>
+
+<div class="tablo"><table>
+<tr><th>Dönem</th><th>Bilgi nereden gelir?</th><th>Güçlü yanı</th><th>Zayıf yanı</th></tr>
+<tr><td>Kural tabanlı (1950'ler →)</td><td>Dilbilimcilerin yazdığı sözlük ve kurallar</td><td>Ne yaptığı okunabilir, dar alanda tutarlı</td><td>Her istisna yeni kural ister; ölçeklenmez</td></tr>
+<tr><td>İstatistiksel (1990'lar →)</td><td>Paralel metinlerden sayılan olasılıklar</td><td>Veri arttıkça iyileşir, kural yazmak gerekmez</td><td>Öbekleri ayrı ayrı çevirir; uzun cümlede akıcılık düşer</td></tr>
+<tr><td>Sinirsel (2014 →)</td><td>Paralel metinlerle eğitilen tek bir ağ</td><td>Akıcı, bütün cümleyi birlikte ele alır</td><td>Çok veri ve hesap ister; hatası kendinden emin görünür; veri yanlılığını taşır</td></tr>
+</table></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3'e ve 6–7'ye:</strong> Gömme bir vektördür, benzerlik kosinüsle ölçülür, gömme tablosu parametredir ve gradyan inişiyle öğrenilir. RNN'deki unutma, Parça 7'deki kaybolan ve patlayan gradyanın dizilerdeki yüzüdür.</p>
+<p><strong>Parça 5'e:</strong> Gömmelerdeki cinsiyet yanlılığı, "model veride ne varsa onu öğrenir" ilkesinin ve ölçüm aracının da yanıltabileceği uyarısının somut örneğidir.</p>
+<p><strong>Parça 10'a:</strong> Bu parçanın iki açık sorunu (uzun metinde unutma ve sırayla işlemenin yavaşlığı) ve durağan gömmenin "banka" sorunu, transformer'ın ve dikkat mekanizmasının çözmeye çalıştığı şeylerdir. Kodlayıcı ve kod çözücü kavramları orada yeniden karşına çıkacak.</p>
+<p><strong>Parça 11–12'ye ve 16'ya:</strong> Türkçenin ekleri tek sıcak gösterimi zorluyordu; tokenleştirme bu sorunu parçalara bölerek ele alır. "Metinden kendi görevini üret" fikri ön eğitimde büyür. Gömme vektörleriyle anlamca arama, RAG'ın temelidir.</p>
+<p><strong>Öbür raflara:</strong> Türkçe rafının ilk parçasındaki çok anlamlılık (gerçek, yan, mecaz anlam), durağan gömmenin neden tek vektörle yetinemediğini gösterir. Sözcüğün anlamını cümlenin belirlemesi, orada dil bilgisi gözlemi, burada mühendislik problemidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Tek sıcak gösterimin iki temel sorunu nedir?</summary><p>Vektörler sözlük kadar uzun ve neredeyse tamamen sıfırdır; ayrıca iki farklı kelimenin benzerliği her zaman 0 çıkar, yani gösterim kelimeler arasında hiçbir benzerlik bilgisi taşımaz ve model bir kelime hakkında öğrendiğini başkasına aktaramaz.</p></details>
+<details><summary>Dağılımsal varsayım nedir ve word2vec onu nasıl kullanır?</summary><p>Benzer anlamlı kelimelerin benzer bağlamlarda geçtiği fikridir. word2vec, bir kelimeden komşularını (skip-gram) ya da komşulardan kelimeyi (CBOW) tahmin etme oyununu oynar; aynı komşuları tahmin etmesi gereken kelimelerin vektörleri bu sırada birbirine yaklaşır.</p></details>
+<details><summary>"kral − erkek + kadın ≈ kraliçe" örneği neden abartılmamalı?</summary><p>Yaygın uygulamalar üç girdi kelimesini cevap olarak seçmeye izin vermez; izin verilse sonuç çoğu zaman girdilerden biri olur. Ayrıca işlem yalnız bazı ilişkilerde iyi çalışır, başarı oranları sınırlıdır ve gösterilen örnekler çoğunlukla işe yarayanlardan seçilir.</p></details>
+<details><summary>Bir RNN'de aynı ağırlıkların her adımda kullanılmasının nedeni nedir?</summary><p>Ağın her uzunluktaki diziyi işleyebilmesi ve bir kelimeyi okuma becerisinin cümlenin her yerinde aynı olması için. Böylece parametre sayısı cümle uzunluğuna bağlı olmaz.</p></details>
+<details><summary>LSTM'de bant (hücre durumu) ve kapılar ne işe yarar?</summary><p>Bant, bilgiyi her adımda yeniden çarpılıp ezilmeden, büyük ölçüde toplama yoluyla taşır; bu da hata sinyalinin geriye akarken sönmesini azaltır. Kapılar 0–1 arası sayılarla neyin silineceğine, neyin ekleneceğine ve neyin dışarı gösterileceğine karar verir.</p></details>
+<details><summary>Transformer'ın çözmeye çalıştığı, RNN ve LSTM'den kalan iki sorun nedir?</summary><p>Birincisi uzun metinde unutma: bütün bilginin sabit boyutlu tek bir vektörden geçmesi. İkincisi sırayla işleme: bir adım bir öncekini beklediği için tek bir metnin içinde paralel hesap yapılamaz ve GPU'lar tam kullanılamaz.</p></details>
+<details><summary>Makine çevirisinin üç dönemi nedir ve her birinde bilgi nereden gelir?</summary><p>Kural tabanlı (dilbilimcilerin yazdığı sözlük ve kurallar; 1954 Georgetown–IBM gösterisi), istatistiksel (paralel metinlerden sayılan olasılıklar; IBM'in Kanada parlamentosu tutanaklarıyla çalışması, öbek tabanlı sistemler) ve sinirsel (paralel metinlerle eğitilen tek ağ; 2014 diziden diziye, 2016 Google'ın GNMT'si).</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Dilin iki sorunu:</strong> kelimeyi anlamını taşıyacak biçimde sayıya çevirmek; kelimelerin sırasını izlemek.</li>
+<li><strong>Sıra numarası</strong> sahte bir büyüklük sırası iddia eder. <strong>Tek sıcak</strong> bunu düzeltir ama vektörler uzun ve boş, her kelime çifti benzerliği 0.</li>
+<li><strong>Dağılımsal varsayım:</strong> kelimeyi komşularından tanırsın. Komşu saymak bile kedi–köpek yakınlığını ortaya çıkarır.</li>
+<li><strong>Kelime gömmesi:</strong> kısa, dolu, öğrenilmiş vektör. <strong>word2vec</strong> (Mikolov ve ark. 2013): CBOW ve skip-gram tahmin oyunlarının yan ürünü.</li>
+<li><strong>Kosinüs benzerliği</strong> = nokta çarpım / uzunlukların çarpımı; yönü ölçer, uzunluğu değil.</li>
+<li><strong>kral − erkek + kadın ≈ kraliçe:</strong> bazı ilişkiler yön olarak öğrenilir; ama girdiler dışlanır, başarı sınırlıdır, abartma.</li>
+<li><strong>Yanlılık:</strong> gömmeler metindeki kalıp yargıları taşır (Bolukbasi ve ark. 2016). Silme yöntemleri çoğunlukla gizler (Gonen ve Goldberg 2019).</li>
+<li><strong>Durağan gömme:</strong> her kelimeye tek vektör; "yüz", "banka" gibi çok anlamlı kelimeler ortalanır.</li>
+<li><strong>RNN:</strong> kelime kelime okur, hafızayı aynı ağırlıklarla günceller. Tekrarlanan çarpma izi söndürür ya da patlatır.</li>
+<li><strong>LSTM</strong> (Hochreiter ve Schmidhuber 1997): toplama yoluyla bilgi taşıyan bant + kapılar; unutma kapısı 2000'de eklendi.</li>
+<li><strong>Kalan iki sorun:</strong> sabit boyutlu tek vektörde sıkışma (unutma) ve sırayla işleme (yavaşlık) → Parça 10.</li>
+<li><strong>Çeviri:</strong> kural tabanlı (1954) → istatistiksel (1990'lar, paralel metin) → sinirsel (2014 seq2seq, 2016 GNMT).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-9">
+<h3>Quiz 9</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on bir tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">10 000 kelimelik bir sözlükte kelimeler tek sıcak (one-hot) gösterimle temsil ediliyor. "kedi" ve "köpek" vektörlerinin kosinüs benzerliği kaçtır?</p>
+<ul class="sec"><li>1</li><li>0</li><li>0,5</li><li>−1</li><li>1 / 10 000</li></ul>
+<div class="coz"><p>Tek sıcak vektörlerde her kelimenin 1'i farklı bir konumdadır. Nokta çarpımda her konumda en az bir sıfır bulunduğu için toplam 0 olur; benzerlik de 0 / (1 × 1) = 0'dır. 1, iki vektörün aynı olması (yani aynı kelime) demektir. −1 tam ters yön ister; tek sıcak vektörlerde negatif sayı yoktur. 0,5 ve 1/10 000 ise gösterimin bir tür benzerlik taşıdığını varsayar; oysa bu gösterimde her farklı kelime çifti tam olarak eşit uzaklıktadır.</p></div></li>
+
+<li data-c="D"><p class="q">Makine çevirisinin tarihiyle ilgili aşağıdaki sıralamalardan hangisi doğrudur?</p>
+<ul class="sec"><li>İstatistiksel çeviri (1954 Georgetown–IBM) → kural tabanlı çeviri (1990'lar) → sinirsel çeviri (2016)</li><li>Sinirsel çeviri (1954) → istatistiksel çeviri (1990'lar) → kural tabanlı çeviri (2016)</li><li>Kural tabanlı çeviri (1954) → sinirsel çeviri (1990'lar) → istatistiksel çeviri (2016)</li><li>Kural tabanlı çeviri (1954 Georgetown–IBM) → istatistiksel çeviri (1990'lar, paralel metinler) → sinirsel çeviri (2016 GNMT)</li><li>İstatistiksel çeviri (1990'lar) → kural tabanlı çeviri (2006 Google Çeviri) → sinirsel çeviri (2016)</li></ul>
+<div class="coz"><p>1954 Georgetown–IBM gösterisi 250 kelimelik sözlük ve 6 kuralla çalışan kural tabanlı bir sistemdi. 1990'larda IBM'de Kanada parlamentosu tutanakları gibi paralel metinlerden olasılık sayan istatistiksel çeviri gelişti; Google Çeviri de 2006'da öbek tabanlı istatistiksel bir sistemle başladı (E bu yüzden yanlış). Sinirsel çeviri 2014'te diziden diziye modellerle öne çıktı ve Google 2016'da GNMT'ye geçti. A, B ve C dönemlerin yerini karıştırır; sıralamanın mantığı "kuralı insan yazar → kural veriden sayılır → bütün çeviriyi bir ağ öğrenir"dir.</p></div></li>
+
+<li data-c="A"><p class="q">a = (1, 0, 1) ve b = (1, 1, 0) vektörlerinin kosinüs benzerliği kaçtır?</p>
+<ul class="sec"><li>0,5</li><li>0</li><li>1</li><li>2</li><li>−0,5</li></ul>
+<div class="coz"><p>Nokta çarpım: 1 × 1 + 0 × 1 + 1 × 0 = 1. Uzunluklar: |a| = √(1 + 0 + 1) = √2, |b| = √2; çarpımları 2'dir. Kosinüs 1 / 2 = 0,5. 0 cevabı, vektörlerin hiç ortak konumu olmadığını varsayar; oysa ilk konumda ikisi de 1'dir. 1, uzunluğa bölmeyi unutup yalnız nokta çarpımı yazmaktır. 2, uzunlukların çarpımını sonuç sanmaktır. Negatif sonuç için en az bir konumda zıt işaretli sayılar gerekirdi.</p></div></li>
+
+<li data-c="C"><p class="q">İki boyutlu oyuncak vektörlerde boyutlar [kraliyet, erillik] olsun: kral = (3; 2), erkek = (1; 2), kadın = (1; −2). kral − erkek + kadın işleminin sonucu hangisidir?</p>
+<ul class="sec"><li>(5; 2)</li><li>(3; 2)</li><li>(3; −2)</li><li>(1; 2)</li><li>(3; 6)</li></ul>
+<div class="coz"><p>Her boyutu ayrı hesapla. Kraliyet: 3 − 1 + 1 = 3. Erillik: 2 − 2 + (−2) = −2. Sonuç (3; −2): kraliyet değeri korunmuş, erillik dişile dönmüş, yani "kraliçe"nin beklenen yeri. (5; 2) üç vektörü toplamaktır; (3; 2) kralın kendisidir, erkeği çıkarıp kadını ekleyince değişmeyeceğini sanmaktır; (1; 2) erkeği de kadını da çıkarmaktır; (3; 6) erkeği ekleyip kadını çıkarmaktır, yani işaretleri ters çevirmektir.</p></div></li>
+
+<li data-c="E"><p class="q">"kral − erkek + kadın ≈ kraliçe" örneğiyle ilgili aşağıdaki ifadelerden hangisi doğrudur?</p>
+<ul class="sec"><li>Bu işlem her türlü kelime ilişkisinde neredeyse kusursuz çalışır.</li><li>Sonuç vektörü, kraliçenin vektörüne her zaman tam olarak eşittir.</li><li>Örnek, gömmelerin her boyutunun "cinsiyet" gibi adlandırılmış bir anlam taşıdığını kanıtlar.</li><li>Örnek, modelin kraliyet kavramını bir insan gibi anladığını gösterir.</li><li>Yaygın uygulamalar soruyu oluşturan üç kelimeyi cevap olarak seçmeye izin vermez; izin verilse sonuç çoğu zaman girdi kelimelerinden biri olabilir.</li></ul>
+<div class="coz"><p>Nissim, van Noord ve van der Goot (2020), orijinal word2vec kodu ve gensim gibi yaygın uygulamaların girdi kelimelerini cevaplardan dışladığını, dışlanmasa sonucun çoğunlukla girdilerden biri olduğunu belirtir; E doğrudur. A yanlış: işlem bazı ilişkilerde iyi çalışır, bildirilen başarı oranları sınırlıdır. B yanlış: sonuç yalnızca en yakın vektördür, işaret "≈"dir. C yanlış: gerçek gömmelerin boyutları adsızdır; cinsiyet gibi bilgiler birçok boyuta dağılmış bir yön olarak bulunur. D, kullanım istatistiğindeki düzenliliği anlamakla karıştırır.</p></div></li>
+
+<li data-c="B"><p class="q">Kelime gömmelerindeki cinsiyet yanlılığı üzerine yapılan çalışmalar için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Yanlılık yalnızca küçük ve özensiz veri kümeleriyle eğitilmiş gömmelerde görülür; büyük haber metinleriyle eğitilenlerde görülmez.</li><li>Cinsiyet yönünü silen yöntemler ölçülen yanlılığı azaltsa da bilgi kelimeler arasındaki uzaklıklarda kalabilir; bu yöntemler yanlılığı çoğunlukla gizler.</li><li>Gömmeler toplumdaki kalıp yargıları düzelterek öğrenir, çünkü eğitim amacı tarafsızlıktır.</li><li>Benzetme testleri, yanlılığı ölçmek için hatasız ve tartışmasız bir araçtır.</li><li>Türkçede "o" zamiri cinsiyet belirtmediği için Türkçeden yapılan çevirilerde cinsiyet yanlılığı ortaya çıkamaz.</li></ul>
+<div class="coz"><p>Gonen ve Goldberg (2019), cinsiyet yönünü silen yöntemlerin yanlılığı çoğunlukla gizlediğini, güya tarafsız kelimeler arasındaki uzaklıklarda cinsiyet izinin kaldığını gösterdi; B doğrudur. A yanlış: Bolukbasi ve arkadaşları (2016) yanlılığı tam da büyük Google News metinleriyle eğitilmiş gömmelerde gösterdi. C yanlış: gömmeler metnin istatistiğini sıkıştırır, toplumu düzeltmez. D yanlış: Nissim ve arkadaşları benzetme testlerinin bazı yanlılıkları abartıp bazılarını gizleyebileceğini gösterdi. E tersini söyler: "o" cinsiyetsiz olduğu için İngilizceye çeviride sistem bir cinsiyet seçmek zorunda kalır ve yanlılık tam orada görünür.</p></div></li>
+
+<li data-c="C"><p class="q">Basitleştirilmiş tek sayılık bir hafıza şu kuralla güncelleniyor: yeni hafıza = 0,5 × eski hafıza + girdi. Başta hafıza 0'dır. Birinci kelimenin girdisi 4, sonraki bütün kelimelerin girdisi 0'dır. Dördüncü kelime okunduktan sonra hafızanın değeri kaçtır?</p>
+<ul class="sec"><li>2</li><li>1</li><li>0,5</li><li>0,25</li><li>4</li></ul>
+<div class="coz"><p>1. adım: 0,5 × 0 + 4 = 4. 2. adım: 0,5 × 4 + 0 = 2. 3. adım: 0,5 × 2 = 1. 4. adım: 0,5 × 1 = 0,5. Her adımda ilk kelimenin izi yarıya iner; bu, RNN'de uzak kelimelerin unutulmasının sezgisidir. 2, ikinci adımda durmaktır; 1 üçüncü adımda durmaktır; 0,25 bir adım fazla çarpmaktır; 4 ise hafızanın hiç azalmadığını sanmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">LSTM, sade tekrarlayan ağın (RNN) hangi sorununu büyük ölçüde hafifletmiş, hangi sorunu ise çözememiştir?</p>
+<ul class="sec"><li>Gömmelerdeki cinsiyet yanlılığını çözmüş; uzun cümlelerde unutmayı çözememiştir.</li><li>Kelimeleri sırayla işleme zorunluluğunu kaldırmış; çok anlamlı kelimeler sorununu çözememiştir.</li><li>Tek sıcak gösterimin uzunluğunu kısaltmış; sırayı izleme sorununu çözememiştir.</li><li>Bilgiyi ve hata sinyalini uzun mesafeye taşıma sorununu hafifletmiştir; bir adımın öncekini beklemesi nedeniyle tek bir metnin içinde paralel işlem yapamama sorunu sürmüştür.</li><li>Patlayan gradyanı tamamen ortadan kaldırmış; kaybolan gradyanı ise artırmıştır.</li></ul>
+<div class="coz"><p>LSTM'nin bandı bilgiyi büyük ölçüde toplama yoluyla taşır ve kapılar neyin silinip ekleneceğini seçer; bu, uzun mesafede sönme sorununu hafifletir. Ama LSTM de bir RNN'dir: h3 için h2'nin bitmesi gerekir, bu yüzden tek bir metnin içindeki adımlar aynı anda hesaplanamaz; D doğrudur. A yanlış: yanlılık gömmelerin verisinden gelir, LSTM'nin konusu değildir. B tersini söyler: sırayla işleme LSTM'de de sürer. C'deki gösterim sorunu gömmelerin konusudur. E'deki "tamamen" ve "artırmıştır" ifadeleri desteklenmez.</p></div></li>
+
+<li data-c="A" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince çoğunlukla kastedilen iç içe halkaların <strong>dıştan içe</strong> doğru sıralanışı hangisidir?</p>
+<ul class="sec"><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li><li>Makine öğrenmesi → yapay zekâ → derin öğrenme → büyük dil modelleri</li><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li><li>Yapay zekâ → derin öğrenme → makine öğrenmesi → büyük dil modelleri</li><li>Derin öğrenme → yapay zekâ → büyük dil modelleri → makine öğrenmesi</li></ul>
+<div class="coz"><p>En geniş halka yapay zekâdır; kural tabanlı uzman sistemler de onun içindedir. Makine öğrenmesi, örnekten öğrenen sistemlerdir ve YZ'nin bir alt kümesidir. Derin öğrenme, çok katmanlı sinir ağlarıyla yapılan makine öğrenmesidir. Büyük dil modelleri de derin öğrenmenin bir türüdür. C doğru halkaları içten dışa sıralar, yani soru kökündeki yönü ters çevirir. B, D ve E iki halkanın yerini değiştirir; "her derin öğrenme bir makine öğrenmesidir, tersi değil" cümlesini kurarak kontrol edebilirsin.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Geçmiş satış kayıtlarından öğrenip bir evin metrekaresi, oda sayısı ve semtinden satış fiyatını TL olarak tahmin eden bir model hangi öğrenme türüne ve hangi problem türüne örnektir?</p>
+<ul class="sec"><li>Denetimsiz öğrenme, sınıflandırma</li><li>Pekiştirmeli öğrenme, regresyon</li><li>Denetimsiz öğrenme, regresyon</li><li>Denetimli öğrenme, sınıflandırma</li><li>Denetimli öğrenme, regresyon</li></ul>
+<div class="coz"><p>Geçmiş satışlarda her evin gerçek fiyatı (etiket) bilindiği için öğrenme denetimlidir. Tahmin edilen şey bir sınıf ("pahalı/ucuz") değil sürekli bir sayı (TL) olduğu için problem regresyondur. Denetimsiz öğrenmede etiket yoktur (ör. müşteri gruplama); pekiştirmeli öğrenmede ajan ödül-cezayla öğrenir (ör. oyun oynamak). Fiyatı "50 bin altı / üstü" gibi gruplara ayırsaydık sınıflandırma olurdu.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">Yapay zekâ modellerinin eğitiminde ekran kartlarının (GPU) tercih edilmesinin temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>GPU'ların, tek bir karmaşık işlemi işlemciden çok daha hızlı yapan tek bir güçlü çekirdeği olması</li><li>Matris çarpımı gibi aynı basit çarpma-toplama işlemini çok sayıda veri üzerinde aynı anda (paralel) yapabilmeleri</li><li>GPU'ların yalnızca tam sayılarla çalışıp ondalıklı sayıları hiç kullanmaması</li><li>Modellerin ekran görüntüsü üretmesi gerektiği için ekran kartına ihtiyaç duyulması</li><li>GPU'ların eğitim verisini kendiliğinden temizleyip etiketlemesi</li></ul>
+<div class="coz"><p>Sinir ağlarının hesabı büyük ölçüde matris çarpımıdır, yani birçok ağırlıklı toplamın aynı anda yapılmasıdır. GPU'lar binlerce basit çekirdekle bu tür aynı işlemi paralel yürütür; B doğrudur. A tersini söyler: GPU'nun gücü tek güçlü çekirdekte değil, çok sayıda basit çekirdektedir. C yanlış: YZ'de float32, float16 gibi ondalıklı sayı biçimleri yaygın kullanılır. D ve E GPU'nun işleviyle ilgisizdir. Bu parçada RNN'nin neden yavaş kaldığını konuşurken bu noktaya döndük: zincir yapısı paralelliği engeller.</p></div></li>
+
+<li data-c="D" data-k="yz-4"><p class="q">Gradyan inişinde öğrenme oranı (adım boyu) çok büyük seçilirse genellikle ne olur?</p>
+<ul class="sec"><li>Model her zaman daha hızlı ve daha iyi bir minimuma ulaşır.</li><li>Eğitim çok yavaşlar ama sonunda kesin olarak en iyi noktaya varılır.</li><li>Kayıp fonksiyonu kendiliğinden ortalama kare hatadan başka bir fonksiyona dönüşür.</li><li>Adımlar en düşük noktanın üzerinden atlar; kayıp salınabilir, hatta büyüyerek ıraksayabilir.</li><li>Modelin parametre sayısı artar.</li></ul>
+<div class="coz"><p>Sisli dağ benzetmesini hatırla: çok büyük adım atan biri vadinin dibini geçip karşı yamaca çıkar, sonra geri döner ve yine geçer. Kayıp düşmek yerine iki yana salınır ya da her adımda büyür; D doğrudur. A ve B, büyük ve küçük öğrenme oranının etkilerini karıştırır: yavaşlık, çok küçük öğrenme oranının sorunudur. C ve E ilgisizdir: öğrenme oranı kayıp fonksiyonunu ya da parametre sayısını değiştirmez, yalnızca parametrelerin her adımda ne kadar değiştirileceğini belirler.</p></div></li>
+
+<li data-c="C" data-k="yz-5"><p class="q">1000 kişilik bir veri kümesinde 10 kişi hastadır. Bir model herkese "sağlıklı" diyor. Bu modelin doğruluğu (accuracy) ve hastaları yakalamadaki duyarlılığı (recall) nedir?</p>
+<ul class="sec"><li>Doğruluk %1, duyarlılık %100</li><li>Doğruluk %99, duyarlılık %99</li><li>Doğruluk %99, duyarlılık %0</li><li>Doğruluk %50, duyarlılık %50</li><li>Doğruluk %0, duyarlılık %0</li></ul>
+<div class="coz"><p>Model 990 sağlıklı kişinin hepsini doğru bilir, 10 hastanın hepsini yanlış bilir: doğruluk 990 / 1000 = %99. Duyarlılık, gerçek hastaların ne kadarının yakalandığıdır: 10 hastadan 0'ı yakalandı, yani %0. Bu, dengesiz veride doğruluğun neden yanıltıcı olduğunun klasik örneğidir. B, doğruluğu duyarlılık sanmaktır; A ve E sayıları tersine çevirir; D ise rastgele tahmini varsayar.</p></div></li>
+
+<li data-c="A" data-k="yz-6"><p class="q">4 girdisi olan bir katmanda 3 nöron var; her nöron 4 girdinin hepsine bağlı ve her nöronun bir sapması (bias) var. Bu katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>15</li><li>12</li><li>7</li><li>18</li><li>4</li></ul>
+<div class="coz"><p>Her nöronun 4 ağırlığı vardır: 3 × 4 = 12 ağırlık. Her nöronun bir sapması vardır: 3 sapma. Toplam 12 + 3 = 15 parametre. 12, sapmaları unutmaktır; 7, girdi ve nöron sayılarını toplamaktır; 18 ve 4 hesabın yapısını yanlış kurar. "70 milyar parametreli model" ifadesi de bu ağırlık ve sapmaların toplam sayısını anlatır; bu parçadaki gömme tablosu da (sözlük × boyut) aynı sayıma eklenir.</p></div></li>
+
+<li data-c="E" data-k="yz-6"><p class="q">Sinir ağında katmanlar arasında doğrusal olmayan bir aktivasyon fonksiyonu (ör. ReLU) kullanılmasaydı ne olurdu?</p>
+<ul class="sec"><li>Ağ daha karmaşık, doğrusal olmayan ilişkileri daha kolay öğrenirdi.</li><li>İleri besleme (forward pass) yapılamaz, sayılar ağda akmazdı.</li><li>Her nöronun sapması kendiliğinden sıfır olurdu.</li><li>Parametre sayısı ikiye katlanırdı.</li><li>Üst üste dizilen doğrusal katmanlar tek bir doğrusal işleme eşdeğer olur; derinlik doğrusal olmayan ilişkileri yakalama gücü kazandırmazdı.</li></ul>
+<div class="coz"><p>Doğrusal bir işlemin ardından başka bir doğrusal işlem yapmak, yine tek bir doğrusal işlemdir. Aktivasyon olmadan on katmanlı bir ağ, tek katmanlı bir doğrusal modelden daha fazlasını ifade edemez; E doğrudur. A tersini söyler. B yanlış: sayılar yine akar, yalnızca sonuç doğrusal kalır. C ve D'nin aktivasyonla ilgisi yoktur: sapma ve parametre sayısı aktivasyon fonksiyonu seçimiyle değişmez.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">Bir ağın eğitim eğrisinde, eğitim kaybı dönemler boyunca düşmeye devam ederken doğrulama kaybı bir noktadan sonra yükselmeye başlıyor. Bu durum en çok neyi gösterir ve hangi önlem uygundur?</p>
+<ul class="sec"><li>Yetersiz öğrenmeyi; ağı küçültmek gerekir.</li><li>Aşırı öğrenmeyi (ezberlemeyi); doğrulama kaybının en düşük olduğu yerde erken durdurmak ya da dropout gibi düzenlileştirme kullanmak uygundur.</li><li>Öğrenme oranının sıfır olduğunu; eğitim süresini uzatmak gerekir.</li><li>Doğrulama verisinin bozuk olduğunu; doğrulama verisini silmek gerekir.</li><li>Modelin mükemmel genelleme yaptığını; hiçbir şey yapmaya gerek yoktur.</li></ul>
+<div class="coz"><p>Eğitim kaybının düşmesi modelin gördüğü örneklere giderek daha iyi uyduğunu, doğrulama kaybının yükselmesi ise görmediği örneklerde kötüleştiğini gösterir; bu aşırı öğrenmedir. Erken durdurma, dropout, ağırlık cezası ve veri artırma bilinen önlemlerdir; B doğrudur. A yanlış: yetersiz öğrenmede eğitim kaybı da yüksek kalır. C yanlış: öğrenme oranı sıfır olsa eğitim kaybı hiç düşmezdi. D, uyarıyı gönderen aracı yok etmektir. E, eğrinin söylediğinin tersidir.</p></div></li>
+
+<li data-c="D" data-k="yz-7"><p class="q">10 000 örneklik bir eğitim verisi, 100 örneklik mini-yığınlarla (batch) işleniyor ve her mini-yığından sonra ağırlıklar bir kez güncelleniyor. 5 dönem (epoch) boyunca toplam kaç ağırlık güncellemesi yapılır?</p>
+<ul class="sec"><li>100</li><li>50</li><li>1000</li><li>500</li><li>50 000</li></ul>
+<div class="coz"><p>Bir dönem, verinin tamamının bir kez görülmesidir. 10 000 / 100 = 100 mini-yığın vardır, yani bir dönemde 100 güncelleme yapılır. 5 dönemde 5 × 100 = 500 güncelleme olur. 100, tek dönemde durmaktır; 50, 10 000'i 100 × 2 gibi yanlış bölmektir; 1000 ve 50 000 ise dönem ve yığın kavramlarını karıştırır (50 000 = her örnekten sonra güncelleme).</p></div></li>
+
+<li data-c="C" data-k="yz-8"><p class="q">Görüntü işleyen ağlarda evrişim (convolution) filtresi için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Resmin bütün piksellerini tek seferde tek bir sayıya indirger ve resmin sınıfını doğrudan söyler.</li><li>Resmi rastgele piksellerini silerek küçültür.</li><li>Küçük bir pencere olarak resmin üzerinde kaydırılır ve her yerde aynı ağırlıklarla kenar, köşe, doku gibi örüntüleri arar.</li><li>Yalnızca renkli resimlerde çalışır; siyah-beyaz resimlerde kullanılamaz.</li><li>Ağın eğitimden önce elle yazılan ve hiç değişmeyen bir kuralıdır.</li></ul>
+<div class="coz"><p>Filtre, birkaç piksellik küçük bir ağırlık penceresidir; resmin her yerinde aynı ağırlıklarla kaydırılır ve aradığı örüntünün (ör. dikey kenar) nerede güçlü olduğunu gösterir; C doğrudur. A, bütün ağın işini tek filtreye yükler. B havuzlamayı ve rastgele silmeyi karıştırır. D yanlış: filtre gri tonlu resimde de çalışır. E yanlış: derin öğrenmede filtrelerin ağırlıkları eğitimle öğrenilir. Bu parçadaki RNN'de de benzer bir fikir vardı: aynı ağırlıklar dizinin her adımında yeniden kullanılır.</p></div></li>
+
+<li data-c="E" data-k="yz-8"><p class="q">Transfer öğrenme aşağıdakilerden hangisini anlatır?</p>
+<ul class="sec"><li>Bir modeli her yeni iş için sıfırdan, rastgele ağırlıklarla eğitmek</li><li>Eğitim verisini bir bilgisayardan başka bir bilgisayara aktarmak</li><li>Bir modelin ağırlıklarını küçültüp daha az bit ile saklamak</li><li>İki farklı modelin cevaplarının ortalamasını almak</li><li>Büyük bir veri kümesinde eğitilmiş bir modeli alıp, öğrendiklerini koruyarak küçük bir veriyle yeni bir işe uyarlamak</li></ul>
+<div class="coz"><p>Transfer öğrenmede, örneğin ImageNet gibi büyük bir veride kenar, şekil, doku tanımayı öğrenmiş bir ağ alınır ve az sayıda tıbbi görüntüyle yeni işe uyarlanır; E doğrudur. A tam tersidir. B, veri taşımadır, öğrenme değildir. C, niceleme (quantization) kavramıdır. D, birden çok modelin birleştirilmesidir. Bu parçadaki word2vec gömmelerinin başka işlerde hazır kullanılması da aynı fikrin dildeki erken bir örneğidir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-8">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-9">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-10">Sonraki parça: transformer ve dikkat</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"word embeddings word2vec explained"</li>
+  <li>"kelime gömmeleri word2vec nedir"</li>
+  <li>"recurrent neural network LSTM explained visually"</li>
+  <li>"history of machine translation rule-based statistical neural"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>word2vec:</strong> Mikolov, Chen, Corrado, Dean, "Efficient Estimation of Word Representations in Vector Space", arXiv 1301.3781 (Ocak 2013). CBOW ve skip-gram tanımları, "King − Man + Woman" ve "biggest − big + small" örnekleri, yaklaşık 6 milyar tokenlik Google News yığını, 1 milyon kelimelik sözlük ve "1,6 milyar kelimeden bir günden kısa sürede" ifadesi makalenin ar5iv sürümünden kontrol edildi. Mikolov, Yih, Zweig, "Linguistic Regularities in Continuous Space Word Representations" (NAACL 2013) makalesinden dil bilgisi benzetmelerinde yaklaşık %40 doğruluk bilgisi alındı. "Gömmeler genellikle 100–300 boyutludur" ifadesi yaygın uygulamaya dayanan genel bir aralıktır, tek bir kaynaktan alınmadı.</li>
+  <li><strong>Analoji eleştirisi:</strong> Nissim, van Noord, van der Goot, "Fair Is Better than Sensational: Man Is to Doctor as Woman Is to Doctor", Computational Linguistics 46(2), 2020. Girdi kelimelerinin dışlanması (word2vec, gensim ve Bolukbasi ve ark. kodlarında) ve kısıt kaldırılınca sonucun çoğunlukla girdilerden biri olduğu makalenin arXiv sürümünden (1905.09866) kontrol edildi. Makale "man:king::woman:?" için belirli bir sonuç tablosu vermiyor; metindeki "kraliçe cevabı kısmen kralın dışlanmasıyla elde edilir" ifadesi genel mekanizmanın yorumudur.</li>
+  <li><strong>Yanlılık:</strong> Bolukbasi ve ark., "Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings", NeurIPS 2016 (özet NeurIPS sitesinden). Gonen ve Goldberg, "Lipstick on a Pig…", 2019 (ACL Anthology özeti; çalışmanın NAACL 2019 sürümü de var). Caliskan, Bryson, Narayanan, Science 2017: yalnızca başlık ve künye arama sonuçlarından doğrulandı, ayrıntısı okunmadı. Google'ın Türkçe–İngilizce cinsiyete özgü çeviri duyurusu: Google Research blogu, 10 Aralık 2018 ("O bir doktor" örneği oradan).</li>
+  <li><strong>RNN ve LSTM:</strong> Hochreiter ve Schmidhuber, "Long Short-Term Memory", Neural Computation 9(8):1735–1780, 1997 (künye ve özetteki "1000 adımı aşan gecikmeler" mlanthology.org üzerinden). Unutma kapısı: Gers, Schmidhuber, Cummins, "Learning to Forget", Neural Computation, 2000 (özet kontrol edildi). Elman 1990 "Finding Structure in Time" ve Cho ve ark. 2014'ün GRU'yu önermesi yalnız arama sonuçlarındaki künyelerden doğrulandı. RNN formülü ve tek sayılık hafıza örneği öğretim amaçlı sadeleştirmedir (gerçek RNN'de matris ve aktivasyon vardır); sayılar Python ile hesaplandı.</li>
+  <li><strong>Makine çevirisi:</strong> Georgetown–IBM gösterisinin tarihi (7 Ocak 1954), IBM 701, 250 kelime öğesi, 6 kural, altmışı aşkın cümle ve ALPAC 1966 Wikipedia'dan; 250 kelime, 6 kural, "altmışı biraz aşan cümle" ve Dostert'in "belki üç beş yıl" sözü Hutchins'in gösteri üzerine makalesinden de kontrol edildi (Hutchins'in metni yalnız "Ocak 1954" diyor; gün Wikipedia'ya dayanıyor). IBM istatistiksel çeviri: Brown ve ark. 1993, Computational Linguistics 19(2), Kanada parlamentosu tutanakları (ikincil kaynak üzerinden). Sutskever, Vinyals, Le 2014: 34,8 ve 33,3 BLEU ile kaynak cümleyi ters çevirme bulgusu arXiv özetinden. Bahdanau, Cho, Bengio 2014: sabit uzunluklu vektör darboğazı ar5iv metninden. GNMT: Google Research blogu, 27 Eylül 2016; Çince–İngilizce ilk çift, %55–85 hata azalması şirketin kendi insan değerlendirmesi. "Google Çeviri 2006'da öbek tabanlı istatistiksel sistemle başladı" bilgisi aynı blogdaki "on yıl önce" ifadesinden çıkarıldı.</li>
+  <li><strong>Firth (1957)</strong> alıntısı yaygın biçimde aktarılan hâliyle verildi; özgün metinle karşılaştırılmadı.</li>
+  <li><strong>Kod:</strong> Üç Python betiği (birlikte.py, gomme.py, yanlilik.py) /tmp altında gerçekten <code>python3 -I</code> ile çalıştırıldı, çıktılar birebir kondu; yalnız numpy kullanıldı, internetten veri ya da model indirilmedi. Bütün vektörler ve metin yığını öğretim amaçlı oyuncaktır, gerçek word2vec değildir. Elle yapılan çözümlü örneklerdeki bütün sayılar ve quiz'deki hesap sorularının cevapları Python ile ayrıca doğrulandı.</li>
+  <li>Sorular bu parça için yazıldı. Tekrar soruları yalnızca kapsam listesinde Parça 1–8'in satırlarında yazan konulardan soruldu; o parçaların metinleri bu parça yazılırken okunamadı (eşzamanlı yazılıyorlardı), terimler kapsam listesinden alındı.</li>
+</ul>
+</div>
+</div>
+</article>

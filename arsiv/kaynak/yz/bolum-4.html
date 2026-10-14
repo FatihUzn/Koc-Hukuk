@@ -1,0 +1,549 @@
+<article class="chapter ders" id="c-yz-4">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 4 · İlk modeller</div>
+<h1>İlk modeller: bir doğru çizmekten soru soran ağaca</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Elinde 200 dairenin metrekaresi ve kirası var; yeni bir dairenin kirasını tahmin etmek istiyorsun. "Bilgisayar bu listeden öğrendi" dediğimizde tam olarak ne oluyor: hangi sayılar değişiyor, neye göre değişiyor, ne zaman duruyor? Ve neden bazen en basit model, en gösterişli olanından daha iyi sonuç veriyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (özellik, etiket, parametre, eğitim, test, aşırı öğrenme, sınıflandırma ile regresyon farkı) ve Parça 3 (vektör, uzaklık, olasılık, eğim sezgisi). Kod bilmen gerekmiyor; sondaki deneme isteğe bağlıdır.</p>
+
+<h2 class="s">Önce büyük resim: her model üç parçadan oluşur</h2>
+
+<p>Parça 2'de makine öğrenmesini "kuralı biz yazmıyoruz, örneklerden çıkarılıyor" diye tanımladık. Bu parçada o cümlenin içini açıyoruz. Bugün göreceğin bütün modeller, hatta ileride göreceğin büyük dil modelleri, aynı üç parçalı iskelete oturur. Bu iskeleti bir kez görürsen, karşına çıkan her yeni modelde aynı üç soruyu sorarsın.</p>
+
+<p><strong>Birinci parça: bir kural ailesi.</strong> Model, olası kuralların bir ailesidir ve ailenin hangi üyesinin seçildiğini birkaç ayar düğmesi belirler. Bu düğmeler Parça 2'de adını koyduğumuz <strong>parametrelerdir</strong>. "Kira, metrekarenin bir katı artı sabit bir miktardır" bir kural ailesidir; "katı" ve "sabit miktar" düğmelerdir.</p>
+
+<p><strong>İkinci parça: bir ölçü.</strong> Düğmelerin herhangi bir konumu için modelin ne kadar kötü olduğunu tek bir sayıyla söyleyen bir ölçü gerekir. Buna <strong>kayıp</strong> diyeceğiz. Kayıp yoksa "daha iyi" diye bir şey de yoktur.</p>
+
+<p><strong>Üçüncü parça: bir ayarlama yöntemi.</strong> Kaybı düşürmek için düğmeleri hangi yöne, ne kadar çevireceğini söyleyen bir yöntem gerekir. Eğitim dediğimiz şey tam olarak budur: düğmeleri kayıp küçülene kadar çevirmek.</p>
+
+<p>Bu parçada önce bu üç parçayı en sade modelde, doğrusal regresyonda tek tek kuracağız. Sonra aynı iskeleti başka biçimde kullanan dört modele geçeceğiz: lojistik regresyon, karar ağacı, rastgele orman ve k-en yakın komşu. En sonda da hangi işte basit modelin derin ağa üstün geldiğini konuşacağız.</p>
+
+<h2 class="s">Doğrusal regresyon: noktalara en iyi uyan doğru</h2>
+
+<p>Dört dairelik küçük bir listeyle başlayalım. Metrekareyi <em>x</em>, aylık kirayı (bin TL) <em>y</em> diye yazalım: 50 m² için 12, 70 m² için 15, 90 m² için 20, 110 m² için 22. Bu dört noktayı bir grafiğe koyarsan, kabaca sağa doğru yükselen bir dizi görürsün. Akla gelen ilk kural: "metrekare arttıkça kira da düzenli biçimde artıyor". Düzenli artışı anlatmanın en basit yolu bir doğrudur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Doğrusal regresyon</strong>, sayısal bir etiketi, özelliklerin ağırlıklı toplamı artı bir sabitle tahmin eden modeldir. Tek özellikte: <strong>ŷ = w × x + b</strong>. Burada <em>w</em> eğimdir (x bir birim artınca tahmin ne kadar artar), <em>b</em> kesişimdir (x sıfırken tahmin). Modelin parametreleri yalnızca bu iki sayıdır.</p></div>
+
+<p>Gösterimi bir kez netleştirelim. <em>y</em> gerçek değerdir, yani dairenin gerçek kirası. <em>ŷ</em> ("y şapka" diye okunur) modelin tahminidir. İkisini ayrı harfle yazmamızın nedeni, bütün işin bu ikisi arasındaki farkla ilgili olmasıdır.</p>
+
+<p>Eğim ve kesişimin günlük anlamı vardır. <em>w</em> = 0,2 demek "her ek metrekare kirayı 0,2 bin TL, yani 200 TL artırıyor" demektir. <em>b</em> = 2 demek "doğruyu sıfır metrekareye kadar uzatırsan 2 bin TL'ye çarpar" demektir. Sıfır metrekarelik daire olmadığı için kesişimin kendisi çoğu zaman anlamsızdır; yalnızca doğrunun yüksekliğini ayarlayan bir düğmedir. Bu, modelin parametrelerinin her zaman gerçek dünyada bir karşılığı olmadığına ilk örnektir.</p>
+
+<p>Gerçek hayatta tek özellik nadirdir. Kirayı metrekarenin yanında oda sayısı, binanın yaşı ve metroya uzaklık da etkiler. O zaman model şöyle genişler: ŷ = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + w<sub>3</sub>x<sub>3</sub> + w<sub>4</sub>x<sub>4</sub> + b. Parça 3'te gördüğün dille söylersek: daireyi bir sayı listesi, yani bir vektör olarak yazıyoruz, ağırlıklar da ikinci bir vektör; tahmin bu iki vektörün çarpımlarının toplamı artı sabit. Her ağırlık, öbür özellikler sabitken o özelliğin tahmine katkısını söyler. Binanın yaşının ağırlığı eksi çıkarsa model "bina eskidikçe kira düşüyor" demiş olur.</p>
+
+<p>"Doğrusal" adı yanıltmasın: model, düz bir çizgiden başka bir şey öğrenemez demek değildir. Eğri bir ilişkiyi yakalamak için x'in yanına x<sup>2</sup>'yi de ayrı bir özellik olarak ekleyebilirsin; model yine ağırlıklı toplam yapar ama sonuç bir eğri olur. "Doğrusal" sözcüğü, tahminin <strong>parametrelere göre</strong> ağırlıklı toplam olduğunu anlatır.</p>
+
+<figure>
+<svg viewBox="0 0 400 280" role="img" aria-label="Dört dairenin metrekare ve kira noktaları, aday doğru ve noktalarla doğru arasındaki dikey hata çizgileri">
+  <line class="sv-c" x1="40" y1="240" x2="390" y2="240" />
+  <line class="sv-c" x1="40" y1="240" x2="40" y2="30" />
+  <text class="sv-s" x="90" y="256" text-anchor="middle">50</text>
+  <text class="sv-s" x="170" y="256" text-anchor="middle">70</text>
+  <text class="sv-s" x="250" y="256" text-anchor="middle">90</text>
+  <text class="sv-s" x="330" y="256" text-anchor="middle">110</text>
+  <text class="sv-s" x="34" y="210" text-anchor="end">12</text>
+  <text class="sv-s" x="34" y="162" text-anchor="end">16</text>
+  <text class="sv-s" x="34" y="114" text-anchor="end">20</text>
+  <text class="sv-s" x="34" y="66" text-anchor="end">24</text>
+  <text class="sv-s" x="390" y="274" text-anchor="end">metrekare (x)</text>
+  <text class="sv-s" x="46" y="22">kira, bin TL (y)</text>
+  <line class="sv-cl" x1="40" y1="236" x2="390" y2="26" />
+  <text class="sv-t" x="60" y="48">aday doğru: ŷ = 0,2x + 2</text>
+  <line class="sv-c" x1="170" y1="170" x2="170" y2="158" stroke-dasharray="4 3" />
+  <line class="sv-c" x1="330" y1="86" x2="330" y2="62" stroke-dasharray="4 3" />
+  <circle class="sv-a" cx="90" cy="206" r="6" />
+  <circle class="sv-a" cx="170" cy="170" r="6" />
+  <circle class="sv-a" cx="250" cy="110" r="6" />
+  <circle class="sv-a" cx="330" cy="86" r="6" />
+  <text class="sv-s" x="180" y="190">hata −1</text>
+  <text class="sv-s" x="340" y="104">hata −2</text>
+  <text class="sv-s" x="100" y="226">hata 0</text>
+</svg>
+<figcaption>Turuncu noktalar gerçek daireler, çizgi bir aday modeldir. Her noktadan doğruya inen kesikli çizgi o dairedeki hatadır (gerçek − tahmin). Eğitim, bu kesikli çizgileri topluca en kısa yapan doğruyu aramaktır.</figcaption>
+</figure>
+
+<h2 class="s">Kayıp fonksiyonu: hatayı tek sayıya çevirmek</h2>
+
+<p>Şekildeki doğru iyi mi? "Fena değil" demek bilgisayara bir şey anlatmaz. İki aday doğruyu karşılaştırmak, binlerce adayı otomatik denemek için her adaya tek bir not vermemiz gerekir. Bu notu üreten fonksiyona <strong>kayıp fonksiyonu</strong> (loss function) denir. Küçük kayıp iyi, büyük kayıp kötü demektir.</p>
+
+<p>Her dairedeki hatayı bulmak kolay: gerçek eksi tahmin. Zor olan, dört hatayı tek sayıya indirmek. İlk akla gelen onları toplamaktır; ama bu çalışmaz, çünkü +3 ve −3'lük iki hata toplanınca sıfır eder ve kötü bir doğru kusursuz görünür. Mutlak değer almak bir çözümdür. Yaygın olan ise hataların <strong>karesini</strong> almaktır. Bunun üç nedeni var: kare her zaman sıfır ya da artıdır, yani hatalar birbirini götürmez; kare büyük hataları orantısız biçimde büyütür (2'lik hata 4, 10'luk hata 100 ceza alır), yani model "birkaç evde felaket" yerine "her evde biraz" yanılmayı tercih eder; ve kare pürüzsüz bir eğri verir, birazdan göreceğimiz eğimle iniş yöntemi pürüzsüz eğrilerde rahat çalışır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Ortalama kare hata</strong> (mean squared error, MSE): her örnekte (gerçek − tahmin) farkının karesini al, bütün örneklerde bu kareleri topla, örnek sayısına böl. Sembolle: MSE = (1/n) × Σ (y − ŷ)<sup>2</sup>. Birimi, etiketin biriminin karesidir; günlük birime dönmek için karekökü alınır (RMSE).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Dört daire için iki aday doğru var. Aday A: ŷ = 0,2x + 2. Aday B: ŷ = 0,18x + 3. Hangisinin kaybı daha düşük?</p>
+<p><strong>Adım 1.</strong> Aday A'nın tahminlerini hesapla: 0,2 × 50 + 2 = 12; 0,2 × 70 + 2 = 16; 0,2 × 90 + 2 = 20; 0,2 × 110 + 2 = 24.</p>
+<p><strong>Adım 2.</strong> Hataları bul (gerçek − tahmin): 12 − 12 = 0; 15 − 16 = −1; 20 − 20 = 0; 22 − 24 = −2.</p>
+<p><strong>Adım 3.</strong> Karelerini al: 0, 1, 0, 4. Topla: 5. Dörde böl: MSE = 1,25.</p>
+<p><strong>Adım 4.</strong> Aday B için aynısını yap. Tahminler: 12; 15,6; 19,2; 22,8. Hatalar: 0; −0,6; 0,8; −0,8. Kareler: 0; 0,36; 0,64; 0,64. Toplam 1,64; dörde bölünce MSE = 0,41.</p>
+<p><strong>Adım 5.</strong> Karşılaştır: 0,41 &lt; 1,25 (küçük kayıp daha iyi).</p>
+<p><strong>Sonuç:</strong> Aday B daha iyi. Bu dört nokta için mümkün olan en iyi doğru ŷ = 0,175x + 3,25'tir ve kaybı 0,375'tir; bunu aşağıda nasıl bulduğumuzu göreceksin. Karekökü yaklaşık 0,61, yani bu doğru bir daireyi ortalama 600 TL civarında bir sapmayla tahmin ediyor diye okunabilir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Daire</th><th>Gerçek kira</th><th>A'nın tahmini</th><th>A'nın hata karesi</th><th>B'nin tahmini</th><th>B'nin hata karesi</th></tr>
+<tr><td>50 m²</td><td>12</td><td>12</td><td>0</td><td>12</td><td>0</td></tr>
+<tr><td>70 m²</td><td>15</td><td>16</td><td>1</td><td>15,6</td><td>0,36</td></tr>
+<tr><td>90 m²</td><td>20</td><td>20</td><td>0</td><td>19,2</td><td>0,64</td></tr>
+<tr><td>110 m²</td><td>22</td><td>24</td><td>4</td><td>22,8</td><td>0,64</td></tr>
+<tr><td colspan="3"><strong>Ortalama (MSE)</strong></td><td><strong>1,25</strong></td><td></td><td><strong>0,41</strong></td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Hataların ortalaması sıfırsa model kusursuzdur."</strong> Hatalar −5 ve +5 ise ortalamaları sıfırdır ama model her daireyi 5 bin TL şaşırıyor. Artı ve eksi hatalar birbirini götürdüğü için ham ortalama bir kayıp ölçüsü olamaz. Doğrusu: hataları ya karesiyle (MSE) ya mutlak değeriyle (ortalama mutlak hata) topla; ikisinde de her hata cezaya artı olarak eklenir.</p></div>
+
+<p>Doğrusal regresyon için en iyi doğruyu veren hazır bir formül vardır; buna <strong>en küçük kareler</strong> yöntemi denir ve kökü 19. yüzyılın başına, Legendre ile Gauss'a gider. Yani bu model aslında yapay zekâdan çok daha eskidir; makine öğrenmesi onu yeni bir çerçeveye koymuştur. Ama hazır formül yalnızca bu kadar basit modellerde vardır. Milyonlarca parametreli bir ağda öyle bir formül yoktur; orada düğmeleri adım adım çevirmek zorundayız. O adım adım yöntemi şimdi en basit hâliyle göreceğiz, çünkü Parça 7'deki sinir ağı eğitimi aynı fikrin büyütülmüş hâlidir.</p>
+
+<h2 class="s">Gradyan inişi: sisli dağda aşağı inmek</h2>
+
+<p>Kendini sisli bir dağın yamacında düşün. Vadiye inmek istiyorsun ama sis yüzünden vadiyi göremiyorsun; yalnızca ayağının altındaki zemini hissedebiliyorsun. Akıllıca strateji şudur: ayağınla zemini yokla, en dik aşağı inen yönü bul, o yöne bir adım at, yeniden yokla. Vadiyi hiç görmeden, yalnızca yerel eğime bakarak dibe yaklaşırsın.</p>
+
+<p>Makine öğrenmesinde dağ, kayıp fonksiyonudur. Yatay konum parametrelerin değeridir (bizim örnekte <em>w</em> ve <em>b</em>), yükseklik o konumdaki kayıptır. Vadinin dibi en küçük kayıp, yani en iyi parametrelerdir. Ayağının altındaki eğim, Parça 3'te sezgisini kurduğumuz <strong>türevdir</strong>: "bu düğmeyi biraz artırırsam kayıp ne kadar ve hangi yönde değişir?" Birden çok parametre olunca her biri için ayrı bir eğim çıkar; bu eğimlerin listesine <strong>gradyan</strong> denir. Yöntemin adı da buradan gelir: gradyan inişi (gradient descent).</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Gradyan inişi:</strong> Parametreye bir başlangıç değeri ver. Sonra şu adımı tekrarla: o noktada kaybın eğimini hesapla ve <strong>yeni değer = eski değer − öğrenme oranı × eğim</strong> yap. Kayıp artık belirgin biçimde düşmeyince ya da belirlenen adım sayısı bitince dur. Öğrenme oranı (learning rate), adım boyunu belirleyen ve eğitimden önce elle seçilen bir sayıdır.</p></div>
+
+<p>Formüldeki eksi işareti kuralın kalbidir. Eğim artıysa, düğmeyi artırmak kaybı artırıyor demektir; o hâlde düğmeyi azaltmalıyız. Eğim eksiyse, düğmeyi artırmak kaybı azaltıyor demektir; eksi çarpı eksi artı yapar ve düğme artar. Yani "eğimin tersine git" kuralı her iki durumda da bizi aşağı götürür. Eğimin büyüklüğü de bilgi taşır: dik yamaçta eğim büyüktür ve adım uzun olur, dibe yaklaştıkça eğim küçülür ve adımlar kendiliğinden kısalır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir kurye 1 saatte 3, 2 saatte 6 teslimat yapmış. Model ŷ = w × x (kesişim yok, yalnız bir düğme). Kayıp MSE. Başlangıç w = 0, öğrenme oranı 0,1. İlk adımları hesapla.</p>
+<p><strong>Adım 1.</strong> Kaybı yaz: iki örneğin hata kareleri (3 − w)<sup>2</sup> ve (6 − 2w)<sup>2</sup>, ortalamaları kayıp. Biraz cebirle bu, 2,5 × (w − 3)<sup>2</sup>'ye eşittir. En küçük değeri w = 3'te (kayıp sıfır); doğru cevabı bildiğimiz bir örnek seçtik ki yöntemin oraya gidip gitmediğini görelim.</p>
+<p><strong>Adım 2.</strong> Eğimi yaz: bu kaybın w'ye göre eğimi 5 × (w − 3)'tür (kaybın türevi). w = 0'da eğim 5 × (0 − 3) = −15 (eksi: w'yi artırmak kaybı düşürür).</p>
+<p><strong>Adım 3.</strong> İlk güncelleme: w = 0 − 0,1 × (−15) = 1,5. Kayıp 22,5'ten 5,625'e indi.</p>
+<p><strong>Adım 4.</strong> w = 1,5'te eğim 5 × (1,5 − 3) = −7,5. Güncelleme: w = 1,5 − 0,1 × (−7,5) = 2,25. Kayıp 1,406.</p>
+<p><strong>Adım 5.</strong> w = 2,25'te eğim −3,75. Güncelleme: w = 2,25 + 0,375 = 2,625. Kayıp 0,352.</p>
+<p><strong>Adım 6.</strong> Desene bak: hedefe (3) olan uzaklık her adımda yarıya iniyor: 3; 1,5; 0,75; 0,375. Beşinci adımda w = 2,906.</p>
+<p><strong>Sonuç:</strong> Yöntem, cevabı hiç bilmeden, yalnızca eğime bakarak w = 3'e yaklaşıyor. Hiçbir adımda kesin cevaba "atlamadık"; her adım bir öncekinden biraz daha iyi.</p></div>
+
+<p>Peki öğrenme oranını başka seçseydik? Aynı problemi üç farklı oranla beşer adım çalıştırdım; sonuçlar aşağıda.</p>
+
+<div class="tablo"><table>
+<tr><th>Adım</th><th>Oran 0,01 (küçük)</th><th>Oran 0,1 (uygun)</th><th>Oran 0,5 (büyük)</th></tr>
+<tr><td>0</td><td>w = 0</td><td>w = 0</td><td>w = 0</td></tr>
+<tr><td>1</td><td>0,15</td><td>1,5</td><td>7,5</td></tr>
+<tr><td>2</td><td>0,29</td><td>2,25</td><td>−3,75</td></tr>
+<tr><td>3</td><td>0,43</td><td>2,625</td><td>13,125</td></tr>
+<tr><td>4</td><td>0,56</td><td>2,8125</td><td>−12,19</td></tr>
+<tr><td>5</td><td>0,68</td><td>2,906</td><td>25,78</td></tr>
+<tr><td>5. adımdaki kayıp</td><td>13,47</td><td>0,022</td><td>1297,46</td></tr>
+</table></div>
+
+<p>Küçük oranda model doğru yöne gidiyor ama kaplumbağa hızıyla: beş adımda 3'e değil, 0,68'e varabildi. Gerçek bir eğitimde bu, saatlerce boşa hesap demektir. Büyük oranda ise her adım vadiyi aşıp karşı yamaca, üstelik daha yükseğe çıkıyor; kayıp düşmek yerine patlıyor. Buna <strong>ıraksama</strong> denir. Bu örnekte sınır 0,4'tür: 0,4'ün üstündeki her oran ıraksar, tam 0,4'te w iki nokta arasında sonsuza dek gidip gelir, 0,2 ise tek adımda cevaba indirir. Gerçek modellerde bu sınır önceden bilinmez; o yüzden öğrenme oranı denenerek seçilir ve eğitim sırasında kayıp eğrisine bakılır.</p>
+
+<figure>
+<svg viewBox="0 0 400 285" role="img" aria-label="Kayıp eğrisi üzerinde gradyan inişi: uygun öğrenme oranıyla dibe yaklaşan adımlar ve büyük oranla karşı yamaca fırlayan adım">
+  <line class="sv-c" x1="20" y1="230" x2="395" y2="230" />
+  <polyline class="sv-c" points="30,110 38,122 46,133 54,143 62,153 70,162 78,171 86,179 94,187 102,194 110,200 118,206 126,211 134,215 142,219 150,222 158,225 166,227 174,229 182,230 190,230 198,230 206,229 214,227 222,225 230,222 238,219 246,215 254,211 262,206 270,200 278,194 286,187 294,179 302,171 310,162 318,153 326,143 334,133 342,122 350,110 358,98 366,85 374,71 382,57 390,42" />
+  <text class="sv-s" x="34" y="24">kayıp</text>
+  <text class="sv-s" x="390" y="246" text-anchor="end">w</text>
+  <text class="sv-s" x="70" y="246" text-anchor="middle">0</text>
+  <text class="sv-s" x="190" y="246" text-anchor="middle">3 (dip)</text>
+  <line class="sv-cl" x1="70" y1="162" x2="130" y2="213" />
+  <line class="sv-cl" x1="130" y1="213" x2="160" y2="226" />
+  <line class="sv-cl" x1="160" y1="226" x2="175" y2="229" />
+  <line class="sv-c" x1="70" y1="162" x2="370" y2="78" stroke-dasharray="5 4" />
+  <circle class="sv-l" cx="70" cy="162" r="6" />
+  <circle class="sv-m" cx="130" cy="213" r="5" />
+  <circle class="sv-m" cx="160" cy="226" r="5" />
+  <circle class="sv-m" cx="175" cy="229" r="5" />
+  <circle class="sv-a" cx="370" cy="78" r="6" />
+  <text class="sv-s" x="34" y="92">başlangıç (mor): w = 0</text>
+  <text class="sv-s" x="340" y="40" text-anchor="end">oran 0,5: ilk adım w = 7,5,</text>
+  <text class="sv-s" x="340" y="56" text-anchor="end">kayıp 22,5'ten 50,6'ya çıktı</text>
+  <text class="sv-t" x="20" y="266">Yeşil: oran 0,1, her adımda yol yarıya iner.</text>
+  <text class="sv-t" x="20" y="282">Turuncu: oran 0,5, vadiyi aşıp yükselir.</text>
+</svg>
+<figcaption>Çanak biçimli kayıp eğrisi. Uygun oranda adımlar dibe yaklaştıkça kısalır, çünkü eğim azalır. Büyük oranda ilk adım karşı yamaca fırlatır; ikinci adım (w = −3,75) grafiğin dışına bile çıkar.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Öğrenme oranını büyütürsem model daha hızlı öğrenir."</strong> Bir yere kadar doğru, sonrası tam tersi. Oran büyüdükçe adım vadiyi aşar; belli bir eşiğin üstünde kayıp her adımda büyür ve model hiçbir şey öğrenmez. Doğrusu: oranı küçükten büyüğe birkaç değer deneyerek seç, eğitimde kaybın düzenli düştüğünü izle; kayıp zıplıyor ya da artıyorsa oranı küçült.</p></div>
+
+<p>İki not daha. Birincisi, doğrusal regresyonun MSE kaybı tek dipli bir çanaktır; nereden başlarsan başla aynı dibe inersin. Sinir ağlarının kayıp yüzeyi ise çok boyutlu ve engebelidir; orada "en iyi" dip yerine "yeterince iyi" bir çukurla yetinilir. Bunu Parça 7'de açacağız. İkincisi, gerçek eğitimde eğim her adımda bütün veri yerine verinin küçük bir parçasıyla hesaplanır; bunun adı ve gerekçesi de Parça 7'nin konusu.</p>
+
+<h2 class="s">Lojistik regresyon: olasılıkla sınıflandırma</h2>
+
+<p>Şimdi sınıflandırmaya geçelim. Parça 2'deki ayrımı hatırla: regresyon bir sayı (kira), sınıflandırma bir sınıf (spam mı, değil mi) tahmin eder. Spam için doğrusal regresyonu doğrudan kullanmayı düşünebilirsin: spam = 1, normal = 0 de, ağırlıklı toplamı hesapla. Sorun şu ki ağırlıklı toplamın bir alt ya da üst sınırı yoktur; 2,7 ya da −1,4 çıkabilir ve "−1,4 spam" diye bir şey anlamsızdır. Bize 0 ile 1 arasında kalan, olasılık gibi okunabilen bir sayı gerekiyor.</p>
+
+<p>Çözüm, ağırlıklı toplamı bir "sıkıştırıcı" fonksiyondan geçirmektir. Bu fonksiyon <strong>sigmoid</strong>tir: çok büyük artı sayıları 1'e, çok büyük eksi sayıları 0'a yaklaştırır, sıfırı tam 0,5'e götürür ve arada S biçimli yumuşak bir geçiş yapar. Matematik olarak σ(z) = 1 / (1 + e<sup>−z</sup>) diye yazılır, ama formülü bilmen gerekmiyor; davranışını bilmen yeter.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Lojistik regresyon</strong>, önce doğrusal regresyon gibi bir ağırlıklı toplam (z = w<sub>1</sub>x<sub>1</sub> + … + b) hesaplayan, sonra bunu sigmoidden geçirip 0 ile 1 arasında bir <strong>olasılık</strong> veren sınıflandırma modelidir. Sınıfa karar vermek için olasılık bir <strong>eşikle</strong> karşılaştırılır; varsayılan eşik genellikle 0,5'tir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Eğitilmiş bir spam modeli şu ağırlıkları öğrenmiş: z = −3 + 1,2 × (bağlantı sayısı) + 2,5 × ("kazandınız" sözcüğü geçiyor mu: evet 1, hayır 0). İçinde 2 bağlantı ve "kazandınız" geçen bir e-postanın spam olasılığı nedir?</p>
+<p><strong>Adım 1.</strong> Özellikleri yerine koy: z = −3 + 1,2 × 2 + 2,5 × 1.</p>
+<p><strong>Adım 2.</strong> Hesapla: z = −3 + 2,4 + 2,5 = 1,9.</p>
+<p><strong>Adım 3.</strong> Sigmoidden geçir: σ(1,9) = 1 / (1 + e<sup>−1,9</sup>) ≈ 1 / (1 + 0,1496) ≈ 0,870.</p>
+<p><strong>Adım 4.</strong> Eşikle karşılaştır: 0,87 &gt; 0,5, o hâlde sınıf "spam".</p>
+<p><strong>Adım 5.</strong> Karşılaştırma için bağlantısız, "kazandınız" geçmeyen bir e-posta: z = −3, σ(−3) ≈ 0,047. Yüzde 5'lik spam olasılığı: normal posta.</p>
+<p><strong>Sonuç:</strong> Model ilk e-posta için "%87 olasılıkla spam" diyor. Ağırlıkları okuyarak nedenini de görebiliyoruz: "kazandınız" sözcüğü z'yi 2,5 artırıyor, en güçlü işaret o.</p></div>
+
+<p>Lojistik regresyonun kaybı MSE değildir. Sınıflandırmada kullanılan kayıp, modelin <strong>doğru sınıfa verdiği olasılığa</strong> bakar ve "emin olup yanılmayı" ağır cezalandırır. Gerçekten spam olan bir e-postaya %87 diyen model az ceza alır (doğal logaritmayla yaklaşık 0,14), %5 diyen model çok ağır ceza alır (yaklaşık 3,0). Bu kayba log kaybı ya da çapraz entropi denir; Parça 11 ve 12'de dil modelinin bir sonraki tokeni tahmin ederken kullandığı kaybın da özünde bu olduğunu göreceksin. Eğitim yine aynı iskeletle yapılır: kayıp, eğim, gradyan inişi.</p>
+
+<p>Eşik konusu Parça 5'te büyüyecek. Şimdilik şunu not et: 0,5 bir zorunluluk değil, bir tercihtir. Önemli bir iş e-postasının spam kutusuna düşmesi pahalıysa eşiği 0,9'a çekersin; model ancak çok eminse "spam" der. Lojistik regresyonun bir sınırı da var: sınıfları ayıran çizgi (iki özellikte bir doğru) düzdür. Sınıflar iç içe geçmiş, kıvrımlı bir biçimde duruyorsa bu model yetmez.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Adında regresyon var, o hâlde sayı tahmin eden bir regresyon modelidir."</strong> Ad tarihsel: model içeride bir ağırlıklı toplam (regresyon) kurar, ama işi sınıflandırmaktır. Çıktısı bir sınıfın olasılığıdır; kira ya da sıcaklık gibi bir sayı tahmin etmez. Doğrusu: lojistik regresyonu bir <strong>sınıflandırma</strong> modeli olarak öğren.</p></div>
+
+<h2 class="s">Karar ağacı: evet/hayır sorularıyla dallanmak</h2>
+
+<p>Şimdiye kadarki iki model her özelliğe bir ağırlık verip toplama dayanıyordu. Karar ağacı bambaşka bir yol izler: tıpkı bir doktorun ya da bir müşteri hizmetleri akış şemasının yaptığı gibi, art arda evet/hayır soruları sorar. "Metrekare 100'den büyük mü?" Evetse bir dala, hayırsa öbür dala gider; bir sonraki soruyu sorar; en sonda bir <strong>yaprağa</strong> varır ve yaprak cevabı verir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Karar ağacı</strong>, veriyi bir özellik hakkındaki evet/hayır sorularıyla tekrar tekrar ikiye bölen modeldir. Eğitimde her düğümde, bölünen grupları en "saf" yapan soru seçilir. Tahmin, yeni örneği kökten başlayıp sorulara göre bir yaprağa indirmektir. Sınıflandırmada yaprak oradaki çoğunluk sınıfını, regresyonda oradaki örneklerin ortalamasını verir.</p></div>
+
+<p>"Saf" sözcüğü önemli. Bir grubun içindeki herkes aynı sınıftaysa grup saftır; yarı yarıya karışıksa en kirli hâlindedir. Ağaç her adımda, o andaki bütün olası soruları dener ve sonucu en saf iki grup veren soruyu seçer. Bu seçim açgözlüdür: yalnızca o adımı düşünür, ilerideki adımları hesaba katmaz. Bu sayede hızlıdır ama her zaman mümkün olan en iyi ağacı bulmaz.</p>
+
+<p>Kütüphaneler saflığı "Gini safsızlığı" ya da "entropi" gibi ölçülerle hesaplar. Sezgiyi kurmak için daha basit bir ölçü kullanalım: her grupta çoğunluğun dediğini tahmin etsek kaç örneği yanlış bilirdik? Bu yanlış sayısı ne kadar azsa bölünme o kadar iyidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Bir kafe, kahve alan müşterinin yanına tatlı da alıp almayacağını tahmin etmek istiyor. Elinde 8 kayıt var (aşağıdaki tablo). İlk soru "Hafta sonu mu?" mu olmalı, yoksa "2 ya da daha fazla kişilik grup mu?" mu?</p>
+<p><strong>Adım 1.</strong> "Hafta sonu mu?" sorusuyla böl. Evet grubu: 1, 2, 5, 6 numaralar; 3 tatlı alan, 1 almayan. Çoğunluk "alır" dersek 1 yanlış.</p>
+<p><strong>Adım 2.</strong> Hayır grubu: 3, 4, 7, 8; 2 alan, 2 almayan. Hangisini desek 2 yanlış. Bu soru için toplam: 1 + 2 = 3 yanlış.</p>
+<p><strong>Adım 3.</strong> "Grup mu?" sorusuyla böl. Evet grubu: 1, 2, 3, 4; dördü de almış. 0 yanlış (tamamen saf).</p>
+<p><strong>Adım 4.</strong> Hayır grubu: 5, 6, 7, 8; 1 alan, 3 almayan. Çoğunluk "almaz", 1 yanlış. Toplam: 0 + 1 = 1 yanlış.</p>
+<p><strong>Adım 5.</strong> Karşılaştır: 1 &lt; 3. İlk soru "Grup mu?" olur.</p>
+<p><strong>Adım 6.</strong> Aynı işlemi kirli kalan "hayır" dalında tekrarla. Orada "Hafta sonu mu?" diye sorunca 7 ve 8 (hafta içi) saf bir "almaz" grubu olur. Ama 5 ile 6'nın ikisi de hafta sonu ve yalnız; özellikleri birebir aynı, davranışları farklı. Hiçbir soru onları ayıramaz.</p>
+<p><strong>Sonuç:</strong> Ağaç önce "grup mu?", sonra yalnız gelenler için "hafta sonu mu?" diye sorar. 5 ve 6 numaralı müşterilerin yaprağı yarı yarıya karışık kalır; bu, verideki gürültünün ya da elimizde olmayan bir özelliğin (belki o gün aç mıydı) izidir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>No</th><th>Hafta sonu mu?</th><th>Grup mu?</th><th>Tatlı aldı mı?</th></tr>
+<tr><td>1</td><td>evet</td><td>evet</td><td>evet</td></tr>
+<tr><td>2</td><td>evet</td><td>evet</td><td>evet</td></tr>
+<tr><td>3</td><td>hayır</td><td>evet</td><td>evet</td></tr>
+<tr><td>4</td><td>hayır</td><td>evet</td><td>evet</td></tr>
+<tr><td>5</td><td>evet</td><td>hayır</td><td>evet</td></tr>
+<tr><td>6</td><td>evet</td><td>hayır</td><td>hayır</td></tr>
+<tr><td>7</td><td>hayır</td><td>hayır</td><td>hayır</td></tr>
+<tr><td>8</td><td>hayır</td><td>hayır</td><td>hayır</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Kafe örneğinden çıkan karar ağacı: önce grup mu sorusu, sonra hafta sonu mu sorusu, üç yaprak">
+  <rect class="sv-l" x="105" y="10" width="190" height="50" rx="12" />
+  <text class="sv-t" x="200" y="32" text-anchor="middle">2+ kişilik grup mu?</text>
+  <text class="sv-s" x="200" y="50" text-anchor="middle">8 kayıt: 5 alır, 3 almaz</text>
+  <path class="sv-c" d="M150 60L90 110" /><text class="sv-s" x="104" y="84" text-anchor="end">evet</text>
+  <path class="sv-c" d="M250 60L305 100" /><text class="sv-s" x="292" y="76">hayır</text>
+  <rect class="sv-m" x="10" y="110" width="160" height="56" rx="10" />
+  <text class="sv-b" x="90" y="134" text-anchor="middle">Tatlı alır</text>
+  <text class="sv-s" x="90" y="154" text-anchor="middle">4 alır / 0 almaz</text>
+  <rect class="sv-l" x="220" y="100" width="170" height="50" rx="12" />
+  <text class="sv-t" x="305" y="122" text-anchor="middle">Hafta sonu mu?</text>
+  <text class="sv-s" x="305" y="140" text-anchor="middle">1 alır / 3 almaz</text>
+  <path class="sv-c" d="M270 150L230 210" /><text class="sv-s" x="238" y="182" text-anchor="end">evet</text>
+  <path class="sv-c" d="M340 150L350 210" /><text class="sv-s" x="352" y="182">hayır</text>
+  <rect class="sv-k" x="160" y="210" width="135" height="60" rx="10" />
+  <text class="sv-b" x="227" y="234" text-anchor="middle">Kararsız</text>
+  <text class="sv-s" x="227" y="254" text-anchor="middle">1 alır / 1 almaz</text>
+  <rect class="sv-a" x="305" y="210" width="90" height="60" rx="10" />
+  <text class="sv-b" x="350" y="234" text-anchor="middle">Almaz</text>
+  <text class="sv-s" x="350" y="254" text-anchor="middle">0 / 2</text>
+</svg>
+<figcaption>Kökten yaprağa her yol okunabilir bir kuraldır: "Grup değilse ve hafta içiyse tatlı almaz." Bu yüzden karar ağacının neden o cevabı verdiğini bir insana tek cümleyle anlatabilirsin.</figcaption>
+</figure>
+
+<p>Karar ağacının en büyük artısı tam olarak bu şekilde görünüyor: <strong>açıklanabilirlik</strong>. Bir bankanın kredi başvurusunu reddeden model ağaçsa, "geliriniz şu düzeyin altında ve son bir yılda iki gecikmeniz var" diye gerekçe yazılabilir. Ağaçların başka pratik artıları da var: özellikleri ölçeklemeye gerek duymazlar (birazdan k-en yakın komşuda bunun neden önemli olduğunu göreceksin), sayısal ve kategorik özellikleri birlikte kullanabilirler, "metrekare 100'ü geçince kira sıçrıyor" gibi eşikli ilişkileri doğal biçimde yakalarlar.</p>
+
+<p>Eksileri de var ve ikisi önemli. Birincisi <strong>aşırı öğrenme</strong>: ağaca sınır koymazsan, her yaprakta tek bir örnek kalana kadar bölmeyi sürdürür. Eğitim verisinde hiç hata yapmaz, ama bu Parça 2'de anlattığımız ezberin ta kendisidir; gürültüyü de kural sanır. Bu yüzden ağacın derinliği ya da bir yaprakta kalması gereken en az örnek sayısı sınırlanır. İkincisi, ağaç <strong>dışarıya taşamaz</strong>: tahmini her zaman bir yapraktaki ortalamadır, bu yüzden eğitimde gördüğü en büyük kiradan daha büyük bir kirayı asla tahmin edemez. 250 m²'lik bir daire, gördüğü en büyük daireler kadar kira alır. Bunu sondaki denemede gerçek sayılarla göreceksin. Bir küçük kusur daha: veriyi birazcık değiştirince ilk soru değişebilir ve bütün ağaç bambaşka bir şekil alabilir. Tek ağaç kararsızdır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ağaç ne kadar derinse o kadar iyi; eğitimde sıfır hata yapıyorsa mükemmel."</strong> Sınırsız ağaç eğitim verisini ezberler, yeni veride ise genellikle sığ bir ağaçtan da kötü çıkar. Eğitim hatasının sıfır olması iyi değil, şüpheli bir işarettir. Doğrusu: derinliği bir ayar olarak gör, birkaç değer dene ve kararı eğitim verisine göre değil, modelin görmediği doğrulama verisine göre ver (Parça 2'deki üçlü ayrım).</p></div>
+
+<h2 class="s">Rastgele orman: kalabalığın oyu</h2>
+
+<p>Tek ağacın kararsızlığı bir fikri doğurur: tek bir ağaca güvenmek yerine çok sayıda farklı ağaç kurup oylarını birleştirmek. Bunun neden işe yaradığını küçük bir hesapla görelim. Her biri %70 doğru bilen ve hataları birbirinden <strong>tamamen bağımsız</strong> olan 3 model düşün. Çoğunluk oyu, en az ikisi doğru bildiğinde doğrudur. Bunun olasılığı 0,7<sup>3</sup> + 3 × 0,7<sup>2</sup> × 0,3 = 0,343 + 0,441 = 0,784'tür. 3 model %78,4'e çıktı. 11 bağımsız modelle %92,2'ye, 101 modelle %99,99'a çıkar (bunları Python'la hesapladım).</p>
+
+<p>Sihir "bağımsız" sözcüğündedir. Aynı veriden aynı yöntemle kurulan ağaçlar aynı hatayı yapar; oylamaları bir şey kazandırmaz. Gerçek ağaçlar hiçbir zaman tam bağımsız olmaz, o yüzden gerçek kazanç yukarıdaki hayalî rakamlardan çok daha mütevazıdır. Rastgele orman, ağaçları birbirinden olabildiğince farklı kılmak için iki rastgelelik ekler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Rastgele orman</strong> (random forest), çok sayıda karar ağacından oluşan bir topluluk modelidir. Her ağaç, eğitim verisinden <strong>yerine koyarak rastgele çekilmiş</strong> bir örneklemle eğitilir ve her bölünmede yalnızca <strong>rastgele seçilmiş birkaç özellik</strong> arasından soru seçebilir. Sınıflandırmada ağaçların oyu, regresyonda tahminlerinin ortalaması alınır. Yöntem Leo Breiman'ın 2001 tarihli makalesiyle yerleşmiştir.</p></div>
+
+<p>Birinci rastgelelik, "yerine koyarak çekmek", şu demek: 1000 satırlık veriden rastgele 1000 satır çekersin ama bir satırı çektikten sonra geri koyarsın; bazı satırlar iki üç kez gelir, bazıları hiç gelmez. Her ağaç biraz farklı bir veri görür. İkinci rastgelelik, her soruda özelliklerin yalnızca bir kısmını aday yapmaktır: tek bir çok güçlü özellik varsa, bütün ağaçlar ilk soruda onu seçip birbirine benzerdi; aday listesini kısıtlamak, öbür özelliklerin de söz almasını sağlar.</p>
+
+<p>Kapsamdaki "çok sayıda zayıf modelin oylaması" ifadesini bir incelikle düzeltelim. Rastgele ormandaki ağaçlar aslında zayıf değil; çoğu zaman derin ve tek başına aşırı öğrenmeye yatkın, yani kararsız modellerdir. Ormanın yaptığı, bu kararsızlığın ortalamasını alıp sönümlemektir. "Zayıf öğrenici" terimi daha çok başka bir topluluk ailesi için, ağaçları sırayla kurup her yeni ağacın bir öncekinin hatalarını düzelttiği <strong>artırma</strong> (boosting) yöntemleri için kullanılır. Gradyan artırmalı ağaçlar (XGBoost, LightGBM gibi kütüphaneler) tablo verisinde bugün en güçlü yöntemler arasındadır. İkisinin ortak fikri aynıdır: tek modelin yerine bir kalabalık.</p>
+
+<p>Bedeli de bellidir: tek ağacı bir insana okuyabilirsin, 500 ağaçlık bir ormanı okuyamazsın. Rastgele orman, açıklanabilirliğin bir kısmını doğruluk ve kararlılık karşılığında satar. Yine de "hangi özellik kararlarda ne kadar rol oynadı" gibi özet ölçüler çıkarılabilir.</p>
+
+<h2 class="s">k-en yakın komşu: bana komşunu söyle</h2>
+
+<p>Şimdiye kadarki bütün modeller eğitim sırasında bir şey (ağırlıklar, sorular) öğrenip veriyi bir kenara koyuyordu. k-en yakın komşu (k-nearest neighbors, k-NN) bunun tersini yapar: hiçbir şey öğrenmez, bütün veriyi saklar. Tahmin zamanı gelince yeni örneğe en çok benzeyen k tane eski örneği bulur ve onların cevabına bakar. Atasözündeki gibi: bana arkadaşını söyle, sana kim olduğunu söyleyeyim.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>k-en yakın komşu</strong>, yeni bir örneğin eğitim verisindeki bütün örneklere uzaklığını hesaplayan, en yakın k tanesini seçen ve sınıflandırmada onların çoğunluk sınıfını, regresyonda değerlerinin ortalamasını tahmin olarak veren modeldir. Eğitimde parametre öğrenilmez; seçilmesi gereken ayarlar k sayısı ve uzaklık ölçüsüdür.</p></div>
+
+<p>"Benzer" burada Parça 3'teki anlamıyla kullanılıyor: her örnek bir vektördür, iki vektör arasındaki uzaklık küçükse benzerdirler. En yaygın ölçü düz çizgi (Öklid) uzaklığıdır: iki boyutta, koordinat farklarının karelerinin toplamının karekökü.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Bir uygulama, kullanıcının iki puanına (haftada kaç gün uygulamayı açtığı, kaç arkadaş eklediği) bakıp ücretli üyeliğe geçip geçmeyeceğini tahmin ediyor. Eski kullanıcılar: P1 (1, 1) hayır; P2 (2, 1) hayır; P3 (4, 3) evet; P4 (2, 4) hayır; P5 (4, 5) evet; P6 (1, 3) hayır; P7 (5, 4) evet. Yeni kullanıcı (3, 3). k = 1 ve k = 3 için tahmin ne?</p>
+<p><strong>Adım 1.</strong> Uzaklıkları hesapla. P3: √((4−3)<sup>2</sup> + (3−3)<sup>2</sup>) = √1 = 1. P4: √(1 + 1) ≈ 1,41. P6: √(4 + 0) = 2. P2, P5, P7: her biri √5 ≈ 2,24. P1: √8 ≈ 2,83.</p>
+<p><strong>Adım 2.</strong> Küçükten büyüğe sırala: P3 (1, evet), P4 (1,41, hayır), P6 (2, hayır), sonra 2,24'te üç kişi, en sonda P1.</p>
+<p><strong>Adım 3.</strong> k = 1: en yakın tek komşu P3, cevabı "evet". Tahmin: üye olur.</p>
+<p><strong>Adım 4.</strong> k = 3: en yakın üç komşu P3 (evet), P4 (hayır), P6 (hayır). Oylama 2'ye 1 "hayır". Tahmin: üye olmaz.</p>
+<p><strong>Sonuç:</strong> Aynı veri, aynı yeni kullanıcı; yalnızca k değişti ve cevap tersine döndü. k küçükse model tek bir komşunun tesadüfüne kapılır (ezbere yakın), k büyükse ayrıntıyı kaçırır (yetersiz öğrenmeye yakın). Doğru k, doğrulama verisinde denenerek seçilir; ikili sınıflandırmada beraberliği önlemek için tek sayı seçmek yaygındır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="k-en yakın komşu: yeni kullanıcı çevresinde k eşittir 1 ve k eşittir 3 için çizilmiş iki daire ve yedi eski kullanıcı">
+  <line class="sv-c" x1="30" y1="270" x2="310" y2="270" />
+  <line class="sv-c" x1="30" y1="270" x2="30" y2="20" />
+  <text class="sv-s" x="310" y="286" text-anchor="end">gün/hafta</text>
+  <text class="sv-s" x="36" y="16">arkadaş</text>
+  <circle class="sv-c" cx="175" cy="135" r="45" />
+  <circle class="sv-c" cx="175" cy="135" r="90" stroke-dasharray="5 4" />
+  <rect class="sv-a" x="79" y="219" width="12" height="12" />
+  <rect class="sv-a" x="124" y="219" width="12" height="12" />
+  <circle class="sv-m" cx="220" cy="135" r="7" />
+  <rect class="sv-a" x="124" y="84" width="12" height="12" />
+  <circle class="sv-m" cx="220" cy="45" r="7" />
+  <rect class="sv-a" x="79" y="129" width="12" height="12" />
+  <circle class="sv-m" cx="265" cy="90" r="7" />
+  <polygon class="sv-l" points="175,125 185,135 175,145 165,135" />
+  <text class="sv-s" x="66" y="248">P1</text>
+  <text class="sv-s" x="138" y="248">P2</text>
+  <text class="sv-s" x="230" y="152">P3</text>
+  <text class="sv-s" x="112" y="80">P4</text>
+  <text class="sv-s" x="232" y="40">P5</text>
+  <text class="sv-s" x="62" y="128">P6</text>
+  <text class="sv-s" x="276" y="94">P7</text>
+  <text class="sv-s" x="175" y="160" text-anchor="middle">yeni</text>
+  <circle class="sv-m" cx="330" cy="40" r="7" /><text class="sv-s" x="342" y="44">evet</text>
+  <rect class="sv-a" x="324" y="60" width="12" height="12" /><text class="sv-s" x="342" y="71">hayır</text>
+  <polygon class="sv-l" points="330,86 338,94 330,102 322,94" /><text class="sv-s" x="342" y="98">yeni</text>
+  <text class="sv-s" x="320" y="130">iç daire:</text>
+  <text class="sv-s" x="320" y="146">k = 1</text>
+  <text class="sv-s" x="320" y="170">dış daire:</text>
+  <text class="sv-s" x="320" y="186">k = 3</text>
+</svg>
+<figcaption>Daireler yeni kullanıcının çevresidir. İç dairenin sınırında tek bir "evet" (P3) var. Dış dairenin içine ya da sınırına P4 ve P6 da giriyor (P6 tam sınırda, uzaklık 2) ve çoğunluk "hayır"a dönüyor.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Özellikleri ölçeklemeden uzaklık hesaplamak.</strong> Bir dairede metrekare 40 ile 160 arasında, oda sayısı 1 ile 5 arasında değişir. Ham sayılarla uzaklık hesaplarsan 20 metrekarelik fark, 4 odalık farktan beş kat "büyük" görünür; model fiilen oda sayısını yok sayar. Bu modelin değil, birimlerin seçtiği bir şeydir. Doğrusu: uzaklığa dayanan modellerden önce her özelliği aynı ölçeğe getir (ör. her sütunu ortalaması 0, yayılımı 1 olacak biçimde dönüştür). Karar ağaçları tek tek eşiklere baktığı için bundan etkilenmez.</p></div>
+
+<p>k-NN'in eğitimi bedavadır ama tahmini pahalıdır: her yeni örnek için bütün eski örneklere uzaklık hesaplanır. Milyonlarca satırda bu yavaşlar; bunun için yaklaşık arama yöntemleri vardır. Bir de çok boyutlu verinin garipliği var: yüzlerce özellik olduğunda bütün noktalar birbirine kabaca eşit uzaklıkta görünmeye başlar ve "en yakın" kavramı anlamını yitirir. Buna "boyutun laneti" denir. Yine de "en benzer örnekleri bul" fikri ölmedi: Parça 16'da göreceğin RAG yöntemi, bir soruya anlamca en yakın belge parçalarını bulurken tam olarak bu fikri, büyük ölçekte kullanır.</p>
+
+<h2 class="s">Hangi problemde basit model kazanır?</h2>
+
+<p>Sinir ağları ve büyük dil modelleri bu kadar güçlüyse, neden bu parçadaki modelleri öğreniyoruz? Çünkü gerçek dünyadaki tahmin problemlerinin büyük kısmı resim ya da metin değil, bir tablodur: müşteri kayıtları, satış rakamları, sensör ölçümleri, kredi başvuruları. Ve bu tablolarda basit modeller çoğu zaman yeterli, bazen daha iyidir.</p>
+
+<div class="tablo"><table>
+<tr><th>Model</th><th>Öğrendiği şey</th><th>Güçlü yanı</th><th>Zayıf yanı</th><th>Açıklanabilirlik</th></tr>
+<tr><td>Doğrusal regresyon</td><td>Her özellik için bir ağırlık ve bir sabit</td><td>Hızlı, az veriyle çalışır, dışarıya taşabilir</td><td>Eğri ve etkileşimli ilişkileri kendiliğinden yakalamaz</td><td>Yüksek: her ağırlık okunur</td></tr>
+<tr><td>Lojistik regresyon</td><td>Aynı ağırlıklar, sigmoidle olasılığa çevrilir</td><td>Olasılık verir, sağlam bir başlangıç modeli</td><td>Sınıfları düz bir sınırla ayırır</td><td>Yüksek</td></tr>
+<tr><td>Karar ağacı</td><td>Evet/hayır soruları ve eşikler</td><td>Eşikli ilişkiler, ölçekleme gerekmez</td><td>Aşırı öğrenir, kararsız, dışarıya taşamaz</td><td>Çok yüksek (sığsa)</td></tr>
+<tr><td>Rastgele orman</td><td>Yüzlerce ağaç</td><td>Tablo verisinde güçlü ve kararlı</td><td>Yavaşlar, tek bir kural olarak okunamaz</td><td>Orta-düşük</td></tr>
+<tr><td>k-en yakın komşu</td><td>Hiçbir şey; veriyi saklar</td><td>Basit, eğitim yok</td><td>Tahmin yavaş, ölçeğe ve çok boyuta duyarlı</td><td>Orta: "şu örneklere benzediği için"</td></tr>
+</table></div>
+
+<p><strong>Az veri.</strong> Derin ağlar binlerce, çoğu zaman milyonlarca parametreye sahiptir ve bunları doldurmak için çok veri ister. 300 satırlık bir tabloda büyük bir ağ büyük olasılıkla ezberler. İki ağırlıklı bir doğrusal modelin ezberleyecek kapasitesi bile yoktur; az veride bu bir zaaf değil, bir korumadır.</p>
+
+<p><strong>Tablo verisi.</strong> 2022'de yayımlanan ve 45 veri kümesini karşılaştıran bir çalışma (Grinsztajn ve arkadaşları), yaklaşık 10 bin satırlık orta boy tablolarda rastgele orman ve gradyan artırma gibi ağaç tabanlı yöntemlerin derin öğrenme modellerini hâlâ geçtiğini bildirdi. Önerdikleri açıklamalardan biri şuydu: tablolarda işe yaramayan, gürültü niteliğinde sütunlar çoktur ve ağaçlar bunları görmezden gelmekte daha iyidir. Bu alanda tartışma sürüyor; örneğin 2025'te Nature'da yayımlanan TabPFN adlı, küçük tablolar için önceden eğitilmiş bir sinir ağı modeli, 10 bin satırın altındaki tablolarda ağaç yöntemlerini geçtiğini bildirdi. Yazıldığı tarih itibarıyla doğru özet şudur: tablo verisinde ağaç toplulukları güçlü bir varsayılandır ve yeni bir yöntem onlarla kıyaslanarak kendini kanıtlamak zorundadır.</p>
+
+<p><strong>Açıklanabilirlik.</strong> Bazı kararların gerekçesi yazılı olarak verilmek zorundadır: kredi reddi, sigorta primi, bir hastaya konan risk puanı. Bir lojistik regresyonun ağırlıklarını ya da sığ bir ağacın dallarını bir denetçiye gösterebilirsin. Parça 6'da göreceğin üzere, derin ağın içi büyük ölçüde bir kara kutudur. Ayrıca basit model ucuzdur: bir dizüstü bilgisayarda saniyeler içinde eğitilir, bir telefonda çalışır.</p>
+
+<p>Derin öğrenmenin açık ara öne geçtiği yer ise ham, yapısız veridir: resim, ses, metin. Bir resimde tek bir pikselin hiçbir anlamı yoktur; anlam binlerce pikselin birlikte oluşturduğu kenarlarda, şekillerde, nesnelerdedir. Bu özellikleri elle tanımlamak neredeyse imkânsızdır ve sinir ağlarının asıl gücü bu özellikleri kendi başına öğrenmesidir (Parça 8 ve 9). Uygulamadaki sağduyulu alışkanlık şudur: her yeni problemde önce basit bir taban modeli (baseline) kur. Karmaşık model, ancak bu tabanı belirgin biçimde geçerse emeğine değer.</p>
+
+<h2 class="s">İsteğe bağlı deneme: scikit-learn ile kira tahmini</h2>
+
+<div class="why"><div class="t">Kod bilmiyorsan</div><p>Bu bölümü atlayabilirsin; yukarıdaki anlatımdan bir şey eksik kalmaz. Burada aynı fikirleri gerçek bir kütüphaneyle, 200 dairelik yapay bir veride çalıştırıyoruz. Sonuçların yorumu, kodu okumadan da anlaşılacak biçimde yazıldı.</p></div>
+
+<p>scikit-learn, Python'da klasik makine öğrenmesi modelleri için en yaygın kütüphanedir. Bu deneme scikit-learn 1.9.1 ve NumPy 2.5.3 ile çalıştırıldı. Veri internetten indirilmiyor; kodun kendisi üretiyor. Gerçek kural bilerek seçildi: kira = 0,15 × metrekare + 4 (bin TL), üstüne ortalaması sıfır, standart sapması 2 olan rastgele gürültü. Yani modelin bulması gereken cevabı biz biliyoruz. Rastgele sayı üreticisine sabit bir tohum (42) verildi, böylece her çalıştırmada aynı 200 daire çıkar. Veri, Parça 2'deki gibi, %75 eğitim ve %25 test diye ayrıldı.</p>
+
+<pre class="kod" data-ad="python3 kira_dogrusal.py">import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(42)          # sabit tohum: her çalıştırmada aynı veri
+m2 = rng.uniform(40, 160, size=200)       # 200 dairenin metrekaresi
+kira = 0.15 * m2 + 4 + rng.normal(0, 2, size=200)   # bin TL; gerçek kural + gürültü
+
+X = m2.reshape(-1, 1)                     # özellik tablosu: 200 satır, 1 sütun
+X_egit, X_test, y_egit, y_test = train_test_split(
+    X, kira, test_size=0.25, random_state=0)
+
+model = LinearRegression()
+model.fit(X_egit, y_egit)                 # eğitim: eğim ve kesişimi bul
+
+print("egim     :", round(model.coef_[0], 3))
+print("kesisim  :", round(model.intercept_, 3))
+tahmin = model.predict(X_test)
+print("test MSE :", round(mean_squared_error(y_test, tahmin), 3))
+print("100 m2 icin tahmin:", round(model.predict([[100]])[0], 2), "bin TL")
+print("250 m2 icin tahmin:", round(model.predict([[250]])[0], 2), "bin TL")</pre>
+<pre class="cikti">egim     : 0.16
+kesisim  : 2.953
+test MSE : 3.276
+100 m2 icin tahmin: 18.98 bin TL
+250 m2 icin tahmin: 43.03 bin TL</pre>
+
+<p><strong>Yorum.</strong> Model, gerçek kuralı görmeden eğimi 0,16, kesişimi 2,95 buldu; gerçek değerler 0,15 ve 4'tü. Fark gürültüden geliyor: 150 eğitim dairesi, gerçek kuralı ancak bu kadar kesin gösterebiliyor. Test kaybı 3,28; gürültünün kendisinin ortalama karesi 4 civarında olduğu için (standart sapma 2'nin karesi) bu, modelin gürültünün altına inemeyeceği sınıra yakın olduğunu gösteriyor (4'ün biraz altında çıkması, 50 dairelik test kümesinin şansıdır). Karekök alırsak model bir daireyi ortalama 1,8 bin TL civarında şaşırıyor. 250 m² için 43 bin TL dedi; gerçek kural 41,5 der. Hiç görmediği bir büyüklüğe makul bir tahminle taşabildi, çünkü doğru sonsuza uzanır. Python ondalık ayırıcı olarak nokta kullanır; metindeki 0,16 ile çıktıdaki 0.16 aynı sayıdır.</p>
+
+<p>Şimdi aynı veride karar ağacını üç farklı derinlik sınırıyla eğitiyoruz: en fazla 2 kat soru, en fazla 4 kat soru ve sınırsız.</p>
+
+<pre class="kod" data-ad="python3 kira_agac.py">import numpy as np
+from sklearn.tree import DecisionTreeRegressor, export_text
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+rng = np.random.default_rng(42)          # aynı tohum: aynı 200 daire
+m2 = rng.uniform(40, 160, size=200)
+kira = 0.15 * m2 + 4 + rng.normal(0, 2, size=200)
+X = m2.reshape(-1, 1)
+X_egit, X_test, y_egit, y_test = train_test_split(
+    X, kira, test_size=0.25, random_state=0)
+
+for derinlik in [2, 4, None]:            # None: sınır yok, ağaç sonuna kadar büyür
+    agac = DecisionTreeRegressor(max_depth=derinlik, random_state=0)
+    agac.fit(X_egit, y_egit)
+    egit_mse = mean_squared_error(y_egit, agac.predict(X_egit))
+    test_mse = mean_squared_error(y_test, agac.predict(X_test))
+    print(f"derinlik={derinlik}: yaprak={agac.get_n_leaves():2d}  "
+          f"egitim MSE={egit_mse:.3f}  test MSE={test_mse:.3f}")
+
+agac = DecisionTreeRegressor(max_depth=2, random_state=0).fit(X_egit, y_egit)
+print()
+print(export_text(agac, feature_names=["m2"], decimals=1))
+print("250 m2 icin tahmin:", round(agac.predict([[250]])[0], 2), "bin TL")</pre>
+<pre class="cikti">derinlik=2: yaprak= 4  egitim MSE=4.947  test MSE=5.053
+derinlik=4: yaprak=16  egitim MSE=3.069  test MSE=5.052
+derinlik=None: yaprak=150  egitim MSE=0.000  test MSE=8.479
+
+|--- m2 &lt;= 102.1
+|   |--- m2 &lt;= 74.9
+|   |   |--- value: [12.0]
+|   |--- m2 &gt;  74.9
+|   |   |--- value: [17.0]
+|--- m2 &gt;  102.1
+|   |--- m2 &lt;= 126.2
+|   |   |--- value: [21.5]
+|   |--- m2 &gt;  126.2
+|   |   |--- value: [25.9]
+
+250 m2 icin tahmin: 25.89 bin TL</pre>
+
+<p><strong>Yorum.</strong> Bu çıktıda bu parçanın üç dersi birden var. <strong>Bir:</strong> sınırsız ağaç 150 eğitim dairesi için 150 yaprak açtı, yani her daireye ayrı bir yaprak; eğitim kaybı tam 0, test kaybı ise 8,48 ile üç ağacın en kötüsü. Bu, aşırı öğrenmenin sayılarla görünüşüdür. <strong>İki:</strong> derinlik 2'lik ağacın kuralları bir insanın okuyabileceği dört satır: "metrekare 102,1'den küçük ve 74,9'dan küçükse kira 12 bin". Ama gerçek ilişki düz bir doğru olduğu için ağaç onu dört basamaklı bir merdivenle taklit ediyor ve test kaybı (5,05) doğrusal modelinkinden (3,28) belirgin biçimde kötü. Veri gerçekten doğrusal olduğunda doğrusal model kazanır. <strong>Üç:</strong> 250 m² için ağaç 25,89 bin TL dedi; bu, en sağdaki yaprağın ortalaması. Ağaç, gördüğü en büyük dairelerin ötesine taşamıyor; doğrusal model aynı soruya 43 dedi. Bu sonuçlar bu tohuma ve bu 50 test dairesine aittir; farklı bir tohumla sayılar biraz değişir, ama sınırsız ağacın eğitimde kusursuz, testte kötü olması değişmez.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2 ve 3'e:</strong> Parça 2'deki parametre, eğitim, test ve aşırı öğrenme burada sayılara döndü. Parça 3'teki vektör (ağırlıklı toplam), uzaklık (k-NN), olasılık (lojistik regresyon) ve eğim (gradyan inişi) sezgileri bu parçada iş başında.</p>
+<p><strong>Parça 5'e:</strong> Bu parçada modelleri yalnızca MSE ve "kaç yanlış" ile ölçtük. Bir sınıflandırıcının ne kadar iyi olduğunu doğru ölçmek (doğruluk neden yanıltır, kesinlik ve duyarlılık, eşiğin seçimi, çapraz doğrulama) bir sonraki parçanın konusu.</p>
+<p><strong>Parça 6 ve 7'ye:</strong> Bir yapay nöron, sigmoidli lojistik regresyonun neredeyse aynısıdır: ağırlıklı toplam, sonra bir sıkıştırıcı fonksiyon. Sinir ağı eğitimi de buradaki gradyan inişinin milyonlarca ağırlığa uygulanmasıdır.</p>
+<p><strong>İleri parçalara:</strong> Lojistik regresyonun log kaybı, dil modellerinin "bir sonraki token" kaybının küçük kardeşidir (Parça 11–12); k-NN'in "en benzerini bul" fikri RAG'da yeniden çıkar (Parça 16); kayıp fonksiyonunun modelin gerçek hedefini tam yansıtmaması da hizalama sorununun çekirdeğidir (Parça 19).</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Her makine öğrenmesi modelinde bulunan üç parça nedir?</summary><p>Parametrelerle ayarlanan bir kural ailesi (model), herhangi bir ayarın ne kadar kötü olduğunu tek sayıyla söyleyen bir kayıp fonksiyonu ve kaybı düşürmek için parametreleri değiştiren bir yöntem (örneğin gradyan inişi). Eğitim, bu yöntemle kaybı küçültmektir.</p></details>
+<details><summary>MSE'de hataların neden karesi alınır? İki neden say.</summary><p>Kare her zaman sıfır ya da artı olduğu için artı ve eksi hatalar birbirini götürmez. Ayrıca kare büyük hataları orantısız cezalandırır ve pürüzsüz bir eğri verdiği için eğimle iniş yöntemleri rahat çalışır.</p></details>
+<details><summary>Gradyan inişinde "yeni değer = eski değer − öğrenme oranı × eğim" kuralındaki eksi işareti ne işe yarar?</summary><p>Eğim, parametreyi artırmanın kaybı hangi yönde değiştirdiğini söyler. Eksi işareti bizi eğimin tersine, yani kaybın azaldığı yöne götürür: eğim artıysa parametre azalır, eğim eksiyse artar.</p></details>
+<details><summary>Lojistik regresyon, doğrusal regresyondan hangi adımla ayrılır ve çıktısı nedir?</summary><p>Ağırlıklı toplamı sigmoid fonksiyonundan geçirir; böylece çıktı 0 ile 1 arasında bir olasılık olur. Sınıf kararı bu olasılığın bir eşikle (çoğu zaman 0,5) karşılaştırılmasıyla verilir.</p></details>
+<details><summary>Karar ağacının iki önemli zayıflığı nedir?</summary><p>Sınırlanmazsa her yaprakta tek örnek kalana kadar bölünür ve eğitim verisini ezberler (aşırı öğrenme). Ayrıca tahmini yapraklardaki ortalamalardan geldiği için eğitimde gördüğü değer aralığının dışına taşamaz. Bir üçüncüsü de kararsızlıktır: veri biraz değişince ağaç bambaşka olabilir.</p></details>
+<details><summary>Rastgele orman ağaçlarını birbirinden farklı kılmak için hangi iki rastgeleliği kullanır ve neden?</summary><p>Her ağaç, veriden yerine koyarak çekilmiş farklı bir örneklemle eğitilir ve her bölünmede yalnızca rastgele seçilmiş birkaç özellik arasından seçim yapar. Amaç ağaçların hatalarını birbirinden bağımsızlaştırmaktır; hataları benzer olan ağaçların oylaması bir şey kazandırmaz.</p></details>
+<details><summary>Bir bankaya 600 satırlık müşteri tablosuyla kredi riski modeli kuracaksın ve her reddin gerekçesini yazman gerekiyor. Neden derin bir ağ yerine lojistik regresyon ya da sığ bir karar ağacıyla başlarsın?</summary><p>Veri az ve tablo biçiminde; büyük bir ağ bu kadar veriyle kolayca ezberler. Lojistik regresyonun ağırlıkları ya da sığ ağacın dalları okunabildiği için her kararın gerekçesi yazılabilir. Ayrıca basit model ucuz ve hızlıdır; sonradan denenecek karmaşık modeller için bir taban çizgisi olur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İskelet:</strong> model (parametreli kural ailesi) + kayıp (kötülüğün tek sayısı) + ayarlama yöntemi (gradyan inişi). Eğitim = kaybı küçültmek.</li>
+<li><strong>Doğrusal regresyon:</strong> ŷ = w × x + b; çok özellikte ağırlıklı toplam + sabit. Parametreler ağırlıklar ve kesişim.</li>
+<li><strong>MSE:</strong> (gerçek − tahmin)<sup>2</sup>'lerin ortalaması. Kare: hatalar birbirini götürmez, büyük hata ağır cezalanır. Karekökü (RMSE) etiketin biriminde.</li>
+<li><strong>Gradyan inişi:</strong> yeni = eski − öğrenme oranı × eğim. Oran çok küçükse yavaş, çok büyükse vadiyi aşar ve kayıp patlar (ıraksama).</li>
+<li><strong>Lojistik regresyon:</strong> ağırlıklı toplam → sigmoid → 0–1 arası olasılık → eşikle sınıf. Adı regresyon, işi sınıflandırma. Kaybı log kaybı.</li>
+<li><strong>Karar ağacı:</strong> grupları en saf yapan evet/hayır sorusunu seçerek böler. Açıklanabilir, ölçekleme istemez; sınırsızsa ezberler, dışarıya taşamaz, kararsızdır.</li>
+<li><strong>Rastgele orman:</strong> farklı örneklem + rastgele özellik alt kümesiyle kurulan çok ağaç; oy ya da ortalama. Kazanç, hataların bağımsızlığı ölçüsünde.</li>
+<li><strong>k-NN:</strong> öğrenmez, saklar; en yakın k örneğin oyu. k küçükse ezber, büyükse kabalık. Önce özellikleri ölçekle.</li>
+<li><strong>Basit model kazanır:</strong> az veri, tablo verisi, açıklama zorunluluğu, düşük maliyet. Derin ağ kazanır: resim, ses, metin. Her zaman önce taban model.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-4">
+<h3>Quiz 4</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir kira modeli ŷ = 0,2x + 3 biçiminde eğitilmiştir (x: metrekare, ŷ: bin TL). 50 m²'lik bir daire için modelin tahmini nedir?</p>
+<ul class="sec"><li>10</li><li>13</li><li>10,6</li><li>160</li><li>50,2</li></ul>
+<div class="coz"><p>Önce eğimle çarp, sonra kesişimi ekle: 0,2 × 50 = 10, 10 + 3 = 13. A, kesişimi (b = 3) eklemeyi unutmanın sonucudur. C, 3'ü önce x'e ekleyip sonra çarpmaktır: 0,2 × 53 = 10,6; işlem sırası yanlış. D, eğim ile kesişimi toplayıp x'le çarpmaktır: (0,2 + 3) × 50 = 160. E ise çarpma yerine toplama yapmaktır. Eğim "x bir artınca tahmin ne kadar artar", kesişim "doğrunun yüksekliği" demektir; ikisi ayrı rollerdedir.</p></div></li>
+
+<li data-c="D"><p class="q">Üç örnekte bir modelin hataları (gerçek − tahmin) −2, +1 ve +1'dir. Bu modelin ortalama kare hatası (MSE) kaçtır?</p>
+<ul class="sec"><li>0</li><li>1,33</li><li>6</li><li>2</li><li>1,41</li></ul>
+<div class="coz"><p>Karelerini al: 4, 1, 1. Topla: 6. Örnek sayısına böl: 6 / 3 = 2. A, hataların ham ortalamasıdır; artı ve eksi birbirini götürdüğü için sıfır çıkar ve kötü bir modeli kusursuz gösterir. B, mutlak değerlerin ortalamasıdır (4 / 3); bu ayrı bir ölçü olan ortalama mutlak hatadır. C, kareleri toplayıp ortalamayı almayı unutmaktır. E, MSE'nin karekökü olan RMSE'dir (√2 ≈ 1,41); soru MSE'yi istiyor.</p></div></li>
+
+<li data-c="A"><p class="q">Gradyan inişinde bir parametrenin şu anki değeri w = 4, o noktadaki kayıp eğimi +6 ve öğrenme oranı 0,5'tir. Bir adım sonra w kaç olur?</p>
+<ul class="sec"><li>1</li><li>7</li><li>3</li><li>−2</li><li>10</li></ul>
+<div class="coz"><p>Kural: yeni = eski − oran × eğim = 4 − 0,5 × 6 = 4 − 3 = 1. Eğim artı olduğu için w'yi artırmak kaybı artırırdı; bu yüzden w azalır. B, eksi yerine artı kullanmaktır (eğim yönünde, yani yokuş yukarı gitmek). C, yalnızca adım boyunu (0,5 × 6 = 3) yeni değer sanmaktır. D, öğrenme oranını unutup eğimin tamamını çıkarmaktır. E hem oranı unutmak hem yönü ters çevirmektir.</p></div></li>
+
+<li data-c="C"><p class="q">Bir modeli eğitirken kayıp her adımda düşeceğine bir aşağı bir yukarı zıplıyor ve giderek büyüyor. Bunun en olası nedeni ve doğru müdahale aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Öğrenme oranı çok küçüktür; büyütülmelidir.</li><li>Model aşırı öğrenmiştir; daha fazla adım çalıştırılmalıdır.</li><li>Öğrenme oranı çok büyüktür; küçültülmelidir.</li><li>Kayıp fonksiyonu yanlıştır; MSE yerine hataların ham toplamı kullanılmalıdır.</li><li>Veri çok azdır; eşik değeri 0,5'ten 0,9'a çekilmelidir.</li></ul>
+<div class="coz"><p>Büyük öğrenme oranında her adım vadinin dibini aşıp karşı yamaca, daha yükseğe çıkar; kayıp zıplar ve büyür (ıraksama). Çözüm oranı küçültmektir. A ters yöndedir: küçük oran yavaş ama düzenli düşüşe yol açar, zıplamaya değil. B'de aşırı öğrenmenin işareti eğitim kaybının artması değil, eğitim kaybı düşerken test kaybının kötüleşmesidir. D'deki ham toplam bir kayıp ölçüsü bile olamaz, çünkü hatalar birbirini götürür. E'deki eşik sınıflandırma kararını etkiler, eğitimin ıraksamasını değil.</p></div></li>
+
+<li data-c="E"><p class="q">Bir lojistik regresyon modeli bir e-posta için 0,87 çıktısı veriyor ve eşik 0,5'tir. Aşağıdaki yorumlardan hangisi doğrudur?</p>
+<ul class="sec"><li>E-postanın 87 kelimesi spam kelimesidir.</li><li>Model bu e-postayı %13 olasılıkla spam sayar.</li><li>Model bir regresyon modeli olduğu için 0,87 bir sayısal tahmindir, sınıf vermez.</li><li>Çıktı 1'e eşit olmadığı için model karar veremez.</li><li>Model e-postanın spam olma olasılığını yaklaşık %87 tahmin eder ve 0,87 eşikten büyük olduğu için onu spam sınıfına koyar.</li></ul>
+<div class="coz"><p>Lojistik regresyon ağırlıklı toplamı sigmoidden geçirip 0 ile 1 arasında bir olasılık verir; 0,87, pozitif sınıfın (spam) olasılığıdır. 0,87 &gt; 0,5 olduğu için sınıf spam olur. A, olasılığı bir sayım gibi okumaktır. B, olasılığın tümleyenini (spam olmama olasılığını) vermektir. C, adındaki "regresyon" yüzünden modeli sayı tahmincisi sanmaktır; işi sınıflandırmadır. D yanlıştır, çünkü karar olasılığın eşikle karşılaştırılmasıyla verilir, çıktının tam 1 olması gerekmez.</p></div></li>
+
+<li data-c="B"><p class="q">10 örneklik bir veride 5 "evet", 5 "hayır" var. X sorusu veriyi (4 evet, 1 hayır) ve (1 evet, 4 hayır) diye; Y sorusu (5 evet, 1 hayır) ve (0 evet, 4 hayır) diye bölüyor. Her grupta çoğunluk sınıfını tahmin edip yanlışları sayarsak, ağacın ilk sorusu ve gerekçesi hangisidir?</p>
+<ul class="sec"><li>X: 2 yanlış, Y: 2 yanlış; ikisi eşittir.</li><li>X: 2 yanlış, Y: 1 yanlış; Y seçilir.</li><li>X: 1 yanlış, Y: 2 yanlış; X seçilir.</li><li>X: 2 yanlış, Y: 3 yanlış; X seçilir.</li><li>X: 8 yanlış, Y: 9 yanlış; X seçilir.</li></ul>
+<div class="coz"><p>X'te her grupta azınlık 1 kişidir: 1 + 1 = 2 yanlış. Y'de ilk grupta azınlık 1 (hayır), ikinci grup tamamen saf: 1 + 0 = 1 yanlış. Daha az yanlış daha saf bölünme demektir; Y seçilir. A, Y'nin saf grubunu gözden kaçırıp her gruba bir yanlış yazmaktır. C ve D sayımı karıştırmaktır. E, yanlışları değil çoğunluktaki doğruları sayıp küçük olanı seçmektir; doğruların sayısı büyük olan daha iyidir, yani bu hem yanlış ölçü hem yanlış yöndür.</p></div></li>
+
+<li data-c="D"><p class="q">Bir k-en yakın komşu modelinde yeni örneğin eğitim örneklerine uzaklıkları ve sınıfları küçükten büyüğe şöyledir: 0,8 evet; 1,1 hayır; 1,3 hayır; 2,0 evet; 2,4 evet. k = 1, k = 3 ve k = 5 için tahminler sırasıyla nedir?</p>
+<ul class="sec"><li>evet, evet, evet</li><li>hayır, hayır, evet</li><li>evet, hayır, hayır</li><li>evet, hayır, evet</li><li>hayır, evet, hayır</li></ul>
+<div class="coz"><p>k = 1: en yakın tek komşu 0,8'deki "evet". k = 3: ilk üç komşu evet, hayır, hayır; çoğunluk "hayır". k = 5: beşi birden; 3 evet, 2 hayır, çoğunluk "evet". Sonuç: evet, hayır, evet. A, her k için yalnızca en yakın komşuya bakmaktır. C, k = 5'te oyu yanlış saymaktır. B ve E, listeyi büyükten küçüğe okumak gibi sıra hatalarından doğar. Bu soru, k'nin değişmesiyle aynı örneğin cevabının değişebildiğini gösterir.</p></div></li>
+
+<li data-c="A"><p class="q">Rastgele ormanın çoğu zaman tek bir karar ağacından daha iyi genelleme yapmasının asıl nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Ağaçlar farklı örneklemler ve rastgele özellik alt kümeleriyle kurulduğu için hataları kısmen birbirinden bağımsızdır ve oylamada birbirini sönümler.</li><li>Ormandaki her ağaç tek bir ağaçtan daha derindir ve eğitim verisini daha iyi ezberler.</li><li>Rastgele orman, ağaçların yerine gradyan inişiyle eğitilen tek bir doğrusal model kullanır.</li><li>Rastgele orman tek bir ağaçtan daha kolay açıklanır, bu yüzden hataları elle düzeltilebilir.</li><li>Ormandaki bütün ağaçlar aynı veriyle aynı biçimde kurulduğu için aynı kararı verir ve bu kararlılık doğruluğu artırır.</li></ul>
+<div class="coz"><p>Topluluğun kazancı, üyelerin farklı hatalar yapmasından gelir: bir ağacın yanıldığı yerde öbürleri doğru bilirse çoğunluk oyu doğru çıkar. Rastgele örneklem ve rastgele özellik alt kümesi tam olarak bu farklılığı üretmek içindir. B'deki ezber genellemeyi iyileştirmez, kötüleştirir. C yanlıştır; rastgele orman karar ağaçlarından oluşur. D tersidir: yüzlerce ağaç tek ağaçtan çok daha zor okunur. E de tersidir: aynı ağaçlar aynı hatayı yapar ve oylama hiçbir şey kazandırmaz.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Yalnızca satranç oynayabilen, başka hiçbir işi yapamayan Deep Blue (1997) aşağıdaki kavramlardan hangisine örnektir?</p>
+<ul class="sec"><li>Genel yapay zekâ (AGI)</li><li>Büyük dil modeli</li><li>Dar yapay zekâ</li><li>Denetimsiz öğrenme</li><li>Transformer mimarisi</li></ul>
+<div class="coz"><p>Tek bir işte çok iyi olup başka işe aktarılamayan sistemler dar yapay zekâdır; Deep Blue bunun klasik örneğidir. Genel yapay zekâ (A), insanın yapabildiği çok çeşitli işleri yapabilen, tanımı hâlâ tartışmalı bir hedeftir. Büyük dil modeli (B) ve transformer (E), 2017 ve sonrasının metin modelleriyle ilgilidir; 1997'deki bir satranç makinesiyle ilgisi yoktur. Denetimsiz öğrenme (D) bir öğrenme türüdür ve Deep Blue'nun çalışma biçimini anlatmaz.</p></div></li>
+
+<li data-c="E" data-k="yz-1"><p class="q">"Yapay zekâ, makine öğrenmesi, derin öğrenme ve büyük dil modelleri" ilişkisini anlatan iç içe halkalar şemasına göre aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her yapay zekâ sistemi bir büyük dil modelidir.</li><li>Derin öğrenme, makine öğrenmesini içine alan daha geniş bir alandır.</li><li>Kural tabanlı uzman sistemler derin öğrenmenin bir türüdür.</li><li>Büyük dil modelleri makine öğrenmesinin dışında kalır.</li><li>Her büyük dil modeli bir derin öğrenme modelidir, ama her makine öğrenmesi modeli derin öğrenme değildir.</li></ul>
+<div class="coz"><p>Halkalar dıştan içe yapay zekâ, makine öğrenmesi, derin öğrenme, büyük dil modelleri diye sıralanır; içteki her halka dıştakinin parçasıdır ama tersi doğru değildir. Bu yüzden her büyük dil modeli derin öğrenmedir; bu parçadaki karar ağacı ise makine öğrenmesidir ama derin öğrenme değildir. A, en içteki halkayı en dıştakiyle eşitlemektir. B sırayı ters çevirir. C yanlıştır, çünkü uzman sistemler öğrenmez, kural yazılarak kurulur. D, en içteki halkayı dışarı taşır.</p></div></li>
+
+<li data-c="A" data-k="yz-2"><p class="q">Aşağıdakilerden hangisi denetimsiz öğrenmeye örnektir?</p>
+<ul class="sec"><li>Etiketsiz müşteri kayıtlarından birbirine benzeyen müşteri gruplarını bulmak</li><li>Fiyatı bilinen evlerden yeni bir evin fiyatını tahmin etmek</li><li>"Kedi" ya da "köpek" diye etiketlenmiş resimlerden yeni bir resmin sınıfını tahmin etmek</li><li>Bir oyunda kazandığında ödül, kaybettiğinde ceza alan bir ajanı eğitmek</li><li>Spam olarak işaretlenmiş e-postalardan spam filtresi eğitmek</li></ul>
+<div class="coz"><p>Denetimsiz öğrenmede örneklerin etiketi yoktur; model verinin içindeki yapıyı, örneğin benzer grupları, kendisi bulur. Müşteri gruplama bunun tipik örneğidir. B, C ve E'de her örneğin doğru cevabı (fiyat, kedi/köpek, spam) bellidir; bunlar denetimli öğrenmedir (B regresyon, C ve E sınıflandırma). D, ödül ve cezayla öğrenen pekiştirmeli öğrenmedir.</p></div></li>
+
+<li data-c="D" data-k="yz-2"><p class="q">Bir modeli değerlendirirken test verisinin eğitimde hiç kullanılmamış olması neden gereklidir?</p>
+<ul class="sec"><li>Test verisi daha temiz olduğu için modeli daha hızlı eğitir.</li><li>Eğitim verisi her zaman test verisinden daha küçük olmalıdır.</li><li>Test verisi kullanılırsa modelin parametre sayısı artar.</li><li>Model gördüğü örnekleri ezberleyebileceği için, ancak hiç görmediği örneklerdeki başarısı genelleme yapıp yapmadığını gösterir.</li><li>Test verisi etiket içermediği için eğitimde kullanılamaz.</li></ul>
+<div class="coz"><p>Modelin amacı yeni örneklerde doğru tahmin yapmaktır. Gördüğü örneklerde iyi çıkması ezberle de olabilir; bu parçadaki sınırsız ağaç eğitimde sıfır hata yapıp testte en kötü sonucu verdi. Bu yüzden ölçüm, modelin hiç görmediği verilerde yapılır. A ve C ilgisiz iddialardır. B tersidir; eğitim verisi genellikle daha büyüktür. E yanlıştır; test verisinin de etiketi vardır, yoksa tahminin doğru olup olmadığı ölçülemezdi.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">(2, 1) ve (4, 2) vektörleri için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Birbirine dik oldukları için hiç benzer değildirler.</li><li>Aynı yöne bakarlar (aralarındaki açı sıfırdır), ama uzunlukları farklıdır.</li><li>Uzunlukları eşittir ama zıt yönlere bakarlar.</li><li>Aralarındaki uzaklık sıfırdır, yani aynı vektördürler.</li><li>İki vektör yalnızca aynı sayılardan oluşuyorsa karşılaştırılabilir; bunlar karşılaştırılamaz.</li></ul>
+<div class="coz"><p>(4, 2), (2, 1)'in tam iki katıdır; ikisi aynı doğrultuda, aynı yöne bakar ve aralarındaki açı sıfırdır. Açı ölçüsüne göre çok benzerdirler. Ama ikincisi birincinin iki katı uzunluğundadır, bu yüzden aralarındaki uzaklık sıfır değildir (D yanlış). Dik olsalardı (A) birinin yönü öbürüne göre 90 derece dönük olurdu. C'de hem uzunluk hem yön yanlıştır. E yanlıştır; aynı boyutta iki vektör her zaman karşılaştırılabilir.</p></div></li>
+
+<li data-c="C" data-k="yz-3"><p class="q">Yapay zekâ modellerinin eğitiminde ekran kartlarının (GPU) kullanılmasının temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>GPU'lar karmaşık mantık kararlarını işlemciden daha iyi verir.</li><li>GPU'lar veriyi kalıcı olarak sabit diskten daha büyük saklar.</li><li>Model eğitimi aynı basit işlemin (çarpma ve toplama) milyonlarca kez yapılmasıdır ve GPU'lar bunu çok sayıda çekirdekte paralel yapar.</li><li>GPU'lar yalnızca görüntü verisiyle çalışır, metin modellerinde kullanılmaz.</li><li>GPU'lar sayıları her zaman tam kesinlikle saklar, bu yüzden yuvarlama hatası olmaz.</li></ul>
+<div class="coz"><p>Model eğitimi büyük ölçüde matris çarpımıdır, yani çok sayıda ağırlıklı toplamın aynı anda yapılması. GPU'lar binlerce basit çekirdekle aynı işlemi paralel yürütmek için tasarlanmıştır; bu iş tam onlara göredir. A tersidir: dallanan, karmaşık mantıkta ana işlemci daha iyidir. B bir depolama iddiasıdır, GPU'nun işi değildir. D yanlıştır; dil modelleri de GPU'larla eğitilir. E de yanlıştır; GPU'lar float32, float16 gibi sınırlı kesinlikle çalışır ve niceleme kesinliği bilerek daha da düşürür.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-3">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-4">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-5">Sonraki parça: bir modeli ölçmek ve kandırılmamak</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linear regression gradient descent intuition"</li>
+  <li>"doğrusal regresyon gradyan inişi makine öğrenmesi"</li>
+  <li>"decision tree random forest explained"</li>
+  <li>"k nearest neighbors algorithm explained"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bütün elle çözülen sayılar (örnek 1'deki MSE değerleri 1,25 / 0,41 / 0,375 ve en iyi doğru 0,175x + 3,25; örnek 2'deki üç öğrenme oranıyla beşer adım ve 0,4 eşiği; örnek 3'teki σ(1,9) ≈ 0,870 ve σ(−3) ≈ 0,047; log kaybı değerleri 0,14 ve 3,0; örnek 4'teki yanlış sayıları; örnek 5'teki uzaklıklar; topluluk oylaması için %78,4, %92,2 ve %99,99) Python ile hesaplandı. Quiz'deki sayısal cevaplar (13; MSE = 2; w = 1; ağaç sorusundaki 2 ve 1 yanlış; k-NN sırası) da elle ve Python'la denetlendi.</li>
+  <li>İsteğe bağlı denemedeki iki betik bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı (scikit-learn 1.9.1, NumPy 2.5.3) ve çıktılar birebir kondu. Veri kodun içinde sabit tohumla üretildi, internetten bir şey indirilmedi. Farklı bir NumPy ya da scikit-learn sürümünde rastgele sayı üretimi veya ağacın eşikleri küçük farklarla değişebilir. scikit-learn'ün varsayılanları (rastgele ormanda 100 ağaç ve yerine koyarak örnekleme; sınıflandırma ağacında Gini, regresyon ağacında kare hata ölçütü; k-NN'de k = 5) kurulu sürüm sorgulanarak denetlendi.</li>
+  <li>Ağaç yöntemlerinin tablo verisindeki üstünlüğü: Grinsztajn, Oyallon ve Varoquaux, "Why do tree-based models still outperform deep learning on tabular data?" (arXiv 2207.08815, NeurIPS 2022): 45 veri kümesi, yaklaşık 10 bin örneklik orta boy veri. TabPFN: Hollmann ve ark., Nature, Ocak 2025; bunu kurumsal basın duyurusundan doğruladım (10 bin satırın altındaki tablolarda en iyi sonuç iddiası), makalenin tam metnine ağ kısıtı yüzünden erişemedim. Bu alan hızla değişiyor; yazıldığı tarih itibarıyla değerlendirildi.</li>
+  <li>Rastgele orman: Breiman, "Random Forests", Machine Learning 45 (2001). En küçük kareler yönteminin Legendre (1805) ve Gauss'a dayandığı yaygın kabul gören tarihtir; yayın tarihini ikincil kaynaklarla karşılaştırdım, özgün metinlere bakmadım.</li>
+  <li>Kapsamda geçen "çok sayıda zayıf modelin oylaması" ifadesi metinde inceltildi: rastgele ormanın ağaçları teknik anlamda "zayıf öğrenici" değil, kararsız (yüksek varyanslı) modellerdir; "zayıf öğrenici" terimi daha çok artırma (boosting) yöntemleri için kullanılır. Bu, ders kitaplarında yerleşik ayrımdır ama farklı kaynaklar terimi gevşek de kullanır.</li>
+  <li>Tanımlar (doğrusal ve lojistik regresyon, MSE, gradyan inişi, karar ağacı, k-NN) standart makine öğrenmesi bilgisidir ve hafızadan yazıldı; bu oturumda satır satır bir ders kitabıyla karşılaştırmadım. Kafe, kurye ve uygulama üyeliği verileri öğretim için uydurulmuştur, gerçek veri değildir.</li>
+  <li>Sorular bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,642 @@
+<article class="chapter ders" id="c-yz-7">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 7 · Sinir ağı nasıl öğrenir</div>
+<h1>Hatayı geriye dağıtmak: bir sinir ağı nasıl öğrenir</h1>
+<p class="time">Okuma ve çözme yaklaşık 55 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Parça 6'daki ağın ağırlıkları başta rastgele sayılardır; ağ ilk gün her rakama gelişigüzel bir cevap verir. Büyük bir modelde bu ağırlıklardan milyarlarca vardır. Ağ bir resme "3" yerine "8" dediğinde suç hangi ağırlığındır, hangisi ne kadar ve hangi yöne değişmelidir? Bunu milyarlarca ağırlık için, her örnekte yeniden, makul bir sürede nasıl hesaplarsın? Ve ağ öğrenmeyi bırakıp ezberlemeye başladığında bunu nereden anlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (eğitim, doğrulama ve test kümeleri; aşırı öğrenme), Parça 3 (eğim sezgisi: "hatayı azaltmak için ağırlığı hangi yöne itmeliyim"), Parça 4 (kayıp fonksiyonu, ortalama kare hata, gradyan inişi, öğrenme oranı), Parça 6 (yapay nöron, ReLU ve sigmoid, ileri besleme, parametre sayısı). Kod bilmen gerekmez; sondaki kod kutusu isteğe bağlıdır.</p>
+
+<h2 class="s">Önce büyük resim: öğrenme dört adımlık bir döngüdür</h2>
+
+<p>Parça 4'te tek bir doğruyu noktalara uydururken iki parametre vardı: eğim ve kesişim. Sisli bir dağda durduğunu, ayağının altındaki eğime bakıp aşağı doğru küçük bir adım attığını, bunu tekrar ettiğini düşünmüştük. Sinir ağında fikir hiç değişmez. Değişen tek şey ölçektir: iki parametre yerine binlerce, milyonlarca, büyük dil modellerinde milyarlarca parametre vardır. Bu parçanın bütün konusu, aynı fikrin bu ölçekte nasıl çalışır hâle getirildiğidir.</p>
+
+<p>Bir sinir ağının eğitimi, aşağıdaki dört adımın binlerce kez tekrarıdır:</p>
+
+<p><strong>1. İleri geçiş.</strong> Bir grup örnek ağa verilir, sayılar Parça 6'da gördüğün gibi soldan sağa akar ve ağ bir tahmin üretir.<br><strong>2. Kayıp.</strong> Tahmin gerçek cevapla karşılaştırılır; aradaki fark tek bir sayıya, kayba çevrilir.<br><strong>3. Geri geçiş (geri yayılım).</strong> Kaybın her bir ağırlığa ne kadar duyarlı olduğu, yani her ağırlığın hatadaki "payı" hesaplanır.<br><strong>4. Güncelleme.</strong> Her ağırlık, kendi payının ters yönünde küçük bir adım kadar değiştirilir.</p>
+
+<p>Sonra yeni örneklerle başa dönülür. Her adım basit bir hesaptır; öğrenme dediğimiz şey bu hesabın çok sayıda tekrarından çıkar. Aşağıda adımları sırayla açacağız, sonra döngüyü bozan sorunlara (aşırı öğrenme, kaybolan gradyan) ve döngünün nasıl izlendiğine (eğitim eğrisi) geçeceğiz.</p>
+
+<h2 class="s">1. Kayıp: ağın ne kadar yanıldığını tek sayıya çevirmek</h2>
+
+<p>Ağırlıkları düzeltmek için önce "ne kadar kötüyüz" sorusunun cevabı tek bir sayı olmalıdır. Neden tek sayı? Çünkü "daha iyi" ve "daha kötü" diyebilmek için iki durumu karşılaştırabilmen gerekir; iki sayı listesi doğrudan karşılaştırılamaz ama iki sayı karşılaştırılabilir. Kayıp fonksiyonu bu işi görür.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kayıp (loss)</strong>, ağın tahminleriyle gerçek cevaplar arasındaki farkı ölçen tek bir sayıdır. Kayıp ne kadar küçükse ağ o kadar iyi tahmin ediyordur. Eğitimin amacı, ağırlıkları değiştirerek bu sayıyı küçültmektir.</p></div>
+
+<p>Bir sayı tahmin eden ağlarda (ev fiyatı gibi) Parça 4'teki <strong>ortalama kare hata</strong> kullanılır: her örnekte farkın karesi alınır, hepsinin ortalaması alınır. Bir sınıf seçen ağlarda (bu resim hangi rakam?) ise başka bir kayıp kullanılır, çünkü ağın çıktısı bir sayı değil, bir olasılık listesidir: "%70 üç, %20 sekiz, %10 öbürleri" gibi. Bu durumda Parça 4'te lojistik regresyonda tanıdığın <strong>log kaybı</strong>, yani <strong>çapraz entropi</strong> kullanılır. Fikri: ağın <em>doğru sınıfa</em> verdiği olasılığa bakılır; bu olasılık yüksekse ceza küçük, düşükse ceza büyüktür. Hesap olarak o olasılığın eksi doğal logaritması alınır; şu tablo yeter:</p>
+
+<div class="tablo"><table>
+<tr><th>Ağın doğru cevaba verdiği olasılık</th><th>Ceza (çapraz entropi)</th><th>Yorum</th></tr>
+<tr><td>%99</td><td>0,010</td><td>Doğru ve emin: neredeyse ceza yok.</td></tr>
+<tr><td>%90</td><td>0,105</td><td>Doğru, oldukça emin.</td></tr>
+<tr><td>%50</td><td>0,693</td><td>Kararsız.</td></tr>
+<tr><td>%10</td><td>2,303</td><td>Büyük olasılıkla yanlış cevap vermiş.</td></tr>
+<tr><td>%1</td><td>4,605</td><td>Yanlış ve yanlışından çok emin: ağır ceza.</td></tr>
+</table></div>
+
+<p>Tablonun son satırı önemlidir; bu parçanın sonunda eğitim eğrisini okurken ona döneceğiz. Çapraz entropi yalnızca yanılmayı değil, <strong>emin olarak yanılmayı</strong> çok ağır cezalandırır. "Bilmiyorum, yarı yarıya" diyen ağ 0,69 ceza alırken, "kesinlikle başka bir şey" diyen ağ 4,6 ceza alır. Bu yüzden iki ağın başarımı (doğru bildiği örneklerin oranı) aynı olsa bile kayıpları farklı olabilir.</p>
+
+<h2 class="s">2. Gradyan inişi, bu kez milyonlarca ağırlıkta</h2>
+
+<p>Parça 4'teki dağ benzetmesini genişlet. İki parametreli modelde dağın yüzeyi iki yönlüydü: doğu-batı ve kuzey-güney. Her yönde eğime bakıp aşağı inen yönü seçiyordun. Ağda her ağırlık ayrı bir yöndür. Parça 6'daki hesapla 64 girdili, 64 gizli nöronlu, 10 çıktılı bir ağın parametresi 64 × 64 + 64 + 64 × 10 + 10 = 4.810 eder; o ağın "dağı" 4.810 yönlüdür. Bunu gözünde canlandıramazsın ama gerekmiyor: her yön için iş aynıdır. "Bu ağırlığı biraz artırırsam kayıp artar mı, azalır mı ve ne kadar?" sorusunun cevabına o ağırlığın <strong>eğimi</strong> denir. Bütün ağırlıkların eğimlerinin listesine de <strong>gradyan</strong> denir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Her ağırlık için güncelleme aynıdır: <strong>yeni ağırlık = eski ağırlık − öğrenme oranı × o ağırlığın eğimi</strong>. Eksi işareti şundandır: eğim pozitifse ağırlığı artırmak kaybı artırır, öyleyse ağırlık azaltılır; eğim negatifse artırılır. Yani her zaman eğimin <em>ters</em> yönüne gidilir. Öğrenme oranı adımın boyunu belirler.</p></div>
+
+<p>Bir fark daha var. Parça 4'teki doğrusal regresyonun kaybı tek dipli bir çanaktı; nereden başlarsan başla aynı dibe iniyordun. Sinir ağının kayıp yüzeyi ise çok sayıda çukuru, düzlüğü ve eyer biçimli geçidi olan engebeli bir arazidir. Gradyan inişi yalnızca ayağının altındaki eğimi bildiği için en derin vadiyi aramaz; hangi çukura inerse orada kalır. Bu yüzden aynı ağ farklı rastgele başlangıç ağırlıklarıyla eğitilince farklı ağırlıklara ve biraz farklı sonuçlara varır. Buna rağmen büyük ağlar iyi çalışır: deneyler, bu yüzeylerdeki çukurların çoğunun birbirine yakın derinlikte olduğunu düşündürür (nedeni hâlâ araştırılıyor). Hedef zaten "en iyi" dip değil, görmediği veride iyi çalışan "yeterince iyi" bir çukurdur.</p>
+
+<p>Asıl soru eğimlerin nasıl bulunacağıdır. Akla gelen ilk yol şudur: bir ağırlığı çok az oynat, ağı baştan çalıştır, kayıp ne kadar değişti bak. Doğru ama çok pahalı bir yoldur: 4.810 ağırlık varsa her eğitim adımında ağı 4.810 kez fazladan çalıştırman gerekir. 70 milyar parametreli bir modelde her adımda 70 milyar kez çalıştırmak demektir; eğitim hiçbir zaman bitmez. Eğimleri bir seferde, hepsini birden hesaplamanın bir yolu olmalı. O yolun adı geri yayılımdır.</p>
+
+<h2 class="s">3. Geri yayılım: suçu payı kadar dağıtmak</h2>
+
+<p>Geri yayılımın arkasındaki fikri bir dişli zinciriyle düşün. Birinci dişli bir tur döndüğünde ikinci dişli iki tur, ikinci bir tur döndüğünde üçüncü üç tur dönüyorsa birinci dişlinin bir turu üçüncüyü kaç tur döndürür? 2 × 3 = 6 tur. Zincirdeki her halkanın etkisi <strong>çarpılarak</strong> birikir. Matematikte buna zincir kuralı denir; senin bilmen gereken tek şey bu çarpma fikridir.</p>
+
+<p>Sinir ağı da böyle bir zincirdir. İlk katmandaki bir ağırlık, gizli nöronun girdisini etkiler; gizli nöronun girdisi onun çıkışını etkiler; o çıkış bir sonraki ağırlıkla çarpılıp tahmini etkiler; tahmin de kaybı etkiler. "Bu ilk ağırlık kaybı ne kadar etkiliyor?" sorusunun cevabı, zincirdeki her halkanın küçük etkisinin çarpımıdır.</p>
+
+<p>İşin akıllıca kısmı hesabın <strong>sondan başlanması</strong>dır. Kayba en yakın halka en kolay hesaplanan halkadır: kayıp, tahmine ne kadar duyarlı? Bu bir kez bulununca, bir önceki halka için yalnızca bir çarpma daha yapmak gerekir; ondan bir öncekine bir çarpma daha. Her katman, kendisinden sonra gelen katmanın zaten hesapladığı sayıyı kullanır. Hiçbir şey iki kez hesaplanmaz. Böylece bütün ağırlıkların eğimleri, kabaca bir ileri geçişle aynı büyüklükte bir işle tek bir geri geçişte çıkar. 70 milyar kez fazladan çalıştırma yerine bir kez geri gitmek: farkın büyüklüğü, büyük ağların neden eğitilebildiğinin cevabıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Geri yayılım (backpropagation)</strong>, kaybın ağdaki her ağırlığa göre eğimini hesaplayan yöntemdir. Hata çıktıdan başlayıp katman katman geriye doğru taşınır; her basamakta bir önceki basamağın sonucu yerel bir etkiyle çarpılır. Sonuçta her ağırlık, hataya kendi katkısı oranında bir "pay" alır. Geri yayılım yalnızca eğimleri bulur; ağırlıkları değiştiren, ondan sonra gelen güncelleme adımıdır.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 310" role="img" aria-label="Tek gizli nöronlu küçük bir ağda ileri geçiş soldan sağa, geri geçiş sağdan sola: her ağırlığın payı çarpılarak bulunuyor">
+  <text class="sv-b" x="320" y="20" text-anchor="middle">İleri geçiş: sayılar soldan sağa akar</text>
+  <rect class="sv-k" x="10" y="40" width="90" height="56" rx="10" />
+  <text class="sv-b" x="55" y="64" text-anchor="middle">x = 2</text>
+  <text class="sv-s" x="55" y="84" text-anchor="middle">girdi</text>
+  <path class="sv-cl" d="M100 68H176" />
+  <polygon class="sv-l" points="176,63 186,68 176,73" />
+  <text class="sv-s" x="142" y="58" text-anchor="middle">× w₁ (0,5)</text>
+  <rect class="sv-l" x="186" y="40" width="140" height="56" rx="10" />
+  <text class="sv-b" x="256" y="64" text-anchor="middle">z = 1 → h = 1</text>
+  <text class="sv-s" x="256" y="84" text-anchor="middle">ReLU nöronu</text>
+  <path class="sv-cl" d="M326 68H396" />
+  <polygon class="sv-l" points="396,63 406,68 396,73" />
+  <text class="sv-s" x="362" y="58" text-anchor="middle">× w₂ (3)</text>
+  <rect class="sv-m" x="406" y="40" width="100" height="56" rx="10" />
+  <text class="sv-b" x="456" y="64" text-anchor="middle">ŷ = 3</text>
+  <text class="sv-s" x="456" y="84" text-anchor="middle">tahmin (y = 4)</text>
+  <path class="sv-cl" d="M506 68H546" />
+  <polygon class="sv-l" points="546,63 556,68 546,73" />
+  <rect class="sv-a" x="556" y="40" width="76" height="56" rx="10" />
+  <text class="sv-b" x="594" y="64" text-anchor="middle">L = 1</text>
+  <text class="sv-s" x="594" y="84" text-anchor="middle">(3 − 4)²</text>
+  <text class="sv-b" x="320" y="128" text-anchor="middle">Geri geçiş: paylar sağdan sola, her basamakta çarpılarak</text>
+  <path class="sv-cl" d="M610 146H40" />
+  <polygon class="sv-l" points="40,141 30,146 40,151" />
+  <text class="sv-s" x="574" y="176" text-anchor="middle">kayıp → tahmin:</text>
+  <text class="sv-t" x="574" y="194" text-anchor="middle">2 × (3 − 4) = −2</text>
+  <text class="sv-s" x="440" y="176" text-anchor="middle">w₂'nin payı:</text>
+  <text class="sv-t" x="440" y="194" text-anchor="middle">−2 × h (1) = −2</text>
+  <text class="sv-s" x="440" y="226" text-anchor="middle">h'ye geçen:</text>
+  <text class="sv-t" x="440" y="244" text-anchor="middle">−2 × w₂ (3) = −6</text>
+  <text class="sv-s" x="256" y="226" text-anchor="middle">z'ye geçen (ReLU açık):</text>
+  <text class="sv-t" x="256" y="244" text-anchor="middle">−6 × 1 = −6</text>
+  <text class="sv-s" x="66" y="226" text-anchor="middle">w₁'in payı:</text>
+  <text class="sv-t" x="66" y="244" text-anchor="middle">−6 × x (2) = −12</text>
+  <text class="sv-s" x="320" y="278" text-anchor="middle">Güncelleme, öğrenme oranı 0,01:</text>
+  <text class="sv-t" x="320" y="298" text-anchor="middle">w₁ = 0,5 − 0,01 × (−12) = 0,62  ·  w₂ = 3 − 0,01 × (−2) = 3,02</text>
+</svg>
+<figcaption>Aşağıdaki çözümlü örneğin şekli. Üst satırda tahmin üretilir, alt satırda hata geriye taşınır. Her ok bir çarpmadır: bir halkanın payı, bir önceki halkanın payı ile o halkanın yerel etkisinin çarpımıdır. Hiçbir ara sonuç iki kez hesaplanmaz.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: geri yayılımı elle yapmak</span>
+<p><strong>Soru:</strong> Ağda tek girdi, tek gizli nöron (ReLU) ve tek çıktı var. Girdi x = 2, ilk ağırlık w₁ = 0,5, ikinci ağırlık w₂ = 3, gerçek cevap y = 4. Kayıp, Parça 4'teki gibi farkın karesi: L = (tahmin − y)². (Sapmaları sıfır kabul ediyoruz.) Her iki ağırlığın eğimini bul, öğrenme oranı 0,01 ile bir adım güncelle ve kaybın düşüp düşmediğini denetle.</p>
+<p><strong>Adım 1 (ileri geçiş, nöronun girdisi).</strong> z = w₁ × x = 0,5 × 2 = 1 (girdi ağırlıkla çarpılır).</p>
+<p><strong>Adım 2 (ileri geçiş, aktivasyon).</strong> h = ReLU(1) = 1 (ReLU pozitif sayıyı olduğu gibi geçirir).</p>
+<p><strong>Adım 3 (ileri geçiş, tahmin).</strong> ŷ = w₂ × h = 3 × 1 = 3 (gizli nöronun çıkışı ikinci ağırlıkla çarpılır).</p>
+<p><strong>Adım 4 (kayıp).</strong> L = (3 − 4)² = 1 (tahmin 1 eksik, karesi 1).</p>
+<p><strong>Adım 5 (geri: kayıp tahmine ne kadar duyarlı?).</strong> Farkın karesinin eğimi "2 × fark"tır: 2 × (3 − 4) = −2. Eksi işareti şunu söylüyor: tahmin artarsa kayıp azalır (çünkü tahmin gerçek cevabın altında).</p>
+<p><strong>Adım 6 (geri: w₂'nin payı).</strong> Tahmin = w₂ × h olduğundan w₂ bir birim artınca tahmin h kadar, yani 1 artar. Pay: −2 × 1 = −2 (önceki pay × yerel etki).</p>
+<p><strong>Adım 7 (geri: hata gizli nörona geçer).</strong> h bir birim artınca tahmin w₂ kadar, yani 3 artar. h'nin payı: −2 × 3 = −6.</p>
+<p><strong>Adım 8 (geri: ReLU'dan geçiş).</strong> z pozitif olduğu için ReLU açıktır ve etkisi 1'dir (z ne kadar artarsa h de o kadar artar). z'nin payı: −6 × 1 = −6. z negatif olsaydı ReLU kapalı olacak, etkisi 0 olacak ve hata buradan geriye hiç geçmeyecekti.</p>
+<p><strong>Adım 9 (geri: w₁'in payı).</strong> z = w₁ × x olduğundan w₁ bir birim artınca z, x kadar yani 2 artar. Pay: −6 × 2 = −12.</p>
+<p><strong>Adım 10 (güncelleme).</strong> w₁ = 0,5 − 0,01 × (−12) = 0,5 + 0,12 = 0,62. w₂ = 3 − 0,01 × (−2) = 3 + 0,02 = 3,02 (eğimin ters yönü).</p>
+<p><strong>Adım 11 (denetim).</strong> Yeni ağırlıklarla: z = 0,62 × 2 = 1,24; h = 1,24; ŷ = 3,02 × 1,24 = 3,7448; L = (3,7448 − 4)² ≈ 0,065.</p>
+<p><strong>Sonuç:</strong> Kayıp tek adımda 1'den yaklaşık 0,065'e indi. Dikkat et: w₁'in payı (−12), w₂'ninkinin (−2) altı katı çıktı; çünkü w₁'deki bir değişiklik hem x'le hem w₂'yle çarpılarak büyüyor. Geri yayılım "hangi ağırlık hatadan ne kadar sorumlu" sorusunu böyle, çarparak cevaplar.</p></div>
+
+<p>Gerçek ağda bir gizli nöron birden çok çıktıya bağlıysa, o nörona geriye doğru birden çok pay gelir ve bu paylar <strong>toplanır</strong>: nöron hangi yoldan olursa olsun hataya katkıda bulunduysa sorumluluğu o kadar büyür. Bir katmanın bütün payları da Parça 3'te gördüğün matris çarpımıyla, yani ekran kartının en iyi yaptığı işle bir seferde hesaplanır.</p>
+
+<p>Bugün kimse geri yayılımı elle yazmaz. PyTorch, JAX, TensorFlow gibi kütüphaneler ileri geçişte yapılan her işlemi kaydeder ve geri geçişi kendiliğinden kurar; buna <strong>otomatik türev</strong> denir. Senin yazdığın şey yalnızca ileri geçiş ve kayıptır. Yöntemin tarihi de bunu yansıtır: aynı hesap tekniği 1970'lerde birkaç kez ayrı ayrı tarif edildi (Linnainmaa 1970, Werbos 1974), ama sinir ağlarında gizli katmanların işe yarar özellikler öğrenebileceğini gösterip yöntemi yaygınlaştıran, Rumelhart, Hinton ve Williams'ın 1986'da <em>Nature</em> dergisinde yayımlanan makalesi oldu.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Geri yayılım, ağın cevabı geriye doğru çalıştırıp girdiyi bulmasıdır" ya da "geri yayılım ağırlıkları günceller" diye düşünmek.</strong> Geri yayılım bir hesap yöntemidir ve tek ürettiği şey eğimlerdir: her ağırlık için "kaybı ne kadar ve hangi yönde etkiliyorsun" sayısı. Ağın yönü tersine çevrilmez, girdi yeniden üretilmez. Ağırlıkları değiştiren, eğimleri kullanan ayrı bir adımdır; bu adımı yapan algoritmaya <strong>iyileştirici</strong> (optimizer) denir. İkisini ayırmak, aşağıda Adam'ı anlamanın ön koşuludur: Adam eğimleri hesaplamaz, eğimleri geri yayılımdan alıp onlarla ne yapılacağına karar verir.</p></div>
+
+<h2 class="s">4. Öğrenme oranı: adımın boyu ve zamanlaması</h2>
+
+<p>Parça 4'te öğrenme oranının çok büyük ya da çok küçük olursa ne olacağını sezgiyle görmüştün. Şimdi aynı küçük ağ üzerinde sayıyla görelim, çünkü sinir ağı eğitiminde en sık bozulan ayar budur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: üç farklı adım boyu</span>
+<p><strong>Soru:</strong> Çözümlü örnek 1'deki ağda eğimler aynı kalsın (w₁ için −12, w₂ için −2). Öğrenme oranı 0,001; 0,01 ve 0,05 olduğunda tek adımlık güncellemeden sonra kayıp ne olur?</p>
+<p><strong>Adım 1 (oran 0,001).</strong> w₁ = 0,5 + 0,001 × 12 = 0,512; w₂ = 3 + 0,001 × 2 = 3,002. Tahmin = 3,002 × (0,512 × 2) ≈ 3,074. Kayıp ≈ (3,074 − 4)² ≈ 0,857.</p>
+<p><strong>Adım 2 (oran 0,01).</strong> Örnek 1'de bulduk: tahmin ≈ 3,745, kayıp ≈ 0,065.</p>
+<p><strong>Adım 3 (oran 0,05).</strong> w₁ = 0,5 + 0,05 × 12 = 1,1; w₂ = 3 + 0,05 × 2 = 3,1. Tahmin = 3,1 × (1,1 × 2) = 6,82. Kayıp = (6,82 − 4)² ≈ 7,95.</p>
+<p><strong>Adım 4 (karşılaştırma).</strong> 0,001'de kayıp 1'den 0,857'ye indi: doğru yön ama çok yavaş. 0,01'de 0,065'e indi: iyi. 0,05'te 1'den 7,95'e <em>çıktı</em>: tahmin 3'ten 6,82'ye fırladı, hedefi (4) aşıp öbür tarafa geçti.</p>
+<p><strong>Sonuç:</strong> Eğimler yön ve göreli büyüklük söyler, ama yalnızca bulunduğun noktanın hemen çevresi için geçerlidir. Adım bu çevreden taşacak kadar büyükse kayıp düşmek yerine yükselir. Gerçek eğitimde bunun belirtisi, kaybın zıplaması, büyümesi ya da sonunda sayı olmaktan çıkmasıdır (kütüphaneler bunu "NaN", yani "sayı değil" diye yazar).</p></div>
+
+<p>Doğru öğrenme oranı denenerek bulunur. Uygulamada oranın eğitim boyunca <strong>sabit tutulmadığını</strong> bilmen gerekir. Buna öğrenme oranı zamanlaması (schedule) denir ve arkasındaki mantık dağ benzetmesiyle açıktır: dağın tepesindeyken vadi uzaktadır, büyük adımlar işe yarar; vadinin dibine yaklaştıkça büyük adımlar seni çukurun bir yamacından öbürüne atar, küçük adımlar gerekir. Bu yüzden oran çoğu zaman eğitim ilerledikçe azaltılır: belli dönemlerde yarıya indirilerek, ya da yumuşak bir eğriyle (yaygın bir seçim kosinüs biçimli azalmadır). Büyük ağlarda bunun önüne bir de <strong>ısınma</strong> (warmup) eklenir: ilk birkaç yüz ya da bin adımda oran sıfıra yakın başlar ve yavaşça hedef değere çıkar. Çünkü başlangıçta ağırlıklar rastgeledir, eğimler güvenilmez ve büyüktür; o anda atılan büyük bir adım ağı toparlanamayacağı bir bölgeye fırlatabilir.</p>
+
+<h2 class="s">5. Mini-yığın, dönem, adım: verinin ağdan geçiş düzeni</h2>
+
+<p>Kaybı hesaplarken hangi örneklere bakılacağı da bir seçimdir ve iki uç da kötüdür.</p>
+
+<p><strong>Bütün veriye bakıp tek adım atmak.</strong> En doğru eğimi verir, çünkü her örneği hesaba katar. Ama bir milyon resim varsa tek bir adım için bir milyon resmi işlemek gerekir; bellek yetmez ve adımlar çok seyrek olur. </p>
+
+<p><strong>Tek örneğe bakıp adım atmak.</strong> Adımlar çok sık olur ama her biri tek bir örneğin görüşüdür. Bir örnek "bu ağırlığı artır", öbürü "azalt" der; yol zikzak çizer. Üstelik ekran kartı tek örnekle neredeyse boş çalışır: Parça 3'te gördüğün gibi onun gücü aynı işi binlerce sayı üzerinde aynı anda yapmasındadır.</p>
+
+<p>Arada bir yol seçilir: veri küçük gruplara bölünür ve her grup için bir adım atılır. Bu gruba <strong>mini-yığın</strong> (mini-batch) denir. 32, 64, 128 gibi boyutlar yaygındır; büyük dil modellerinde bir yığın milyonlarca token içerebilir. Mini-yığının eğimi bütün verinin eğiminin gürültülü bir tahminidir; bu gürültü küçük olduğu için iş görür, hatta bazı araştırmacılara göre biraz gürültü ağın keskin, ezberci çukurlara saplanmasını da zorlaştırır (bu son nokta araştırma konusudur, kesin bir yasa değil).</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Mini-yığın:</strong> bir güncelleme adımı için birlikte işlenen örnek grubu. <strong>Adım (iterasyon):</strong> bir mini-yığın için yapılan bir ileri geçiş + geri geçiş + güncelleme. <strong>Dönem (epoch):</strong> eğitim verisinin tamamının bir kez ağdan geçirilmesi. Bir dönemdeki adım sayısı = örnek sayısı ÷ yığın boyutu (artan varsa yukarı yuvarlanır, son yığın küçük kalır).</p></div>
+
+<div class="tablo"><table>
+<tr><th>Terim</th><th>Ne kadar veri</th><th>Ne olur</th><th>Örnek (300 eğitim örneği, yığın 32)</th></tr>
+<tr><td>Örnek</td><td>Tek bir resim, tek bir satır</td><td>Kaybı hesaplanır</td><td>Bir el yazısı rakam</td></tr>
+<tr><td>Mini-yığın</td><td>Birkaç düzine örnek</td><td>Kayıpları ortalanır, eğim çıkar</td><td>32 rakam</td></tr>
+<tr><td>Adım</td><td>Bir mini-yığın</td><td>Ağırlıklar bir kez güncellenir</td><td>Dönem başına 10 adım</td></tr>
+<tr><td>Dönem</td><td>Bütün eğitim verisi</td><td>Her örnek bir kez görülür</td><td>30 dönem = 300 güncelleme</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: kaç güncelleme yapılır?</span>
+<p><strong>Soru:</strong> (a) 300 eğitim örneği, yığın boyutu 32 ve 30 dönemlik eğitimde ağırlıklar toplam kaç kez güncellenir? (b) 60.000 örnek ve yığın boyutu 128 ise bir dönem kaç adımdır?</p>
+<p><strong>Adım 1.</strong> (a) 300 ÷ 32 = 9,375. Dokuz tam yığın 9 × 32 = 288 örnek eder (bölme).</p>
+<p><strong>Adım 2.</strong> Geriye 300 − 288 = 12 örnek kalır; bunlar onuncu, küçük bir yığın olur. Bir dönem 10 adımdır (artan yukarı yuvarlanır).</p>
+<p><strong>Adım 3.</strong> 30 dönem × 10 adım = 300 güncelleme (dönem sayısı × dönem başına adım).</p>
+<p><strong>Adım 4.</strong> (b) 60.000 ÷ 128 = 468,75. 468 tam yığın ve bir küçük yığın: dönem başına 469 adım.</p>
+<p><strong>Sonuç:</strong> (a) 300 güncelleme, (b) 469 adım. Bu hesap neden önemli? Çünkü "10 dönem eğittim" cümlesi tek başına ağın kaç kez düzeltildiğini söylemez; aynı 10 dönem, yığın boyutu küçükse çok daha fazla adım demektir. Ayrıca örnekler her dönemin başında karıştırılır; böylece yığınlar her dönem farklı örneklerden oluşur ve ağ, örneklerin sırasını öğrenemez.</p></div>
+
+<h2 class="s">6. İyileştiriciler: eğimle ne yapılacağına karar vermek</h2>
+
+<p>Yukarıdaki kural (eski ağırlık − oran × eğim) en yalın iyileştiricidir ve adı <strong>stokastik gradyan inişi</strong>dir (SGD; "stokastik", eğimin rastgele seçilmiş bir yığından hesaplandığını anlatır). İki zayıf yanı vardır. Birincisi, gürültülü eğimlerle zikzak çizer. İkincisi, bütün ağırlıklara aynı adım oranını uygular; oysa bazı ağırlıkların eğimleri hep küçük ama tutarlıdır, bazılarınınki büyük ama her adımda yön değiştirir.</p>
+
+<p>Birinci soruna çözüm <strong>momentum</strong>dur. Yokuş aşağı yuvarlanan ağır bir top düşün: her an yalnızca ayağının altındaki eğime göre değil, o ana kadar kazandığı hıza göre de ilerler. Küçük tümsekler onu durdurmaz, sürekli aynı yöne giden bir yamaçta da giderek hızlanır. Momentumlu iyileştirici de son eğimlerin hareketli bir ortalamasını tutar ve adımı bu ortalamaya göre atar. Zikzaklar birbirini götürür, tutarlı yön birikir.</p>
+
+<p>İkinci soruna çözüm, her ağırlığa <strong>kendi adım boyunu</strong> vermektir. Bugün en yaygın kullanılan iyileştiricilerden <strong>Adam</strong> (Kingma ve Ba, 2014'te arXiv'de yayımlandı, 2015'te ICLR konferansında sunuldu) iki şeyi birlikte yapar. Her ağırlık için son eğimlerin hareketli ortalamasını tutar (momentum gibi: "genelde hangi yöne gidiyoruz?") ve son eğimlerin büyüklüğünün hareketli ortalamasını tutar ("bu ağırlığın eğimleri genelde ne kadar büyük?"). Sonra adımı, yönün tutarlılığını büyüklüğe bölerek ayarlar. Adı da bundan gelir: uyarlanır moment tahmini (<em>adaptive moment estimation</em>).</p>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Ağırlık A: eğim her adımda +0,001</th><th>Ağırlık B: eğim sırayla +10, −10, +10…</th></tr>
+<tr><td>Ne anlama geliyor?</td><td>Küçük ama hep aynı yönü gösteren, güvenilir bir eğim</td><td>Büyük ama sürekli yön değiştiren, gürültülü bir eğim</td></tr>
+<tr><td>SGD (oran 0,001) adım boyu</td><td>0,000001 (neredeyse hiç kıpırdamaz)</td><td>0,01 (her adımda ileri geri sallanır)</td></tr>
+<tr><td>Adam (oran 0,001) adım boyu</td><td>0,001 (her adımda)</td><td>İlk adım 0,001; sonra 0,00005 ile 0,00034 arası</td></tr>
+</table></div>
+
+<p>Tablodaki sayılar Adam'ın makaledeki varsayılan ayarlarıyla (oran 0,001, iki ortalama için 0,9 ve 0,999 katsayıları) hesaplandı. SGD, güvenilir ama küçük eğimli A'yı neredeyse hiç kıpırdatmıyor, gürültülü B'yi sallıyor. Adam tam tersini yapıyor: A'ya oranın tamamı kadar adım attırıyor, B'nin adımlarını ise kısıyor. Kaba bir özetle Adam'ın adımı "öğrenme oranı × (eğim ne kadar tutarlı)" gibi davranır; eğimin ham büyüklüğü adımı belirlemez. Bu yüzden Adam çoğu problemde fazla ayar gerektirmeden makul çalışır. Ama "her zaman en iyisi" değildir: bazı görüntü problemlerinde iyi ayarlanmış momentumlu SGD'nin daha iyi genelleştiği bildirilmiştir ve bugün büyük modellerde Adam'ın ağırlık cezasını ayrı ele alan AdamW gibi türevleri yaygındır.</p>
+
+<h2 class="s">7. Kaybolan ve patlayan gradyan</h2>
+
+<p>Geri yayılımın gücü çarpmadan geliyordu; zayıflığı da çarpmadan gelir. Hata geriye doğru her katmandan geçerken bir sayıyla çarpılır. Katman sayısı artınca bu çarpımlar zinciri uzar ve uzun çarpım zincirleri iki tehlikeli yöne kayar.</p>
+
+<p><strong>Kaybolan gradyan.</strong> Parça 6'da gördüğün sigmoid fonksiyonunun eğimi en fazla 0,25'tir (eğrinin en dik yeri orta noktasıdır ve orada bile çıkış girdiden dört kat yavaş değişir). Hata sigmoidli 10 katmandan geçerse her katmanda en fazla 0,25 ile çarpılır: 0,25<sup>10</sup> ≈ 0,00000095, yani milyonda birden az. Son katmanlar öğrenir, ilk katmanlara ise neredeyse hiç hata ulaşmaz; ilk katmanların ağırlıkları başlangıçtaki rastgele hâlinde kalır. 1990'larda derin ağların eğitilememesinin başlıca nedenlerinden biri buydu (sorunu Hochreiter 1991'deki tezinde, Bengio ve arkadaşları 1994'te inceledi).</p>
+
+<p><strong>Patlayan gradyan.</strong> Tersi de olabilir: her katmanda çarpan 1'den büyükse, örneğin 1,5 ise, 20 katman sonra hata 1,5<sup>20</sup> ≈ 3.325 katına çıkar. Eğimler devleşir, güncelleme ağırlıkları uçuruma atar, kayıp NaN olur. Bu sorun özellikle dizileri adım adım işleyen ağlarda (Parça 9) görülür, çünkü orada aynı ağırlık her adımda yeniden çarpılır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Derin bir ağın eğitilebilmesi için hatanın katmanlardan geçerken <strong>ne sönmesi ne büyümesi</strong> gerekir; katman başına çarpanların 1'e yakın kalması gerekir. Bugünkü ağlarda bunu sağlayan araçlar: ReLU gibi aktivasyonlar (açıkken eğimi tam 1'dir, hatayı küçültmeden geçirir), ağırlıkların başlangıç değerlerinin katman büyüklüğüne göre ölçekli seçilmesi, katman çıktılarını belli bir aralıkta tutan normalleştirme katmanları, girdiyi bir katmanın "üstünden atlatıp" çıktısına ekleyen artık bağlantılar (hata bu kısa yoldan doğrudan geriye akabilir) ve eğim belli bir büyüklüğü aşınca onu kırpmak (gradient clipping).</p></div>
+
+<p>Bu araçların ayrıntısını Parça 8 ve 10'da, ilgili ağ türleriyle göreceksin. Aklında kalması gereken fikir şu: derin öğrenmenin 2010'lardaki atılımının bir parçası daha büyük veri ve ekran kartıysa, öbür parçası bu çarpım zincirini dengede tutmayı öğrenmekti.</p>
+
+<h2 class="s">8. Ezberlemeye karşı: düzenlileştirme</h2>
+
+<p>Parça 2'de aşırı öğrenmeyi (overfitting) tanımıştık: model eğitim örneklerini ezberler, görmediği örneklerde başarısız olur. Sinir ağları buna özellikle yatkındır, çünkü çok fazla parametreleri vardır. Bu parçanın denemesindeki ağın 4.810 parametresi var ve yalnızca 300 eğitim örneği görüyor. Ayarlanabilir düğme sayısı örnek sayısının 16 katı olunca, ağın her örneği ayrı ayrı "hatırlamasına" yetecek kadar serbestliği vardır. Ezberlemeyi zorlaştıran her yönteme <strong>düzenlileştirme</strong> (regularization) denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Düzenlileştirme</strong>, modelin eğitim verisine daha az uymasını göze alarak görmediği veride daha iyi çalışmasını amaçlayan her yöntemdir. Hepsinin ortak fikri, ağın "kolay ezber yolunu" pahalı hâle getirmektir: ağırlıkları büyütmeyi cezalandırarak, ağın tek tek nöronlara güvenmesini engelleyerek, eğitimi ezber başlamadan durdurarak ya da veriyi çeşitlendirerek.</p></div>
+
+<h3>Ağırlık cezası</h3>
+
+<p>Ezberleyen ağlarda ağırlıklar genellikle büyür: bir örneğin küçük bir ayrıntısına dev bir ağırlıkla tepki vermek, o örneği ayrı tutmanın kolay yoludur. Ağırlık cezası, kayba ağırlıkların büyüklüğüyle orantılı bir ek ceza ekler (en yaygın biçimi, ağırlıkların karelerinin toplamıdır; L2 cezası ya da ağırlık sönümü, weight decay da denir). Artık ağ bir ağırlığı büyütmek istiyorsa, bunun kaybı gerçekten düşürmesi gerekir; yalnızca tek bir örneği açıklamak için büyütmek kârlı olmaz. Sonuçta ağ, daha "yumuşak", daha az uç karar veren bir fonksiyona yönelir.</p>
+
+<h3>Dropout</h3>
+
+<p>Dropout'ta eğitimin her adımında gizli nöronların bir kısmı (örneğin yarısı) rastgele seçilip <strong>kapatılır</strong>, yani o adımda çıkışları sıfır sayılır. Bir sonraki adımda başka bir rastgele kısım kapatılır. Neden işe yarar? Çünkü hiçbir nöron, belirli bir komşusunun orada olacağına güvenemez. Ezber çoğu zaman birkaç nöronun birlikte, çok özel bir örüntüye kilitlenmesiyle olur; dropout bu ortaklıkları bozar ve her nöronu tek başına da işe yarayan özellikler öğrenmeye zorlar. Bir başka açıdan bakınca, her adımda ağın farklı bir "inceltilmiş" kopyası eğitilir; tahmin sırasında bütün nöronlar açılır ve çıkışlar buna göre ölçeklenir; bu da sanki binlerce küçük ağın ortalamasını almaya benzer. Yöntem Hinton ve arkadaşlarının 2012 tarihli bir ön baskısında önerildi, ayrıntılı hâli 2014'te Srivastava ve arkadaşlarının makalesinde yayımlandı.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 270" role="img" aria-label="Dropout: solda tahmin sırasında bütün nöronları açık ağ, sağda bir eğitim adımında iki gizli nöronu rastgele kapatılmış aynı ağ">
+  <line class="sv-c" x1="60" y1="70" x2="160" y2="55" />
+  <line class="sv-c" x1="60" y1="70" x2="160" y2="95" />
+  <line class="sv-c" x1="60" y1="70" x2="160" y2="135" />
+  <line class="sv-c" x1="60" y1="70" x2="160" y2="175" />
+  <line class="sv-c" x1="60" y1="70" x2="160" y2="215" />
+  <line class="sv-c" x1="60" y1="115" x2="160" y2="55" />
+  <line class="sv-c" x1="60" y1="115" x2="160" y2="95" />
+  <line class="sv-c" x1="60" y1="115" x2="160" y2="135" />
+  <line class="sv-c" x1="60" y1="115" x2="160" y2="175" />
+  <line class="sv-c" x1="60" y1="115" x2="160" y2="215" />
+  <line class="sv-c" x1="60" y1="160" x2="160" y2="55" />
+  <line class="sv-c" x1="60" y1="160" x2="160" y2="95" />
+  <line class="sv-c" x1="60" y1="160" x2="160" y2="135" />
+  <line class="sv-c" x1="60" y1="160" x2="160" y2="175" />
+  <line class="sv-c" x1="60" y1="160" x2="160" y2="215" />
+  <line class="sv-c" x1="60" y1="205" x2="160" y2="55" />
+  <line class="sv-c" x1="60" y1="205" x2="160" y2="95" />
+  <line class="sv-c" x1="60" y1="205" x2="160" y2="135" />
+  <line class="sv-c" x1="60" y1="205" x2="160" y2="175" />
+  <line class="sv-c" x1="60" y1="205" x2="160" y2="215" />
+  <line class="sv-c" x1="160" y1="55" x2="260" y2="110" />
+  <line class="sv-c" x1="160" y1="55" x2="260" y2="170" />
+  <line class="sv-c" x1="160" y1="95" x2="260" y2="110" />
+  <line class="sv-c" x1="160" y1="95" x2="260" y2="170" />
+  <line class="sv-c" x1="160" y1="135" x2="260" y2="110" />
+  <line class="sv-c" x1="160" y1="135" x2="260" y2="170" />
+  <line class="sv-c" x1="160" y1="175" x2="260" y2="110" />
+  <line class="sv-c" x1="160" y1="175" x2="260" y2="170" />
+  <line class="sv-c" x1="160" y1="215" x2="260" y2="110" />
+  <line class="sv-c" x1="160" y1="215" x2="260" y2="170" />
+  <circle class="sv-k" cx="60" cy="70" r="11" />
+  <circle class="sv-k" cx="60" cy="115" r="11" />
+  <circle class="sv-k" cx="60" cy="160" r="11" />
+  <circle class="sv-k" cx="60" cy="205" r="11" />
+  <circle class="sv-l" cx="160" cy="55" r="11" />
+  <circle class="sv-l" cx="160" cy="95" r="11" />
+  <circle class="sv-l" cx="160" cy="135" r="11" />
+  <circle class="sv-l" cx="160" cy="175" r="11" />
+  <circle class="sv-l" cx="160" cy="215" r="11" />
+  <circle class="sv-m" cx="260" cy="110" r="11" />
+  <circle class="sv-m" cx="260" cy="170" r="11" />
+  <text class="sv-b" x="160" y="22" text-anchor="middle">Tahmin sırasında</text>
+  <text class="sv-s" x="160" y="248" text-anchor="middle">bütün nöronlar açık</text>
+  <text class="sv-s" x="60" y="232" text-anchor="middle">girdi</text>
+  <text class="sv-s" x="260" y="200" text-anchor="middle">çıktı</text>
+  <line class="sv-c" x1="390" y1="70" x2="490" y2="55" />
+  <line class="sv-c" x1="390" y1="70" x2="490" y2="135" />
+  <line class="sv-c" x1="390" y1="70" x2="490" y2="215" />
+  <line class="sv-c" x1="390" y1="115" x2="490" y2="55" />
+  <line class="sv-c" x1="390" y1="115" x2="490" y2="135" />
+  <line class="sv-c" x1="390" y1="115" x2="490" y2="215" />
+  <line class="sv-c" x1="390" y1="160" x2="490" y2="55" />
+  <line class="sv-c" x1="390" y1="160" x2="490" y2="135" />
+  <line class="sv-c" x1="390" y1="160" x2="490" y2="215" />
+  <line class="sv-c" x1="390" y1="205" x2="490" y2="55" />
+  <line class="sv-c" x1="390" y1="205" x2="490" y2="135" />
+  <line class="sv-c" x1="390" y1="205" x2="490" y2="215" />
+  <line class="sv-c" x1="490" y1="55" x2="590" y2="110" />
+  <line class="sv-c" x1="490" y1="55" x2="590" y2="170" />
+  <line class="sv-c" x1="490" y1="135" x2="590" y2="110" />
+  <line class="sv-c" x1="490" y1="135" x2="590" y2="170" />
+  <line class="sv-c" x1="490" y1="215" x2="590" y2="110" />
+  <line class="sv-c" x1="490" y1="215" x2="590" y2="170" />
+  <circle class="sv-k" cx="390" cy="70" r="11" />
+  <circle class="sv-k" cx="390" cy="115" r="11" />
+  <circle class="sv-k" cx="390" cy="160" r="11" />
+  <circle class="sv-k" cx="390" cy="205" r="11" />
+  <circle class="sv-l" cx="490" cy="55" r="11" />
+  <circle class="sv-a" cx="490" cy="95" r="11" />
+  <line class="sv-cl" x1="482" y1="87" x2="498" y2="103" />
+  <line class="sv-cl" x1="482" y1="103" x2="498" y2="87" />
+  <circle class="sv-l" cx="490" cy="135" r="11" />
+  <circle class="sv-a" cx="490" cy="175" r="11" />
+  <line class="sv-cl" x1="482" y1="167" x2="498" y2="183" />
+  <line class="sv-cl" x1="482" y1="183" x2="498" y2="167" />
+  <circle class="sv-l" cx="490" cy="215" r="11" />
+  <circle class="sv-m" cx="590" cy="110" r="11" />
+  <circle class="sv-m" cx="590" cy="170" r="11" />
+  <text class="sv-b" x="490" y="22" text-anchor="middle">Bir eğitim adımında</text>
+  <text class="sv-s" x="490" y="248" text-anchor="middle">2 gizli nöron kapalı</text>
+  <text class="sv-s" x="390" y="232" text-anchor="middle">girdi</text>
+  <text class="sv-s" x="590" y="200" text-anchor="middle">çıktı</text>
+  <line class="sv-c" x1="320" y1="40" x2="320" y2="250" />
+</svg>
+<figcaption>Dropout. Solda tahmin sırasında kullanılan ağ: bütün nöronlar açık. Sağda bir eğitim adımı: iki gizli nöron rastgele kapatılmış, bağlantıları o adımda yok sayılıyor. Bir sonraki adımda başka nöronlar kapanır. Ağ hiçbir nöronun her zaman orada olacağına güvenemediği için bilgiyi yayarak saklamayı öğrenir.</figcaption>
+</figure>
+
+<h3>Erken durdurma</h3>
+
+<p>Eğitim uzadıkça ağ önce genel örüntüleri, sonra giderek eğitim kümesine özgü ayrıntıları öğrenir. Öyleyse ezber başladığı anda durmak mantıklıdır. Bunu anlamanın yolu, Parça 2'deki doğrulama kümesidir: her dönemin sonunda ağ, eğitimde hiç görmediği doğrulama örnekleri üzerinde ölçülür. Doğrulama kaybı düşmeyi bırakıp yükselmeye başladığında ağın eğitim kümesine özgü şeyler öğrendiği anlaşılır. Pratikte eğitim birkaç dönem daha sürdürülür (kayıp bazen dalgalanıp yeniden düşebilir), ama doğrulama kaybının en düşük olduğu dönemdeki ağırlıklar saklanır ve sonunda o ağırlıklara dönülür.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Erken durdurma:</strong> (1) Her dönemden sonra doğrulama kaybını ölç. (2) Şimdiye kadarki en düşük değerse ağırlıkların bir kopyasını sakla. (3) Belirli sayıda dönem boyunca (sabır payı, örneğin 5 ya da 10) daha düşük bir değer gelmezse eğitimi kes. (4) Saklanan en iyi ağırlıklara dön. Bu kararların hiçbirinde test kümesi kullanılmaz.</p></div>
+
+<h3>Veri artırma</h3>
+
+<p>Ezberin en kökten ilacı daha fazla veridir; ama veri pahalıdır. Veri artırma (data augmentation), elindeki örneklerden anlamı değiştirmeyen küçük oynamalarla yeni örnekler üretir. Bir kedi fotoğrafını biraz döndürmek, kırpmak, aynalamak, parlaklığını değiştirmek onu kedi olmaktan çıkarmaz; ağ ise her dönemde aynı resmin biraz farklı bir hâlini görür ve tek bir piksel düzenini ezberleyemez. Sınırına dikkat: dönüşüm, etiketi değiştirmemelidir. Bir el yazısı "6"yı 180 derece döndürürsen "9" olur; yazıyı aynalamak harfleri bozar. Hangi oynamanın güvenli olduğu verinin türüne bağlıdır ve her problemde ayrıca düşünülür.</p>
+
+<div class="tablo"><table>
+<tr><th>Yöntem</th><th>Ne yapar</th><th>Neden ezberi zorlaştırır</th><th>Bedeli</th></tr>
+<tr><td>Ağırlık cezası</td><td>Kayba ağırlıkların büyüklüğüyle orantılı ceza ekler</td><td>Tek örneği açıklamak için ağırlık büyütmek kârlı olmaz</td><td>Ceza çok büyükse ağ yetersiz öğrenir</td></tr>
+<tr><td>Dropout</td><td>Eğitimde her adımda rastgele nöronları kapatır</td><td>Nöronlar birbirine yaslanarak özel örüntü kuramaz</td><td>Eğitim yavaşlar; tahminde kapatılması unutulmamalı</td></tr>
+<tr><td>Erken durdurma</td><td>Doğrulama kaybı en düşükken durur, o ağırlıklara döner</td><td>Ezber aşamasına girmeden eğitimi keser</td><td>Ayrı bir doğrulama kümesi gerekir</td></tr>
+<tr><td>Veri artırma</td><td>Anlamı korunan oynamalarla yeni örnekler üretir</td><td>Aynı resmin tam hâlini iki kez görmez</td><td>Yanlış dönüşüm etiketi bozar</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Erken durdurmayı ya da ayar seçimini test kümesine bakarak yapmak.</strong> "Test başarımı en yüksekken durdum" dediğin anda test kümesi artık test değildir: onu modeli seçmek için kullandın, yani dolaylı olarak eğitime kattın. Raporladığın test sonucu iyimser olur; bu, Parça 5'te gördüğün sızıntının bir türüdür. Doğrusu: durdurma, öğrenme oranı, ceza büyüklüğü gibi bütün seçimler doğrulama kümesiyle yapılır; test kümesine en sonda, bir kez bakılır.</p>
+<p><strong>Dropout'u tahmin sırasında açık bırakmak.</strong> Dropout yalnızca eğitim içindir. Kütüphanelerde modelin "eğitim kipi" ve "değerlendirme kipi" ayrıdır; değerlendirmeye geçmeyi unutursan model her çalıştırmada rastgele nöronları kapatır, aynı resme her seferinde farklı cevap verir ve başarımı olduğundan düşük görünür.</p></div>
+
+<h2 class="s">9. Eğitim eğrisini okumak</h2>
+
+<p>Eğitimin içini göremezsin; görebildiğin şey, her dönemin sonunda ölçtüğün birkaç sayıdır. Bu sayıların dönemlere göre çizilmiş hâline <strong>eğitim eğrisi</strong> (öğrenme eğrisi) denir ve bir ağın sağlıklı öğrenip öğrenmediğini anlamanın ilk aracıdır. En az iki çizgi çizilir: eğitim kaybı ve doğrulama kaybı.</p>
+
+<p>Aşağıdaki iki şekil, bu parça için gerçekten eğitilmiş küçük bir ağdan alındı: 8 × 8 piksellik el yazısı rakamları tanıyan, 64 nöronlu tek gizli katmanı olan, 4.810 parametreli bir ağ. 300 örnekle eğitildi, 500 örnekle doğrulandı, 997 örnek de test için en sona saklandı. Nasıl eğitildiğini görmek istersen sondaki isteğe bağlı kutuya bak; eğriyi okumak için gerekmez.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Eğitim kaybı ve doğrulama kaybının 30 dönem boyunca değişimi: eğitim kaybı sıfıra iniyor, doğrulama kaybı 0,19 civarında duruyor">
+  <line class="sv-c" x1="70" y1="250" x2="610" y2="250" />
+  <text class="sv-s" x="62" y="254" text-anchor="end">0</text>
+  <line class="sv-c" x1="66" y1="195" x2="70" y2="195" />
+  <text class="sv-s" x="62" y="199" text-anchor="end">0,2</text>
+  <line class="sv-c" x1="66" y1="140" x2="70" y2="140" />
+  <text class="sv-s" x="62" y="144" text-anchor="end">0,4</text>
+  <line class="sv-c" x1="66" y1="85" x2="70" y2="85" />
+  <text class="sv-s" x="62" y="89" text-anchor="end">0,6</text>
+  <line class="sv-c" x1="66" y1="30" x2="70" y2="30" />
+  <text class="sv-s" x="62" y="34" text-anchor="end">0,8</text>
+  <line class="sv-c" x1="70" y1="30" x2="70" y2="250" />
+  <text class="sv-s" x="70" y="268" text-anchor="middle">1</text>
+  <text class="sv-s" x="144" y="268" text-anchor="middle">5</text>
+  <text class="sv-s" x="238" y="268" text-anchor="middle">10</text>
+  <text class="sv-s" x="331" y="268" text-anchor="middle">15</text>
+  <text class="sv-s" x="424" y="268" text-anchor="middle">20</text>
+  <text class="sv-s" x="517" y="268" text-anchor="middle">25</text>
+  <text class="sv-s" x="610" y="268" text-anchor="middle">30</text>
+  <text class="sv-s" x="340" y="290" text-anchor="middle">dönem</text>
+  <text class="sv-s" x="22" y="140" text-anchor="middle">kayıp</text>
+  <polyline class="sv-c" points="70,76 89,183 107,205 126,212 144,231 163,238 182,240 200,243 219,244 238,245 256,246 275,246 293,247 312,248 331,248 349,248 368,248 387,248 405,249 424,249 442,249 461,249 480,249 498,249 517,249 536,249 554,249 573,249 591,249 610,249" />
+  <polyline class="sv-cl" points="70,45 89,139 107,169 126,175 144,191 163,193 182,197 200,193 219,199 238,194 256,197 275,196 293,196 312,196 331,196 349,195 368,195 387,195 405,194 424,194 442,194 461,194 480,193 498,193 517,193 536,193 554,192 573,192 591,192 610,191" />
+  <text class="sv-t" x="330" y="182">doğrulama kaybı (≈0,19–0,21)</text>
+  <text class="sv-t" x="330" y="236">eğitim kaybı (→ 0,002)</text>
+  <text class="sv-s" x="96" y="56">1. dönem: eğitim 0,63 · doğrulama 0,74</text>
+  <text class="sv-s" x="350" y="80">eğitim başarımı 9. dönemden itibaren %100,</text>
+  <text class="sv-s" x="350" y="98">doğrulama başarımı ise %94 dolayında</text>
+</svg>
+<figcaption>Gerçek eğitim eğrisi, 30 dönem. İnce çizgi eğitim kaybı, kalın çizgi doğrulama kaybı. İlk birkaç dönemde ikisi birlikte hızla düşüyor: ağ gerçekten öğreniyor. Sonra yollar ayrılıyor: eğitim kaybı sıfıra doğru inmeye devam ederken doğrulama kaybı 0,19 dolayında duruyor.</figcaption>
+</figure>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Doğrulama kaybının yakın çekimi, dönem 5 ile 30 arası: ağırlık cezası kapalıyken kayıp 9. dönemde en düşük noktaya inip sonra yükseliyor, ceza açıkken düşük kalıyor">
+  <line class="sv-c" x1="66" y1="250" x2="70" y2="250" />
+  <text class="sv-s" x="62" y="254" text-anchor="end">0,17</text>
+  <line class="sv-c" x1="66" y1="206" x2="70" y2="206" />
+  <text class="sv-s" x="62" y="210" text-anchor="end">0,18</text>
+  <line class="sv-c" x1="66" y1="162" x2="70" y2="162" />
+  <text class="sv-s" x="62" y="166" text-anchor="end">0,19</text>
+  <line class="sv-c" x1="66" y1="118" x2="70" y2="118" />
+  <text class="sv-s" x="62" y="122" text-anchor="end">0,20</text>
+  <line class="sv-c" x1="66" y1="74" x2="70" y2="74" />
+  <text class="sv-s" x="62" y="78" text-anchor="end">0,21</text>
+  <line class="sv-c" x1="66" y1="30" x2="70" y2="30" />
+  <text class="sv-s" x="62" y="34" text-anchor="end">0,22</text>
+  <line class="sv-c" x1="70" y1="30" x2="70" y2="250" />
+  <line class="sv-c" x1="70" y1="250" x2="610" y2="250" />
+  <text class="sv-s" x="70" y="268" text-anchor="middle">5</text>
+  <text class="sv-s" x="178" y="268" text-anchor="middle">10</text>
+  <text class="sv-s" x="286" y="268" text-anchor="middle">15</text>
+  <text class="sv-s" x="394" y="268" text-anchor="middle">20</text>
+  <text class="sv-s" x="502" y="268" text-anchor="middle">25</text>
+  <text class="sv-s" x="610" y="268" text-anchor="middle">30</text>
+  <text class="sv-s" x="340" y="290" text-anchor="middle">dönem</text>
+  <polyline class="sv-cl" points="70,52 92,87 113,158 135,78 156,180 178,105 200,158 221,131 243,140 264,140 286,131 308,122 329,122 351,118 372,109 394,109 416,100 437,96 459,92 480,87 502,83 524,78 545,74 567,74 588,65 610,61" />
+  <polyline class="sv-c" points="70,78 92,83 113,188 135,140 156,206 178,184 200,232 221,210 243,219 264,224 286,232 308,228 329,232 351,224 372,232 394,237 416,241 437,224 459,237 480,232 502,237 524,232 545,224 567,228 588,237 610,237" />
+  <circle class="sv-a" cx="156" cy="180" r="6" />
+  <line class="sv-c" x1="156" y1="172" x2="156" y2="46" />
+  <text class="sv-s" x="164" y="42">9. dönem: en düşük (0,186)</text>
+  <text class="sv-t" x="430" y="50">ceza kapalı: 0,213</text>
+  <text class="sv-t" x="430" y="204">ceza açık: 0,173</text>
+</svg>
+<figcaption>Aynı doğrulama kaybının 5–30. dönemlerdeki yakın çekimi (dikey eksen 0,17–0,22 arasına büyütüldü). Kalın çizgi: ağırlık cezası kapalı; kayıp 9. dönemde en düşük noktasına iniyor, sonra yavaş yavaş yükseliyor. İnce çizgi: aynı ağ, aynı veri, yalnızca ağırlık cezası açık; kayıp yükselmiyor, 0,17 dolayında kalıyor.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Eğitim eğrisi şöyle okunur. <strong>İki kayıp birlikte düşüyorsa</strong> ağ öğreniyordur, eğitime devam et. <strong>İkisi de yüksek kalıyorsa</strong> ağ yetersiz öğreniyordur (model çok küçük, öğrenme oranı yanlış ya da eğitim çok kısa). <strong>Eğitim kaybı düşerken doğrulama kaybı durup yükseliyorsa</strong> ağ ezberlemeye başlamıştır: erken durdurma ya da düzenlileştirme gerekir. <strong>Kayıp zıplıyor ya da büyüyorsa</strong> öğrenme oranı büyük olabilir. Eğitim kaybı tek başına hiçbir zaman başarı göstergesi değildir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: gerçek bir eğriyi teşhis etmek</span>
+<p><strong>Soru:</strong> Yukarıdaki eğitimde ölçülen sayılar şunlar: 1. dönemde eğitim kaybı 0,633, doğrulama kaybı 0,744; 9. dönemde 0,023 ve 0,186; 30. dönemde 0,002 ve 0,213. Eğitim başarımı 9. dönemden itibaren %100, doğrulama başarımı 9. dönemde %94,0, 30. dönemde %94,4. Bu ağa ne oluyor ve ne yapılmalı?</p>
+<p><strong>Adım 1 (ilk dönemler).</strong> 1'den 9'a eğitim kaybı 0,633 → 0,023, doğrulama kaybı 0,744 → 0,186. İkisi birlikte düştü: bu dönemlerde ağ görmediği rakamlarda da iyileşiyor, yani genel örüntüler öğreniyor.</p>
+<p><strong>Adım 2 (9. dönemden sonra eğitim tarafı).</strong> Eğitim kaybı 0,023 → 0,002, eğitim başarımı %100. Ağ 300 eğitim örneğinin hepsini doğru biliyor ve her birinden giderek daha emin.</p>
+<p><strong>Adım 3 (9. dönemden sonra doğrulama tarafı).</strong> Doğrulama kaybı 0,186 → 0,213; yükseliyor. Eğitim ile doğrulama arasındaki açıklık büyüyor. Bu, kurala göre ezber belirtisi.</p>
+<p><strong>Adım 4 (çelişki gibi görünen nokta).</strong> Ama doğrulama başarımı düşmedi; %94,0'dan %94,4'e çıktı. Kayıp yükselirken başarım nasıl düşmez? Çapraz entropi tablosuna dön: kayıp, emin olarak yanılmayı ağır cezalandırır. Ağ doğrulamada hâlâ aşağı yukarı aynı örnekleri yanlış biliyor, ama yanlış bildiklerinde giderek <em>daha emin</em> oluyor. Doğru/yanlış sayısı neredeyse aynı, yanlışların kendinden eminliği artmış.</p>
+<p><strong>Adım 5 (teşhis ve öneri).</strong> Ağ aşırı öğrenmenin başındadır: eğitim kümesinde kusursuz, doğrulama kümesinde aşırı kendinden emin. Erken durdurma 9. dönemdeki ağırlıkları seçer. Ağırlık cezası açıldığında (ikinci şekildeki ince çizgi) doğrulama kaybı 30. dönemde 0,213 yerine 0,173'te kalıyor ve doğrulama başarımı %95,0 oluyor.</p>
+<p><strong>Sonuç:</strong> Ezber burada hafif ve "doğru sayısı"nda henüz görünmüyor; ilk uyarıyı kayıp veriyor. Test kümesinde (en sona saklanan 997 örnek) sonuçlar birbirine çok yakın: 9. dönemdeki ağ %93,8, 30. dönemdeki ağ %93,9, cezalı ağın en iyi dönemi %94,2. Bu kadar küçük farklar (997 örnekte %0,1 tek bir resme denk gelir) rastlantıyla oluşabilir; bir yöntemin "kazandığını" söylemek için farklı rastgele başlangıçlarla tekrarlamak gerekir. Dürüst okuma budur: eğri bir sorunun başladığını gösteriyor, ama bu küçük deneyde sorunun bedeli henüz küçük.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Eğride gördüğün</th><th>Büyük olasılıkla anlamı</th><th>Denenecek ilk şey</th></tr>
+<tr><td>Eğitim ve doğrulama kaybı birlikte düşüyor</td><td>Sağlıklı öğrenme</td><td>Devam et</td></tr>
+<tr><td>İkisi de yüksek ve yatay</td><td>Yetersiz öğrenme</td><td>Daha büyük model, daha uzun eğitim, öğrenme oranını değiştirmek</td></tr>
+<tr><td>Eğitim düşüyor, doğrulama durup yükseliyor</td><td>Aşırı öğrenme</td><td>Erken durdurma, ağırlık cezası, dropout, daha çok ya da artırılmış veri</td></tr>
+<tr><td>Kayıp zıplıyor, büyüyor ya da NaN oluyor</td><td>Öğrenme oranı fazla büyük ya da gradyan patlıyor</td><td>Oranı küçültmek, ısınma eklemek, eğim kırpmak</td></tr>
+<tr><td>Kayıp çok yavaş, neredeyse düz iniyor</td><td>Öğrenme oranı fazla küçük ya da gradyan kayboluyor</td><td>Oranı büyütmek; derin ağda aktivasyon ve başlangıç ayarlarına bakmak</td></tr>
+<tr><td>Doğrulama, eğitimden baştan beri çok daha iyi</td><td>Şüpheli: kümeler karışmış, ya da dropout yalnız eğitimde açık olduğu için (bu normal olabilir)</td><td>Veri ayrımını ve sızıntıyı denetlemek</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme: ağı kendin eğit (Python)</span>
+<p>Bu kutu, yukarıdaki eğrilerin nasıl elde edildiğini gösterir; kod bilmiyorsan atlayabilirsin. Gereken: Python 3, <code>scikit-learn</code> ve <code>numpy</code>. Veri kümesi (<code>load_digits</code>) kütüphanenin içinde gelir, internetten bir şey indirilmez. Burada scikit-learn 1.9.1 ve numpy 2.5.3 kullanıldı. Büyük ağlarda PyTorch gibi kütüphaneler kullanılır; <code>MLPClassifier</code> bu parçanın kavramlarını birkaç satırda gösterdiği için seçildi.</p>
+<p><strong>Adım 1.</strong> Aşağıdaki dosyayı <code>egit.py</code> adıyla kaydet. Her satırın yanındaki açıklama, bu parçadaki karşılığını söylüyor.</p>
+<pre class="kod" data-ad="egit.py">import copy
+import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import log_loss
+
+# 1797 el yazisi rakam, her biri 8x8 = 64 piksel (0-16 arasi parlaklik)
+X, y = load_digits(return_X_y=True)
+X = X / 16.0                      # pikselleri 0-1 araligina indir
+
+# 300 egitim, 500 dogrulama, kalan 997 test; test sona kadar kilitli
+X_tr, X_kalan, y_tr, y_kalan = train_test_split(
+    X, y, train_size=300, random_state=0, stratify=y)
+X_va, X_te, y_va, y_te = train_test_split(
+    X_kalan, y_kalan, train_size=500, random_state=0, stratify=y_kalan)
+
+ag = MLPClassifier(hidden_layer_sizes=(64,),   # 64 noronlu tek gizli katman
+                   solver="adam", learning_rate_init=0.03,
+                   batch_size=32, alpha=0.0,     # agirlik cezasi kapali
+                   random_state=0)
+
+print("donem  egitim_kaybi  dogr_kaybi  egitim_bas  dogr_bas")
+en_iyi_kayip, en_iyi_donem, en_iyi_ag = 99.0, 0, None
+for donem in range(1, 31):
+    ag.partial_fit(X_tr, y_tr, classes=np.arange(10))   # veriden bir tam gecis
+    k_tr = log_loss(y_tr, ag.predict_proba(X_tr))
+    k_va = log_loss(y_va, ag.predict_proba(X_va))
+    b_tr = ag.score(X_tr, y_tr)
+    b_va = ag.score(X_va, y_va)
+    print(f"{donem:5d}  {k_tr:12.3f}  {k_va:10.3f}  {b_tr:10.3f}  {b_va:8.3f}")
+    if k_va &lt; en_iyi_kayip:                       # erken durdurma icin kayit
+        en_iyi_kayip, en_iyi_donem = k_va, donem
+        en_iyi_ag = copy.deepcopy(ag)
+
+print("parametre sayisi:", sum(w.size for w in ag.coefs_ + ag.intercepts_))
+print("en dusuk dogrulama kaybi: donem", en_iyi_donem)
+print("test basarimi, en iyi donemdeki ag:", round(en_iyi_ag.score(X_te, y_te), 3))
+print("test basarimi, 30. donemdeki ag:   ", round(ag.score(X_te, y_te), 3))</pre>
+<p><strong>Adım 2.</strong> Çalıştır: <code>python3 egit.py</code>. Benim aldığım çıktı:</p>
+<pre class="kod" data-ad="$ komut">python3 egit.py</pre>
+<pre class="cikti">donem  egitim_kaybi  dogr_kaybi  egitim_bas  dogr_bas
+    1         0.633       0.744       0.810     0.768
+    2         0.245       0.404       0.920     0.872
+    3         0.164       0.293       0.950     0.916
+    4         0.139       0.274       0.953     0.908
+    5         0.070       0.215       0.987     0.930
+    6         0.045       0.207       0.987     0.938
+    7         0.036       0.191       0.993     0.942
+    8         0.027       0.209       0.997     0.932
+    9         0.023       0.186       1.000     0.940
+   10         0.018       0.203       1.000     0.936
+   11         0.015       0.191       1.000     0.938
+   12         0.013       0.197       1.000     0.938
+   13         0.011       0.195       1.000     0.938
+   14         0.009       0.195       1.000     0.940
+   15         0.008       0.197       1.000     0.940
+   16         0.007       0.199       1.000     0.942
+   17         0.006       0.199       1.000     0.942
+   18         0.006       0.200       1.000     0.942
+   19         0.005       0.202       1.000     0.942
+   20         0.005       0.202       1.000     0.944
+   21         0.004       0.204       1.000     0.944
+   22         0.004       0.205       1.000     0.946
+   23         0.003       0.206       1.000     0.948
+   24         0.003       0.207       1.000     0.946
+   25         0.003       0.208       1.000     0.944
+   26         0.003       0.209       1.000     0.946
+   27         0.003       0.210       1.000     0.944
+   28         0.002       0.210       1.000     0.946
+   29         0.002       0.212       1.000     0.944
+   30         0.002       0.213       1.000     0.944
+parametre sayisi: 4810
+en dusuk dogrulama kaybi: donem 9
+test basarimi, en iyi donemdeki ag: 0.938
+test basarimi, 30. donemdeki ag:    0.939</pre>
+<p><strong>Adım 3 (kodu parçanın diliyle okumak).</strong> <code>train_test_split</code> iki kez çağrılıp veri üçe bölündü; test kümesi döngüde hiç kullanılmıyor. <code>batch_size=32</code> mini-yığın boyutu, <code>learning_rate_init=0.03</code> öğrenme oranı, <code>solver="adam"</code> iyileştirici, <code>alpha</code> ağırlık cezasının büyüklüğü (scikit-learn'de L2 cezası). Her <code>partial_fit</code> çağrısı bir dönemdir (300 örnek, yığın 32: 10 adım). <code>log_loss</code> çapraz entropiyi, <code>score</code> başarımı ölçer. <code>copy.deepcopy</code> doğrulama kaybının en düşük olduğu dönemdeki ağı saklar: erken durdurma budur.</p>
+<p><strong>Adım 4 (ağırlık cezasını açmak).</strong> <code>alpha=0.0</code> yerine <code>alpha=0.01</code> yazıp yeniden çalıştırdığımda çıktının başlık satırı, 9. ve 30. dönem satırları ve son dört satırı şöyleydi (aradaki satırlar ikinci şekildeki ince çizgidir):</p>
+<pre class="cikti">donem  egitim_kaybi  dogr_kaybi  egitim_bas  dogr_bas
+    9         0.026       0.180       0.997     0.942
+   30         0.008       0.173       1.000     0.950
+parametre sayisi: 4810
+en dusuk dogrulama kaybi: donem 21
+test basarimi, en iyi donemdeki ag: 0.942
+test basarimi, 30. donemdeki ag:    0.937</pre>
+<p><strong>Sonuç:</strong> Sayılar <code>random_state=0</code> sabitlendiği için bu sürümlerle her çalıştırmada aynı çıkar; başka bir scikit-learn ya da numpy sürümünde son basamaklar farklı olabilir, çünkü rastgele sayı üretimi ve iç hesaplar sürümler arasında değişebilir. Kendin dene: <code>train_size=300</code>'ü 1000 yap (daha çok veri ezberi zorlaştırır mı?), <code>learning_rate_init</code>'i 0.3 yap (kayıp zıplıyor mu?), <code>hidden_layer_sizes</code>'ı <code>(8,)</code> yap (yetersiz öğrenme görüyor musun?).</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 4'e ve 6'ya:</strong> Parça 4'teki gradyan inişi burada milyonlarca ağırlığa genişledi; Parça 6'daki ileri geçiş, geri yayılımın ilk yarısıdır. Parça 6'daki "70 milyar parametre" ifadesi artık "her adımda 70 milyar eğim hesaplanır ve 70 milyar ağırlık güncellenir" demek.</p>
+<p><strong>Parça 2'ye ve 5'e:</strong> Erken durdurma doğrulama kümesinin en somut kullanımıdır; test kümesiyle durdurmak bir sızıntıdır.</p>
+<p><strong>Parça 8'e:</strong> Görüntü ağları veri artırmayı yoğun kullanır; derin görüntü ağlarının eğitilebilmesi de bu parçadaki kaybolan gradyan sorununun çözülmesine bağlıdır.</p>
+<p><strong>Parça 9, 10 ve 12'ye:</strong> Patlayan ve kaybolan gradyan, tekrarlayan ağların uzun metinde neden zorlandığını anlatır. Büyük dil modellerinin ön eğitimi de burada gördüğün döngünün aynısıdır: kayıp çapraz entropidir (doğru sonraki tokene verilen olasılık), iyileştirici çoğunlukla Adam türevidir, öğrenme oranı ısınma ve azalmayla zamanlanır; tek fark ölçektir.</p>
+</div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce cevapla, sonra aç.</p>
+
+<details><summary>Bir eğitim adımının dört aşaması nedir ve geri yayılım bunların hangisidir?</summary><p>İleri geçiş (tahmin üretilir), kayıp (hata tek sayıya çevrilir), geri geçiş (her ağırlığın eğimi bulunur), güncelleme (ağırlıklar eğimin ters yönünde değiştirilir). Geri yayılım üçüncü aşamadır: yalnızca eğimleri hesaplar; ağırlıkları değiştiren iyileştiricidir.</p></details>
+<details><summary>Geri yayılım neden sondan başlar ve bu neden hesabı ucuzlatır?</summary><p>Çünkü her ağırlığın payı, zincirde kendisinden sonra gelen halkaların etkilerinin çarpımıdır. Sondan başlayınca her katman, bir sonraki katmanın zaten bulduğu sayıyı alıp yalnızca bir çarpma daha yapar; hiçbir ara sonuç iki kez hesaplanmaz. Böylece bütün eğimler, her ağırlığı tek tek oynatıp ağı yeniden çalıştırmak yerine tek bir geri geçişte çıkar.</p></details>
+<details><summary>Dönem, mini-yığın ve adım arasındaki fark nedir? 1.000 örnek ve yığın 50 ile bir dönemde kaç adım vardır?</summary><p>Mini-yığın bir güncelleme için birlikte işlenen örnek grubudur, adım bir mini-yığın için yapılan bir güncellemedir, dönem bütün eğitim verisinin bir kez geçirilmesidir. 1.000 ÷ 50 = 20 adım.</p></details>
+<details><summary>Adam, düz gradyan inişinden kavramsal olarak neyle ayrılır?</summary><p>Her ağırlık için iki hareketli ortalama tutar: eğimin yönünün (momentum gibi) ve eğimin büyüklüğünün. Adımı yönün tutarlılığına göre ayarlar; böylece küçük ama tutarlı eğimli ağırlıklar yeterince hızlı ilerler, büyük ama gürültülü eğimli ağırlıklar sallanmaz. Düz gradyan inişi ise bütün ağırlıklara aynı oranı uygular ve adım doğrudan eğimin büyüklüğüyle orantılıdır.</p></details>
+<details><summary>Kaybolan gradyan neden olur ve derin ağlarda hangi araçlar onu hafifletir?</summary><p>Hata geriye doğru her katmanda bir sayıyla çarpılır; bu sayılar 1'den küçükse (sigmoidin eğimi en çok 0,25) çarpım zinciri uzadıkça hata sönmeye başlar ve ilk katmanlar öğrenemez. ReLU (açıkken eğimi 1), ölçekli başlangıç ağırlıkları, normalleştirme katmanları ve artık bağlantılar bunu hafifletir.</p></details>
+<details><summary>Eğitim kaybı düşerken doğrulama kaybı yükseliyorsa ne oluyordur, ne yaparsın?</summary><p>Ağ eğitim kümesine özgü ayrıntıları ezberlemeye başlamıştır (aşırı öğrenme). Doğrulama kaybının en düşük olduğu dönemdeki ağırlıklara dönersin (erken durdurma) ve gerekiyorsa ağırlık cezası, dropout ya da veri artırma eklersin. Bu kararların hiçbirinde test kümesini kullanmazsın.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Döngü:</strong> ileri geçiş → kayıp → geri geçiş (eğimler) → güncelleme; binlerce kez.</li>
+<li><strong>Kayıp:</strong> sayı tahmininde ortalama kare hata, sınıflandırmada çapraz entropi (doğru sınıfa verilen olasılık düşükse ceza büyük; emin olarak yanılmak en ağır ceza).</li>
+<li><strong>Güncelleme:</strong> yeni ağırlık = eski − öğrenme oranı × eğim (eğimin ters yönü).</li>
+<li><strong>Geri yayılım:</strong> sondan başa, her basamakta çarparak her ağırlığın hatadaki payını bulur; tek geri geçişte bütün eğimler. Ağırlıkları değiştirmez. Yaygınlaştıran makale: Rumelhart, Hinton, Williams 1986.</li>
+<li><strong>Öğrenme oranı:</strong> büyükse kayıp zıplar/büyür, küçükse yavaş iner. Zamanlama: başta ısınma, sonra azalma.</li>
+<li><strong>Mini-yığın / adım / dönem:</strong> bir dönemdeki adım = örnek ÷ yığın (yukarı yuvarla). Örnekler her dönem karıştırılır.</li>
+<li><strong>İyileştiriciler:</strong> SGD; momentum (hız biriktirir); Adam (2014): her ağırlığa kendi adım boyu, yön tutarlılığına göre.</li>
+<li><strong>Kaybolan / patlayan gradyan:</strong> uzun çarpım zinciri söner (0,25<sup>10</sup>) ya da büyür (1,5<sup>20</sup>). Çare: ReLU, ölçekli başlangıç, normalleştirme, artık bağlantı, eğim kırpma.</li>
+<li><strong>Düzenlileştirme:</strong> ağırlık cezası, dropout (yalnız eğitimde), erken durdurma (doğrulamaya göre), veri artırma (etiketi bozmadan).</li>
+<li><strong>Eğri okuma:</strong> ikisi birlikte düşüyor = öğreniyor; eğitim ↓ doğrulama ↑ = ezber; kayıp başarımdan önce uyarır. Test kümesine en sonda bir kez bakılır.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-7">
+<h3>Quiz 7</h3>
+<p class="qa">On yedi soru: sekizi bu parçadan, dokuzu önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+<li data-c="B"><p class="q">Sinir ağı eğitiminde bir dönem (epoch) neyi anlatır?</p>
+<ul class="sec"><li>Tek bir mini-yığın için yapılan bir güncelleme adımını</li><li>Eğitim verisinin tamamının bir kez ağdan geçirilmesini</li><li>Sayıların ağın bir katmanından bir sonrakine geçmesini</li><li>Öğrenme oranının yarıya indirildiği anı</li><li>Test kümesinin bir kez ölçülmesini</li></ul>
+<div class="coz"><p>Dönem, eğitim kümesindeki her örneğin bir kez görülmesidir; bir dönemin içinde, yığın boyutuna göre birçok güncelleme adımı vardır. A'daki tanım "adım"ın (iterasyon) tanımıdır; dönemle adımı karıştırmak en sık yanılgıdır. C ileri geçişin bir parçasını anlatır. D öğrenme oranı zamanlamasıyla ilgilidir; oran bazen dönem sınırlarında değiştirilir ama dönemin tanımı bu değildir. E yanlıştır: test kümesi eğitim boyunca hiç kullanılmaz.</p></div></li>
+
+<li data-c="D"><p class="q">2.000 örnekli bir eğitim kümesi, yığın boyutu 50 ile 10 dönem boyunca eğitiliyor. Ağın ağırlıkları toplam kaç kez güncellenir?</p>
+<ul class="sec"><li>40</li><li>200</li><li>2.000</li><li>400</li><li>20.000</li></ul>
+<div class="coz"><p>Bir dönemdeki adım sayısı örnek sayısı ÷ yığın boyutudur: 2.000 ÷ 50 = 40. On dönemde 40 × 10 = 400 güncelleme yapılır. A yalnızca bir dönemin adım sayısıdır, dönem sayısıyla çarpmayı unutanın cevabıdır. C, her örnekten sonra güncelleme yapıldığını sanmaktır ve dönem sayısını da unutur. B 2.000 ÷ 10 ile, E ise 2.000 × 10 ile bulunur; ikisinde de yığın boyutu hesaba katılmamıştır.</p></div></li>
+
+<li data-c="A"><p class="q">Geri yayılımın (backpropagation) yaptığı iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Kaybın her ağırlığa göre eğimini çıktıdan girdiye doğru, katman katman çarparak hesaplar.</li><li>Her ağırlığı tek tek biraz oynatıp ağı yeniden çalıştırarak eğimi ölçer.</li><li>Ağın çıktısından geriye doğru giderek girdi resmini yeniden üretir.</li><li>Eğimleri kullanıp her ağırlığın yeni değerini belirler ve günceller.</li><li>Eğitim örneklerini her dönemin başında karıştırır.</li></ul>
+<div class="coz"><p>Geri yayılım bir eğim hesaplama yöntemidir: hata sondan başlar, her basamakta bir önceki payla yerel etki çarpılır ve her ağırlık hatadaki payını alır. B eğimi bulmanın doğru ama çok pahalı yoludur; geri yayılım tam da bu pahalılıktan kurtarmak için vardır. C ağın tersine çalıştırıldığı yanılgısıdır. D'deki işi iyileştirici (SGD, Adam) yapar; geri yayılım yalnızca ona eğimleri verir. E veri yükleme düzeniyle ilgilidir.</p></div></li>
+
+<li data-c="C"><p class="q">Tek ağırlıklı bir modelde tahmin ŷ = w × h, h = 2, başlangıçta w = 1,5 ve gerçek cevap y = 5'tir. Kayıp (ŷ − y)² ise ve öğrenme oranı 0,1 ile bir gradyan inişi adımı atılırsa w'nin yeni değeri ne olur?</p>
+<ul class="sec"><li>0,7</li><li>1,9</li><li>2,3</li><li>2,5</li><li>1,7</li></ul>
+<div class="coz"><p>Tahmin 1,5 × 2 = 3, fark 3 − 5 = −2. Kaybın tahmine duyarlılığı 2 × (−2) = −4; tahmin w'ye h kadar duyarlı olduğundan w'nin eğimi −4 × 2 = −8. Yeni w = 1,5 − 0,1 × (−8) = 2,3; denetim: yeni tahmin 4,6, kayıp 4'ten 0,16'ya iner. A eksi işaretini unutup eğim yönünde gidenin cevabıdır. B'de h ile çarpma ya da 2 çarpanı unutulmuştur (eğim −4 sanılmış). E'de ikisi birden unutulmuştur (eğim −2). D, w'yi doğrudan y ÷ h olarak bulup "tek adımda cevaba atlamak"tır; gradyan inişi böyle çalışmaz.</p></div></li>
+
+<li data-c="E"><p class="q">Bir ağ eğitilirken eğitim kaybı her dönemde düşüyor; doğrulama kaybı ise 12. döneme kadar düşüp sonra her dönem biraz yükseliyor. Aşağıdakilerden hangisi en uygun yorum ve harekettir?</p>
+<ul class="sec"><li>Ağ yetersiz öğreniyor; model büyütülmelidir.</li><li>Öğrenme oranı çok küçük; büyütülmelidir.</li><li>Eğitim kaybı düştüğü sürece ağ iyileşiyordur; eğitime devam edilmelidir.</li><li>Test kümesindeki başarımın en yüksek olduğu dönemde durulmalıdır.</li><li>Ağ ezberlemeye başlamıştır; 12. dönemdeki ağırlıklara dönmek ya da düzenlileştirme eklemek gerekir.</li></ul>
+<div class="coz"><p>Eğitim kaybı düşerken doğrulama kaybının yükselmesi aşırı öğrenmenin tipik işaretidir: ağ eğitim kümesine özgü ayrıntıları öğreniyor. Erken durdurma doğrulama kaybının en düşük olduğu 12. dönem ağırlıklarını seçer; ağırlık cezası, dropout ya da veri artırma da denenebilir. A yanlıştır, yetersiz öğrenmede eğitim kaybı da yüksek kalır. B'nin belirtisi ikisinin de çok yavaş inmesidir. C eğitim kaybını başarı göstergesi sanmaktır. D test kümesini model seçimine katar; bu bir sızıntıdır ve test sonucu iyimser çıkar.</p></div></li>
+
+<li data-c="B"><p class="q">Dropout hakkında aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Eğitim bittikten sonra en az kullanılan nöronları ağdan kalıcı olarak siler.</li><li>Eğitimin her adımında gizli nöronların bir kısmını rastgele kapatır; tahmin sırasında bütün nöronlar kullanılır.</li><li>Tahmin sırasında rastgele nöronları kapatarak aynı girdiye her seferinde farklı cevap üretmeyi amaçlar.</li><li>Eğitim verisindeki gürültülü örnekleri rastgele seçip atar.</li><li>Öğrenme oranını her dönem rastgele bir miktar düşürür.</li></ul>
+<div class="coz"><p>Dropout her eğitim adımında farklı bir rastgele nöron grubunu kapatır; hiçbir nöron komşusuna güvenemediği için ağ bilgiyi yayarak saklamayı öğrenir ve ezber zorlaşır. Tahminde bütün nöronlar açılır ve çıkışlar buna göre ölçeklenir. A kalıcı budamayı anlatır, ayrı bir tekniktir. C, dropout'u tahminde açık bırakma hatasının sonucudur, amacı değil. D veri temizliğiyle, E öğrenme oranı zamanlamasıyla ilgilidir.</p></div></li>
+
+<li data-c="A"><p class="q">Sigmoid aktivasyonlu, 10 gizli katmanlı bir ağda son katmanların ağırlıkları hızla değişirken ilk katmanların ağırlıkları neredeyse hiç değişmiyor. En olası neden hangisidir?</p>
+<ul class="sec"><li>Hata geriye her katmanda en çok 0,25 olan sigmoid eğimiyle çarpılarak geçtiği için ilk katmanlara ulaşan eğim çok küçülmüştür.</li><li>Öğrenme oranı çok büyük olduğu için gradyan patlamıştır.</li><li>Geri yayılım yalnızca son katmanın eğimlerini hesaplar.</li><li>İlk katmanlarda parametre sayısı çok azdır.</li><li>Mini-yığın yalnızca son katmanlardan geçer.</li></ul>
+<div class="coz"><p>Bu, kaybolan gradyan sorunudur. Sigmoidin eğimi en fazla 0,25 olduğundan 10 katmanda çarpım en fazla 0,25<sup>10</sup>, yani milyonda birden azdır; ilk katmanlara neredeyse hiç hata ulaşmaz. B'nin belirtisi tersidir: ağırlıklar devleşir, kayıp zıplar ya da NaN olur. C yanlıştır, geri yayılım bütün katmanların eğimlerini hesaplar; sorun hesaplanan sayının çok küçük olmasıdır. D ve E'nin öğrenme hızıyla böyle bir ilişkisi yoktur; her örnek ağın bütün katmanlarından geçer.</p></div></li>
+
+<li data-c="D"><p class="q">Bir sınıflandırma ağında 10. dönemden sonra doğrulama başarımı %94 dolayında sabit kalırken doğrulama kaybı (çapraz entropi) yavaşça yükseliyor. Aşağıdakilerden hangisi bunun en makul açıklamasıdır?</p>
+<ul class="sec"><li>Ağ doğrulama örneklerinin giderek daha fazlasını yanlış biliyordur.</li><li>Kayıp hatalı hesaplanıyordur; başarım sabitken kayıp yükselemez.</li><li>Öğrenme oranı çok küçük olduğu için ağ öğrenmeyi bırakmıştır.</li><li>Ağ, yanlış bildiği doğrulama örneklerinde giderek daha emin hâle geliyordur.</li><li>Doğrulama kümesi eğitim kümesiyle karışmıştır.</li></ul>
+<div class="coz"><p>Çapraz entropi yalnızca doğru-yanlışa değil, doğru sınıfa verilen olasılığa bakar ve emin olarak yanılmayı çok ağır cezalandırır (%1 olasılık 4,6 ceza). Doğru bilinen örneklerin sayısı aynı kalırken yanlış bilinenlerde ağın güveni artarsa kayıp yükselir: bu, ezberin erken belirtisidir. A'da başarım düşerdi. B yanlıştır, yukarıdaki nedenle ikisi ayrı hareket edebilir. C kaybın yükselmesini açıklamaz. E'de doğrulama sonuçları gerçek olmayacak kadar iyi görünürdü, kayıp yükselmezdi.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince çoğunlukla kastedilen alanların en geniş olandan en dar olana doğru sıralanışı hangisidir?</p>
+<ul class="sec"><li>Derin öğrenme → makine öğrenmesi → yapay zekâ → büyük dil modelleri</li><li>Makine öğrenmesi → yapay zekâ → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → büyük dil modelleri → derin öğrenme → makine öğrenmesi</li><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li></ul>
+<div class="coz"><p>İç içe halkalar şemasında en dış halka yapay zekâdır (kural tabanlı uzman sistemler de bunun içindedir). Onun içinde örnekten öğrenen sistemler, yani makine öğrenmesi; onun içinde çok katmanlı sinir ağlarıyla yapılan derin öğrenme; onun içinde de büyük dil modelleri vardır. E aynı zincirin tersidir, yönü kaçıranın cevabıdır. A, B ve D halkaların yerini karıştırır: örneğin her büyük dil modeli bir derin öğrenme modelidir, tersi doğru değildir.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir mağaza, hiçbir müşterisine önceden bir grup etiketi vermeden, alışveriş alışkanlıkları birbirine benzeyen müşterileri kendiliğinden gruplamak istiyor. Bu iş hangi öğrenme türüne girer?</p>
+<ul class="sec"><li>Denetimli öğrenme, sınıflandırma</li><li>Denetimli öğrenme, regresyon</li><li>Pekiştirmeli öğrenme</li><li>Kural tabanlı uzman sistem</li><li>Denetimsiz öğrenme</li></ul>
+<div class="coz"><p>Denetimsiz öğrenmede veride etiket yoktur; model verinin içindeki yapıyı, burada benzer müşteri gruplarını, kendisi bulur. A ve B denetimli öğrenmedir ve her örnek için doğru cevabın (etiketin) baştan verilmesini gerektirir; burada etiket yok. C'de bir ajan ödül ve ceza alarak davranış öğrenir, gruplama işi değildir. D'de kurallar insan tarafından yazılır, öğrenme yoktur.</p></div></li>
+
+<li data-c="A" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin ağırlıkları 16 bitten 8 bite nicelenirse (quantization) aşağıdakilerden hangisi beklenir?</p>
+<ul class="sec"><li>Ağırlıkların kapladığı bellek yaklaşık yarıya iner; karşılığında doğrulukta bir miktar kayıp olabilir.</li><li>Parametre sayısı 3,5 milyara iner.</li><li>Model daha hassas sayılar kullandığı için daha doğru olur.</li><li>Ağırlıkların kapladığı bellek iki katına çıkar.</li><li>Yalnızca eğitim verisi sıkıştırılır, model değişmez.</li></ul>
+<div class="coz"><p>Niceleme her ağırlığı daha az bitle saklamaktır; parametre sayısı aynı kalır ama her biri daha az yer kaplar. 16 bit 2 bayttır: 7 milyar × 2 bayt ≈ 14 GB; 8 bitte 1 bayt, yani ≈ 7 GB. Daha kaba sayılar kullanıldığı için hassasiyet azalır ve doğrulukta küçük bir kayıp olabilir. B bit sayısını parametre sayısıyla karıştırır. C ve D tam tersini söyler. E yanlıştır; niceleme modelin ağırlıklarına uygulanır.</p></div></li>
+
+<li data-c="D" data-k="yz-4"><p class="q">Rastgele orman (random forest) yönteminin temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Tek ve çok derin bir karar ağacı kurup bütün veriyi ona ezberletmek</li><li>Noktalara en iyi uyan doğruyu bulmak</li><li>Yeni örneğe en yakın k örneğin etiketine bakmak</li><li>Farklı veri ve özellik alt kümeleriyle kurulmuş çok sayıda karar ağacının oylamasıyla karar vermek</li><li>Ağırlıkları gradyan inişiyle güncellemek</li></ul>
+<div class="coz"><p>Rastgele orman, her biri tek başına zayıf ve biraz farklı olan çok sayıda karar ağacı kurar ve sonucu oylamayla (sayı tahmininde ortalamayla) belirler; ağaçların hataları birbirini kısmen götürür. A tek ağacın aşırı öğrenmesini anlatır; orman tam da bundan kaçınmak için vardır. B doğrusal regresyonun, C k-en yakın komşunun fikridir. E sinir ağlarının ve regresyonun eğitim yöntemidir; karar ağaçları böyle eğitilmez.</p></div></li>
+
+<li data-c="B" data-k="yz-4"><p class="q">Aşağıdaki işlerin hangisinde basit bir model (lojistik regresyon ya da karar ağacı) derin bir sinir ağına tercih edilmeye en uygundur?</p>
+<ul class="sec"><li>Milyonlarca etiketli fotoğrafla nesne tanımak</li><li>Birkaç yüz satırlık bir tablo verisiyle kredi kararı vermek ve kararın gerekçesini müşteriye açıklamak</li><li>Konuşma kaydını yazıya çevirmek</li><li>Bir dilden ötekine uzun metin çevirmek</li><li>İnternet ölçeğinde metinle bir dil modeli eğitmek</li></ul>
+<div class="coz"><p>Basit modeller az veride, tablo verisinde ve kararın açıklanması gerektiğinde güçlüdür: birkaç yüz satırla büyük bir ağ kolayca ezberler, karar ağacının dalları ise "gelir şundan düşük, borç şundan yüksek" diye okunabilir. A, C, D ve E'de veri büyük ve yapısızdır (resim, ses, metin); bu işlerde derin ağlar basit modellerden çok daha iyidir ve açıklanabilirlik birincil şart değildir.</p></div></li>
+
+<li data-c="E" data-k="yz-5"><p class="q">10.000 kişilik bir veri kümesinde kişilerin %99'u sağlıklıdır. Herkese "sağlıklı" diyen bir model için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Doğruluğu %1'dir.</li><li>Duyarlılığı (recall) %99'dur.</li><li>Kesinliği ve duyarlılığı %100'dür.</li><li>Doğruluğu yüksek olduğu için tarama için en iyi modeldir.</li><li>Doğruluğu %99'dur ama hastaların hiçbirini yakalamaz; duyarlılığı sıfırdır.</li></ul>
+<div class="coz"><p>Model 9.900 sağlıklı kişiyi doğru, 100 hastayı yanlış sınıflar: doğruluk 9.900 ÷ 10.000 = %99. Ama duyarlılık, gerçek hastaların ne kadarının yakalandığıdır: 100 hastanın hiçbiri yakalanmadığı için 0. Dengesiz veride doğruluğun yanıltıcı olmasının klasik örneği budur. A doğrulukla hata oranını karıştırır. B ve C duyarlılığı yanlış hesaplar. D, hastalık taramasında asıl önemli olanın duyarlılık olduğunu gözden kaçırır.</p></div></li>
+
+<li data-c="C" data-k="yz-5"><p class="q">Bir şirket, müşterinin aboneliğini iptal edip etmeyeceğini tahmin eden bir model kuruyor. Özelliklerden biri "iptal onay e-postası gönderildi mi?" sorusunun cevabıdır. Model doğrulamada %99,8 başarı veriyor. En olası açıklama hangisidir?</p>
+<ul class="sec"><li>Model mükemmel genelleşiyordur; hemen kullanıma alınabilir.</li><li>Model yetersiz öğreniyordur.</li><li>Veri sızıntısı vardır: cevap girdinin içinde gizlidir ve tahmin anında bu bilgi bulunmaz.</li><li>Model, Goodhart yasası gereği ölçütü bozmuştur.</li><li>Veri dengesiz olduğu için doğruluk düşük çıkmıştır.</li></ul>
+<div class="coz"><p>İptal onay e-postası ancak iptal gerçekleştikten sonra gönderilir; yani bu özellik, tahmin edilmek istenen sonucu neredeyse doğrudan içerir. Model bir şey öğrenmemiş, cevabı girdiden okumuştur. Gerçek kullanımda, iptal henüz olmamışken bu bilgi yoktur ve başarı çöker. A sahte başarıya kanmaktır. B'de başarı düşük olurdu. D ölçüt hedef hâline gelince bozulmasıyla ilgili genel bir ilkedir; buradaki somut sorun sızıntıdır. E'de başarı yüksek, düşük değil.</p></div></li>
+
+<li data-c="A" data-k="yz-6"><p class="q">4 girdisi, 3 nöronlu tek bir gizli katmanı ve 2 çıktı nöronu olan, her nöronda bir sapma (bias) bulunan tam bağlı bir ağın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>23</li><li>18</li><li>21</li><li>24</li><li>9</li></ul>
+<div class="coz"><p>Girdiden gizli katmana 4 × 3 = 12 ağırlık ve 3 sapma: 15. Gizli katmandan çıktıya 3 × 2 = 6 ağırlık ve 2 sapma: 8. Toplam 15 + 8 = 23. B sapmaları hiç saymamaktır (12 + 6). C çıktı nöronlarının sapmalarını unutmaktır (12 + 3 + 6). D katman boyutlarını birbiriyle çarpmaktır (4 × 3 × 2). E nöron ve girdi sayısını toplamaktır; parametre bağlantılar ve sapmalardır.</p></div></li>
+
+<li data-c="D" data-k="yz-6"><p class="q">Bir çok katmanlı algılayıcının gizli katmanlarında hiç aktivasyon fonksiyonu kullanılmasaydı ne olurdu?</p>
+<ul class="sec"><li>Ağ daha güçlü olur, her fonksiyona daha kolay yaklaşırdı.</li><li>Ağ yalnızca sınıflandırma yapabilir, sayı tahmin edemezdi.</li><li>Ağın parametre sayısı sıfıra inerdi.</li><li>Kaç katman üst üste konursa konsun ağ tek bir doğrusal fonksiyona eşdeğer olur, doğrusal olmayan ilişkileri yakalayamazdı.</li><li>İleri besleme sağdan sola doğru akardı.</li></ul>
+<div class="coz"><p>Her katman ağırlıklı toplam alır; ağırlıklı toplamın ağırlıklı toplamı yine bir ağırlıklı toplamdır. Aradaki ReLU ya da sigmoid gibi doğrusal olmayan bir adım olmadan yüz katman tek bir katmana indirgenebilir ve dünyadaki eğri, kıvrımlı ilişkileri yakalayamaz. A tam tersini söyler. B'nin aktivasyonla ilgisi yoktur. C yanlıştır; ağırlıklar ve sapmalar yerinde durur. E ileri beslemenin yönünü karıştırır.</p></div></li>
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-6">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-7">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-8">Sonraki parça: görüntüyü anlayan ağlar</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"backpropagation intuition neural network explained"</li>
+  <li>"geri yayılım algoritması sinir ağı anlatım"</li>
+  <li>"Adam optimizer momentum explained visually"</li>
+  <li>"overfitting dropout early stopping learning curve"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Geri yayılımın tarihi:</strong> Rumelhart, Hinton ve Williams, "Learning representations by back-propagating errors", <em>Nature</em> 323, s. 533 (Ekim 1986) — künye ve özet NASA ADS kaydından doğrulandı. Daha önceki tarifler (Linnainmaa 1970, Werbos 1974) ve 1986 makalesinin yöntemi "ünlü yaptığı" bilgisi, Baydin ve ark.'nın otomatik türev derlemesinden ("Automatic differentiation in machine learning: a survey", arXiv:1502.05767) alındı. Kimin "ilk" olduğu tartışmalı bir konudur; metin bu yüzden 1986 makalesini "yaygınlaştıran" olarak anar.</li>
+  <li><strong>Adam:</strong> Kingma ve Ba, "Adam: A Method for Stochastic Optimization", arXiv:1412.6980 (ilk sürüm 22 Aralık 2014); makalenin kendi başlığında "ICLR 2015'te konferans makalesi olarak yayımlandı" yazıyor. Adın "adaptive moment estimation"dan geldiği, eğimin birinci momentini (ortalama) ve ikinci ham momentini tuttuğu ve varsayılan ayarlar (0,001; 0,9; 0,999) makaleden doğrulandı. Tablodaki Adam ve SGD adım boyları bu formülle Python'da hesaplandı.</li>
+  <li><strong>Dropout:</strong> Srivastava, Hinton, Krizhevsky, Sutskever, Salakhutdinov, "Dropout: A Simple Way to Prevent Neural Networks from Overfitting", <em>JMLR</em> 15(56):1929–1958, 2014 — künye ve yöntemin özeti (eğitimde birimleri rastgele kapatmak, testte ağırlıkları küçültülmüş tek ağ kullanmak) JMLR sayfasından doğrulandı. 2012 ön baskısı arXiv:1207.0580. Bugünkü kütüphanelerin çoğu ölçeklemeyi tahminde değil eğitim sırasında yapar ("ters dropout"); sonuç aynıdır, metin bu ayrıntıya girmedi.</li>
+  <li><strong>Hafızadan ya da ikincil kaynakla yazılanlar:</strong> Hochreiter (1991) ve Bengio ve ark. (1994) bilgisi yalnız ikincil kaynaklarla karşılaştırıldı. Momentumlu SGD'nin bazı görüntü problemlerinde Adam'dan iyi genelleştiği bulgusu Wilson ve ark. 2017 ("The Marginal Value of Adaptive Gradient Methods in Machine Learning", NeurIPS 2017), AdamW ise Loshchilov ve Hutter'ın "Decoupled Weight Decay Regularization" (arXiv:1711.05101) çalışmasıdır; ikisinin de yalnızca başlık ve künyesi doğrulandı. Mini-yığın gürültüsünün genellemeye yardım ettiği görüşü araştırma konusudur, metinde de öyle sunuldu. Isınma, kosinüs azalma, normalleştirme, artık bağlantı, eğim kırpma ve kayıp yüzeyindeki çukurların çoğunun benzer derinlikte olduğu görüşü genel bilgi olarak, kaynak gösterilmeden yazıldı; sonuncusu araştırma konusudur. "Geri geçiş, ileri geçişle aynı büyüklükte iştir" ifadesi bilerek kaba tutuldu.</li>
+  <li><strong>Çalıştırılan kod:</strong> Deneme kutusundaki <code>egit.py</code> bu ortamda <code>python3 -I egit.py</code> ile gerçekten çalıştırıldı (Python 3, scikit-learn 1.9.1, numpy 2.5.3); çıktı birebir kondu. Ağırlık cezalı sürüm (<code>alpha=0.01</code>, kodda başka hiçbir değişiklik yok) de çalıştırıldı; ondan yalnızca başlık, 9. ve 30. dönem ve son dört satır gösterildi, aradaki satırlar atlandı. İki eğitim eğrisi şekli bu iki çıktının sayılarından çizildi. <code>MLPClassifier</code>'ın <code>alpha</code> değerinin L2 cezası olduğu ve <code>partial_fit</code>'in "verinin üzerinden tek bir geçiş" yaptığı, kurulu sürümün kendi belgelerinden (docstring) okundu. PyTorch bu ortamda kurulu değildi ve kullanılmadı.</li>
+  <li><strong>Elle hesaplar:</strong> Çözümlü örnek 1–3'teki bütün sayılar, çapraz entropi tablosu, 0,25<sup>10</sup> ve 1,5<sup>20</sup> değerleri ve quiz'deki bütün hesap soruları Python ile ayrıca hesaplanarak doğrulandı.</li>
+  <li>Sorular bu parça için yazıldı; tekrar soruları yalnızca kapsam listesinde Parça 1–6'nın satırlarında yazan konulardan seçildi.</li>
+</ul>
+</div>
+</div>
+</article>

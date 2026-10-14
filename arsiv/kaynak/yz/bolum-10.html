@@ -1,0 +1,574 @@
+<article class="chapter ders" id="c-yz-10">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 10 · Transformer ve dikkat</div>
+<h1>Dikkat: transformer bir kelimeyi bağlamından nasıl anlar?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>"Yağmurdan çay taştı" ile "Demli çay içtim" cümlelerinde "çay" aynı dört harf. Birinde dere, öbüründe bardaktaki içecek. Sen bunu düşünmeden ayırıyorsun, çünkü gözün kelimeye değil, yanındaki kelimelere de bakıyor. Kelimeyi bir sayı listesine çeviren bir program aynı ayrımı nasıl yapar? Üstelik bunu bir kitabın tamamında, binlerce kelime için aynı anda ve hızla nasıl yapar?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (vektör, iki vektörün aynı yöne bakması, matris çarpımı, olasılık dağılımı, GPU'nun paralel hesabı), Parça 6 (nöron, katman, ileri besleme, parametre), Parça 7 (gradyan ve kaybolan gradyan), Parça 9 (kelime gömmeleri, RNN ve LSTM'nin iki sorunu). Python kutuları isteğe bağlıdır; kod bilmiyorsan atla, konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi çözüyor?</h2>
+
+<p>Parça 9'u iki sorunla kapatmıştık. Birincisi <strong>unutma</strong>: tekrarlayan ağ (RNN, LSTM) metni kelime kelime okur ve okuduklarını tek bir "hafıza" vektöründe taşır. Cümle uzadıkça baştaki bilgi bu küçük vektörde silikleşir. İkincisi <strong>yavaşlık</strong>: beşinci kelimeyi işlemek için dördüncünün bitmesini beklemek zorundasın. Bin kelimelik bir metin bin sıralı adım demektir ve GPU'nun binlerce çekirdeği o sırada çoğunlukla boş bekler.</p>
+
+<p>2017'de yayımlanan bir makale ikisine birden aynı çareyi önerdi: kelimeleri sırayla okumayı bırak; her kelime, cümledeki <strong>bütün</strong> kelimelere doğrudan baksın ve hangisine ne kadar bakacağını kendisi öğrensin. Bu bakma işine <strong>dikkat</strong> (attention), bu fikir üstüne kurulan mimariye <strong>transformer</strong> denir. Bugün adını duyduğun sohbet modellerinin iskeleti budur.</p>
+
+<p>Bu parçada sırasıyla şunları kuracağız: makalenin ne yaptığı ve neden bu kadar önemli sayıldığı; dikkatin sezgisi; sorgu, anahtar ve değer fikri; dikkatin elle, adım adım hesabı; aynı anda birçok ilişkiye bakan "çok başlı" dikkat; sıranın kaybolmaması için eklenen konum bilgisi; katmanların üst üste dizilmesi; paralel işlemenin ölçeği nasıl açtığı; son olarak kodlayıcı ile kod çözücü ayrımı. Bir not: transformer aslında kelimelerle değil, kelime parçalarıyla (token) çalışır. Token'ı Parça 11'de göreceğiz; burada anlatımı sade tutmak için "kelime" diyeceğiz.</p>
+
+<h2 class="s">2017: "Attention Is All You Need"</h2>
+
+<p>Makalenin adı Türkçeye "İhtiyacın olan tek şey dikkat" diye çevrilebilir. Sekiz yazarı vardır (ilk sırada Ashish Vaswani); yazarların hepsi o sırada Google'da çalışıyordu. Makale 12 Haziran 2017'de arXiv'e konuldu ve aynı yıl NIPS (bugünkü adıyla NeurIPS) konferansının bildiri kitabında yayımlandı.</p>
+
+<p>Makalenin sınandığı iş <strong>makine çevirisiydi</strong>, yani Parça 9'da kısa tarihini gördüğümüz alan. İngilizceden Almancaya ve İngilizceden Fransızcaya çeviride, o zamana kadarki en iyi sistemlerden daha iyi puan aldı ve bunu çok daha kısa eğitimle yaptı. Asıl önemi ise puanında değil, mimarisinin sadeliğindedir: yineleme (RNN) yok, evrişim (Parça 8'deki filtreler) yok; yalnızca dikkat katmanları ve basit ileri besleme ağları var.</p>
+
+<p>Dikkat fikrini bu makale icat etmedi. 2014'te Bahdanau ve arkadaşları, çeviri yapan bir RNN'e "çevirirken kaynak cümlenin hangi kelimesine bakayım" diye seçim yaptıran bir dikkat katmanı eklemişti. Orada dikkat, RNN'e takılmış bir yardımcıydı. 2017 makalesinin cesur adımı, RNN'i tamamen atıp <strong>yalnız dikkatle</strong> yetinmekti; başlıktaki "tek şey" vurgusu buradan gelir.</p>
+
+<div class="tablo"><table>
+<tr><th>Makaledeki ayrıntı</th><th>Temel model</th><th>Büyük model</th></tr>
+<tr><td>Kodlayıcı katman sayısı / kod çözücü katman sayısı</td><td>6 / 6</td><td>6 / 6</td></tr>
+<tr><td>Her kelimeyi temsil eden vektörün boyutu</td><td>512</td><td>1024</td></tr>
+<tr><td>Dikkat başı sayısı</td><td>8 (her biri 64 boyut)</td><td>16</td></tr>
+<tr><td>İleri besleme ağının iç boyutu</td><td>2048</td><td>4096</td></tr>
+<tr><td>Parametre sayısı</td><td>yaklaşık 65 milyon</td><td>yaklaşık 213 milyon</td></tr>
+<tr><td>Eğitim</td><td>8 GPU'lu tek makinede yaklaşık 12 saat</td><td>aynı makinede yaklaşık 3,5 gün</td></tr>
+<tr><td>Çeviri puanı (BLEU), İngilizce→Almanca / İngilizce→Fransızca</td><td colspan="2">büyük modelle 28,4 / 41,8</td></tr>
+</table></div>
+
+<p>Tablodaki BLEU, makine çevirisinin otomatik bir kalite ölçütüdür: üretilen çeviriyi insan çevirisiyle kelime öbekleri düzeyinde karşılaştırır, yüksek olan daha iyidir. Parça 5'te gördüğün uyarı burada da geçerli: tek bir ölçüt çevirinin bütün kalitesini anlatmaz. Parametre satırını da Parça 6'yla birlikte oku: 2017'nin "büyük" modeli 213 milyon parametreydi; bugün milyarlarla konuşuluyor. Aradaki büyümeyi mümkün kılan şeyi bu parçanın sonunda göreceğiz: paralellik.</p>
+
+<h2 class="s">Dikkatin sezgisi: kelimeyi komşularıyla anlamak</h2>
+
+<p>İngilizcede "bank" hem banka hem de ırmak kıyısı demektir; bu yüzden YZ anlatımlarında "bank" örneği çok kullanılır. Türkçede "banka" tek anlamlıdır, ama bizde de aynı oyunu oynayan kelimeler bol: "çay" (içecek ya da dere), "yüz" (surat, yüzmek ya da sayı), "dolu" (boş olmayan ya da buz yağışı). Bunların hangi anlamda olduğu kelimenin içinde yazmaz; <strong>cümlede</strong> yazar.</p>
+
+<p>Parça 9'daki kelime gömmesini hatırla: word2vec gibi bir yöntem her kelimeye <strong>tek</strong> bir vektör verir. "Çay"ın vektörü hem dereden hem içecekten bir şeyler taşır, ikisinin ortalaması gibi bir yerde durur. Oysa bize her cümlede o cümleye uygun, ayrı bir "çay" vektörü lazım. Dikkat tam bunu yapar: kelimenin başlangıç vektörünü alır, cümledeki öbür kelimelerden bilgi çekerek onu <strong>bağlama göre günceller</strong>.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Dikkat</strong>, bir kelimenin yeni temsilini, cümledeki kelimelerin temsillerinin <strong>ağırlıklı ortalaması</strong> olarak hesaplayan işlemdir. Ağırlıkları önceden biz yazmayız; model, hangi kelimenin hangisine ne kadar bakması gerektiğini eğitim sırasında öğrenir. Ağırlıklar sıfır ile bir arasındadır ve bir kelime için toplamları her zaman 1'dir.</p></div>
+
+<p>Neden ağırlıklı ortalama? Çünkü "hangi kelimeye bakayım" sorusunun cevabı çoğu zaman tek bir kelime değildir. "Yağmurdan çay taştı" cümlesinde "çay"ı dereye çeviren hem "yağmurdan" hem "taştı"dır. Ağırlıklı ortalama, birkaç kelimeden farklı oranlarda bilgi almanın en basit yoludur. Ayrıca her ağırlık düzgün, yumuşak bir sayı olduğu için Parça 7'deki gradyan inişiyle ayarlanabilir; "şu kelimeyi seç, öbürlerini at" gibi sert bir seçim ise türev almaya elverişli değildir.</p>
+
+<p>Dikkat yalnız çok anlamlı kelimeler için değil, her ilişki için çalışır. "Kupa bavula sığmadı, çünkü <u>o</u> çok büyüktü." cümlesinde "o" kupadır; "çünkü <u>o</u> çok küçüktü" dersen bavuldur. Zamirin kime döndüğünü bulmak için de aynı işlem gerekir: "o", "büyük" ya da "küçük" kelimesine ve bu sözcüğün hangi nesneye yakıştığına bakar. Fiilin öznesini bulmak, bir sıfatın hangi isme bağlı olduğunu çözmek, metnin başında geçen bir adı sonda hatırlamak: hepsi "kime bakayım" sorusudur.</p>
+
+<h2 class="s">Sorgu, anahtar, değer: bir kütüphane benzetmesi</h2>
+
+<p>Ağırlıkları nasıl buluruz? Transformer bunun için her kelimeden <strong>üç ayrı vektör</strong> türetir. Önce bir benzetme kuralım.</p>
+
+<p>Bir kütüphaneye gittin. Elinde aradığın konuyu yazdığın bir fiş var: bu <strong>sorgu</strong> (query). Raflardaki her kitabın sırtında ne hakkında olduğunu söyleyen bir etiket var: bu <strong>anahtar</strong> (key). Kitabın içindeki asıl bilgi de <strong>değer</strong>dir (value). Fişini her etiketle karşılaştırırsın; etiket fişine ne kadar uyuyorsa o kitaptan o kadar çok okursun. Eve döndüğünde kafanda kalan şey, kitapların içeriklerinin, uyum oranlarına göre karışımıdır.</p>
+
+<p>Benzetmenin bittiği yer önemli. Gerçek kütüphanede genellikle tek kitabı seçip gerisini bırakırsın; bir veritabanı da sorguya tam uyan satırı getirir. Dikkat ise <strong>yumuşak bir aramadır</strong>: her kitaptan biraz okur, uyanlardan çok, uymayanlardan az. Ayrıca bu kütüphanede okuyan da kitaptır: cümledeki her kelime hem bir fiş yazar hem sırtına bir etiket takar hem de içinde bir bilgi taşır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Her kelimenin başlangıç vektörü üç ayrı, öğrenilmiş matrisle çarpılır ve üç vektör çıkar. <strong>Sorgu (q)</strong>: "ben neyi arıyorum?" <strong>Anahtar (k)</strong>: "ben ne tür bir bilgi sunuyorum?" <strong>Değer (v)</strong>: "bana bakan olursa ona ne aktarırım?" Bir kelimenin başka bir kelimeye ne kadar bakacağı, kendi sorgusu ile öbürünün anahtarının ne kadar uyuştuğuna bağlıdır; aktarılan bilgi ise öbürünün değeridir.</p></div>
+
+<p>Neden üç ayrı vektör, neden kelimenin kendi vektörü değil? Çünkü bir kelimenin "aradığı" ile "sunduğu" aynı şey değildir. "Taştı" fiili bir özne arar (sorgusu "ne taştı?"), ama başkalarına "ben bir su olayıyım" bilgisini sunar (anahtarı). Üç rolü ayırmak, modele bu farkı öğrenme özgürlüğü verir. Bu üç matrisin sayıları da Parça 7'deki gibi geri yayılımla öğrenilir; hiçbirini insan yazmaz.</p>
+
+<p>"Uyuşma" nasıl ölçülür? Parça 3'te iki vektörün ne kadar aynı yöne baktığını görmüştük. Transformer bunun en basit biçimini kullanır: <strong>nokta çarpımı</strong>. İki vektörün karşılıklı sayılarını çarpıp toplarsın: [1; 1] ile [2; 0] için 1×2 + 1×0 = 2. Aynı yöne bakan ve uzun vektörlerin nokta çarpımı büyük, dik vektörlerinki sıfır, zıt yöne bakanlarınki negatiftir.</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Ölçekli nokta çarpımı dikkatinin dört adımı: puan, ölçekleme, softmax, ağırlıklı toplam">
+  <rect class="sv-l" x="20" y="10" width="160" height="44" rx="10"/>
+  <text class="sv-b" x="100" y="30" text-anchor="middle">sorgu q</text><text class="sv-s" x="100" y="47" text-anchor="middle">bakan kelimeden</text>
+  <rect class="sv-l" x="220" y="10" width="160" height="44" rx="10"/>
+  <text class="sv-b" x="300" y="30" text-anchor="middle">anahtarlar k</text><text class="sv-s" x="300" y="47" text-anchor="middle">her kelimeden bir tane</text>
+  <path class="sv-c" d="M100 54V76H200V92"/><path class="sv-c" d="M300 54V76H200"/>
+  <rect class="sv-k" x="60" y="92" width="280" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="112" text-anchor="middle">1. Puan: her anahtar için q · k</text><text class="sv-s" x="200" y="129" text-anchor="middle">ne kadar uyuşuyorlar?</text>
+  <path class="sv-c" d="M200 136V152"/>
+  <rect class="sv-k" x="60" y="152" width="280" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="172" text-anchor="middle">2. Ölçekle: her puanı √d'ye böl</text><text class="sv-s" x="200" y="189" text-anchor="middle">d: anahtar vektörünün boyutu</text>
+  <path class="sv-c" d="M200 196V212"/>
+  <rect class="sv-k" x="60" y="212" width="280" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="232" text-anchor="middle">3. Softmax: puanları ağırlığa çevir</text><text class="sv-s" x="200" y="249" text-anchor="middle">hepsi 0 ile 1 arasında, toplam 1</text>
+  <path class="sv-c" d="M200 256V272"/>
+  <rect class="sv-a" x="290" y="272" width="100" height="44" rx="10"/>
+  <text class="sv-b" x="340" y="292" text-anchor="middle">değerler v</text><text class="sv-s" x="340" y="309" text-anchor="middle">her kelimeden</text>
+  <rect class="sv-k" x="20" y="272" width="250" height="44" rx="10"/>
+  <text class="sv-t" x="145" y="292" text-anchor="middle">4. Ağırlıklı toplam</text><text class="sv-s" x="145" y="309" text-anchor="middle">ağırlık × değer, hepsini topla</text>
+  <path class="sv-c" d="M290 294H270"/>
+  <path class="sv-c" d="M145 316V340"/>
+  <rect class="sv-m" x="45" y="340" width="200" height="44" rx="10"/>
+  <text class="sv-b" x="145" y="360" text-anchor="middle">yeni vektör</text><text class="sv-s" x="145" y="377" text-anchor="middle">bağlama göre güncellenmiş</text>
+</svg>
+<figcaption>Dikkatin bütün hesabı bu dört adımdır. Sorgu ve anahtarlar "ne kadar bakayım?" sorusunu cevaplar (adım 1–3); değerler "ne alayım?" sorusunu (adım 4). Bu yüzden anahtar ile değer ayrı vektörlerdir.</figcaption>
+</figure>
+
+<h2 class="s">Dikkati elle hesaplamak</h2>
+
+<p>Şimdi bu dört adımı gerçek sayılarla yapalım. Uyarı baştan: aşağıdaki vektörleri ben <strong>elle kurdum</strong>, öğretim amaçlı bir oyuncaktır. Gerçek bir modelde vektörlerin yüzlerce boyutu vardır, sayılar eğitimle bulunur ve tek tek boyutların "su" ya da "içecek" gibi düzgün adları olmaz. Ama yapılan hesap, sayılar küçük olsa da gerçek modeldekinin aynısıdır.</p>
+
+<p>Vektörlerimiz iki boyutlu olsun. Birinci boyutu "su, doğa olayı" bilgisi, ikinci boyutu "içecek, mutfak" bilgisi gibi düşün. Cümle: <strong>"yağmurdan çay taştı"</strong>. Sorgu, anahtar ve değer vektörlerini, öğrenilmiş matrislerden çıkmış gibi doğrudan veriyorum:</p>
+
+<div class="tablo"><table>
+<tr><th>Kelime</th><th>Sorgu q</th><th>Anahtar k</th><th>Değer v</th></tr>
+<tr><td>yağmurdan</td><td>[1; 0]</td><td>[2; 0]</td><td>[1; 0]</td></tr>
+<tr><td>çay</td><td>[1; 1]</td><td>[0; 1]</td><td>[0,5; 0,5]</td></tr>
+<tr><td>taştı</td><td>[1; 0]</td><td>[1; 0]</td><td>[1; 0]</td></tr>
+</table></div>
+
+<p>Dikkat et: "çay"ın değeri [0,5; 0,5], yani kendi başına iki anlamın tam ortasında; anahtarı [0; 1] ise "kendi başıma söylenirsem daha çok içecek akla gelir" diyor. Sorgusu [1; 1]: "beni hangi yöne çekecek bir şey var mı, ikisine de bakıyorum".</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Ölçekli nokta çarpımı dikkati</strong>, bir kelime için dört adımda hesaplanır: (1) kelimenin sorgusunu cümledeki her kelimenin anahtarıyla nokta çarpımına sok, puanları yaz; (2) her puanı anahtar boyutunun karekökü √d'ye böl; (3) bölünmüş puanlara softmax uygula; (4) çıkan ağırlıkların her birini ilgili kelimenin değer vektörüyle çarp ve topla.</p></div>
+
+<p>Üçüncü adımdaki <strong>softmax</strong>'ı Parça 3'teki olasılık dağılımıyla bağla. Elinde istediğin büyüklükte, hatta negatif puanlar var; bunları toplamı 1 olan pozitif ağırlıklara çevirmek istiyorsun. Softmax her puanın e tabanında üssünü alır (e ≈ 2,718; e<sup>x</sup> her zaman pozitiftir ve büyük puanı daha da büyütür), sonra her birini bu üslerin toplamına böler. Büyük puan büyük pay, küçük puan küçük pay alır, ama hiçbiri tam sıfır olmaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> "yağmurdan çay taştı" cümlesinde "çay" kelimesinin dikkat ağırlıklarını ve yeni vektörünü hesapla (yukarıdaki tablo).</p>
+<p><strong>Adım 1 (puanlar).</strong> q<sub>çay</sub> = [1; 1]. Yağmurdan: 1×2 + 1×0 = 2. Çay: 1×0 + 1×1 = 1. Taştı: 1×1 + 1×0 = 1. Puanlar: 2, 1, 1.</p>
+<p><strong>Adım 2 (ölçekleme).</strong> Anahtar boyutu d = 2, √2 ≈ 1,414. Puanlar: 2 ÷ 1,414 ≈ 1,414; 1 ÷ 1,414 ≈ 0,707; 0,707.</p>
+<p><strong>Adım 3a (üs alma).</strong> e<sup>1,414</sup> ≈ 4,113; e<sup>0,707</sup> ≈ 2,028; e<sup>0,707</sup> ≈ 2,028. Toplam: 4,113 + 2,028 + 2,028 = 8,169.</p>
+<p><strong>Adım 3b (bölme).</strong> Yağmurdan: 4,113 ÷ 8,169 ≈ 0,503. Çay: 2,028 ÷ 8,169 ≈ 0,248. Taştı: 0,248. (Toplam 0,999; kalan binde bir yuvarlamadan.)</p>
+<p><strong>Adım 4 (ağırlıklı toplam).</strong> 0,503 × [1; 0] = [0,503; 0]. 0,248 × [0,5; 0,5] = [0,124; 0,124]. 0,248 × [1; 0] = [0,248; 0]. Topla: [0,503 + 0,124 + 0,248; 0,124] = [0,875; 0,124].</p>
+<p><strong>Sonuç:</strong> "Çay"ın yeni vektörü yaklaşık [0,88; 0,12]. Başlangıçta iki anlamın tam ortasındaydı ([0,5; 0,5]); dikkat onu belirgin biçimde birinci boyuta, yani "su, doğa olayı" yönüne çekti. Kelime bağlamından "dere" anlamını almış oldu. (Python ile tam hesap 0,876 veriyor; elle bulduğumuz 0,875 farkı yuvarlamadandır.)</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Aynı "çay" vektörlerini (q = [1; 1], k = [0; 1], v = [0,5; 0,5]) bu kez <strong>"demli çay içtim"</strong> cümlesine koy. "Demli" için k = [0; 2], v = [0; 1]; "içtim" için k = [0; 1], v = [0; 1] olsun. "Çay"ın yeni vektörü ne olur?</p>
+<p><strong>Adım 1 (puanlar).</strong> Demli: 1×0 + 1×2 = 2. Çay: 1. İçtim: 1×0 + 1×1 = 1. Puanlar yine 2, 1, 1.</p>
+<p><strong>Adım 2–3.</strong> Puanlar öncekiyle aynı olduğu için ağırlıklar da aynı: 0,503; 0,248; 0,248.</p>
+<p><strong>Adım 4.</strong> 0,503 × [0; 1] = [0; 0,503]. 0,248 × [0,5; 0,5] = [0,124; 0,124]. 0,248 × [0; 1] = [0; 0,248]. Toplam: [0,124; 0,875].</p>
+<p><strong>Sonuç:</strong> Bu kez "çay" [0,12; 0,88] oldu, ikinci boyuta, "içecek" yönüne çekildi. Aynı kelime, aynı başlangıç vektörleriyle, yalnızca komşuları değiştiği için tam ters yöne gitti. Parça 9'daki tek vektörlü gömmenin yapamadığı şey budur: <strong>bağlama göre değişen temsil</strong>.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="İki cümlede çay kelimesinin dikkat ağırlıkları sütun grafiği olarak">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">"yağmurdan çay taştı"</text>
+  <line class="sv-c" x1="30" y1="120" x2="370" y2="120"/>
+  <rect class="sv-l" x="55" y="80" width="70" height="40"/>
+  <rect class="sv-l" x="165" y="100" width="70" height="20"/>
+  <rect class="sv-l" x="275" y="100" width="70" height="20"/>
+  <text class="sv-t" x="90" y="72" text-anchor="middle">0,503</text>
+  <text class="sv-t" x="200" y="92" text-anchor="middle">0,248</text>
+  <text class="sv-t" x="310" y="92" text-anchor="middle">0,248</text>
+  <text class="sv-t" x="90" y="140" text-anchor="middle">yağmurdan</text>
+  <text class="sv-t" x="200" y="140" text-anchor="middle">çay</text>
+  <text class="sv-t" x="310" y="140" text-anchor="middle">taştı</text>
+  <text class="sv-s" x="200" y="164" text-anchor="middle">çay'ın yeni vektörü ≈ [0,88; 0,12] → "su, doğa" yönü</text>
+  <text class="sv-b" x="200" y="200" text-anchor="middle">"demli çay içtim"</text>
+  <line class="sv-c" x1="30" y1="300" x2="370" y2="300"/>
+  <rect class="sv-m" x="55" y="260" width="70" height="40"/>
+  <rect class="sv-m" x="165" y="280" width="70" height="20"/>
+  <rect class="sv-m" x="275" y="280" width="70" height="20"/>
+  <text class="sv-t" x="90" y="252" text-anchor="middle">0,503</text>
+  <text class="sv-t" x="200" y="272" text-anchor="middle">0,248</text>
+  <text class="sv-t" x="310" y="272" text-anchor="middle">0,248</text>
+  <text class="sv-t" x="90" y="320" text-anchor="middle">demli</text>
+  <text class="sv-t" x="200" y="320" text-anchor="middle">çay</text>
+  <text class="sv-t" x="310" y="320" text-anchor="middle">içtim</text>
+  <text class="sv-s" x="200" y="344" text-anchor="middle">çay'ın yeni vektörü ≈ [0,12; 0,88] → "içecek" yönü</text>
+</svg>
+<figcaption>Sütunların boyu, "çay"ın her kelimeye verdiği dikkat ağırlığıdır. İki cümlede ağırlıkların oranı aynı, ama bakılan kelimelerin taşıdığı değerler farklı olduğu için "çay" iki ayrı yöne çekiliyor.</figcaption>
+</figure>
+
+<p>Bu iki örnek bir ayrıntıyı da gösteriyor: "çay" kendine de bakıyor (ağırlığı 0,248). Öz-dikkatte kelime kendini de cümlenin bir üyesi sayar; kendi bilgisini tamamen kaybetmemesinin bir yolu budur.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Makale bu dört adımı bütün kelimeler için tek satırda yazar: <strong>Dikkat(Q, K, V) = softmax(Q·K<sup>T</sup> ÷ √d<sub>k</sub>) · V</strong>. Burada Q, her satırı bir kelimenin sorgusu olan matristir; K ve V de anahtarların ve değerlerin matrisleri. K<sup>T</sup>, K'nin satırlarını sütun yapmak demektir; Q·K<sup>T</sup> çarpımı, Parça 3'teki "birçok ağırlıklı toplamı aynı anda yapmak" fikriyle, <strong>her sorguyu her anahtarla</strong> tek seferde çarpar ve bir puan tablosu üretir. d<sub>k</sub> anahtar boyutudur.</p></div>
+
+<h3>Neden √d'ye bölüyoruz?</h3>
+
+<p>Ölçekleme adımı göze küçük bir ayrıntı gibi görünür, ama atlandığında eğitim bozulur. Nedeni şudur: nokta çarpımı, boyut sayısı kadar çarpımı toplar. Boyut 2 iken puanlar 1–2 civarındaydı. Makaledeki temel modelde her anahtar 64 boyutludur; 64 sayıyı topladığında puanlar da çok daha büyük çıkar. Makale bunu şöyle açıklar: vektörlerin her bir sayısı ortalaması 0, yayılımı 1 olan bağımsız rastgele sayılar gibi davranırsa, nokta çarpımının yayılımı (varyansı) d<sub>k</sub> olur. Büyük puanlar softmax'ı neredeyse "hepsi bir kelimeye" durumuna iter.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Puanlar 2, 1, 1 iken softmax ne verir? Aynı puanlar sekiz kat büyük, yani 16, 8, 8 olsaydı ne verirdi? Bunu √64 = 8'e bölünce ne olur?</p>
+<p><strong>Adım 1.</strong> e<sup>2</sup> ≈ 7,389; e<sup>1</sup> ≈ 2,718. Toplam 7,389 + 2,718 + 2,718 = 12,825. Ağırlıklar: 7,389 ÷ 12,825 ≈ 0,576; 2,718 ÷ 12,825 ≈ 0,212; 0,212.</p>
+<p><strong>Adım 2.</strong> e<sup>16</sup> ≈ 8.886.111; e<sup>8</sup> ≈ 2.981. Toplam ≈ 8.892.072. Ağırlıklar: ≈ 0,9993; ≈ 0,0003; ≈ 0,0003.</p>
+<p><strong>Adım 3.</strong> 16, 8, 8 puanlarını 8'e bölersen yeniden 2, 1, 1 elde edersin; ağırlıklar yeniden 0,576; 0,212; 0,212 olur.</p>
+<p><strong>Sonuç:</strong> Büyük puanlarda softmax ağırlığın neredeyse tamamını tek kelimeye verir; öbür kelimeler binde birin altına düşer. Bu durumda ağırlıklar puanlardaki küçük değişikliklere neredeyse hiç tepki vermez, yani gradyan çok küçülür ve öğrenme durur. Parça 7'deki <strong>kaybolan gradyan</strong> sorununun bir biçimidir. √d<sub>k</sub>'ye bölmek puanları makul bir aralıkta tutar.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Dikkat, en uygun kelimeyi seçer, öbürlerini atar."</strong> Hayır. Softmax yumuşak bir dağılım üretir; her kelime bir pay alır. Örnek 1'de "çay" en çok "yağmurdan"a baktı ama "taştı"dan da, kendisinden de bilgi aldı. Seçim sert olsaydı (yalnız en yüksek puan), türev alınamaz ve model gradyan inişiyle eğitilemezdi.</p>
+<p><strong>"Ağırlıkların toplamını 1 yapan şey √d'ye bölmektir."</strong> Hayır. Toplamı 1 yapan softmax'tır. √d'ye bölmek yalnız puanların büyüklüğünü ayarlar; dağılımın ne kadar "sivri" ya da "yayvan" olacağını etkiler.</p></div>
+
+<h2 class="s">Öz-dikkat: her kelime aynı anda herkese bakar</h2>
+
+<p>Şimdiye kadar yalnız "çay"ın satırını hesapladık. Öz-dikkatte (self-attention) cümledeki <strong>her</strong> kelime aynı hesabı yapar: her kelime kendi sorgusuyla bütün anahtarlara bakar. Sonuç, satırları "bakan", sütunları "bakılan" kelime olan kare bir ağırlık tablosudur. "Öz" sözcüğü, sorguların, anahtarların ve değerlerin <strong>aynı cümleden</strong> geldiğini söyler. (İleride göreceğimiz kodlayıcı-kod çözücü dikkatinde sorgu bir cümleden, anahtar ve değer başka bir cümleden gelir.)</p>
+
+<p>Bu tablonun her satırı birbirinden bağımsız hesaplanır: "yağmurdan"ın satırı "çay"ın satırını beklemez. Hepsi tek bir matris çarpımında birlikte çıkar. Paralelliğin kaynağı burasıdır; birazdan ona döneceğiz.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik, örnek 1'deki oyuncak vektörlerle üç kelimenin hepsi için dikkati hesaplar. numpy kütüphanesi gerekir (<code>pip install numpy</code>). Kodu bilmiyorsan bu kutuyu atlayabilirsin; sonuçları zaten metinde tartışıyoruz.</p>
+<pre class="kod" data-ad="python3 dikkat.py">import numpy as np
+np.set_printoptions(precision=3, suppress=True)
+
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+def dikkat(Q, K, V, maske=None):
+    puan = Q @ K.T / np.sqrt(K.shape[1])   # her sorgu x her anahtar
+    if maske is not None:
+        puan = np.where(maske, puan, -np.inf)  # yasak hucre: -sonsuz
+    w = softmax(puan)                       # her satirin toplami 1
+    return w, w @ V
+
+# "yagmurdan cay tasti" -- elle kurulmus oyuncak vektorler
+# 1. boyut: su/doga, 2. boyut: icecek/mutfak
+Q = np.array([[1, 0], [1, 1], [1, 0]], float)
+K = np.array([[2, 0], [0, 1], [1, 0]], float)
+V = np.array([[1, 0], [0.5, 0.5], [1, 0]], float)
+
+w, z = dikkat(Q, K, V)
+print("Agirliklar (satir: bakan, sutun: bakilan):")
+print(w)
+print("Yeni vektorler:")
+print(z)
+
+maske = np.tril(np.ones((3, 3), bool))     # yalniz kendisi ve oncesi
+w, z = dikkat(Q, K, V, maske)
+print("Maskeli agirliklar:")
+print(w)</pre>
+<pre class="cikti">Agirliklar (satir: bakan, sutun: bakilan):
+[[0.576 0.14  0.284]
+ [0.503 0.248 0.248]
+ [0.576 0.14  0.284]]
+Yeni vektorler:
+[[0.93  0.07 ]
+ [0.876 0.124]
+ [0.93  0.07 ]]
+Maskeli agirliklar:
+[[1.    0.    0.   ]
+ [0.67  0.33  0.   ]
+ [0.576 0.14  0.284]]</pre>
+<p><strong>Okuma.</strong> İkinci satır, elle bulduğumuz "çay" satırıdır: 0,503; 0,248; 0,248 ve yeni vektör [0,876; 0,124]. Birinci ve üçüncü satırda "yağmurdan" ve "taştı" en çok "yağmurdan"a (0,576), en az "çay"a (0,14) bakıyor; çünkü onların sorgusu [1; 0] yalnız "su" boyutunu soruyor ve "çay"ın anahtarı o boyutta 0. Kodda <code>@</code> işareti matris çarpımıdır; <code>Q @ K.T</code> bütün puan tablosunu tek seferde üretir. Son üç satır "maskeli" dikkattir; onu kod çözücüyü anlatırken açıklayacağız. Kodu kendi bilgisayarında çalıştırdığında sayılar aynı çıkmalıdır, çünkü içinde rastgelelik yok.</p></div>
+
+<h2 class="s">Çok başlı dikkat: aynı cümleye farklı gözlerle bakmak</h2>
+
+<p>Bir cümlede aynı anda birçok ilişki vardır. "Dün akşam yağmurdan çay taştı" cümlesinde "taştı" için kimin taştığı (çay), ne zaman (dün akşam) ve neden (yağmurdan) ayrı ayrı önemlidir. Tek bir dikkat hesabı her kelime için tek bir ağırlık dağılımı üretir; bu dağılım bütün bu ilişkileri bir ortalamaya ezer. Makale bunu açıkça söyler: tek başlı dikkatte ortalama alma, farklı türden bilgilere aynı anda bakmayı engeller.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Çok başlı dikkat</strong> (multi-head attention), aynı katmanda birkaç dikkat hesabını yan yana yapmaktır. Her "baş" kendi sorgu, anahtar ve değer matrislerine sahiptir, dolayısıyla cümleye kendi ölçütüyle bakar ve kendi ağırlık tablosunu üretir. Başların çıktıları yan yana eklenir ve bir matrisle yeniden ana boyuta çevrilir.</p></div>
+
+<p>Makaledeki temel modelde vektör boyutu 512 ve baş sayısı 8'dir. Her baş 512 ÷ 8 = 64 boyutlu sorgu, anahtar ve değerle çalışır. Yani sekiz baş, tek büyük başla kabaca aynı hesap yükünü taşır; fark, bu yükün sekiz farklı "bakış açısına" bölünmesidir. Benzetme: bir metni sekiz editöre veriyorsun; biri dil bilgisine, biri zaman ifadelerine, biri kimin kimden söz ettiğine bakıyor. Akşam sekiz notu birleştiriyorsun.</p>
+
+<p>Benzetmenin sınırını bil: editörlere görevlerini sen veriyorsun, başlara kimse görev vermez. Başların neye bakacağı eğitimde kendiliğinden ortaya çıkar. Araştırmacılar bazı başların dil bilgisine benzer ilişkileri izlediğini gözlemlemiştir, ama her başın düzgün bir adı olduğunu sanma; birçoğunun ne yaptığı kolayca yorumlanamaz. Bu konu, modelin içini anlamaya çalışan yorumlanabilirlik alanına girer (Parça 19).</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sorgu, anahtar ve değer cümledeki üç farklı kelimedir."</strong> Hayır. Bunlar <strong>her kelimenin</strong> sahip olduğu üç roldür. Üç kelimelik cümlede üç sorgu, üç anahtar, üç değer vardır; çok başlı dikkatte bunlar her baş için ayrıca bulunur.</p>
+<p><strong>"Dikkat ağırlıkları, modelin neden öyle cevap verdiğinin açıklamasıdır."</strong> Ağırlık tablosunu renkli bir görselle çizmek çekicidir ve ipucu verir, ama tek başına açıklama sayılmaz. Bir modelde onlarca katman ve her katmanda birçok baş vardır; bilgi bunların hepsinden ve aradaki ileri besleme ağlarından geçerek karışır. Araştırmacılar dikkat ağırlıklarının açıklama olarak ne kadar güvenilir olduğunu tartışmaktadır. "Model şu kelimeye baktığı için şunu dedi" gibi kesin yargılardan kaçın.</p></div>
+
+<h2 class="s">Konum bilgisi: sıra nereye kayboldu?</h2>
+
+<p>Dikkat hesabına bir daha bak: puanlar yalnız sorgu ve anahtar vektörlerine bağlıdır, kelimelerin cümledeki <strong>yerine</strong> değil. Cümlenin kelimelerini karıştırırsan, ağırlık tablosunun satırları ve sütunları da aynı biçimde karışır; her kelimenin kendi çıktısı değişmez. Yani saf dikkat, cümleyi sırasız bir kelime torbası gibi görür.</p>
+
+<p>Bu ciddi bir sorundur, çünkü sıra anlam taşır. "İki yüz" iki yüzdür, "yüz iki" yüz iki. İki ifadede aynı iki kelime var; yalnız sıra farklı. RNN bu sorunu yaşamaz, çünkü kelimeleri zaten sırayla okur. Transformer sıralı okumayı bıraktığı için sırayı başka bir yolla geri vermek zorundadır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Transformer'da her kelimenin vektörüne, kelimenin <strong>kaçıncı sırada</strong> olduğunu kodlayan bir <strong>konum vektörü</strong> eklenir (toplanır). Böylece aynı kelime farklı yerlerde farklı vektörle başlar ve dikkat hesabı sırayı "görür". Konum vektörü, kelime vektörüyle aynı boyuttadır ki ikisi toplanabilsin; ekleme işlemi ağın en altında, ilk katmandan önce yapılır.</p></div>
+
+<p>Konum vektörü nasıl seçilir? Makale iki yol dener. Birincisinde her konum için vektör, kelime vektörleri gibi eğitimle öğrenilir. İkincisinde vektörler sabit bir formülle, farklı hızlarda salınan sinüs ve kosinüs dalgalarıyla üretilir. Makaleye göre iki yol neredeyse aynı sonucu verir; yazarlar dalgalı sürümü seçer, çünkü bu sürümün eğitimde görülenden daha uzun metinlere genelleyebileceğini düşünürler.</p>
+
+<p>Dalga fikrini bir saatle düşün. Saniye ibresi çok hızlı döner, dakika ibresi daha yavaş, saat ibresi en yavaş. Üç ibrenin birlikte durduğu yer, günün her anı için farklıdır. Konum vektörünün her boyut çifti de böyle bir "ibre"dir: ilk boyutlar hızlı döner ve yan yana iki kelimeyi ayırır; son boyutlar yavaş döner ve metnin başını sonundan ayırır. Makalede çift sıradaki boyutlar sinüs, tek sıradakiler kosinüs alır ve dalga boyları boyut ilerledikçe 2π'den 10000·2π'ye kadar büyür.</p>
+
+<div class="tablo"><table>
+<tr><th>Konum</th><th>Boyut 1: sin(konum)</th><th>Boyut 2: cos(konum)</th><th>Boyut 3: sin(konum ÷ 100)</th><th>Boyut 4: cos(konum ÷ 100)</th></tr>
+<tr><td>0 (ilk kelime)</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>0,841</td><td>0,540</td><td>0,010</td><td>1,000</td></tr>
+<tr><td>2</td><td>0,909</td><td>−0,416</td><td>0,020</td><td>1,000</td></tr>
+<tr><td>3</td><td>0,141</td><td>−0,990</td><td>0,030</td><td>1,000</td></tr>
+</table></div>
+
+<p>Bu tablo, makalenin formülünün 4 boyuta küçültülmüş hâlidir (değerler aşağıdaki betikle hesaplandı). İlk iki sütun hızlı ibredir: her konumda belirgin biçimde değişiyor. Son iki sütun yavaş ibredir: dört kelime boyunca neredeyse kıpırdamıyor, ama yüzlerce kelimelik bir metinde başla sonu ayırmaya yarar. 512 boyutlu gerçek modelde bu ibrelerden 256 tane vardır.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>"İki yüz" ile "yüz iki"yi konum bilgisi olmadan ve konum bilgisiyle öz-dikkatten geçirelim. Basit tutmak için sorgu, anahtar ve değer olarak kelime vektörünün kendisini kullanıyoruz (gerçekte üç ayrı matristen geçer). Kelime vektörleri yine elle kurulmuş oyuncak vektörlerdir.</p>
+<pre class="kod" data-ad="python3 konum.py">import numpy as np
+np.set_printoptions(precision=3, suppress=True)
+
+def softmax(x):
+    e = np.exp(x - x.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+def oz_dikkat(X):
+    w = softmax(X @ X.T / np.sqrt(X.shape[1]))
+    return w @ X
+
+def konum(n, d):
+    pe = np.zeros((n, d))
+    for pos in range(n):
+        for i in range(0, d, 2):
+            pe[pos, i] = np.sin(pos / 10000 ** (i / d))
+            pe[pos, i + 1] = np.cos(pos / 10000 ** (i / d))
+    return pe
+
+iki = np.array([1.0, 0.0, 0.0, 1.0])
+yuz = np.array([0.0, 1.0, 1.0, 0.0])
+
+a = oz_dikkat(np.array([iki, yuz]))   # "iki yuz"  = 200
+b = oz_dikkat(np.array([yuz, iki]))   # "yuz iki"  = 102
+print("Konumsuz, 'iki' kelimesinin ciktisi:", a[0], b[1])
+
+pe = konum(2, 4)
+a = oz_dikkat(np.array([iki, yuz]) + pe)
+b = oz_dikkat(np.array([yuz, iki]) + pe)
+print("Konumlu,  'iki' kelimesinin ciktisi:", a[0], b[1])
+print("Konum vektorleri:")
+print(konum(4, 4))</pre>
+<pre class="cikti">Konumsuz, 'iki' kelimesinin ciktisi: [0.731 0.269 0.269 0.731] [0.731 0.269 0.269 0.731]
+Konumlu,  'iki' kelimesinin ciktisi: [0.951 1.166 0.311 1.692] [1.673 0.674 0.101 1.909]
+Konum vektorleri:
+[[ 0.     1.     0.     1.   ]
+ [ 0.841  0.54   0.01   1.   ]
+ [ 0.909 -0.416  0.02   1.   ]
+ [ 0.141 -0.99   0.03   1.   ]]</pre>
+<p><strong>Okuma.</strong> Konum bilgisi yokken "iki" kelimesi, ister başta ister sonda olsun, öz-dikkatten tıpatıp aynı vektörle çıkıyor: model iki yüz ile yüz ikiyi ayıramaz. Konum vektörleri eklenince iki çıktı farklılaşıyor; artık sonraki katmanların bu farkı kullanması mümkün. Son blok, yukarıdaki tablonun kaynağıdır. Koddaki <code>i</code>, makale formülündeki "2i"ye karşılık gelir; bu yüzden üs <code>i / d</code> diye yazıldı.</p></div>
+
+<h2 class="s">Katmanları üst üste dizmek</h2>
+
+<p>Bir transformer katmanı (makalenin dilinde bir "blok") iki alt parçadan oluşur: önce çok başlı öz-dikkat, sonra her kelimeye <strong>ayrı ayrı</strong> uygulanan küçük bir ileri besleme ağı. Bu ikinci parça, Parça 6'daki çok katmanlı algılayıcının (MLP) ta kendisidir: 512 boyutlu vektörü 2048 boyuta açar, ReLU'dan geçirir, yeniden 512'ye indirir. İş bölümü şöyle düşünülebilir: dikkat kelimeler arasında bilgi <strong>taşır</strong>, ileri besleme ağı her kelimenin kendi vektöründe bu bilgiyi <strong>işler</strong>.</p>
+
+<p>Her alt parçanın çevresinde iki yardımcı düzen vardır. <strong>Artık bağlantı</strong> (residual connection): alt parçanın çıktısı, girdisinin üstüne eklenir. Yani katman vektörü baştan yazmaz, ona bir "düzeltme" ekler. Bu, hem kelimenin özgün bilgisinin korunmasını hem de gradyanın derin ağda kaybolmadan geriye akmasını kolaylaştırır (Parça 7). <strong>Katman normalleştirme</strong> (layer normalization): her kelimenin vektöründeki sayıları ortalaması sıfır, yayılımı bir olacak biçimde yeniden ölçekler; sayıların katman katman büyüyüp küçülerek eğitimi bozmasını önler.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Transformer, aynı yapıdaki katmanların <strong>üst üste dizilmesiyle</strong> kurulur: bir katmanın çıktısı bir sonrakinin girdisidir ve her katmanın kendi parametreleri vardır. Her katman her kelimenin vektörünü cümlenin geri kalanına bakarak biraz daha günceller. Makaledeki modelde kodlayıcıda 6, kod çözücüde 6 katman vardır.</p></div>
+
+<p>Neden tek katman yetmez? Örnek 1'de "çay" tek adımda "dere" anlamını aldı, çünkü oyuncak vektörleri öyle kurmuştuk. Gerçek dilde anlamlar zincirlenir: önce "çay"ın dere olduğu anlaşılır, sonraki katmanda "taştı"nın öznesi olarak bu yeni "dere" vektörü kullanılır, daha sonra "yağmur"la birlikte bir sel olayı resmi kurulur. Her katman, öncekinin zenginleştirdiği vektörler üzerinde çalışır. Alt katmanların daha yerel, üst katmanların daha soyut ilişkileri taşıdığı sık yapılan bir yorumdur; ama Parça 8'deki görüntü ağlarındaki "kenar → şekil → nesne" düzeni kadar temiz bir merdiven beklememek gerekir.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 430" role="img" aria-label="Kodlayıcı ve kod çözücüden oluşan özgün transformer mimarisi">
+  <rect class="sv-k" x="40" y="70" width="240" height="190" rx="14"/>
+  <text class="sv-b" x="160" y="94" text-anchor="middle">Kodlayıcı katmanı × 6</text>
+  <rect class="sv-l" x="60" y="110" width="200" height="50" rx="10"/>
+  <text class="sv-t" x="160" y="132" text-anchor="middle">Çok başlı öz-dikkat</text><text class="sv-s" x="160" y="150" text-anchor="middle">her kelime herkese bakar</text>
+  <rect class="sv-m" x="60" y="185" width="200" height="50" rx="10"/>
+  <text class="sv-t" x="160" y="207" text-anchor="middle">İleri besleme ağı</text><text class="sv-s" x="160" y="225" text-anchor="middle">her kelimeye ayrı</text>
+  <path class="sv-c" d="M160 160V185"/>
+  <rect class="sv-k" x="60" y="290" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="160" y="310" text-anchor="middle">kelime vektörleri</text><text class="sv-s" x="160" y="326" text-anchor="middle">+ konum vektörleri</text>
+  <path class="sv-c" d="M160 290V260"/>
+  <text class="sv-s" x="160" y="360" text-anchor="middle">kaynak cümle (ör. İngilizce)</text>
+  <path class="sv-c" d="M160 344V334"/>
+  <rect class="sv-k" x="350" y="70" width="260" height="250" rx="14"/>
+  <text class="sv-b" x="480" y="94" text-anchor="middle">Kod çözücü katmanı × 6</text>
+  <rect class="sv-a" x="370" y="250" width="220" height="50" rx="10"/>
+  <text class="sv-t" x="480" y="272" text-anchor="middle">Maskeli öz-dikkat</text><text class="sv-s" x="480" y="290" text-anchor="middle">yalnız kendisine ve öncesine</text>
+  <rect class="sv-l" x="370" y="180" width="220" height="50" rx="10"/>
+  <text class="sv-t" x="480" y="202" text-anchor="middle">Kodlayıcı-kod çözücü dikkati</text><text class="sv-s" x="480" y="220" text-anchor="middle">anahtar ve değer kodlayıcıdan</text>
+  <rect class="sv-m" x="370" y="110" width="220" height="50" rx="10"/>
+  <text class="sv-t" x="480" y="132" text-anchor="middle">İleri besleme ağı</text><text class="sv-s" x="480" y="150" text-anchor="middle">her kelimeye ayrı</text>
+  <path class="sv-c" d="M480 250V230"/><path class="sv-c" d="M480 180V160"/>
+  <path class="sv-cl" d="M280 120H320V205H370"/>
+  <text class="sv-s" x="315" y="236" text-anchor="middle">kodlayıcı</text><text class="sv-s" x="315" y="250" text-anchor="middle">çıktısı</text>
+  <rect class="sv-k" x="380" y="350" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="480" y="370" text-anchor="middle">üretilen kelimeler</text><text class="sv-s" x="480" y="386" text-anchor="middle">+ konum vektörleri</text>
+  <path class="sv-c" d="M480 350V320"/>
+  <text class="sv-s" x="480" y="416" text-anchor="middle">hedef cümle şimdiye kadar (ör. Almanca)</text>
+  <rect class="sv-a" x="370" y="10" width="220" height="40" rx="10"/>
+  <text class="sv-t" x="480" y="35" text-anchor="middle">sonraki kelimenin olasılıkları</text>
+  <path class="sv-c" d="M480 70V50"/>
+</svg>
+<figcaption>2017 makalesindeki özgün yapı. Kodlayıcı kaynak cümleyi okur ve her kelimesi için bağlamlı bir vektör çıkarır. Kod çözücü hedef cümleyi kelime kelime üretir; her kelimede hem şimdiye kadar ürettiklerine (maskeli öz-dikkat) hem de kodlayıcının çıktısına (kodlayıcı-kod çözücü dikkati) bakar. Artık bağlantı ve normalleştirme şekilde gösterilmedi.</figcaption>
+</figure>
+
+<h2 class="s">Paralel işleme: ölçeği açan anahtar</h2>
+
+<p>Şimdi başlıktaki ikinci soruya, hıza dönelim. Bir RNN'de beşinci kelimenin hafıza vektörü, dördüncünün hafıza vektöründen hesaplanır; dördüncü üçüncüden, üçüncü ikinciden. Bu bir zincirdir ve zincirin halkalarını aynı anda dövemezsin. Makalenin girişindeki tespit budur: bu doğal sıralılık, bir örneğin içinde paralel hesabı engeller.</p>
+
+<p>Öz-dikkatte zincir yoktur. Her kelimenin sorgusu, anahtarı ve değeri yalnız o kelimenin kendi vektöründen çıkar; puan tablosunun bütün hücreleri tek bir matris çarpımıyla birlikte hesaplanır. Parça 3'te GPU'nun gücünün "aynı basit işlemi milyonlarca kez aynı anda yapmak" olduğunu görmüştük. Transformer, dil işini tam da GPU'nun sevdiği biçime, büyük matris çarpımlarına çevirdi.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="RNN'de kelimelerin sırayla işlenmesi ile öz-dikkatte bütün kelimelerin birbirine doğrudan bağlanması">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">RNN: 4 sıralı adım</text>
+  <rect class="sv-k" x="20" y="40" width="70" height="36" rx="8"/><text class="sv-t" x="55" y="63" text-anchor="middle">h1</text>
+  <rect class="sv-k" x="115" y="40" width="70" height="36" rx="8"/><text class="sv-t" x="150" y="63" text-anchor="middle">h2</text>
+  <rect class="sv-k" x="210" y="40" width="70" height="36" rx="8"/><text class="sv-t" x="245" y="63" text-anchor="middle">h3</text>
+  <rect class="sv-k" x="305" y="40" width="70" height="36" rx="8"/><text class="sv-t" x="340" y="63" text-anchor="middle">h4</text>
+  <path class="sv-cl" d="M90 58H115"/><path class="sv-cl" d="M185 58H210"/><path class="sv-cl" d="M280 58H305"/>
+  <text class="sv-s" x="55" y="96" text-anchor="middle">dün</text><text class="sv-s" x="150" y="96" text-anchor="middle">yağmurdan</text>
+  <text class="sv-s" x="245" y="96" text-anchor="middle">çay</text><text class="sv-s" x="340" y="96" text-anchor="middle">taştı</text>
+  <text class="sv-b" x="200" y="140" text-anchor="middle">Öz-dikkat: tek adımda hepsi</text>
+  <path class="sv-c" d="M55 230Q150 160 245 230"/><path class="sv-c" d="M150 230Q245 160 340 230"/>
+  <path class="sv-c" d="M55 230Q197 130 340 230"/>
+  <path class="sv-c" d="M90 248H115"/><path class="sv-c" d="M185 248H210"/><path class="sv-c" d="M280 248H305"/>
+  <rect class="sv-m" x="20" y="230" width="70" height="36" rx="8"/><text class="sv-t" x="55" y="253" text-anchor="middle">dün</text>
+  <rect class="sv-m" x="115" y="230" width="70" height="36" rx="8"/><text class="sv-t" x="150" y="253" text-anchor="middle">yağmurdan</text>
+  <rect class="sv-m" x="210" y="230" width="70" height="36" rx="8"/><text class="sv-t" x="245" y="253" text-anchor="middle">çay</text>
+  <rect class="sv-m" x="305" y="230" width="70" height="36" rx="8"/><text class="sv-t" x="340" y="253" text-anchor="middle">taştı</text>
+  <text class="sv-s" x="200" y="290" text-anchor="middle">her çift doğrudan bağlı; uzaklık hep 1 adım</text>
+</svg>
+<figcaption>Üstte RNN: "taştı"ya ulaşmak için "dün"ün bilgisi üç halkadan geçmek zorunda ve her halka öncekini bekliyor. Altta öz-dikkat: her kelime her kelimeyle tek adımda bağlı (çizgilerin hepsi çizilmedi); bütün bağlantılar aynı anda hesaplanır.</figcaption>
+</figure>
+
+<p>Şekildeki ikinci fark <strong>yol uzunluğudur</strong>. RNN'de metnin ilk kelimesinin bilgisi bininci kelimeye ulaşmak için bin halkadan geçer ve her halkada biraz silinir; Parça 9'daki unutma sorunu budur. Öz-dikkatte iki kelime arasındaki yol, aradaki mesafe ne olursa olsun tek adımdır. Makalenin karşılaştırma tablosu bu iki farkı açıkça listeler.</p>
+
+<div class="tablo"><table>
+<tr><th>Ölçüt (n: kelime sayısı)</th><th>Tekrarlayan katman (RNN)</th><th>Öz-dikkat katmanı</th></tr>
+<tr><td>Birbirini beklemek zorunda olan sıralı adım</td><td>n tane</td><td>sabit (n'den bağımsız)</td></tr>
+<tr><td>İki kelime arasındaki en uzun yol</td><td>n adım</td><td>1 adım</td></tr>
+<tr><td>Bir katmandaki toplam iş, metin uzunluğuna göre</td><td>n ile doğru orantılı</td><td>n<sup>2</sup> ile orantılı (her çift)</td></tr>
+<tr><td>GPU'ya uygunluk</td><td>zayıf: zincir paralelleşmez</td><td>güçlü: büyük matris çarpımları</td></tr>
+</table></div>
+
+<p>Tablonun üçüncü satırı bedeli gösterir. Öz-dikkat her kelime çiftine bir puan hesaplar: 1.000 kelimelik metinde 1.000 × 1.000 = 1 milyon puan, 2.000 kelimede 4 milyon. Metin iki katına çıkınca puan tablosu dört katına çıkar. Bu iş paralel yapılabildiği için hızlıdır, ama bellek ve hesap ihtiyacı hızla büyür. Bir modelin aynı anda görebileceği metin miktarının, yani <strong>bağlam penceresinin</strong> neden sınırlı olduğunun önemli nedenlerinden biri budur; Parça 11'de bağlam penceresine döneceğiz.</p>
+
+<p>Paralelliğin asıl sonucu ekonomiktir. Aynı sürede çok daha fazla veriyle, çok daha büyük modeller eğitilebildi. 2017'deki model 8 GPU'da yarım günde eğitildi; sonraki yıllarda aynı iskelet binlerce GPU'ya yayılarak yüz milyonlarca, sonra milyarlarca parametreye büyütüldü. Parametre, veri ve hesap büyüdükçe kaybın nasıl düştüğünü anlatan ölçekleme yasaları Parça 12'nin konusudur. Transformer'ı "çok önemli" yapan şey, bu büyümenin mümkün olduğu ilk mimari olmasıdır; dil üzerinde daha akıllıca bir hile olması değil.</p>
+
+<h2 class="s">Kodlayıcı ve kod çözücü</h2>
+
+<p>Makaledeki model bir çevirmendir ve iki yarıdan oluşur. <strong>Kodlayıcı</strong> (encoder) kaynak cümleyi, örneğin İngilizce cümleyi, okur. Öz-dikkatinde her kelime cümlenin tamamına, hem öncesine hem sonrasına bakabilir; çünkü kaynak cümle baştan bellidir. Çıktısı, kaynak cümlenin her kelimesi için bağlamlı bir vektördür.</p>
+
+<p><strong>Kod çözücü</strong> (decoder) hedef cümleyi, örneğin Almancayı, kelime kelime üretir. Her adımda şimdiye kadar ürettiği kelimelere bakar ve bir sonraki kelime için bütün sözlük üzerinde bir olasılık dağılımı çıkarır; en üstteki doğrusal katman ve softmax bunu yapar. Seçilen kelime sona eklenir ve aynı iş tekrarlanır. Kod çözücünün iki ayrı dikkati vardır: kendi ürettikleri üzerinde <strong>maskeli öz-dikkat</strong> ve kodlayıcının çıktısına bakan <strong>kodlayıcı-kod çözücü dikkati</strong>. İkincisinde sorgu kod çözücüden, anahtar ve değer kodlayıcıdan gelir: "Şu an Almanca cümlede buradayım; İngilizce cümlenin hangi kelimesine bakmalıyım?"</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Maske</strong> (nedensel maske), kod çözücüdeki öz-dikkatte her konumun yalnız <strong>kendisine ve kendinden önceki</strong> konumlara bakmasına izin veren düzendir. Sonraki konumların puanları softmax'tan önce eksi sonsuz yapılır; e<sup>−∞</sup> = 0 olduğundan bu konumların ağırlığı tam sıfır çıkar.</p></div>
+
+<p>Maske neden gerekli? Eğitimde model, doğru çeviriyi bütünüyle görür ve her konumda "sıradaki kelime ne?" sorusunu aynı anda çözerek paralel öğrenir. Maske olmasaydı her konum, tahmin etmesi gereken bir sonraki kelimeye doğrudan bakar ve kopya çekerdi. Bu, Parça 5'teki veri sızıntısının ta kendisidir: eğitimde mükemmel, gerçek kullanımda işe yaramaz bir model. Maske sayesinde eğitimdeki durum, kullanımdaki durumla aynı olur: ileriyi göremezsin, çünkü henüz yazılmadı. Python kutusundaki "maskeli ağırlıklar" çıktısına bak: ilk kelime yalnız kendine bakabildiği için ağırlığı 1, ikinci kelime ilk ikisini görüyor (0,67 ve 0,33), üçüncü kelime hepsini görüyor ve satırı maskesiz hâliyle aynı.</p>
+
+<h3>Üç aile ve bugünkü durum</h3>
+
+<p>Makaleden kısa süre sonra araştırmacılar iki yarıyı ayrı ayrı kullanmaya başladı. Böylece bugün de kullanılan üç aile doğdu.</p>
+
+<div class="tablo"><table>
+<tr><th>Aile</th><th>Ne görür?</th><th>İyi olduğu iş</th><th>Bilinen örnek</th></tr>
+<tr><td>Yalnız kodlayıcı</td><td>Metnin tamamını, iki yönlü</td><td>Metni anlamak: sınıflandırma, arama, gömme vektörü üretmek</td><td>BERT (2018)</td></tr>
+<tr><td>Yalnız kod çözücü</td><td>Yalnız öncesini (maskeli)</td><td>Metin üretmek: bir sonraki kelimeyi tahmin ederek yazmak</td><td>GPT serisi (2018'den itibaren)</td></tr>
+<tr><td>Kodlayıcı + kod çözücü</td><td>Kaynağı tamamen, hedefi soldan sağa</td><td>Bir metni başka bir metne çevirmek: çeviri, özetleme</td><td>2017'deki özgün transformer</td></tr>
+</table></div>
+
+<p>Sohbet modelleri metin <strong>ürettiği</strong> için kod çözücü tarafındadır. Ekim 2026 itibarıyla, mimarisi kamuya açıklanmış büyük sohbet modellerinin (örneğin açık ağırlıklı model aileleri) büyük çoğunluğu yalnız kod çözücü yapıdadır: tek bir yığın, maskeli öz-dikkat ve sonraki kelime tahmini. Bu genellemeyi iki temkinle oku. Birincisi, kapalı modellerin mimarisi çoğu zaman ayrıntılı açıklanmaz; "hepsi böyle" demek doğrulanamaz. İkincisi, bu modeller 2017'deki tasarımı birebir kullanmaz: konum bilgisinin veriliş biçimi, normalleştirmenin yeri, ileri besleme ağının yapısı gibi birçok ayrıntı değişmiştir. Değişmeyen çekirdek, bu parçada elle hesapladığın şeydir: sorgu, anahtar, değer ve softmax'la ağırlıklı toplam.</p>
+
+<p>Bir yalnız kod çözücünün kodlayıcı-kod çözücü dikkatine ihtiyacı yoktur, çünkü ayrı bir kaynak cümle yoktur: soru da cevap da aynı metnin içindedir. Model, kullanıcının yazdığını ve kendi ürettiğini tek bir uzun metin gibi görür ve bu metne bir kelime daha ekler. Bu "bir kelime daha ekle" döngüsünü, olasılıklardan nasıl seçim yapıldığını ve sıcaklık ayarını Parça 11'de göreceksin. Transformer yalnız dille de sınırlı kalmadı: resmi küçük karelere bölüp her kareyi bir "kelime" gibi işleyen sürümleri 2020'den itibaren görüntü işlerinde de kullanılmaktadır, yani Parça 8'deki evrişimli ağların alanına da girmiştir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3'e:</strong> Dikkat puanı bir nokta çarpımıdır (iki vektörün ne kadar aynı yöne baktığı); bütün puanlar tek bir matris çarpımıyla çıkar; softmax puanları bir olasılık dağılımına çevirir; hepsi GPU'nun paralel gücüne yaslanır.</p>
+<p><strong>Parça 6 ve 7'ye:</strong> Her transformer katmanında bir ileri besleme ağı (MLP) vardır; sorgu, anahtar, değer matrisleri dahil bütün parametreler geri yayılımla öğrenilir; √d ile ölçekleme ve artık bağlantılar kaybolan gradyana karşı alınmış önlemlerdir.</p>
+<p><strong>Parça 9'a:</strong> RNN'in unutma ve sıralı yavaşlık sorunlarını öz-dikkat çözdü; tek vektörlü kelime gömmesinin yerini bağlama göre değişen temsil aldı.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 11'de kelimenin yerini token alacak, kod çözücünün "sonraki kelime olasılıkları" ve n<sup>2</sup> maliyetinin sınırladığı bağlam penceresi ayrıntılanacak. Parça 12'de paralelliğin açtığı ölçeğin, yani ön eğitim ve ölçekleme yasalarının hikâyesi var. Parça 16'daki RAG'de kullanılan gömme vektörleri çoğu zaman yalnız kodlayıcı modellerden çıkar.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Dikkatin dört adımını sırayla say ve her birinin ne işe yaradığını bir cümleyle söyle.</summary><p>Birincisi puan: sorguyu her anahtarla nokta çarpımına sokup uyuşmayı ölçmek. İkincisi ölçekleme: puanları √d'ye bölüp büyük boyutta softmax'ın tek kelimeye yığılmasını önlemek. Üçüncüsü softmax: puanları toplamı 1 olan pozitif ağırlıklara çevirmek. Dördüncüsü ağırlıklı toplam: her kelimenin değer vektörünü ağırlığıyla çarpıp toplayarak yeni, bağlamlı vektörü elde etmek.</p></details>
+<details><summary>Sorgu, anahtar ve değer kütüphane benzetmesinde neye karşılık gelir ve benzetme nerede biter?</summary><p>Sorgu aradığın konuyu yazdığın fiş, anahtar kitap sırtındaki konu etiketi, değer kitabın içindeki bilgidir. Benzetme şurada biter: gerçek kütüphanede genellikle tek kitap seçersin, dikkat ise yumuşak bir aramadır ve her kitaptan uyumu oranında biraz alır. Ayrıca dikkatte her kelime aynı anda hem fiş yazan hem etiket taşıyan hem de bilgi sunan taraftır.</p></details>
+<details><summary>Konum bilgisi olmasaydı transformer neyi ayıramazdı? Neden?</summary><p>Aynı kelimelerin farklı sıralarını, örneğin "iki yüz" ile "yüz iki"yi ayıramazdı. Dikkat puanları yalnız sorgu ve anahtar vektörlerine bağlıdır, kelimenin yerine bağlı değildir; kelimeleri karıştırınca her kelimenin çıktısı aynı kalır. Bu yüzden her kelimenin vektörüne kaçıncı sırada olduğunu kodlayan bir konum vektörü eklenir.</p></details>
+<details><summary>Çok başlı dikkat tek başlıdan ne bakımdan üstündür? Makaledeki temel modelde kaç baş vardı ve her biri kaç boyutluydu?</summary><p>Tek baş, her kelime için tek bir ağırlık dağılımı üretir ve farklı ilişkileri (özne, zaman, neden gibi) tek bir ortalamaya ezer. Çok başlı dikkatte her baş kendi matrisleriyle cümleye ayrı bir ölçütle bakar, sonra çıktılar birleştirilir. Temel modelde 8 baş vardı; 512 boyut 8'e bölündüğü için her baş 64 boyutluydu.</p></details>
+<details><summary>Transformer'ın RNN'e göre eğitimi neden çok daha hızlıdır, ve bunun bedeli nedir?</summary><p>RNN'de her kelime öncekinin bitmesini beklediği için n kelimelik metin n sıralı adım ister; öz-dikkatte bütün kelime çiftlerinin puanları tek bir büyük matris çarpımıyla aynı anda hesaplanır ve bu GPU'ya çok uygundur. Bedeli, her kelime çifti için puan hesaplanmasıdır: iş ve bellek kelime sayısının karesiyle büyür, metin iki katına çıkınca puan tablosu dört katına çıkar.</p></details>
+<details><summary>Kod çözücüdeki maske ne yapar ve olmasaydı eğitimde ne olurdu?</summary><p>Maske, her konumun yalnız kendisine ve önceki konumlara bakmasını sağlar; sonraki konumların puanları eksi sonsuz yapılır ve ağırlıkları sıfır çıkar. Maske olmasaydı model eğitimde tahmin etmesi gereken sonraki kelimeye doğrudan bakıp kopya çekerdi; bu bir veri sızıntısıdır ve model gerçek kullanımda, sonraki kelime henüz yokken, işe yaramazdı.</p></details>
+<details><summary>Yalnız kodlayıcı, yalnız kod çözücü ve kodlayıcı-kod çözücü ailelerini birer işle eşleştir.</summary><p>Yalnız kodlayıcı (ör. BERT) metni iki yönlü görür ve anlamaya dayalı işlerde, sınıflandırma ve aramada iyidir. Yalnız kod çözücü (ör. GPT serisi) yalnız öncesini görür ve metin üretir; bugünkü sohbet modellerinin mimarisi açıklanmış olanlarının çoğu bu ailedendir. Kodlayıcı-kod çözücü, 2017'deki özgün yapıdır ve bir metni başka bir metne dönüştürmede, örneğin çeviride kullanılır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>2017, "Attention Is All You Need":</strong> Google'daki sekiz yazar; çeviri görevi; RNN ve evrişim yok, yalnız dikkat. Dikkat 2014'ten beri vardı; yenilik onunla yetinmekti.</li>
+<li><strong>Dikkat:</strong> kelimenin yeni vektörü = cümledeki değer vektörlerinin ağırlıklı ortalaması. Ağırlıklar öğrenilir, toplamları 1.</li>
+<li><strong>Sorgu–anahtar–değer:</strong> "ne arıyorum" – "ne sunuyorum" – "ne aktarırım". Her kelimede üçü de var; üç öğrenilmiş matristen çıkar.</li>
+<li><strong>Dört adım:</strong> q·k puanı → √d'ye böl → softmax → ağırlık × değer, topla. Formül: softmax(QK<sup>T</sup> ÷ √d<sub>k</sub>)·V.</li>
+<li><strong>√d neden:</strong> büyük boyutta puanlar büyür, softmax tek kelimeye yığılır, gradyan kaybolur.</li>
+<li><strong>Çok başlı dikkat:</strong> birkaç baş, her biri kendi ölçütüyle; temel modelde 8 × 64 = 512. Başların rolleri öğrenilir, her zaman yorumlanamaz.</li>
+<li><strong>Konum:</strong> dikkat sırayı görmez ("iki yüz" = "yüz iki"); her vektöre konum vektörü eklenir. Makalede sinüs–kosinüs dalgaları; öğrenilen sürüm neredeyse aynı sonuç verdi.</li>
+<li><strong>Katman:</strong> çok başlı dikkat + ileri besleme ağı, çevrelerinde artık bağlantı ve normalleştirme; makalede 6 + 6 katman.</li>
+<li><strong>Paralellik:</strong> sıralı adım sayısı sabit, kelimeler arası yol 1 adım; bedeli n<sup>2</sup> iş ve bellek. Ölçeği açan bu oldu.</li>
+<li><strong>Kodlayıcı / kod çözücü:</strong> kodlayıcı her yöne bakar; kod çözücü maskeyle yalnız geriye bakar ve sonraki kelimeyi üretir. Sohbet modellerinin (mimarisi açıklananların) çoğu yalnız kod çözücü.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-10">
+<h3>Quiz 10</h3>
+<p class="qa">Yirmi soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">2017 tarihli "Attention Is All You Need" makalesinde önerilen transformer'ın temel yeniliği aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Dikkat mekanizmasını ilk kez icat etmesi</li><li>Yinelemeyi (RNN) ve evrişimi tamamen bırakıp diziyi yalnız dikkat katmanları ve ileri besleme ağlarıyla işlemesi</li><li>Kelimeleri tek sıcak (one-hot) gösterimle temsil etmesi</li><li>Metni kelime kelime, bir hafıza vektörü taşıyarak okuması</li><li>Yalnızca görüntü tanıma için tasarlanmış olması</li></ul>
+<div class="coz"><p>Doğru cevap B: makalenin cesur adımı RNN'i ve evrişimi atıp yalnız dikkatle yetinmekti. A yanlış, çünkü dikkat 2014'te Bahdanau ve arkadaşlarının çeviri yapan RNN'inde zaten vardı; orada RNN'e takılmış bir yardımcıydı. C, Parça 9'da sınırını gördüğümüz eski gösterimdir; transformer öğrenilen gömmelerle çalışır. D tam olarak RNN'in tarifidir, yani transformer'ın bıraktığı şey. E yanlış: makale makine çevirisi üzerinde sınandı.</p></div></li>
+
+<li data-c="D"><p class="q">Dikkatin kütüphane benzetmesinde "anahtar" (key) aşağıdakilerden hangisine karşılık gelir?</p>
+<ul class="sec"><li>Aradığın konuyu yazdığın fiş</li><li>Kitabın içindeki asıl bilgi</li><li>Kütüphanedeki rafların sayısı</li><li>Her kitabın sırtındaki, ne hakkında olduğunu söyleyen etiket</li><li>Kütüphaneden çıkarken yanına aldığın tek kitap</li></ul>
+<div class="coz"><p>Anahtar, bir kelimenin "ben ne tür bilgi sunuyorum" diye başkalarına gösterdiği yüzdür; kitap sırtındaki etikete benzer (D). Sorgu fiştir (A), değer kitabın içeriğidir (B). C benzetmede bir karşılığı olmayan çeldiricidir. E, dikkatin sert bir seçim yaptığı yanılgısını yoklar: dikkat her kitaptan uyumu oranında biraz alır, tek kitap seçmez.</p></div></li>
+
+<li data-c="A"><p class="q">Bir kelimenin üç kelimeye verdiği dikkat ağırlıkları sırasıyla 0,5; 0,25; 0,25 ve bu üç kelimenin değer vektörleri sırasıyla [4; 0], [0; 4], [2; 2] ise kelimenin yeni vektörü aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[2,5; 1,5]</li><li>[2; 2]</li><li>[6; 6]</li><li>[4; 0]</li><li>[2; 1]</li></ul>
+<div class="coz"><p>Ağırlıklı toplam: 0,5 × [4; 0] = [2; 0]; 0,25 × [0; 4] = [0; 1]; 0,25 × [2; 2] = [0,5; 0,5]. Toplam [2,5; 1,5], cevap A. B, ağırlıkları yok sayıp düz ortalama almaktır; C, değerleri ağırlıksız toplamaktır. D, en yüksek ağırlıklı kelimenin değerini olduğu gibi almaktır, yani sert seçim yanılgısı. E, üçüncü kelimenin katkısını unutmaktır.</p></div></li>
+
+<li data-c="C"><p class="q">Ölçekli nokta çarpımı dikkatinde puanlar softmax'tan önce neden √d<sub>k</sub>'ye bölünür?</p>
+<ul class="sec"><li>Ağırlıkların toplamını 1 yapmak için</li><li>Hesabı daha az çarpma işlemiyle yapmak için</li><li>Boyut büyüdükçe nokta çarpımları büyür, softmax ağırlığı neredeyse tek kelimeye yığar ve gradyanlar çok küçülür; bölme puanları makul aralıkta tutar</li><li>Negatif puanları pozitife çevirmek için</li><li>Kelimelerin sırasını modele bildirmek için</li></ul>
+<div class="coz"><p>Nokta çarpımı boyut sayısı kadar terimi toplar; 64 boyutta puanlar büyür ve softmax örneğin [0,9993; 0,0003; 0,0003] gibi neredeyse sert bir dağılım verir. Bu bölgede ağırlıklar puan değişikliklerine tepki vermez, gradyan kaybolur; C doğrudur. A'yı yapan softmax'tır. B yanlış: bölme fazladan bir işlemdir. D'yi de softmax'taki üs alma yapar. E konum vektörünün işidir.</p></div></li>
+
+<li data-c="E"><p class="q">Konum bilgisi eklenmemiş bir öz-dikkat katmanı için "iki yüz" ve "yüz iki" ifadeleriyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Dikkat sırayı zaten bildiği için model ikisini kesinlikle ayırır.</li><li>"İki" kelimesinin çıktısı, başta olduğu ifadede daha büyük olur.</li><li>Model yalnız ilk kelimeye bakar, ikinciyi yok sayar.</li><li>İki ifadede kelime sayısı farklı olduğu için çıktılar farklıdır.</li><li>"İki" kelimesinin çıktısı iki ifadede de aynıdır; model sırayı bilmediği için ikisini ayıramaz.</li></ul>
+<div class="coz"><p>Dikkat puanları yalnız sorgu ve anahtar vektörlerine bağlıdır; kelimelerin sırası değişince tablo yalnızca yer değiştirir, her kelimenin kendi çıktısı aynı kalır. Python denemesinde bunu gördük: konumsuz "iki" iki ifadede de [0,731; 0,269; 0,269; 0,731] çıktı. Bu yüzden E doğru, A yanlış. B'de iddia edilen fark konum bilgisi olmadan oluşmaz. C dikkatin işleyişine aykırıdır; D yanlıştır çünkü iki ifadede de aynı iki kelime vardır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir transformer'da her kelimenin vektörü 512 boyutlu ve dikkat 8 başlıdır. Makaledeki düzende olduğu gibi boyut başlara eşit bölünürse her başın sorgu ve anahtar vektörü kaç boyutludur?</p>
+<ul class="sec"><li>512</li><li>64</li><li>8</li><li>4096</li><li>520</li></ul>
+<div class="coz"><p>Her baş, ana boyutun baş sayısına bölünmüş hâliyle çalışır: 512 ÷ 8 = 64; cevap B. Makaledeki temel modelde de d<sub>k</sub> = d<sub>v</sub> = 64'tür. A, her başın tam boyutla çalıştığını sanmaktır; o zaman hesap yükü sekiz kat artardı. C baş sayısının kendisidir. D çarpma (512 × 8), E toplama (512 + 8) yapmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">Transformer'ın kod çözücüsüyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Kod çözücüdeki öz-dikkat, henüz üretilmemiş sonraki kelimeler dahil cümlenin tamamını görür.</li><li>Kod çözücü yalnızca metni sınıflandırmak için kullanılır, metin üretemez.</li><li>BERT, yalnız kod çözücüden oluşan bir modeldir.</li><li>Maskeleme sayesinde her konum yalnız kendisine ve önceki konumlara bakar; bu, metni soldan sağa üretmeyi mümkün kılar.</li><li>Maske, softmax'tan sonra bütün ağırlıkları ikiye böler.</li></ul>
+<div class="coz"><p>Kod çözücüde sonraki konumların puanları eksi sonsuz yapılır ve ağırlıkları sıfır çıkar; böylece her konum yalnız geçmişe bakar ve model sıradaki kelimeyi kopya çekmeden tahmin etmeyi öğrenir (D). A tam olarak maskenin önlediği durumdur. B ters: kod çözücünün işi metin üretmektir; sınıflandırmada yalnız kodlayıcılar öne çıkar. C yanlış: BERT yalnız kodlayıcıdır. E'de maske softmax'tan önce uygulanır ve ağırlıkları bölmez, yasak hücreleri sıfırlar.</p></div></li>
+
+<li data-c="C"><p class="q">Bir öz-dikkat katmanına verilen metin 1.000 kelimeden 2.000 kelimeye çıkarsa, her kelime çifti için hesaplanan puan tablosunun hücre sayısı kaç katına çıkar?</p>
+<ul class="sec"><li>2</li><li>√2</li><li>4</li><li>8</li><li>Değişmez</li></ul>
+<div class="coz"><p>Öz-dikkatte her kelime her kelimeye bir puan verir; n kelime için tablo n × n hücrelidir. 1.000 kelimede 1.000.000, 2.000 kelimede 4.000.000 hücre vardır; oran 4, cevap C. A, işin kelime sayısıyla doğru orantılı olduğunu sanmaktır; bu RNN'deki sıralı adım sayısı için geçerlidir. D küpe göre büyümektir. E, paralelliği "maliyet yok" diye yanlış okumaktır: paralellik süreyi kısaltır ama hesap ve bellek yine n<sup>2</sup> ile büyür. Bağlam penceresinin sınırlı olmasının nedenlerinden biri budur.</p></div></li>
+
+<li data-c="A" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince çoğunlukla kastedilen kavramlar arasındaki ilişki aşağıdakilerden hangisinde doğru verilmiştir?</p>
+<ul class="sec"><li>Yapay zekâ makine öğrenmesini, makine öğrenmesi derin öğrenmeyi, derin öğrenme büyük dil modellerini kapsar.</li><li>Dördü aynı şeyin farklı adlarıdır.</li><li>Derin öğrenme makine öğrenmesini kapsar, makine öğrenmesi de yapay zekâyı.</li><li>Büyük dil modelleri yapay zekânın dışında ayrı bir alandır.</li><li>Makine öğrenmesi, büyük dil modellerinin bir alt türüdür.</li></ul>
+<div class="coz"><p>Parça 1'deki iç içe halkalar şemasında en dışta yapay zekâ, onun içinde örnekten öğrenen sistemler yani makine öğrenmesi, onun içinde çok katmanlı sinir ağlarıyla çalışan derin öğrenme, en içte büyük dil modelleri vardır (A). B yanlış: kural tabanlı uzman sistemler de YZ'dir ama öğrenmez. C ve E halkaları ters çevirir. D yanlış: büyük dil modelleri derin öğrenmenin, dolayısıyla YZ'nin içindedir.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir evin metrekaresi, oda sayısı ve semtinden, geçmiş satışların fiyatlarıyla eğitilerek satış fiyatını tahmin eden model için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Denetimsiz öğrenme; sınıflandırma</li><li>Pekiştirmeli öğrenme; regresyon</li><li>Denetimli öğrenme; sınıflandırma</li><li>Denetimsiz öğrenme; regresyon</li><li>Denetimli öğrenme; regresyon</li></ul>
+<div class="coz"><p>Eğitim verisinde her evin gerçek satış fiyatı, yani etiketi vardır; bu denetimli öğrenmedir. Tahmin edilen şey bir sayıdır (fiyat), bir sınıf değil; bu regresyondur. Cevap E. Denetimsiz öğrenme etiketsiz veriyle çalışır (müşteri gruplama gibi), pekiştirmeli öğrenme ödül-ceza ile öğrenen ajanlar içindir. Sınıflandırma "spam mı değil mi", "kedi mi köpek mi" gibi kategori seçer.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">Aşağıdaki vektörlerden hangisi [1; 2] vektörüyle <strong>tam olarak</strong> aynı yöne bakar?</p>
+<ul class="sec"><li>[2; 1]</li><li>[3; 6]</li><li>[−1; −2]</li><li>[2; −1]</li><li>[0; 5]</li></ul>
+<div class="coz"><p>[3; 6], [1; 2]'nin 3 katıdır: uzunluğu farklı, yönü aynıdır; aralarındaki açı sıfırdır (B). [−1; −2] tam ters yöne bakar. [2; −1] dik açı yapar; nokta çarpımı 1×2 + 2×(−1) = 0'dır. [2; 1] ve [0; 5] yakın yönlere bakar ama aynı yöne değil. Benzerliği açıyla ölçmenin değeri budur: uzunluk değil, yön karşılaştırılır.</p></div></li>
+
+<li data-c="C" data-k="yz-4"><p class="q">Gradyan inişinde öğrenme oranı (adım boyu) gereğinden çok büyük seçilirse en olası sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Model hiç hesaplama yapmaz.</li><li>Kayıp her adımda çok az düşer, eğitim çok yavaş ilerler.</li><li>Adımlar vadinin dibini aşar; kayıp zikzak yapar, hatta büyüyerek ıraksayabilir.</li><li>Model kendiliğinden karar ağacına dönüşür.</li><li>Veri kümesi küçülür.</li></ul>
+<div class="coz"><p>Sisli dağ benzetmesinde öğrenme oranı adımının boyudur. Adım çok büyükse en dik iniş yönüne gitsen bile vadinin dibini atlayıp karşı yamaca çıkarsın; kayıp bir düşer bir yükselir, kötü durumda giderek büyür (C). B, öğrenme oranının çok küçük olduğu durumun tarifidir. A, D ve E öğrenme oranıyla ilgisi olmayan çeldiricilerdir.</p></div></li>
+
+<li data-c="A" data-k="yz-5"><p class="q">1.000 kişilik bir veri kümesinde 10 kişi hasta, 990 kişi sağlıklıdır. Herkese "sağlıklı" diyen bir model için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Doğruluk %99'dur, hastalar için duyarlılık (recall) 0'dır.</li><li>Doğruluk %1'dir, duyarlılık %100'dür.</li><li>Doğruluk %99'dur, duyarlılık %99'dur.</li><li>Doğruluk %50'dir, çünkü iki sınıf vardır.</li><li>Model hiçbir hata yapmamıştır.</li></ul>
+<div class="coz"><p>Model 990 sağlıklıyı doğru, 10 hastayı yanlış bilir: doğruluk 990 ÷ 1.000 = %99. Ama hastaların hiçbirini yakalamaz; duyarlılık "gerçek hastaların ne kadarını buldun" sorusudur ve 0 ÷ 10 = 0'dır (A). Bu, dengesiz veride doğruluğun neden yanıltıcı olduğunun klasik örneğidir. B ve C oranları karıştırır; D sınıf sayısını oranla karıştırır; E, 10 hastanın kaçırıldığını görmezden gelir.</p></div></li>
+
+<li data-c="D" data-k="yz-6"><p class="q">Bir yapay nöronun girdileri 1 ve −2, ağırlıkları sırasıyla 2 ve 3, sapması (bias) 1'dir ve aktivasyon fonksiyonu ReLU'dur. Nöronun çıktısı kaçtır?</p>
+<ul class="sec"><li>−3</li><li>9</li><li>3</li><li>0</li><li>1</li></ul>
+<div class="coz"><p>Önce ağırlıklı toplam ve sapma: 1 × 2 + (−2) × 3 + 1 = 2 − 6 + 1 = −3. ReLU, negatif sayıları 0'a çevirir, pozitifleri olduğu gibi bırakır; ReLU(−3) = 0 (D). A, aktivasyonu uygulamayı unutmaktır. B, −2'nin işaretini kaybetmektir (2 + 6 + 1). C, ReLU'yu mutlak değer sanmaktır. E, yalnız sapmayı yazmaktır.</p></div></li>
+
+<li data-c="E" data-k="yz-7"><p class="q">Bir sinir ağının eğitiminde eğitim kaybı düşmeye devam ederken doğrulama kaybı 20. dönemden sonra yükselmeye başlıyor. Aşağıdakilerden hangisi en uygun yorum ve önlemdir?</p>
+<ul class="sec"><li>Yetersiz öğrenme vardır; ağı küçültmek gerekir.</li><li>Öğrenme oranı sıfırdır; artırmak gerekir.</li><li>Model iyi genelliyor; eğitime sınırsız devam edilmelidir.</li><li>Kesinlikle veri sızıntısı vardır; başka açıklaması yoktur.</li><li>Aşırı öğrenme başlamıştır; erken durdurma, dropout ya da veri artırma gibi düzenlileştirme uygulanabilir.</li></ul>
+<div class="coz"><p>Eğitim kaybının düşüp doğrulama kaybının yükselmesi, modelin eğitim örneklerini ezberlemeye başladığını, görmediği veride kötüleştiğini gösterir: aşırı öğrenme (E). Önlemler Parça 7'deki düzenlileştirme araçlarıdır; en basiti doğrulama kaybının en düşük olduğu noktada durmaktır. A ters durumdur: yetersiz öğrenmede eğitim kaybı da yüksek kalır. B'de öğrenme oranı sıfır olsaydı eğitim kaybı da düşmezdi. C eğriyi yanlış okur; D tek olası açıklama değildir.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">10.000 örnekli bir veri kümesi, her biri 100 örnekten oluşan mini-yığınlarla eğitiliyor ve her mini-yığından sonra ağırlıklar bir kez güncelleniyor. Bir dönemde (epoch) ağırlıklar kaç kez güncellenir?</p>
+<ul class="sec"><li>10.000</li><li>100</li><li>1</li><li>1.000.000</li><li>50</li></ul>
+<div class="coz"><p>Bir dönem, veri kümesinin tamamının bir kez görülmesidir. 10.000 örnek 100'erlik yığınlara bölünürse 10.000 ÷ 100 = 100 yığın olur; her yığından sonra bir güncelleme yapıldığına göre 100 güncelleme (B). A, her örnekten sonra güncelleme yapıldığını sanmaktır. C, bütün veriyi tek yığın sanmaktır. D çarpma yapmaktır; E ise bir hesaba dayanmaz.</p></div></li>
+
+<li data-c="C" data-k="yz-8"><p class="q">Evrişimli bir ağda bir filtrenin (çekirdeğin) yaptığı iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Resmi rastgele parçalara bölüp karıştırmak</li><li>Resmin renklerini siyah beyaza çevirmek</li><li>Küçük bir pencere olarak resmin üstünde kayıp her konumda aynı deseni (kenar, köşe, doku) aramak</li><li>Resmin boyutunu her zaman iki katına çıkarmak</li><li>Resimdeki nesnenin adını doğrudan yazmak</li></ul>
+<div class="coz"><p>Filtre, birkaç piksellik küçük bir ağırlık penceresidir; resmin her yerinde kaydırılarak aynı deseni arar ve desenin bulunduğu yerlerde güçlü bir sinyal üretir (C). Alt katmanlardaki filtreler kenar ve köşe gibi basit desenleri, üst katmanlardakiler bunlardan oluşan şekilleri yakalar. A ve D filtrenin işi değildir; boyutu küçültmek havuzlamanın işidir ve iki katına çıkarmak söz konusu değildir. B bir ön işlemdir. E, ağın en sonundaki sınıflandırma katmanının sonucudur, tek bir filtrenin değil.</p></div></li>
+
+<li data-c="A" data-k="yz-8"><p class="q">Elinde yalnızca 500 etiketli tıbbi görüntü var. Aşağıdakilerden hangisi transfer öğrenmeye örnektir?</p>
+<ul class="sec"><li>Milyonlarca genel resimle eğitilmiş bir ağı alıp son katmanlarını bu 500 görüntüyle yeniden eğitmek</li><li>500 görüntüyü sıfırdan başlatılmış çok büyük bir ağa ezberletmek</li><li>Test görüntülerini de eğitim verisine katarak başarıyı artırmak</li><li>Havuzlama katmanlarını kaldırıp ağı daha yavaş çalıştırmak</li><li>Görüntüleri hiç kullanmadan yalnız hasta yaşına bakmak</li></ul>
+<div class="coz"><p>Transfer öğrenme, büyük veride öğrenilmiş genel görme becerilerini (kenar, doku, şekil) küçük bir işe taşımaktır; genellikle hazır ağın son katmanları yeni işe göre yeniden eğitilir (A). B, az veriyle aşırı öğrenmeye davetiyedir. C bir veri sızıntısıdır ve sahte başarı üretir. D ve E transfer öğrenmeyle ilgisizdir.</p></div></li>
+
+<li data-c="D" data-k="yz-9"><p class="q">Kelimeleri tek sıcak (one-hot) gösterimle temsil etmenin temel sınırı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Her kelime için tek bir sayı kullandığı için hiç bellek harcamaması</li><li>Yalnızca İngilizcede çalışabilmesi</li><li>Anlamca yakın kelimeleri birbirine çok yakın yerleştirmesi</li><li>Her kelimenin öbürlerine eşit uzaklıkta olması; "kedi" ile "köpek" arasındaki benzerliği taşımaması ve vektörün sözlük kadar uzun olması</li><li>Kelimelerin cümledeki sırasını saklaması</li></ul>
+<div class="coz"><p>Tek sıcak gösterimde her kelime, sözlük boyunda bir vektörde yalnız kendi yerinde 1, başka her yerde 0'dır. Bu yüzden her iki kelime birbirine dik, yani eşit derecede "ilgisiz"dir; anlam benzerliği hiç taşınmaz, vektörler de devasa ve seyrek olur (D). A ters: vektör sözlük kadar uzundur. B yanlış: dilden bağımsızdır. C, kelime gömmelerinin (word2vec) özelliğidir. E de yanlış: tek sıcak gösterim tek bir kelimeyi temsil eder, sırayla ilgisi yoktur.</p></div></li>
+
+<li data-c="E" data-k="yz-9"><p class="q">Tekrarlayan ağların (RNN, LSTM) transformer'ın çözdüğü iki sorunu aşağıdakilerden hangisinde birlikte verilmiştir?</p>
+<ul class="sec"><li>Görüntü işleyememek ve renkleri karıştırmak</li><li>Fazla paralel çalışmak ve çok hızlı eğitilmek</li><li>Kelime gömmesi kullanamamak ve yalnız tam sayı işlemek</li><li>Hiç parametre taşımamak ve bu yüzden öğrenememek</li><li>Uzun metinde baştaki bilgiyi unutmak ve metni kelime kelime sırayla işlemek zorunda olduğu için yavaş eğitilmek</li></ul>
+<div class="coz"><p>RNN metni kelime kelime okuyup bilgiyi tek bir hafıza vektöründe taşır; metin uzadıkça baştaki bilgi silikleşir. Ayrıca her adım bir öncekini beklediği için paralel hesap yapılamaz ve eğitim yavaştır (E). Transformer'ın öz-dikkati iki kelime arasındaki yolu tek adıma indirerek ve bütün kelimeleri aynı anda işleyerek ikisini birden çözdü. B tam tersini söyler. A, C ve D RNN'in özelliklerini yanlış tarif eder: RNN'ler gömmelerle çalışır ve parametreleri vardır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-9">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-10">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-11">Sonraki parça: token ve bir sonraki kelime</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"transformer self-attention query key value görsel anlatım"</li>
+  <li>"attention is all you need paper explained"</li>
+  <li>"multi-head attention positional encoding sezgisel açıklama"</li>
+  <li>"encoder decoder vs decoder only transformer"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Makale ayrıntıları, 14 Ekim 2026'da makalenin kendisinden (arXiv 1706.03762, ar5iv HTML sürümü ve arXiv özet sayfası) doğrulandı: 6 + 6 katman; temel modelde vektör boyutu 512, 8 baş, d<sub>k</sub> = d<sub>v</sub> = 64, ileri besleme iç boyutu 2048, yaklaşık 65 milyon parametre; büyük modelde 1024 boyut, 16 baş, 4096, yaklaşık 213 milyon parametre; formül softmax(QK<sup>T</sup>/√d<sub>k</sub>)V ve ölçeklemenin gerekçesi (varyans d<sub>k</sub>, softmax'ın çok küçük gradyan bölgesi); sinüs–kosinüs konum kodlaması, öğrenilen konum vektörleriyle "neredeyse aynı" sonuç ve daha uzun dizilere genelleme gerekçesi; WMT 2014 İngilizce→Almanca (28,4 BLEU) ve İngilizce→Fransızca (41,8 BLEU); 8 adet NVIDIA P100 GPU'lu tek makine, temel model 12 saat, büyük model 3,5 gün; kod çözücüde eksi sonsuzla maskeleme; öz-dikkat ile RNN'in karşılaştırma tablosu (n<sup>2</sup>·d iş, sabit sıralı adım, 1 adımlık yol). arXiv'e ilk yükleme tarihi 12 Haziran 2017; NIPS 2017 bildiri kitabındaki yayın proceedings.neurips.cc kaydından ve Vikipedi'deki makale sayfasından teyit edildi. Yazarların hepsinin o sırada Google'da çalıştığı bilgisi Vikipedi'den alındı.</li>
+  <li>Bahdanau ve ark. (2014) dikkat mekanizması ile BERT'in (2018) yalnız kodlayıcı, GPT serisinin (2018'den itibaren) yalnız kod çözücü olduğu bilgisi Vikipedi'nin makale sayfasıyla karşılaştırıldı; birincil makalelerini bu oturumda açmadım.</li>
+  <li>"Ekim 2026 itibarıyla mimarisi açıklanmış sohbet modellerinin büyük çoğunluğu yalnız kod çözücüdür" genellemesi genel alan bilgisine dayanıyor; bunu sayan güncel bir derlemeyle doğrulamadım. Kapalı modellerin mimarisi çoğunlukla açıklanmadığından bu bir genelleme olarak okunmalı. Görüntüde transformer kullanımının 2020'den itibaren yaygınlaştığı bilgisi hafızadandır.</li>
+  <li>"Dikkat ağırlıkları açıklama mıdır?" tartışması ve bazı başların dil bilgisine benzer ilişkileri izlediği gözlemi, yorumlanabilirlik literatüründen hafızayla aktarıldı; belirli bir makaleye dayandırılmadı, bu yüzden metinde temkinli dille yazıldı.</li>
+  <li>Elle kurulan bütün sorgu, anahtar, değer ve kelime vektörleri öğretim amaçlı oyuncaktır; gerçek bir modelden alınmamıştır. Çözümlü örnek 1–3'teki bütün sayılar ve konum tablosu Python (numpy) ile hesaplanarak doğrulandı. İki Python betiği (<code>dikkat.py</code>, <code>konum.py</code>) bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı; çıktılar birebir konuldu. Betiklerde rastgelelik yoktur; çıktı numpy sürümüne göre yalnız biçim olarak (boşluk, basamak) değişebilir.</li>
+  <li>Quiz'deki sayısal cevaplar (ağırlıklı toplam, 512 ÷ 8, n<sup>2</sup> oranı, vektör yönleri, nöron çıktısı, dönem başına güncelleme) Python ile kontrol edildi. Tekrar soruları kapsam listesindeki Parça 1–9 satırlarından yazıldı; o parçaların metinleri bu yazım sırasında henüz elimde değildi, bu yüzden terimler kapsam listesindeki kullanıma göre seçildi.</li>
+</ul>
+</div>
+</div>
+</article>

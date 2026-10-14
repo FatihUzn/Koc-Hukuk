@@ -1,5 +1,5 @@
 /* Anlık bildirim gönderici. Supabase'deki zamanlayıcı 5 dakikada bir çağırır (x-sifre başlığıyla).
-   Gizlilik: bildirimde yalnızca bloğun dış adı ve saat yazar; asıl iş ve sınav adı hiçbir zaman yazmaz.
+   Günde iki bildirim: 07:45 kalan süre, 21:45 gün sonu. Gizlilik: ders ya da sınav adı hiçbir zaman yazmaz.
    Ortam değişkenleri (Vercel → Settings → Environment Variables):
      VAPID_OZEL      bildirim imzalama anahtarı (gizli)
      BILDIRIM_SIFRE  zamanlayıcının kullandığı şifre (gizli) */
@@ -74,8 +74,11 @@ const SERT = [
   "Aynaya bakınca gurur duyacağın bir gün olsun bu.",
   "Ya bugün zor olur, ya haziran."
 ];
-const ARA_SAYI = 2;        // günde kaç ara mesaj (14 Ekim: 6 → 2, göz alıştı)
-const ARA_BOSLUK = 180;    // iki ara mesaj arası en az kaç dakika
+/* 14 Ekim: günde yalnız iki bildirim. Blok başlangıcı ("Odak I" vb.), gün içi ara mesajlar ve öğle/akşamüstü yoklaması kaldırıldı.
+   SABAH 07:45 → kalan hafta (sınavın adı yazmaz; kilit ekranında yalnız "N hafta N gün kaldı").
+   AKSAM 21:45 → gün sonu: işaretli blok sayısı; eşitleme özeti yoksa bir cümle. */
+const SABAH = 465, AKSAM = 1305;
+const SINAV_GUNU = "2027-06-19";   // app.js'teki SINAV ile aynı gün
 
 const p2 = (n) => String(n).padStart(2, "0");
 function simdiTR(ms) {
@@ -85,34 +88,29 @@ function simdiTR(ms) {
     gunNo: Math.floor(d.getTime() / 86400000) };
 }
 const dkDan = (s) => { const p = s.split(":"); return +p[0] * 60 + +p[1]; };
-function rasgele(tohum) { let x = (tohum * 2654435761) >>> 0; return () => { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return x / 4294967296; }; }
+const takvimGunu = (g) => Math.floor(Date.UTC(+g.slice(0, 4), +g.slice(5, 7) - 1, +g.slice(8, 10)) / 86400000);
+function kalanMetin(gun) {
+  const g = takvimGunu(SINAV_GUNU) - takvimGunu(gun);
+  if (g <= 0) return null;
+  const h = Math.floor(g / 7), a = g % 7;
+  return (h ? h + " hafta" : "") + (h && a ? " " : "") + (a ? a + " gün" : "") + " kaldı";
+}
 
 /* Bu 5 dakikalık dilimde ne gönderilecek? Saf işlev: test edilebilir. */
 function secim(z, ozet) {
-  const bloklar = Bloklar.gunluk(z.dw), out = [];
-  const baslayan = bloklar.filter((b) => dkDan(b.s) === z.dilim);
-  for (const b of baslayan) out.push({ title: b.ad, body: b.s + (b.dk ? " · " + b.dk + " dk" : ""), tag: "blok" });
-
-  // Ara mesajlar: 09:00–21:30 arasında, her gün farklı ama o gün için sabit dilimlerde.
-  const r = rasgele(z.gunNo), blokDilim = new Set(bloklar.map((b) => dkDan(b.s)));
-  const ara = [];
-  let deneme = 0;
-  while (ara.length < ARA_SAYI && deneme++ < 400) {
-    const d = 540 + Math.floor(r() * 150) * 5;           // 09:00 + 0..745 dk
-    if (d <= 1290 && !blokDilim.has(d) && !ara.some((x) => Math.abs(x - d) < ARA_BOSLUK)) ara.push(d);
+  const out = [];
+  if (z.dilim === SABAH) {
+    const k = kalanMetin(z.gun);
+    if (k) { const say = Bloklar.gunluk(z.dw).filter((b) => b.say).length;
+      out.push({ title: k, body: say ? "Bugün " + say + " blok. İlki " + (Bloklar.gunluk(z.dw).find((b) => b.say) || {}).s + "." : "Bugün hafif gün.", tag: "sabah" }); }
   }
-  const sira = ara.indexOf(z.dilim);
-  if (sira >= 0) out.push({ title: "275", body: SERT[(z.gunNo * ARA_SAYI + sira) % SERT.length], tag: "soz" });
-
-  // Durum yoklaması: 12:45, 17:15, 21:45 — o saate kadar bitmiş olması gereken blok sayısına göre.
-  if ([765, 1035, 1305].includes(z.dilim) && ozet && ozet.gun === z.gun && typeof ozet.yapilan === "number") {
-    const beklenen = bloklar.filter((b) => b.say && dkDan(b.s) + (b.dk || 0) <= z.dilim).length;
-    const y = ozet.yapilan, t = ozet.toplam || bloklar.filter((b) => b.say).length;
+  if (z.dilim === AKSAM) {
     let m;
-    if (y >= beklenen) m = y + "/" + t + ". Takvimin önündesin. Bozma.";
-    else if (y === 0) m = "Saat " + p2(Math.floor(z.dilim / 60)) + ":" + p2(z.dilim % 60) + ". Bugün işaretli tek blok yok. Gün hâlâ kurtarılır, ama şimdi başlarsan.";
-    else m = y + "/" + t + ". Şu saate kadar " + beklenen + " olmalıydı. Açığı kapat.";
-    out.push({ title: "Durum", body: m, tag: "durum" });
+    if (ozet && ozet.gun === z.gun && typeof ozet.yapilan === "number") {
+      const y = ozet.yapilan, t = ozet.toplam || Bloklar.gunluk(z.dw).filter((b) => b.say).length;
+      m = y >= t ? y + "/" + t + ". Tam gün. Ekranı kapat, uyu." : y === 0 ? "Bugün işaretli blok yok. Yarın ilk blokla başla." : y + "/" + t + ". Yarın bir fazlası.";
+    } else m = "Günü kapat. Yarının ilk bloğunu şimdi seç.";
+    out.push({ title: "Gün sonu", body: m, tag: "aksam" });
   }
   return out;
 }

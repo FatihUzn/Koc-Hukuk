@@ -61,6 +61,7 @@ var BOLUMLER = [
   {id:"defter", ad:"Yanlış defteri",kisa:"Defter"},
   {id:"yil",    ad:"Yıl",           kisa:"Yıl"},
   {id:"plan",   ad:"Plan ve yaşam", kisa:"Plan"},
+  {id:"ben",    ad:"Ben",           kisa:"Ben"},
   {id:"spor",   ad:"Spor",          kisa:"Spor"},
   {id:"gundem", ad:"Gündem",        kisa:"Gündem"},
   {id:"ders",   ad:"Ders okuma",    kisa:"Dersler"}
@@ -112,6 +113,7 @@ var IKON={
   gundem:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="11" height="10" rx="1.500"/><path d="M5 6h6M5 8.500h6M5 11h3.500"/></svg>',
   plan:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2 1.5"/></svg>'
 };
+IKON.ben='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.6" r="2.6"/><path d="M3 13.4c.7-2.4 2.6-3.6 5-3.6s4.3 1.2 5 3.6"/></svg>';
 IKON.spor='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6v4M4.500 4.500v7M11.500 4.500v7M14 6v4M4.500 8h7"/></svg>';
 (function(){
   var nav=$("nav");
@@ -1441,7 +1443,7 @@ var GRUPLAR=[
   {id:"bugun",   ad:"Bugün",   alt:[["bugun","Bugün"]]},
   {id:"oku",     ad:"Oku",     alt:[["ders","Oku"]]},
   {id:"gundem",  ad:"Gündem",  alt:[["gundem","Gündem"]]},
-  {id:"ben",     ad:"Ben",     alt:[["plan","Düzen","duzen"],["spor","Spor"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
+  {id:"ben",     ad:"Ben",     alt:[["ben","Ben"],["plan","Düzen","duzen"],["spor","Spor"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
 ];
 var GIKON={
   bugun:IKON.bugun, calisma:IKON.netler,
@@ -1453,7 +1455,7 @@ var benAlt=yerelOku("ben_alt","duzen"), grupSon=yerelOku("grup_son",{})||{};
 function grupBul(sec){ for(var i=0;i<GRUPLAR.length;i++){ if(GRUPLAR[i].alt.some(function(a){return a[0]===sec;})) return GRUPLAR[i]; } return GRUPLAR[0]; }
 function gitGrup(gid){
   var g=GRUPLAR.filter(function(x){return x.id===gid;})[0]; if(!g) return;
-  var hedef=grupSon[gid]; if(!g.alt.some(function(a){return a[0]===hedef;})) hedef=g.alt[0][0];
+  var hedef=grupSon[gid]; if(gid==="ben" || !g.alt.some(function(a){return a[0]===hedef;})) hedef=g.alt[0][0];
   git(hedef);
 }
 function grupGuncelle(){
@@ -1463,7 +1465,7 @@ function grupGuncelle(){
   var hero=$("hero"), facts=document.querySelector(".facts");
   if(hero) hero.hidden = g.id!=="bugun";
   if(facts) facts.hidden = g.id!=="calisma";
-  var s=$("sekme"); s.innerHTML=""; s.hidden = g.alt.length<2;
+  var s=$("sekme"); s.innerHTML=""; s.hidden = g.alt.length<2 || g.id==="ben";
   g.alt.forEach(function(a){
     var b=el("button",null,a[1]); b.type="button"; b.setAttribute("role","tab");
     var secili = a[2] ? (aktif===a[0] && benAlt===a[2]) : (aktif===a[0]);
@@ -1496,6 +1498,10 @@ function grupGuncelle(){
   });
   var eskiGit=git; git=function(id){ eskiGit(id); grupGuncelle(); };
   var t=$("ayTema"); if(t) t.addEventListener("click",function(){ $("themeBtn").click(); });
+  /* Ben: tek liste menü; her satır kendi sayfasını açar, sayfanın başında "‹ Ben" */
+  document.querySelectorAll("[data-ben]").forEach(function(r){ r.addEventListener("click",function(){
+    var x=r.getAttribute("data-ben").split(":"); if(x[1]){ benAlt=x[1]; yerelYaz("ben_alt",benAlt); } git(x[0]); window.scrollTo(0,0); }); });
+  document.querySelectorAll(".geri-ben").forEach(function(r){ r.addEventListener("click",function(){ git("ben"); }); });
   var y=$("ayYedek"); if(y) y.addEventListener("click",function(){ yedekAl(); });
   var u=$("ayYukle"); if(u) u.addEventListener("click",function(){ $("ioFile").click(); });
 })();

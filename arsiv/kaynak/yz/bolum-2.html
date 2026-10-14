@@ -1,0 +1,515 @@
+<article class="chapter ders" id="c-yz-2">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 2 · Örnekten öğrenmek</div>
+<h1>Kural yazmak yerine örnekten öğrenmek: makine öğrenmesinin mantığı</h1>
+<p class="time">Okuma ve çözme yaklaşık 50 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir e-postanın istenmeyen posta (spam) olup olmadığını ayıran bir program yazmak istiyorsun. "İçinde 'bedava' geçiyorsa spam" diye kural koyarsın; ertesi gün spamcılar "b3dava" yazar, senin kuralın çöker. Yüzlerce kural yazarsın, her biri bir yerden delinir. Peki kuralları sen yazmak yerine, bilgisayara binlerce "bu spam, bu değil" örneği gösterip kuralı <strong>onun bulmasını</strong> isteyebilir misin? Bulduğu kuralın yeni e-postalarda da işe yarayıp yaramadığını nasıl anlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (yapay zekânın ne olduğu, kural tabanlı sistemlerle öğrenen sistemlerin farkı, makine öğrenmesinin YZ içindeki yeri). Kod bilmen gerekmiyor; "İsteğe bağlı deneme" kutularındaki Python örneklerini atlayabilirsin, konu eksik kalmaz.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 1'de bugün "yapay zekâ" denince çoğunlukla <strong>makine öğrenmesinin</strong> kastedildiğini gördük. Bu parça, makine öğrenmesinin <strong>nasıl düşündüğünü</strong> kurar. Rafın geri kalanındaki her şey, sinir ağları da büyük dil modelleri de, burada kuracağımız birkaç fikrin büyütülmüş hâlidir.</p>
+
+<p>Sırasıyla: geleneksel programlama ile makine öğrenmesinin farkı ve küçük bir spam filtresini elle "eğitmek"; her makine öğrenmesi metninde karşına çıkacak sekiz sözcük; üç öğrenme türü ve iki problem türü; en sonda en önemli soru: bir modelin gerçekten öğrenip öğrenmediğini nasıl anlarız? Bu soru bizi eğitim, doğrulama ve test verisine, ezberleme ile genelleme ayrımına ve "çöp girer, çöp çıkar" ilkesine götürecek.</p>
+
+<h2 class="s">İki farklı yol: kuralı sen yazarsın ya da örnek verirsin</h2>
+
+<p>Bilgisayar programı, en sade hâliyle, bir tarif uygulayan makinedir. Bir hesap makinesi programını düşün: "iki sayıyı topla" kuralını bir insan yazar, sen 3 ve 4 verirsin, program 7 der. Kural baştan bellidir ve insanın kafasındadır; bilgisayarın işi onu hızlı ve hatasız uygulamaktır. Buna <strong>geleneksel programlama</strong> diyeceğiz: <em>kurallar + veri → cevaplar</em>.</p>
+
+<p>Bu yol, kuralı açıkça söyleyebildiğin her işte mükemmeldir: bordro hesaplamak, bir listeyi sıralamak. Ama bazı işlerde kuralı söyleyemezsin. Bir fotoğrafta kedi olduğunu nasıl anladığını adım adım yazmayı dene: "Kulakları üçgen" dersin, ama köpeklerin de üçgen kulağı olabilir; "bıyığı var" dersin, ama arkadan çekilmiş fotoğrafta bıyık görünmez. Kediyi bir bakışta tanırsın, ama bu işi bir kural listesine çeviremezsin. Spam da böyledir: binlerce biçimi var ve sürekli değişiyor.</p>
+
+<p>Makine öğrenmesi bu işlerde yönü tersine çevirir. Kuralı yazmak yerine, bilgisayara bol miktarda <strong>örnek</strong> ve her örneğin <strong>doğru cevabını</strong> verirsin; bilgisayar, örneklerle cevapları birbirine bağlayan kuralı kendisi arar. Formülü: <em>veri + cevaplar → kurallar</em>. Bulunan bu kurala <strong>model</strong> denir. Model bir kez bulunduktan sonra yeni, cevabı bilinmeyen verilere uygulanır ve cevap üretir.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Geleneksel programlamada kurallar ve veri programa girer, cevap çıkar; makine öğrenmesinde veri ve cevaplar eğitime girer, kurallar yani model çıkar">
+  <text class="sv-b" x="10" y="22">Geleneksel programlama</text>
+  <rect class="sv-l" x="10" y="34" width="100" height="34" rx="8" />
+  <text class="sv-t" x="60" y="56" text-anchor="middle">Kurallar</text>
+  <rect class="sv-k" x="10" y="78" width="100" height="34" rx="8" />
+  <text class="sv-t" x="60" y="100" text-anchor="middle">Veri</text>
+  <path class="sv-c" d="M110 51H132V73H149M110 95H132V73" />
+  <polyline class="sv-c" points="142,68 149,73 142,78" />
+  <rect class="sv-k" x="150" y="50" width="100" height="46" rx="10" />
+  <text class="sv-b" x="200" y="78" text-anchor="middle">Program</text>
+  <path class="sv-c" d="M250 73H289" />
+  <polyline class="sv-c" points="282,68 289,73 282,78" />
+  <rect class="sv-m" x="290" y="56" width="100" height="34" rx="8" />
+  <text class="sv-t" x="340" y="78" text-anchor="middle">Cevaplar</text>
+  <text class="sv-b" x="10" y="166">Makine öğrenmesi</text>
+  <rect class="sv-k" x="10" y="178" width="100" height="34" rx="8" />
+  <text class="sv-t" x="60" y="200" text-anchor="middle">Veri</text>
+  <rect class="sv-m" x="10" y="222" width="100" height="34" rx="8" />
+  <text class="sv-t" x="60" y="244" text-anchor="middle">Cevaplar</text>
+  <path class="sv-c" d="M110 195H132V217H149M110 239H132V217" />
+  <polyline class="sv-c" points="142,212 149,217 142,222" />
+  <rect class="sv-k" x="150" y="194" width="100" height="46" rx="10" />
+  <text class="sv-b" x="200" y="222" text-anchor="middle">Eğitim</text>
+  <path class="sv-cl" d="M250 217H289" />
+  <polyline class="sv-cl" points="282,212 289,217 282,222" />
+  <rect class="sv-l" x="290" y="200" width="100" height="34" rx="8" />
+  <text class="sv-t" x="340" y="222" text-anchor="middle">Kurallar</text>
+  <text class="sv-s" x="340" y="252" text-anchor="middle">(= model)</text>
+  <text class="sv-s" x="200" y="288" text-anchor="middle">Model sonra yeni veriye uygulanır ve cevap üretir: buna çıkarım denir.</text>
+</svg>
+<figcaption>Üst satırda kuralı insan yazar, bilgisayar uygular. Alt satırda cevaplar da girdidir; çıktı ise kuralın kendisidir. Makine öğrenmesinde "programlamak", büyük ölçüde doğru örnekleri toplamak ve öğrenme sürecini kurmak demektir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Makine öğrenmesi</strong>, bir bilgisayarın bir işi yapma kuralını insanın açıkça yazması yerine, o işin örneklerinden (ve çoğu zaman örneklerin doğru cevaplarından) çıkarması ve bu sayede <strong>daha önce görmediği</strong> örneklerde de iş yapabilmesidir. Ölçüt, gördüğü örnekleri tekrar etmek değil, yenilerinde başarılı olmaktır.</p></div>
+
+<p>Tanımın son cümlesi bu parçanın omurgasıdır. Kısa bir tarih notu: "machine learning" terimini yaygınlaştıran ilk yayınlardan biri, Arthur Samuel'in 1959'da yayımladığı, dama oynamayı kendi oyunlarından öğrenen program üzerine makalesidir. Tom Mitchell 1997'deki ders kitabında şu tanımı verdi: bir program, bir iş türünde (T), bir başarı ölçüsüne (P) göre, deneyimle (E) daha iyi hâle geliyorsa <em>öğreniyordur</em>. Bu tanım "öğrenme" gibi bulanık bir sözcüğü ölçülebilir bir şeye çevirir.</p>
+
+<h3>Spam filtresi: aynı iş, iki yol</h3>
+
+<p>Geleneksel yolla bir insan spamları inceler, şüpheli sözcüklerin listesini çıkarır ve "bu sözcüklerden ikisi geçiyorsa spam" diye kural koyar. Bu, spamcılar yeni sözcükler bulana ya da yazımı bozana kadar çalışır; her değişiklikte liste elle güncellenir ve büyüdükçe kurallar birbiriyle çelişir.</p>
+
+<p>Makine öğrenmesi yoluyla ise kullanıcıların "spam" düğmesine bastığı milyonlarca e-posta toplanır; bu düğme her e-postaya bir cevap yapıştırır. Öğrenme süreci, hangi sözcüklerin ve gönderen özelliklerinin spamla birlikte görüldüğünü kendisi çıkarır; spamcılar taktik değiştirince model yeni işaretlenmiş örneklerle yeniden eğitilir. İnsanın işi kural yazmak olmaktan çıkar, iyi örnek toplamak ve öğrenmeyi ölçmek olur. Gerçek filtreler sözcüklerden çok daha fazlasına bakar; aşağıdaki örnek fikri göstermek için sadeleştirilmiştir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1 · Bir spam filtresini elle eğitmek</span>
+<p><strong>Soru:</strong> Elimizde, her biri "spam" ya da "normal" diye işaretlenmiş sekiz e-posta var. Bunlardan bir kural öğren ve "bedava fırsatı kaçırmayın hemen tıklayın" e-postasına karar ver.</p>
+<p>Spam: (1) "bedava hediye kazandınız hemen tıklayın" (2) "hemen tıklayın indirim fırsatı kaçmaz" (3) "kazandınız ödülünüzü almak için tıklayın" (4) "bedava indirim fırsatı sadece bugün"<br>Normal: (5) "yarınki toplantı saat onda" (6) "rapor ekte toplantı öncesi bakabilir misin" (7) "bugün akşam yemeğe gelir misin" (8) "faturanız ekte bilginize"</p>
+<p><strong>Adım 1 (öğrenme yöntemini seç).</strong> Çok basit bir yöntem kuralım: her sözcüğe bir <em>ağırlık</em> verelim. Sözcük bir spam e-postada geçiyorsa ağırlığına +1, normal bir e-postada geçiyorsa −1 ekleyelim. Ağırlığı yüksek sözcük "spam kokar", düşük sözcük "normal kokar".</p>
+<p><strong>Adım 2 (ağırlıkları say).</strong> "tıklayın" 1., 2. ve 3. spamda geçiyor, hiçbir normalde geçmiyor: +3. "bedava" 1. ve 4. spamda: +2. "kazandınız" 1. ve 3. spamda: +2. "hemen" 1. ve 2. spamda: +2. "fırsatı" 2. ve 4. spamda: +2. "toplantı" 5. ve 6. normalde: −2. "ekte" 6. ve 8. normalde: −2. "bugün" 4. spamda (+1) ve 7. normalde (−1) geçiyor: 0, yani bu sözcük hiçbir yöne işaret etmiyor.</p>
+<p><strong>Adım 3 (kural hazır).</strong> Öğrendiğimiz şey artık bir sözcük–ağırlık tablosu. Bunu kimse elle yazmadı; örneklerden çıktı. Bu tablo bizim <em>modelimizdir</em>, içindeki sayılar da modelin <em>parametreleridir</em>.</p>
+<p><strong>Adım 4 (yeni e-postaya uygula).</strong> "bedava fırsatı kaçırmayın hemen tıklayın": bedava +2, fırsatı +2, kaçırmayın 0 (hiç görülmedi), hemen +2, tıklayın +3. Toplam +9.</p>
+<p><strong>Adım 5 (karar).</strong> Karar kuralımız "toplam sıfırdan büyükse spam" olsun. +9 &gt; 0, demek ki <strong>spam</strong>.</p>
+<p><strong>Sonuç:</strong> Hiçbir insan "bedava + hemen = spam" demedi; sekiz örnek bunu kendiliğinden ortaya çıkardı. Aynı yöntemle "toplantı notları ekte" −4 alır ve normal sayılır. Ama "tebrikler büyük ödül sizi bekliyor" e-postası 0 alır ve <em>normal</em> sayılır: içindeki sözcüklerin hiçbiri eğitimde görülmedi ("ödülünüzü" görüldü ama "ödül" ayrı bir sözcük sayıldı). Model yalnız gördüğünden öğrenebilir; bu sınır aşağıda "verinin temsil gücü" başlığında geri gelecek.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Kod bilmiyorsan bu kutuyu atla. Aşağıdaki betik, yukarıdaki örneği aynen yapar; hiçbir kütüphane gerektirmez. <code>python3 spam_ogren.py</code> diye çalıştırabilirsin.</p>
+<pre class="kod" data-ad="python3 spam_ogren.py"># Etiketli örnekler: (metin, etiket)
+egitim = [
+    ("bedava hediye kazandınız hemen tıklayın", "spam"),
+    ("hemen tıklayın indirim fırsatı kaçmaz", "spam"),
+    ("kazandınız ödülünüzü almak için tıklayın", "spam"),
+    ("bedava indirim fırsatı sadece bugün", "spam"),
+    ("yarınki toplantı saat onda", "normal"),
+    ("rapor ekte toplantı öncesi bakabilir misin", "normal"),
+    ("bugün akşam yemeğe gelir misin", "normal"),
+    ("faturanız ekte bilginize", "normal"),
+]
+
+# EĞİTİM: her kelimeye bir ağırlık öğren
+# ağırlık = (geçtiği spam sayısı) - (geçtiği normal sayısı)
+agirlik = {}
+for metin, etiket in egitim:
+    for kelime in set(metin.split()):
+        artis = 1 if etiket == "spam" else -1
+        agirlik[kelime] = agirlik.get(kelime, 0) + artis
+
+print("Öğrenilen ağırlıklardan bazıları:")
+for k in ["tıklayın", "bedava", "kazandınız", "bugün", "toplantı", "ekte"]:
+    print(f"  {k:12} {agirlik[k]:+d}")
+
+# ÇIKARIM: yeni, etiketsiz e-postaya karar ver
+def tahmin(metin):
+    puan = sum(agirlik.get(k, 0) for k in metin.split())
+    return puan, ("spam" if puan > 0 else "normal")
+
+for yeni in ["bedava fırsatı kaçırmayın hemen tıklayın",
+             "toplantı notları ekte",
+             "tebrikler büyük ödül sizi bekliyor"]:
+    puan, karar = tahmin(yeni)
+    print(f"{yeni!r}: puan {puan:+d} -> {karar}")</pre>
+<pre class="cikti">Öğrenilen ağırlıklardan bazıları:
+  tıklayın     +3
+  bedava       +2
+  kazandınız   +2
+  bugün        +0
+  toplantı     -2
+  ekte         -2
+'bedava fırsatı kaçırmayın hemen tıklayın': puan +9 -> spam
+'toplantı notları ekte': puan -4 -> normal
+'tebrikler büyük ödül sizi bekliyor': puan +0 -> normal</pre>
+<p>Üstteki döngü <strong>eğitim</strong>, alttaki <code>tahmin</code> işlevi <strong>çıkarımdır</strong>; bu ayrım bütün makine öğrenmesinde aynıdır. Kendin dene: <code>egitim</code> listesine son cümleyi spam etiketiyle ekleyip yeniden çalıştır; kararın değiştiğini göreceksin. Model daha akıllı olmadı, yalnız daha çok şey <em>gördü</em>.</p></div>
+
+<h2 class="s">Sekiz sözcükle makine öğrenmesi</h2>
+
+<p>Makine öğrenmesi üzerine okuyacağın her metin aynı küçük sözlüğü kullanır; İngilizce karşılıklarını da bilmek işini kolaylaştırır. Bir örnek üzerinden kuralım: bir şehirdeki satılmış evlerin kaydı.</p>
+
+<div class="tablo"><table>
+<tr><th>Sözcük</th><th>İngilizcesi</th><th>Ne demek</th><th>Ev fiyatı örneğinde</th></tr>
+<tr><td>veri kümesi</td><td>dataset</td><td>Öğrenmede kullanılan bütün kayıtların toplamı</td><td>Son üç yılda satılmış 20.000 evin tablosu</td></tr>
+<tr><td>örnek</td><td>example, sample, instance</td><td>Veri kümesindeki tek bir kayıt; tablonun bir satırı</td><td>Tek bir evin satırı</td></tr>
+<tr><td>özellik</td><td>feature</td><td>Bir örneği betimleyen ölçülmüş bilgi; tablonun bir sütunu</td><td>metrekare, oda sayısı, bina yaşı, kat, semt</td></tr>
+<tr><td>etiket</td><td>label, target</td><td>Örnek için bilinen doğru cevap; tahmin edilmek istenen şey</td><td>Evin gerçekte satıldığı fiyat</td></tr>
+<tr><td>model</td><td>model</td><td>Özelliklerden etikete giden, öğrenilmiş kural</td><td>"Bu özelliklerdeki ev yaklaşık şu fiyata satılır" diyen hesap</td></tr>
+<tr><td>parametre</td><td>parameter, weight</td><td>Modelin içindeki, eğitimle ayarlanan sayılar</td><td>Her metrekarenin fiyata ne kadar eklediği gibi katsayılar</td></tr>
+<tr><td>eğitim</td><td>training</td><td>Parametrelerin örneklere bakılarak ayarlanması</td><td>20.000 evin kaydından katsayıların çıkarılması</td></tr>
+<tr><td>çıkarım</td><td>inference, prediction</td><td>Eğitilmiş modelin yeni bir örneğe cevap üretmesi</td><td>Yeni ilana girilen evin fiyatının tahmin edilmesi</td></tr>
+</table></div>
+
+<p>Tabloyu biraz açalım, çünkü her satırda bir incelik var.</p>
+
+<p><strong>Özellik ile etiket</strong> arasındaki fark, modelin <em>neyi bildiği</em> ile <em>neyi tahmin edeceği</em> arasındaki farktır. Çıkarım anında elinde olacak bilgiler özelliktir; tahmin etmek istediğin bilgi etikettir. Bu yüzden aynı sütun bir problemde özellik, başka bir problemde etiket olabilir. Evin fiyatından semtini tahmin etmeye kalkarsan, semt etiket olur, fiyat özellik. Hangisinin hangisi olduğuna veri değil, <strong>sorduğun soru</strong> karar verir.</p>
+
+<p>Bir başka incelik: bilgisayar yalnız sayıyla hesap yapar. "Semt" gibi yazı biçimindeki bilgi de, resimler ve sözcükler de modele girmeden önce sayıya çevrilir; bu fikir Parça 3'ün konusu.</p>
+
+<p><strong>Model ile parametre</strong> arasındaki fark, bir tarifin <em>biçimi</em> ile içindeki <em>miktarlar</em> arasındaki fark gibidir. "Un, şeker ve yumurtayı karıştır" biçimdir; "300 gram un, 2 yumurta" miktarlardır. Biçimi genellikle insan seçer ("fiyat, her özelliğin bir katsayıyla çarpılıp toplanmasıyla hesaplansın"), miktarları eğitim bulur. Spam örneğimizde biçim "ağırlıkları topla, sıfırdan büyükse spam" idi; parametreler sözcük ağırlıklarıydı. "70 milyar parametreli model", eğitimle ayarlanmış 70 milyar sayı demektir (Parça 6).</p>
+
+<p><strong>Eğitim ile çıkarım</strong> en çok karıştırılan ayrımdır. Eğitim pahalıdır ve seyrek yapılır; çıkarım ucuzdur ve sürekli yapılır: her e-posta geldiğinde, her soru sorulduğunda. Bir sohbet asistanıyla konuşurken yaptığın şey çıkarımdır; konuşma sırasında modelin parametreleri değişmez (Parça 11).</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir problemde neyin özellik, neyin etiket olduğunu bulmak için kendine şunu sor: <strong>"Modeli kullanacağım anda elimde ne olacak, neyi bilmek isteyeceğim?"</strong> Elinde olacak olanlar özelliktir. Bilmek istediğin etikettir. Kullanım anında elinde olmayacak bir bilgiyi özellik yaparsan, model kâğıt üstünde parlar ama gerçek hayatta çalışamaz.</p></div>
+
+<p>Nedeni: eğitim tablosunda bütün sütunlar hazırdır, çıkarım anında değil. "Satıştan sonra yapılan tadilat tutarı" tabloda bulunabilir, ama ilan girildiği anda kimse bilemez. Böyle bilgiyi özellik yapmanın adı veri sızıntısıdır (Parça 5).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2 · Bir problemi sözlüğe çevirmek</span>
+<p><strong>Soru:</strong> Bir emlak sitesi, kullanıcı ilanını girer girmez "benzer evler şu fiyata satıldı, sen de yaklaşık şu fiyatı isteyebilirsin" diye öneri göstermek istiyor. Elinde geçmiş satışların kaydı var. Bu işi makine öğrenmesi sözlüğüyle tarif et.</p>
+<p><strong>Adım 1 (veri kümesi).</strong> Geçmiş satışların kaydı. Her satır bir satış.</p>
+<p><strong>Adım 2 (örnek).</strong> Tek bir satılmış ev, yani tablonun bir satırı.</p>
+<p><strong>Adım 3 (çıkarım anında elde ne var?).</strong> Kullanıcı ilanı girerken metrekareyi, oda sayısını, bina yaşını, katı, semti yazar. Bunlar özelliklerdir. "Satış süresi" ya da "son satış fiyatı" o anda bilinmez; bunlar özellik olamaz.</p>
+<p><strong>Adım 4 (neyi bilmek istiyoruz?).</strong> Evin satılacağı fiyatı. Bu etikettir. Geçmiş satışlarda bu sütun dolu, yani elimizde etiketli örnekler var.</p>
+<p><strong>Adım 5 (model ve parametre).</strong> Model, özelliklerden fiyata giden bir hesap; parametreler, bu hesapta her özelliğin ne kadar ağırlık taşıdığını belirleyen sayılar. Hangi biçimin seçileceği Parça 4'ün konusu.</p>
+<p><strong>Adım 6 (eğitim ve çıkarım).</strong> Eğitim: geçmiş satışlardan parametreleri ayarlamak, belki ayda bir yeniden yapılır. Çıkarım: her yeni ilanda modelin bir fiyat önermesi, günde binlerce kez.</p>
+<p><strong>Sonuç:</strong> Etiketli örneklerden, sayı biçiminde bir cevap tahmin eden bir iş. Aşağıda göreceğimiz adlarla bu bir <strong>denetimli öğrenme</strong>, türü de <strong>regresyon</strong> problemidir.</p></div>
+
+<h2 class="s">Üç öğrenme türü: neyle öğreniyor?</h2>
+
+<p>Makine öğrenmesi, öğrenirken eline geçen <em>geri bildirimin</em> türüne göre üç ana kola ayrılır. Ayrımın nedeni şudur: her kolun veri toplama maliyeti, kullanılan yöntemler ve yanılma biçimleri farklıdır. Bir probleme hangi kolun uyduğunu bilmek, o problemi çözmeye başlamanın ilk adımıdır.</p>
+
+<h3>Denetimli öğrenme: cevap anahtarıyla çalışmak</h3>
+
+<p><strong>Denetimli öğrenmede</strong> (bazı Türkçe kaynaklarda "gözetimli öğrenme"; İngilizcesi supervised learning) her örneğin yanında doğru cevabı, yani etiketi vardır. Model bir tahmin yapar, tahmin etiketle karşılaştırılır, aradaki farka göre parametreler düzeltilir. Adındaki "denetim", her adımda cevabı bilen bir öğretmenin varlığına işaret eder. Ev fiyatı tahmini, kedi–köpek fotoğrafı ayırma, spam filtresi, bir röntgende kırık olup olmadığını bulma, bir cümleyi başka dile çevirme: hepsi denetimlidir.</p>
+
+<p>Denetimli öğrenmenin gücü de zayıflığı da etikettedir: model neyin doğru olduğunu açıkça bilir, ama etiket çoğu zaman pahalıdır. Bir milyon fotoğrafı etiketlemek insan emeği ister; tıbbi görüntülerde etiketi uzman hekim koymalıdır. Spam örneğinde etiket ucuzdu, çünkü kullanıcılar düğmeye basarak onu zaten veriyordu.</p>
+
+<h3>Denetimsiz öğrenme: cevap anahtarı yokken yapı aramak</h3>
+
+<p><strong>Denetimsiz öğrenmede</strong> (unsupervised learning) etiket yoktur; elinde yalnız özellikler vardır. Model "doğru cevabı" öğrenemez, çünkü doğru cevap verilmemiştir. Bunun yerine verinin içindeki yapıyı arar: hangi örnekler birbirine benziyor, hangileri öbürlerinden çok farklı?</p>
+
+<p>En tanıdık örnek müşteri gruplamadır. Bir mağaza müşterilerinin ne sıklıkla geldiğini, ne kadar harcadığını bilir ama "türlerini" bilmez. Denetimsiz bir yöntem onları benzerliklerine göre, diyelim beş gruba ayırır. Bu işe <strong>kümeleme</strong> (clustering) denir. Model grupların adını bilmez: ona "bu grup öğrenciler, şu grup indirim avcıları" diyen bir etiket verilmedi. Grupları yorumlamak, onlara ad koymak ve işe yarayıp yaramadığına karar vermek insana kalır. Denetimsiz öğrenmenin bir başka yaygın kullanımı <strong>aykırı örnek bulmaktır</strong>: bir kredi kartında her zamankinden çok farklı bir işlem, bir makinede alışılmışın dışında bir titreşim.</p>
+
+<h3>Pekiştirmeli öğrenme: deneyerek, ödülle öğrenmek</h3>
+
+<p><strong>Pekiştirmeli öğrenmede</strong> (reinforcement learning) ne hazır bir örnek tablosu ne de her adım için doğru cevap vardır. Bunun yerine bir <strong>ajan</strong> (karar veren program) bir <strong>ortamda</strong> hareket eder, her hareketinden sonra bir <strong>ödül</strong> ya da ceza alır ve zamanla toplam ödülü en çok artıran davranışı bulmaya çalışır. Bir çocuğun bisiklet sürmeyi öğrenmesine benzer: kimse ona her an hangi kası ne kadar kasacağını söylemez; düşer (ceza), dengede kalır (ödül), yavaş yavaş öğrenir.</p>
+
+<p>Oyunlar bu tür için biçilmiş kaftandır: ödül açıktır ve ajan milyonlarca kez oynayabilir. Parça 1'de andığımız AlphaGo, insan oyunlarından denetimli öğrenmeyle başlayıp kendi kendine oynayarak pekiştirmeli öğrenmeyle güçlenmişti. Robot kontrolü ve depoda yol bulma da bu türe girer. Zorluk ödüldedir: ödül çoğu zaman geç gelir (hangi hamlenin işe yaradığını oyunun sonunda bile bilemezsin) ve kötü tasarlanmış bir ödül ajanı istemediğin kestirmelere iter (Parça 13 ve 19).</p>
+
+<div class="tablo"><table>
+<tr><th>Tür</th><th>Veride ne var?</th><th>Model neyi öğrenir?</th><th>Tipik örnek</th></tr>
+<tr><td>Denetimli</td><td>Özellikler + doğru cevap (etiket)</td><td>Özellikten etikete giden kuralı</td><td>Ev fiyatı tahmini; kedi mi köpek mi; spam mı</td></tr>
+<tr><td>Denetimsiz</td><td>Yalnız özellikler</td><td>Verideki yapıyı: benzer gruplar, aykırı örnekler</td><td>Müşterileri alışkanlıklarına göre gruplamak</td></tr>
+<tr><td>Pekiştirmeli</td><td>Ortam, eylemler ve ödül sinyali</td><td>Hangi durumda hangi eylemin uzun vadede en çok ödül getirdiğini</td><td>Oyun oynayan ajan; denge kurmayı öğrenen robot</td></tr>
+</table></div>
+
+<p>Bu üçlü kesin duvarlarla ayrılmaz. Önemli bir ara yol, etiketi verinin kendisinden üretmektir: büyük dil modelleri "bu metnin bir sonraki sözcüğü ne?" sorusunun cevabını metnin kendisinden alarak eğitilir; kimse etiket yazmaz ama her örneğin doğru cevabı vardır. Bu yaklaşıma öz-denetimli öğrenme denir; Parça 12'de ayrıntısıyla döneceğiz.</p>
+
+<h2 class="s">İki problem türü: sınıflandırma ve regresyon</h2>
+
+<p>Denetimli öğrenmenin içinde ikinci bir ayrım vardır ve bu ayrım etiketin <strong>ne tür bir şey</strong> olduğuna bakar. Ayrımın nedeni pratiktir: iki türde modelin çıktısı da, hatanın ölçülme biçimi de farklıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Etiket bir <strong>sınıf</strong>, yani sınırlı sayıda seçenekten biriyse (spam / normal; kedi / köpek / kuş; 0'dan 9'a rakamlar) problem <strong>sınıflandırmadır</strong>. Etiket <strong>sürekli bir sayıysa</strong>, yani bir ölçekte herhangi bir değeri alabiliyorsa (fiyat, sıcaklık, süre, kilo) problem <strong>regresyondur</strong>.</p></div>
+
+<p>Ayırt etmek için en iyi soru şudur: <strong>"Cevaplar arasında ortalama almak anlamlı mı?"</strong> 3 milyon ile 4 milyonluk iki evin arasında 3,5 milyon anlamlı bir fiyattır: regresyon. "Kedi" ile "köpek"in ortalaması yoktur: sınıflandırma.</p>
+
+<p>Bu soru en çok, etiketin sayıyla yazıldığı ama aslında sınıf olduğu durumlarda işe yarar. El yazısı rakam tanımada etiket 0–9 arası bir sayıdır, ama 3 ile 5'in ortalaması olan 4 anlamlı bir "ara cevap" değildir; rakamlar burada sınıf adıdır, problem sınıflandırmadır. Tersine, "1–5 yıldız" puanı bazen regresyon gibi ele alınır, çünkü 4 gerçekten 3 ile 5'in ortasındadır; böyle sınır durumlar seni şaşırtmasın.</p>
+
+<p>Sınıflandırma modelleri çoğu zaman bir <strong>olasılık</strong> da üretir ("spam olma olasılığı %87"), sonra bir eşik konur. Bunu Parça 4 ve 5'te açacağız. Adına aldanma: "lojistik regresyon" adında regresyon geçse de bir sınıflandırma yöntemidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3 · Problemin türünü bulmak</span>
+<p><strong>Soru:</strong> Aşağıdaki dört işin her biri için öğrenme türünü ve (denetimliyse) problem türünü bul. (a) Bir banka, geçmişte "dolandırıcılık" ya da "normal" diye işaretlenmiş kart işlemlerinden yeni işlemleri ayırmak istiyor. (b) Bir müzik uygulaması, kullanıcılarını dinleme alışkanlıklarına göre gruplamak istiyor; hiçbir grup adı önceden belli değil. (c) Bir depo robotu, raflar arasında en kısa sürede paket toplamayı, her başarılı teslimde puan alarak öğrenecek. (d) Bir market zinciri, geçmiş satış kayıtlarından yarın her şubede kaç ekmek satılacağını tahmin etmek istiyor.</p>
+<p><strong>Adım 1 (a için etiket var mı?).</strong> Var: her geçmiş işlem "dolandırıcılık" ya da "normal" diye işaretli. Denetimli öğrenme.</p>
+<p><strong>Adım 2 (a için etiketin türü).</strong> İki seçenekten biri; ortalaması anlamsız. <strong>Sınıflandırma.</strong></p>
+<p><strong>Adım 3 (b için etiket var mı?).</strong> Yok; grupların adı da sayısı da bilinmiyor, yalnız dinleme alışkanlıkları var. <strong>Denetimsiz öğrenme</strong> (kümeleme). Sınıflandırma ya da regresyon sorusu burada sorulmaz, çünkü tahmin edilecek bir etiket yok.</p>
+<p><strong>Adım 4 (c için geri bildirim nasıl geliyor?).</strong> Hazır doğru cevap yok; robot hareket ediyor, sonuçta puan alıyor. <strong>Pekiştirmeli öğrenme.</strong></p>
+<p><strong>Adım 5 (d için etiket var mı ve türü ne?).</strong> Var: geçmiş günlerin gerçek satış sayıları. Denetimli. Etiket bir sayı ve ortalaması anlamlı (40 ile 60 ekmeğin ortası 50 ekmek). <strong>Regresyon.</strong> Ekmek sayısı tam sayı olsa da ölçek üzerinde bir değer olduğu için regresyon olarak ele alınır.</p>
+<p><strong>Sonuç:</strong> (a) denetimli sınıflandırma, (b) denetimsiz kümeleme, (c) pekiştirmeli öğrenme, (d) denetimli regresyon. Her seferinde iki soru sırayla soruldu: önce "geri bildirim ne biçimde geliyor?", sonra, etiket varsa, "etiketin ortalaması anlamlı mı?".</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Denetimsiz öğrenme grupları kendisi adlandırır ve doğru grupları bulur."</strong> Kümeleme yöntemi yalnız "bu örnekler birbirine benziyor" der; grupların ne anlama geldiğini söylemez. Üstelik "doğru" gruplama diye tek bir şey yoktur: aynı müşterileri harcama tutarına göre de, alışveriş saatine göre de gruplayabilirsin ve ikisi de matematiksel olarak geçerli olur. Hangi gruplamanın işe yaradığına, onu kullanacak insan, işin amacına bakarak karar verir.</p>
+<p><strong>"Etiket sayıysa problem regresyondur."</strong> Etiketin sayıyla yazılması yetmez; sayının bir ölçek üzerinde anlamlı olması gerekir. Rakam tanıma, posta kodu, ürün kodu gibi "sayı biçiminde ad" taşıyan etiketler sınıftır.</p></div>
+
+<h2 class="s">Asıl soru: model öğrendi mi, ezberledi mi?</h2>
+
+<p>Şimdi parçanın en önemli fikrine geliyoruz. Tanımımızı hatırla: makine öğrenmesinde ölçüt, gördüğü örnekleri tekrar etmek değil, <strong>yenilerinde</strong> başarılı olmaktır. Bunun neden bu kadar önemli olduğunu bir öğrenci benzetmesiyle görelim.</p>
+
+<p>Bir öğretmen dönem boyunca 200 çözümlü soru veriyor, yıl sonu sınavını da bu soruların aynısından yapıyor. 100 alan öğrenci konuyu öğrenmiş midir? Bilemezsin; belki cevapları ezberlemiştir. Anlayanla ezberleyeni ayırmanın tek yolu, onlara <strong>daha önce hiç görmedikleri</strong> sorular sormaktır. Konuyu anlayan yeni sorularda da iyi yapar; ezberleyen çöker.</p>
+
+<p>Makine öğrenmesinde durum aynıdır, hatta daha keskindir, çünkü bilgisayar ezberlemeyi insandan çok daha iyi yapar. Sekiz e-postanın her birini bir tabloya yazıp "bu metin gelirse şu cevabı ver" diyen bir program, o sekizde %100 başarılı olur ve dokuzuncuda hiçbir şey bilmez.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Genelleme</strong> (generalization), modelin eğitimde görmediği yeni örneklerde de iyi sonuç vermesidir. <strong>Aşırı öğrenme</strong> (overfitting; "aşırı uyum" da denir), modelin eğitim örneklerine fazla sıkı uyup onların rastlantısal ayrıntılarını ve gürültüsünü de öğrenmesi, bu yüzden eğitim verisinde çok iyi, yeni veride belirgin biçimde kötü olmasıdır. <strong>Yetersiz öğrenme</strong> (underfitting; "eksik uyum"), modelin verideki gerçek düzeni bile yakalayamayacak kadar basit kalması ya da yeterince eğitilmemesi, bu yüzden hem eğitimde hem yeni veride kötü olmasıdır.</p></div>
+
+<p>Aşırı öğrenmenin neden olduğunu anlamak için verinin iki parçadan oluştuğunu düşün: <em>gerçek düzen</em> ve <em>gürültü</em>. Ev fiyatlarında gerçek düzen: büyük ev, yeni bina, merkezi semt daha pahalı. Gürültü ise o tek satışa özgü rastlantılardır: satıcının acelesi vardı, ucuza verdi. Gürültü bir sonraki satışta tekrar etmez. Gürültüyü de öğrenen model eğitimdeki her satışı kuruşu kuruşuna tutturur, ama yeni evlerde o rastlantıları boşuna arar ve yanılır.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 260" role="img" aria-label="Aynı noktalara üç model: düz çizgi yetersiz öğreniyor, yumuşak eğri iyi genelliyor, her noktadan geçen zikzak aşırı öğreniyor">
+  <text class="sv-b" x="107" y="20" text-anchor="middle">Yetersiz öğrenme</text>
+  <rect class="sv-k" x="5" y="30" width="204" height="180" rx="10" />
+  <line class="sv-cl" x1="15" y1="141" x2="199" y2="141" />
+  <circle class="sv-a" cx="30" cy="175" r="4" /><circle class="sv-a" cx="50" cy="158" r="4" /><circle class="sv-a" cx="70" cy="166" r="4" />
+  <circle class="sv-a" cx="90" cy="136" r="4" /><circle class="sv-a" cx="110" cy="130" r="4" /><circle class="sv-a" cx="130" cy="112" r="4" />
+  <circle class="sv-a" cx="150" cy="118" r="4" /><circle class="sv-a" cx="170" cy="92" r="4" /><circle class="sv-a" cx="190" cy="86" r="4" />
+  <text class="sv-s" x="107" y="230" text-anchor="middle">eğitimde: kötü</text>
+  <text class="sv-s" x="107" y="246" text-anchor="middle">yeni veride: kötü</text>
+  <text class="sv-b" x="320" y="20" text-anchor="middle">İyi genelleme</text>
+  <rect class="sv-k" x="218" y="30" width="204" height="180" rx="10" />
+  <path class="sv-cl" d="M233 178Q323 140 411 82" />
+  <circle class="sv-a" cx="243" cy="175" r="4" /><circle class="sv-a" cx="263" cy="158" r="4" /><circle class="sv-a" cx="283" cy="166" r="4" />
+  <circle class="sv-a" cx="303" cy="136" r="4" /><circle class="sv-a" cx="323" cy="130" r="4" /><circle class="sv-a" cx="343" cy="112" r="4" />
+  <circle class="sv-a" cx="363" cy="118" r="4" /><circle class="sv-a" cx="383" cy="92" r="4" /><circle class="sv-a" cx="403" cy="86" r="4" />
+  <text class="sv-s" x="320" y="230" text-anchor="middle">eğitimde: iyi</text>
+  <text class="sv-s" x="320" y="246" text-anchor="middle">yeni veride: iyi</text>
+  <text class="sv-b" x="533" y="20" text-anchor="middle">Aşırı öğrenme</text>
+  <rect class="sv-k" x="431" y="30" width="204" height="180" rx="10" />
+  <polyline class="sv-cl" points="446,190 456,175 466,145 476,158 486,190 496,166 506,115 516,136 526,150 536,130 546,90 556,112 566,145 576,118 586,70 596,92 606,115 616,86 626,55" />
+  <circle class="sv-a" cx="456" cy="175" r="4" /><circle class="sv-a" cx="476" cy="158" r="4" /><circle class="sv-a" cx="496" cy="166" r="4" />
+  <circle class="sv-a" cx="516" cy="136" r="4" /><circle class="sv-a" cx="536" cy="130" r="4" /><circle class="sv-a" cx="556" cy="112" r="4" />
+  <circle class="sv-a" cx="576" cy="118" r="4" /><circle class="sv-a" cx="596" cy="92" r="4" /><circle class="sv-a" cx="616" cy="86" r="4" />
+  <text class="sv-s" x="533" y="230" text-anchor="middle">eğitimde: kusursuz</text>
+  <text class="sv-s" x="533" y="246" text-anchor="middle">yeni veride: kötü</text>
+</svg>
+<figcaption>Üç kutuda da aynı dokuz eğitim örneği var (turuncu noktalar). Soldaki model, yükselen eğilimi bile görmüyor. Ortadaki, noktaların arasından geçen yumuşak eğilimi yakalıyor; her noktaya değmiyor ama yeni bir nokta büyük olasılıkla ona yakın düşecek. Sağdaki, her noktadan tam geçmek için zikzak çiziyor; noktaların arasındaki sapmaları gerçek sanmış, yeni bir nokta geldiğinde ondan uzakta kalacak.</figcaption>
+</figure>
+
+<p>Ortak ders: modelin ne kadar <strong>esnek</strong> olduğu ile ne kadar <strong>veri</strong> gördüğü arasında bir denge vardır. Az veriye çok esnek model verirsen gürültüyü de ezberler; fazla katı model gerçek düzeni bile çizemez. Dengenin nasıl kurulduğu Parça 4 ve 7'nin konusu; burada bilmen gereken sorunu <strong>teşhis</strong> etmek, ve teşhisin tek yolu modeli görmediği veride ölçmektir.</p>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Eğitim verisinde</th><th>Görülmemiş veride</th><th>Ne anlatıyor?</th></tr>
+<tr><td>Yetersiz öğrenme</td><td>Kötü</td><td>Kötü (eğitimdekine yakın)</td><td>Model ya çok basit ya yeterince eğitilmedi; gerçek düzeni yakalayamıyor.</td></tr>
+<tr><td>İyi genelleme</td><td>İyi</td><td>İyi (eğitimden biraz düşük)</td><td>Gerçek düzen öğrenildi. Küçük bir fark normaldir.</td></tr>
+<tr><td>Aşırı öğrenme</td><td>Çok iyi, bazen kusursuz</td><td>Belirgin biçimde kötü</td><td>Model eğitim örneklerinin ayrıntısını ezberledi; aradaki büyük açık asıl işarettir.</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Eğitim verisinde %100 başarı aldık, model mükemmel."</strong> Eğitim verisindeki başarı tek başına neredeyse hiçbir şey söylemez; yeterince esnek her model eğitim verisini ezberleyebilir. Hatta eğitimde kusursuz sonuç, çoğu zaman bir uyarı işaretidir. Doğru soru şudur: <em>görmediği</em> veride ne kadar başarılı, ve bu sonuç eğitimdekinden ne kadar uzak?</p></div>
+
+<h2 class="s">Veriyi üçe bölmek: eğitim, doğrulama, test</h2>
+
+<p>"Görmediği veride ölç" demek kolay; ama görülmemiş veriyi nereden bulacağız? Çözüm basit ve katıdır: eğitime başlamadan önce elindeki etiketli veriyi bölersin ve bir kısmını modelden <strong>saklarsın</strong>. Pratikte veri üç parçaya ayrılır.</p>
+
+<p><strong>Eğitim verisi</strong> (training set): Modelin parametreleri bu örneklere bakılarak ayarlanır. Öğrencinin çalışırken çözdüğü sorular.</p>
+
+<p><strong>Doğrulama verisi</strong> (validation set): Eğitimde kullanılmaz ama <strong>karar vermek</strong> için kullanılır. Hangi model biçimi daha iyi? Model ne kadar esnek olmalı? Eğitim ne zaman durmalı? Bu sorulara cevap vermek için farklı adayları eğitir, her birini doğrulama verisinde ölçer, en iyisini seçersin. Modelin eğitimle değil senin seçiminle belirlenen bu ayarlarına <strong>hiperparametre</strong> denir (parametreleri eğitim bulur, hiperparametreleri sen seçersin). Öğrencinin dönem içinde, ders çalışma yöntemini ayarlamak için çözdüğü ara sınavlar.</p>
+
+<p><strong>Test verisi</strong> (test set): En sona kadar kilitli durur. Bütün kararlar verildikten, model seçildikten sonra <strong>bir kez</strong> açılır ve modelin gerçek dünyada ne kadar başarılı olacağına dair en dürüst kestirimi verir. Öğrencinin yıl sonunda, daha önce hiç görmediği sorulardan oluşan sınavı.</p>
+
+<figure>
+<svg viewBox="0 0 400 255" role="img" aria-label="Veri yüzde altmış eğitim, yüzde yirmi doğrulama, yüzde yirmi test olarak bölünür; eğitimle modeller eğitilir, doğrulamada seçilir, testte bir kez ölçülür">
+  <rect class="sv-m" x="10" y="14" width="228" height="44" rx="8" />
+  <text class="sv-b" x="124" y="41" text-anchor="middle">Eğitim · %60</text>
+  <rect class="sv-l" x="240" y="14" width="74" height="44" rx="8" />
+  <text class="sv-s" x="277" y="33" text-anchor="middle">doğrulama</text>
+  <text class="sv-s" x="277" y="49" text-anchor="middle">%20</text>
+  <rect class="sv-a" x="316" y="14" width="74" height="44" rx="8" />
+  <text class="sv-s" x="353" y="33" text-anchor="middle">test</text>
+  <text class="sv-s" x="353" y="49" text-anchor="middle">%20</text>
+  <rect class="sv-m" x="10" y="80" width="380" height="36" rx="8" />
+  <text class="sv-t" x="200" y="103" text-anchor="middle">1. Her aday modeli eğitim verisiyle eğit</text>
+  <path class="sv-c" d="M200 116V127" /><polyline class="sv-c" points="195,121 200,127 205,121" />
+  <rect class="sv-l" x="10" y="128" width="380" height="36" rx="8" />
+  <text class="sv-t" x="200" y="151" text-anchor="middle">2. Adayları doğrulamada karşılaştır, seç</text>
+  <path class="sv-c" d="M200 164V175" /><polyline class="sv-c" points="195,169 200,175 205,169" />
+  <rect class="sv-a" x="10" y="176" width="380" height="36" rx="8" />
+  <text class="sv-t" x="200" y="199" text-anchor="middle">3. Seçilen modeli testte yalnız bir kez ölç</text>
+  <text class="sv-s" x="200" y="240" text-anchor="middle">Test sonucu beğenilmese de geri dönüp ayar değiştirilmez.</text>
+</svg>
+<figcaption>Bölme oranları kesin bir kural değildir; %60/20/20, %70/15/15, %80/10/10 yaygındır. Veri çok büyükse test ve doğrulama payı yüzde olarak küçülebilir, çünkü birkaç bin örnek bile güvenilir bir ölçüm verir. Değişmeyen şey sıradır: eğit, doğrulamada seç, testte bir kez ölç.</figcaption>
+</figure>
+
+<p>"Neden üç? İki yetmez mi?" diye sorabilirsin. Yetmez. Doğrulama verisi olmadığını, 40 farklı ayarı test verisinde ölçüp en iyisini seçtiğini düşün. 40 adaydan biri, gerçekten iyi olduğu için değil, şans eseri o test örneklerine biraz daha iyi uyduğu için öne çıkmış olabilir. Test artık "görülmemiş" değildir: onunla bir karar verdin, model onu dolaylı yoldan gördü; raporladığın sonuç iyimser çıkar. Doğrulama verisi, seçim için harcanacak, "kirlenmesi" göze alınmış ayrı veridir; test böylece temiz kalır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Test verisi hiçbir karar için kullanılmaz.</strong> Parametreler eğitim verisinden, hiperparametreler ve model seçimi doğrulama verisinden belirlenir; test verisi en sonda bir kez, yalnızca raporlamak için açılır. Neden: modeli ya da ayarlarını etkileyen her veri, artık modelin "gördüğü" veridir ve onunla yapılan ölçüm gerçek başarıyı olduğundan iyi gösterir.</p></div>
+
+<p>Bölme de dikkat ister. Veri bir sıraya göre dizilmişse (önce bütün spamlar, sonra bütün normaller) ve ilk %60'ı eğitime ayırırsan, eğitim ile test bambaşka şeylerden oluşur; bu yüzden genellikle karıştırarak bölünür. Ama yarınki satış gibi zamanla değişen bir şeyi tahmin ediyorsan, geçmişle eğitip daha yeni dönemle test etmek gerekir, çünkü model gerçekte de geleceği tahmin edecektir. Bölmenin öbür tuzaklarını ve çapraz doğrulamayı Parça 5'te göreceğiz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4 · Gerçek bir deneyde teşhis koymak</span>
+<p><strong>Soru:</strong> Bilgisayarın el yazısı rakamları tanıması için, her biri 8×8 piksellik 1.797 küçük rakam görüntüsünden oluşan bir veri kümesi kullanıldı. Veri %60 eğitim (1.078 görüntü), %20 doğrulama (359), %20 test (360) diye bölündü. Ayarlanabilir bir esneklik değeri ("derinlik": büyüdükçe model daha karmaşık kurallar kurabiliyor; ne olduğunu Parça 4'te göreceğiz) farklı değerlere getirildi ve her seferinde model eğitildi. Sonuçlar aşağıda: sayılar doğru bilinen görüntülerin oranı (1,000 = %100). Hangi ayar seçilmeli, test sonucu nasıl okunmalı?</p>
+<div class="tablo"><table>
+<tr><th>Derinlik</th><th>Eğitimde doğru oranı</th><th>Doğrulamada doğru oranı</th></tr>
+<tr><td>1</td><td>0,212</td><td>0,156</td></tr>
+<tr><td>2</td><td>0,319</td><td>0,265</td></tr>
+<tr><td>4</td><td>0,573</td><td>0,465</td></tr>
+<tr><td>6</td><td>0,819</td><td>0,699</td></tr>
+<tr><td>8</td><td>0,921</td><td>0,794</td></tr>
+<tr><td>10</td><td>0,983</td><td>0,841</td></tr>
+<tr><td>sınırsız</td><td>1,000</td><td>0,799</td></tr>
+</table></div>
+<p><strong>Adım 1 (üst satırlara bak).</strong> Derinlik 1 ve 2'de model eğitimde bile %21 ve %32'de kalıyor. On rakamın arasından rastgele seçse %10 civarı tutturacaktı; biraz öğrenmiş ama çok az. Eğitim ve doğrulama ikisi de kötü: <strong>yetersiz öğrenme</strong>.</p>
+<p><strong>Adım 2 (en alt satıra bak).</strong> Sınırsız derinlikte eğitimde 1,000, yani her eğitim görüntüsü doğru. Ama doğrulamada 0,799; aradaki açık yaklaşık 20 puan. Model eğitim görüntülerini ezberlemiş: <strong>aşırı öğrenme</strong>. Dikkat et: eğitim başarısı arttığı hâlde doğrulama başarısı 10'dan sınırsıza geçerken <em>düştü</em>.</p>
+<p><strong>Adım 3 (seçimi doğrulamaya göre yap).</strong> Doğrulama sütunundaki en yüksek değer 0,841, derinlik 10'da. Seçilen ayar: 10. Eğitim sütununa bakarak seçseydik "sınırsız"ı seçecektik ve yanılacaktık.</p>
+<p><strong>Adım 4 (testi bir kez aç).</strong> Derinlik 10 modeli, hiç kullanılmamış 360 test görüntüsünde ölçüldü: 0,864.</p>
+<p><strong>Adım 5 (sonucu yorumla).</strong> Test sonucu doğrulamadakinden (0,841) biraz yüksek çıktı. Model birden iyileşmedi; bu büyüklükteki kümelerde birkaç görüntünün şansı bu farkı yaratır. Önemli olan, test sonucunun doğrulamaya yakın olması.</p>
+<p><strong>Sonuç:</strong> Rapor şöyle yazılır: "Derinlik doğrulama verisine göre 10 seçildi; model görülmemiş test verisinde rakamların yaklaşık %86'sını doğru tanıdı." Eğitimdeki 0,983 raporun manşeti olmaz. Daha güçlü yöntemler bu veride çok daha yüksek sonuç verir; amaç teşhisi göstermekti.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python ve scikit-learn</span>
+<p>Kod bilmiyorsan bu kutuyu atla. Yukarıdaki tablo bu betikle üretildi. scikit-learn adlı makine öğrenmesi kütüphanesi gerekir (bu çıktı 1.9.1 sürümüyle alındı); veri kümesi kütüphanenin içinde gelir, internetten bir şey indirilmez. <code>random_state=0</code> bölmeyi sabitler; değiştirirsen ya da farklı sürüm kullanırsan sayılar birkaç puan oynayabilir.</p>
+<pre class="kod" data-ad="python3 bolme.py">from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
+X, y = load_digits(return_X_y=True)   # 8x8 piksellik el yazısı rakamlar
+print("örnek sayısı:", X.shape[0], "| özellik sayısı:", X.shape[1])
+
+# %60 eğitim, %20 doğrulama, %20 test
+X_egt, X_kalan, y_egt, y_kalan = train_test_split(X, y, test_size=0.4, random_state=0)
+X_dog, X_test, y_dog, y_test = train_test_split(X_kalan, y_kalan, test_size=0.5, random_state=0)
+print("eğitim:", len(y_egt), "doğrulama:", len(y_dog), "test:", len(y_test))
+
+print("derinlik  eğitim  doğrulama")
+en_iyi = None
+for derinlik in [1, 2, 4, 6, 8, 10, None]:
+    model = DecisionTreeClassifier(max_depth=derinlik, random_state=0)
+    model.fit(X_egt, y_egt)                      # eğitim
+    e = model.score(X_egt, y_egt)                # gördüğü sorular
+    d = model.score(X_dog, y_dog)                # görmediği sorular
+    print(f"{str(derinlik):>8}  {e:6.3f}  {d:9.3f}")
+    if en_iyi is None or d > en_iyi[1]:
+        en_iyi = (derinlik, d, model)
+
+derinlik, d, model = en_iyi
+print("doğrulamaya göre seçilen derinlik:", derinlik)
+print("test (yalnız bir kez):", round(model.score(X_test, y_test), 3))</pre>
+<pre class="cikti">örnek sayısı: 1797 | özellik sayısı: 64
+eğitim: 1078 doğrulama: 359 test: 360
+derinlik  eğitim  doğrulama
+       1   0.212      0.156
+       2   0.319      0.265
+       4   0.573      0.465
+       6   0.819      0.699
+       8   0.921      0.794
+      10   0.983      0.841
+    None   1.000      0.799
+doğrulamaya göre seçilen derinlik: 10
+test (yalnız bir kez): 0.864</pre>
+<p>Sözlüğümüzü koda eşle: <code>X</code> özellikler (her görüntünün 64 piksel değeri), <code>y</code> etiketler (0–9 arası rakam), her satır bir örnek. <code>fit</code> eğitimdir; <code>score</code> eğitilmiş modelle çıkarım yapıp doğru oranını hesaplar. <code>None</code> sınırsız derinliktir. Test verisine yalnız son satırda dokunulur.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Testte beğenmediğim sonucu görünce ayarı değiştirip testi yeniden çalıştırırım."</strong> Bunu bir kez yaptığında test verisi doğrulama verisine dönüşür; ikinci, üçüncü denemede gördüğün sayı artık dürüst bir kestirim değildir. Test sonucu kötüyse yapılacak doğru şey, bunu raporlamak ve yeni bir çalışma turunda, gerekirse <em>yeni</em> bir test verisi ayırarak ilerlemektir. Araştırmalarda ve kıyaslama tablolarında da aynı sorun büyük ölçekte yaşanır: herkes aynı test kümesine yıllarca bakınca, o kümedeki başarı gerçek başarıyı abartmaya başlar (Parça 5'te kıyaslama tablolarının sınırları).</p></div>
+
+<h2 class="s">Çöp girer, çöp çıkar: verinin kalitesi ve temsil gücü</h2>
+
+<p>Bilgisayarcıların eski bir sözü vardır: "garbage in, garbage out", çöp girer, çöp çıkar. Makine öğrenmesinde bu sözün anlamı derinleşir, çünkü veri yalnız girdi değil, <strong>kuralın kaynağıdır</strong>. Verideki hata ve çarpıklık modelin <em>içine</em> işlenir ve her kararında yeniden ortaya çıkar; kötü kural yazan programcıyı bulup düzeltebilirsin, ama kötü veriden öğrenmiş bir modelde hatanın yeri çoğu zaman görünmez. Veri sorunları iki aileye ayrılır.</p>
+
+<p><strong>Kalite sorunları: veri yanlış ya da kirli.</strong> Etiketler hatalı olabilir: yorgun bir etiketçi kediye "köpek" yazmış, bir kullanıcı sevmediği bülteni "spam" diye işaretlemiştir. Değerler eksik ya da saçma olabilir (0 metrekarelik ev), aynı kayıt birçok kez tekrar edebilir, birimler karışabilir (bir şube adet, öbürü koli yazmıştır). Bunlar sıkıcı ama zorunlu bir işle, <strong>veriyi temizlemekle</strong> çözülür; uygulamada zamanın büyük bölümünün model kurmaya değil veriye gittiği sık dile getirilir.</p>
+
+<p><strong>Temsil sorunları: veri doğru ama dünyayı temsil etmiyor.</strong> Bu daha sinsidir, çünkü her kayıt tek tek doğru olabilir. Model eğitim verisinin dünyasında yaşar; gerçek dünya farklıysa sessizce yanılır. Yalnız gündüz fotoğraflarıyla eğitilmiş bir araç tanıma sistemi geceleyin zorlanır; yalnız büyük şehir satışlarıyla eğitilmiş bir ev fiyatı modeli küçük bir ilçede anlamsız fiyatlar önerir.</p>
+
+<p>En öğretici örneklerden biri 2016'da yayımlanan bir araştırmadan gelir (Ribeiro ve arkadaşları). Araştırmacılar bilerek kötü bir model kurdular: kurtları ve husky köpeklerini ayıran bu modeli, bütün kurt fotoğraflarının arka planında <strong>kar</strong> bulunan 20 görüntüyle eğittiler. Model hayvanı değil karı öğrendi: arka planda kar varsa "kurt", yoksa "husky" dedi. Tahminler makine öğrenmesini bilen 27 kişiye açıklamasız gösterildiğinde 10'u modele güvendi; modelin neye baktığını gösteren açıklamalardan sonra bu sayı 3'e düştü. Örneklem küçük, ama ders açık: veride fark etmediğin bir kestirme varsa model onu bulur ve kullanır.</p>
+
+<p>Bir ayrıntı daha: doğrulama ve test verisi de aynı çarpık kaynaktan bölünmüşse, yani orada da bütün kurtlar karlıysa, model orada da parlar. Üçe bölme, modelin <em>bu veri dağılımında</em> genelleyip genellemediğini ölçer; verinin kendisinin dünyayı temsil edip etmediğini ölçemez. O soruyu ancak verinin nereden geldiğini düşünerek ve modeli gerçek kullanım koşullarından toplanmış örneklerle sınayarak cevaplayabilirsin.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Model, eğitim verisinin temsil ettiği dünyadan daha iyisini bilemez.</strong> Veri ne kadar çok olursa olsun, modelin kullanılacağı durumları (farklı zamanlar, yerler, insanlar, koşullar) kapsamıyorsa model o durumlarda güvenilmezdir. Bu yüzden "Ne kadar verimiz var?" sorusundan önce "Verimiz, modelin kullanılacağı gerçek durumlara benziyor mu?" sorusu sorulur.</p></div>
+
+<p>Bu kuralın bir başka yüzü <strong>yanlılıktır</strong>: veri, geçmişteki insan kararlarının kaydıysa, o kararlardaki eşitsizlikleri de taşır ve model bunları "düzen" sanıp öğrenir. Ayrıntısı Parça 5'te. Şimdilik tek cümle: model verinin aynasıdır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5 · Temsil sorununu önceden yakalamak</span>
+<p><strong>Soru:</strong> Bir kafe zinciri, kasadaki kameradan müşterinin hangi içeceği seçtiğini bardağa bakarak tanıyan bir model kurmak istiyor. Eğitim için, merkez şubede bir hafta boyunca, öğle saatlerinde çekilmiş 50.000 fotoğraf toplandı. Model doğrulama ve test verisinde %97 doğru tanıyor. Zincir modeli yarın bütün şubelerde açmayı planlıyor. Ne sorman gerekir?</p>
+<p><strong>Adım 1 (veri nereden geldi?).</strong> Tek şube, tek hafta, yalnız öğle saatleri. Doğrulama ve test verisi de aynı fotoğraflardan bölündü.</p>
+<p><strong>Adım 2 (model nerede kullanılacak?).</strong> Bütün şubelerde, sabahtan geceye, mevsimler boyunca.</p>
+<p><strong>Adım 3 (iki dünya arasındaki farkları say).</strong> Işık farklı (akşam, loş şubeler). Tezgâh ve arka plan farklı; kurt–kar örneğindeki gibi model arka planı öğrenmiş olabilir. Mevsimsel bardaklar eğitimde hiç yok.</p>
+<p><strong>Adım 4 (%97 neyi kanıtlıyor?).</strong> Modelin <em>merkez şubenin öğle saatlerinde</em> iyi genellediğini. Öbür koşullar hakkında hiçbir şey söylemiyor, çünkü o koşullardan tek bir örnek ölçülmedi.</p>
+<p><strong>Adım 5 (ne yapılmalı?).</strong> Farklı şubelerden ve saatlerden örnek toplamak, bunlardan ayrı bir test kümesi kurmak, modeli önce bir iki şubede denemek.</p>
+<p><strong>Sonuç:</strong> Yüksek test sonucu, "verinin dünyası" ile "kullanım dünyası" aynıysa anlamlıdır. Sorulacak soru "test sonucu kaç?" değil, "test hangi koşulları temsil ediyor?" sorusudur.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1'e:</strong> Uzman sistemlerin kuralı elle yazdığını gördük; bu parça kuralın veriden çıkarıldığı yolu kurdu. "Ne ölçüldü?" sorusu somutlaştı: görülmemiş veride mi ölçüldü?</p>
+<p><strong>Parça 3, 4 ve 5'e:</strong> Özelliklerin sayıya (vektöre) dönüşmesini Parça 3'te; modelin biçimini (doğrusal regresyon, karar ağacı) ve parametrelerin nasıl bulunduğunu Parça 4'te; doğru oranının neden yanıltabileceğini, veri sızıntısını ve yanlılığı Parça 5'te göreceğiz. Aşırı öğrenmeye karşı araçlar Parça 7'de.</p>
+<p><strong>Büyük dil modellerine:</strong> Parça 12'deki ön eğitim etiketi metnin kendisinden alır; Parça 13'teki insan geri bildirimiyle pekiştirmeli öğrenme, buradaki pekiştirmeli öğrenmenin bir uygulamasıdır.</p>
+<p><strong>Öbür alanlara:</strong> İktisatta regresyon eski bir araçtır (talep tahmini); oradaki "geçmişle kur, gelecekle sına" disiplini eğitim–test ayrımının akrabasıdır. Kod rafındaki <code>if</code>–<code>else</code> ile yazılmış her karar "geleneksel programlama" satırına düşer.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Geleneksel programlama ile makine öğrenmesinin girdileri ve çıktıları nedir?</summary><p>Geleneksel programlamada kurallar ve veri girer, cevaplar çıkar; kuralı insan yazar. Makine öğrenmesinde veri ve o verinin doğru cevapları girer, kural (model) çıkar; model sonra yeni veriye uygulanıp cevap üretir.</p></details>
+<details><summary>Özellik ile etiket arasındaki fark nedir? Bir sütunun hangisi olduğuna ne karar verir?</summary><p>Özellik, örneği betimleyen ve modeli kullanacağın anda elinde olacak bilgidir; etiket, tahmin etmek istediğin doğru cevaptır. Hangisinin hangisi olduğuna veri değil sorduğun soru karar verir: evin fiyatını tahmin ediyorsan fiyat etikettir, fiyattan semti tahmin ediyorsan semt etikettir.</p></details>
+<details><summary>Bir problemin sınıflandırma mı regresyon mu olduğuna nasıl karar verirsin?</summary><p>Etiketin türüne bakarım: sınırlı seçeneklerden biriyse sınıflandırma, ölçek üzerinde sürekli bir sayıysa regresyon. Kestirme soru: cevaplar arasında ortalama almak anlamlı mı? Rakam tanımada etiket sayı olsa da ortalama anlamsızdır, bu yüzden sınıflandırmadır.</p></details>
+<details><summary>Doğrulama verisi neden vardır; yalnız eğitim ve test verisi neden yetmez?</summary><p>Model ve ayar seçimi gibi kararlar bir veriye bakılarak verilir. Bu kararlar test verisiyle verilirse test verisi artık görülmemiş olmaz ve raporlanan sonuç iyimser çıkar. Doğrulama verisi seçim için ayrılmış ayrı bir veridir; test verisi böylece en sonda bir kez, dürüst ölçüm için kullanılabilir.</p></details>
+<details><summary>Eğitimde %99, doğrulamada %70 başarı gösteren bir model hakkında ne söylersin?</summary><p>Aradaki büyük açık aşırı öğrenmenin işaretidir: model eğitim örneklerinin rastlantısal ayrıntılarını ezberlemiş, yeni örneklere genelleyemiyor. Eğitimdeki yüksek sonuç tek başına başarı kanıtı değildir.</p></details>
+<details><summary>Kurt–husky–kar örneği hangi sorunu gösterir ve doğrulama verisi bu sorunu neden yakalayamayabilir?</summary><p>Modelin hayvanı değil, eğitim verisinde kurtla birlikte görünen karı öğrendiğini, yani verinin dünyayı temsil etmediğini gösterir. Doğrulama ve test verisi aynı çarpık kaynaktan bölündüyse orada da bütün kurtlar karlıdır ve model orada da başarılı görünür; bölme, verinin temsil gücünü ölçmez.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Geleneksel programlama:</strong> kurallar + veri → cevaplar. <strong>Makine öğrenmesi:</strong> veri + cevaplar → kurallar (model).</li>
+<li><strong>Ölçüt:</strong> gördüğü örnekleri tekrar etmek değil, görmediği örneklerde başarılı olmak.</li>
+<li><strong>Sözlük:</strong> veri kümesi (bütün kayıtlar), örnek (bir satır), özellik (bir sütun, elde olan bilgi), etiket (tahmin edilecek doğru cevap), model (öğrenilmiş kural), parametre (modelin eğitimle ayarlanan sayıları), eğitim (parametreleri ayarlamak), çıkarım (yeni örneğe cevap üretmek).</li>
+<li><strong>Özellik mi etiket mi:</strong> "Kullanım anında elimde ne olacak, neyi bilmek isteyeceğim?"</li>
+<li><strong>Denetimli:</strong> etiketli örnek. <strong>Denetimsiz:</strong> etiket yok, yapı aranır (kümeleme); grupların adını insan koyar. <strong>Pekiştirmeli:</strong> ajan, ortam, ödül.</li>
+<li><strong>Sınıflandırma:</strong> etiket bir sınıf. <strong>Regresyon:</strong> etiket sürekli sayı. Ortalaması anlamlı mı?</li>
+<li><strong>Yetersiz öğrenme:</strong> eğitimde de yenide de kötü. <strong>Aşırı öğrenme:</strong> eğitimde çok iyi, yenide kötü; açık büyük. <strong>Genelleme:</strong> ikisinde de iyi.</li>
+<li><strong>Üçe böl:</strong> eğitim (parametreler), doğrulama (seçim, hiperparametre), test (en sonda bir kez). Test hiçbir karar için kullanılmaz.</li>
+<li><strong>Çöp girer çöp çıkar:</strong> kalite (yanlış etiket, eksik değer, tekrar) ve temsil (veri kullanım dünyasına benziyor mu?). Bölme, temsil gücünü ölçmez.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-2">
+<h3>Quiz 2</h3>
+<p class="qa">Sekiz yeni, iki tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Geleneksel programlama ile makine öğrenmesi arasındaki farkı en doğru anlatan hangisidir?</p>
+<ul class="sec"><li>Geleneksel programlamada bilgisayar veri kullanmaz; makine öğrenmesinde kullanır.</li><li>Geleneksel programlamada kuralı insan yazar; makine öğrenmesinde kural, örnek veriden ve doğru cevaplardan çıkarılır.</li><li>Makine öğrenmesinde hiç program yazılmaz; her şeyi model kendisi yapar.</li><li>Makine öğrenmesi yalnız sayısal veriyle, geleneksel programlama yalnız metinle çalışır.</li><li>İkisi aynı şeydir; makine öğrenmesi yalnızca daha hızlı bilgisayar gerektirir.</li></ul>
+<div class="coz"><p>Temel fark kuralın kaynağıdır: geleneksel programlamada "kurallar + veri → cevaplar", makine öğrenmesinde "veri + cevaplar → kurallar". A yanlış, çünkü geleneksel programlar da veri işler (bordro programı maaş verisini kullanır). C yanlış, çünkü öğrenme sürecini, veriyi hazırlamayı ve modeli kullanan programı yine insanlar yazar. D'nin dayanağı yok; ikisi de her tür veriyle çalışabilir, makine öğrenmesinde metin ve resim de sonunda sayıya çevrilir. E yanlış, çünkü fark hızda değil yöntemdedir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir tabloda satılmış evlerin metrekaresi, oda sayısı, bina yaşı, semti ve satış fiyatı var. Amaç, yeni bir evin satış fiyatını tahmin etmek. Bu problemde "satış fiyatı" sütunu nedir?</p>
+<ul class="sec"><li>Özellik</li><li>Parametre</li><li>Örnek</li><li>Etiket</li><li>Çıkarım</li></ul>
+<div class="coz"><p>Tahmin edilmek istenen ve geçmiş kayıtlarda doğru değeri bilinen bilgi etikettir. Metrekare, oda sayısı, bina yaşı ve semt ise özelliklerdir (A): ilan girildiği anda elde olan bilgiler. Parametre (B) tablonun bir sütunu değil, modelin içinde eğitimle ayarlanan sayılardır. Örnek (C) tablonun bir sütunu değil, bir satırıdır, yani tek bir evdir. Çıkarım (E) bir veri parçası değil, eğitilmiş modelin yeni eve fiyat tahmin etmesi işlemidir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdakilerden hangisi denetimsiz öğrenmeye örnektir?</p>
+<ul class="sec"><li>Bir mağazanın, hiçbir grup adı vermeden, müşterilerini alışveriş alışkanlıklarına göre benzer gruplara ayırması</li><li>Daha önce "dolandırıcılık" ya da "normal" diye işaretlenmiş işlemlerden yararlanarak yeni işlemleri ayırmak</li><li>Geçmiş satış fiyatlarından yeni bir evin fiyatını tahmin etmek</li><li>Bir oyun ajanının kazandıkça puan alarak strateji geliştirmesi</li><li>"Kedi" ya da "köpek" diye etiketlenmiş fotoğraflardan yeni bir fotoğrafın hangisi olduğunu bulmak</li></ul>
+<div class="coz"><p>Denetimsiz öğrenmede etiket yoktur; model yalnız özelliklere bakarak verideki yapıyı, burada benzer müşteri gruplarını arar (kümeleme). B, C ve E'de her örneğin doğru cevabı (dolandırıcılık/normal, satış fiyatı, kedi/köpek) verilmiş; bunlar denetimli öğrenmedir. D'de hazır etiket yok ama geri bildirim ödül biçiminde geliyor; bu pekiştirmeli öğrenmedir. Ayırt edici soru: geri bildirim hangi biçimde geliyor, etiket mi, ödül mü, hiç yok mu?</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdakilerden hangisi bir regresyon problemidir?</p>
+<ul class="sec"><li>Bir e-postanın spam olup olmadığını belirlemek</li><li>Bir röntgen görüntüsünde kırık olup olmadığını bulmak</li><li>Bir uçuşun kaç dakika rötar yapacağını tahmin etmek</li><li>Bir müşteri yorumunu "olumlu", "olumsuz" ya da "nötr" diye ayırmak</li><li>Bir fotoğraftaki el yazısı rakamın 0'dan 9'a hangisi olduğunu bulmak</li></ul>
+<div class="coz"><p>Rötar süresi bir ölçek üzerinde sürekli bir sayıdır ve ortalaması anlamlıdır (10 ile 30 dakikanın ortası 20 dakika): regresyon. A ve B iki sınıflı, D üç sınıflı sınıflandırmadır. E en sık tuzaktır: etiket bir sayıyla yazılıyor ama 3 ile 5'in ortalaması olan 4 anlamlı bir "ara cevap" değildir; rakamlar burada sınıf adıdır, problem sınıflandırmadır.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdakilerden hangisi çıkarım (inference) aşamasında gerçekleşir?</p>
+<ul class="sec"><li>Modelin parametrelerinin örneklere bakılarak ayarlanması</li><li>Verinin eğitim, doğrulama ve test diye bölünmesi</li><li>Örneklerin insanlar tarafından etiketlenmesi</li><li>Doğrulama sonuçlarına bakılarak modelin esneklik ayarının seçilmesi</li><li>Eğitimi bitmiş modelin, bir kullanıcının yeni yüklediği fotoğraf için tahmin üretmesi</li></ul>
+<div class="coz"><p>Çıkarım, eğitilmiş modelin yeni, etiketsiz bir örneğe cevap üretmesidir; parametreler bu sırada değişmez. A eğitimin tanımıdır. B, C ve D eğitimden önce ya da eğitim sürecinin içinde yapılan hazırlık ve seçim adımlarıdır: veriyi bölmek, etiketlemek ve hiperparametre seçmek. Günlük kullanımda bir modele soru sorduğunda yaptığın şey her zaman çıkarımdır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir sınıflandırma modeli eğitim verisinde örneklerin %99'unu, doğrulama verisinde %71'ini doğru biliyor. Bu durumun en olası açıklaması hangisidir?</p>
+<ul class="sec"><li>Yetersiz öğrenme: model fazla basit kalmış, gerçek düzeni yakalayamamış.</li><li>Aşırı öğrenme: model eğitim örneklerinin ayrıntılarını ezberlemiş, yeni örneklere genelleyemiyor.</li><li>Model mükemmel; doğrulama verisi hatalı olmalı, atılması gerekir.</li><li>Test verisine bakmadan bir şey söylenemez; test verisi birkaç kez çalıştırılmalıdır.</li><li>Eğitim ile doğrulama başarısı arasında her zaman bu kadar fark olur; durum normaldir.</li></ul>
+<div class="coz"><p>Eğitimde çok yüksek, görülmemiş veride belirgin biçimde düşük başarı ve aradaki büyük açık (28 puan) aşırı öğrenmenin tipik işaretidir. A yanlış: yetersiz öğrenmede model eğitimde de kötü olurdu. C yanlış: elverişsiz sonucu veren veriyi atmak, sorunu gizlemektir. D yanlış: teşhis için doğrulama verisi yeter; test verisini tekrar tekrar kullanmak onu kirletir. E yanlış: iyi genelleyen bir modelde küçük bir fark normaldir ama bu büyüklükte bir açık değil.</p></div></li>
+
+<li data-c="D"><p class="q">Bir ekip, modeli için 40 farklı ayar denedi, her birini test verisinde ölçtü, testte en yüksek sonucu veren ayarı seçti ve "test başarımız %93" diye duyurdu. Bu raporun asıl sorunu nedir?</p>
+<ul class="sec"><li>40 ayar denemek doğru değildir; tek bir ayarla yetinilmeliydi.</li><li>Test verisi eğitim verisinden büyük olmalıydı.</li><li>Doğrulama verisi yalnız denetimsiz öğrenmede kullanılır; burada bir sorun yoktur.</li><li>Test verisi seçim için kullanıldığından artık "görülmemiş" değildir; %93 büyük olasılıkla gerçek başarıyı olduğundan iyi gösteriyor.</li><li>Test başarısı her zaman eğitim başarısından düşük olacağı için %93 imkânsızdır.</li></ul>
+<div class="coz"><p>Ayar seçimi test verisine bakılarak yapıldığında, 40 adaydan biri gerçekten daha iyi olduğu için değil, şans eseri o test örneklerine daha iyi uyduğu için seçilmiş olabilir; test artık bir doğrulama verisine dönüşmüştür ve sonuç iyimserdir. Doğru yol, seçimi ayrı bir doğrulama verisiyle yapıp testi en sonda bir kez açmaktır. A yanlış: birçok ayar denemek normaldir, sorun neyin üzerinde denendiğidir. B'nin dayanağı yok. C yanlış: doğrulama verisi denetimli öğrenmede model seçimi için kullanılır. E yanlış: test başarısı genellikle eğitimdekinden düşüktür ama bu bir zorunluluk değildir ve %93 kendi başına imkânsız değildir.</p></div></li>
+
+<li data-c="A"><p class="q">Kurt ve köpek fotoğraflarını ayırmak için bir model eğitildi. Eğitim verisindeki bütün kurt fotoğraflarının arka planında kar var. Aynı kaynaktan ayrılmış doğrulama verisinde model çok başarılı; ama karlı bir parkta çekilmiş bir köpek fotoğrafına "kurt" diyor. Bu durumu en iyi açıklayan hangisidir?</p>
+<ul class="sec"><li>Model hayvanı değil, veride kurtla birlikte görünen karı öğrenmiş; veri, modelin kullanılacağı dünyayı temsil etmiyor.</li><li>Model yetersiz öğrenmiş; daha uzun eğitilse sorun kendiliğinden çözülür.</li><li>Doğrulama başarısı yüksek olduğuna göre model doğrudur; hatalı olan fotoğraftır.</li><li>Problem aslında regresyon olduğu için sınıflandırma modeli seçilmemeliydi.</li><li>Pekiştirmeli öğrenme kullanılsaydı model karı dikkate almazdı.</li></ul>
+<div class="coz"><p>Model, veride senin fark etmediğin bir kestirme varsa onu öğrenir; burada kar, kurt etiketiyle kusursuz biçimde birlikte görünüyordu. Doğrulama verisi aynı çarpık kaynaktan bölündüğü için orada da bütün kurtlar karlıydı ve sorun görünmedi; bölme, verinin temsil gücünü ölçmez. B yanlış: model eğitimde başarılı, yani yetersiz öğrenme yok; daha uzun eğitim aynı kestirmeyi pekiştirir. C, doğrulama başarısını gerçek dünyadaki başarıyla karıştırır. D yanlış: kurt mu köpek mi sorusu iki sınıflı bir sınıflandırmadır. E'nin dayanağı yok: öğrenme türünü değiştirmek verideki çarpıklığı ortadan kaldırmaz.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Bugün "yapay zekâ" denince çoğunlukla kastedilen kavramların iç içe ilişkisi, en genişten en dara doğru hangisinde doğru sıralanmıştır?</p>
+<ul class="sec"><li>Derin öğrenme → makine öğrenmesi → yapay zekâ → büyük dil modelleri</li><li>Makine öğrenmesi → yapay zekâ → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → makine öğrenmesi → derin öğrenme → büyük dil modelleri</li><li>Yapay zekâ → büyük dil modelleri → derin öğrenme → makine öğrenmesi</li><li>Büyük dil modelleri → derin öğrenme → makine öğrenmesi → yapay zekâ</li></ul>
+<div class="coz"><p>En dış halka yapay zekâdır; kural tabanlı uzman sistemler de bu halkanın içindedir ama makine öğrenmesi değildir. Makine öğrenmesi, YZ'nin örnekten öğrenen kısmıdır; derin öğrenme, makine öğrenmesinin çok katmanlı sinir ağlarıyla yapılan kısmıdır; büyük dil modelleri de derin öğrenmenin dil üzerine kurulmuş bir koludur. E aynı zincirin ters sırasıdır (dardan genişe), soru kökündeki yönü kaçıranlar onu seçer. A, B ve D halkaların yerini karıştırır.</p></div></li>
+
+<li data-c="E" data-k="yz-1"><p class="q">Aşağıdakilerden hangisi dar yapay zekâ (dar YZ) örneği <strong>değildir</strong>?</p>
+<ul class="sec"><li>Satranç oynamak için kurulmuş Deep Blue</li><li>E-postaları spam ve normal diye ayıran bir filtre</li><li>Go oynamayı öğrenen AlphaGo</li><li>Fotoğraflardaki yüzleri tanıyan bir sistem</li><li>İnsanın yapabildiği hemen her zihinsel işi öğrenip yapabilen bir sistem</li></ul>
+<div class="coz"><p>Dar YZ tek bir işte (ya da dar bir iş ailesinde) iyidir: Deep Blue satrançta, AlphaGo Go'da, spam filtresi e-posta ayırmada, yüz tanıma sistemi yüzlerde. Bunlar kendi alanlarının dışında hiçbir şey yapamaz; Deep Blue bir e-postayı okuyamaz. E'deki tanım genel yapay zekâyı (AGI) anlatır. Parça 1'de gördüğümüz gibi AGI'nin tanımı da tartışmalıdır ve hâlâ ulaşılmış kabul edilen bir hedef değildir. Olumsuz köke dikkat: "değildir" diye soruluyor.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-1">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-2">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-3">Sonraki parça: gereken matematiğin sezgisi</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"makine öğrenmesi nedir denetimli denetimsiz pekiştirmeli öğrenme"</li>
+  <li>"traditional programming vs machine learning explained"</li>
+  <li>"overfitting underfitting explained"</li>
+  <li>"train validation test split why"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Çalıştırılan kod: iki betik de /tmp/yazar/yz-2/ altında <code>python3 -I</code> ile çalıştırıldı ve çıktılar birebir kondu. spam_ogren.py yalnız standart Python kullanır. bolme.py scikit-learn 1.9.1 ve numpy 2.5.3 ile çalıştı; veri kümesi (load_digits) kütüphanenin içinde gelir, internetten bir şey indirilmedi. Çözümlü örnek 4'teki tablo bu çıktıdan alındı. Farklı sürümlerde ya da farklı <code>random_state</code> değerlerinde sayılar birkaç puan değişebilir.</li>
+  <li>Çözümlü örnek 1'deki ağırlıklar ve toplamlar (+9, −4, 0) betikle doğrulandı.</li>
+  <li>Kurt–husky örneği: Ribeiro, Singh ve Guestrin, "Why Should I Trust You?: Explaining the Predictions of Any Classifier" (2016, arXiv:1602.04938) makalesinin kendisinden doğrulandı: 20 eğitim görüntüsü, kurt fotoğraflarının hepsinde karlı arka plan, bilerek kötü kurulmuş sınıflandırıcı, katılımcı tablosunda 27 kişi; açıklamadan önce 10/27, sonra 3/27 kişi modele güvendi. Makalede katılımcı sayısı metinde değil tablodaki paydada geçiyor; "27 kişi" bu paydadan çıkarıldı.</li>
+  <li>Arthur Samuel'in dama programı makalesinin 1959'da IBM Journal of Research and Development'ta yayımlandığı doğrulandı. Ona sık atfedilen "açıkça programlanmadan öğrenme" cümlesinin makalede birebir geçip geçmediğini doğrulayamadım; bu yüzden metinde alıntı olarak kullanılmadı. "Terimi ilk kullanan" yerine "yaygınlaştıran ilk yayınlardan biri" denmesi bu belirsizlik yüzündendir.</li>
+  <li>Tom Mitchell'in 1997 tarihli "Machine Learning" kitabındaki T–P–E tanımı ikincil kaynaklarla (ders notları ve kitabı aktaran sayfalar) karşılaştırıldı; kitabın kendisine erişilmedi.</li>
+  <li>AlphaGo'nun önce insan oyunlarından denetimli öğrenmeyle, sonra kendi kendine oynayarak pekiştirmeli öğrenmeyle eğitildiği bilgisi hafızadan yazıldı (DeepMind'ın 2016 Nature makalesindeki yöntem olarak yaygın biçimde bilinir); bu oturumda birincil kaynakla karşılaştırılmadı.</li>
+  <li>"Projelerde zamanın büyük bölümü veriyle geçer" ifadesi sektörde sık dile getirilen bir gözlemdir; kesin bir yüzde vermekten bilerek kaçınıldı, çünkü dolaşımdaki yüzdelerin çoğu sağlam bir ölçüme dayanmıyor.</li>
+  <li>Türkçe terimler yerleşik değildir: "denetimli/gözetimli", "aşırı öğrenme/aşırı uyum", "çıkarım/tahmin" kaynaktan kaynağa değişir; metinde en yaygın gördüklerimi kullandım ve İngilizce karşılıklarını verdim. Bölme oranları (%60/20/20 vb.) kesin kural değil, yaygın uygulamadır.</li>
+  <li>Sorular bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

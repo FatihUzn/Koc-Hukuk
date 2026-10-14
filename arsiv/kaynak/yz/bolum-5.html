@@ -1,0 +1,471 @@
+<article class="chapter ders" id="c-yz-5">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 5 · Değerlendirme</div>
+<h1>Bir modeli ölçmek ve kandırılmamak: doğruluktan Goodhart yasasına</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir şirket "Geliştirdiğimiz model bu hastalığı %99 doğrulukla tespit ediyor" diye duyuru yapıyor. Kulağa harika geliyor. Ama hastalık, taranan her 100 kişiden yalnızca birinde varsa, hiçbir şey öğrenmemiş, herkese "sağlıklısın" diyen bir program da %99 doğruluk tutturur. O hâlde bu %99 neyi kanıtlıyor, neyi kanıtlamıyor? Bir modelin gerçekten işe yarayıp yaramadığını hangi sorularla anlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (eğitim, doğrulama ve test ayrımı; sınıflandırma; aşırı öğrenme), Parça 4 (lojistik regresyonun bir olasılık vermesi, örneğin "spam olasılığı %87"). Parça 3'teki olasılık sezgisi de işine yarar. Python kutuları isteğe bağlıdır; atlarsan konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: tek bir sayı neden yetmez?</h2>
+
+<p>Parça 2'de makine öğrenmesinin örnekten kural çıkardığını, Parça 4'te de ilk modelleri gördük. Şimdi kaçınılmaz soruya geldik: eğittiğin model <strong>iyi mi</strong>? "İyi" sözcüğü burada tehlikelidir, çünkü bir modeli bir sayıyla özetlemek çok kolaydır ve o sayı çok kolay yanıltır.</p>
+
+<p>Bir modeli yanlış ölçmenin üç ana yolu vardır ve bu parça sırayla üçünü de söker. Birincisi, <strong>yanlış ölçütü seçmek</strong>: doğruluk gibi masum görünen bir sayı, verinin yapısı yüzünden hiçbir şey söylemeyebilir. İkincisi, <strong>doğru ölçütü yanlış veriyle hesaplamak</strong>: cevap girdinin içine gizlice sızmışsa model kâğıt üzerinde parlar, gerçek dünyada çöker. Üçüncüsü, <strong>ölçütü hedefe dönüştürmek</strong>: bir sayıyı yükseltmek amaç hâline gelince sayı, ölçmesi gereken şeyden kopar.</p>
+
+<p>Araya bir dördüncü soru girer: model ortalamada iyi olsa bile <strong>kime</strong> iyi, kime kötü çalışıyor? Sonunda da "yeni model şu kıyaslamada birinci oldu" haberlerini nasıl okuyacağına bağlanacağız.</p>
+
+<h2 class="s">1. Doğruluk ve dengesiz verinin tuzağı</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Doğruluk (accuracy)</strong>, modelin doğru tahmin ettiği örneklerin bütün örneklere oranıdır. 1.000 e-postanın 930'unu doğru sınıflandıran bir modelin doğruluğu 930 / 1.000 = 0,93, yani %93'tür.</p></div>
+
+<p>Doğruluk, sınıflar aşağı yukarı eşit sayıdaysa iş görür. Ama gerçek dünyadaki ilginç sorunların çoğunda sınıflar eşit değildir. Hastalık taramasında hastalar azınlıktadır. Kredi kartı işlemlerinde dolandırıcılık binde birkaçtır. Fabrikada kusurlu parça yüzde birin altında olabilir. Bu tür veriye <strong>dengesiz veri</strong> denir: bir sınıf (çoğunluk sınıfı) ötekini ezici biçimde aşar.</p>
+
+<p>Dengesiz veride doğruluğun neden çöktüğünü görmek için hiçbir şey öğrenmeyen bir "modeli" düşün: her örneğe çoğunluk sınıfının adını söylüyor. Bu modelin doğruluğu, çoğunluk sınıfının oranına eşittir. Yani veri %99 sağlıklıysa, bu tembel model %99 doğruluk alır. Model hiçbir hastayı yakalamaz ama sayı muhteşem görünür.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> 10.000 kişilik bir taramada 100 kişi gerçekten hasta. A modeli herkese "sağlıklı" diyor. B modeli 100 hastanın 90'ını "hasta" diye işaretliyor, ama 9.900 sağlıklı kişiden 490'ını da yanlışlıkla "hasta" diye işaretliyor. Hangi modelin doğruluğu daha yüksek, hangisi daha işe yarar?</p>
+<p><strong>Adım 1.</strong> A modelinin doğru bildiklerini say. 9.900 sağlıklı kişinin hepsine "sağlıklı" dedi (doğru), 100 hastanın hepsine "sağlıklı" dedi (yanlış). Doğru tahmin: 9.900.</p>
+<p><strong>Adım 2.</strong> A'nın doğruluğu: 9.900 / 10.000 = 0,99, yani %99.</p>
+<p><strong>Adım 3.</strong> B modelinin doğru bildiklerini say. Hastalardan 90'ını doğru yakaladı. Sağlıklılardan 490'ını yanlış işaretledi, demek ki 9.900 − 490 = 9.410'una doğru "sağlıklı" dedi. Doğru tahmin: 90 + 9.410 = 9.500.</p>
+<p><strong>Adım 4.</strong> B'nin doğruluğu: 9.500 / 10.000 = 0,95, yani %95.</p>
+<p><strong>Adım 5.</strong> İşe yararlığı sor: A modeli 100 hastanın kaçını buldu? Hiçbirini. B modeli 100 hastanın 90'ını buldu.</p>
+<p><strong>Sonuç:</strong> Doğruluğu <strong>düşük</strong> olan B modeli, tarama için çok daha değerlidir. Yalnızca doğruluğa baksaydın yanlış modeli seçerdin. Bu tuzaktan çıkmak için hataları türlerine ayırmak gerekir; sıradaki bölümün konusu bu.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Her modelin sonucunu, <strong>hiçbir şey öğrenmeyen en basit tahminle</strong> (taban çizgisi, baseline) yan yana koy. Sınıflandırmada en basit tahmin "her zaman çoğunluk sınıfı"dır. Neden: bir sayı ancak bir şeye göre iyi ya da kötüdür. %99 doğruluk, taban çizgisi %50 olan bir işte olağanüstüdür; taban çizgisi %99 olan bir işte hiçtir.</p></div>
+
+<h2 class="s">2. Karışıklık matrisi: hataları türüne ayırmak</h2>
+
+<p>Doğruluk, bütün hataları tek torbaya atar. Oysa bir hastayı kaçırmakla sağlıklı birine boşuna "hasta olabilirsin" demek aynı ağırlıkta değildir. Bu yüzden ikili sınıflandırmada (iki sınıflı: hasta/sağlıklı, spam/normal) dört olasılığı ayrı ayrı sayarız.</p>
+
+<p>Önce bir adlandırma kuralı: aradığımız, dikkat çekmek istediğimiz sınıfa <strong>pozitif</strong>, öbürüne <strong>negatif</strong> denir. Taramada pozitif "hasta", spam filtresinde pozitif "spam"dır. Buradaki "pozitif" iyi demek değildir; tıptaki "test pozitif çıktı" kullanımı gibi, "aranan şey bulundu" demektir. Kütüphanelerde ve makalelerde İngilizce kısaltmalar (TP, FP…) geçtiği için onları da bil.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Karışıklık matrisi (confusion matrix)</strong>, gerçek sınıfı satırlara, modelin tahminini sütunlara koyan ve her hücrede o birleşimden kaç örnek olduğunu sayan tablodur. İkili sınıflandırmada dört hücresi vardır: doğru pozitif (TP), yanlış negatif (FN), yanlış pozitif (FP), doğru negatif (TN). Adın ilk yarısı tahminin doğru mu yanlış mı olduğunu, ikinci yarısı modelin ne dediğini söyler.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Hücre</th><th>Gerçek</th><th>Model ne dedi</th><th>Taramada anlamı</th></tr>
+<tr><td>Doğru pozitif (TP, true positive)</td><td>hasta</td><td>hasta</td><td>Yakalanan hasta</td></tr>
+<tr><td>Yanlış negatif (FN, false negative)</td><td>hasta</td><td>sağlıklı</td><td>Kaçırılan hasta; eve "temizsin" diye gönderildi</td></tr>
+<tr><td>Yanlış pozitif (FP, false positive)</td><td>sağlıklı</td><td>hasta</td><td>Boşuna alarm; gereksiz endişe ve ek tetkik</td></tr>
+<tr><td>Doğru negatif (TN, true negative)</td><td>sağlıklı</td><td>sağlıklı</td><td>Doğru "sağlıklı"</td></tr>
+</table></div>
+
+<p>İstatistikte yanlış pozitife <strong>I. tip hata</strong>, yanlış negatife <strong>II. tip hata</strong> da denir; başka bir kaynakta bu adlarla karşılaşırsan aynı şey olduğunu bil. Bir uyarı: bazı kütüphaneler ve kitaplar matrisi senin gördüğünden farklı yönde çizer (satırlar tahmin, sütunlar gerçek olabilir ya da negatif sınıf önce gelebilir). Bir karışıklık matrisine bakınca ilk iş, eksenlerin ne olduğunu okumaktır.</p>
+
+<figure>
+<svg viewBox="0 0 400 340" role="img" aria-label="Çözümlü örnek 1'deki B modelinin karışıklık matrisi: TP 90, FN 10, FP 490, TN 9410; kesinlik sol sütuna, duyarlılık üst satıra bakar">
+  <text class="sv-b" x="175" y="36" text-anchor="middle">Model: hasta</text>
+  <text class="sv-b" x="315" y="36" text-anchor="middle">Model: sağlıklı</text>
+  <text class="sv-t" x="52" y="96" text-anchor="middle">Gerçekte</text><text class="sv-t" x="52" y="114" text-anchor="middle">hasta</text>
+  <text class="sv-t" x="52" y="196" text-anchor="middle">Gerçekte</text><text class="sv-t" x="52" y="214" text-anchor="middle">sağlıklı</text>
+  <rect class="sv-m" x="105" y="50" width="140" height="100"/>
+  <rect class="sv-a" x="245" y="50" width="140" height="100"/>
+  <rect class="sv-a" x="105" y="150" width="140" height="100"/>
+  <rect class="sv-m" x="245" y="150" width="140" height="100"/>
+  <text class="sv-t" x="175" y="82" text-anchor="middle">Doğru pozitif</text><text class="sv-b" x="175" y="106" text-anchor="middle">TP = 90</text><text class="sv-s" x="175" y="128" text-anchor="middle">yakalanan hasta</text>
+  <text class="sv-t" x="315" y="82" text-anchor="middle">Yanlış negatif</text><text class="sv-b" x="315" y="106" text-anchor="middle">FN = 10</text><text class="sv-s" x="315" y="128" text-anchor="middle">kaçırılan hasta</text>
+  <text class="sv-t" x="175" y="182" text-anchor="middle">Yanlış pozitif</text><text class="sv-b" x="175" y="206" text-anchor="middle">FP = 490</text><text class="sv-s" x="175" y="228" text-anchor="middle">boşuna alarm</text>
+  <text class="sv-t" x="315" y="182" text-anchor="middle">Doğru negatif</text><text class="sv-b" x="315" y="206" text-anchor="middle">TN = 9.410</text><text class="sv-s" x="315" y="228" text-anchor="middle">doğru "sağlıklı"</text>
+  <rect class="sv-cl" x="107" y="52" width="136" height="196"/>
+  <rect class="sv-cl" x="105" y="50" width="280" height="100"/>
+  <text class="sv-t" x="200" y="290" text-anchor="middle">Kesinlik = sol sütun: 90 / 580 ≈ 0,155</text>
+  <text class="sv-t" x="200" y="316" text-anchor="middle">Duyarlılık = üst satır: 90 / 100 = 0,90</text>
+</svg>
+<figcaption>Çözümlü örnek 1'deki B modelinin karışıklık matrisi. Yeşil hücreler doğru, turuncu hücreler yanlış tahminlerdir. Mor çerçeveler, iki ölçütün matrisin hangi kısmına baktığını gösterir: kesinlik modelin "hasta" dediği sütuna, duyarlılık gerçekten hasta olanların satırına.</figcaption>
+</figure>
+
+<p>Doğruluk bu matristen de okunur: köşegendeki iki yeşil hücrenin toplamı (90 + 9.410) bölü hepsi (10.000). Ama matris bize doğruluğun gizlediğini de gösterir: turuncu hücrelerden biri 10, öbürü 490. Hata türlerinin dengesi bambaşka.</p>
+
+<h2 class="s">3. Kesinlik ve duyarlılık</h2>
+
+<p>Matrisi iki ayrı soruya cevap veren iki sayıya indirebiliriz. Hangisini sorduğunu bilmek, ölçmenin yarısıdır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Kesinlik (precision)</strong> = TP / (TP + FP). Soru: "Model 'pozitif' dediğinde ne sıklıkla haklı?" Modelin alarmlarına ne kadar güvenebileceğini ölçer.</p>
+<p><strong>Duyarlılık (recall)</strong> = TP / (TP + FN). Soru: "Gerçekte pozitif olanların ne kadarını yakaladı?" Modelin gözünden ne kadar az şey kaçtığını ölçer. Tıpta aynı sayıya <em>sensitivite</em> denir.</p></div>
+
+<p>İki formülün payı aynıdır (TP); fark paydadadır. Kesinliğin paydası, modelin "pozitif" dediklerinin hepsidir (sütun). Duyarlılığın paydası, gerçekten pozitif olanların hepsidir (satır). Bunu bir balıkçı ağıyla düşünebilirsin: duyarlılık, göldeki balıkların ne kadarının ağa girdiğidir; kesinlik, ağdan çıkanların ne kadarının balık olduğudur (geri kalanı yosun ve teneke kutu). Ağı büyütürsen daha çok balık yakalarsın (duyarlılık artar) ama daha çok çöp de gelir (kesinlik düşer).</p>
+
+<p>B modeline dönelim. Duyarlılık: 90 / (90 + 10) = 0,90. Hastaların %90'ı yakalanmış; fena değil. Kesinlik: 90 / (90 + 490) = 90 / 580 ≈ 0,155. Model "hasta" dediğinde yalnızca yaklaşık %15,5 ihtimalle haklı; yani her 100 alarmdan 84 ya da 85'i boşuna. A modelinin (herkese "sağlıklı") duyarlılığı 0 / 100 = 0'dır; kesinliği ise hesaplanamaz, çünkü hiç "pozitif" demediği için payda sıfırdır. Kütüphaneler bu durumda genellikle uyarı verip 0 yazar.</p>
+
+<p>Bir de negatif sınıfın gözünden bakan bir ölçüt var: <strong>özgüllük (specificity)</strong> = TN / (TN + FP), yani sağlıklıların ne kadarına doğru "sağlıklı" dendiği. B modelinde 9.410 / 9.900 ≈ 0,95. İkisini tek sayıda birleştiren <strong>F1 skoru</strong> da vardır (uyumlu ortalama); ama mümkünse iki sayıyı ayrı ayrı oku.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kesinlik ile duyarlılığı karıştırmak.</strong> "Bu test hastaların %90'ını yakalıyor" cümlesi duyarlılık hakkındadır; "testin pozitif çıkarsa %90 ihtimalle hastasın" demek değildir. Çözümlü örnek 1'de duyarlılık 0,90 iken kesinlik yalnızca 0,155 çıktı. Fark, hastalığın nadir olmasından gelir: 9.900 sağlıklının küçük bir yüzdesi bile, 100 hastanın büyük bölümünden sayıca fazladır. Bir sonucu okurken hep sor: payda kim? Model "pozitif" dediklerinin hepsi mi, gerçek pozitiflerin hepsi mi?</p></div>
+
+<h2 class="s">4. Eşik değeri ve iki ölçüt arasındaki takas</h2>
+
+<p>Parça 4'te lojistik regresyonun doğrudan "spam" ya da "normal" demediğini, bir olasılık verdiğini gördük: "bu e-postanın spam olma olasılığı %87". Karar, bu olasılığı bir <strong>eşik değeriyle</strong> karşılaştırarak verilir. Olasılık eşiğe eşit ya da eşikten büyükse "pozitif", küçükse "negatif" denir. Kütüphaneler varsayılan olarak 0,5 kullanır, ama 0,5 kutsal bir sayı değildir; yalnızca bir başlangıçtır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Eşiği <strong>düşürmek</strong>, daha çok örneği "pozitif" saymak demektir: duyarlılık artar ya da aynı kalır, kesinlik genellikle düşer. Eşiği <strong>yükseltmek</strong> tersini yapar: model yalnızca çok emin olduğunda alarm verir, kesinlik genellikle artar, duyarlılık düşer ya da aynı kalır. Neden: eşik, ağın büyüklüğüdür. Daha büyük ağ hem daha çok balık hem daha çok çöp toplar.</p></div>
+
+<p>"Genellikle" bilerek konuldu: eşik düştükçe pozitif sayılan küme yalnızca büyüdüğü için duyarlılık asla azalmaz; kesinlik ise küçük veride bazen inip çıkabilir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir spam filtresi 10 e-postaya şu spam olasılıklarını vermiş. Parantez içinde gerçek durum var (S: spam, N: normal): 0,95 (S), 0,90 (S), 0,85 (S), 0,70 (N), 0,60 (S), 0,45 (N), 0,35 (S), 0,30 (N), 0,20 (N), 0,10 (N). Eşik 0,8, 0,5 ve 0,3 olduğunda doğruluk, kesinlik ve duyarlılık nedir?</p>
+<p><strong>Adım 1.</strong> Gerçek spamları say: 0,95, 0,90, 0,85, 0,60 ve 0,35. Toplam 5 spam, 5 normal e-posta var. Duyarlılığın paydası her eşikte 5'tir.</p>
+<p><strong>Adım 2.</strong> Eşik 0,8: 0,8 ve üstü olanlar "spam" sayılır: 0,95, 0,90, 0,85. Üçü de gerçekten spam: TP = 3, FP = 0. Kaçırılan spamlar 0,60 ve 0,35: FN = 2. Kalan 5 normal e-postaya doğru "normal" denmiş: TN = 5.</p>
+<p><strong>Adım 3.</strong> Eşik 0,8 için: doğruluk (3 + 5) / 10 = 0,80; kesinlik 3 / (3 + 0) = 1,00; duyarlılık 3 / 5 = 0,60.</p>
+<p><strong>Adım 4.</strong> Eşik 0,5: "spam" sayılanlar 0,95, 0,90, 0,85, 0,70, 0,60. Bunlardan 0,70 normal: TP = 4, FP = 1. Kaçırılan yalnızca 0,35: FN = 1. TN = 4. Doğruluk (4 + 4) / 10 = 0,80; kesinlik 4 / 5 = 0,80; duyarlılık 4 / 5 = 0,80.</p>
+<p><strong>Adım 5.</strong> Eşik 0,3: "spam" sayılanlara 0,45, 0,35 ve 0,30 da eklenir (0,30 eşiğe eşit olduğu için girer). Sekiz e-posta "spam" sayıldı; bunların 5'i gerçek spam: TP = 5, FP = 3 (0,70, 0,45, 0,30). FN = 0, TN = 2. Doğruluk (5 + 2) / 10 = 0,70; kesinlik 5 / 8 = 0,625; duyarlılık 5 / 5 = 1,00.</p>
+<p><strong>Sonuç:</strong> Model aynı, olasılıklar aynı; yalnızca eşik değişti. Eşik düştükçe duyarlılık 0,60 → 0,80 → 1,00 yükseldi, kesinlik 1,00 → 0,80 → 0,625 düştü. Doğruluk ise iki eşikte aynı (0,80) kaldı ve aradaki önemli farkı hiç göstermedi.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="On e-postanın spam olasılığı bir sayı doğrusunda; üst sırada gerçek spamlar, alt sırada normal e-postalar; 0,3, 0,5 ve 0,8'de üç eşik çizgisi">
+  <text class="sv-s" x="170" y="34" text-anchor="middle">0,3</text>
+  <text class="sv-s" x="230" y="34" text-anchor="middle">0,5</text>
+  <text class="sv-s" x="320" y="34" text-anchor="middle">0,8</text>
+  <line class="sv-cl" x1="170" y1="42" x2="170" y2="172"/>
+  <line class="sv-cl" x1="230" y1="42" x2="230" y2="172"/>
+  <line class="sv-cl" x1="320" y1="42" x2="320" y2="172"/>
+  <text class="sv-b" x="10" y="85">spam</text>
+  <text class="sv-b" x="10" y="135">normal</text>
+  <circle class="sv-a" cx="365" cy="80" r="6"/>
+  <circle class="sv-a" cx="350" cy="80" r="6"/>
+  <circle class="sv-a" cx="335" cy="80" r="6"/>
+  <circle class="sv-a" cx="260" cy="80" r="6"/>
+  <circle class="sv-a" cx="185" cy="80" r="6"/>
+  <circle class="sv-m" cx="290" cy="130" r="6"/>
+  <circle class="sv-m" cx="215" cy="130" r="6"/>
+  <circle class="sv-m" cx="170" cy="130" r="6"/>
+  <circle class="sv-m" cx="140" cy="130" r="6"/>
+  <circle class="sv-m" cx="110" cy="130" r="6"/>
+  <line class="sv-c" x1="80" y1="172" x2="380" y2="172"/>
+  <text class="sv-s" x="80" y="190" text-anchor="middle">0</text>
+  <text class="sv-s" x="230" y="190" text-anchor="middle">0,5</text>
+  <text class="sv-s" x="380" y="190" text-anchor="end">1</text>
+  <text class="sv-t" x="230" y="216" text-anchor="middle">modelin verdiği spam olasılığı</text>
+</svg>
+<figcaption>Çözümlü örnek 2'nin on e-postası. Her mor çizgi bir eşiktir; çizginin sağında kalanlar "spam" sayılır. Eşik sola kaydıkça üst sıradaki bütün spamlar yakalanır (duyarlılık artar), ama alt sıradaki normal e-postalar da ağa girmeye başlar (kesinlik düşer). Hiçbir eşik iki sırayı kusursuz ayıramaz, çünkü 0,70'teki normal e-posta 0,60 ve 0,35'teki spamlardan daha yüksek puan almış.</figcaption>
+</figure>
+
+<h3>Hangisi önemli? Hatanın bedeline bak</h3>
+
+<p>Eşik bir teknik ayar gibi görünür ama aslında bir <strong>değer yargısıdır</strong>: hangi hatanın daha pahalı olduğuna dair bir karar. Bu kararı model veremez, onu kullananlar verir.</p>
+
+<p><strong>Hastalık taraması.</strong> Taramanın amacı, hastalığı olabilecekleri kaçırmadan ayıklamaktır. Kaçırılan hasta (FN) tedavide geç kalır; bunun bedeli ağır olabilir. Boşuna alarmın (FP) bedeli ise gereksiz endişe ve ikinci bir tetkiktir. Bu yüzden ilk aşama taramalarda <strong>duyarlılık</strong> öne çıkar; eşik düşük tutulur ve yanlış alarmlar ikinci, daha kesin bir testle elenir. Çözümlü örnek 1'deki B modeli tam böyle bir ilk elek olarak anlamlıdır.</p>
+
+<p><strong>Spam filtresi.</strong> Burada pozitif "spam"dir. Bir spamın gelen kutusuna düşmesi (FN) can sıkar ama sil geç. Önemli bir e-postanın (bir iş teklifi, bir fatura) spam klasörüne gitmesi (FP) ise fark edilmeyebilir ve pahalıya patlayabilir. Bu yüzden spam filtresinde <strong>kesinlik</strong> öne çıkar; eşik yüksek tutulur, emin olunmayan e-posta gelen kutusunda bırakılır.</p>
+
+<div class="tablo"><table>
+<tr><th>Uygulama (pozitif sınıf)</th><th>Yanlış negatifin bedeli</th><th>Yanlış pozitifin bedeli</th><th>Genellikle öne çıkan</th></tr>
+<tr><td>Hastalık taraması (hasta)</td><td>Hasta kaçar, tedavi gecikir</td><td>Endişe, ek tetkik masrafı</td><td>Duyarlılık; ardından ikinci test</td></tr>
+<tr><td>Spam filtresi (spam)</td><td>Bir spam görürsün</td><td>Önemli e-posta kaybolur</td><td>Kesinlik</td></tr>
+<tr><td>Kartta dolandırıcılık uyarısı (dolandırıcılık)</td><td>Para çalınır</td><td>Masum müşterinin kartı bloke olur</td><td>İkisi de; şüpheliler çoğu zaman bir insana ya da SMS onayına gönderilir</td></tr>
+<tr><td>İşe alım ön elemesi (uygun aday)</td><td>İyi aday görünmeden elenir; bu hata çoğu zaman hiç fark edilmez</td><td>İnsan değerlendirici fazladan bir dosya okur</td><td>Duyarlılık; ama kimin elendiği ayrıca ölçülmeli (bkz. bölüm 7)</td></tr>
+</table></div>
+
+<p>Son satıra dikkat et: bazı hatalar <strong>görünmez</strong>. Elenen aday geri dönüp "yanlış elendim" demez; görünmeyen hata ölçülmezse, model o yönde bozulsa bile kimse fark etmez.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Eşiği test verisine bakarak ayarlamak.</strong> Parça 2'de test kümesinin, modelin hiç görmediği ve yalnızca en sonda bir kez açılan bir ölçü olduğunu söylemiştik. Eşiği test kümesinde en iyi sonucu verecek şekilde seçersen, test kümesi artık eğitim sürecinin bir parçası olur ve verdiği sayı iyimser çıkar. Doğrusu: eşiği doğrulama kümesinde (ya da birazdan göreceğimiz çapraz doğrulamayla) seç, test kümesine en sonda bir kez bak.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme: Python ile karışıklık matrisi ve eşik</span>
+<p>Kod bilmiyorsan atlayabilirsin. Betik, Çözümlü örnek 2'deki hesabı scikit-learn kütüphanesine yaptırır; Python ve scikit-learn kurulu olmalı.</p>
+<pre class="kod" data-ad="python3 esik.py">from sklearn.metrics import confusion_matrix, precision_score, recall_score, accuracy_score
+
+# 10 e-postanın modelce verilen spam olasılığı ve gerçek etiketi (1 = spam, 0 = normal)
+olasilik = [0.95, 0.90, 0.85, 0.70, 0.60, 0.45, 0.35, 0.30, 0.20, 0.10]
+gercek   = [1,    1,    1,    0,    1,    0,    1,    0,    0,    0]
+
+for esik in [0.8, 0.5, 0.3]:
+    tahmin = [1 if p >= esik else 0 for p in olasilik]
+    tn, fp, fn, tp = confusion_matrix(gercek, tahmin).ravel()
+    print(f"eşik={esik}: TP={tp} FP={fp} FN={fn} TN={tn}",
+          f"doğruluk={accuracy_score(gercek, tahmin):.2f}",
+          f"kesinlik={precision_score(gercek, tahmin):.3f}",
+          f"duyarlılık={recall_score(gercek, tahmin):.2f}")</pre>
+<pre class="cikti">eşik=0.8: TP=3 FP=0 FN=2 TN=5 doğruluk=0.80 kesinlik=1.000 duyarlılık=0.60
+eşik=0.5: TP=4 FP=1 FN=1 TN=4 doğruluk=0.80 kesinlik=0.800 duyarlılık=0.80
+eşik=0.3: TP=5 FP=3 FN=0 TN=2 doğruluk=0.70 kesinlik=0.625 duyarlılık=1.00</pre>
+<p>Çıktı, elle bulduğumuz sayıların aynısı. Dikkat edilecek bir ayrıntı: <code>confusion_matrix</code> matrisi negatif sınıf (0) önce gelecek şekilde döndürür, bu yüzden <code>ravel()</code> ile düzleştirince sıra TN, FP, FN, TP olur. Bölüm 2'deki uyarı tam olarak buydu: eksenleri ve sırayı her seferinde kontrol et.</p></div>
+
+<h2 class="s">5. Veri sızıntısı: cevap girdiye gizlice girince</h2>
+
+<p>Buraya kadar ölçütü doğru seçmeyi konuştuk. Ama doğru ölçüt de yanlış veriyle hesaplanırsa yalan söyler. Makine öğrenmesinde en sinsi hata türlerinden biri budur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Veri sızıntısı (data leakage)</strong>, modelin eğitim ya da değerlendirme sırasında, gerçek kullanımda tahmin anında elinde <strong>olmayacak</strong> bir bilgiye erişmesidir. Sonuç: değerlendirmede çok yüksek, gerçek dünyada çok düşük bir başarı. Bu sahte başarının adı yoktur ama belirtisi vardır: sonuç "gerçek olamayacak kadar iyi"dir.</p></div>
+
+<p>Neden olur? Çünkü model, Parça 2'de gördüğümüz gibi, veride hedefle birlikte değişen <strong>her</strong> örüntüyü yakalar. Ona "anlamlı" örüntüyü "kopya" örüntüden ayırmayı kimse öğretmez. Hedefin kendisi ya da hedeften sonra oluşan bir bilgi girdide duruyorsa, model en kolay yolu seçer ve onu kullanır. Cevap anahtarını bulan biri gibi: puanı mükemmel olur, ama bir şey öğrenmemiştir.</p>
+
+<p>Sızıntının birkaç sık rastlanan biçimi var:</p>
+
+<div class="tablo"><table>
+<tr><th>Sızıntı türü</th><th>Ne olur</th><th>Örnek</th><th>Önlem</th></tr>
+<tr><td>Hedeften sonra oluşan özellik</td><td>Girdi, sonucun bir yansımasıdır</td><td>Hastanın "zatürre olacak mı" tahmininde "zatürre antibiyotiği reçete edildi mi" sütunu</td><td>Her özellik için sor: tahmin anında bu bilgi var mı?</td></tr>
+<tr><td>Zaman sızıntısı</td><td>Model geleceği görerek geçmişi tahmin eder</td><td>Geçen yılın satışlarını tahmin ederken veriyi rastgele karıştırıp bölmek; eğitimde gelecek ayların verisi bulunur</td><td>Zamana göre böl: eğitim hep testten önce</td></tr>
+<tr><td>Tekrar eden kayıtlar</td><td>Aynı örnek hem eğitimde hem testte</td><td>Aynı hastanın iki röntgeni farklı kümelere düşer; model hastayı tanır, hastalığı değil</td><td>Kişi, cihaz ya da belge düzeyinde böl; kopyaları temizle</td></tr>
+<tr><td>Ön işlemenin bütün veriyle yapılması</td><td>Test verisinin bilgisi eğitime sızar</td><td>Ortalama, ölçekleme ya da "en iyi özellik seçimi" bölmeden önce bütün veride hesaplanır</td><td>Önce böl, sonra her işlemi yalnızca eğitim parçasında öğren</td></tr>
+<tr><td>Kısa yol (sızıntının akrabası)</td><td>Model hedefle rastlantısal olarak bağlı bir ipucunu öğrenir</td><td>Röntgende hangi hastanenin cihazı olduğunu gösteren işaretler</td><td>Modeli başka kaynaktan gelen veride de sına</td></tr>
+</table></div>
+
+<p>Son satırın gerçek bir örneği var. PLOS Medicine'de 2018'de yayımlanan bir çalışmada (Zech ve ark.), göğüs röntgeninden zatürre tespit eden modeller üç hastane sisteminin verisiyle eğitilip sınandı. Modeller, röntgenin hangi hastaneden, hatta hangi bölümden geldiğini çok yüksek isabetle ayırt edebiliyordu. Hastanelerin hasta profilleri ve hastalık oranları farklı olduğu için "bu röntgen hangi hastaneden" bilgisi, zatürre tahmini için kullanışlı bir kısa yol hâline geliyordu. Yazarlar, eğitimde kullanılan hastanelerin verisiyle ölçülen başarının gerçek dünyadaki başarıyı olduğundan iyi gösterebileceği uyarısını yaptılar; beş doğal karşılaştırmanın üçünde, dışarıdan gelen röntgenlerdeki başarı anlamlı biçimde düşüktü.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önce böl, sonra her şeyi yap.</strong> Veriyi eğitim, doğrulama ve test kümelerine ayırmak, yapacağın ilk iştir. Ortalama alma, ölçekleme, eksik değer doldurma, özellik seçme gibi veriden bir şey "öğrenen" her adım, yalnızca eğitim parçasına bakarak yapılır; sonra aynı dönüşüm doğrulama ve test parçalarına uygulanır. Neden: test kümesinin tek görevi, modelin hiç görmediği veriyi temsil etmektir. Ondan herhangi bir bilgi eğitime sızarsa bu görevi yapamaz.</p></div>
+
+<p>Bu kural en çok çiğnenen kuraldır, çünkü çiğnemek hiçbir hata mesajı üretmez: program sorunsuz çalışır, yalnızca sonuç yalan söyler. Sızıntının en iyi dedektörü basit bir sorudur: "Model, tahmin yapacağı anda bu sütunu bilecek mi?"</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir telefon şirketi, hangi müşterilerin önümüzdeki ay aboneliğini iptal edeceğini tahmin etmek istiyor. Elindeki tabloda şu sütunlar var: (1) müşterinin kaç yıldır abone olduğu, (2) son üç ayın ortalama faturası, (3) son üç ayda müşteri hizmetlerini kaç kez aradığı, (4) "iptal talebi işlem numarası", (5) iptal etti mi (hedef). Model %99,8 doğruluk alıyor. Ne düşünmeli?</p>
+<p><strong>Adım 1.</strong> Sonucun büyüklüğüne bak. İnsan davranışını tahmin eden bir model için %99,8 "gerçek olamayacak kadar iyi" bir sayıdır. İlk tepki kutlama değil, şüphe olmalı.</p>
+<p><strong>Adım 2.</strong> Taban çizgisini hesapla. Müşterilerin, diyelim ki, %3'ü iptal ediyorsa herkese "iptal etmez" demek %97 doğruluk verir. Yani %99,8 tek başına bir şey söylemiyor; karışıklık matrisine ve duyarlılığa bakmak gerekir. Ama asıl sorun başka yerde olabilir.</p>
+<p><strong>Adım 3.</strong> Her sütun için sor: tahmin anında, yani ay başında bu bilgi var mı? (1), (2) ve (3) geçmişe ait, ay başında bilinir. (4) "İptal talebi işlem numarası" ise ancak müşteri iptal talebinde bulunduktan <strong>sonra</strong> oluşur. Bu sütun doluysa müşteri zaten iptal etmiştir.</p>
+<p><strong>Adım 4.</strong> Sızıntıyı adlandır: hedeften sonra oluşan özellik. Model "işlem numarası doluysa iptal" kuralını öğrenmiş; bu kural doğru ama işe yaramaz, çünkü ay başında bu sütun herkeste boş olacak.</p>
+<p><strong>Sonuç:</strong> (4) numaralı sütun çıkarılmalı ve model yeniden değerlendirilmeli. Gerçekçi sonuç büyük olasılıkla çok daha düşük çıkacaktır; ama o düşük sayı doğru sayıdır.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme: tamamen rastgele veride sahte başarı</span>
+<p>Bu deneme, sızıntının ne kadar ikna edici olabileceğini gösterir. 100 örnek ve 5.000 özellik üretiyoruz; hepsi rastgele sayı. Etiketler de yazı-tura. Yani öğrenilecek <strong>hiçbir şey yok</strong>; dürüst bir değerlendirme %50 civarında bir sonuç vermeli. Önce sızıntılı yolu deniyoruz: bütün veriye bakıp etiketle en çok ilişkili görünen 20 özelliği seçiyor, sonra modeli değerlendiriyoruz. Ardından aynı seçimi, değerlendirmenin her turunda yalnızca eğitim parçasına bakarak yapıyoruz (<code>make_pipeline</code> bunu sağlar). <code>cross_val_score</code> birazdan anlatacağımız çapraz doğrulamayı yapar.</p>
+<pre class="kod" data-ad="python3 sizinti.py">import numpy as np
+from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import make_pipeline
+
+rng = np.random.default_rng(0)
+X = rng.normal(size=(100, 5000))   # 100 örnek, 5000 tamamen rastgele özellik
+y = rng.integers(0, 2, size=100)   # etiketler de yazı-tura: öğrenilecek hiçbir şey yok
+
+# YANLIŞ: en "faydalı" 20 özelliği bütün veriye bakarak seç, sonra çapraz doğrula
+X_secili = SelectKBest(f_classif, k=20).fit_transform(X, y)
+yanlis = cross_val_score(LogisticRegression(), X_secili, y, cv=5)
+
+# DOĞRU: seçim adımı her katta yalnızca o katın eğitim parçasına bakar
+boru = make_pipeline(SelectKBest(f_classif, k=20), LogisticRegression())
+dogru = cross_val_score(boru, X, y, cv=5)
+
+print("sızıntılı  :", np.round(yanlis, 2), "ortalama", round(yanlis.mean(), 2))
+print("sızıntısız :", np.round(dogru, 2), "ortalama", round(dogru.mean(), 2))
+print("en basit tahmin (hep çoğunluk sınıfı):", round(max(y.mean(), 1 - y.mean()), 2))</pre>
+<pre class="cikti">sızıntılı  : [0.7  0.8  0.85 0.9  1.  ] ortalama 0.85
+sızıntısız : [0.45 0.6  0.3  0.45 0.6 ] ortalama 0.48
+en basit tahmin (hep çoğunluk sınıfı): 0.55</pre>
+<p>Rastgele gürültüden %85 doğruluk! Sebep şu: 5.000 rastgele özellik içinde bazıları yalnızca şans eseri bu 100 etiketle uyumlu görünür. Seçimi bütün veriye bakarak yapınca, test parçalarındaki etiketlerle de şans eseri uyuşan özellikleri seçmiş olursun; test kümesi artık habersiz değildir. Sızıntısız yol ise %48 verir: en basit tahminin (%55) bile altında, yani modelin gerçekte hiçbir şey öğrenmediğini dürüstçe söyler. Sayılar <code>default_rng(0)</code> ile sabitlendiği için sende de aynı çıkmalı; başka bir tohum (seed) ya da farklı kütüphane sürümüyle küçük farklar olabilir, ama aradaki uçurum kalır.</p></div>
+
+<h2 class="s">6. Çapraz doğrulama: şansa tek bir zar atmamak</h2>
+
+<p>Parça 2'de veriyi eğitim, doğrulama ve test diye üçe bölmüştük. Bu düzenin bir zayıflığı var: veri azsa, hangi örneklerin doğrulama kümesine düştüğü sonucu çok etkiler. Şanslı bir bölmede kolay örnekler doğrulamaya düşer ve model iyi görünür; şanssız bir bölmede tersi olur. Yukarıdaki denemede sızıntısız sonuçların kat kat 0,30 ile 0,60 arasında oynaması tam olarak bunu gösteriyor: 20 örneklik bir doğrulama parçası, tek başına güvenilir bir ölçü değil.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>k katlı çapraz doğrulama (k-fold cross-validation):</strong> Eğitim için ayırdığın veriyi k eşit parçaya (kat) böl. Modeli k kez eğit; her seferinde bir katı doğrulama için kenara koy, kalan k − 1 katla eğit, kenardaki katta ölç. Sonunda elinde k tane skor olur. Bunların <strong>ortalaması</strong> modelin beklenen başarısını, <strong>yayılımı</strong> (en küçükle en büyük arasındaki fark ya da standart sapma) bu tahminin ne kadar oynak olduğunu söyler. Her örnek tam bir kez doğrulamada, k − 1 kez eğitimde kullanılır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="Beş katlı çapraz doğrulama: beş tur, her turda farklı bir kat doğrulama için ayrılıyor">
+  <rect class="sv-l" x="70" y="8" width="18" height="14"/><text class="sv-s" x="94" y="20">eğitim katı</text>
+  <rect class="sv-a" x="200" y="8" width="18" height="14"/><text class="sv-s" x="224" y="20">doğrulama katı</text>
+  <text class="sv-t" x="10" y="57">Tur 1</text>
+  <rect class="sv-a" x="70" y="38" width="56" height="30"/><rect class="sv-l" x="126" y="38" width="56" height="30"/><rect class="sv-l" x="182" y="38" width="56" height="30"/><rect class="sv-l" x="238" y="38" width="56" height="30"/><rect class="sv-l" x="294" y="38" width="56" height="30"/>
+  <text class="sv-b" x="360" y="58">s1</text>
+  <text class="sv-t" x="10" y="97">Tur 2</text>
+  <rect class="sv-l" x="70" y="78" width="56" height="30"/><rect class="sv-a" x="126" y="78" width="56" height="30"/><rect class="sv-l" x="182" y="78" width="56" height="30"/><rect class="sv-l" x="238" y="78" width="56" height="30"/><rect class="sv-l" x="294" y="78" width="56" height="30"/>
+  <text class="sv-b" x="360" y="98">s2</text>
+  <text class="sv-t" x="10" y="137">Tur 3</text>
+  <rect class="sv-l" x="70" y="118" width="56" height="30"/><rect class="sv-l" x="126" y="118" width="56" height="30"/><rect class="sv-a" x="182" y="118" width="56" height="30"/><rect class="sv-l" x="238" y="118" width="56" height="30"/><rect class="sv-l" x="294" y="118" width="56" height="30"/>
+  <text class="sv-b" x="360" y="138">s3</text>
+  <text class="sv-t" x="10" y="177">Tur 4</text>
+  <rect class="sv-l" x="70" y="158" width="56" height="30"/><rect class="sv-l" x="126" y="158" width="56" height="30"/><rect class="sv-l" x="182" y="158" width="56" height="30"/><rect class="sv-a" x="238" y="158" width="56" height="30"/><rect class="sv-l" x="294" y="158" width="56" height="30"/>
+  <text class="sv-b" x="360" y="178">s4</text>
+  <text class="sv-t" x="10" y="217">Tur 5</text>
+  <rect class="sv-l" x="70" y="198" width="56" height="30"/><rect class="sv-l" x="126" y="198" width="56" height="30"/><rect class="sv-l" x="182" y="198" width="56" height="30"/><rect class="sv-l" x="238" y="198" width="56" height="30"/><rect class="sv-a" x="294" y="198" width="56" height="30"/>
+  <text class="sv-b" x="360" y="218">s5</text>
+  <text class="sv-t" x="210" y="252" text-anchor="middle">Sonuç: s1 … s5'in ortalaması ve yayılımı</text>
+</svg>
+<figcaption>Beş katlı çapraz doğrulama. Turuncu kat her turda bir sağa kayar; böylece her örnek bir kez doğrulamada bulunur. Test kümesi bu şemanın içinde değildir: o, en baştan ayrılmış ve en sonda bir kez açılacak ayrı bir kasadır.</figcaption>
+</figure>
+
+<p>Çapraz doğrulamanın birkaç önemli inceliği var. Birincisi, <strong>test kümesinin yerini almaz</strong>. Çapraz doğrulamayı model seçmek ve ayar yapmak (örneğin eşiği ya da karar ağacının derinliğini seçmek) için kullanırsın; son ve dürüst ölçü yine dokunulmamış test kümesinden gelir. İkincisi, katlara bölme de sızıntıya açıktır: aynı hastanın kayıtları farklı katlara düşerse yine hastayı tanıyan bir model elde edersin. Bu yüzden kayıtlar kişi ya da grup düzeyinde bölünür. Zaman sırası olan veride katlar karıştırılmaz; her turda eğitim parçası doğrulama parçasından önceki döneme ait olur. Üçüncüsü, modeli k kez eğitmek gerekir; günlerce süren büyük sinir ağı eğitimlerinde bu yüzden çoğu zaman tek bir doğrulama kümesiyle yetinilir (veri büyük olduğu için tek bölmenin şans payı da küçüktür).</p>
+
+<p>Dengesiz veride bir incelik daha var: rastgele bölünce bir kata hiç ya da çok az pozitif örnek düşebilir. <strong>Tabakalı (stratified)</strong> bölme, her katta sınıf oranlarını bütün verideki oranla aynı tutar. scikit-learn, sınıflandırma modellerinde <code>cv=5</code> dediğinde varsayılan olarak tabakalı bölme kullanır.</p>
+
+<h2 class="s">7. Yanlılık ve adalet: model veride ne varsa onu öğrenir</h2>
+
+<p>Bir sözcük uyarısı: İngilizcedeki "bias" iki anlamda kullanılır. Biri teknik terimdir (Parça 6'da nöronun "sapma" değeri; istatistikte tahminin sistematik kayması). Öbürü bu bölümün konusudur: bir modelin belirli insan gruplarına sistematik olarak haksız sonuç vermesi. Türkçede ikincisi için genellikle <strong>yanlılık</strong> ya da <strong>önyargı</strong> denir.</p>
+
+<p>Yanlılığın kaynağı çoğu zaman modelin kendisi değil, <strong>öğrendiği veridir</strong>. Parça 2'de "çöp girer çöp çıkar" demiştik; burada daha incesi geçerli: veri çöp olmasa bile geçmişin kararlarını taşıyorsa, model geçmişin kararlarını öğrenir. Model "ne olmalı"yı değil "ne olmuş"u öğrenir. Geçmişte bir grup sistematik olarak dezavantajlı bırakıldıysa, o örüntü veride vardır ve model onu bir kural gibi yakalar.</p>
+
+<h3>İşe alım örneği</h3>
+
+<p>Reuters'ın 10 Ekim 2018'de yayımladığı bir haberde (Jeffrey Dastin), adı verilmeyen kaynaklara dayanarak şu anlatıldı: Amazon'da bir ekip 2014'ten itibaren iş başvurularını tarayıp adaylara bir ile beş yıldız arasında puan veren bir sistem geliştiriyordu. Modeller, şirkete son 10 yılda gelen özgeçmişlerdeki örüntülerden öğreniyordu ve bu özgeçmişlerin çoğu, teknoloji sektörünün erkek ağırlıklı yapısını yansıtacak biçimde erkeklerden gelmişti. Habere göre 2015'e gelindiğinde şirket, sistemin teknik pozisyonlarda adayları cinsiyet açısından tarafsız puanlamadığını fark etti: sistem İngilizcede "kadınların" anlamına gelen "women's" sözcüğünü içeren özgeçmişleri, örneğin "kadınlar satranç kulübü kaptanı" ifadesini, cezalandırmayı öğrenmişti; iki kadın kolejinin mezunlarının puanını da düşürüyordu. Program bu terimlere karşı tarafsız olacak biçimde düzenlendi; ama habere göre bu, makinelerin adayları ayrımcı olabilecek başka yollarla sıralamayı bulmayacağının güvencesi değildi. Ekip 2017 başında dağıtıldı. Kaynaklara göre işe alım uzmanları sistemin önerilerine bakmış ama yalnızca bu sıralamalara dayanmamıştı; Amazon habere ilişkin yorum yapmadı.</p>
+
+<p>Bu olayın dersi teknik ayrıntıda değil, mekanizmadadır. Kimse modele "kadınları ele" demedi; model "geçmişte işe alınanlara benzeyeni öne çıkar" görevini yaptı ve geçmişte işe alınanların çoğu erkekti. Cinsiyet sütunu tabloda olmasa bile, cinsiyetle ilişkili sözcükler (kulüp adları, okul adları) modelin önündeydi.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Hassas sütunu silersek model adil olur" diye düşünmek.</strong> Cinsiyet, etnik köken ya da yaş sütununu veriden çıkarmak yanlılığı çoğu zaman gidermez, çünkü başka sütunlar o bilginin <strong>vekili (proxy)</strong> olabilir: işe alımda kulüp ve okul adları, kredide oturulan semt ya da posta kodu, alışveriş alışkanlıkları. Model, silinen bilgiyi vekillerinden yeniden kurar. Üstelik hassas sütunu tamamen silersen, modelin gruplara nasıl davrandığını <strong>ölçme</strong> imkânını da kaybedersin. Doğrusu: hassas bilgiyi eğitim girdisi olarak kullanmasan bile değerlendirme için sakla ve sonuçları gruplara ayırarak ölç.</p></div>
+
+<h3>Kredi örneği ve "iddia ile ölçüm" farkı</h3>
+
+<p>Kredide de aynı mekanizma çalışır. Bir banka geçmişte belirli semtlerde oturanlara daha az kredi verdiyse, o semtlerde kredi geçmişi olan kişi sayısı azdır; model "bu semtten gelen başvuru riskli" örüntüsünü öğrenebilir ve geçmişteki dezavantajı geleceğe taşır. Bu yüzden birçok ülkede kredi kararlarında ayrımcılığı yasaklayan kurallar vardır ve modelin kararlarının açıklanabilir olması istenir.</p>
+
+<p>Ama her şikâyet de kanıt değildir; burada da ölçmek gerekir. Kasım 2019'da yazılımcı David Heinemeier Hansson, Apple Card'ın kendisine eşinden çok daha yüksek kredi limiti verdiğini yazarak sistemi cinsiyetçilikle suçladı ve konu büyük tartışma yarattı. New York Eyaleti Finansal Hizmetler Dairesi (NYDFS) kartın arkasındaki banka Goldman Sachs'ı inceledi ve 23 Mart 2021'de yayımladığı raporda, New York'tan yapılmış yaklaşık 400.000 başvuruyu analiz ettiğini, kredi mevzuatı açısından yasa dışı ayrımcılık kanıtı bulmadığını, benzer özelliklere sahip kadın ve erkeklerin genellikle benzer sonuçlar aldığını açıkladı. Aynı rapor, müşteri hizmetlerindeki eksikliklerin ve şeffaflık yokluğunun tüketici güvenini zedelediğini de not etti. İki olay birlikte şunu öğretir: yanlılık gerçek bir risktir, ama var olup olmadığı izlenimle değil, doğru soruyla ve doğru veriyle ölçülerek anlaşılır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Bir kredi modeli, krediyi geri ödeyecek kişileri "onay" ile işaretlemeye çalışıyor. Başvuranların 800'ü A grubundan, 200'ü B grubundan. A grubunda geri ödeyecek 600 kişinin 540'ı onay almış; B grubunda geri ödeyecek 150 kişinin 90'ı onay almış. Modelin genel duyarlılığı nedir, gruplara göre nedir?</p>
+<p><strong>Adım 1.</strong> Pozitif sınıf "geri ödeyecek"tir. Duyarlılık, geri ödeyeceklerin ne kadarının onay aldığıdır.</p>
+<p><strong>Adım 2.</strong> Genel duyarlılık: toplam geri ödeyecek 600 + 150 = 750 kişi, bunlardan onay alan 540 + 90 = 630. Duyarlılık 630 / 750 = 0,84.</p>
+<p><strong>Adım 3.</strong> A grubunun duyarlılığı: 540 / 600 = 0,90.</p>
+<p><strong>Adım 4.</strong> B grubunun duyarlılığı: 90 / 150 = 0,60.</p>
+<p><strong>Adım 5.</strong> Yorumla: krediyi geri ödeyebilecek A grubu üyelerinin %10'u reddedilirken, aynı durumdaki B grubu üyelerinin %40'ı reddediliyor. Genel sayı (0,84), ağırlıkça büyük olan A grubuna yakın çıktığı için B grubunun durumunu gizliyor.</p>
+<p><strong>Sonuç:</strong> Genel ölçüt, azınlıktaki bir grubun çok kötü hizmet aldığını saklayabilir. Bu yüzden yüksek etkili kararlarda ölçütler <strong>gruplara ayrılarak</strong> raporlanır.</p></div>
+
+<p>"Adil" ne demek, sorusu da tek cevaplı değildir. Gruplar arasında duyarlılığın eşit olmasını isteyebilirsin; ya da modelin "%70 risk" dediği kişilerin gerçekten yaklaşık %70'inin geri ödememesini (her grupta aynı anlamı taşıyan puan) isteyebilirsin; ya da boşuna reddedilme oranlarının eşit olmasını. Kleinberg, Mullainathan ve Raghavan'ın 2016'da yayımlanan bir çalışması, bu tür birkaç doğal adalet koşulunun, çok kısıtlı özel durumlar dışında (ör. grupların temel oranları eşitse ya da tahmin kusursuzsa) aynı anda sağlanamayacağını matematiksel olarak gösterdi. Yani adalet, bir hesap hatası düzeltmekten öte, hangi koşulun önceleneceğine dair bir karardır; bu karar da teknik ekibin tek başına vereceği bir şey değildir.</p>
+
+<h2 class="s">8. Goodhart yasası: ölçüt hedef olunca bozulur</h2>
+
+<p>İngiliz iktisatçı Charles Goodhart, 1975'te Birleşik Krallık'ın para politikası üzerine yazdığı bir makalede şu gözlemi yaptı: gözlemlenen her istatistiksel düzenlilik, onu denetim amacıyla kullanmak için üzerine baskı kurulduğunda çökme eğilimindedir. Bugün bu fikir, antropolog Marilyn Strathern'in 1997'de İngiliz üniversitelerindeki denetim sistemi üzerine yazdığı makaledeki daha kısa ifadesiyle bilinir: "Bir ölçüt hedef hâline geldiğinde, iyi bir ölçüt olmaktan çıkar."</p>
+
+<p>Mantığı şudur: bir ölçüt, gerçekten önemsediğin şeyle <strong>birlikte</strong> hareket ettiği için değerlidir. Ama ölçütü yükseltmek için ödül verdiğin anda, insanlar (ya da modeller) ölçütü yükseltmenin, asıl şeyi iyileştirmekten daha ucuz yollarını bulur. Bir çağrı merkezinde "ortalama görüşme süresi"ni kısaltmayı hedef yaptığını düşün: müşteri sorunlarını daha hızlı çözmek mümkün, ama telefonu sorunu çözmeden kapatmak çok daha kolay. Sayı iyileşir, hizmet kötüleşir.</p>
+
+<p>Makine öğrenmesi Goodhart'a özellikle açıktır, çünkü model tanım gereği <strong>verilen sayıyı</strong> (Parça 4'teki kayıp fonksiyonu gibi) iyileştirmek üzere eğitilir; sayı ile asıl amaç arasında boşluk varsa onu bulur. Bölüm 5'teki sızıntılı model de bir anlamda budur: "doğruluğu artır" denmiş, model de en ucuz yolu (kopyayı) bulmuştur. Bu fikir Parça 19'da "hizalama" başlığı altında, modelin istenen hedefi değil ölçülen hedefi öğrenmesi ve ödül hackleme olarak yeniden karşına çıkacak.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir modeli tek bir ölçüte göre seçme ya da ödüllendirme. Birbirini dengeleyen <strong>birkaç ölçüt</strong> kullan (kesinlik ve duyarlılık birlikte; genel ve grup bazında ölçüt birlikte), ölçütün kolayca kandırılamayacağı veri topla ve sayının yanında örneklere gözle de bak. Neden: tek ölçüt, onu yükselten en ucuz davranışı ödüllendirir; birden çok ölçütü aynı anda kandırmak çok daha zordur.</p></div>
+
+<h2 class="s">9. Kıyaslama tabloları: neden tek başına yetmezler</h2>
+
+<p>Yapay zekâ haberlerinde sık sık "yeni model şu kıyaslamada rekor kırdı" cümlesini görürsün. <strong>Kıyaslama (benchmark)</strong>, herkesin modelini aynı şekilde sınadığı, sabit ve herkese açık bir soru ya da örnek kümesidir; sonuçlar bir sıralama tablosunda (leaderboard) yayımlanır. Parça 8'de göreceğimiz ImageNet yarışması bunun ünlü bir örneğidir. Kıyaslamalar farklı ekiplerin sonuçlarını karşılaştırılabilir kıldı; ama yukarıdaki her tuzak burada da, büyütülmüş hâlde geçerlidir.</p>
+
+<p><strong>Test verisine bulaşma (contamination).</strong> Büyük dil modelleri (Parça 12'de göreceğiz) internetten toplanmış devasa metinlerle eğitilir. Kıyaslama soruları ve cevapları da internette yayımlanmıştır; forumlarda tartışılmış, kopyalanmış olabilir. Bu metinler eğitim verisine girerse model bu soruları cevaplarıyla birlikte önceden görmüş olur. Bu, bölüm 5'teki "tekrar eden kayıtlar" sızıntısının dev ölçekli hâlidir: kıyaslamadaki puan, modelin yeteneğini değil hafızasını ölçebilir.</p>
+
+<p>Bunu sınamak için araştırmacılar bazen kıyaslamanın "ikizini" yazar: aynı tarzda, aynı zorlukta, ama hiç yayımlanmamış yeni sorular. Scale AI'dan araştırmacılar Mayıs 2024'te (NeurIPS 2024'te yayımlandı) yaygın kullanılan GSM8k adlı ilkokul düzeyi matematik problemleri kıyaslamasının stilini ve zorluğunu taklit eden, 1.250 yeni sorudan oluşan GSM1k'yi hazırladı. Bazı model ailelerinde (makalede Phi ve Mistral örnek gösteriliyor) doğrulukta %13'e varan düşüş gözlendi ve bu, kıyaslamaya aşırı uyum işareti olarak yorumlandı; buna karşılık en ileri modellerin çoğunda (makalede Gemini, GPT ve Claude örnek gösteriliyor) aşırı uyuma dair belirti azdı. Yani bulaşma gerçek bir sorun, ama her modelde aynı ölçüde değil ve ancak yeni veriyle ölçülerek anlaşılabiliyor.</p>
+
+<p><strong>Sıralama tablosuna aşırı uyum.</strong> Test verisini hiç görmeyen bir model bile, ekip test puanına bakarak yüzlerce ayar denediyse ve en iyisini yayımladıysa, dolaylı olarak teste uydurulmuş olur. Bu, "eşiği test kümesinde ayarlamak" hatasının topluluk ölçeğindeki karşılığıdır.</p>
+
+<p><strong>Doygunluk ve dar ölçüm.</strong> Modeller bir kıyaslamada %95'in üstüne çıkınca, kalan farklar çoğu zaman sorulardaki etiket hatalarından ya da rastlantıdan gelir; kıyaslama artık ayırt edici olmaktan çıkar. Ayrıca her kıyaslama gerçek kullanımın dar bir dilimini ölçer; çoktan seçmeli sorulardaki başarı, modelin senin işinde, senin belgelerinle ne yapacağını tam söylemez.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kıyaslama puanını genel yetenek ölçüsü sanmak.</strong> "Model X, matematik kıyaslamasında %92 aldı; demek ki matematiği çok iyi biliyor" çıkarımı üç şeyi atlar: sorular eğitim verisine bulaşmış olabilir, model bu kıyaslamaya göre ayarlanmış olabilir ve kıyaslama yalnızca belirli bir soru türünü ölçer. Doğrusu: kıyaslamayı bir ipucu say, ama kendi işin için küçük, yayımlanmamış, gerçek örneklerden oluşan kendi değerlendirme kümeni hazırla ve modelleri onunla karşılaştır.</p></div>
+
+<p>Parça 1'deki üç soruya (ne ölçüldü, kim ölçtü, neyle kıyaslandı) artık şu alt soruları ekleyebilirsin: Ölçüt doğruluk mu, kesinlik mi, duyarlılık mı? Veri dengeli mi, taban çizgisi ne? Test verisi eğitimden gerçekten ayrı mı, sızıntı denetlendi mi? Sonuçlar gruplara ayrılarak verildi mi? Kıyaslama yeni mi, yoksa yıllardır internette dolaşan bir soru kümesi mi?</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 2'deki eğitim/doğrulama/test ayrımının neden bu kadar katı tutulduğunu burada gördük: sızıntı ve eşik ayarı o ayrımı sessizce bozuyor. Parça 4'teki lojistik regresyonun verdiği olasılık, burada eşik değeriyle karara dönüştü. Parça 1'deki "abartıyı ayırma" soru listesi bu parçada ayrıntılandı.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 7'de sinir ağlarının eğitim ve doğrulama kaybı eğrilerini okurken aynı mantığı kullanacağız. Parça 12'deki ön eğitimde test verisine bulaşma yeniden gündeme gelecek. Parça 14'te dil modellerinin yanılmalarını ölçmek, Parça 19'da hizalama sorunu ve ödül hackleme, buradaki Goodhart yasasının doğrudan devamıdır. Parça 20'deki düzenleme tartışmalarında, yüksek riskli sistemlerin (işe alım, kredi) neden ayrıca denetlendiğini bu parçadaki yanlılık örnekleri açıklar.</p>
+<p><strong>Öbür alanlara:</strong> Kesinlik ve duyarlılık, tıpta tarama testlerinin, siber güvenlikte saldırı tespit sistemlerinin (yanlış alarm ile kaçırılan saldırı arasındaki takas) temel dilidir. Goodhart yasası iktisatta ve işletmede performans göstergeleri (KPI) tasarlarken aynen geçerlidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<details><summary>Veri %99 oranında tek bir sınıftan oluşuyorsa, %99 doğruluk neden hiçbir şey kanıtlamaz?</summary><p>Çünkü hiçbir şey öğrenmeyen, her örneğe çoğunluk sınıfının adını söyleyen bir model de %99 doğruluk alır. Doğruluk, bu en basit tahminle (taban çizgisi) kıyaslanmadıkça anlamsızdır; ayrıca azınlık sınıfının ne kadarının yakalandığını (duyarlılık) hiç göstermez.</p></details>
+<details><summary>Kesinlik ve duyarlılık hangi soruların cevabıdır? Formüllerinin paydası nedir?</summary><p>Kesinlik: model "pozitif" dediğinde ne sıklıkla haklı? Paydası modelin pozitif dediklerinin hepsidir (TP + FP). Duyarlılık: gerçek pozitiflerin ne kadarı yakalandı? Paydası gerçek pozitiflerin hepsidir (TP + FN). İkisinin de payı TP'dir.</p></details>
+<details><summary>Eşik değeri düşürülünce duyarlılık ve kesinlik nasıl değişir? Neden?</summary><p>Eşik düşünce daha çok örnek pozitif sayılır. Duyarlılık artar ya da aynı kalır, çünkü yakalanan gerçek pozitifler yalnızca çoğalabilir. Kesinlik genellikle düşer, çünkü yeni pozitif sayılanların arasına daha çok negatif örnek de karışır.</p></details>
+<details><summary>Veri sızıntısını yakalamak için bir özelliğe hangi soruyu sorarsın?</summary><p>"Model gerçek kullanımda tahmin yapacağı anda bu bilgiye sahip olacak mı?" Olmayacaksa (örneğin bilgi hedeften sonra oluşuyorsa ya da test verisinden hesaplanmışsa) o özellik sızıntıdır ve değerlendirme sahte bir başarı gösterir.</p></details>
+<details><summary>Çapraz doğrulama ne işe yarar ve neyin yerini tutmaz?</summary><p>Veriyi k kata bölüp modeli k kez farklı bir katla doğrulayarak, tek bir şanslı ya da şanssız bölmeye bağlı kalmadan ortalama başarıyı ve oynaklığını ölçer; model seçme ve ayar yapmada kullanılır. En baştan ayrılmış ve en sonda bir kez açılan test kümesinin yerini tutmaz.</p></details>
+<details><summary>Hassas bir sütunu (ör. cinsiyet) veriden silmek neden modeli adil yapmaya yetmez?</summary><p>Başka sütunlar o bilginin vekili olabilir (kulüp adları, okul, semt, posta kodu); model silinen bilgiyi onlardan yeniden kurar. Üstelik sütun silinirse modelin gruplara nasıl davrandığı ölçülemez. Doğrusu, ölçütleri gruplara ayırarak raporlamaktır.</p></details>
+<details><summary>Goodhart yasası nedir ve makine öğrenmesinde neden özellikle önemlidir?</summary><p>Bir ölçüt hedef hâline gelince iyi bir ölçüt olmaktan çıkar, çünkü onu yükseltmenin asıl amacı iyileştirmekten daha ucuz yolları bulunur. Model tanım gereği verilen sayıyı iyileştirmek üzere eğitildiği için, sayı ile asıl amaç arasındaki her boşluğu bulup kullanır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Doğruluk</strong> = doğru tahmin / bütün örnekler. Dengesiz veride yanıltır; hep <strong>taban çizgisiyle</strong> (çoğunluk sınıfı) kıyasla.</li>
+<li><strong>Karışıklık matrisi:</strong> TP (yakalanan), FN (kaçırılan), FP (boşuna alarm), TN (doğru negatif). Pozitif = aranan sınıf, "iyi" değil. Eksenleri her seferinde oku.</li>
+<li><strong>Kesinlik</strong> = TP / (TP + FP): alarmına güvenebilir miyim? <strong>Duyarlılık</strong> = TP / (TP + FN): ne kadarını yakaladım? Payda kim, onu sor.</li>
+<li><strong>Eşik</strong> olasılığı karara çevirir. Eşik düşerse duyarlılık ↑, kesinlik genellikle ↓. Hangi hatanın pahalı olduğuna göre seçilir: tarama → duyarlılık, spam → kesinlik.</li>
+<li>Eşiği ve ayarları <strong>doğrulamada</strong> seç; teste en sonda bir kez bak.</li>
+<li><strong>Veri sızıntısı:</strong> tahmin anında olmayacak bilgi girdiye girer → sahte başarı. "Önce böl, sonra her şeyi yap." Çok iyi sonuca önce şüpheyle bak.</li>
+<li><strong>Çapraz doğrulama:</strong> k kat, k tur; ortalama + yayılım. Kişi/zaman düzeyinde böl; test kümesinin yerini tutmaz.</li>
+<li><strong>Yanlılık:</strong> model geçmişte ne olduysa onu öğrenir. Hassas sütunu silmek yetmez (vekil değişkenler). Ölçütleri <strong>gruplara ayırarak</strong> raporla. Adalet tanımları aynı anda sağlanamayabilir.</li>
+<li><strong>Goodhart:</strong> ölçüt hedef olunca bozulur. Birden çok, birbirini dengeleyen ölçüt kullan.</li>
+<li><strong>Kıyaslamalar:</strong> bulaşma, sıralamaya aşırı uyum, doygunluk, dar ölçüm. Kendi gerçek örneklerinle değerlendir.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-5">
+<h3>Quiz 5</h3>
+<p class="qa">On beş soru: sekizi bu parçadan, yedisi önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="D"><p class="q">Bir bankanın 1.000 kart işleminden oluşan örnek verisinde 10 işlem dolandırıcılıktır. Her işleme "normal" diyen bir modelin doğruluğu kaçtır?</p>
+<ul class="sec"><li>%1</li><li>%10</li><li>%90</li><li>%99</li><li>%100</li></ul>
+<div class="coz"><p>Model 990 normal işlemin hepsini doğru, 10 dolandırıcılığın hepsini yanlış bilir: 990 / 1.000 = %99 (D). A, dolandırıcılık oranıdır, doğruluk değil. B ve C hesap hatasıdır. E olamaz, çünkü 10 işlem yanlış sınıflandırıldı. Bu sorunun asıl dersi: %99 doğruluğa rağmen model tek bir dolandırıcılığı yakalamadı, yani duyarlılığı 0'dır. Dengesiz veride doğruluğu her zaman çoğunluk sınıfı taban çizgisiyle kıyasla.</p></div></li>
+
+<li data-c="A"><p class="q">Bir modelin karışıklık matrisinde TP = 40, FP = 10, FN = 20, TN = 930'dur. Modelin kesinliği ve duyarlılığı sırasıyla yaklaşık kaçtır?</p>
+<ul class="sec"><li>0,80 ve 0,67</li><li>0,67 ve 0,80</li><li>0,80 ve 0,97</li><li>0,97 ve 0,67</li><li>0,04 ve 0,67</li></ul>
+<div class="coz"><p>Kesinlik = TP / (TP + FP) = 40 / 50 = 0,80. Duyarlılık = TP / (TP + FN) = 40 / 60 ≈ 0,67. Doğru cevap A. B, iki formülün yer değiştirdiği tipik karışıklıktır. 0,97 doğruluktur: (40 + 930) / 1.000; C ve D bu sayıyı yanlış yere koyar. E'deki 0,04, TP'nin bütün örneklere oranıdır (40 / 1.000) ve hiçbir standart ölçüte karşılık gelmez. Formülleri ezberlemek yerine paydayı sor: kesinlikte "model pozitif dediklerinin hepsi", duyarlılıkta "gerçek pozitiflerin hepsi".</p></div></li>
+
+<li data-c="C"><p class="q">Bir lojistik regresyon modelinin eşik değeri 0,5'ten 0,2'ye düşürülüyor. Aşağıdakilerden hangisi her durumda doğrudur?</p>
+<ul class="sec"><li>Kesinlik mutlaka artar.</li><li>Doğruluk mutlaka artar.</li><li>Duyarlılık azalmaz; ya artar ya aynı kalır.</li><li>Modelin verdiği olasılıklar değişir.</li><li>Yanlış pozitif sayısı mutlaka azalır.</li></ul>
+<div class="coz"><p>Eşik düşünce pozitif sayılan küme yalnızca büyür; önceden yakalanan gerçek pozitifler yakalanmaya devam eder, bazıları da eklenebilir. Bu yüzden duyarlılık azalamaz (C). A yanlış: kesinlik genellikle düşer, çünkü yeni pozitiflerin arasına negatifler karışır. B yanlış: doğruluk artabilir de azalabilir de (Çözümlü örnek 2'de 0,80'den 0,70'e düştü). D yanlış: eşik modelin verdiği olasılıkları değiştirmez, yalnızca karara nasıl çevrildiğini değiştirir. E yanlış: daha çok örnek pozitif sayıldığı için yanlış pozitifler artar ya da aynı kalır.</p></div></li>
+
+<li data-c="B"><p class="q">Aşağıdaki uygulamaların hangisinde, yanlış pozitifin bedeli genellikle yanlış negatifinkinden <strong>daha ağır</strong> olduğu için kesinlik öne çıkar?</p>
+<ul class="sec"><li>Nadir bir hastalık için ilk aşama tarama</li><li>Önemli e-postaların kaybolmaması istenen bir spam filtresi</li><li>Fabrikada bozuk parçanın müşteriye gitmesini önleyen ilk kontrol</li><li>Havalimanında şüpheli bavulu ek incelemeye ayıran ilk tarama</li><li>Deprem sonrası enkazda canlı arayan bir algılayıcı</li></ul>
+<div class="coz"><p>Spam filtresinde pozitif "spam"dir; yanlış pozitif, normal bir e-postanın spam klasörüne gitmesidir ve önemli bir mesajın fark edilmeden kaybolmasına yol açabilir. Bu yüzden kesinlik öne çıkar (B). Öbür dördünde kaçırılan pozitifin (hasta, bozuk parça, tehlikeli bavul, enkaz altındaki insan) bedeli çok ağırdır; yanlış alarm ise ek bir kontrolle temizlenebilir. Bu tür ilk elek sistemlerinde duyarlılık öne çıkar ve eşik düşük tutulur.</p></div></li>
+
+<li data-c="E"><p class="q">Bir hastane, hastaların yatıştan sonraki 30 gün içinde yeniden yatıp yatmayacağını tahmin eden bir model kuruyor. Aşağıdaki özelliklerden hangisi büyük olasılıkla bir <strong>veri sızıntısıdır</strong>?</p>
+<ul class="sec"><li>Hastanın yaşı</li><li>Yatış sırasında konan tanı</li><li>Son bir yıldaki yatış sayısı</li><li>Taburcu olurken kullandığı ilaç sayısı</li><li>Taburcudan sonraki 30 gün içinde yapılan acil servis başvurusu sayısı</li></ul>
+<div class="coz"><p>Model taburcu anında tahmin yapacaktır. O anda gelecekteki 30 günün acil başvuruları bilinemez; üstelik bu bilgi hedefle (yeniden yatış) doğrudan bağlantılıdır. Bu, hedeften sonra oluşan bir özelliktir: sızıntıdır (E). Yaş, tanı, geçmiş yatış sayısı ve taburcudaki ilaç sayısı tahmin anında bilinen bilgilerdir; meşru özelliklerdir. Sızıntıyı yakalamanın sorusu hep aynı: "tahmin anında bu bilgiye sahip olacak mıyım?"</p></div></li>
+
+<li data-c="C"><p class="q">5 katlı çapraz doğrulama ile ilgili aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Model beş kez eğitilir.</li><li>Her örnek tam bir kez doğrulama katında bulunur.</li><li>Çapraz doğrulama yapıldıysa ayrıca bir test kümesi ayırmaya gerek kalmaz.</li><li>Sonuç, beş skorun ortalaması ve yayılımıyla raporlanabilir.</li><li>Aynı hastanın kayıtları farklı katlara dağılırsa sonuç iyimser çıkabilir.</li></ul>
+<div class="coz"><p>C yanlıştır: çapraz doğrulama model seçme ve ayar yapma aracıdır; bu seçimler doğrulama skorlarına bakılarak yapıldığı için o skorlar artık tam habersiz değildir. Son ve dürüst ölçü, en baştan ayrılmış ve en sonda bir kez açılan test kümesinden gelir. A, B ve D yöntemin tanımıdır. E de doğrudur: aynı kişinin kayıtları hem eğitimde hem doğrulamada olursa model kişiyi tanır; bu bir sızıntıdır ve kayıtların kişi düzeyinde bölünmesi gerekir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir şirket, işe alım modelinden "cinsiyet" sütununu çıkarıyor ama özgeçmiş metnini, okul ve kulüp adlarıyla birlikte modele vermeye devam ediyor. Aşağıdakilerden hangisi bu durum için en doğru değerlendirmedir?</p>
+<ul class="sec"><li>Model, cinsiyetle ilişkili sözcüklerden bu bilgiyi dolaylı olarak yeniden öğrenebilir; sonuçlar gruplara ayrılarak ölçülmelidir.</li><li>Cinsiyet sütunu olmadığı için model tanım gereği cinsiyet açısından adildir.</li><li>Model metin okuduğu için yanlılık ancak sayısal sütunlarda ortaya çıkabilir.</li><li>Genel doğruluk yüksekse modelin her grupta eşit çalıştığı kesindir.</li><li>Yanlılığı önlemenin tek yolu modeli daha uzun süre eğitmektir.</li></ul>
+<div class="coz"><p>Okul ve kulüp adları gibi sözcükler cinsiyetin vekili olabilir; model silinen bilgiyi onlardan yeniden kurabilir. Reuters'ın 2018'de aktardığı işe alım aracı örneğinde de "women's" sözcüğü ve kadın kolejleri bu rolü oynamıştı. Doğru cevap A. B, "hassas sütunu silmek yeter" yanılgısıdır. C yanlış: metin, yanlılığın en kolay sızdığı yerlerden biridir. D yanlış: genel ölçüt, küçük bir grubun kötü hizmet aldığını gizleyebilir (Çözümlü örnek 4). E yanlış: daha uzun eğitim, verideki örüntüyü yalnızca daha iyi öğrenir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir dil modeli, yıllardır internette yayımlanan bir matematik kıyaslamasında %92 alıyor. Araştırmacılar aynı tarzda ve zorlukta, hiç yayımlanmamış yeni sorular yazıyor; model bunlarda %79 alıyor. Aşağıdakilerden hangisi bu farkın en olası açıklamasıdır?</p>
+<ul class="sec"><li>Yeni sorular yanlışlıkla çok daha zor yazılmıştır, başka açıklama düşünülemez.</li><li>Model yeni sorularda daha yüksek sıcaklık ayarıyla çalışmıştır.</li><li>Fark, kesinlik ile duyarlılık arasındaki takastan kaynaklanır.</li><li>Kıyaslama soruları ya da benzerleri eğitim verisine bulaşmış ya da model bu kıyaslamaya aşırı uydurulmuştur.</li><li>Kıyaslama puanı her zaman gerçek yeteneği ölçtüğü için yeni sorulardaki puan önemsizdir.</li></ul>
+<div class="coz"><p>Aynı tarz ve zorluktaki yeni sorularda belirgin düşüş, en çok test verisine bulaşma ya da kıyaslamaya aşırı uyum ile açıklanır (D); GSM1k çalışması tam olarak bu yöntemle bazı model ailelerinde %13'e varan düşüş gözledi. A'daki olasılık tamamen dışlanamaz, ama araştırmacılar zorluğu eşleştirmeye çalıştığı için "başka açıklama düşünülemez" ifadesi yanlıştır. B konu dışıdır ve verilmemiş bir bilgiye dayanır. C bu durumla ilgisizdir; burada bir eşik değişmedi. E, Goodhart yasasının uyardığı yanılgının ta kendisidir.</p></div></li>
+
+<li data-c="B" data-k="yz-1"><p class="q">"Yapay zekâ", "makine öğrenmesi", "derin öğrenme" ve "büyük dil modelleri" kavramlarının ilişkisini en doğru anlatan seçenek hangisidir?</p>
+<ul class="sec"><li>Dördü aynı şeyin farklı adlarıdır.</li><li>Büyük dil modelleri derin öğrenmenin, derin öğrenme makine öğrenmesinin, makine öğrenmesi de yapay zekânın bir alt alanıdır.</li><li>Makine öğrenmesi derin öğrenmenin bir alt alanıdır.</li><li>Büyük dil modelleri kural tabanlı uzman sistemlerin bir türüdür.</li><li>Yapay zekâ, büyük dil modellerinin bir alt alanıdır.</li></ul>
+<div class="coz"><p>Parça 1'deki iç içe halkalar şemasında en dışta yapay zekâ, onun içinde makine öğrenmesi, onun içinde derin öğrenme, en içte büyük dil modelleri vardır (B). A yanlış: bugün günlük dilde bu kavramlar birbirinin yerine kullanılsa da kapsamları farklıdır. C ve E halkaları ters çevirir. D yanlış: büyük dil modelleri kural yazılarak değil, örnekten öğrenerek kurulan sistemlerdir; uzman sistemler ise kuralları insanların elle yazdığı eski yaklaşımdır.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Geleneksel programlama ile makine öğrenmesinin farkını en doğru anlatan seçenek hangisidir?</p>
+<ul class="sec"><li>Geleneksel programlamada veri hiç kullanılmaz.</li><li>Makine öğrenmesinde programcı her kuralı tek tek yazar.</li><li>İkisinde de girdi "kural + veri", çıktı "cevap"tır.</li><li>Makine öğrenmesi yalnızca görüntü verisinde çalışır.</li><li>Geleneksel programlamada kural + veri → cevap; makine öğrenmesinde veri + cevap → kural üretilir.</li></ul>
+<div class="coz"><p>Parça 2'deki temel ayrım budur: geleneksel programlamada insan kuralı yazar, program onu veriye uygulayıp cevap üretir; makine öğrenmesinde ise örnek veriler ve doğru cevapları (etiketler) verilir, kural (model) bunlardan çıkarılır (E). A yanlış: geleneksel program da veriyle çalışır. B, makine öğrenmesini geleneksel programlamayla karıştırır. C iki yaklaşımı aynı sayar. D yanlış: makine öğrenmesi tablo, metin, ses ve görüntü dahil her tür veride kullanılır; spam filtresi metin örneğidir.</p></div></li>
+
+<li data-c="A" data-k="yz-2"><p class="q">Bir mağaza, müşterilerini satın alma alışkanlıklarına göre gruplara ayırmak istiyor; hangi grupların olacağı ya da müşterilerin hangi gruba ait olduğu önceden bilinmiyor. Bu iş hangi öğrenme türüne örnektir?</p>
+<ul class="sec"><li>Denetimsiz öğrenme</li><li>Denetimli öğrenme, regresyon</li><li>Denetimli öğrenme, sınıflandırma</li><li>Pekiştirmeli öğrenme</li><li>Kural tabanlı uzman sistem</li></ul>
+<div class="coz"><p>Verinin etiketi yok: hiçbir müşteri için "doğru grup" önceden bilinmiyor. Etiketsiz veride yapı bulmak denetimsiz öğrenmedir ve müşteri gruplama onun klasik örneğidir (A). B ve C denetimli öğrenmedir; etiketli örnek gerektirir (regresyon sayı, sınıflandırma sınıf tahmin eder). D'de bir ajan ödül-ceza ile öğrenir; burada ödül yok. E, kuralları insanın yazdığı bir sistemdir; burada gruplar veriden çıkarılmak isteniyor.</p></div></li>
+
+<li data-c="C" data-k="yz-3"><p class="q">a = (1, 2), b = (2, 4) ve c = (2, −1) vektörleri veriliyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>a ile c aynı yöne bakar.</li><li>a ile b birbirine diktir.</li><li>a ile b tam olarak aynı yöne bakar; a ile c birbirine diktir.</li><li>Üç vektör de aynı yöne bakar.</li><li>a ile b'nin uzunlukları farklı olduğu için yönleri karşılaştırılamaz.</li></ul>
+<div class="coz"><p>b = 2 × a olduğu için b, a ile tam olarak aynı yöne bakar; yalnızca iki kat uzundur. a ile c'nin karşılıklı çarpımlarının toplamı 1 × 2 + 2 × (−1) = 0'dır; bu, iki vektörün dik olduğunu, yani yönce hiç benzemediğini gösterir. Doğru cevap C. A ve D bu yüzden yanlış; B, a ile b için tersini söyler. E yanlış: Parça 3'te gördüğümüz gibi açı ile benzerlik ölçmenin amacı tam da uzunluktan bağımsız olarak yöne bakmaktır.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">7 milyar parametreli bir modelde her parametre float16 (16 bit = 2 bayt) ile saklandığında ağırlıklar yaklaşık 14 GB yer tutar. Model 8 bite nicelenirse ağırlıklar yaklaşık ne kadar yer tutar?</p>
+<ul class="sec"><li>3,5 GB</li><li>7 GB</li><li>14 GB</li><li>28 GB</li><li>56 GB</li></ul>
+<div class="coz"><p>8 bit 1 bayttır. 7 milyar parametre × 1 bayt = 7 milyar bayt ≈ 7 GB (B). A, 4 bitlik niceleme olurdu (yarım bayt). C, float16 ile aynı boyuttur; niceleme yapılmamış gibi hesaplar. D, float32 (4 bayt) olurdu. E, parametre başına 8 bayt saymaktır; "8 bit"i "8 bayt" sanma hatasıdır. Niceleme bellekten tasarruf eder ama sayıların daha kaba saklanması nedeniyle biraz doğruluk kaybına yol açabilir.</p></div></li>
+
+<li data-c="C" data-k="yz-4"><p class="q">Bir modelin üç evdeki tahminleri 2, 5 ve 9; gerçek değerler 3, 5 ve 7'dir (milyon lira). Ortalama kare hata (MSE) yaklaşık kaçtır?</p>
+<ul class="sec"><li>0,33</li><li>1</li><li>1,67</li><li>3</li><li>5</li></ul>
+<div class="coz"><p>Hatalar (tahmin − gerçek): −1, 0 ve 2. Kareleri: 1, 0 ve 4. Toplam 5, ortalama 5 / 3 ≈ 1,67 (C). A, hataların işaretiyle ortalamasıdır: (−1 + 0 + 2) / 3 ≈ 0,33; artı ve eksi hatalar birbirini götürdüğü için yanıltıcıdır. B, mutlak hataların ortalamasıdır: (1 + 0 + 2) / 3 = 1; bu başka bir ölçüttür (ortalama mutlak hata). D, mutlak hataların toplamıdır. E, karelerin toplamıdır ama örnek sayısına bölünmemiştir. Kare almak hem işaretleri ortadan kaldırır hem de büyük hataları daha ağır cezalandırır.</p></div></li>
+
+<li data-c="D" data-k="yz-4"><p class="q">Gradyan inişiyle eğitilen bir modelde kayıp her adımda bir azalıp bir artarak gittikçe büyüyor ve sonunda sayılar kontrolden çıkıyor. En olası neden hangisidir?</p>
+<ul class="sec"><li>Öğrenme oranı çok küçüktür.</li><li>Model aşırı öğrenme (overfitting) yapmıştır.</li><li>Veri kümesinde hiç etiket yoktur.</li><li>Öğrenme oranı (adım boyu) çok büyüktür; her adım vadinin dibini aşıp karşı yamaca savruluyor.</li><li>Kayıp fonksiyonu olarak ortalama kare hata kullanılmıştır.</li></ul>
+<div class="coz"><p>Parça 4'teki sisli dağ benzetmesinde adım çok büyükse vadinin dibini atlayıp karşı yamaçta daha yükseğe çıkarsın; bir sonraki adım daha da büyük savrulur ve kayıp patlar (D). A'nın belirtisi farklıdır: kayıp çok yavaş ama düzenli azalır. B'de eğitim kaybı düşmeye devam eder, sorun doğrulama verisinde görünür. C, denetimli eğitimin hiç kurulamaması demektir, bu belirtiyi açıklamaz. E yanlış: ortalama kare hata regresyonda yaygın ve uygun bir kayıp fonksiyonudur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-4">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-5">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-6">Sonraki parça: yapay nöron ve katmanlı ağ</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"confusion matrix precision recall explained"</li>
+  <li>"karışıklık matrisi kesinlik duyarlılık makine öğrenmesi"</li>
+  <li>"data leakage machine learning examples"</li>
+  <li>"k-fold cross validation explained"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Tanımlar (doğruluk, karışıklık matrisi, kesinlik, duyarlılık, özgüllük, F1, eşik, k katlı ve tabakalı çapraz doğrulama, veri sızıntısı türleri) makine öğrenmesinde yerleşik kullanıma göre yazıldı; scikit-learn davranışları (ör. <code>confusion_matrix</code> çıktısının sırası, sınıflandırıcıda <code>cv=5</code> için tabakalı bölme) kurulu sürümde çalıştırılarak denendi, resmî belgeyle bu oturumda satır satır karşılaştırılmadı.</li>
+  <li>Bütün sayısal örnekler (Çözümlü örnek 1, 2 ve 4; quizdeki doğruluk, kesinlik, duyarlılık, MSE, niceleme ve vektör soruları) Python ile hesaplanarak doğrulandı.</li>
+  <li>İki isteğe bağlı deneme, 14 Ekim 2026'da Python 3.13.16, scikit-learn 1.9.1 ve NumPy 2.5.3 ile <code>python3 -I</code> kullanılarak gerçekten çalıştırıldı; çıktılar birebir kondu. İnternetten veri indirilmedi; ikinci denemedeki veri <code>default_rng(0)</code> ile üretilen rastgele sayılardır. Farklı sürümlerde ikinci denemenin sayıları küçük farklar gösterebilir.</li>
+  <li>İşe alım örneği: Reuters, Jeffrey Dastin, "Amazon scraps secret AI recruiting tool that showed bias against women", 10 Ekim 2018 (Euronews ve Canadian HR Reporter'daki yeniden yayımları üzerinden okundu). Habere göre ayrıntılar adı verilmeyen kaynaklara dayanır ve Amazon yorum yapmamıştır; "2017 başında dağıtıldı" ifadesi, 2018 tarihli haberdeki "geçen yılın başında" ifadesinden çıkarıldı.</li>
+  <li>Kredi örneği: NYDFS'nin Apple Card / Goldman Sachs raporu, 23 Mart 2021 (AppleInsider'ın haberi üzerinden doğrulandı; raporun kendisi doğrudan açılmadı). Yaklaşık 400.000 başvuru sayısı ve "yasa dışı ayrımcılık kanıtı bulunmadı" bulgusu bu habere dayanır.</li>
+  <li>Zech ve ark., PLOS Medicine, 2018 (arXiv 1807.00431 özeti üzerinden doğrulandı): modellerin hastane sistemini yüksek isabetle ayırt ettiği ve beş karşılaştırmanın üçünde dış veride başarının anlamlı biçimde düştüğü. Hastaneler arası hastalık oranı farkının kısa yolu nasıl beslediğine dair açıklama makalenin genel bulgusunun özetidir; ayrıntılı sayılar (AUC değerleri) tam metne erişilemediği için verilmedi.</li>
+  <li>GSM1k: Zhang ve ark. (Scale AI), "A Careful Examination of Large Language Model Performance on Grade School Arithmetic", arXiv 2405.00332, Mayıs 2024; NeurIPS 2024. 1.250 soru, %13'e varan düşüş ve model aileleri makalenin özetinden ve ana metninden alındı. Bu sonuçlar o tarihteki model sürümleri içindir; bugünkü modeller için geçerli olduğu iddia edilmez.</li>
+  <li>Goodhart (1975) ve Strathern (1997) ifadeleri ve bağlamları Wikipedia'nın "Goodhart's law" maddesi üzerinden doğrulandı (birincil metinler açılmadı). Çağrı merkezi örneği gerçek bir olay değil, açıklayıcı bir kurgudur.</li>
+  <li>Adalet koşullarının aynı anda sağlanamaması: Kleinberg, Mullainathan, Raghavan, "Inherent Trade-Offs in the Fair Determination of Risk Scores", arXiv 1609.05807, 2016. Özet, "çok kısıtlı özel durumlar dışında" üç koşulun birlikte sağlanamayacağını söylüyor; metindeki koşulların tarifi (gruplar içinde tutarlı puan, hata oranlarının dengesi) ve özel durum örnekleri (eşit temel oranlar, kusursuz tahmin) hafızadan yazıldı ve özetle çelişmiyor, ama bu oturumda tam metinle karşılaştırılmadı.</li>
+  <li>Çözümlü örnek 3'teki telefon şirketi ve quizdeki hastane, işe alım ve kıyaslama senaryoları kurgusaldır; quizdeki %92 ve %79 sayıları GSM1k'den alınmamıştır.</li>
+  <li>Bu parçada saldırı ya da atlatma yöntemi anlatılmadı; kıyaslamaya bulaşma ve sızıntı yalnızca ölçme hatası olarak, savunma (doğru değerlendirme) tarafından ele alındı.</li>
+</ul>
+</div>
+</div>
+</article>

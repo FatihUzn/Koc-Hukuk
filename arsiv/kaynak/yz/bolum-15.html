@@ -1,0 +1,642 @@
+<article class="chapter ders" id="c-yz-15">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 15 · İstem yazmak</div>
+<h1>İstem yazmak: modele ne istediğini eksiksiz söylemek</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>İki kişi aynı modele aynı toplantı notunu veriyor. Biri yalnız "Bunu özetle." yazıyor ve eline kimsenin işine yaramayan, her şeyden biraz söz eden bir paragraf geçiyor. Öbürü üç satır daha yazıyor: özetin kime gideceğini, neye odaklanacağını, hangi biçimde olacağını. Onun eline doğrudan kullanabileceği bir metin geçiyor. Model aynı, not aynı. Fark nereden çıkıyor ve o üç satırı her seferinde nasıl doğru yazarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (örnekten öğrenme, eğitim ve test ayrımı), Parça 5 (Goodhart yasası), Parça 11 (token, bir sonraki tokenin tahmini, sıcaklık, bağlam penceresi, modelin hafızası olmaması), Parça 13 (ince ayar, sistem istemi, rol, akıl yürüten modeller), Parça 14 (halüsinasyon, yaltaklanma, "emin değilsen söyle"). Python kutusu isteğe bağlıdır; kod bilmiyorsan atla, konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 11'de bir dil modelinin temel işini gördük: önüne konan metinden sonra gelecek token için bir olasılık dağılımı üretir; cevap, bu tahminin tekrar tekrar yapılmasıyla oluşur. Bu parça o makineyi <strong>kullanan</strong> taraftan bakıyor: modele verdiğin metni nasıl yazarsın ki istediğin şeyi, istediğin biçimde, en az sürprizle alasın?</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İstem</strong> (prompt), bir dil modeline cevap üretmesi için verilen metnin tamamıdır: yazdığın talimat, eklediğin belge, verdiğin örnekler ve sohbetin önceki mesajları. Modelin senin durumun hakkında bildiği her şey bu metnin içindedir; dışındaki hiçbir şeyi bilemez.</p></div>
+
+<p>Bu tanımın ikinci cümlesi bütün parçanın temelidir. Bir arkadaşına "bunu özetle" dediğinde o, seni, işini, notun hangi toplantıdan geldiğini, özeti kime göstereceğini zaten bilir; kısa söz yeter. Model bunların hiçbirini bilmez. Parça 11'de gördüğümüz gibi modelin kalıcı bir hafızası da yoktur: sohbet geçmişi her seferinde istemle birlikte yeniden verilir. (Bazı ürünler önceki sohbetlerden notlar tutup bunları senin yerine isteme ekleyebilir; bu da sonuçta istemin içine giren metindir.)</p>
+
+<p>Sırayla şunları kuracağız: iyi istemin altı parçası; dört "kötü istem → iyi istem" dönüşümü; "adım adım düşün" araştırması ve yeni modellerdeki durumu; işi parçalara bölmek; rol vermek; modelin soru sormasını istemek; model farkları; istemi deneyerek düzeltmek; isteme <strong>yazmaman</strong> gerekenler.</p>
+
+<p>Bir uyarı: bu parçadaki istemleri öğretim için ben yazdım; hiçbiri bir modelden alınmış gerçek çıktı değildir. Bir cevabın şeklini gösterdiğim yeri "beklenen çıktı biçimi" diye işaretledim. Kişi ve şirket adları kurgudur.</p>
+
+<h2 class="s">Model boşluğu neyle doldurur?</h2>
+
+<p>"Bunu özetle" istemi aslında birçok soruyu cevapsız bırakır: Özet kaç cümle olsun? Kim okuyacak? Neye odaklanılsın: kararlara mı, tartışmaya mı, açık kalan sorulara mı? Madde madde mi, paragraf mı? Model bu soruları sana sormadan cevaplamak zorundadır, çünkü bir sonraki tokeni üretmesi gerekir. Peki neye göre cevaplar?</p>
+
+<p>Parça 11'in mekanizmasına dön. Model, eğitimde gördüğü sayısız metinden "böyle bir istemden sonra genellikle ne gelir" bilgisini çıkarmıştır. Parça 13'teki ince ayar ise ona "yardımsever bir asistan böyle bir istekte genellikle ne yapar" bilgisini eklemiştir. Senin isteminde bir bilgi eksikse, model o boşluğu bu iki kaynaktan gelen <strong>en olası, en tipik</strong> varsayımla doldurur. En tipik özet de orta uzunlukta, her şeye eşit ağırlık veren, kimseye özel olmayan bir özettir. Model "kötü" çalışmamıştır; senin vermediğin bilgiyi ortalamayla tamamlamıştır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>İstemde söylemediğin her şeyi model <strong>ortalama bir durum</strong> varsayarak tamamlar. Cevabın sana özel olmasını istiyorsan, seni ortalamadan ayıran her bilgiyi (amaç, okur, sınırlar, biçim) yazmak zorundasın. Bu yüzden iyi istem çoğu zaman kötüsünden uzundur; ama uzunluk değil, <strong>eksik bilginin tamamlanması</strong> işe yarar.</p></div>
+
+<p>Anthropic'in istem yazma belgesi bunun için kullanışlı bir benzetme önerir: modeli, işinde çok yetenekli ama şirkete <strong>yeni gelmiş</strong> bir çalışan gibi düşün; senin alışkanlıklarını, iş akışını, beklentilerini bilmez. Aynı belgede bir de sınama önerilir: istemini, görevi hiç bilmeyen bir iş arkadaşına göster ve yalnız o metne bakarak işi yapmasını iste; o şaşırıyorsa model de şaşıracaktır. Bu "yeni çalışan sınaması", bu parçada kuracağımız her şeyin kısa hâlidir.</p>
+
+<p>Model eksik bilgiyi tamamladığını sana söylemek zorunda da değildir: gecikmenin nedenini bilmediği bir e-postada inandırıcı bir neden uydurabilir. Bu, Parça 14'teki halüsinasyonun gündelik biçimidir; eksik istem modeli tahmine, bazen de uydurmaya iter.</p>
+
+<h2 class="s">İyi istemin altı parçası</h2>
+
+<p>Kötü istemlerin neredeyse hepsi aynı birkaç bilginin eksikliğinden doğar. Bunları bir kontrol listesi gibi kullan: her istemde altısı gerekmez, kısa bir soru için görev yeter; ama sonuç tatmin etmediğinde ilk bakacağın yer bu listedir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>İyi bir istemin altı parçası: <strong>(1) görev</strong>: ne yapılacağı, tek ve açık bir fiille; <strong>(2) bağlam</strong>: neden yapıldığı, kimin için, hangi durumda; <strong>(3) kısıtlar</strong>: uzunluk, ton, yapılmaması gerekenler, kullanılacak ya da kullanılmayacak kaynaklar; <strong>(4) istenen biçim</strong>: madde, tablo, JSON, e-posta, kod gibi çıktının şekli; <strong>(5) örnek</strong>: istediğin çıktıya benzeyen bir ya da birkaç örnek; <strong>(6) değerlendirme ölçütü</strong>: iyi bir cevabın neye göre iyi sayılacağı.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Parça</th><th>Cevapladığı soru</th><th>Eksik kalırsa ne olur?</th><th>Kısa örnek</th></tr>
+<tr><td>Görev</td><td>Ne yapılacak?</td><td>Model ne istediğini tahmin eder; özet yerine yorum, yorum yerine özet yazabilir.</td><td>"Bu notu özetle."</td></tr>
+<tr><td>Bağlam</td><td>Neden, kim için?</td><td>Cevap herkese yazılmış gibi olur; ayrıntı düzeyi ve dil okura uymaz.</td><td>"Toplantıya katılamayan yöneticiye gidecek."</td></tr>
+<tr><td>Kısıtlar</td><td>Hangi sınırlar içinde?</td><td>Uzunluk, ton ve kapsam ortalamaya kayar; istemediğin şeyler eklenir.</td><td>"En çok 120 sözcük; notta olmayan bilgi ekleme."</td></tr>
+<tr><td>Biçim</td><td>Hangi şekilde?</td><td>Cevabı kopyalayıp kullanmak için yeniden düzenlemen gerekir.</td><td>"Önce kararlar, sonra sorumlular, madde madde."</td></tr>
+<tr><td>Örnek</td><td>Neye benzesin?</td><td>Sözle anlatması zor beklentiler (üslup, ayrıntı düzeyi) tutturulamaz.</td><td>"Şu geçen haftaki özete benzesin: …"</td></tr>
+<tr><td>Ölçüt</td><td>İyi cevap neye göre iyi?</td><td>Model neyin önemli olduğunu bilmez; sen de sonucu neyle yargılayacağını bilmezsin.</td><td>"Her karar, sorumlusu ve tarihiyle birlikte yer almalı."</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 420" role="img" aria-label="İyi bir istemin parçaları üst üste dizilmiş: görev, bağlam, kısıtlar, biçim, örnek, ölçüt ve ayraç içindeki veri">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Bir istemin anatomisi</text>
+  <rect class="sv-l" x="10" y="34" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="59" text-anchor="middle">Görev</text>
+  <text class="sv-s" x="132" y="51">Ne yapılacak? Tek açık fiil:</text><text class="sv-s" x="132" y="67">özetle, yaz, çıkar, karşılaştır</text>
+  <rect class="sv-l" x="10" y="82" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="107" text-anchor="middle">Bağlam</text>
+  <text class="sv-s" x="132" y="99">Neden, kim için, hangi durumda?</text><text class="sv-s" x="132" y="115">okur, amaç, önceden bilinenler</text>
+  <rect class="sv-l" x="10" y="130" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="155" text-anchor="middle">Kısıtlar</text>
+  <text class="sv-s" x="132" y="147">Uzunluk, ton, yasaklar,</text><text class="sv-s" x="132" y="163">"notta yoksa ekleme"</text>
+  <rect class="sv-l" x="10" y="178" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="203" text-anchor="middle">Biçim</text>
+  <text class="sv-s" x="132" y="195">Madde, tablo, e-posta, JSON;</text><text class="sv-s" x="132" y="211">alanların sırası ve adları</text>
+  <rect class="sv-m" x="10" y="226" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="251" text-anchor="middle">Örnek</text>
+  <text class="sv-s" x="132" y="243">Bir ya da birkaç girdi–çıktı</text><text class="sv-s" x="132" y="259">çifti (az örnekli istem)</text>
+  <rect class="sv-m" x="10" y="274" width="110" height="40" rx="8"/><text class="sv-b" x="65" y="299" text-anchor="middle">Ölçüt</text>
+  <text class="sv-s" x="132" y="291">İyi cevap neye göre iyi?</text><text class="sv-s" x="132" y="307">eksiksizlik, doğruluk, uzunluk</text>
+  <line class="sv-cl" x1="10" y1="330" x2="390" y2="330"/>
+  <text class="sv-s" x="200" y="348" text-anchor="middle">talimat yukarıda, işlenecek veri aşağıda, ayraç içinde</text>
+  <rect class="sv-a" x="10" y="358" width="380" height="52" rx="8"/>
+  <text class="sv-b" x="200" y="380" text-anchor="middle">Veri: &lt;metin&gt; … &lt;/metin&gt;</text>
+  <text class="sv-s" x="200" y="399" text-anchor="middle">not, e-posta, fatura, kod: işlenecek malzeme</text>
+</svg>
+<figcaption>Mor kutular her istemde düşünülmesi gereken temel bilgiler, yeşil kutular sonucu sıkılaştıran ek araçlardır. En alttaki turuncu kutu talimat değil, üzerinde çalışılacak malzemedir; onu ayraçla ayırmak, modelin talimatla veriyi karıştırmasını zorlaştırır.</figcaption>
+</figure>
+
+<h3>Veriyi talimattan ayırmak</h3>
+
+<p>Şekildeki çizginin altı ayrı bir konu. Bir istem çoğu zaman iki tür metin içerir: senin <strong>talimatın</strong> ("özetle") ve modelin üzerinde çalışacağı <strong>veri</strong> (toplantı notunun kendisi). İkisi aynı metnin içinde art arda durduğunda model hangisinin hangisi olduğunu karıştırabilir. Toplantı notunda "herkes bu maddeyi kısaca yazsın" gibi bir cümle varsa, model bunu sana ait bir talimat sanabilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>İşlenecek metni talimattan <strong>görünür bir ayraçla</strong> ayır: üç tırnak, bir başlık ya da &lt;metin&gt; … &lt;/metin&gt; gibi etiketler. Sonra talimatta bu ayraca adıyla gönderme yap ("&lt;metin&gt; etiketleri arasındaki notu özetle"). Ayraç, modelin "bu kısım okunacak malzeme, uyulacak emir değil" ayrımını yapmasını kolaylaştırır.</p></div>
+
+<p>Bu öneri hem OpenAI'nin hem Anthropic'in belgelerinde geçer; etiket adlarının özel anlamı yoktur, tutarlı ve açıklayıcı olmaları yeter. Ama ayraç bir <strong>kolaylık</strong>tır, kilit değildir: belgeye gizlenmiş talimatların modele kullanıcı talimatı gibi görünmesi, yani istem enjeksiyonu ve ona karşı gereken öbür savunmalar Parça 18'in konusu.</p>
+
+<h3>Örnek vermek: az örnekli istem</h3>
+
+<p>Altı parçanın en güçlüsü çoğu zaman örnektir, çünkü sözle anlatması zor olan şeyi gösterir. "Kısa, sade, biraz esprili" demek yerine bir örnek koyarsan model "kısa"nın kaç sözcük, "esprili"nin ne kadar olduğunu oradan çıkarır. Bu fikre 2020'de yayımlanan GPT-3 makalesi (Brown ve ark., "Language Models are Few-Shot Learners") ad verdi.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Sıfır örnekli</strong> (zero-shot) istemde modele yalnız görevin tarifi verilir. <strong>Tek örnekli</strong> (one-shot) istemde tarife bir örnek, <strong>az örnekli</strong> (few-shot) istemde birkaç örnek eklenir. Örnekler istemin içinde, cevap üretilirken verilir; modelin ağırlıkları değişmez. Model örneklerdeki kalıbı yakalayıp yeni girdiye uygular. Buna <strong>bağlam içi öğrenme</strong> (in-context learning) de denir.</p></div>
+
+<p>Parça 2'deki makine öğrenmesinde örnekler parametreleri <strong>kalıcı olarak</strong> değiştiriyordu. Burada hiçbir parametre değişmez; örnekler yalnız o istemde etkilidir ve bir sonraki istemde yeniden verilmeleri gerekir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Tek bir örnek verip modelin onu kopyalamasına şaşırmak.</strong> Model örnekten "kalıbı" çıkarır ama hangi özelliğin kalıp, hangisinin rastlantı olduğunu bilemez. Tek örnekteki e-posta "Merhaba Ayşe Hanım" diye başlıyorsa, bütün e-postalar "Ayşe Hanım"a gidebilir; örnekte üç madde varsa her cevap üç madde olabilir. Doğrusu: birbirinden <strong>farklı</strong> birkaç örnek ver ki ortak olan (asıl kalıp) ile değişen (rastlantı) ayrılsın; örnekleri &lt;ornek&gt; gibi etiketlerle işaretle; örneklerin talimatınla çelişmediğinden emin ol. Anthropic'in belgesi çoğu iş için 3–5 örnek önerir; OpenAI'nin akıl yürüten modeller için belgesi ise önce örneksiz denemeyi, gerekirse örnek eklemeyi önerir. İkisi de örneklerin talimatla uyumlu olması gerektiğini vurgular.</p></div>
+
+<h3>Değerlendirme ölçütü: iki kişiye birden yazılır</h3>
+
+<p>Altıncı parça en çok atlananıdır. "İyi bir cevap şunları içermeli" diye yazdığında model neyin önemli olduğunu öğrenir; kararları eksiksiz vermesi gerektiğini bilen model, uzun tartışmayı kısaltıp kararları korur. Ayrıca <strong>sen</strong> cevabı neyle yargılayacağını önceden belirlemiş olursun: cevap gelince "hoşuma gitti mi?" diye değil, "ölçütü karşılıyor mu?" diye bakarsın.</p>
+
+<h2 class="s">Kötü istem → iyi istem: dört dönüşüm</h2>
+
+<p>Şimdi altı parçayı dört gündelik işte uygulayalım. Her örnekte kötü istemden başlıyorum, eksik parçaları tek tek buluyorum ve iyi istemi kuruyorum. Kutulardaki istemleri kendin bir modele verip deneyebilirsin; aldığın cevap benim yazdığım beklenen biçime tıpatıp uymayabilir, çünkü cevaplar modele ve sıcaklık ayarına göre değişir (Parça 11).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1 · Özet</span>
+<p><strong>Soru:</strong> Selin (kurgu), bir yazılım ekibinin 40 dakikalık toplantısından iki sayfalık dağınık notlar tutmuş. Toplantıya katılamayan bölüm yöneticisine bir özet göndermesi gerekiyor. İlk denemesi şu:</p>
+<pre class="kod" data-ad="kötü istem">Bunu özetle.
+[iki sayfalık toplantı notu]</pre>
+<p><strong>Adım 1 (eksikleri say).</strong> Görev var ama okur, amaç, uzunluk, biçim ve odak yok. Model ortalama bir özet yazacak: her konudan biraz, kararlarla tartışmalar eşit ağırlıkta.</p>
+<p><strong>Adım 2 (bağlam ekle).</strong> Okur, toplantıya katılmamış bir yönetici; teknik ayrıntıyla değil, kararlarla ve kimin neyi ne zamana yapacağıyla ilgileniyor. Bunu yazmak, modele neyi atabileceğini söyler.</p>
+<p><strong>Adım 3 (kısıt ekle).</strong> En çok 120 sözcük. Notta olmayan hiçbir şey eklenmemeli; "toplantı verimli geçti" gibi uydurma bir yargı yanlış bilgidir.</p>
+<p><strong>Adım 4 (biçim ekle).</strong> Yönetici hızla tarayacak; üç başlık işe yarar: kararlar, görevler, açık sorular.</p>
+<p><strong>Adım 5 (ölçüt ekle).</strong> Her karar ve her görev, sorumlusu ve tarihiyle yer almalı. Notta sorumlu ya da tarih yoksa model uydurmamalı, "belirtilmemiş" yazmalı.</p>
+<p><strong>Sonuç:</strong> İyi istem şöyle olur:</p>
+<pre class="kod" data-ad="iyi istem">Aşağıdaki &lt;not&gt; etiketleri arasındaki toplantı notunu özetle.
+
+Bağlam: Özet, toplantıya katılamayan bölüm yöneticisine gidecek.
+Teknik tartışmayla değil, alınan kararlarla ve kimin neyi
+ne zamana yapacağıyla ilgileniyor.
+
+Kısıtlar:
+- En çok 120 sözcük.
+- Yalnız notta yazanları kullan; yorum ya da değerlendirme ekleme.
+- Notta sorumlu ya da tarih yoksa uydurma, "belirtilmemiş" yaz.
+
+Biçim: Üç başlık kullan: Kararlar, Görevler, Açık sorular.
+Görevleri "kişi – iş – tarih" biçiminde yaz.
+
+İyi bir özet: notta geçen her kararı ve her görevi içerir,
+başka hiçbir şey eklemez.
+
+&lt;not&gt;
+[iki sayfalık toplantı notu]
+&lt;/not&gt;</pre>
+<p>Beklenen cevabın şekli aşağıdaki gibidir. Bunu ben yazdım; bir modelin gerçek çıktısı değildir, yalnız biçimi gösterir:</p>
+<pre class="kod" data-ad="beklenen çıktı biçimi (model çıktısı değil)">Kararlar
+- Ödeme sayfasının yeni sürümü iki hafta ertelendi.
+
+Görevler
+- Can – test ortamını kurmak – 21 Ekim
+- Deniz – güvenlik incelemesi – belirtilmemiş
+
+Açık sorular
+- Mobil sürümün aynı tarihte çıkıp çıkmayacağı.</pre></div>
+
+<p>İyi istem kötüsünden on kat uzun, ama eklenen her satır bir boşluğu kapatıyor. "Lütfen çok iyi bir özet yaz" gibi bir süs yok; "iyi"nin ne demek olduğu ölçüt satırında tanımlı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2 · E-posta</span>
+<p><strong>Soru:</strong> Mert (kurgu), Kuzey Lojistik (kurgu şirket) adlı bir firmada müşteri ilişkilerinde çalışıyor. Bir müşterinin siparişi gecikecek ve bunu bildirmesi gerekiyor. İlk denemesi:</p>
+<pre class="kod" data-ad="kötü istem">Müşteriye gecikme için özür e-postası yaz.</pre>
+<p><strong>Adım 1 (eksikleri say).</strong> Model müşteriyi, sipariş numarasını, nedeni, yeni tarihi bilmiyor. Ya köşeli parantezli bir şablon verecek ya da inandırıcı bir neden ve tarih uyduracak; uydurulan teslim tarihi, müşteriye verilmiş yanlış bir sözdür.</p>
+<p><strong>Adım 2 (olguları ver).</strong> Müşteri Özdemir Yapı (kurgu), sipariş 2026-1187, eski tarih 16 Ekim, yeni tarih 23 Ekim, neden gümrükte bekleyen bir parça. Modelin bilemeyeceği ama doğruluk için şart olan bilgiler bunlar.</p>
+<p><strong>Adım 3 (tonu belirle).</strong> İki yıllık müşteri: resmî ama sıcak; kısa bir özür, abartısız.</p>
+<p><strong>Adım 4 (yapılmaması gerekeni yaz).</strong> Şirket indirim sözü veremez. Bunu yazmazsan iyi niyetli model "telafi olarak %10 indirim" ekleyebilir. Yasakla birlikte yerine ne yapılacağını da söyle: "indirim önerme; soruları için doğrudan aranabileceğini belirt."</p>
+<p><strong>Adım 5 (biçim ve ölçüt).</strong> Konu satırı ve en çok 150 sözcük. Ölçüt: müşteri yeni tarihi, nedeni ve kime ulaşacağını tek okumada bulabilmeli.</p>
+<p><strong>Sonuç:</strong></p>
+<pre class="kod" data-ad="iyi istem">Bir müşteriye teslimat gecikmesini bildiren bir e-posta yaz.
+
+Olgular:
+- Müşteri: Özdemir Yapı, satın alma sorumlusu Ayşe Kaya
+- Sipariş no: 2026-1187
+- Planlanan teslim: 16 Ekim; yeni teslim: 23 Ekim
+- Neden: Bir parça gümrükte bekliyor.
+- Gönderen: Mert Aydın, Kuzey Lojistik müşteri ilişkileri
+
+Ton: İki yıllık bir müşteri; resmî ama sıcak. Kısa ve net bir
+özür yeterli, abartılı özür dileme.
+
+Kısıtlar:
+- İndirim, tazminat ya da kesin olmayan bir söz verme.
+  Bunun yerine sorular için beni doğrudan arayabileceğini yaz.
+- Yukarıdaki olguların dışında bilgi ekleme. Bir bilgi
+  eksikse uydurma, [köşeli parantez] içinde boş bırak.
+
+Biçim: "Konu:" satırı, ardından en çok 150 sözcüklük gövde.
+
+Ölçüt: Müşteri yeni tarihi, nedeni ve kime ulaşacağını
+tek okumada bulabilmeli.</pre>
+<p>Telefon numarasını istemde vermediğim için iyi bir cevap onu uydurmamalı, [telefon] diye boş bırakmalıdır. Bu, kısıtlardaki "eksikse uydurma" satırının sınamasıdır: cevabı okurken ilk bakacağın yer orasıdır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3 · Kod</span>
+<p><strong>Soru:</strong> Bir küçük işletmenin satış kayıtları bir CSV dosyasında (virgülle ayrılmış satırlardan oluşan düz metin tablo) duruyor. Her ürünün toplam satışını bulan bir Python betiği isteniyor. İlk deneme:</p>
+<pre class="kod" data-ad="kötü istem">Python'da CSV okuyan kod yaz.</pre>
+<p><strong>Adım 1 (eksikleri say).</strong> Hangi sütunlar? Ne hesaplanacak? Ek kütüphane kurulabilir mi? Bozuk satırda ne olacak? Model hepsini varsayacak ve büyük olasılıkla dosyayı yazdıran genel bir örnek verecek.</p>
+<p><strong>Adım 2 (girdiyi göster).</strong> Kodda en çok iş gören bağlam, gerçek girdinin küçük bir örneğidir: ilk satırlar sütun adlarını, ayıracı ve sayıların yazılışını tek seferde anlatır. Satırlarda gerçek müşteri adı varsa uydurma adlarla değiştir.</p>
+<p><strong>Adım 3 (ortam ve kısıtlar).</strong> Python 3.13, yalnız standart kütüphane, çünkü ek paket kurulamayan bir bilgisayarda çalışacak. Tutarlar ondalık virgüllü; söylemezsen kod "1250,50"yi sayıya çeviremez.</p>
+<p><strong>Adım 4 (hata davranışı).</strong> Bozuk satırda betik çökmesin, satırı atlayıp numarasını yazsın. Sen karar vermezsen model verir.</p>
+<p><strong>Adım 5 (kabul ölçütü).</strong> Örnek satırlar için doğru sonucu kendin hesapla ve isteme yaz; cevabı çalıştırıp hemen sınarsın. Model var olmayan bir fonksiyon uydurabilir (Parça 14); kodun doğruluğu ancak çalıştırınca anlaşılır.</p>
+<p><strong>Sonuç:</strong></p>
+<pre class="kod" data-ad="iyi istem">satislar.csv dosyasındaki satışlardan her ürünün toplam
+tutarını hesaplayan bir Python betiği yaz.
+
+Dosyanın ilk satırları (ayıraç noktalı virgül):
+&lt;ornek_girdi&gt;
+tarih;urun;tutar
+03.10.2026;kalem;1250,50
+04.10.2026;defter;80,00
+&lt;/ornek_girdi&gt;
+
+Ortam: Python 3.13, yalnız standart kütüphane.
+Kısıtlar:
+- Tutarlarda ondalık ayırıcı virgüldür.
+- Bozuk bir satırda durma; satırı atla ve satır numarasını yaz.
+Biçim: Önce kod, sonra en çok beş cümlelik açıklama.
+Kabul ölçütü: Yukarıdaki iki satır için çıktı
+"kalem: 1250.50" ve "defter: 80.00" olmalı.</pre>
+<p>Bu istem modelin işini daraltır ama senin işini bitirmez: dönen kodu kendi bilgisayarında, örnek dosyayla çalıştırıp kabul ölçütünü sınamak senin görevin. YZ ile yazılım geliştirmenin bütün döngüsünü Parça 17'de kuracağız.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4 · Veri çıkarma</span>
+<p><strong>Soru:</strong> Muhasebeye her hafta onlarca fatura e-postası geliyor ve her birinden aynı dört bilgiyi (firma, fatura numarası, tarih, tutar) bir tabloya aktarmak gerekiyor. İlk deneme:</p>
+<pre class="kod" data-ad="kötü istem">Bu faturadaki bilgileri çıkar.
+[fatura e-postası]</pre>
+<p><strong>Adım 1 (eksikleri say).</strong> "Bilgiler" hangileri? Model ya her şeyi döker ya kendi seçtiklerini; biçim de her seferinde değişebilir. Çıktıyı bir program okuyacaksa bu işi kullanılmaz kılar.</p>
+<p><strong>Adım 2 (alanlar ve biçim).</strong> Dört alanı adlarıyla say ve çıktıyı JSON (alan adı–değer çiftlerinden oluşan, programların kolayca okuduğu metin biçimi) olarak iste.</p>
+<p><strong>Adım 3 (eksik veri kuralı).</strong> En tehlikeli hata, metinde olmayan bir değerin "makul" bir tahminle doldurulmasıdır: tarih yoksa model uydurma bir tarih yazabilir. Kural koy: "Metinde yoksa null yaz, tahmin etme." null, JSON'da "değer yok" demektir.</p>
+<p><strong>Adım 4 (sayı biçimi).</strong> "1.250,50 TL" bir program için metindir; tutarı saf sayı olarak iste: 1250.5.</p>
+<p><strong>Adım 5 (bir örnek ver).</strong> Bir girdi–çıktı örneği, alan sırasını, null kullanımını ve sayının yazılışını birlikte gösterir.</p>
+<p><strong>Sonuç:</strong></p>
+<pre class="kod" data-ad="iyi istem">&lt;fatura&gt; etiketleri arasındaki metinden dört alanı çıkar.
+Çıktın bir program tarafından okunacak.
+
+Kurallar:
+- Yalnız JSON yaz; öncesinde ya da sonrasında hiçbir şey yazma.
+- Alanlar: firma, fatura_no, tarih (GG.AA.YYYY), tutar_tl.
+- Metinde olmayan alan için null yaz; tahmin etme.
+- tutar_tl noktalı ondalıklı bir sayı olsun (1250.5 gibi).
+
+&lt;ornek&gt;
+Girdi: Ada Kırtasiye, fatura AK-77, 02.10.2026, toplam 80,00 TL
+Çıktı: {"firma": "Ada Kırtasiye", "fatura_no": "AK-77",
+        "tarih": "02.10.2026", "tutar_tl": 80.0}
+&lt;/ornek&gt;
+
+&lt;fatura&gt;
+[fatura e-postası]
+&lt;/fatura&gt;</pre>
+<p>Örnekteki firma da kurgudur. Bu istemle çalışan bir düzende, gelen her cevabı bir programla denetlemek mümkündür: JSON mu, dört alan var mı, tutar sayı mı? Bunu aşağıdaki isteğe bağlı kutuda yapıyoruz.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik iki iş yapar. Birincisi, istemi her seferinde elle yazmak yerine bir <strong>şablondan</strong> doldurur; böylece altı parçadan hiçbiri unutulmaz ve her fatura aynı istemle işlenir. İkincisi, gelen cevabın biçimini denetler. Betik hiçbir modeli çağırmaz; denetleyiciyi sınamak için üç cevap adayını <strong>ben elle yazdım</strong>, bunlar model çıktısı değildir. Ek kütüphane gerekmez.</p>
+<pre class="kod" data-ad="python3 istem.py">import json
+
+SABLON = """&lt;gorev&gt;{gorev}&lt;/gorev&gt;
+&lt;baglam&gt;{baglam}&lt;/baglam&gt;
+&lt;kisitlar&gt;
+{kisitlar}
+&lt;/kisitlar&gt;
+&lt;bicim&gt;{bicim}&lt;/bicim&gt;
+&lt;metin&gt;
+{metin}
+&lt;/metin&gt;"""
+
+def istem_kur(gorev, baglam, kisitlar, bicim, metin):
+    satirlar = "\n".join("- " + k for k in kisitlar)
+    return SABLON.format(gorev=gorev, baglam=baglam,
+                         kisitlar=satirlar, bicim=bicim, metin=metin)
+
+ALANLAR = {"firma": str, "fatura_no": str, "tarih": str, "tutar_tl": float}
+
+def denetle(cevap):
+    try:
+        veri = json.loads(cevap)
+    except json.JSONDecodeError:
+        return ["gecerli JSON degil"]
+    sorunlar = []
+    for alan, tur in ALANLAR.items():
+        if alan not in veri:
+            sorunlar.append("eksik alan: " + alan)
+        elif veri[alan] is not None and not isinstance(veri[alan], tur):
+            sorunlar.append(alan + " yanlis turde: " + repr(veri[alan]))
+    for alan in veri:
+        if alan not in ALANLAR:
+            sorunlar.append("istenmeyen alan: " + alan)
+    return sorunlar or ["uygun"]
+
+istem = istem_kur(
+    gorev="Asagidaki faturadan dort alani cikar.",
+    baglam="Muhasebe tablosuna aktarilacak; bir program okuyacak.",
+    kisitlar=["Yalniz JSON yaz, baska hicbir sey yazma.",
+              "Metinde olmayan alan icin null yaz, tahmin etme.",
+              "Tutari noktali ondalikli sayi olarak yaz (1250.5)."],
+    bicim='{"firma": ..., "fatura_no": ..., "tarih": "GG.AA.YYYY", "tutar_tl": ...}',
+    metin="Kuzey Lojistik (kurgu) - Fatura No: KL-0412 - Toplam: 1.250,50 TL")
+print(istem)
+print("Istem uzunlugu:", len(istem), "karakter")
+print()
+
+# Elle yazilmis uc ornek cevap (model ciktisi DEGIL), denetleyiciyi sinamak icin
+adaylar = {
+    "aday 1": 'Elbette! Iste JSON: {"firma": "Kuzey Lojistik"}',
+    "aday 2": '{"firma": "Kuzey Lojistik", "fatura_no": "KL-0412", '
+              '"tarih": null, "tutar_tl": "1.250,50 TL"}',
+    "aday 3": '{"firma": "Kuzey Lojistik", "fatura_no": "KL-0412", '
+              '"tarih": null, "tutar_tl": 1250.5}',
+}
+for ad, cevap in adaylar.items():
+    print(ad, "-&gt;", "; ".join(denetle(cevap)))</pre>
+<pre class="cikti">&lt;gorev&gt;Asagidaki faturadan dort alani cikar.&lt;/gorev&gt;
+&lt;baglam&gt;Muhasebe tablosuna aktarilacak; bir program okuyacak.&lt;/baglam&gt;
+&lt;kisitlar&gt;
+- Yalniz JSON yaz, baska hicbir sey yazma.
+- Metinde olmayan alan icin null yaz, tahmin etme.
+- Tutari noktali ondalikli sayi olarak yaz (1250.5).
+&lt;/kisitlar&gt;
+&lt;bicim&gt;{"firma": ..., "fatura_no": ..., "tarih": "GG.AA.YYYY", "tutar_tl": ...}&lt;/bicim&gt;
+&lt;metin&gt;
+Kuzey Lojistik (kurgu) - Fatura No: KL-0412 - Toplam: 1.250,50 TL
+&lt;/metin&gt;
+Istem uzunlugu: 464 karakter
+
+aday 1 -&gt; gecerli JSON degil
+aday 2 -&gt; tutar_tl yanlis turde: '1.250,50 TL'
+aday 3 -&gt; uygun</pre>
+<p><strong>Okuma.</strong> Üstteki blok doldurulmuş şablondur: her fatura için yalnız <code>metin</code> değişir. Aday 1 JSON'un önüne bir giriş cümlesi eklemiş; insan için zararsız, program için okunamaz. "Yalnız JSON yaz" kısıtı bu yüzden var. Aday 2'de tutar metin olarak yazılmış. Aday 3 uygun; tarih <code>null</code>, çünkü faturada tarih yok ve kural "tahmin etme" diyor. Gerçek bir düzende bu denetleyici cevabı tabloya yazmadan önce çalışır ve uymayanları bir insana gönderir. Betikte rastgelelik yok; sende de aynı çıktı çıkmalı.</p></div>
+
+<h2 class="s">"Adım adım düşün" ve büyük işi parçalara bölmek</h2>
+
+<p>İstem yazma üzerine en çok bilinen tavsiye muhtemelen "adım adım düşün" sözüdür. Bunun arkasında iki 2022 makalesi var ve ne bulduklarını doğru bilmek, sözü sihirli bir formül sanmaktan korur.</p>
+
+<p><strong>Wei ve arkadaşları (Google, Ocak 2022, "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models").</strong> Modele birkaç çözülmüş örnek verildi; örneklerde yalnız cevap değil, cevaba giden ara adımlar da yazılıydı. Bu ara adımlara <strong>düşünce zinciri</strong> (chain of thought) denir. 540 milyar parametreli bir model, sekiz böyle örnekle, ilkokul düzeyindeki matematik problemlerinden oluşan GSM8K kıyaslamasında o dönemin en iyi sonucunu aldı. Ama kazanç yalnız yaklaşık 100 milyar parametre ve üzerindeki modellerde görüldü; 10 milyardan küçük modellerin çoğunda yöntem başarıyı düşürdü, küçük modeller akıcı ama mantıksız zincirler yazdı.</p>
+
+<p><strong>Kojima ve arkadaşları (Mayıs 2022, "Large Language Models are Zero-Shot Reasoners").</strong> Örnekleri de kaldırdılar; cevabın başına yalnız "Let's think step by step" ("Adım adım düşünelim") eklediler. Dönemin InstructGPT modelinde (text-davinci-002) doğruluk, aritmetik soru kümesi MultiArith'te %17,7'den %78,7'ye, GSM8K'de %10,4'ten %40,7'ye çıktı. Model önce akıl yürütmesini yazıyor, ikinci bir istemle o metinden kesin cevap çıkarılıyordu. Etki küçük modellerde yine görülmedi.</p>
+
+<p>Neden işe yarıyor olabilir? Yaygın bir açıklama Parça 11'in mekanizmasına dayanır: model her tokende kabaca aynı miktarda hesap yapar ve her token önceki bütün metne bakarak üretilir. Ara adımları yazan model hem daha çok "hesap fırsatı" bulur hem de kendi ara sonuçlarına dayanabilir. Bu sezgisel bir açıklamadır; konu hâlâ araştırılıyor ve yazılı zincirin modelin içinde gerçekte olanın sadık bir kaydı olmayabileceği de tartışılıyor.</p>
+
+<h3>Akıl yürüten modellerde durum farklı olabilir</h3>
+
+<p>Parça 13'teki "akıl yürüten" modeller, cevaptan önce kendiliğinden uzun bir ara düşünce üretecek biçimde eğitilmiştir; 2022'de istemle tetiklenen davranış onlarda eğitimin parçası olmuştur. Bu yüzden "adım adım düşün" demenin onlarda aynı kazancı sağlayacağını varsaymamak gerekir.</p>
+
+<p>Üreticilerin belgeleri de bu yönde. OpenAI'nin "Reasoning best practices" sayfası (tarihsiz; 14 Ekim 2026'da okundu), bu modeller içeriden akıl yürüttüğü için "adım adım düşün" ya da "akıl yürütmeni açıkla" demenin gereksiz olduğunu, böyle istemlerin bazen performansı bozabileceğini söylüyor; kısa, açık talimat ve net bir hedef tarifi öneriyor. Anthropic'in istem belgesi (tarihsiz; aynı gün okundu), "iyice düşün" gibi genel bir yönlendirmenin elle yazılmış adım planından çoğu zaman daha iyi akıl yürütme ürettiğini söylüyor. İki belge de kendi modelleri içindir ve güncellenir; "yazıldığı tarih itibarıyla" bilgi olarak oku.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Adım adım düşün" her modelde her işi iyileştiren sihirli bir sözdür.</strong> Değildir. 2022 araştırmaları kazancı belirli türde işlerde (çok adımlı aritmetik, mantık soruları) ve büyük modellerde gösterdi; küçük modellerde başarının düştüğü durumlar da raporlandı. Bugünün akıl yürüten modelleri ara düşünceyi zaten kendileri üretiyor ve üreticilerin belgeleri bu sözü gereksiz, hatta bazen zararlı sayıyor. Ayrıca bir özet ya da çeviri gibi çok adımlı akıl yürütme gerektirmeyen işte ara adım istemek yalnız cevabı uzatır ve yavaşlatır. Doğrusu: hangi modelle ve hangi işte çalıştığına bak; emin değilsen aynı işi bu sözle ve bu söz olmadan birkaç girdi üzerinde dene, sonucu karşılaştır.</p></div>
+
+<h3>Büyük işi parçalara bölmek</h3>
+
+<p>"Adım adım"ın modelden bağımsız, her zaman geçerli olan bir biçimi vardır: işi <strong>sen</strong> adımlara bölersin. Tek bir istemle "Bu 30 sayfalık raporu oku, sorunları bul, her birine çözüm öner, sonra yöneticiye sunum metni yaz" demek yerine bu işi ayrı istemlere ayırırsın. Her istemin çıktısı bir sonrakinin girdisi olur ve aradaki her noktada sonucu kontrol edebilirsin.</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Tek büyük istem ile kontrol noktalı istem zinciri karşılaştırması">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Tek büyük istem</text>
+  <rect class="sv-a" x="40" y="34" width="320" height="50" rx="10"/>
+  <text class="sv-t" x="200" y="55" text-anchor="middle">oku + sorunları bul + çözüm öner</text><text class="sv-t" x="200" y="73" text-anchor="middle">+ sunum metni yaz</text>
+  <path class="sv-c" d="M200 84V104"/>
+  <rect class="sv-k" x="110" y="104" width="180" height="34" rx="8"/><text class="sv-t" x="200" y="126" text-anchor="middle">tek uzun cevap</text>
+  <text class="sv-s" x="200" y="156" text-anchor="middle">hata nerede doğdu? görünmez</text>
+  <line class="sv-c" x1="20" y1="172" x2="380" y2="172"/>
+  <text class="sv-b" x="200" y="196" text-anchor="middle">Kontrol noktalı zincir</text>
+  <rect class="sv-l" x="10" y="212" width="110" height="44" rx="8"/><text class="sv-t" x="65" y="231" text-anchor="middle">1. Sorunları</text><text class="sv-t" x="65" y="248" text-anchor="middle">listele</text>
+  <rect class="sv-l" x="145" y="212" width="110" height="44" rx="8"/><text class="sv-t" x="200" y="231" text-anchor="middle">2. Her birine</text><text class="sv-t" x="200" y="248" text-anchor="middle">çözüm öner</text>
+  <rect class="sv-l" x="280" y="212" width="110" height="44" rx="8"/><text class="sv-t" x="335" y="231" text-anchor="middle">3. Sunum</text><text class="sv-t" x="335" y="248" text-anchor="middle">metni yaz</text>
+  <path class="sv-cl" d="M120 234H145"/><path class="sv-cl" d="M255 234H280"/>
+  <circle class="sv-m" cx="132" cy="290" r="16"/><text class="sv-b" x="132" y="295" text-anchor="middle">✓</text>
+  <circle class="sv-m" cx="267" cy="290" r="16"/><text class="sv-b" x="267" y="295" text-anchor="middle">✓</text>
+  <path class="sv-c" d="M132 274V240"/><path class="sv-c" d="M267 274V240"/>
+  <text class="sv-s" x="132" y="324" text-anchor="middle">liste eksik mi?</text>
+  <text class="sv-s" x="267" y="324" text-anchor="middle">öneriler uygun mu?</text>
+  <text class="sv-s" x="200" y="356" text-anchor="middle">her adımın çıktısı bir sonrakinin girdisi;</text>
+  <text class="sv-s" x="200" y="374" text-anchor="middle">hata doğduğu adımda yakalanır</text>
+</svg>
+<figcaption>Üstte bütün iş tek istemde: sonuç kötüyse sorunun okumada mı, önerilerde mi, yazımda mı doğduğunu göremezsin. Altta iş üç isteme bölünmüş; yeşil noktalarda ara sonucu kendin kontrol edip gerekirse yalnız o adımı yeniden çalıştırırsın.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Birden çok farklı beceri isteyen bir işi <strong>istem zincirine</strong> böl: her adım tek bir iş yapsın (bul, sınıflandır, öner, yaz), her adımın çıktısı açık bir biçimde olsun (liste, tablo) ve adımlar arasında sonucu kontrol et. Hata çıktığında yalnız o adımı düzelt ve yeniden çalıştır.</p></div>
+
+<p>Yararları: her istem tek amaçlı olduğu için daha az boşluk içerir; Parça 14'teki "uzun mantık zincirinde kayma" riski azalır; en önemlisi, kontrol noktaları sende kalır. Sorun listesi eksikse, eksik listeden üretilmiş güzel bir sunum metniyle uğraşmadan önce görürsün. Bu fikrin programa dönüşmüş hâli, araçları sırayla kullanıp sonucu kontrol eden <strong>ajan</strong> döngüsüdür (Parça 16).</p>
+
+<h2 class="s">Rol vermek: neyi değiştirir, neyi değiştirmez?</h2>
+
+<p>İstemlerin çok sık başladığı bir kalıp: "Sen deneyimli bir avukatsın", "Sen bir pazarlama uzmanısın". Parça 13'te sistem isteminde modele bir rol verilebildiğini gördük. Rol gerçekten bir şey değiştirir; ama değiştirdiği şey çoğu kişinin sandığı şey değildir.</p>
+
+<p>Rol de istemin geri kalanı gibi, "bu metinden sonra ne gelir" tahminini koşullayan bir bağlamdır. "Sen bir çocuk kitabı yazarısın" dersen sözcük seçimi, cümle uzunluğu ve ton çocuk kitaplarına kayar; "sen bir hukukçusun" dersen terimler ve ihtiyat cümleleri artar. Rol bu yüzden <strong>üslup, bakış açısı ve varsayılan biçim</strong> için ucuz ve güçlü bir araçtır; Anthropic'in belgesi de tek bir rol cümlesinin fark yaratabileceğini söyler.</p>
+
+<p>Ama rol <strong>yeni bilgi eklemez</strong>. Modelin hukuk bilgisi eğitiminde gördüğü metinlerden gelir; "sen avukatsın" onu artırmaz, yalnız daha "avukat gibi" sunar. Tehlike de burada: rol cevabı emin ve uzman gösterir, doğru yapmaz. Parça 14'teki uydurulmuş kanun maddesi, avukat rolüyle yazılınca daha da inandırıcı görünür.</p>
+
+<p>Zheng ve arkadaşları (arXiv'de Kasım 2023, EMNLP 2024 Findings) 162 rolü dört model ailesinde 2.410 bilgi sorusuyla denedi. Rol eklemek, rolsüz isteme göre doğruluğu iyileştirmedi; bazı sorularda bazı roller daha iyiydi, ama hangisinin işe yarayacağını önceden seçmenin otomatik yolları rastgele seçimden pek iyi değildi. Çalışma bilgi sorularıyla sınırlıdır; üslup üzerine bir şey söylemez.</p>
+
+<div class="tablo"><table>
+<tr><th>Rol vermek…</th><th>Değiştirir</th><th>Değiştirmez</th></tr>
+<tr><td>Dil ve üslup</td><td>Sözcük seçimi, terim kullanımı, resmîlik, cümle uzunluğu</td><td>—</td></tr>
+<tr><td>Bakış açısı</td><td>Neye dikkat edileceği: avukat riske, editör akıcılığa bakar</td><td>—</td></tr>
+<tr><td>Bilgi</td><td>—</td><td>Modelin eğitimde öğrendiği bilginin miktarı ve doğruluğu</td></tr>
+<tr><td>Güvenilirlik</td><td>Cevabın ne kadar emin ve uzman <em>göründüğü</em></td><td>Cevabın gerçekten doğru olup olmadığı; kaynak uydurma riski</td></tr>
+<tr><td>Sorumluluk</td><td>—</td><td>Kararın sende kalması: "avukat rolündeki model" avukat değildir</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Rolü, cevabın <strong>sesini ve bakış açısını</strong> ayarlamak için kullan; bilgiyi ve doğruluğu artırdığını varsayma. Rolden çok, bağlam daha fazla iş görür: "Sen bir muhasebecisin" yerine "Bu metin, muhasebe bilgisi olmayan bir esnafa vergi takvimini anlatmak için" yazmak, okuru ve amacı doğrudan söyler.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sen dünyanın en iyi doktorusun" deyince cevabın tıbben güvenilir olacağını sanmak.</strong> Rol cümlesi modelin bilgisini değiştirmez, yalnız sunuşunu değiştirir; üstelik daha emin bir dil, yanlışı daha zor fark edilir kılar. Sağlık, hukuk, para gibi alanlarda doğrusu: rolü üslup için kullanıyorsan kullan, ama cevabı Parça 14'teki alışkanlıklarla karşıla (kaynak iste, kritik bilgiyi bağımsız doğrula) ve kararı gerçek bir uzmana danışarak ver.</p></div>
+
+<h2 class="s">Belirsizlikte soru sormasını istemek</h2>
+
+<p>Bazen istemi yazarken neyin eksik olduğunu sen de bilmezsin. Bu durumda işi tersine çevirebilirsin: modelden, cevaba başlamadan önce <strong>sana soru sormasını</strong> iste. Model, ince ayar sırasında "kullanıcıya hemen bir cevap ver" yönünde güçlü biçimde şekillendirildiği için bunu kendiliğinden her zaman yapmaz; açıkça izin vermen ve hatta istemen gerekir.</p>
+
+<span class="cumle">Bu işe başlamadan önce, iyi bir sonuç için bilmen gereken ama bende eksik olan bilgileri <u>en fazla üç soruyla</u> sor. Cevaplarımı aldıktan sonra yaz.</span>
+
+<p>Böylece boşluk ortalamayla değil, sorulup cevaplanarak kapanır; modelin soruları da sana bir sonraki benzer iş için kontrol listesi olur. "En fazla üç" sınırı, uzun bir anket dökülmesini engeller.</p>
+
+<p>Aynı mantığın bir başka biçimi Parça 14'teki "emin değilsen söyle" talimatıdır. "Bilmiyorum"un <strong>kabul edilebilir bir cevap</strong> olduğunu açıkça söylemek, uydurma baskısını kısmen azaltır; garanti değildir, çünkü model kendi güven düzeyini her zaman doğru bilmez. Veri çıkarmadaki "metinde yoksa null yaz" kuralı bunun özel hâlidir. Yaltaklanmaya karşı da görüşünü belli etmeden sor: "Bu planım bence harika, değil mi?" yerine "Bu planın en zayıf üç noktası nedir?"</p>
+
+<h2 class="s">Aynı istem, farklı model, farklı sonuç</h2>
+
+<p>İyi bir istem yazdın, bir modelde çok iyi çalıştı. Başka bir modele, hatta aynı modelin yeni sürümüne verdiğinde aynı sonucu alacak mısın? Çoğu zaman tam olarak alamazsın; bunun üç nedeni var.</p>
+
+<p><strong>Birincisi, rastgelelik.</strong> Sıcaklık ve örnekleme yüzünden (Parça 11) aynı model aynı isteme bile farklı cevap verebilir. Tek denemeyle istemi yargılamak, bir kez yazı tura atıp paranın hilesini yargılamaya benzer.</p>
+
+<p><strong>İkincisi, modeller farklı eğitilir.</strong> Ön eğitim verisi (Parça 12), ince ayar ve geri bildirim (Parça 13) her modelde farklıdır; biri talimatı harfi harfine uygular, öbürü niyeti tahmin etmeye çalışır. Üreticilerin belgeleri bu yüzden farklı tavsiyeler verir:</p>
+
+<div class="tablo"><table>
+<tr><th>Konu</th><th>OpenAI, akıl yürüten modeller belgesi</th><th>Anthropic, istem yazma belgesi</th></tr>
+<tr><td>Ara adımlar</td><td>"Adım adım düşün" gereksiz; bazen performansı bozabilir.</td><td>"İyice düşün" gibi genel yönlendirme, elle yazılmış adım planından çoğu zaman iyidir.</td></tr>
+<tr><td>Örnekler</td><td>Önce örneksiz dene; gerekirse az sayıda, talimatla uyumlu örnek ekle.</td><td>Çoğu iş için 3–5 çeşitli örnek; etiketlerle işaretle.</td></tr>
+<tr><td>Ayraçlar</td><td>Markdown, XML etiketleri, bölüm başlıkları önerilir.</td><td>XML etiketleri önerilir; tutarlı, açıklayıcı adlar.</td></tr>
+<tr><td>Hedef</td><td>Başarılı cevabın ölçütlerini çok açık tarif et.</td><td>Açık ve doğrudan ol; talimatın nedenini de açıkla.</td></tr>
+</table></div>
+<p>Tablo iki şirketin resmî belgelerinden, 14 Ekim 2026'da okunarak hazırlandı; belgelerde yayın tarihi yok. Farklar çelişki değil, farklı modellere göre ayarlanmış tavsiyelerdir; açıklık, ayraç ve net başarı tarifi ikisinde de ortak.</p>
+
+<p><strong>Üçüncüsü, küçük biçim farkları büyük sonuç farkı doğurabilir.</strong> Sclar ve arkadaşları (Ekim 2023, ICLR 2024), az örnekli istemlerde anlamı değiştirmeyen biçim değişikliklerinin (ayraç işareti, büyük-küçük harf, boşluk) LLaMA-2-13B modelinin doğruluğunu 76 puana varan farklarla değiştirebildiğini gösterdi; duyarlılık daha büyük ya da ince ayarlı modellerde de kaybolmadı.</p>
+
+<p>Dil de bir değişkendir: Türkçe istem çoğu zaman daha çok token tutar (Parça 11), bu da bağlam penceresinin daha çabuk dolması ve ücretli kullanımda (Parça 16) daha çok maliyet demektir. Türkçe mi İngilizce mi daha iyi çalıştığı modele ve işe göre değişir; kendi işinde dene.</p>
+
+<h2 class="s">İstem bir kez yazılıp bırakılmaz</h2>
+
+<p>Buraya kadar söylenenlerin hepsi bir sonuca varıyor: bir istemin iyi olup olmadığını yazarken bilemezsin; ancak deneyerek öğrenirsin. Bir kez kullanacağın kısa bir soru için bu döngüye gerek yok. Ama aynı istemi her hafta onlarca fatura için, her gün müşteri e-postaları için kullanacaksan, onu bir ürün gibi sınaman gerekir.</p>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="İstem geliştirme döngüsü: yaz, dene, karşılaştır, düzelt; ortada test girdileri ve sürüm kaydı">
+  <rect class="sv-l" x="130" y="10" width="140" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="32" text-anchor="middle">1. Yaz</text><text class="sv-s" x="200" y="50" text-anchor="middle">altı parçayla, ölçütle</text>
+  <rect class="sv-l" x="266" y="150" width="130" height="50" rx="10"/>
+  <text class="sv-b" x="331" y="172" text-anchor="middle">2. Dene</text><text class="sv-s" x="331" y="190" text-anchor="middle">aynı girdilerle</text>
+  <rect class="sv-l" x="130" y="290" width="140" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="312" text-anchor="middle">3. Karşılaştır</text><text class="sv-s" x="200" y="330" text-anchor="middle">cevapları ölçütle</text>
+  <rect class="sv-a" x="4" y="150" width="130" height="50" rx="10"/>
+  <text class="sv-b" x="69" y="172" text-anchor="middle">4. Düzelt</text><text class="sv-s" x="69" y="190" text-anchor="middle">tek değişiklik</text>
+  <path class="sv-cl" d="M270 35H331V150"/>
+  <path class="sv-cl" d="M331 200V315H270"/>
+  <path class="sv-cl" d="M130 315H69V200"/>
+  <path class="sv-cl" d="M69 150V35H130"/>
+  <rect class="sv-m" x="145" y="130" width="110" height="90" rx="10"/>
+  <text class="sv-t" x="200" y="156" text-anchor="middle">test girdileri</text>
+  <text class="sv-s" x="200" y="174" text-anchor="middle">5–10 örnek,</text>
+  <text class="sv-s" x="200" y="190" text-anchor="middle">kolay + zor</text>
+  <text class="sv-t" x="200" y="210" text-anchor="middle">sürüm kaydı</text>
+</svg>
+<figcaption>İstem geliştirmenin döngüsü. Ortadaki test girdileri her turda aynı kalır; böylece iki sürümün farkı girdilerden değil istemden gelir. Her düzeltmede tek bir şey değiştirilir ve her sürüm saklanır ki iyileşmeyen değişiklik geri alınabilsin.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Tekrar tekrar kullanılacak bir istemi şu döngüyle geliştir: (1) istemi değerlendirme ölçütüyle birlikte yaz; (2) önceden seçtiğin, kolay ve zor durumları içeren 5–10 test girdisiyle dene; (3) her cevabı ölçütle karşılaştır ve hangi girdide neyin bozulduğunu not et; (4) istemde <strong>tek bir şeyi</strong> değiştir ve aynı girdilerle yeniden dene. Her sürümü sakla.</p></div>
+
+<p>Girdilerin <strong>sabit</strong> kalması Parça 2'deki test kümesi fikridir: girdiler değişirse farkın istemden mi girdiden mi geldiğini bilemezsin. <strong>Zor durumlar</strong> (tarihsiz fatura, kızgın müşteri e-postası) gerekir, çünkü istemler çoğu zaman uç örnekte bozulur. <strong>Tek değişiklik</strong>, neyin işe yaradığını gösterir; üç şeyi birden değiştirirsen hangisinin yardım ettiğini ayıramazsın. Rastgelelik yüzünden önemli bir istemi her girdide birkaç kez çalıştırmak da iyi bir alışkanlıktır.</p>
+
+<p>Bir tuzak da Parça 5'ten tanıdık: <strong>Goodhart yasası</strong>. Aynı beş girdide defalarca düzeltilen istem o girdilere "ezber" yapabilir; orada kusursuz, gerçek veride vasat olur. Aşırı öğrenmenin istemdeki karşılığıdır; çaresi, düzeltirken kullanmadığın birkaç girdiyi kenarda tutup son sürümü onlarla da denemektir. Bu sınamaları programla yapan düzenlere değerlendirme (eval) denir; sözcüğün güvenlikteki kullanımını Parça 19'da göreceksin.</p>
+
+<h2 class="s">İsteme yazmaman gerekenler</h2>
+
+<p>Bütün bu parça modele daha çok bilgi vermeyi öğütledi. Şimdi sınırını çizmek gerekiyor: bazı bilgiler <strong>hiçbir istemde</strong> yer almamalıdır.</p>
+
+<p>Bir sohbet hizmetine yazdığın her şey, çoğu durumda senin bilgisayarından çıkıp hizmet sağlayıcının sunucularına gider ve orada bir süre saklanabilir. Hizmete ve ayarlarına göre bu sohbetler modeli geliştirmek için de kullanılabilir. Örneğin OpenAI'nin yardım sayfası (14 Ekim 2026'da okundu), ChatGPT'de "Improve the model for everyone" (modeli herkes için geliştir) ayarı kapatıldığında yeni sohbetlerin modelleri eğitmek için kullanılmayacağını; geçici sohbetlerin model geliştirmede kullanılmadığını ama güvenlik amacıyla 30 güne kadar saklanabileceğini; bir cevaba beğeni ya da beğenmeme geri bildirimi verdiğinde ise o sohbetin tamamının, ayarı kapatmış olsan bile, eğitimde kullanılabileceğini söylüyor. Her hizmetin kuralları farklıdır ve değişir; kullandığın hizmetin gizlilik ayarlarına ve şartlarına kendin bakmalısın.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Parolaları, API anahtarlarını, banka ve kart bilgilerini, kimlik numaralarını, başkalarına ait kişisel verileri (müşteri adları, telefonlar, sağlık bilgisi) ve şirket sırlarını isteme yazma. İşin bu bilgiyi gerektiriyorsa önce <strong>maskele</strong>: gerçek değerleri [MÜŞTERİ_1], [TUTAR] gibi yer tutucularla değiştir, cevabı aldıktan sonra kendi bilgisayarında geri yerleştir. Şirket verisiyle çalışırken şirketin izin verdiği araçları ve kuralları kullan.</p></div>
+
+<p>Nedenleri üç katmanlıdır. Teknik: isteme yazılan parola ya da anahtar artık senin denetiminde olmayan bir sistemde durur; sızarsa başkası senin adına işlem yapabilir (anahtarların neden koda bile yazılmadığını Parça 16'da göreceğiz). Hukuki: başkasının kişisel verisini bir hizmete aktarmak kişisel veri kurallarına (Türkiye'de KVKK; Parça 20) takılabilir. Güven: sana emanet edilen bilgiyi üçüncü bir tarafa vermiş olursun. Sohbet geçmişini silmek, verinin sağlayıcıdan da hemen silindiği anlamına gelmeyebilir.</p>
+
+<p>Maskeleme çoğu iş için yeterlidir, çünkü model işin <strong>yapısıyla</strong> ilgilenir, gerçek adlarla değil: Örnek 2'deki e-posta [MÜŞTERİ] ile taslak olarak yazılıp sonra doldurulabilir. Siber güvenlik rafı, verinin nerede saklandığı ve nasıl sızdığı konusunu daha geniş ele alır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2 ve 5'e:</strong> Az örnekli istem, parametre değiştirmeden örnekten öğrenmedir. Sabit test girdileri eğitim–test ayrımının, aynı girdilere fazla uyarlanmış istem aşırı öğrenmenin ve Goodhart yasasının karşılığıdır.</p>
+<p><strong>Parça 11'e:</strong> Model boşluğu en olası devamla doldurur, hafızası yoktur, sıcaklık yüzünden farklı cevap verebilir; düşünce zincirinin yaygın açıklaması token token üretime dayanır.</p>
+<p><strong>Parça 13 ve 14'e:</strong> Rol ve sistem istemi ince ayarla gelen davranışlardır; akıl yürüten modeller "adım adım" tavsiyesini değiştirir. "Eksikse uydurma", "emin değilsen söyle", "yoksa null yaz" halüsinasyon ve yaltaklanmaya karşı istem düzeyindeki önlemlerdir.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 16'da istem bir programa girer (şablon, API, RAG, ajan); Parça 17'de kod istemi test ve çalıştırmayla birleşir; Parça 18'de ayracın neden tek başına yetmediğini, istem enjeksiyonunu görürüz; Parça 20'de KVKK ele alınır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>İstemde söylemediğin bir bilgiyi model neyle doldurur ve bu neden sorun olur?</summary><p>Eğitimde gördüğü metinlerden ve ince ayardan gelen en olası, en tipik varsayımla doldurur. Sonuç herkese yazılmış gibi ortalama bir cevaptır; daha kötüsü, olgular eksikse (tarih, neden, telefon) model inandırıcı ama uydurma değerler yazabilir. Çaresi, seni ortalamadan ayıran bilgileri açıkça yazmak ya da eksikse uydurmamasını söylemektir.</p></details>
+<details><summary>İyi bir istemin altı parçasını say ve her birinin hangi soruyu cevapladığını söyle.</summary><p>Görev (ne yapılacak), bağlam (neden ve kim için), kısıtlar (hangi sınırlar içinde: uzunluk, ton, yasaklar), biçim (hangi şekilde: madde, tablo, JSON), örnek (neye benzesin) ve değerlendirme ölçütü (iyi cevap neye göre iyi). Kısa sorularda görev yetebilir; sonuç tatmin etmezse ilk bakılacak yer bu listedir.</p></details>
+<details><summary>Az örnekli (few-shot) istem ile Parça 2'deki makine öğrenmesi arasındaki temel fark nedir?</summary><p>Makine öğrenmesinde örnekler eğitim sırasında parametreleri kalıcı olarak değiştirir. Az örnekli istemde örnekler yalnız istemin içinde, cevap üretilirken verilir; modelin ağırlıkları değişmez ve örnekler bir sonraki isteme taşınmaz. Buna bağlam içi öğrenme denir.</p></details>
+<details><summary>Kojima ve arkadaşlarının 2022 çalışması ne buldu ve bu bulgu bugünün akıl yürüten modellerine neden doğrudan taşınamaz?</summary><p>Cevabın başına yalnız "Let's think step by step" eklemek, text-davinci-002 modelinde MultiArith doğruluğunu %17,7'den %78,7'ye, GSM8K'yi %10,4'ten %40,7'ye çıkardı; etki küçük modellerde görülmedi. Bugünün akıl yürüten modelleri ara düşünceyi zaten kendiliğinden üretecek biçimde eğitildiği için bu söz onlara aynı kazancı sağlamayabilir; OpenAI'nin belgesi onu gereksiz ve bazen zararlı sayıyor.</p></details>
+<details><summary>Rol vermek ("Sen deneyimli bir avukatsın") neyi değiştirir, neyi değiştirmez?</summary><p>Sözcük seçimini, tonu, bakış açısını ve varsayılan biçimi değiştirir. Modelin bilgisini ve cevabın doğruluğunu değiştirmez; yalnız cevabı daha emin ve uzman gösterir, bu da yanlışı fark etmeyi zorlaştırabilir. Zheng ve arkadaşlarının çalışmasında 162 rol, bilgi sorularında rolsüz isteme göre doğruluğu iyileştirmedi.</p></details>
+<details><summary>Bir istemi geliştirirken neden test girdilerini sabit tutar ve her seferinde tek bir şey değiştirirsin?</summary><p>Girdiler sabitse iki sürüm arasındaki fark yalnız istemden gelir; girdiler değişirse farkın kaynağını bilemezsin. Tek değişiklik, iyileşmenin ya da kötüleşmenin hangi değişiklikten geldiğini gösterir. Ayrıca düzeltmede kullanmadığın birkaç girdiyi kenarda tutarsın ki istem o birkaç örneğe fazla uyarlanmasın.</p></details>
+<details><summary>Bir müşteri listesindeki verilerle bir model üzerinde çalışman gerekiyor. Gizlilik açısından ne yaparsın?</summary><p>Gerçek adları, telefonları, kimlik ve hesap bilgilerini isteme yazmam; onları [MÜŞTERİ_1] gibi yer tutucularla maskelerim ve cevabı aldıktan sonra kendi bilgisayarımda geri yerleştiririm. Kullandığım hizmetin saklama ve eğitimde kullanma kurallarına bakarım, şirket verisiyse şirketin izin verdiği aracı kullanırım. Çünkü isteme yazılan veri sağlayıcının sunucularına gider ve başkasının kişisel verisi hukuki kurallara tabidir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İstem:</strong> modele verilen metnin tamamı. Model senin durumun hakkında yalnız bunu bilir; hafızası yok.</li>
+<li><strong>Boşluk ortalamayla dolar:</strong> söylemediğin her şeyi model en tipik varsayımla tamamlar, olgu eksikse uydurabilir.</li>
+<li><strong>Altı parça:</strong> görev, bağlam, kısıtlar, biçim, örnek, değerlendirme ölçütü. "Yeni çalışan sınaması": görevi bilmeyen biri yalnız bu metinle işi yapabilir mi?</li>
+<li><strong>Ayraç:</strong> veriyi talimattan etiketle ayır (&lt;metin&gt;…&lt;/metin&gt;). Kolaylıktır, güvenlik kilidi değildir (Parça 18).</li>
+<li><strong>Az örnekli istem:</strong> ağırlık değişmez, örnek istemde kalır. Birden çok, çeşitli, talimatla uyumlu örnek ver.</li>
+<li><strong>Dört dönüşüm:</strong> özet (okur + odak + uzunluk + biçim), e-posta (olgular + ton + verilmeyecek sözler), kod (örnek girdi + ortam + hata davranışı + kabul ölçütü), veri çıkarma (alan adları + JSON + "yoksa null").</li>
+<li><strong>Düşünce zinciri:</strong> Wei 2022 (örnekli, ~100 milyar parametre üstünde kazanç), Kojima 2022 ("Let's think step by step": MultiArith 17,7 → 78,7). Akıl yürüten modellerde gereksiz olabilir; dene ve karşılaştır.</li>
+<li><strong>Parçalara böl:</strong> her adım tek iş, aralarda kontrol noktası.</li>
+<li><strong>Rol:</strong> üslubu ve bakış açısını değiştirir; bilgiyi ve doğruluğu değil.</li>
+<li><strong>Soru sorsun:</strong> "Başlamadan önce en fazla üç soru sor"; "emin değilsen söyle"; görüşünü belli etmeden sor.</li>
+<li><strong>Model farkı:</strong> rastgelelik, farklı eğitim, biçime duyarlılık (76 puana varan fark). Tek denemeyle yargılama.</li>
+<li><strong>Döngü:</strong> yaz → sabit test girdileriyle dene → ölçütle karşılaştır → tek değişiklik; sürümleri sakla, kenarda yeni girdi tut.</li>
+<li><strong>Yazma:</strong> parola, anahtar, kart, kimlik, başkasının kişisel verisi, şirket sırrı. Maskele: [MÜŞTERİ_1].</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-15">
+<h3>Quiz 15</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir istemde yazan "İyi bir özet, notta geçen her kararı sorumlusu ve tarihiyle birlikte içerir." cümlesi, iyi istemin altı parçasından hangisine örnektir?</p>
+<ul class="sec"><li>Görev</li><li>Değerlendirme ölçütü</li><li>Örnek (few-shot)</li><li>Rol</li><li>Ayraç</li></ul>
+<div class="coz"><p>Cümle, iyi bir cevabın neye göre iyi sayılacağını tanımlıyor; bu değerlendirme ölçütüdür (B). Görev ne yapılacağını söyler ("özetle"); bu cümle ise yapılan işin başarı koşulunu söyler. Örnek, istenen çıktıya benzeyen bir girdi–çıktı çifti olurdu. Rol "Sen bir … sın" kalıbıdır ve altı parçanın içinde değildir. Ayraç, veriyi talimattan ayıran etiket ya da işarettir. Ölçüt hem modele neyin önemli olduğunu söyler hem de senin cevabı neyle yargılayacağını belirler.</p></div></li>
+
+<li data-c="D"><p class="q">Az örnekli (few-shot) istemle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Verilen örnekler modelin parametrelerini kalıcı olarak değiştirir.</li><li>Model, bir sohbette verilen örnekleri sonraki bütün sohbetlerde hatırlar.</li><li>Tek bir örnek vermek, birkaç çeşitli örnek vermekten her zaman daha iyidir.</li><li>Örnekler istemin içinde, cevap üretilirken verilir; modelin ağırlıkları değişmez ve model örneklerdeki kalıbı yeni girdiye uygular.</li><li>Örnekler yalnızca kod yazdırırken işe yarar.</li></ul>
+<div class="coz"><p>Az örnekli istemde örnekler bağlamın bir parçasıdır; model onlardaki kalıbı yakalar ama hiçbir parametresi değişmez (D). Bu yüzden A yanlıştır; parametreleri kalıcı değiştiren, Parça 2'deki eğitimdir. B yanlıştır: model hafıza tutmaz, örnekleri her istemde yeniden vermen gerekir. C yanlıştır: tek örnekte model hangi özelliğin kalıp, hangisinin rastlantı olduğunu ayıramaz ve örneği kopyalayabilir. E yanlıştır: özet, e-posta, veri çıkarma gibi her işte örnek kullanılabilir.</p></div></li>
+
+<li data-c="A"><p class="q">Sistem istemine "Sen deneyimli bir vergi danışmanısın." cümlesi eklendiğinde aşağıdakilerden hangisinin değişmesi <strong>beklenmez</strong>?</p>
+<ul class="sec"><li>Modelin vergi mevzuatı hakkında eğitimde öğrendiği bilginin miktarı ve doğruluğu</li><li>Cevapta kullanılan terimler</li><li>Cevabın tonu ve resmîliği</li><li>Cevabın neye dikkat çektiği</li><li>Cevabın ne kadar emin ve uzman göründüğü</li></ul>
+<div class="coz"><p>Rol cümlesi modelin bilgisini artırmaz; bilgi eğitimde gördüğü metinlerden gelir ve bir cümleyle değişmez (A). Terimler, ton, bakış açısı ve cevabın emin görünmesi ise rolle değişebilir; rol tam da bu üslup ayarı için kullanışlıdır. E'nin değişmesi bir tehlikedir: daha uzman görünen bir cevap, yanlışsa yanlışlığı daha zor fark edilir. Zheng ve arkadaşlarının çalışmasında da rol eklemek bilgi sorularında doğruluğu iyileştirmedi.</p></div></li>
+
+<li data-c="E"><p class="q">Bir müşteri şikâyetine cevap taslağı hazırlatmak istiyorsun. Gizlilik açısından en doğru yol aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Müşterinin adını, telefonunu ve kimlik numarasını isteme olduğu gibi yazmak, çünkü model ne kadar çok bilgi alırsa o kadar iyi cevap verir</li><li>Bilgileri yazıp sohbet bitince geçmişi silmek; böylece veri her yerden hemen silinmiş olur</li><li>Kimlik numarasını yazmamak ama telefon ve adres gibi öbür bilgileri yazmak</li><li>Hiçbir bağlam vermeden "şikâyete cevap yaz" demek</li><li>Şikâyetin içeriğini verip kişisel bilgileri [MÜŞTERİ], [TELEFON] gibi yer tutucularla maskelemek, gerçek bilgileri cevabı aldıktan sonra kendi bilgisayarında eklemek</li></ul>
+<div class="coz"><p>Model işin yapısıyla ilgilenir, gerçek kişi bilgileriyle değil; maskeleme hem iyi bir taslak almanı hem de kişisel veriyi isteme koymamanı sağlar (E). A, başkasına ait kişisel veriyi bir üçüncü tarafa aktarır. B yanlıştır: geçmişi silmek verinin sağlayıcıdan da hemen silindiği anlamına gelmeyebilir; saklama süreleri hizmetin kurallarına bağlıdır. C, telefon ve adresi de kişisel veri olarak görmemektir. D ise bağlamı tamamen kaldırarak modeli ortalama, işe yaramaz bir cevaba iter.</p></div></li>
+
+<li data-c="C"><p class="q">Kojima ve arkadaşlarının 2022 tarihli "Large Language Models are Zero-Shot Reasoners" çalışmasıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Modele sekiz çözülmüş örnek vererek düşünce zincirini ilk kez gösterdi.</li><li>"Adım adım düşünelim" cümlesinin her boyuttaki modelde aynı kazancı sağladığını buldu.</li><li>Cevabın başına yalnız "Let's think step by step" eklemek, text-davinci-002 modelinde MultiArith doğruluğunu %17,7'den %78,7'ye çıkardı.</li><li>Akıl yürüten modellerde bu cümlenin gereksiz olduğunu gösterdi.</li><li>Özet ve çeviri işlerinde büyük kazanç gösterdi.</li></ul>
+<div class="coz"><p>Kojima ve arkadaşları örnek vermeden, yalnız tetikleyici bir cümleyle sıfır örnekli düşünce zincirini gösterdi; MultiArith'te %17,7'den %78,7'ye, GSM8K'de %10,4'ten %40,7'ye çıkış raporlandı (C). A, Wei ve arkadaşlarının örnekli çalışmasıdır. B yanlıştır: çalışma, model küçükken düşünce zincirinin etkili olmadığını söyler. D yanlıştır: 2022'de bugünkü akıl yürüten modeller yoktu; bu uyarı üreticilerin güncel belgelerinden gelir. E yanlıştır: çalışma aritmetik, sembolik ve mantık soruları üzerindedir.</p></div></li>
+
+<li data-c="A"><p class="q">Cevaptan önce kendiliğinden uzun bir ara düşünce üreten "akıl yürüten" bir modelle çalışıyorsun. Üretici belgeleri ve 2022 araştırmaları birlikte düşünüldüğünde en doğru tutum aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>"Adım adım düşün" sözünün bu modelde aynı kazancı sağlayacağını varsaymamak; hedefi açık tarif etmek ve gerekirse sözün olduğu ve olmadığı iki sürümü aynı girdilerle karşılaştırmak</li><li>Her isteme mutlaka "adım adım düşün" yazmak, çünkü 2022 araştırmaları bunun her modelde işe yaradığını kanıtladı</li><li>Modele hiçbir bağlam vermemek, çünkü akıl yürüten modeller eksik bilgiyi kendileri bulur</li><li>Modelin akıl yürütmesini yasaklamak</li><li>Her adımı en ince ayrıntısına kadar yazan uzun bir plan vermenin her zaman en iyi sonucu verdiğini kabul etmek</li></ul>
+<div class="coz"><p>Akıl yürüten modeller 2022'de istemle tetiklenen davranışı zaten eğitimle kazanmıştır; OpenAI'nin belgesi "adım adım düşün" demeyi gereksiz ve bazen zararlı sayar, Anthropic'in belgesi genel bir yönlendirmenin elle yazılmış adım planından çoğu zaman iyi olduğunu söyler. Bu yüzden varsayım yerine deneme gerekir (A). B, 2022 bulgularını bütün modellere genellemektir; o çalışmalar bile küçük modellerde kazanç görmedi. C yanlıştır: model senin bağlamını bilemez. D'nin dayanağı yoktur. E, Anthropic belgesinin tersini söyler.</p></div></li>
+
+<li data-c="D"><p class="q">Fatura e-postalarından alan çıkaran bir istem yazıyorsun. Faturada tarih bulunmadığında modelin uydurma bir tarih yazmasını en doğrudan önleyen ekleme aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>"Sen deneyimli bir muhasebecisin."</li><li>"Lütfen çok dikkatli ve kusursuz çalış."</li><li>"Cevabı Türkçe yaz."</li><li>"Metinde olmayan alan için null yaz; tahmin etme."</li><li>"Önce faturayı özetle, sonra alanları çıkar."</li></ul>
+<div class="coz"><p>Model eksik bilgiyi en olası varsayımla doldurur; bunu önlemenin en doğrudan yolu, eksik durumda ne yapılacağını açıkça söylemektir (D). "Değer yok" demeyi kabul edilebilir bir cevap hâline getirir ve programın da okuyabileceği net bir işaret verir. A rolle bilgi ya da dikkat eklenmeyeceği için uydurmayı önlemez. B ölçüt tanımlamayan bir süstür. C dil seçimidir. E, işi uzatır ama eksik alanda ne yapılacağını söylemez.</p></div></li>
+
+<li data-c="B"><p class="q">Bir istemi beş sabit test girdisiyle defalarca düzelttin; son sürüm o beş girdide kusursuz, ama gerçek kullanımda gelen yeni faturalarda sık hata yapıyor. Bu durumun en iyi açıklaması ve önlemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin sıcaklığı sıfırdır; artırmak gerekir.</li><li>İstem o beş girdiye fazla uyarlanmıştır (aşırı öğrenmenin ve Goodhart yasasının istemdeki karşılığı); düzeltmede kullanılmayan, zor durumları da içeren ayrı girdilerle sınamak gerekir.</li><li>Test girdilerini her denemede değiştirmek, istem sürümlerini karşılaştırmanın en doğru yoludur.</li><li>Her düzeltmede istemin üç dört yerini birden değiştirmek sorunu çözer.</li><li>İsteme "Sen dünyanın en iyi muhasebecisisin" eklemek gerekir.</li></ul>
+<div class="coz"><p>Aynı küçük girdi kümesinde ölçüt hedef hâline gelince istem o örneklere göre şekillenir; Parça 2'deki aşırı öğrenmenin ve Parça 5'teki Goodhart yasasının karşılığıdır. Çaresi, düzeltmede kullanmadığın ve uç durumları içeren girdileri kenarda tutup son sürümü onlarla sınamaktır (B). A'nın sorunla ilgisi yoktur. C, sürümler arası farkın istemden mi girdiden mi geldiğini anlaşılmaz yapar; sabit girdiler doğrudur, sorun yalnız onlara güvenmektir. D, hangi değişikliğin işe yaradığını ayırt etmeyi imkânsız kılar. E bilgi ya da genelleme eklemez.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir modelin başarısını, eğitim sırasında hiç görmediği ayrı bir test kümesiyle ölçmenin temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Test kümesi her zaman eğitim kümesinden büyük olduğu için</li><li>Eğitim kümesinde etiket bulunmadığı için</li><li>Modelin hesaplama süresini kısaltmak için</li><li>Test kümesi kullanılınca aşırı öğrenme kendiliğinden ortadan kalktığı için</li><li>Modelin gördüğü örnekleri ezberleyip ezberlemediğini değil, yeni örneklere genelleyip genellemediğini görmek için</li></ul>
+<div class="coz"><p>Model eğitim örneklerini ezberleyebilir; ezberleyen model gördüğü sorularda mükemmel, yeni sorularda kötüdür. Bunu ancak görmediği örneklerle ölçünce anlarsın (E). A yanlıştır: test kümesi genellikle daha küçüktür. B yanlıştır: denetimli öğrenmede eğitim kümesi etiketlidir. C'nin bir ilgisi yoktur. D yanlıştır: test kümesi aşırı öğrenmeyi önlemez, yalnız ortaya çıkarır.</p></div></li>
+
+<li data-c="C" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin her parametresi 16 bit (2 bayt) ile saklanırken 8 bite (1 bayt) nicelenirse, yalnız parametrelerin kapladığı yer yaklaşık nasıl değişir?</p>
+<ul class="sec"><li>14 GB'tan 28 GB'a çıkar.</li><li>7 GB'tan 3,5 GB'a iner.</li><li>14 GB'tan 7 GB'a iner.</li><li>Değişmez, çünkü parametre sayısı aynı kalır.</li><li>14 GB'tan 1,75 GB'a iner.</li></ul>
+<div class="coz"><p>16 bitte her parametre 2 bayttır: 7 milyar × 2 = 14 milyar bayt, yaklaşık 14 GB. 8 bitte her parametre 1 bayttır: 7 milyar × 1 = 7 GB (C). Niceleme parametre sayısını değil, her parametrenin kaç bitle saklandığını değiştirir; bu yüzden D yanlıştır. A ters yöndedir. B, başlangıcı yanlış alıp (bayt yerine parametre sayısı) yarıya bölmektir. E, 16 biti 2 bit sanmaktır.</p></div></li>
+
+<li data-c="A" data-k="yz-4"><p class="q">Rastgele orman (random forest) modelinin temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Birbirinden biraz farklı çok sayıda karar ağacı eğitip tahminlerini oylamayla birleştirmek</li><li>Tek bir çok derin karar ağacını sonuna kadar büyütmek</li><li>Verideki noktalara en iyi uyan tek bir doğru çizmek</li><li>Yeni örneğe en yakın k komşunun etiketine bakmak</li><li>Ağaçları rastgele budayarak modeli küçültmek</li></ul>
+<div class="coz"><p>Rastgele orman, "çok sayıda zayıf modelin oylaması" fikridir: her ağaç verinin ve özelliklerin biraz farklı bir alt kümesiyle eğitilir, son karar oylamayla verilir (A). Tek ağacın hataları birbirinden farklı ağaçlarda dengelenir. B tek ağaçtır ve aşırı öğrenmeye açıktır. C doğrusal regresyon, D k-en yakın komşudur. E, adındaki "rastgele" sözcüğünü yanlış yorumlar.</p></div></li>
+
+<li data-c="E" data-k="yz-5"><p class="q">Bir e-posta spam filtresinde, önemli bir iş e-postasının yanlışlıkla spam klasörüne gitmesi en pahalı hata sayılıyor. Bu durumda "spam" sınıfı için hangi ölçüt özellikle yüksek tutulmalıdır?</p>
+<ul class="sec"><li>Duyarlılık (recall), çünkü bütün spamleri yakalamak her şeyden önemlidir</li><li>Doğruluk (accuracy), çünkü tek başına her durumu anlatır</li><li>Eşik değeri sıfır yapılmalıdır</li><li>Hiçbiri; spam filtresinde ölçüt seçimi önemli değildir</li><li>Kesinlik (precision), çünkü "spam" dediği e-postaların gerçekten spam olması gerekir</li></ul>
+<div class="coz"><p>Kesinlik, modelin "spam" dediklerinin ne kadarının gerçekten spam olduğunu ölçer; iş e-postasını spam saymak bir yanlış pozitiftir ve kesinliği düşürür (E). Duyarlılık ise gerçek spamlerin ne kadarını yakaladığını ölçer; burada daha az kritiktir, çünkü kaçan bir spam gelen kutusunda biraz rahatsızlık verir. B, dengesiz veride yanıltıcı olabilen tek ölçüttür. C, her şeyi spam saymaya yol açar ve kesinliği çökertir. D, Parça 5'in temel dersine aykırıdır.</p></div></li>
+
+<li data-c="B" data-k="yz-6"><p class="q">3 girdisi olan bir katmanda 2 nöron var ve her nöron her girdiye bağlı, her nöronun bir sapması (bias) var. Bu katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>6</li><li>8</li><li>5</li><li>9</li><li>12</li></ul>
+<div class="coz"><p>Her nöron 3 girdiye bağlı olduğu için 3 ağırlık taşır; 2 nöron için 3 × 2 = 6 ağırlık. Her nöronun bir sapması vardır: 2 sapma. Toplam 6 + 2 = 8 parametre (B). A sapmaları unutmaktır. C girdi ve nöron sayısını toplamaktır. D ve E bir hesaba dayanmaz ya da her nörona fazladan değer ekler. "70 milyar parametre" de aynı sayımın çok büyük ölçekte yapılmasıdır.</p></div></li>
+
+<li data-c="D" data-k="yz-7"><p class="q">Bir sinir ağının eğitiminde dropout kullanmanın amacı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Eğitimi hızlandırmak için öğrenme oranını her dönemde artırmak</li><li>Eğitim verisini kopyalayarak çoğaltmak</li><li>Ağın katman sayısını kalıcı olarak azaltmak</li><li>Eğitim sırasında rastgele nöronları geçici olarak devre dışı bırakıp ağın tek tek nöronlara yaslanmasını engelleyerek aşırı öğrenmeyi azaltmak</li><li>Gradyanların patlamasını önlemek için ağırlıkları sıfırlamak</li></ul>
+<div class="coz"><p>Dropout bir düzenlileştirme yöntemidir: her eğitim adımında nöronların bir kısmı rastgele kapatılır, böylece ağ bilgiyi birçok nörona dağıtmak zorunda kalır ve eğitim örneklerini ezberlemesi zorlaşır (D). Kapatma geçicidir; kullanımda bütün nöronlar çalışır, bu yüzden C yanlıştır. A, öğrenme oranı zamanlamasıyla karışır. B, veri artırmaya benzer ama aynı şey değildir. E dropout'un işi değildir.</p></div></li>
+
+<li data-c="C" data-k="yz-8"><p class="q">2012'de AlexNet'in görüntü tanımada dönüm noktası sayılmasını sağlayan üç etken birlikte aşağıdakilerden hangisinde verilmiştir?</p>
+<ul class="sec"><li>Kural tabanlı uzman sistem, elle yazılmış özellikler, küçük veri</li><li>Transformer mimarisi, dikkat mekanizması, token</li><li>Büyük etiketli veri (ImageNet), GPU ile hesap gücü, derin evrişimli ağ</li><li>Pekiştirmeli öğrenme, oyun ortamı, ödül fonksiyonu</li><li>Kelime gömmeleri, RNN, makine çevirisi</li></ul>
+<div class="coz"><p>AlexNet, ImageNet gibi milyonlarca etiketli resimden oluşan bir veriyi, GPU'ların paralel hesabıyla eğitilen derin bir evrişimli ağla birleştirdi; üç etken bir araya gelince sonuç öncekilerden belirgin biçimde iyi oldu (C). A, AlexNet'in geride bıraktığı eski yaklaşımı anlatır. B 2017 transformer'ın ögeleridir. D, AlphaGo gibi oyun oynayan sistemlere aittir. E dil işleme tarihine aittir.</p></div></li>
+
+<li data-c="B" data-k="yz-9"><p class="q">Kelime gömmeleri (word embeddings) ile ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelimeyi sözlük uzunluğunda, yalnız bir yeri 1 olan bir vektörle gösterir.</li><li>Anlamca yakın kelimeleri uzayda birbirine yakın yerleştirir ve eğitim metinlerindeki yanlılıkları da öğrenebilir.</li><li>"Kral − erkek + kadın ≈ kraliçe" ilişkisi her kelime çifti için kusursuz çalışır.</li><li>Kelimelerin cümledeki sırasını saklar.</li><li>Yalnız İngilizce için kullanılabilir.</li></ul>
+<div class="coz"><p>Gömmeler kelimeleri kısa, yoğun vektörlerle gösterir ve benzer bağlamlarda geçen kelimeleri birbirine yakın yerleştirir; aynı mekanizma metinlerdeki toplumsal yanlılıkları da vektörlere taşır (B). A tek sıcak gösterimin tarifidir. C, Parça 9'da abartılmaması gerektiği vurgulanan örneği genellemektir. D yanlıştır: gömme tek bir kelimenin temsilidir. E yanlıştır: yöntem dilden bağımsızdır.</p></div></li>
+
+<li data-c="E" data-k="yz-10"><p class="q">Öz-dikkatte bir kelimenin cümledeki kelimelere verdiği dikkat ağırlıklarıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Ağırlıklar insanlar tarafından elle yazılır.</li><li>Kelime yalnız en yüksek puanlı tek kelimeye bakar, öbürlerinin ağırlığı tam sıfırdır.</li><li>Ağırlıkların toplamını 1 yapan şey puanları √d'ye bölmektir.</li><li>Kelime kendisine hiç dikkat veremez.</li><li>Ağırlıklar softmax ile elde edilir; her biri 0 ile 1 arasındadır ve bir kelime için toplamları 1'dir.</li></ul>
+<div class="coz"><p>Sorgu–anahtar puanları softmax'tan geçirilir; sonuç pozitif, toplamı 1 olan yumuşak bir dağılımdır (E). A yanlıştır: ağırlıkları üreten matrisler eğitimle öğrenilir. B sert seçim yanılgısıdır; softmax hiçbir kelimeye tam sıfır vermez (maskeli durum hariç). C yanlıştır: √d'ye bölmek yalnız puanların büyüklüğünü ayarlar, toplamı 1 yapan softmax'tır. D yanlıştır: öz-dikkatte kelime kendini de cümlenin bir üyesi sayar.</p></div></li>
+
+<li data-c="A" data-k="yz-11"><p class="q">Bir sohbet modeliyle uzun bir konuşmada model, birkaç mesaj önce söylediğin bir bilgiyi kullanabiliyor. Bunun nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Sohbet geçmişi her yeni mesajda istemle birlikte modele yeniden verilir; model onu bağlam penceresinin içinde görür.</li><li>Model her mesajdan sonra parametrelerini güncelleyip bilgiyi kalıcı olarak öğrenir.</li><li>Modelin içinde her kullanıcı için ayrı bir kalıcı hafıza nöronu vardır.</li><li>Sıcaklık yükseldikçe model daha çok şey hatırlar.</li><li>Model, söylenen her şeyi tokenleştirmeden olduğu gibi saklar.</li></ul>
+<div class="coz"><p>Modelin kendi içinde kalıcı bir hafızası yoktur; uygulama, önceki mesajları her seferinde yeni mesajla birlikte modele verir ve model bunları bağlam penceresinin içinde görür (A). Bu yüzden konuşma bağlam penceresini aşarsa eski kısımlar görülmez olabilir. B yanlıştır: kullanım sırasında parametreler değişmez. C uydurma bir mekanizmadır. D'de sıcaklık, örneklemenin rastgeleliğini ayarlar, hafızayı değil. E yanlıştır: model metni token olarak işler.</p></div></li>
+
+<li data-c="D" data-k="yz-12"><p class="q">Bir büyük dil modelinin ön eğitiminde (pretraining) modelin temel olarak öğrendiği iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İnsanların iki cevaptan hangisini daha çok beğendiğini tahmin etmek</li><li>Yalnızca soru–cevap çiftlerinden oluşan örnek konuşmaları taklit etmek</li><li>Resimleri sınıflandırmak</li><li>Çok büyük miktarda metinde, verilen metinden sonra gelecek tokeni tahmin etmek</li><li>Kullanıcıların sohbetlerinden anlık olarak öğrenmek</li></ul>
+<div class="coz"><p>Ön eğitim, internet ölçeğindeki metin üzerinde "bir sonraki tokeni tahmin et" oyununun çok büyük sayıda oynanmasıdır (D). A, RLHF'teki ödül modelinin işidir; B denetimli ince ayara (SFT) aittir ve her ikisi Parça 13'ün konusu, ön eğitimden sonra gelir. C görüntü modellerinin işidir. E yanlıştır: ön eğitim kullanım sırasında değil, model yayımlanmadan önce yapılır.</p></div></li>
+
+<li data-c="C" data-k="yz-12"><p class="q">2022 tarihli "Chinchilla" çalışmasının ölçekleme konusundaki temel mesajı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Model ne kadar büyükse veri miktarından bağımsız olarak o kadar iyidir.</li><li>Hesap gücünün artırılması kaybı hiç etkilemez.</li><li>Belirli bir hesap bütçesinde parametre sayısı ile eğitim verisi miktarı dengeli büyütülmelidir; birçok büyük model, boyutuna göre az veriyle eğitilmişti.</li><li>Ölçekleme yasaları yalnız görüntü modellerinde geçerlidir.</li><li>Eğitim verisi arttıkça kayıp her zaman yükselir.</li></ul>
+<div class="coz"><p>Chinchilla çalışması, aynı hesapla daha küçük ama çok daha fazla veriyle eğitilmiş bir modelin daha iyi sonuç verebileceğini göstererek veri ile parametrenin dengesine dikkat çekti (C). A, tam da bu çalışmanın düzelttiği yaklaşımdır. B ve E ölçekleme yasalarının söylediğinin tersidir: parametre, veri ve hesap arttıkça kayıp öngörülebilir biçimde düşer. D yanlıştır: bu çalışmalar dil modelleri üzerindedir.</p></div></li>
+
+<li data-c="B" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli"nin görevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İnternetten yeni eğitim metni toplamak</li><li>İnsanların iki cevaptan hangisini tercih ettiğini öğrenip yeni cevaplara puan vermek; dil modeli bu puanı artıracak biçimde ayarlanır</li><li>Metni tokenlere bölmek</li><li>Modelin bilgi kesim tarihini güncellemek</li><li>Kullanıcının sistem istemini yazmak</li></ul>
+<div class="coz"><p>RLHF'te insanlar aynı soruya verilmiş iki cevaptan iyisini seçer; ödül modeli bu tercihlerden öğrenir ve yeni cevaplara "insanlar bunu ne kadar beğenir" puanı verir. Dil modeli de bu puanı yükseltecek yönde ayarlanır (B). A ön eğitimin veri toplama aşamasına, C tokenleştiriciye aittir. D yanlıştır: RLHF modele yeni güncel bilgi eklemez. E'de sistem istemini uygulamayı kuran kişi yazar.</p></div></li>
+
+<li data-c="E" data-k="yz-13"><p class="q">Bir temel modelin (base model) doğrudan iyi bir sohbet asistanı olmamasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Temel model hiç metin üretemez.</li><li>Temel modelin parametresi yoktur.</li><li>Temel model yalnız resimlerle eğitilmiştir.</li><li>Temel model her soruyu reddeder.</li><li>Temel model yalnız metni devam ettirmeyi öğrenmiştir; bir soruya cevap vermek yerine soruyu ya da metni sürdürebilir.</li></ul>
+<div class="coz"><p>Ön eğitim modele "bu metinden sonra ne gelir" becerisini kazandırır, "soruya yardımcı bir cevap ver" davranışını değil. Bu yüzden temel model bir soruyu, benzer soruların listesini sürdürür gibi devam ettirebilir (E). Asistan davranışı Parça 13'teki denetimli ince ayar ve insan geri bildirimiyle kazanılır. A, B ve C temel modeli yanlış tarif eder. D'deki reddetme davranışı ise tersine, ince ayar ve güvenlik eğitimiyle gelen bir davranıştır.</p></div></li>
+
+<li data-c="A" data-k="yz-14"><p class="q">Dil modellerinde halüsinasyonun neden mekanizmanın doğal bir sonucu olduğu aşağıdakilerden hangisinde en doğru açıklanmıştır?</p>
+<ul class="sec"><li>Model en olası devam metnini üretir; olası metin ile doğru metin aynı şey değildir, bu yüzden bilmediği yerde akıcı ve inandırıcı ama yanlış bir metin üretebilir.</li><li>Model kullanıcıyı bilerek yanıltmak için eğitilmiştir.</li><li>Halüsinasyon yalnız internet bağlantısı koptuğunda olur.</li><li>Halüsinasyon yalnız çok küçük modellerde görülür; büyük modellerde hiç yoktur.</li><li>Halüsinasyon, sıcaklık sıfıra çekildiğinde kesinlikle ortadan kalkar.</li></ul>
+<div class="coz"><p>Model, eğitimde gördüğü metinlere göre "bu bağlamdan sonra en olası" devamı üretir; bilmediği bir kaynak, tarih ya da madde sorulduğunda olası görünen bir değer yazabilir (A). B yanlıştır: aldatma amacı yoktur; sorun mekanizmanın kendisindedir. C'nin dayanağı yoktur. D yanlıştır: büyük modeller de halüsinasyon üretir. E yanlıştır: sıcaklık sıfırken model hep en olası tokeni seçer, ama en olası olan yine yanlış olabilir.</p></div></li>
+
+<li data-c="D" data-k="yz-14"><p class="q">Bir modelden bir yatırım için uzun bir faiz hesabı yapmasını istedin. Parça 14'teki kullanıcı alışkanlıklarına göre en doğru yaklaşım aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin verdiği sonucu, akıcı ve emin yazıldığı için doğru kabul etmek</li><li>Aynı soruyu art arda sorup modelin aynı sayıyı söylemesini doğruluk kanıtı saymak</li><li>Modele "Hesabın doğru, değil mi?" diye sorup onay almak</li><li>Hesabı koda ya da hesap tablosuna yaptırmak ve kritik sonucu bağımsız olarak doğrulamak</li><li>Hesabı daha uzun bir mantık zinciriyle tek seferde yaptırmak</li></ul>
+<div class="coz"><p>Dil modelleri hesaplama ve sayma işlerinde, özellikle uzun zincirlerde hata yapabilir; hesabı deterministik bir araca (kod, hesap tablosu) yaptırmak ve kritik sonucu bağımsız doğrulamak güvenli yoldur (D). A, akıcılığı doğrulukla karıştırmaktır. B yanlıştır: aynı hatayı tekrarlamak doğruluk göstermez. C yaltaklanmaya açıktır; model onaylamaya yatkın olabilir. E, uzun mantık zincirinde kayma riskini artırır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-14">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-15">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-16">Sonraki parça: modeli bir uygulamaya bağlamak</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"prompt engineering temel ilkeler örneklerle"</li>
+  <li>"few-shot prompting chain of thought explained"</li>
+  <li>"reasoning models prompting differences step by step"</li>
+  <li>"prompt evaluation iterate test cases"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Wei ve ark., "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models" (arXiv 2201.11903; ilk sürüm 28 Ocak 2022): sekiz örnekli düşünce zinciri, 540 milyar parametreli modelle GSM8K'de dönemin en iyi sonucu ve "doğrulayıcılı, ince ayarlı GPT-3'ü bile geçmesi"; kazancın yaklaşık 100 milyar parametre ve üzerinde görülmesi, 10 milyarın altındaki modellerin çoğunda başarının düşmesi, küçük modellerin "akıcı ama mantıksız" zincirleri. 14 Ekim 2026'da arXiv özet sayfası ve ar5iv HTML sürümünden doğrulandı. Makaledeki GSM8K yüzdelerini metinden okuyamadığım için (grafikte duruyor) sayı vermedim.</li>
+  <li>Kojima ve ark., "Large Language Models are Zero-Shot Reasoners" (arXiv 2205.11916; 24 Mayıs 2022; NeurIPS 2022): text-davinci-002 ile MultiArith %17,7 → %78,7, GSM8K %10,4 → %40,7; iki aşamalı istem (akıl yürütme çıkarma, cevap çıkarma); küçük modellerde etkisizlik. 14 Ekim 2026'da arXiv ve ar5iv'den doğrulandı.</li>
+  <li>Akıl yürüten modellerde durumun farklı olabileceği: OpenAI, "Reasoning best practices" (developers.openai.com; sayfada tarih yok; 14 Ekim 2026'da okundu): kısa ve doğrudan istem, düşünce zinciri istemlerinden kaçınma ("adım adım düşün" gereksiz, bazen performansı bozabilir), ayraç kullanımı, önce örneksiz deneme, hedefin çok açık tarifi. Anthropic, istem yazma belgesi (platform.claude.com, "be clear and direct" sayfası; tarih yok; 14 Ekim 2026'da okundu): "parlak ama yeni çalışan" benzetmesi ve iş arkadaşı sınaması, talimatın nedenini açıklama, 3–5 örnek ve &lt;example&gt; etiketleri, XML etiketleri, tek cümlelik rolün etkisi, "iyice düşün" gibi genel yönlendirmenin elle yazılmış adım planından çoğu zaman iyi olması. Bu iki belge kendi modelleri içindir ve sık güncellenir; metinde "yazıldığı tarih itibarıyla" diye verildi. Belgelere doğrudan erişemediğim için ifadeleri, sayfaları okuyan bir özetleme aracı üzerinden aldım; birebir alıntı yapmadım, özetledim.</li>
+  <li>Brown ve ark., "Language Models are Few-Shot Learners" (arXiv 2005.14165, 2020): sıfır, tek ve az örnekli ayarların tanımı ve ağırlık güncellemesi olmaması ar5iv sürümünden doğrulandı. "Bağlam içi öğrenme" teriminin bu makalede geçtiği hafızadandır.</li>
+  <li>Zheng ve ark., "When 'A Helpful Assistant' Is Not Really Helpful: Personas in System Prompts Do Not Improve Performances of Large Language Models" (arXiv 2311.10054; ilk sürüm 16 Kasım 2023, v2 7 Ekim 2024): 162 rol, 4 model ailesi, 2.410 bilgi sorusu; rolün doğruluğu iyileştirmemesi, en iyi rolü otomatik seçmenin rastgeleye yakın olması. arXiv özet sayfasından doğrulandı; EMNLP 2024 Findings'te yayımlandığı bilgisi ACL Anthology arama sonucundan alındı.</li>
+  <li>Sclar ve ark., "Quantifying Language Models' Sensitivity to Spurious Features in Prompt Design" (arXiv 2310.11324; 17 Ekim 2023): LLaMA-2-13B'de biçim değişiklikleriyle 76 puana varan fark; duyarlılığın model boyutu, örnek sayısı ve ince ayarla kaybolmaması. arXiv özet sayfasından doğrulandı; ICLR 2024 bilgisi konferansın poster sayfasının arama sonucunda görünmesinden alındı.</li>
+  <li>OpenAI yardım sayfası "Data Controls FAQ" (help.openai.com; 14 Ekim 2026'da okundu): "Improve the model for everyone" kapalıyken yeni sohbetlerin eğitimde kullanılmaması, geçici sohbetlerin model geliştirmede kullanılmayıp 30 güne kadar saklanabilmesi, geri bildirim verilen sohbetin ayardan bağımsız olarak eğitimde kullanılabilmesi. Sayfa bireysel hesaplarda ayarın varsayılan değerini belirtmiyor; ben de vermedim. Öbür hizmetlerin kurallarını bu parçada doğrulamadım; metinde genel ifade kullandım.</li>
+  <li>Düşünce zincirinin neden işe yaradığına dair "token başına sabit hesap, ara adımlar daha çok hesap ve koşullama sağlar" açıklaması yaygın bir sezgidir; belirli bir kaynakla doğrulamadım, metinde bu yüzden temkinli yazdım. Yazılı zincirin modelin iç işleyişini her zaman sadakatle yansıtmadığı da araştırma literatüründe tartışılan bir konudur; hafızadan ve genel ifadeyle yazıldı.</li>
+  <li>"Türkçe istem mi İngilizce mi daha iyi" sorusuna genel bir cevap vermedim, çünkü modele ve işe göre değiştiğini düşünüyorum ve bunu ölçen güncel bir karşılaştırmayı bu oturumda doğrulamadım.</li>
+  <li>Bu parçadaki bütün istemleri öğretim amacıyla ben yazdım; hiçbirini bir modelde çalıştırmadım ve hiçbir model çıktısı göstermedim. "Beklenen çıktı biçimi" bloğu da benim yazdığım bir biçim örneğidir. Kişi ve şirket adları (Selin, Mert Aydın, Ayşe Kaya, Can, Deniz, Kuzey Lojistik, Özdemir Yapı, Ada Kırtasiye) kurgudur.</li>
+  <li>Python betiği (<code>istem.py</code>) bu ortamda Python 3.13.16 ile <code>python3 -I</code> komutuyla gerçekten çalıştırıldı ve çıktı birebir konuldu; betik hiçbir modeli ya da ücretli API'yi çağırmaz, yalnız standart kütüphaneyi kullanır ve rastgelelik içermez. Üç cevap adayı denetleyiciyi sınamak için elle yazıldı.</li>
+  <li>Quiz'deki sayısal cevaplar (7 milyar × 2 bayt = 14 GB, × 1 bayt = 7 GB; 3 × 2 + 2 = 8 parametre) elle ve Python'la kontrol edildi. Tekrar soruları Parça 2–14'ün kapsam satırlarından yazıldı; Parça 1–10 metinleri yazılmıştı, Parça 11–14 metinleri bu yazım sırasında elimde değildi, bu yüzden o parçaların soruları kapsam listesindeki terimlere göre kuruldu. Kural gereği toplam tekrar sorusu 16'yı geçmesin diye en eski parça olan Parça 1'den soru alınmadı.</li>
+</ul>
+</div>
+</div>
+</article>

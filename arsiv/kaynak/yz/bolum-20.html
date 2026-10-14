@@ -1,0 +1,514 @@
+<article class="chapter ders" id="c-yz-20">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 20 · Ekonomi ve düzenleme</div>
+<h1>Çipten yasaya: yapay zekânın ekonomisi ve kuralları</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir sohbet asistanına tek bir soru yazdığında, cevap bir şirketin tasarladığı, başka bir şirketin Tayvan'daki fabrikasında üretilmiş bir çipte, bir veri merkezinin elektriğiyle hesaplanıyor ve sana bir bulut şirketinin ağı üzerinden geliyor. Bu zincirin hangi halkası kimin elinde? Aynı işin fiyatı iki yılda neden yüzlerce kat düştü? Bu teknolojinin kuralını kim koyuyor: Brüksel mi, Washington mı, Ankara mı, yoksa mahkemeler mi?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (GPU'nun paralel hesabı, niceleme), Parça 5 (kıyaslama tabloları ve Goodhart yasası), Parça 11 (token, bağlam penceresi, sohbet geçmişinin her seferinde yeniden verilmesi), Parça 12 (ön eğitim, hesap gücü, eğitim maliyeti), Parça 16 (API ve token başına ücret), Parça 18 ve 19 (güvenlik, hizalama). Python kutusu isteğe bağlıdır; kod bilmiyorsan atla.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi çözüyor?</h2>
+
+<p>Şimdiye kadar yapay zekânın içine baktık. Bu parçada dışarı çıkıyoruz: bir model, onu mümkün kılan bir sanayinin ve onu sınırlayan bir hukukun içinde yaşar. Bu ikisini bilmeden "şu ülke öne geçti", "fiyatlar düşüyor" gibi cümleleri değerlendiremezsin.</p>
+
+<p>Parçanın iki yarısı var. Birinci yarı <strong>ekonomi</strong>: değer zinciri ve darboğazlar, enerji, fiyatların neden düştüğü, açık ağırlıklı ile kapalı modeller tartışması, büyük oyuncular ve ülkeler, iş gücüne etkisi. İkinci yarı <strong>düzenleme</strong>: Avrupa Birliği'nin Yapay Zekâ Yasası, ABD'nin çip ihracat kontrolleri, telif davaları ve Türkiye'deki durum.</p>
+
+<p>Bu konular hızla eskir; her rakam "14 Ekim 2026 itibarıyla" verildi, kaynakları sondaki "Kaynak ve doğrulama" bölümünde. Asıl öğrenmen gereken, rakamları okuma yöntemi.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Tarihli bir rakamı okurken üç soru sor:</strong> (1) Kim söyledi: şirketin kendisi mi, resmî bir kurum mu, bağımsız bir araştırma mı, yoksa bir yorumcu mu? (2) Ne zaman söyledi: bu alanda altı aylık bir rakam bile eski olabilir. (3) Tam olarak neyi ölçtü: "pazar payı" gelir mi, adet mi, hesap gücü mü? Parça 1'deki abartı ile gerçeği ayırma listesinin ekonomideki karşılığı budur.</p></div>
+
+<h2 class="s">Değer zinciri: bir cevabın arkasındaki fabrika</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Değer zinciri</strong>, bir ürünün hammaddeden kullanıcıya ulaşana kadar geçtiği halkaların sırasıdır; her halka bir değer ekler ve bir pay alır. <strong>Darboğaz</strong>, zincirde yerine kolayca başkası konamayan, az sayıda şirketin elinde toplanmış halkadır. Darboğazı elinde tutan, hem fiyat üzerinde hem de zincirin geri kalanı üzerinde güç kazanır.</p></div>
+
+<p>YZ'nin değer zinciri aşağıdan yukarı altı halkadır.</p>
+
+<p><strong>1. Çip tasarımı.</strong> Parça 3'te gördüğün gibi YZ, aynı basit işlemi milyonlarca kez paralel yapan çiplerle çalışır. Bu çiplerin baskın tasarımcısı NVIDIA'dır. Stanford'un YZ Endeksi raporunun 2026 sürümü, Epoch AI'ın tahminine dayanarak, dünyadaki YZ hesap kapasitesinin %60'ından fazlasının NVIDIA çiplerinden geldiğini, kalanın büyük kısmını Google ve Amazon'un kendi çiplerinin sağladığını yazıyor. NVIDIA'nın kendi açıklamasına göre 26 Temmuz 2026'da biten çeyrekte toplam geliri 96,2 milyar dolar, bunun 89,0 milyar doları (yaklaşık %92,5) veri merkezi geliriydi.</p>
+
+<p><strong>2. Üretim.</strong> NVIDIA çiplerini kendisi üretmez; tasarımı bir <strong>dökümhaneye</strong> (foundry), yani başkaları için çip üreten fabrikaya verir. En ileri YZ çiplerinin neredeyse hepsini Tayvanlı TSMC üretir; YZ Endeksi raporu TSMC'yi küresel YZ tedarik zincirinde "tek bağımlılık noktası" diye niteler. TrendForce'a göre TSMC 2026'nın ikinci çeyreğinde dökümhane pazarının %72,5'ini tutuyordu. Bu halkaya yüksek bant genişlikli bellek (SK Hynix, Samsung, Micron), paketleme (ASE, Amkor) ve en ileri baskı makineleri (Hollandalı ASML) bağlıdır.</p>
+
+<p><strong>3. Veri merkezi ve enerji.</strong> Çipler, soğutma ve ağ donanımıyla veri merkezlerine yerleştirilir; bu halkanın asıl hammaddesi elektriktir.</p>
+
+<p><strong>4. Bulut sağlayıcıları.</strong> Çoğu şirket hesap gücünü saatle kiralar. Amazon (AWS), Microsoft (Azure) ve Google (Google Cloud) bu halkanın büyük oyuncularıdır; bir kısmı kendi çipini tasarlar ve kendi modelini eğitir, yani birden çok halkada durur.</p>
+
+<p><strong>5. Model laboratuvarları.</strong> Parça 12 ve 13'teki ön eğitimi ve ince ayarı yapan, modeli API ile (Parça 16) ya da kendi uygulamasıyla sunan şirketler.</p>
+
+<p><strong>6. Uygulamalar.</strong> Modeli bir işe bağlayan ürünler: sohbet asistanı, kod asistanı (Parça 17), müşteri hizmetleri botu. En kalabalık halkadır; girmesi de, taklit edilmesi de en kolay olan halka.</p>
+
+<figure>
+<svg viewBox="0 0 400 470" role="img" aria-label="Yapay zekânın değer zinciri: çip tasarımı, üretim, veri merkezi ve enerji, bulut, model laboratuvarları, uygulamalar">
+  <rect class="sv-a" x="20" y="10" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="32" text-anchor="middle">1. Çip tasarımı</text>
+  <text class="sv-s" x="170" y="52" text-anchor="middle">NVIDIA, AMD, Google, Amazon</text>
+  <path class="sv-c" d="M170 66V82"/>
+  <rect class="sv-a" x="20" y="82" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="104" text-anchor="middle">2. Üretim ve bellek</text>
+  <text class="sv-s" x="170" y="124" text-anchor="middle">TSMC, Samsung · HBM: SK Hynix, Micron</text>
+  <path class="sv-c" d="M170 138V154"/>
+  <rect class="sv-k" x="20" y="154" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="176" text-anchor="middle">3. Veri merkezi ve enerji</text>
+  <text class="sv-s" x="170" y="196" text-anchor="middle">2024'te 415 TWh (IEA)</text>
+  <path class="sv-c" d="M170 210V226"/>
+  <rect class="sv-k" x="20" y="226" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="248" text-anchor="middle">4. Bulut sağlayıcıları</text>
+  <text class="sv-s" x="170" y="268" text-anchor="middle">AWS, Azure, Google Cloud</text>
+  <path class="sv-c" d="M170 282V298"/>
+  <rect class="sv-l" x="20" y="298" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="320" text-anchor="middle">5. Model laboratuvarları</text>
+  <text class="sv-s" x="170" y="340" text-anchor="middle">kapalı ve açık ağırlıklı modeller</text>
+  <path class="sv-c" d="M170 354V370"/>
+  <rect class="sv-m" x="20" y="370" width="300" height="56" rx="10"/>
+  <text class="sv-b" x="170" y="392" text-anchor="middle">6. Uygulamalar</text>
+  <text class="sv-s" x="170" y="412" text-anchor="middle">sohbet, kod, müşteri hizmetleri</text>
+  <path class="sv-cl" d="M330 14H345V134H330"/>
+  <text class="sv-b" x="372" y="70" text-anchor="middle">dar</text>
+  <text class="sv-b" x="372" y="88" text-anchor="middle">boğaz</text>
+  <text class="sv-s" x="200" y="452" text-anchor="middle">aşağı indikçe oyuncu sayısı artar, darboğaz azalır</text>
+</svg>
+<figcaption>Turuncu halkalarda çok az şirket var ve yerlerine başkası yıllar içinde bile zor konur; ihracat kontrollerinin bu halkalara yönelmesi bu yüzdendir. Yeşil halkada binlerce şirket var. Rakamlar yazıldığı tarihteki kaynaklardan; şirket adları örnektir, liste eksiksiz değildir.</figcaption>
+</figure>
+
+<p>Darboğazın nedeni yalnızca para değildir. YZ Endeksi raporunun ifadesiyle her halkada giriş engeli yüksektir: onlarca yıllık uzmanlık, özel ekipman ve büyük sermaye gerekir. Yoğunlaşmanın coğrafi bir yüzü de var: en ileri üretim tek bir şirkette ve bölgede toplandığı için oradaki bir kesinti bütün zinciri etkileyebilir. Hükümetlerin kendi topraklarında çip fabrikası kurdurmak için teşvik vermesinin nedeni budur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Çipi tasarlayan şirket onu kendi fabrikasında üretir."</strong> Hayır. NVIDIA ve benzerleri "fabrikasız" (fabless) şirketlerdir: tasarlar, üretimi dökümhaneye verir. Bu yüzden "NVIDIA'nın çip arzı" aslında büyük ölçüde TSMC'nin üretim kapasitesine ve bellek üreticilerinin arzına bağlıdır. Bir halkayı anlamak için onun hangi halkaya yaslandığına bak.</p></div>
+
+<h3>Enerji: YZ'nin görünmeyen hammaddesi</h3>
+
+<p>Uluslararası Enerji Ajansı'nın (IEA) 2025 tarihli "Energy and AI" raporuna göre veri merkezleri 2024'te yaklaşık 415 teravatsaat (TWh) elektrik tüketti; bu, dünya tüketiminin yaklaşık %1,5'idir ve 2030'da yaklaşık 945 TWh'ye çıkması bekleniyor. 2024 tüketiminin %45'i ABD'de, %25'i Çin'de, %15'i Avrupa'daydı; YZ'ye odaklı tipik bir veri merkezi 100.000 hane kadar elektrik çekiyor. Rakamlar bütün veri merkezleri içindir, ama artışın ana sürükleyicisi YZ'dir.</p>
+
+<p>Parça 12'de eğitimin enerji maliyetini konuşmuştuk. Fark şu: eğitim bir kez yapılır, <strong>çıkarım</strong> (inference), yani modelin her soruya cevap vermesi, her gün yapılır. YZ Endeksi raporuna göre yaygın kullanılan bir modelde çıkarım maliyeti birkaç ay içinde tek seferlik eğitim maliyetini aşabilir. Şebeke kapasitesi yeni veri merkezlerinin nereye kurulabileceğini belirler; raporun aktardığına göre ABD'de bazı yerel yönetimler yeni veri merkezi yapımını kısıtlamaya başladı.</p>
+
+<h2 class="s">Fiyatlar: token neden ucuzladı, fatura neden büyüyor?</h2>
+
+<p>Parça 16'da API ile token başına ödendiğini gördün. Fiyat genellikle "1 milyon token başına" verilir; girdi (senin gönderdiğin) ve çıktı (modelin ürettiği) ayrı fiyatlanır. Çıktı çoğu sağlayıcıda daha pahalıdır, çünkü Parça 11'deki döngüyle tek tek üretilir; girdi tek seferde paralel işlenir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Maliyet = (girdi tokeni ÷ 1.000.000) × girdi fiyatı + (çıktı tokeni ÷ 1.000.000) × çıktı fiyatı.</strong> Aylık tahmin için bunu konuşma başına hesaplar, aylık konuşma sayısıyla çarparsın. Girdi tokenine sistem istemi, eklenen belgeler (Parça 16'daki RAG) ve sohbet geçmişi de dahildir; çünkü Parça 11'de gördüğün gibi modelin hafızası yoktur, geçmiş her seferinde yeniden gönderilir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir müşteri hizmetleri asistanı ayda 100.000 konuşma yapıyor. Her konuşmada ortalama 2.000 girdi ve 500 çıktı tokeni harcanıyor. <em>Örnek</em> fiyatlar: 1 milyon girdi tokeni 1 dolar, 1 milyon çıktı tokeni 4 dolar. (Bu fiyatlar hesap alıştırması için uydurulmuştur, gerçek bir şirketin fiyatı değildir.) Aylık maliyet nedir?</p>
+<p><strong>Adım 1.</strong> Aylık girdi tokeni: 100.000 × 2.000 = 200.000.000, yani 200 milyon.</p>
+<p><strong>Adım 2.</strong> Aylık çıktı tokeni: 100.000 × 500 = 50.000.000, yani 50 milyon.</p>
+<p><strong>Adım 3.</strong> Girdi maliyeti: 200 × 1 = 200 dolar (200 milyon, 1 milyonun 200 katı).</p>
+<p><strong>Adım 4.</strong> Çıktı maliyeti: 50 × 4 = 200 dolar.</p>
+<p><strong>Sonuç:</strong> Aylık yaklaşık 400 dolar; konuşma başına 400 ÷ 100.000 = 0,004 dolar. Dikkat: çıktı tokeni girdinin dörtte biri olduğu hâlde maliyetin yarısını tutuyor, çünkü fiyatı dört kat.</p></div>
+
+<h3>İki yılda yüzlerce kat</h3>
+
+<p>Stanford YZ Endeksi'nin 2025 raporu, Epoch AI ile birlikte şunu ölçtü: MMLU adlı genel bilgi testinde GPT-3.5 düzeyinde (64,8 puan) başarı gösteren en ucuz modeli sorgulamanın fiyatı, Kasım 2022'de 1 milyon token başına 20 dolardı; Ekim 2024'te 0,07 dolara indi. Rapor bunu "280 kattan fazla" düşüş diye özetliyor. Epoch AI'ın tahminine göre göreve bağlı olarak bu fiyatlar yılda 9 ile 900 kat arasında düşüyor.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Kasım 2022 fiyatıyla GPT-3.5 düzeyindeki bir iş için ayda 1.000 dolar ödeyen biri, aynı iş için Ekim 2024 fiyatıyla ne öderdi? Düşüş tam olarak kaç kattır?</p>
+<p><strong>Adım 1.</strong> Kat sayısı: 20 ÷ 0,07 ≈ 285,7. Rapor "280 kattan fazla" diyor; tutarlı.</p>
+<p><strong>Adım 2.</strong> Yeni fatura: 1.000 × (0,07 ÷ 20) = 1.000 × 0,0035 = 3,5 dolar.</p>
+<p><strong>Adım 3.</strong> Ölçümün koşuluna bak: karşılaştırılan şey "aynı başarı düzeyi". Yani 2024'ün en iyi modeli değil, 2022'nin en iyisi kadar iyi olan en ucuz model.</p>
+<p><strong>Sonuç:</strong> Fatura 1.000 dolardan yaklaşık 3,5 dolara iner. Ama bu, "en yeni model 285 kat ucuzladı" demek değildir; en yeni ve en yetenekli modeller hâlâ çok daha pahalı olabilir. Fiyat düşüşü her zaman "hangi başarı düzeyi için" sorusuyla okunur.</p></div>
+
+<p>Bu düşüşün dört kaynağı var. <strong>Donanım</strong>: YZ Endeksi 2026'ya göre GPU hesabının maliyeti 2006'dan beri %99'dan fazla düştü. <strong>Verimli modeller</strong>: büyük modelin bilgisini küçük bir modele aktarmak (damıtma) ve Parça 3'teki niceleme. <strong>Rekabet</strong>: bir şirket fiyat indirince öbürleri izliyor; basında "fiyat savaşı" denen budur. <strong>Açık ağırlıklı rakipler</strong>: herkesin çalıştırabildiği güçlü bir model, kapalı modellerin fiyatına tavan çizer.</p>
+
+<p>Ekonomik mantık şöyle: eğitim çok pahalı ama tek seferliktir (sabit maliyet); bir soruya daha cevap vermek görece ucuzdur (marjinal maliyet). Böyle sektörlerde rekabet fiyatı marjinal maliyete doğru iter. Yine de toplam harcama büyüyor, çünkü ucuzlayan şey daha çok kullanılır: ajanlar (Parça 16) tek görev için onlarca istek atıyor. YZ Endeksi 2026'ya göre küresel özel YZ yatırımı 2025'te 344,7 milyar dolara ulaştı, bir önceki yıla göre %127,5 arttı.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Örnek 1'de konuşma başına sabit token saydık. Gerçekte çok turlu bir sohbette geçmiş her turda yeniden gönderildiği için girdi tokeni turdan tura büyür. Aşağıdaki betik bunu hesaplar. Fiyatlar yine <strong>örnektir</strong>, gerçek bir şirketin fiyatı değildir; kendi tahminin için sağlayıcının güncel fiyat sayfasındaki sayıları koy.</p>
+<pre class="kod" data-ad="python3 maliyet.py"># ORNEK fiyatlar: gercek bir sirketin fiyati DEGIL.
+GIRDI_FIYAT = 1.00   # 1 milyon girdi tokeni icin dolar
+CIKTI_FIYAT = 4.00   # 1 milyon cikti tokeni icin dolar
+
+SISTEM = 300   # sistem istemi (token)
+SORU = 100     # kullanicinin her mesaji (token)
+CEVAP = 250    # modelin her cevabi (token)
+TUR = 6        # bir konusmadaki soru-cevap sayisi
+
+def konusma():
+    gecmis = SISTEM
+    top_girdi = top_cikti = 0
+    for t in range(1, TUR + 1):
+        girdi = gecmis + SORU          # gecmis her seferinde yeniden gonderilir
+        top_girdi += girdi
+        top_cikti += CEVAP
+        print(f"Tur {t}: girdi {girdi:5d}  cikti {CEVAP}")
+        gecmis = girdi + CEVAP
+    return top_girdi, top_cikti
+
+g, c = konusma()
+print("Bir konusma toplami:", g, "girdi,", c, "cikti")
+
+AYLIK = 100_000   # aylik konusma sayisi
+ucret = (g * AYLIK / 1e6) * GIRDI_FIYAT + (c * AYLIK / 1e6) * CIKTI_FIYAT
+print(f"Aylik tahmin ({AYLIK} konusma): {ucret:,.2f} dolar")
+print(f"Fiyatlar 10 kat duserse:      {ucret / 10:,.2f} dolar")</pre>
+<pre class="cikti">Tur 1: girdi   400  cikti 250
+Tur 2: girdi   750  cikti 250
+Tur 3: girdi  1100  cikti 250
+Tur 4: girdi  1450  cikti 250
+Tur 5: girdi  1800  cikti 250
+Tur 6: girdi  2150  cikti 250
+Bir konusma toplami: 7650 girdi, 1500 cikti
+Aylik tahmin (100000 konusma): 1,365.00 dolar
+Fiyatlar 10 kat duserse:      136.50 dolar</pre>
+<p><strong>Okuma.</strong> Kullanıcı her turda yalnız 100 token yazıyor, ama altıncı turda modele giden girdi 2.150 token, çünkü sistem istemi ve önceki beş soru-cevap da gidiyor. Altı turda toplam girdi 7.650 token, çıktının beş katı; aylık 100.000 konuşmada girdi 765, çıktı 600 dolar. Uzun sohbetlerin pahalı olmasının nedeni budur. Betikte rastgelelik yok; kendi bilgisayarında aynı çıktıyı almalısın.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Maliyeti yalnız kullanıcının yazdığı mesajla hesaplamak.</strong> Kullanıcı "kısa bir soru" yazar ama modele giden metin sistem istemi, eklenen belgeler ve bütün sohbet geçmişiyle birlikte binlerce token olabilir. Maliyet tahmininde girdiyi modele <em>gerçekten</em> giden metinle say; Parça 16'daki denemede API'nin döndürdüğü token sayısını yazdırmanın amacı buydu.</p></div>
+
+<h2 class="s">Açık ağırlıklı ve kapalı modeller</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kapalı model</strong>, ağırlıkları (Parça 6'daki parametreler) yalnız onu geliştiren şirkette duran modeldir; ona yalnız şirketin uygulaması ya da API'si üzerinden erişirsin. <strong>Açık ağırlıklı (open-weight) model</strong>, ağırlık dosyaları yayımlanmış modeldir: indirebilir, kendi bilgisayarında ya da sunucunda çalıştırabilir, ince ayar yapabilirsin; ne kadar serbest olduğunu lisansı belirler. "Açık ağırlık" ile "açık kaynak" aynı şey değildir: açık ağırlıklı modellerin çoğunda eğitim verisi ve eğitim kodu paylaşılmaz, yani modeli sıfırdan yeniden üretemezsin.</p></div>
+
+<p>Örnekler: Çinli DeepSeek, R1 modelini 20 Ocak 2025'te ticari kullanıma izin veren MIT lisansıyla yayımladı. OpenAI, 5 Ağustos 2025'te gpt-oss-120b ve gpt-oss-20b'yi Apache 2.0 lisansıyla yayımladı; şirketin GPT-2'den beri ilk açık ağırlıklı dil modelleriydi. Meta'nın Llama, Alibaba'nın Qwen ailesi ve Mistral AI'ın bazı modelleri de açık ağırlıklıdır; lisansları farklıdır, bazıları kullanıma koşul koyar.</p>
+
+<p>Aradaki fark ne kadar? YZ Endeksi 2026'nın izlediği, kullanıcıların iki cevaba oy verdiği Arena sıralamasında en iyi kapalı model Mayıs 2023'te en iyi açık ağırlıklı modelin %15,2 önündeydi; fark Ağustos 2024'te %0,5'e indi, sonra yeniden açıldı. Mart 2026'da Claude Opus 4.6 (1.503 puan), GLM-5'in (1.454 puan) %3,4 önündeydi. Parça 5'i unutma: bu tek bir ölçüttür ve kullanıcı tercihini ölçer.</p>
+
+<h3>Tartışma: iki tarafın en güçlü argümanları</h3>
+
+<p>Açık mı kapalı mı sorusu bilimsel ve politik olarak açık bir tartışmadır. Aşağıdaki tablo iki tarafın en güçlü argümanlarını yan yana koyar; bu metin hiçbirini kesin doğru diye sunmaz.</p>
+
+<div class="tablo"><table>
+<tr><th>Konu</th><th>Ağırlıkları açmaktan yana</th><th>Kapalı tutmaktan ya da temkinden yana</th></tr>
+<tr><td>Güvenlik</td><td>Bağımsız araştırmacılar modeli inceleyip açıkları bulabilir; yorumlanabilirlik (Parça 19) ağırlıklara erişim ister.</td><td>Yayımlanan ağırlık geri alınamaz; Parça 18'deki güvenlik eğitimi ince ayarla zayıflatılabilir, kötüye kullanım izlenemez.</td></tr>
+<tr><td>Mahremiyet ve bağımsızlık</td><td>Model kendi sunucunda çalışır, veri dışarı çıkmaz; tek bir şirketin fiyat ve kural değişikliğine bağımlı kalmazsın.</td><td>Kapalı sağlayıcı izleme, kötüye kullanım tespiti ve güncelleme yapabilir; güvenlik sorumluluğu belli bir şirkettedir.</td></tr>
+<tr><td>Rekabet ve yenilik</td><td>Küçük şirketler, üniversiteler ve ülkeler sıfırdan eğitmeden güçlü bir temel kullanır; fiyatlar düşer.</td><td>Pahalı sınır araştırmasını ticari gelir finanse eder; geliri olmayan model bu yatırımı sürdüremeyebilir.</td></tr>
+<tr><td>Yayım biçimi</td><td>Kapatmak gücü birkaç şirkette toplar.</td><td>Önce kapalı sunup riskleri gözlemlemek daha temkinlidir; yetenek arttıkça hata maliyeti artar.</td></tr>
+</table></div>
+
+<p>Tartışma çoğu zaman "hangi yetenek düzeyindeki model, hangi değerlendirmeden sonra açılır" sorusuna dönüşür; Parça 19'daki tehlikeli yetenek değerlendirmeleri bu kararın araçlarındandır.</p>
+
+<h2 class="s">Büyük oyuncular ve ülkeler</h2>
+
+<p>Aşağıdaki tablo yazıldığı tarih itibarıyla bir fotoğraftır, sıralama değildir. Bir yıl sonra adlar değişmiş olabilir; değişmeyecek olan, ülkelerin zincirin farklı halkalarında güçlü olmasıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Bölge</th><th>Güçlü olduğu halkalar</th><th>Örnek oyuncular (Ekim 2026)</th></tr>
+<tr><td>ABD</td><td>Çip tasarımı, bulut, sınır model laboratuvarları, yatırım</td><td>NVIDIA, AMD; AWS, Microsoft, Google; OpenAI, Anthropic, Google DeepMind, Meta, xAI</td></tr>
+<tr><td>Çin</td><td>Model laboratuvarları (çoğu açık ağırlıklı), uygulama, kendi çip sanayisini kurma çabası</td><td>DeepSeek, Alibaba (Qwen), Zhipu (GLM), ByteDance; çipte Huawei</td></tr>
+<tr><td>Avrupa</td><td>Üretim ekipmanı, düzenleme, bazı model şirketleri</td><td>ASML (Hollanda), Mistral AI (Fransa); AB Yapay Zekâ Yasası</td></tr>
+<tr><td>Tayvan ve Güney Kore</td><td>Çip üretimi ve bellek</td><td>TSMC; SK Hynix, Samsung</td></tr>
+</table></div>
+
+<p>YZ Endeksi 2026'ya göre ABD ile Çin'in en iyi modelleri arasındaki fark neredeyse kapandı. Şubat 2025'te DeepSeek-R1, en iyi ABD modelinin yalnız %0,4 gerisindeydi; Mart 2026'da en iyi ABD modeli en iyi Çin modelinin (Dola-Seed-2.0 Preview) %2,7 önündeydi. Yatırımda tablo farklı: 2025'te ABD'nin özel YZ yatırımı Çin'inkinin 23 katıydı. Ama rapor bu rakamın Çin'i küçük gösterebileceğini de yazıyor: devlet yönlendirmeli fonların 2000–2023 arasında YZ şirketlerine yatırdığı tahminen 184 milyar dolar "özel yatırım" sayılmıyor.</p>
+
+<h2 class="s">İş gücüne etkisi: ne biliyoruz, ne bilmiyoruz?</h2>
+
+<p>"YZ işleri yok edecek mi?" sorusunun dürüst cevabı: kesin bilmiyoruz, ama soruyu daha iyi sorabiliriz. YZ <strong>meslekleri</strong> değil <strong>görevleri</strong> etkiler. Bir meslek bir görev demetidir: avukat sözleşme okur, müvekkille görüşür, duruşmaya çıkar. YZ bazı görevleri hızlandırır, bazılarına dokunmaz; mesleğin geleceği, değişen görevlerin payına ve kalan görevlere talebe bağlıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Bir verimlilik araştırmasını okurken sor:</strong> Kimler üzerinde yapıldı (kaç kişi, hangi meslek)? Hangi <em>görev</em> ölçüldü? Verimlilik nasıl tanımlandı (süre mi, adet mi, kalite mi)? Karşılaştırma grubu var mı, kişiler gruplara rastgele mi atandı? Ne kadar süre izlendi? Bir görevdeki bulguyu bütün mesleğe, bir mesleği bütün ekonomiye genellemek ayrı birer adımdır ve her biri ayrı kanıt ister.</p></div>
+
+<p><strong>Çağrı merkezi çalışması.</strong> Erik Brynjolfsson, Danielle Li ve Lindsey Raymond, bir yazılım şirketinin 5.179 müşteri destek temsilcisine üretken YZ'ye dayalı bir sohbet yardımcısının kademeli olarak verilmesini incelediler (çalışma 2023'te yayımlandı, 2025'te Quarterly Journal of Economics'te basıldı). Yardımcıya erişim, saatte çözülen sorun sayısını ortalama yaklaşık %14 artırdı. En büyük artış, yaklaşık %34, acemi ve düşük becerili temsilcilerdeydi; deneyimlilerde etki çok azdı. Yazarlara göre yardımcı, iyi çalışanların yöntemlerini yeni gelenlere taşıyordu.</p>
+
+<p><strong>Yazma deneyi.</strong> Shakked Noy ve Whitney Zhang, 2023'te Science dergisinde yayımlanan, önceden kayda geçirilmiş bir çevrim içi deneyde 453 üniversite mezunu profesyonele mesleklerine özgü yazma görevleri verdiler ve yarısına rastgele ChatGPT erişimi tanıdılar. ChatGPT kullananlarda görev süresi ortalama %40 kısaldı, çıktının kalitesi %18 arttı ve çalışanlar arasındaki fark azaldı.</p>
+
+<div class="tablo"><table>
+<tr><th>Çalışma</th><th>Kimler, hangi görev</th><th>Bulgu</th><th>En çok kim yararlandı?</th></tr>
+<tr><td>Brynjolfsson, Li, Raymond (2023; 2025)</td><td>5.179 müşteri destek temsilcisi</td><td>Saatte çözülen sorun ortalama %14 arttı</td><td>Acemi ve düşük becerili (%34 civarı)</td></tr>
+<tr><td>Noy ve Zhang (2023)</td><td>453 profesyonel, yazma görevleri</td><td>Süre %40 kısaldı, kalite %18 arttı</td><td>Başta zayıf olanlar; fark azaldı</td></tr>
+<tr><td>Cui ve ark. (2025), YZ Endeksi 2026'dan</td><td>Yazılım geliştiriciler, kod asistanı</td><td>Tamamlanan değişiklik isteği %26 arttı</td><td>Genç ve az deneyimli</td></tr>
+<tr><td>Becker ve ark. (METR, 2025), YZ Endeksi 2026'dan</td><td>Deneyimli açık kaynak geliştiriciler</td><td>YZ ile %19 <em>yavaşladılar</em>; kendilerini hızlanmış sandılar</td><td>Hiç kimse</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir çağrı merkezinde deneyimli bir temsilci saatte 10, yeni başlayan bir temsilci saatte 6 sorun çözüyor. Yeni başlayana çağrı merkezi çalışmasındaki acemi artışı (%34), deneyimliye ise ortalama artış (%14) uygulansaydı ne olurdu? Bu hesaptan ne çıkar, ne çıkmaz?</p>
+<p><strong>Adım 1.</strong> Yeni başlayan: 6 × 1,34 ≈ 8,0 sorun.</p>
+<p><strong>Adım 2.</strong> Deneyimli: 10 × 1,14 = 11,4 sorun. (Gerçekte çalışma deneyimlilerde etkinin çok az olduğunu buldu; bu yüzden bu sayı iyimser bir üst sınırdır.)</p>
+<p><strong>Adım 3.</strong> Fark önce 10 − 6 = 4 soruydu, şimdi en fazla 11,4 − 8,0 = 3,4; deneyimlide artış sıfıra yakınsa fark 2'ye iner.</p>
+<p><strong>Adım 4.</strong> Ne çıkmaz: bu hesap, çağrı merkezinin kaç kişi çalıştıracağını söylemez; aynı işi daha az kişiyle de, daha çok müşteriye aynı kişiyle de yapmak mümkündür.</p>
+<p><strong>Sonuç:</strong> Bulgunun özü "verim arttı ve acemiyle usta arasındaki fark daraldı"dır. "İşlerin %14'ü yok olacak" ya da "işsizlik şu kadar artacak" gibi bir sonuç bu veriden çıkarılamaz.</p></div>
+
+<h3>Tartışmanın iki yönü</h3>
+
+<p><strong>İyimser okuma.</strong> Görev düzeyindeki deneylerin çoğu verim artışı buluyor ve en çok yararlananlar çoğu zaman en az deneyimliler; YZ beceri farkını kapatabilir. YZ Endeksi 2026'ya göre ABD'de verimlilik artışı 2025'te %2,7 oldu (önceki on yılın ortalaması %1,4); Brynjolfsson bunu, kurumların önce uyum maliyetine katlanıp kazancı sonra gördüğü bir "J eğrisi"nin başlangıcı olarak yorumluyor. Yeni teknolojiler geçmişte bazı işleri azaltırken yenilerini de yaratmıştır.</p>
+
+<p><strong>Kaygılı okuma.</strong> Etki önce işe giriş kapısında görünüyor olabilir. Brynjolfsson, Chandar ve Chen'in Ağustos 2025 tarihli çalışması, büyük bir bordro sağlayıcısının verileriyle, YZ'ye en açık mesleklerdeki 22–25 yaş çalışanların istihdamında %13'lük göreli bir düşüş buldu; düşüş, YZ'nin insanın yerine geçtiği mesleklerde toplanıyordu. YZ Endeksi 2026, YZ'ye çok yaslanarak öğrenenlerde beceri gelişiminin yavaşladığına dair bulguları da aktarıyor. Makro beklentiler de temkinli: Daron Acemoglu'nun 2024 hesabı, YZ'nin on yılda toplam faktör verimliliğini en fazla %0,66 artıracağını öngörüyor.</p>
+
+<p>Ortak nokta şu: YZ Endeksi 2026'nın ifadesiyle büyük ölçekli iş kayıpları henüz genel istihdam verilerinde görünmüyor, ama etki eşit dağılmıyor ve en çok gençlerde hissediliyor. Bu metin kesin bir işsizlik tahmini vermiyor, çünkü güvenilir bir tahmin yok; her yeni iddiayı yöntem kutusundaki sorularla oku.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Görev düzeyindeki verim artışını doğrudan iş kaybına çevirmek.</strong> "%40 daha hızlı yazıyorlar, demek ki yazarların %40'ı işsiz kalacak" yanlıştır: verim artışı talebi artırabilir, çalışanı başka görevlere kaydırabilir ya da kadroyu küçültebilir; hangisi olacağı ayrı kanıt ister. Tersi de hatadır: "genel işsizlik artmadı, öyleyse etki yok" demek giriş seviyesindeki daralmayı gözden kaçırır.</p></div>
+
+<h2 class="s">Düzenleme 1: AB Yapay Zekâ Yasası</h2>
+
+<p>Aynı model bir spam filtresinde de, bir işe alım sisteminde de çalışabilir. Spam filtresi hata yapınca bir e-posta kaybolur; işe alım sistemi hata yapınca biri işsiz kalır. Avrupa Birliği bu yüzden teknolojiye değil <strong>kullanımın yarattığı riske</strong> göre kural koydu.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Risk temelli yaklaşım:</strong> AB Yapay Zekâ Yasası (Tüzük (AB) 2024/1689) YZ sistemlerini dört risk düzeyine ayırır ve yükümlülüğü riske göre artırır. <strong>Kabul edilemez risk</strong> yasaktır: sosyal puanlama, yüz tanıma veritabanı kurmak için internetten ya da kamera kayıtlarından ayrım gözetmeden yüz toplama, iş yerinde ve eğitim kurumlarında duygu tanıma gibi uygulamalar. <strong>Yüksek risk</strong> sıkı yükümlülüklere bağlıdır: işe alımda özgeçmiş sıralama, kredi puanlama, eğitimde öğrenci değerlendirme, ulaşım gibi kritik altyapıdaki güvenlik bileşenleri. <strong>Şeffaflık riski</strong> bildirim ister: sohbet botuyla konuştuğunu bilmek, derin sahtelerin (deepfake) etiketlenmesi. <strong>En az risk</strong> için özel kural yoktur: YZ'li video oyunları, spam filtreleri.</p></div>
+
+<p>Bunların yanında, Parça 12–13'te anlatılan türden büyük <strong>genel amaçlı modeller</strong> için ayrı bir kural seti vardır, çünkü böyle bir model tek bir kullanıma bağlı değildir. Yaptırımlar ağırdır: Yasa'nın 99. maddesine göre yasak uygulamalar için para cezası 35 milyon avroya ya da şirketin bir önceki yıldaki dünya çapındaki yıllık cirosunun %7'sine, hangisi yüksekse, kadar çıkabilir; öbür yükümlülüklerin çoğunda üst sınır 15 milyon avro ya da %3'tür. Yasa yalnız AB şirketlerini değil, AB pazarına YZ sistemi sunan başka ülkelerin şirketlerini de bağlar; Avrupa'ya ürün satan bir Türk şirketi de bu kurallarla karşılaşır.</p>
+
+<p>Yasa tek bir günde uygulanmaya başlamadı; kademeli bir takvimi var ve bu takvim 2026'da değiştirildi. Avrupa Komisyonu'nun resmî sayfasına göre:</p>
+
+<div class="tablo"><table>
+<tr><th>Tarih</th><th>Ne oldu?</th></tr>
+<tr><td>1 Ağustos 2024</td><td>Yasa yürürlüğe girdi.</td></tr>
+<tr><td>2 Şubat 2025</td><td>Yasak uygulamalar ve YZ okuryazarlığı yükümlülüğü uygulanmaya başladı.</td></tr>
+<tr><td>2 Ağustos 2025</td><td>Genel amaçlı modellere ilişkin yükümlülükler ve yönetişim kuralları başladı.</td></tr>
+<tr><td>27 Temmuz 2026</td><td>Bazı tarihleri erteleyen "Dijital Omnibus" (Tüzük (AB) 2026/1744; Komisyon önerisi 19 Kasım 2025) yürürlüğe girdi.</td></tr>
+<tr><td>2 Ağustos 2026</td><td>Genel uygulama tarihi; şeffaflık kuralları başladı.</td></tr>
+<tr><td>2 Aralık 2026</td><td>Omnibus'la eklenen yeni yasak: kişinin rızası olmadan mahrem görüntü ya da çocuk istismarı içeriği üreten sistemler ("çıplaklaştırma" uygulamaları).</td></tr>
+<tr><td>2 Aralık 2027</td><td>Ek III'teki yüksek riskli kullanımlar (işe alım, kredi, eğitim gibi) için kurallar; ertelenmiş tarih.</td></tr>
+<tr><td>2 Ağustos 2028</td><td>Ek I'deki ürünlere gömülü yüksek riskli YZ (makine, oyuncak, asansör gibi) için kurallar; ertelenmiş tarih.</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 350" role="img" aria-label="AB Yapay Zekâ Yasası'nın dört risk düzeyi ve uygulama tarihleri basamaklı bir piramit olarak">
+  <rect class="sv-a" x="125" y="10" width="150" height="60" rx="8"/>
+  <text class="sv-b" x="200" y="34" text-anchor="middle">Kabul edilemez</text>
+  <text class="sv-s" x="200" y="56" text-anchor="middle">yasak · 2 Şub 2025</text>
+  <rect class="sv-l" x="85" y="78" width="230" height="76" rx="8"/>
+  <text class="sv-b" x="200" y="100" text-anchor="middle">Yüksek risk</text>
+  <text class="sv-s" x="200" y="120" text-anchor="middle">Ek III: 2 Ara 2027</text>
+  <text class="sv-s" x="200" y="140" text-anchor="middle">Ek I (ürünler): 2 Ağu 2028</text>
+  <rect class="sv-k" x="45" y="162" width="310" height="60" rx="8"/>
+  <text class="sv-b" x="200" y="186" text-anchor="middle">Şeffaflık riski</text>
+  <text class="sv-s" x="200" y="208" text-anchor="middle">bildirim, etiketleme · 2 Ağu 2026</text>
+  <rect class="sv-m" x="10" y="230" width="380" height="60" rx="8"/>
+  <text class="sv-b" x="200" y="254" text-anchor="middle">En az risk</text>
+  <text class="sv-s" x="200" y="276" text-anchor="middle">özel yükümlülük yok (spam filtresi, oyun)</text>
+  <text class="sv-t" x="200" y="316" text-anchor="middle">Genel amaçlı modeller: ayrı kurallar, 2 Ağu 2025</text>
+  <text class="sv-s" x="200" y="338" text-anchor="middle">yürürlük 1 Ağu 2024 · tarihler Omnibus sonrası</text>
+</svg>
+<figcaption>Yukarı çıktıkça sistem sayısı azalır, yükümlülük artar; en üstte yasak vardır. Yüksek risk tarihleri 2026'daki Dijital Omnibus'la ertelendi; genel amaçlı modeller piramidin dışında, ayrı bir kural setiyle düzenlenir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> AB pazarında sunulan dört sistemi risk düzeyine ayır ve Ekim 2026 itibarıyla ilgili kuralın uygulanıp uygulanmadığını söyle: (a) bir e-posta servisinin spam filtresi, (b) bir bankanın müşteri sorularını cevaplayan sohbet botu, (c) bir şirketin iş başvurularını sıralayan sistemi, (d) vatandaşları davranışlarına göre puanlayıp kamu hizmetine erişimi buna bağlayan bir sistem.</p>
+<p><strong>Adım 1.</strong> Her sistem için "hata ya da kötüye kullanım kime, ne kadar zarar verir?" diye sor.</p>
+<p><strong>Adım 2.</strong> (a) Hata bir e-postayı kaçırtır; en az risk. Özel yükümlülük yok.</p>
+<p><strong>Adım 3.</strong> (b) Asıl risk, kişinin bir makineyle konuştuğunu bilmemesi; şeffaflık riski. Bildirim yükümlülüğü 2 Ağustos 2026'dan beri uygulanıyor.</p>
+<p><strong>Adım 4.</strong> (c) Kişinin geçim imkânını etkiler ve Parça 5'teki yanlılık örneklerinin tam alanıdır; yüksek risk (Ek III, işe alım). Kuralları 2 Aralık 2027'de uygulanacak; Ekim 2026'da henüz uygulanmıyor.</p>
+<p><strong>Adım 5.</strong> (d) Sosyal puanlama; kabul edilemez, yasak. 2 Şubat 2025'ten beri uygulanıyor.</p>
+<p><strong>Sonuç:</strong> Sıralama en azdan yasağa: (a), (b), (c), (d). Sınıflandırmayı belirleyen şey kullanılan model değil, sistemin ne işte kullanıldığıdır; aynı dil modeli (b)'de de (c)'de de çalışıyor olabilir.</p></div>
+
+<p>Savunanlar, temel hakları koruyan ortak bir kuralın güveni artırdığını ve 27 ayrı ulusal kural yerine tek bir pazar kuralı getirdiğini vurgular. Eleştirenler, uyum maliyetinin küçük şirketleri zorladığını ve Avrupa'yı rekabette geri bıraktığını söyler; Omnibus'taki erteleme bu eleştirilere kısmen bir cevaptır. Başka bölgeler farklı yollar seçti: Çin 2023'te üretken YZ hizmetleri için geçici önlemler koydu ve YZ ile üretilmiş içeriğin etiketlenmesini 1 Eylül 2025'ten itibaren zorunlu kıldı. ABD'de ulaşabildiğim kaynaklara göre federal düzeyde kapsamlı bir YZ yasası yok.</p>
+
+<h2 class="s">Düzenleme 2: ABD'nin çip ihracat kontrolleri</h2>
+
+<p>Değer zincirindeki darboğazı hatırla: sınır modelleri eğitmek için en ileri çiplere ve onları üretecek ekipmana ihtiyaç var. ABD, bu çiplerin tasarımında ve ekipmanın önemli bir bölümünde güçlü olduğu için ihracatı kontrol ederek başka ülkelerin, özellikle Çin'in, sınır YZ'ye erişimini etkileyebileceğini düşündü. ABD hükümetinin resmî gerekçesi ulusal güvenliktir: çiplerin askerî amaçlarla ya da süper bilgisayarlarda kullanılması riski. Bu kurallar sık değişti; aşağıdaki tablo bilinen ana adımlardır.</p>
+
+<div class="tablo"><table>
+<tr><th>Tarih</th><th>Adım</th></tr>
+<tr><td>7 Ekim 2022</td><td>ABD Ticaret Bakanlığı'na bağlı Sanayi ve Güvenlik Bürosu (BIS), ileri hesaplama çipleri ve çip üretim ekipmanının Çin'e ihracatını lisansa bağlayan ilk kapsamlı kuralları yayımladı.</td></tr>
+<tr><td>17 Ekim 2023</td><td>Kurallar güncellendi: eşikler değiştirildi, kapsam başka ülkelere ve Çin merkezli şirketlerin yurt dışı birimlerine genişletildi.</td></tr>
+<tr><td>13 Ocak 2025</td><td>Dünyayı ülke gruplarına ayıran "YZ Yayılım Kuralı" yayımlandı; uyum tarihi 15 Mayıs 2025'ti.</td></tr>
+<tr><td>9 Nisan 2025</td><td>NVIDIA'nın Çin için özel ürettiği, daha düşük performanslı H20 çipi de lisansa bağlandı; şirket bunun için yaklaşık 5,5 milyar dolarlık bir gider öngördüğünü açıkladı.</td></tr>
+<tr><td>13 Mayıs 2025</td><td>YZ Yayılım Kuralı, uygulanmaya başlamadan iptal edildi.</td></tr>
+<tr><td>Aralık 2025 – Ocak 2026</td><td>Yönetim, H200 çiplerinin Çin'e koşullu satışına izin vereceğini duyurdu. 15 Ocak 2026'da yürürlüğe giren kuralla H200 ve benzeri çipler için lisans incelemesi "ret varsayımı"ndan "vaka bazında inceleme"ye geçti; aynı tarihte bu tür çiplere %25 gümrük vergisi kondu.</td></tr>
+<tr><td>Mart – Ağustos 2026</td><td>Çin önce alımları kısıtladı, sonra sınırlı alıma izin verdi; NVIDIA ilk H200 sevkiyatlarını Ağustos 2026'da doğruladı. Blackwell çipleri Çin'e yasak.</td></tr>
+</table></div>
+
+<p>Bu politikanın değerlendirmesi bölünmüştür ve metin taraf tutmaz. Savunanlar, en ileri hesap gücünü sınırlamanın askerî açıdan hassas yeteneklere erişimi yavaşlattığını söyler. Eleştirenlerin bir kısmı kontrollerin hedef ülkeyi kendi çip sanayisini kurmaya ittiğini, bir kısmı ABD şirketlerinin büyük bir pazarı kaybettiğini, bir kısmı da üçüncü ülkeler üzerinden satışın denetiminin zor olduğunu vurgular. Çin ise kontrolleri teknolojik gelişmesini engelleme girişimi olarak görür ve yerli alternatifleri destekler. NVIDIA Ağustos 2026'da bir sonraki çeyrek için Çin'den veri merkezi geliri varsaymadığını açıkladı. <strong>Yazıldığı tarihte durum değişiyor olabilir</strong>; güncel kuralı BIS'in duyurularından kontrol et.</p>
+
+<h2 class="s">Düzenleme 3: Telif davaları</h2>
+
+<p>Parça 12'de ön eğitimin telif tartışması doğurduğunu söylemiştik. Soru: telifli bir eseri izinsiz model eğitiminde kullanmak hukuka uygun mu? ABD'de cevap <strong>adil kullanım</strong> (fair use) ilkesine bağlıdır; mahkeme kullanımın amacına ve eseri dönüştürüp dönüştürmediğine, eserin niteliğine, kullanılan miktara ve eserin pazarına verilen zarara bakar. Avrupa'da metin ve veri madenciliği istisnasının sınırı tartışılıyor.</p>
+
+<div class="tablo"><table>
+<tr><th>Dava</th><th>Konu</th><th>Durum (14 Ekim 2026)</th></tr>
+<tr><td>New York Times – OpenAI ve Microsoft (ABD, 27 Aralık 2023)</td><td>Gazete haberlerinin izinsiz eğitimde kullanılması ve çıktıda yeniden üretilmesi</td><td>Sürüyor; adil kullanım konusundaki karşılıklı talepler Eylül 2026'da sunuldu, karar yok.</td></tr>
+<tr><td>Bartz – Anthropic (ABD)</td><td>Kitaplarla eğitim ve korsan kopyaların indirilmesi</td><td>Haziran 2025: satın alınmış kitaplarla eğitim adil kullanım, korsan kopyaları kütüphanede tutmak değil. 1,5 milyar dolarlık uzlaşma (eser başına yaklaşık 3.000 dolar) 20 Temmuz 2026'da nihai onay aldı.</td></tr>
+<tr><td>Kadrey – Meta (ABD)</td><td>Llama'nın kitaplarla eğitilmesi</td><td>Haziran 2025: davacılar pazar zararını gösteremediği için eğitimde Meta lehine karar; hâkim başka davaların farklı sonuçlanabileceğini not etti. Kalan iddialar sürüyor.</td></tr>
+<tr><td>Thomson Reuters – Ross (ABD)</td><td>Hukuk veritabanı özetleriyle bir arama aracı eğitmek</td><td>Şubat 2025: adil kullanım değil; temyiz 29 Eylül 2026'da onadı. Araç üretken YZ değil, var olan pasajları getiren bir arama sistemiydi.</td></tr>
+<tr><td>GEMA – OpenAI (Almanya, 11 Kasım 2025)</td><td>Şarkı sözlerinin model tarafından ezberlenip yeniden üretilmesi</td><td>Münih mahkemesi ezberlemeyi çoğaltma saydı; metin ve veri madenciliği istisnasının bunu kapsamadığına karar verdi. Karar temyizde.</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Telifte henüz tek bir cevap yok, ama ayrımlar belirginleşiyor.</strong> Mahkemeler şunlara ayrı ayrı bakıyor: eserin <em>nasıl edinildiği</em> (satın alınmış mı, korsan mı), modelin eseri <em>dönüştürüp dönüştürmediği</em> (yeni metin üretmek ile var olan pasajı getirmek), modelin eseri <em>ezberleyip çıktıda yeniden üretip üretmediği</em> ve eser sahibinin <em>pazarına zarar</em> verilip verilmediği. Kararlar ülkeye ve davanın kanıtlarına göre değişiyor; birçok dava sürüyor. Bir uzlaşma, mahkemenin bir ilke koyduğu anlamına gelmez.</p></div>
+
+<h2 class="s">Türkiye'de durum</h2>
+
+<h3>KVKK: kişisel veriye bakış</h3>
+
+<p>Türkiye'de YZ'ye en doğrudan dokunan yasa, 7 Nisan 2016'da Resmî Gazete'de yayımlanan 6698 sayılı Kişisel Verilerin Korunması Kanunu'dur (KVKK). YZ'yi adıyla anmaz, ama bir YZ sistemi kişisel veri işlediğinde doğrudan uygulanır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>KVKK'nın temel yaklaşımı:</strong> Kişisel veri, "kimliği belirli veya belirlenebilir gerçek kişiye ilişkin her türlü bilgi"dir (md. 3). İşleme şu ilkelere uymak zorundadır (md. 4): hukuka ve dürüstlük kurallarına uygunluk; doğru ve gerektiğinde güncel olma; belirli, açık ve meşru amaçlar için işlenme; amaçla bağlantılı, sınırlı ve ölçülü olma; gerekli süre kadar saklanma. Veri kural olarak ilgili kişinin <strong>açık rızasıyla</strong> işlenir; kanunda sayılan sözleşmenin ifası, hukuki yükümlülük, meşru menfaat gibi şartlardan biri varsa rıza aranmaz (md. 5). Sağlık, biyometrik ve genetik veriler gibi <strong>özel nitelikli</strong> veriler daha sıkı korunur (md. 6).</p></div>
+
+<p>YZ açısından üç nokta öne çıkar. Birincisi, 11. madde ilgili kişiye "işlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edilmesi suretiyle kişinin kendisi aleyhine bir sonucun ortaya çıkmasına itiraz etme" hakkını tanır; yalnız bir modelin kararıyla kredisi reddedilen biri buna dayanabilir. İkincisi, yüz tanıma biyometrik veri işler ve özel nitelikli veri kurallarına girer (Parça 8). Üçüncüsü, yurt dışına aktarımı düzenleyen 9. madde 7499 sayılı Kanunla değişti (yürürlük 1 Haziran 2024); yurt dışındaki bir YZ hizmetine kişisel veri göndermek bu madde açısından değerlendirilmesi gereken bir aktarım olabilir. Parça 15'teki "istemle kişisel veri paylaşma" uyarısının hukuki zemini budur.</p>
+
+<p>Kişisel Verileri Koruma Kurumu YZ'ye özel iki belge yayımladı: Eylül 2021'de "Yapay Zekâ Alanında Kişisel Verilerin Korunmasına Dair Tavsiyeler" ve 24 Kasım 2025'te "Üretken Yapay Zekâ ve Kişisel Verilerin Korunması Rehberi (15 Soruda)". İkincisi üretken YZ'nin yaşam döngüsünü ve risklerini 6698 sayılı Kanun çerçevesinde ele alıyor ve bu araçları kullanan bireylere öneriler sunuyor. Bunlar bağlayıcı yönetmelik değil, yol gösterici belgelerdir.</p>
+
+<h3>YZ'ye özel bir kanun var mı?</h3>
+
+<p>Ulaşabildiğim kaynaklara göre, 14 Ekim 2026 itibarıyla Türkiye'de yapay zekâyı tek başına düzenleyen yürürlükte bir kanun yoktur. TBMM'ye birkaç kanun teklifi sunuldu: Haziran 2024'te Kocaeli Milletvekili Ömer Faruk Gergerlioğlu'nun risk temelli, AB yasasına benzer bir teklifi (komisyonda bekliyor); Kasım 2025'te Kırıkkale Milletvekili Halil Öztürk'ün mevcut kanunlarda değişiklik öneren teklifi; Aralık 2025 ve Ocak 2026'da MHP Kayseri Milletvekili İsmail Özdemir'in YZ ile üretilmiş içeriğin işaretlenmesine ve rıza dışı paylaşımına yönelik teklifleri. Hiçbirinin kanunlaştığına dair kayıt bulamadım. TBMM Yapay Zekâ Araştırma Komisyonu raporunu 26 Şubat 2026'da TBMM Başkanı'na sundu; yayımlanan değerlendirmelere göre rapor bir "Türk Yapay Zekâ Kanunu" hazırlanmasını ve bir "Türk Yapay Zekâ Kurumu" kurulmasını öneriyor. Teklif, Genel Kurul'dan geçip yayımlanmadıkça bağlayıcı değildir; güncel durumu TBMM'nin sitesinden kontrol et.</p>
+
+<h3>Strateji ve eylem planları</h3>
+
+<div class="tablo"><table>
+<tr><th>Belge</th><th>Tarih</th><th>Öne çıkanlar</th></tr>
+<tr><td>Ulusal Yapay Zekâ Stratejisi 2021–2025</td><td>2021/18 sayılı Cumhurbaşkanlığı Genelgesi, Resmî Gazete 20 Ağustos 2021</td><td>2025 hedefleri arasında YZ'nin ekonomideki payını %5'e çıkarmak ve 50.000 yeni istihdam vardı.</td></tr>
+<tr><td>2024–2025 Eylem Planı</td><td>Temmuz 2024'te güncellendi</td><td>Türkçe büyük dil modeli geliştirme, yetenekli kişileri ülkeye çekme gibi eylemler.</td></tr>
+<tr><td>Türkiye Yapay Zekâ Eylem Planı 2026–2030</td><td>2026/9 sayılı Cumhurbaşkanlığı Genelgesi, Resmî Gazete 18 Ağustos 2026</td><td>Sanayi ve Teknoloji Bakanlığı koordinasyonunda dört eksen ("Fark Et, İstifade Et, Üret ve Yönet"). Haberlere göre hedefler: 5 milyon kişiye YZ eğitimi, 10.000 ileri düzey uzman, en az 1 GW veri merkezi gücü, en az 10 milyar dolar yatırım.</td></tr>
+</table></div>
+
+<p>Bir uyarı: hedef, sonuç değildir. 2021–2025 stratejisinin hedeflerine ne ölçüde ulaşıldığını ölçen bağımsız ve yayımlanmış bir değerlendirme bulamadım. Bir hedef rakamı gördüğünde "kim söyledi, neyi ölçtü" sorularını buraya da uygula.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3 ve 12'ye:</strong> GPU'ların paralel hesabı ve ön eğitimin hesap ihtiyacı, darboğazı ve enerji talebini açıklar; niceleme fiyat düşüşünün kaynaklarından biridir.</p>
+<p><strong>Parça 5'e:</strong> Arena gibi tek ölçütler ve "kim ölçtü" sorusu; işe alım ve kredideki yanlılık, AB yasasının bu sistemleri yüksek riskli saymasının nedenidir.</p>
+<p><strong>Parça 11 ve 16'ya:</strong> Token başına ücret ve sohbet geçmişinin yeniden gönderilmesi, maliyet hesabının temelidir.</p>
+<p><strong>Parça 18, 19 ve 21'e:</strong> Açık ağırlık tartışmasındaki güvenlik argümanları ve tehlikeli yetenek değerlendirmeleri; iş gücü bulguları Parça 21'de meslek seçimine taşınacak.</p>
+<p><strong>Öbür alanlara:</strong> Değer zinciri, darboğaz, sabit ve marjinal maliyet iktisadın temel kavramlarıdır; KVKK ve telif, siber rafının hukuk parçalarıyla birlikte okunabilir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>YZ değer zincirinin altı halkasını sırayla say. Darboğaz nerede ve neden?</summary><p>Çip tasarımı, üretim (dökümhane, bellek, paketleme), veri merkezi ve enerji, bulut, model laboratuvarları, uygulamalar. Darboğaz en çok tasarım ve üretimdedir: çok az şirket vardır ve giriş için onlarca yıllık uzmanlık, özel ekipman ve büyük sermaye gerekir; en ileri YZ çiplerinin neredeyse hepsini TSMC üretir.</p></details>
+<details><summary>"GPT-3.5 düzeyindeki modelin fiyatı 280 kattan fazla düştü" cümlesini okurken neye dikkat etmelisin?</summary><p>Karşılaştırma sabit bir başarı düzeyindedir: 2022'deki GPT-3.5 kadar iyi olan en ucuz modelin fiyatı 20 dolardan 0,07 dolara indi. En yeni modeller aynı oranda ucuzlamış değildir ve kullanım arttığı için toplam harcama yine de büyüyebilir.</p></details>
+<details><summary>Açık ağırlık ile açık kaynak farkı nedir? Açık ağırlık lehine ve aleyhine birer argüman söyle.</summary><p>Açık ağırlıkta ağırlıklar indirilebilir ama eğitim verisi ve kodu çoğu zaman paylaşılmaz. Lehine: veri kendi sunucunda kalır, bağımsız araştırmacılar modeli inceleyebilir. Aleyhine: yayımlanan ağırlık geri alınamaz, güvenlik eğitimi ince ayarla zayıflatılabilir.</p></details>
+<details><summary>Çağrı merkezi çalışmasının iki ana bulgusu neydi ve ondan hangi sonuç çıkarılamaz?</summary><p>Saatte çözülen sorun ortalama yaklaşık %14 arttı; en büyük artış (yaklaşık %34) acemi ve düşük becerililerdeydi. Kaç kişinin işten çıkarılacağı ya da işsizliğin ne kadar artacağı bu çalışmadan çıkarılamaz.</p></details>
+<details><summary>AB Yapay Zekâ Yasası'nın dört risk düzeyini birer örnekle say. Ek III yüksek risk kuralları ne zaman uygulanacak?</summary><p>Yasak: sosyal puanlama. Yüksek risk: işe alımda özgeçmiş sıralama. Şeffaflık: sohbet botu, derin sahte. En az risk: spam filtresi. Ek III kuralları, Dijital Omnibus'la ertelenerek 2 Aralık 2027'de uygulanacak.</p></details>
+<details><summary>KVKK'nın hangi maddesi otomatik kararlarla ilgili bir hak tanır? Türkiye'de YZ'ye özel kanun var mı?</summary><p>11. madde, verilerin münhasıran otomatik sistemlerle analizi sonucunda kişinin aleyhine çıkan sonuca itiraz hakkını tanır. 14 Ekim 2026 itibarıyla ulaşılabilen kaynaklara göre YZ'ye özel yürürlükte bir kanun yoktur; TBMM'de bekleyen teklifler vardır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Rakam okuma:</strong> kim söyledi, ne zaman, neyi ölçtü?</li>
+<li><strong>Değer zinciri:</strong> tasarım → üretim ve bellek → veri merkezi ve enerji → bulut → model laboratuvarı → uygulama. NVIDIA YZ hesabının %60'ından fazlası, TSMC dökümhane pazarının %72,5'i (2026 ortası).</li>
+<li><strong>Enerji (IEA):</strong> veri merkezleri 2024'te 415 TWh (%1,5); 2030'da yaklaşık 945 TWh bekleniyor.</li>
+<li><strong>Fiyat:</strong> girdi ve çıktı tokenleri × kendi fiyatları; geçmiş her turda yeniden gider. Sabit başarı düzeyinde 280 kattan fazla düşüş (2022–2024), ama toplam harcama büyüyor.</li>
+<li><strong>Açık ağırlık ≠ açık kaynak.</strong> Lehine denetim, mahremiyet, rekabet; aleyhine geri alınamazlık, sökülebilir güvenlik.</li>
+<li><strong>İş gücü:</strong> YZ görevleri etkiler. Çağrı merkezi %14 (acemide %34); yazma süresi −%40, kalite +%18. Giriş seviyesinde daralma bulguları var; kesin tahmin yok.</li>
+<li><strong>AB YZ Yasası:</strong> dört risk düzeyi. Yürürlük 1 Ağu 2024; yasaklar 2 Şub 2025; genel amaçlı modeller 2 Ağu 2025; şeffaflık 2 Ağu 2026; yüksek risk 2 Ara 2027 ve 2 Ağu 2028. Ceza 35 milyon avro ya da cironun %7'si.</li>
+<li><strong>ABD ihracat kontrolleri:</strong> Ekim 2022, Ekim 2023; Yayılım Kuralı Mayıs 2025'te iptal; Ocak 2026'dan beri H200 düzeyi vaka bazında. Durum değişkendir.</li>
+<li><strong>Telif:</strong> edinme biçimi, dönüştürme, ezberleme, pazar zararı; birçok dava sürüyor.</li>
+<li><strong>Türkiye:</strong> KVKK md. 4 ilkeler, md. 5 açık rıza, md. 11(g) otomatik karara itiraz; YZ'ye özel kanun yok; 2026–2030 Eylem Planı Ağustos 2026'da yürürlüğe girdi.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-20">
+<h3>Quiz 20</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Yapay zekâ değer zincirinde TSMC'nin temel rolü aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Büyük dil modelleri eğitip bunları API ile satmak</li><li>Başka şirketlerin tasarladığı çipleri üretmek (dökümhane)</li><li>Veri merkezleri için elektrik üretmek</li><li>Çip tasarlayıp yalnız kendi ürünlerinde kullanmak</li><li>AB Yapay Zekâ Yasası'nın uygulanmasını denetlemek</li></ul>
+<div class="coz"><p>TSMC bir dökümhanedir: NVIDIA gibi fabrikasız şirketlerin tasarladığı çipleri üretir ve en ileri YZ çiplerinin neredeyse hepsini o üretir; doğru cevap B. A model laboratuvarlarının işidir. C enerji şirketlerinin işidir; veri merkezleri elektriği şebekeden alır. D, tasarlayan şirketin üreteni olduğu yanılgısını yoklar; tasarım ile üretim çoğu zaman ayrı şirketlerdedir. E bir şirketin değil, AB ve ulusal otoritelerin görevidir.</p></div></li>
+
+<li data-c="D"><p class="q">AB Yapay Zekâ Yasası'na göre, iş başvurularındaki özgeçmişleri sıralayarak şirkete aday öneren bir YZ sistemi hangi kategoridedir?</p>
+<ul class="sec"><li>Kabul edilemez risk (yasak)</li><li>En az risk</li><li>Şeffaflık riski</li><li>Yüksek risk</li><li>Yasanın kapsamı dışında, çünkü yasa yalnız genel amaçlı modelleri düzenler</li></ul>
+<div class="coz"><p>İşe alım, kişinin geçimini etkileyen bir karar alanıdır ve yasada yüksek riskli kullanımlar arasında (Ek III) sayılır; doğru cevap D. Yasak kategorisi sosyal puanlama gibi uygulamalar içindir (A). B ve C, hatanın sonucunun küçük olduğu ya da yalnız bilgilendirmenin yettiği durumlardır. E yanlıştır: yasa riskli kullanımları düzenler; genel amaçlı modeller ise ayrıca, ek bir kural setiyle düzenlenir. Sınıfı belirleyen modelin kendisi değil, kullanıldığı iştir.</p></div></li>
+
+<li data-c="A"><p class="q">14 Ekim 2026 itibarıyla AB Yapay Zekâ Yasası'nın takvimiyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Yasak uygulamalar 2 Şubat 2025'ten beri uygulanıyor; Ek III'teki yüksek riskli kullanımların kuralları Dijital Omnibus'la 2 Aralık 2027'ye ertelendi.</li><li>Yasa henüz yürürlüğe girmedi.</li><li>Bütün yükümlülükler aynı gün, 1 Ağustos 2024'te uygulanmaya başladı.</li><li>Dijital Omnibus yasayı tamamen yürürlükten kaldırdı.</li><li>Genel amaçlı modellere ilişkin yükümlülükler 2028'de başlayacak.</li></ul>
+<div class="coz"><p>Yasa 1 Ağustos 2024'te yürürlüğe girdi ama kademeli uygulanıyor: yasaklar 2 Şubat 2025'te, genel amaçlı model kuralları 2 Ağustos 2025'te başladı; 27 Temmuz 2026'da yürürlüğe giren Omnibus, Ek III yüksek risk kurallarını 2 Aralık 2027'ye, Ek I'dekileri 2 Ağustos 2028'e erteledi. Doğru cevap A. B ve C yürürlük ile uygulama tarihini karıştırır. D yanlış: Omnibus bazı tarihleri erteledi ve yeni bir yasak ekledi, yasayı kaldırmadı. E'de 2028 Ek I yüksek risk tarihidir, genel amaçlı modellerinki değil.</p></div></li>
+
+<li data-c="C"><p class="q">"Açık ağırlıklı" (open-weight) bir dil modeli için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Eğitim verisinin tamamı mutlaka yayımlanmıştır.</li><li>Yalnız geliştiren şirketin API'si üzerinden kullanılabilir.</li><li>Ağırlık dosyaları indirilebilir ve lisans koşullarına uyularak kendi donanımında çalıştırılabilir; eğitim verisi ve kodu paylaşılmamış olabilir.</li><li>Her zaman ücretsizdir ve her türlü kullanıma koşulsuz açıktır.</li><li>Kapalı modellerden her ölçütte daha başarılıdır.</li></ul>
+<div class="coz"><p>Açık ağırlık, ağırlıkların yayımlanması demektir; çoğu zaman eğitim verisi ve kodu paylaşılmaz, bu yüzden "açık kaynak" ile aynı değildir. Doğru cevap C. A bu farkı gözden kaçırır. B kapalı modelin tarifidir. D yanlış: ne kadar serbest olduğunu lisans belirler, bazı lisanslar kullanıma koşul koyar. E yanlış: Mart 2026'da Arena'da en iyi kapalı model en iyi açık ağırlıklı modelin %3,4 önündeydi.</p></div></li>
+
+<li data-c="E"><p class="q">Bir uygulama ayda 50.000 konuşma yapıyor; her konuşmada ortalama 3.000 girdi ve 600 çıktı tokeni harcanıyor. Örnek fiyatlar: 1 milyon girdi tokeni 1 dolar, 1 milyon çıktı tokeni 4 dolar. Aylık maliyet kaç dolardır?</p>
+<ul class="sec"><li>150</li><li>120</li><li>630</li><li>2.700</li><li>270</li></ul>
+<div class="coz"><p>Girdi: 50.000 × 3.000 = 150 milyon token, 150 × 1 = 150 dolar. Çıktı: 50.000 × 600 = 30 milyon token, 30 × 4 = 120 dolar. Toplam 270 dolar; doğru cevap E. A yalnız girdiyi, B yalnız çıktıyı hesaplar. C fiyatları ters uygulamaktır (150 × 4 + 30 × 1). D, milyona bölerken bir basamak kaydırmaktır. Gerçek bir uygulamada sohbet geçmişi de girdiye eklendiği için girdi tokeni bu örnektekinden büyük olabilir.</p></div></li>
+
+<li data-c="B"><p class="q">Brynjolfsson, Li ve Raymond'un 5.179 müşteri destek temsilcisiyle yaptığı çalışmanın bulgularıyla uyumlu olan ifade aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>YZ yardımcısı, temsilcilerin %14'ünün işten çıkarılmasına yol açtı.</li><li>Saatte çözülen sorun sayısı ortalama yaklaşık %14 arttı; en büyük artış acemi ve düşük becerili temsilcilerdeydi.</li><li>En çok yararlananlar en deneyimli ve en becerikli temsilcilerdi.</li><li>Verimlilik değişmedi, ama müşteri memnuniyeti düştü.</li><li>Çalışma, ekonomide işsizliğin %34 artacağını gösterdi.</li></ul>
+<div class="coz"><p>Çalışma ortalama yaklaşık %14 verim artışı, acemi ve düşük becerililerde yaklaşık %34 artış buldu; deneyimlilerde etki çok azdı; doğru cevap B. A, verim artışını iş kaybına çeviren yaygın hatadır; çalışma işten çıkarma ölçmedi. C bulgunun tersidir. D yanlış: müşteri memnuniyeti ve çalışanların işte kalma oranı iyileşti. E, %34'ü yanlış yere taşır ve tek bir şirketteki görev düzeyindeki bulguyu bütün ekonomiye genelleştirir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir banka, kredi başvurularını yalnızca otomatik bir modelle değerlendiriyor ve bir başvuruyu reddediyor. 6698 sayılı KVKK'nın 11. maddesi başvuru sahibine bu durumla ilgili hangi hakkı açıkça tanır?</p>
+<ul class="sec"><li>Münhasıran otomatik sistemlerle yapılan analiz sonucunda aleyhine çıkan sonuca itiraz etme</li><li>Bankanın modelinin kaynak kodunu isteme</li><li>Kredinin kendiliğinden onaylanmasını isteme</li><li>Modelin eğitildiği bütün verilerin silinmesini isteme</li><li>Hiçbir hak tanımaz, çünkü KVKK yalnız kâğıt kayıtları kapsar</li></ul>
+<div class="coz"><p>11. maddenin (g) bendi, işlenen verilerin münhasıran otomatik sistemlerle analiz edilmesi suretiyle kişinin aleyhine bir sonuç çıkmasına itiraz hakkını tanır; doğru cevap A. B ve C kanunda bu biçimde yer almaz; itiraz hakkı sonucu otomatik olarak değiştirmez. D'de kişi kendi verilerinin silinmesini koşullarına göre isteyebilir, ama bütün eğitim verisinin silinmesi diye bir hak yoktur. E yanlış: kanunun işleme tanımı otomatik yolları açıkça kapsar.</p></div></li>
+
+<li data-c="D"><p class="q">ABD'nin YZ çiplerine yönelik ihracat kontrolleriyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Kontroller ilk kez 2025'te başladı ve o günden beri hiç değişmedi.</li><li>Ocak 2025'te yayımlanan YZ Yayılım Kuralı hâlâ uygulanmaktadır.</li><li>Ocak 2026'daki kuralla en gelişmiş Blackwell çiplerinin Çin'e satışı serbest bırakıldı.</li><li>İlk kapsamlı kurallar Ekim 2022'de çıktı; Ocak 2026'da H200 düzeyindeki çipler için lisans incelemesi "ret varsayımı"ndan "vaka bazında inceleme"ye geçti.</li><li>Kontroller yalnızca Avrupa ülkelerine yapılan satışları kapsar.</li></ul>
+<div class="coz"><p>BIS'in ilk kapsamlı kuralları 7 Ekim 2022'de, güncellemesi 17 Ekim 2023'te çıktı; 15 Ocak 2026'da yürürlüğe giren kural H200 ve benzeri çipler için incelemeyi vaka bazına çevirdi. Doğru cevap D. A yanlış: kurallar 2022'de başladı ve sık değişti. B yanlış: Yayılım Kuralı 13 Mayıs 2025'te, uygulanmaya başlamadan iptal edildi. C yanlış: Blackwell çipleri yazıldığı tarihte Çin'e yasak. E yanlış: kontrollerin asıl hedefi Çin'dir.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Yapay zekâ tarihindeki "YZ kışları"nın başlıca nedenleri aşağıdakilerden hangisinde birlikte verilmiştir?</p>
+<ul class="sec"><li>Bilgisayarların gereğinden güçlü, verinin gereğinden bol olması</li><li>Transformer mimarisinin icat edilmesi</li><li>Abartılı vaatlerin karşılanamaması, yetersiz hesap gücü ve veri</li><li>ChatGPT'nin kitlesel kullanıma açılması</li><li>Kural tabanlı sistemlerin hiç denenmemiş olması</li></ul>
+<div class="coz"><p>YZ kışları, verilen büyük sözlerin dönemin hesap gücü ve veri miktarıyla karşılanamaması üzerine ilgi ve finansmanın çekildiği dönemlerdir; doğru cevap C. A durumu tersine çevirir: sorun hesabın ve verinin yetersizliğiydi. B (2017) ve D (2022 sonu) kışlardan çok sonra gelen ve canlanmayla ilişkili gelişmelerdir. E yanlış: uzman sistemler gibi kural tabanlı sistemler denenmiş ve sınırları görülmüştü.</p></div></li>
+
+<li data-c="E" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin her parametresi float32 biçiminde (4 bayt) saklanınca model yaklaşık 28 GB tutuyor. Parametreler 8 bite (1 bayt) nicelenirse model yaklaşık kaç GB tutar?</p>
+<ul class="sec"><li>28</li><li>14</li><li>56</li><li>3,5</li><li>7</li></ul>
+<div class="coz"><p>Parametre sayısı değişmez, parametre başına bayt 4'ten 1'e iner: 7 milyar × 1 bayt = 7 GB; doğru cevap E. A boyutun değişmediğini sanmaktır. B 16 bite (2 bayt) inmenin sonucudur. C boyutu iki katına çıkarır. D 4 bite (yarım bayt) inmenin sonucudur. Niceleme, modeli daha küçük donanımda ve daha ucuz çalıştırmanın yollarından biridir; karşılığında bir miktar doğruluk kaybı olabilir.</p></div></li>
+
+<li data-c="A" data-k="yz-4"><p class="q">"Rastgele orman" modelinin temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Çok sayıda karar ağacı kurup tahminlerini oylamak ya da ortalamasını almak</li><li>Tek bir çok derin sinir ağı eğitmek</li><li>Yeni örneği yalnız en yakın komşusunun etiketiyle sınıflandırmak</li><li>Noktalara en iyi uyan tek bir doğru bulmak</li><li>Gradyan inişini tamamen bırakıp parametreleri rastgele seçmek</li></ul>
+<div class="coz"><p>Rastgele orman, her biri verinin ve özelliklerin farklı bir parçasıyla kurulan çok sayıda karar ağacının oylamasıdır; tek tek zayıf modellerin hataları oylamada birbirini kısmen götürür. Doğru cevap A. B derin öğrenmedir. C k-en yakın komşu yönteminin (k = 1) tarifidir. D doğrusal regresyondur. E, adındaki "rastgele" sözcüğünü yanlış yorumlamaktır: rastgelelik ağaçların farklı veri ve özellik alt kümeleriyle kurulmasındadır.</p></div></li>
+
+<li data-c="B" data-k="yz-6"><p class="q">4 girdiyi alan bir katmanda 3 nöron var ve her nöronun bir sapması (bias) bulunuyor. Bu katmanın toplam parametre sayısı kaçtır?</p>
+<ul class="sec"><li>12</li><li>15</li><li>7</li><li>16</li><li>3</li></ul>
+<div class="coz"><p>Her nöronun her girdi için bir ağırlığı vardır: 4 × 3 = 12 ağırlık. Her nöronun bir sapması vardır: 3 sapma. Toplam 12 + 3 = 15; doğru cevap B. A sapmaları unutmaktır. C girdi ve nöron sayısını toplamaktır. D, 12 ağırlığa tek bir ortak sapma eklemektir. E yalnız sapmaları saymaktır. "70 milyar parametreli model" ifadesindeki sayı da bu hesabın bütün katmanlar için toplanmasıyla bulunur.</p></div></li>
+
+<li data-c="D" data-k="yz-8"><p class="q">2012'de AlexNet'in görüntü tanımada dönüm noktası sayılmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İlk yapay sinir ağı olması</li><li>Transformer mimarisini kullanan ilk model olması</li><li>Kural tabanlı bir uzman sistem olması</li><li>Büyük etiketli veri (ImageNet), GPU hesabı ve derin evrişimli ağı bir araya getirip rakiplerini açık farkla geçmesi</li><li>Metin üreten ilk büyük dil modeli olması</li></ul>
+<div class="coz"><p>AlexNet, ImageNet yarışmasında derin bir evrişimli ağı GPU'larla büyük etiketli veri üzerinde eğiterek önceki yöntemleri açık farkla geçti ve derin öğrenmenin dönüşünü başlattı; doğru cevap D. A yanlış: yapay nöron fikri onlarca yıl öncesine dayanır. B yanlış: transformer 2017'de geldi. C, öğrenen bir sistemi kural tabanlı sanmaktır. E görüntü değil dil modelleriyle ilgilidir.</p></div></li>
+
+<li data-c="C" data-k="yz-9"><p class="q">Makine çevirisinin tarihsel gelişimi aşağıdaki sıralamalardan hangisinde doğru verilmiştir?</p>
+<ul class="sec"><li>Sinirsel → istatistiksel → kural tabanlı</li><li>İstatistiksel → kural tabanlı → sinirsel</li><li>Kural tabanlı → istatistiksel → sinirsel</li><li>Kural tabanlı → sinirsel → istatistiksel</li><li>Üç yaklaşım da aynı yıllarda ortaya çıktı.</li></ul>
+<div class="coz"><p>İlk sistemler dil bilgisi kurallarını ve sözlükleri insanların elle yazdığı kural tabanlı sistemlerdi; sonra paralel metinlerden olasılık öğrenen istatistiksel çeviri geldi; en son sinir ağlarıyla çalışan sinirsel çeviri yaygınlaştı. Doğru cevap C. A sırayı tamamen ters çevirir; B ve D iki aşamanın yerini karıştırır. E yanlıştır: yaklaşımlar birbirinin ardından, öncekinin sınırlarına cevap olarak geldi.</p></div></li>
+
+<li data-c="E" data-k="yz-11"><p class="q">Bir sohbet modeli aynı konuşmadaki önceki mesajları nasıl "hatırlar"?</p>
+<ul class="sec"><li>Her mesajdan sonra ağırlıklarını güncelleyerek</li><li>Sıcaklık (temperature) yükseldikçe daha çok şey hatırlayarak</li><li>Tokenleştirme sırasında konuşmayı kalıcı bir hafızaya yazarak</li><li>Bağlam penceresi sınırsız olduğu için her şeyi sonsuza kadar saklayarak</li><li>Sohbet geçmişi her istekte yeniden girdi olarak verilir ve model onu bağlam penceresinin içinde görür</li></ul>
+<div class="coz"><p>Modelin konuşmalar arasında kalıcı bir hafızası yoktur; uygulama, önceki mesajları her yeni istekle birlikte yeniden gönderir ve model bunları bağlam penceresinde görür. Doğru cevap E. A yanlış: kullanım sırasında ağırlıklar değişmez. B'de sıcaklık örneklemenin rastgeleliğini ayarlar, hafızayı değil. C'de tokenleştirme metni parçalara bölmektir. D yanlış: bağlam penceresi sınırlıdır ve dolunca eski metin sığmaz. Bu parçadaki maliyet hesabında girdi tokeninin turdan tura büyümesinin nedeni de budur.</p></div></li>
+
+<li data-c="A" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli" aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İnsanların iki cevaptan hangisini tercih ettiğinden öğrenip cevaplara puan veren model</li><li>Kullanıcılara para ödülü dağıtan bir program</li><li>Ön eğitimde bir sonraki tokeni tahmin eden temel modelin kendisi</li><li>Modelin sistem istemini yazan insan ekibi</li><li>Görüntüleri sınıflandıran evrişimli bir ağ</li></ul>
+<div class="coz"><p>RLHF'de insanlar aynı soruya verilmiş iki cevaptan iyisini seçer; bu tercihlerden, bir cevabın ne kadar iyi olduğunu tahmin eden bir ödül modeli eğitilir ve sohbet modeli bu ödüle göre ayarlanır. Doğru cevap A. B ödülü gerçek bir ödeme sanmaktır. C temel modeldir; ödül modeli ondan ayrı bir değerlendiricidir. D sistem istemiyle ilgilidir. E görüntü işlemeyle ilgilidir.</p></div></li>
+
+<li data-c="D" data-k="yz-14"><p class="q">Dil modellerinde halüsinasyonun bu mekanizmadan doğal olarak çıkmasının temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modellerin internete her an bağlı olup yanlış siteleri okuması</li><li>Modellerin bilerek yalan söylemeye programlanması</li><li>Ekran kartlarının hesap hatası yapması</li><li>Modelin olası metni üretmek üzere eğitilmesi; olası metnin her zaman doğru metin olmaması</li><li>Bağlam penceresinin hiç sınırı olmaması</li></ul>
+<div class="coz"><p>Model, verilen metinden sonra en olası devamı üretmeyi öğrenir; bilmediği bir yerde de akıcı ve kendinden emin, olası görünen bir metin üretir, ama bu metin doğru olmak zorunda değildir. Doğru cevap D. A yanlış: temel model kendi başına internete bağlanmaz. B, olguya bir niyet yükler. C donanım hatası değildir. E yanlış: bağlam penceresi sınırlıdır ve bununla halüsinasyon arasında doğrudan bir bağ kurulamaz.</p></div></li>
+
+<li data-c="B" data-k="yz-16"><p class="q">RAG (bilgiyle zenginleştirilmiş üretim) aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modeli şirket belgeleriyle sıfırdan yeniden eğitmek</li><li>Belgeleri gömme vektörlerine çevirip anlamca en yakın parçaları bulmak ve bunları isteme ekleyerek modele cevap ürettirmek</li><li>Modelin sıcaklığını sıfıra indirerek hep aynı cevabı vermesini sağlamak</li><li>API anahtarını kodun içine yazmak</li><li>Modelin çıktısını rastgele kısaltmak</li></ul>
+<div class="coz"><p>RAG'de belgeler önceden gömme vektörlerine çevrilip bir vektör veritabanına konur; soru gelince anlamca en yakın parçalar bulunur ve isteme eklenir; model, "bilmediği" şirket belgelerine dayanarak cevap verir. Doğru cevap B. A yeniden eğitimdir; RAG modelin ağırlıklarına dokunmaz. C örneklemeyle, D güvenlik hatasıyla, E ilgisiz bir işlemle ilgilidir.</p></div></li>
+
+<li data-c="C" data-k="yz-17"><p class="q">Bir kodlama ajanının yazdığı kodu güvenle kabul etmek için aşağıdakilerden hangisi en uygun çalışma biçimidir?</p>
+<ul class="sec"><li>Kod çalışıyor gibi göründüğü için okumadan ana dala eklemek</li><li>Ajanın "testler geçti" demesini yeterli saymak</li><li>Ayrı bir dalda küçük adımlarla ilerlemek, değişikliği (diff) okumak ve testleri gerçekten çalıştırmak</li><li>Bütün projeyi tek seferde yeniden yazdırıp sonucu denemeden yayımlamak</li><li>Hata çıkarsa sürüm kontrolü kullanmadan dosyaları elle geri almak</li></ul>
+<div class="coz"><p>YZ'nin yazdığı kod "çalışıyor gibi görünebilir" ama uydurma bir fonksiyon, eski bir söz dizimi ya da bir güvenlik açığı içerebilir; bu yüzden değişiklik okunur, testler gerçekten çalıştırılır, iş küçük adımlarla ve ayrı bir dalda yapılır ki geri almak kolay olsun. Doğru cevap C. A ve B doğrulamayı atlar. D büyük ve denetlenemez bir değişikliktir. E sürüm kontrolünün sağladığı güvenli geri almayı bırakır.</p></div></li>
+
+<li data-c="E" data-k="yz-17"><p class="q">Aşağıdakilerden hangisi YZ ile yazılan kodda sık görülen bir güvenlik hatası <strong>değildir</strong>?</p>
+<ul class="sec"><li>Parola ya da API anahtarı gibi bir sırrı doğrudan koda yazmak</li><li>Kullanıcı girdisini doğrulamayı atlamak</li><li>Veritabanında erişim kurallarını tanımlamayı unutmak</li><li>Var olmayan bir kütüphaneyi ya da fonksiyonu kullanmak</li><li>API anahtarını ortam değişkeninden okumak</li></ul>
+<div class="coz"><p>Kök olumsuz: hata <em>olmayanı</em> arıyoruz. API anahtarını ortam değişkeninden okumak, sırrı koddan ayırmanın doğru yoludur; doğru cevap E. A, B ve C, YZ ile yazılan kodda sık bırakılan güvenlik açıklarıdır. D, YZ'nin uydurma kütüphane ya da fonksiyon yazma eğilimidir; kod çalışmaz ya da biri o adla zararlı bir paket yayımlarsa risk doğar.</p></div></li>
+
+<li data-c="A" data-k="yz-18"><p class="q">Web sayfalarını okuyup e-posta gönderebilen bir YZ ajanını istem enjeksiyonuna karşı korumak için aşağıdakilerden hangisi uygun bir savunma birleşimidir?</p>
+<ul class="sec"><li>Okunan içeriği talimattan ayırmak, ajana yalnız gereken en az yetkiyi vermek ve geri alınamaz işlerde insan onayı istemek</li><li>Sistem istemini uzatmanın tek başına yeterli olduğunu kabul etmek</li><li>Ajanın web sayfalarında gördüğü her talimatı otomatik uygulamasına izin vermek</li><li>Daha büyük bir modele geçmenin saldırıyı kesin olarak önleyeceğini varsaymak</li><li>Ajana bütün hesaplarda tam yönetici yetkisi vermek</li></ul>
+<div class="coz"><p>İstem enjeksiyonunda bir sayfadaki ya da e-postadaki gizli metin modele kullanıcı talimatı gibi görünür; savunma katmanlıdır: veriyi talimattan ayırmak, en az yetki, kritik işlerde insan onayı ve çıktıyı doğrulamak. Doğru cevap A. B ve D tek bir önlemi tam koruma sanır; güvenlik eğitimi ve sistem istemi tam koruma değildir. C saldırıya kapıyı açar. E, bir saldırı başarılı olursa zararı en büyük hâle getirir.</p></div></li>
+
+<li data-c="D" data-k="yz-18"><p class="q">Telefonda bir yakınının sesine çok benzeyen biri acil para istiyor. Ses klonlamayla dolandırıcılığa karşı en uygun davranış aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Ses tanıdık olduğu için hemen para göndermek</li><li>Arayanın verdiği yeni numarayı geri arayıp onaylamak</li><li>Arayana kendi banka bilgilerini doğrulama için okumak</li><li>Aile içinde önceden belirlenmiş parola sorusunu sormak ve yakınını bildiğin numaradan, ikinci bir kanaldan aramak</li><li>Konuşmayı uzatıp aceleyle karar vermek</li></ul>
+<div class="coz"><p>Ses artık kimliğin kanıtı değildir; doğrulama, saldırganın bilemeyeceği bir şeye (önceden kararlaştırılmış parola sorusu) ve onun kontrol etmediği bir kanala (bildiğin numara) dayanmalıdır. Doğru cevap D. A ve E dolandırıcının istediği aceleyi verir. B'de numarayı saldırgan verdiği için doğrulama işe yaramaz. C kişisel bilgiyi saldırgana teslim eder.</p></div></li>
+
+<li data-c="B" data-k="yz-19"><p class="q">Bir temizlik robotu "görünürde kir kalmaması" ölçütüyle ödüllendiriliyor ve kirin üstünü örterek yüksek puan alıyor. Bu durum aşağıdakilerden hangisine örnektir?</p>
+<ul class="sec"><li>Aşırı öğrenme</li><li>Ödül hackleme: modelin istenen amacı değil ölçülen ölçütü en üst düzeye çıkarması</li><li>Transfer öğrenme</li><li>Veri artırma</li><li>Yorumlanabilirlik</li></ul>
+<div class="coz"><p>Robota istenen şey temizliktir, ölçülen şey görünürde kir olmamasıdır; robot ölçütü amaçtan daha ucuz bir yolla karşılıyor. Bu ödül hacklemedir ve Parça 5'teki Goodhart yasasının hizalamadaki karşılığıdır: ölçüt hedef olunca bozulur. Doğru cevap B. A eğitim verisini ezberleyip yeni veride başarısız olmaktır. C, D ve E sırasıyla bir modeli başka işe uyarlamak, veriyi çoğaltmak ve modelin içini anlamaya çalışmaktır.</p></div></li>
+
+<li data-c="C" data-k="yz-19"><p class="q">Yapay zekâda "yorumlanabilirlik" (interpretability) alanı aşağıdakilerden hangisini amaçlar?</p>
+<ul class="sec"><li>Modelin cevaplarını başka dillere çevirmek</li><li>Modeli daha az parametreyle çalıştırmak</li><li>Modelin içinde, ağırlıklarında ve ara hesaplarında neyin temsil edildiğini ve kararlarının nasıl oluştuğunu anlamak</li><li>Modelin fiyatını düşürmek</li><li>Kullanıcının istemini otomatik olarak düzeltmek</li></ul>
+<div class="coz"><p>Yorumlanabilirlik, kara kutu sayılan ağın içinde hangi kavramların nasıl temsil edildiğini ve bir çıktının hangi iç hesaplardan doğduğunu anlamaya çalışan araştırma alanıdır; hizalama ve güvenlik için önemlidir. Doğru cevap C. A çeviridir. B niceleme ya da damıtma gibi verimlilik yöntemleridir. D ekonomiyle, E istem yazımıyla ilgilidir. Açık ağırlık tartışmasında bu alanın ağırlıklara erişim gerektirmesi bir argüman olarak kullanılır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-19">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-20">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-21">Sonraki parça: YZ'yi öğrenmek ve meslek</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"AI supply chain Nvidia TSMC explained"</li>
+  <li>"EU AI Act risk based approach explained"</li>
+  <li>"open weight vs closed AI models debate"</li>
+  <li>"yapay zekâ KVKK kişisel veriler"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bütün rakamlar ve durumlar 14 Ekim 2026'da kontrol edildi; bu alan çok hızlı değiştiği için okuduğun tarihte eskimiş olabilir.</li>
+  <li><strong>Değer zinciri:</strong> NVIDIA'nın 26 Temmuz 2026'da biten çeyrek sonuçları (toplam 96,2 milyar, veri merkezi 89,0 milyar dolar; Çin'den veri merkezi geliri varsayılmaması) şirketin 26 Ağustos 2026 tarihli basın bülteninden. "NVIDIA küresel YZ hesabının %60'ından fazlası", "TSMC tek bağımlılık noktası", bellek ve paketleme şirketleri, giriş engelleri, GPU hesap maliyetinin 2006'dan beri %99'dan fazla düşmesi, çıkarım maliyetinin eğitimi aşabilmesi ve ABD'de yerel kısıtlamalar Stanford HAI "AI Index Report 2026" (Bölüm 1 ve 2, PDF) metninden okundu. TSMC'nin %72,5 dökümhane payı TrendForce'un 9 Eylül 2026 basın bülteninden. ASML'nin EUV makinelerindeki rolü ve bulut sağlayıcılarının adları genel alan bilgisidir, bu oturumda ayrı bir kaynakla doğrulanmadı.</li>
+  <li><strong>Enerji:</strong> 415 TWh, %1,5, 945 TWh, %45/%25/%15 dağılım ve "100.000 hane" IEA "Energy and AI" (2025) yönetici özetinden.</li>
+  <li><strong>Fiyat:</strong> 20 dolardan 0,07 dolara düşüş ve "yılda 9 ile 900 kat" AI Index 2025 Bölüm 1'den (Epoch AI ve Artificial Analysis verisi; fiyat 3:1 ağırlıklı girdi-çıktı ortalaması). Raporun özet kısmı bu dönemi "yaklaşık 18 ay", metni "1,5 yıl" diyor; oysa Kasım 2022–Ekim 2024 yaklaşık 23 aydır; bu yüzden metinde yıllık oran hesaplanmadı. 2025 özel yatırımı (344,7 milyar dolar, %127,5), ABD/Çin oranı (23 kat) ve Çin devlet fonları tahmini (184 milyar dolar) AI Index 2026 Bölüm 4'ten. "Çıktı tokeni çoğu sağlayıcıda daha pahalıdır" genel alan bilgisidir. Örnek fiyatlar (1 ve 4 dolar) uydurmadır; çözümlü örneklerdeki ve quizdeki bütün sayılar Python ile kontrol edildi.</li>
+  <li><strong>Python denemesi:</strong> <code>maliyet.py</code> bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı, çıktı birebir kondu; betikte rastgelelik ve dış kütüphane yoktur.</li>
+  <li><strong>Açık/kapalı:</strong> DeepSeek-R1 (20 Ocak 2025, MIT lisansı) DeepSeek'in resmî duyurusundan; gpt-oss (5 Ağustos 2025, Apache 2.0, GPT-2'den beri ilk açık ağırlık) The Register haberinden. Llama, Qwen ve Mistral'ın açık ağırlıklı modelleri ve lisans farkları hafızadan. Arena farkları (%15,2, %0,5, %3,4; Claude Opus 4.6 ve GLM-5 puanları) ile ABD–Çin farkı (%0,4, %2,7) AI Index 2026 Bölüm 2'den. Tartışma tablosundaki argümanlar alanda yaygın dile getirilen görüşlerin özetidir; tek bir kaynağa dayanmaz, taraf tutmamak için iki sütun eşit tutuldu.</li>
+  <li><strong>İş gücü:</strong> Brynjolfsson, Li, Raymond: NBER Working Paper 31161 sayfası (5.179 temsilci, %14, %34; QJE 140(2), 2025). Noy ve Zhang: Science 2023 özetinden (453 kişi, süre %40); %18 kalite artışı özetin tamamında yer alıyor, ama bu oturumda yalnız özetin bir kısmını alıntı olarak görebildim. Cui ve ark., Becker ve ark. (METR), ABD verimliliği %2,7, J eğrisi ve "öğrenme cezası" bulguları AI Index 2026 Bölüm 4'ten (ikincil aktarım; birincil makaleleri açmadım). "Canaries" çalışması (%13) SIEPR sayfasından; Acemoglu (%0,66) NBER sayfasından. Çözümlü örnek 3'teki temsilci rakamları (10 ve 6) uydurma bir örnektir.</li>
+  <li><strong>AB YZ Yasası:</strong> Dört risk düzeyi, örnekler ve uygulama takvimi Avrupa Komisyonu'nun "AI Act" sayfasından (digital-strategy.ec.europa.eu); Omnibus'un 27 Temmuz 2026'da yürürlüğe girdiği, öneri tarihi (19 Kasım 2025) ve yeni yüksek risk tarihleri Komisyon'un haber sayfasından; tüzük numarası (2026/1744) ve 2 Aralık 2026 tarihleri nicfab.eu ve artificialintelligenceact.eu'dan (ikincil); Mayıs 2026'daki siyasi uzlaşı Gibson Dunn'dan. EUR-Lex'e bu ortamdan erişilemedi. Ceza tutarları Komisyon'un AI Act Service Desk sayfasındaki 99. madde metninden. Yasanın AB dışı sağlayıcılara uygulanması (md. 2) hafızadan. Çin'in etiketleme kuralı (1 Eylül 2025) doğrulandı; 2023 geçici önlemlerinin tarihi (15 Ağustos 2023) hafızadan. ABD'de federal kapsamlı YZ yasası olmadığı bilgisi bu oturumda ayrıca doğrulanmadı.</li>
+  <li><strong>İhracat kontrolleri:</strong> 7 Ekim 2022 ve 17 Ekim 2023 BIS'in 17 Ekim 2023 basın bülteninden; Yayılım Kuralı tarihleri Akin Gump'tan; H20 lisans şartı ve 5,5 milyar dolar NVIDIA'nın SEC'e verdiği 8-K bildiriminden (birincil); Ocak 2026 kuralı ve %25 vergi Mayer Brown analizinden; Mart 2026 ve Ağustos 2026 gelişmeleri Quartz/Yahoo ve South China Morning Post haberlerinden. BIS'in Ocak 2026 basın bültenine doğrudan erişemedim. Aralık 2024 güncellemesi gibi ara adımlar tabloya konmadı. Durum sık değiştiği için metinde açıkça uyarıldı.</li>
+  <li><strong>Telif:</strong> NYT davasının durumu ailawsuittracker.com'dan (12 Ekim 2026 güncellemesi, ikincil); Bartz uzlaşmasının nihai onayı JURIST'ten; Ross temyiz kararı Haynes Boone'dan; Kadrey ve GEMA kararları dava izleme sitesinden (ikincil). Adil kullanımın dört ölçütü genel hukuk bilgisidir. Bu metin hukuki görüş değildir.</li>
+  <li><strong>Türkiye:</strong> KVKK md. 3, 4, 5, 6, 9 ve 11 metinleri mevzuat.gov.tr'deki güncel PDF'den okundu (7499 sayılı Kanunla değişiklik ve 1 Haziran 2024 yürürlük dahil). KVKK'nın 2025 rehberi Anadolu Ajansı'nın 24 Kasım 2025 haberinden; 2021 tavsiyelerinin tarihi ikincil kaynaklardan. Kanun teklifleri npartners.com.tr ve regulations.ai'den (ikincil; teklif sahiplerinin parti bilgisi yalnız İsmail Özdemir için kaynakta vardı); hiçbirinin kanunlaştığına dair kayıt bulamadım. Komisyon raporunun sunuluşu TBMM ve Anadolu Ajansı haberinden (26 Şubat 2026); önerilerin içeriği TMMOB'un görüş metninden. 2021–2025 Stratejisi'nin tarihi ve hedefleri ikincil bir üniversite sayfasından (cbddo.gov.tr'ye erişilemedi); 2024–2025 güncellemesi ICT Media'dan; 2026–2030 Eylem Planı'nın genelge numarası ve tarihi DHA'dan, sayısal hedefleri Teknoblog'dan (ikincil; Bakanlığın plan metnini açmadım). Özel sektör kullanım örnekleri genel gözlemdir, kaynakla doğrulanmadı.</li>
+  <li>Tekrar soruları kapsam listesindeki Parça 1–19 satırlarından yazıldı; 1–16 arasından on parça eşit aralıkla seçildi (1, 3, 4, 6, 8, 9, 11, 13, 14, 16), 17–19'dan ikişer soru var. Parça 11–19'un metinleri bu yazım sırasında elimde değildi; terimler kapsam satırlarına göre seçildi.</li>
+</ul>
+</div>
+</div>
+</article>

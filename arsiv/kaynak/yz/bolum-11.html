@@ -1,0 +1,619 @@
+<article class="chapter ders" id="c-yz-11">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 11 · Token ve sonraki kelime</div>
+<h1>Token ve bir sonraki kelime: dil modeli metni nasıl görür, nasıl yazar?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir sohbet modeline aynı soruyu iki kez sorarsın, iki farklı cevap alırsın. Ona "kitaplarımızdan" kelimesinde kaç tane "a" olduğunu sorarsın, bazen yanılır; oysa aynı model sana uzun bir deneme yazabilir. Çok uzun bir sohbetin sonunda, başta söylediğin bir ayrıntıyı unutmuş gibi davranır. Bu üç tuhaflık birbirinden bağımsız arızalar mı, yoksa modelin metni görme ve yazma biçiminden doğan tek bir hikâyenin parçaları mı?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (olasılık dağılımı ve softmax), Parça 9 (tek sıcak gösterim, kelime gömmeleri, Türkçe eklerin yarattığı sözlük sorunu), Parça 10 (yalnız kod çözücü model, maskeli öz-dikkat, puan tablosunun n<sup>2</sup> ile büyümesi). Python kutuları isteğe bağlıdır; kod bilmiyorsan atla, konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 10'da transformer'ı anlatırken kolaylık olsun diye hep "kelime" dedik ve bir not düştük: model aslında kelimelerle değil, <strong>token</strong> denen parçalarla çalışır. Bu parçada o notu açıyoruz. Çünkü bir dil modelinin hem gücü hem de tuhaf zayıflıkları, metni hangi parçalara böldüğüne ve o parçaları nasıl tek tek ürettiğine sıkı sıkıya bağlıdır.</p>
+
+<p>Sırasıyla: metnin neden parçalara bölündüğü ve parça sözlüğünün <strong>bayt çifti birleştirme</strong> (BPE) ile nasıl kurulduğu; Türkçenin neden daha çok token tuttuğu; modelin asıl işi olan <strong>sonraki token olasılık dağılımı</strong> ve uzun cevabı üreten döngü; <strong>sıcaklık</strong> ve örnekleme; <strong>bağlam penceresi</strong>; modelin hafızasızlığı; son olarak tokenleşmenin yan etkileri.</p>
+
+<h2 class="s">Neden kelime değil, parça?</h2>
+
+<p>Parça 9'da bilgisayarın kelimeyi sayıya çevirmesi gerektiğini görmüştük: her kelimeye bir numara verilir, numara da bir gömme vektörüne bağlanır. Bunun için önce bir <strong>sözlük</strong> lazımdır, yani modelin tanıdığı birimlerin numaralı listesi. Soru, bu birimlerin ne olacağıdır. Üç aday var ve her birinin bir bedeli var.</p>
+
+<p><strong>Birinci aday: tam kelime.</strong> Ama dil açık uçludur: her gün yeni adlar, terimler, yazım hataları doğar. Sözlükte olmayan kelime eskiden tek bir "bilinmeyen" işaretine çevrilir, bilgisi kaybolurdu. Türkçede sorun daha ağırdır. Parça 9'da gördüğümüz gibi "ev", "evler", "evlerimiz", "evlerimizden" ayrı kelime sayılırsa her biri ayrı bir sözlük girişi ister; tek bir kökten yüzlerce biçim türer ve sözlük patlar. Üstelik bu biçimlerin çoğu metinde çok seyrek geçer, model onların her biri için iyi bir vektör öğrenecek kadar örnek göremez.</p>
+
+<p><strong>İkinci aday: tek tek karakter.</strong> Bu kez sözlük küçücük olur ve hiçbir kelime "bilinmeyen" kalmaz. Ama metin çok uzun bir diziye dönüşür: on kelimelik bir cümle altmış, yetmiş birim tutar. Parça 10'un sonunda öz-dikkatin bedelini görmüştük: puan tablosu dizi uzunluğunun karesiyle büyür. Dizi beş kat uzarsa tablo yirmi beş kat büyür. Ayrıca tek bir harf neredeyse hiç anlam taşımaz; model anlamı her seferinde harflerden yeniden kurmak zorunda kalır.</p>
+
+<p><strong>Üçüncü aday: alt kelime (kelime parçası).</strong> Sık geçen kelimeler tek parça kalır, seyrek kelimeler bilinen parçalara bölünür, hiç görülmemiş bir şey en kötü durumda tek tek karakterlere ya da baytlara iner. Böylece sözlük makul boyda kalır, dizi makul uzunlukta kalır ve hiçbir girdi "bilinmeyen" olmaz. Bugünkü dil modellerinin seçtiği yol budur.</p>
+
+<div class="tablo"><table>
+<tr><th>Birim</th><th>Sözlük</th><th>Dizi uzunluğu</th><th>Görülmemiş kelime</th></tr>
+<tr><td>Tam kelime</td><td>çok büyük, Türkçede patlar</td><td>kısa</td><td>"bilinmeyen" olur, bilgisi kaybolur</td></tr>
+<tr><td>Tek karakter</td><td>çok küçük</td><td>çok uzun (dikkat maliyeti karesel artar)</td><td>sorun yok</td></tr>
+<tr><td>Alt kelime (token)</td><td>orta boy (bugün tipik olarak on binlerden birkaç yüz bine)</td><td>orta</td><td>bilinen parçalara bölünür</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Token</strong>, bir dil modelinin metni işlerken kullandığı en küçük birimdir. Bir token bir kelimenin tamamı, bir kelime parçası, bir noktalama işareti, bir boşluk ya da tek bir bayt olabilir. Metni tokenlere bölen ve her tokene sözlükteki numarasını veren programa <strong>tokenleştirici</strong> (tokenizer), bu işe <strong>tokenleştirme</strong> denir. Model metni hiçbir zaman harf olarak görmez; yalnızca bu numaraların dizisini görür.</p></div>
+
+<p>Tanımdaki son cümle bu parçanın anahtarıdır, tekrar oku. Sen ekranda "kitaplarımızdan" yazısını görürsün. Model ise örneğin üç ya da dört numaradan oluşan bir liste görür ve her numara bir gömme vektörüne bağlanır (Parça 9). Hangi numaranın hangi harflerden oluştuğu modele doğrudan söylenmez. Parçanın sonunda bunun neden harf saymayı zorlaştırdığına döneceğiz.</p>
+
+<h2 class="s">Bayt çifti birleştirme: sözlüğü veriden kurmak</h2>
+
+<p>Peki hangi parçaların sözlüğe gireceğine kim karar verir? Bir dilbilimci oturup Türkçenin eklerini tek tek yazabilirdi. Ama bu yüzlerce dil, kod, emoji ve teknik terim için ölçeklenmez. Bunun yerine sözlük de, model gibi, <strong>veriden öğrenilir</strong>. En yaygın yöntemlerden biri <strong>bayt çifti birleştirme</strong>dir (byte pair encoding, BPE).</p>
+
+<p>Yöntemin kökeni ilginçtir: 1994'te Philip Gage bunu bir <strong>veri sıkıştırma</strong> yöntemi olarak yayımladı. Bir dosyada en sık yan yana geçen iki baytı bul, ikisinin yerine kullanılmayan tek bir bayt koy, tekrarla. 2015'te Rico Sennrich, Barry Haddow ve Alexandra Birch aynı fikri makine çevirisinde seyrek kelimeleri parçalara bölmek için uyarladı (makaleleri arXiv'e 31 Ağustos 2015'te konuldu). Sonraki yıllarda GPT-2 (2019) gibi modeller bu yöntemin metni önce baytlara çeviren bir sürümünü kullandı. Bugün kullanılan tokenleştiricilerin ayrıntıları şirketten şirkete değişir ve hepsi açıklanmaz; ama ana fikir aşağıdakidir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>BPE ile sözlük kurmak:</strong> (1) Büyük bir metin derlemindeki her kelimeyi tek tek karakterlerine (ya da baytlarına) böl; başlangıç sözlüğü bu karakterlerdir. (2) Derlemdeki bütün kelimelerde <strong>yan yana duran parça çiftlerini</strong> say; her kelimenin derlemde kaç kez geçtiğini de hesaba kat. (3) En sık geçen çifti bul, onu derlemin her yerinde tek parçaya birleştir ve bu yeni parçayı sözlüğe ekle; birleştirme kuralını da sırasıyla kaydet. (4) Sözlük istenen boya ulaşana kadar 2. ve 3. adımı tekrarla. Yeni bir metni tokenlerken, kaydedilen birleştirme kuralları <strong>öğrenildikleri sırayla</strong> uygulanır.</p></div>
+
+<p>Neden "en sık çift"? Her birleştirme derlemdeki toplam token sayısını, o çiftin geçiş sayısı kadar azaltır. Sıkıştırmadan gelen mantık budur: sık olana kısa kod ver.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: BPE'yi elle başlatmak</span>
+<p><strong>Soru:</strong> Derlemimiz yalnız şu kelimelerden oluşsun (parantez içinde kaç kez geçtiği): ev (6), evler (4), evde (3), evlerde (2), evlerimiz (2), okul (5), okullar (3), okulda (3), okullarda (2), kitap (5), kitaplar (3), kitapta (2), kitaplarimiz (2). Basit tutmak için "ı" yerine "i" yazıyoruz. İlk üç birleştirme ne olur?</p>
+<p><strong>Adım 1 (harflere böl).</strong> "evler" → e · v · l · e · r; "kitapta" → k · i · t · a · p · t · a; ötekiler de böyle. Başlangıç sözlüğü derlemdeki 14 farklı harftir.</p>
+<p><strong>Adım 2 (çiftleri say).</strong> "e+v" çifti "ev" ile başlayan her kelimede bir kez geçer: 6 + 4 + 3 + 2 + 2 = 17. "t+a" çifti "kitap", "kitaplar", "kitaplarimiz" içinde birer kez, "kitapta" içinde iki kez geçer: 5 + 3 + (2 × 2) + 2 = 14. "o+k" ve "u+l" çiftleri "okul" ailesinin dört kelimesinde birer kez geçer: 5 + 3 + 3 + 2 = 13. "k+i", "i+t", "a+p" "kitap" ailesinde 12'şer kez geçer. En büyüğü 17'dir.</p>
+<p><strong>Adım 3 (birinci birleştirme).</strong> "e+v" → "ev". Artık "evler" kelimesi ev · l · e · r diye yazılır ve sözlükte 15 parça vardır.</p>
+<p><strong>Adım 4 (yeniden say, ikinci birleştirme).</strong> "ev" birleşince "e+v" sayımı ortadan kalkar; öteki sayımlar değişmez. En büyük sayım artık 14 ile "t+a"dır: "ta" sözlüğe girer.</p>
+<p><strong>Adım 5 (üçüncü birleştirme ve eşitlik).</strong> "o+k" ile "u+l" 13'te berabere. Bir eşitlik kuralı gerekir; aşağıdaki Python denemesi alfabede sonra gelen çifti seçer, bu yüzden üçüncü birleştirme "u+l" → "ul", dördüncüsü "o+k" → "ok" olur. Beşinci adımda "ok" ile "ul" yan yana 13 kez geçtiği için "okul" tek token olur.</p>
+<p><strong>Sonuç:</strong> Üç adımda sözlüğe "ev", "ta", "ul" girdi. Dikkat et: "ta" bir ek değil, "kitap"ın ortasından ve "kitapta"nın sonundan gelen bir harf çiftidir. BPE dil bilgisi bilmez, yalnız sayar.</p></div>
+
+<p>Bu süreci 16 birleştirme boyunca bilgisayara yaptıralım ve sonra öğrenilen kurallarla birkaç kelimeyi, aralarında derlemde hiç geçmeyen ikisini de, tokenleyelim.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python: küçük bir BPE</span>
+<p>Aşağıdaki betik yalnız Python'ın kendisiyle çalışır, hiçbir kütüphane indirmez. Gerçek tokenleştiriciler milyarlarca kelimelik derlemde on binlerce birleştirme öğrenir; buradaki yalnız mekanizmayı göstermek için kurulmuş bir oyuncaktır.</p>
+<pre class="kod" data-ad="python3 bpe.py">from collections import Counter
+
+# Kucuk, ogretim amacli bir derlem: kelime -&gt; kac kez gectigi
+derlem = {
+    "ev": 6, "evler": 4, "evde": 3, "evlerde": 2, "evlerimiz": 2,
+    "okul": 5, "okullar": 3, "okulda": 3, "okullarda": 2,
+    "kitap": 5, "kitaplar": 3, "kitapta": 2, "kitaplarimiz": 2,
+}
+
+# Her kelime once harflerine bolunur
+kelimeler = {tuple(k): n for k, n in derlem.items()}
+
+def cift_say(kelimeler):
+    sayac = Counter()
+    for parcalar, n in kelimeler.items():
+        for a, b in zip(parcalar, parcalar[1:]):
+            sayac[(a, b)] += n
+    return sayac
+
+def birlestir(kelimeler, cift):
+    yeni = {}
+    for parcalar, n in kelimeler.items():
+        p, i = [], 0
+        while i &lt; len(parcalar):
+            if i + 1 &lt; len(parcalar) and (parcalar[i], parcalar[i + 1]) == cift:
+                p.append(parcalar[i] + parcalar[i + 1])
+                i += 2
+            else:
+                p.append(parcalar[i])
+                i += 1
+        yeni[tuple(p)] = n
+    return yeni
+
+kurallar = []
+for adim in range(1, 17):
+    sayac = cift_say(kelimeler)
+    cift, kac = max(sayac.items(), key=lambda x: (x[1], x[0]))
+    kelimeler = birlestir(kelimeler, cift)
+    kurallar.append(cift)
+    print(f"{adim:2}. birlestirme: {cift[0]} + {cift[1]} -&gt; {cift[0] + cift[1]}  ({kac} kez)")
+
+def tokenle(kelime):
+    parcalar = tuple(kelime)
+    for cift in kurallar:            # kurallar ogrenildigi sirayla uygulanir
+        parcalar = tuple(birlestir({parcalar: 1}, cift))[0]
+    return list(parcalar)
+
+print()
+for k in ["evlerde", "okullarda", "kitaplarimiz", "evlerimizde", "kalemler"]:
+    t = tokenle(k)
+    print(f"{k:14} -&gt; {' | '.join(t)}   ({len(t)} token)")
+
+harfler = sorted({h for k in derlem for h in k})
+sozluk = harfler + [a + b for a, b in kurallar]
+print()
+print("Sozluk boyutu:", len(harfler), "harf +", len(kurallar), "birlesim =", len(sozluk))
+print("evlerde -&gt; numaralar:", [sozluk.index(t) for t in tokenle("evlerde")])</pre>
+<pre class="cikti"> 1. birlestirme: e + v -&gt; ev  (17 kez)
+ 2. birlestirme: t + a -&gt; ta  (14 kez)
+ 3. birlestirme: u + l -&gt; ul  (13 kez)
+ 4. birlestirme: o + k -&gt; ok  (13 kez)
+ 5. birlestirme: ok + ul -&gt; okul  (13 kez)
+ 6. birlestirme: ta + p -&gt; tap  (12 kez)
+ 7. birlestirme: k + i -&gt; ki  (12 kez)
+ 8. birlestirme: ki + tap -&gt; kitap  (12 kez)
+ 9. birlestirme: l + a -&gt; la  (10 kez)
+10. birlestirme: la + r -&gt; lar  (10 kez)
+11. birlestirme: l + e -&gt; le  (8 kez)
+12. birlestirme: le + r -&gt; ler  (8 kez)
+13. birlestirme: ev + ler -&gt; evler  (8 kez)
+14. birlestirme: okul + lar -&gt; okullar  (5 kez)
+15. birlestirme: kitap + lar -&gt; kitaplar  (5 kez)
+16. birlestirme: d + e -&gt; de  (5 kez)
+
+evlerde        -&gt; evler | de   (2 token)
+okullarda      -&gt; okullar | d | a   (3 token)
+kitaplarimiz   -&gt; kitaplar | i | m | i | z   (5 token)
+evlerimizde    -&gt; evler | i | m | i | z | de   (6 token)
+kalemler       -&gt; k | a | le | m | ler   (5 token)
+
+Sozluk boyutu: 14 harf + 16 birlesim = 30
+evlerde -&gt; numaralar: [26, 29]</pre>
+<p><strong>Okuma.</strong> "lar" ve "ler" çoğul ekleri sözlüğe girdi; kimse onlara "ek" demedi, sık oldukları için kendiliğinden ortaya çıktılar. "evlerde" yalnız iki tokene indi: <code>evler | de</code>. Derlemde hiç olmayan "evlerimizde" ise altı tokene bölündü: "imiz" grubu yeterince sık görülmediği için harflerine dağıldı. Hiç görülmemiş "kalemler" bile tokenlenebildi: kökü tanınmadığı için harflere düştü, ama sondaki "ler" tanındı. Son satır, modelin gerçekte gördüğü şeydir: <code>[26, 29]</code>, yani iki numara. Bu numaralar yalnız bu oyuncak sözlükte geçerlidir; her tokenleştiricinin numaraları farklıdır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="okullarda kelimesinin BPE birleştirmeleriyle okullar, d ve a tokenlerine bölünmesi">
+  <text class="sv-b" x="200" y="18" text-anchor="middle">"okullarda" nasıl tokenlenir?</text>
+  <rect class="sv-k" x="12" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="30" y="256" text-anchor="middle">o</text>
+  <rect class="sv-k" x="54" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="72" y="256" text-anchor="middle">k</text>
+  <rect class="sv-k" x="96" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="114" y="256" text-anchor="middle">u</text>
+  <rect class="sv-k" x="138" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="156" y="256" text-anchor="middle">l</text>
+  <rect class="sv-k" x="180" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="198" y="256" text-anchor="middle">l</text>
+  <rect class="sv-k" x="222" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="240" y="256" text-anchor="middle">a</text>
+  <rect class="sv-k" x="264" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="282" y="256" text-anchor="middle">r</text>
+  <rect class="sv-m" x="306" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="324" y="256" text-anchor="middle">d</text>
+  <rect class="sv-m" x="348" y="236" width="36" height="30" rx="6"/><text class="sv-t" x="366" y="256" text-anchor="middle">a</text>
+  <path class="sv-c" d="M30 236V210H72V236"/><path class="sv-c" d="M114 236V210H156V236"/><path class="sv-c" d="M198 236V210H240V236"/>
+  <rect class="sv-l" x="31" y="180" width="40" height="30" rx="6"/><text class="sv-t" x="51" y="200" text-anchor="middle">ok</text>
+  <rect class="sv-l" x="115" y="180" width="40" height="30" rx="6"/><text class="sv-t" x="135" y="200" text-anchor="middle">ul</text>
+  <rect class="sv-l" x="199" y="180" width="40" height="30" rx="6"/><text class="sv-t" x="219" y="200" text-anchor="middle">la</text>
+  <text class="sv-s" x="51" y="228" text-anchor="middle">4.</text><text class="sv-s" x="135" y="228" text-anchor="middle">3.</text><text class="sv-s" x="219" y="228" text-anchor="middle">9.</text>
+  <path class="sv-c" d="M51 180V154H135V180"/><path class="sv-c" d="M219 180V154H282V236"/>
+  <rect class="sv-l" x="68" y="124" width="50" height="30" rx="6"/><text class="sv-t" x="93" y="144" text-anchor="middle">okul</text>
+  <rect class="sv-l" x="225" y="124" width="50" height="30" rx="6"/><text class="sv-t" x="250" y="144" text-anchor="middle">lar</text>
+  <text class="sv-s" x="93" y="172" text-anchor="middle">5.</text><text class="sv-s" x="300" y="172" text-anchor="middle">10.</text>
+  <path class="sv-c" d="M93 124V98H250V124"/>
+  <rect class="sv-a" x="131" y="68" width="80" height="30" rx="6"/><text class="sv-b" x="171" y="88" text-anchor="middle">okullar</text>
+  <text class="sv-s" x="171" y="116" text-anchor="middle">14.</text>
+  <text class="sv-b" x="200" y="296" text-anchor="middle">sonuç: okullar | d | a (3 token)</text>
+  <text class="sv-s" x="200" y="318" text-anchor="middle">küçük sayılar: birleştirmenin öğrenilme sırası</text>
+</svg>
+<figcaption>Oyuncak BPE'nin "okullarda" kelimesini tokenlemesi. Kurallar öğrenildikleri sırayla uygulanır: önce "ul" (3.), "ok" (4.), "okul" (5.), sonra "la" (9.), "lar" (10.) ve en sonda "okullar" (14.). "da" için bir kural öğrenilmediğinden d ve a ayrı kalır.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Token, hece ya da dil bilgisindeki ek demektir."</strong> Hayır. Token, sıklık sayımından doğan bir parçadır. Bazen bir eke denk gelir ("lar" gibi), bazen bir kelimenin anlamsız bir dilimine ("ta" gibi), bazen de bir kelime ile önündeki boşluğun birleşimine. Aynı kelime farklı tokenleştiricilerde farklı bölünür; "bir token kaç harftir" sorusunun sabit bir cevabı yoktur.</p></div>
+
+<h3>Neden "bayt"?</h3>
+
+<p>Karakterlerden başlamanın bir sorunu var: dünyada yüz binlerce karakter (bütün alfabeler, Çince karakterler, emojiler) vardır ve derlemde hiç görülmemiş bir karakter yine "bilinmeyen" olur. Çözüm, metni önce <strong>UTF-8</strong> denen standart kodlamayla baytlara çevirmektir. Bir bayt 0 ile 255 arasında bir sayıdır, yani yalnız 256 farklı değer vardır. Başlangıç sözlüğü bu 256 bayt olursa, hangi dilde ve hangi işaretle yazılmış olursa olsun her metin en kötü durumda baytlarına bölünerek temsil edilebilir. Birleştirmeler bu baytların üstüne kurulur. GPT-2'nin kullandığı yaklaşım budur.</p>
+
+<p>Bunun Türkçe için önemli bir sonucu var: UTF-8'de İngiliz alfabesindeki harfler bir bayt tutar, ama ç, ğ, ı, ö, ş, ü iki bayt tutar.</p>
+
+<div class="tablo"><table>
+<tr><th>Metin</th><th>Karakter sayısı</th><th>UTF-8 bayt sayısı</th></tr>
+<tr><td>kitap</td><td>5</td><td>5</td></tr>
+<tr><td>şeker</td><td>5</td><td>6 (ş iki bayt)</td></tr>
+<tr><td>ğ</td><td>1</td><td>2</td></tr>
+<tr><td>ı</td><td>1</td><td>2</td></tr>
+<tr><td>a</td><td>1</td><td>1</td></tr>
+<tr><td>€</td><td>1</td><td>3</td></tr>
+</table></div>
+
+<p>Tablodaki sayılar Python'da <code>len("şeker".encode("utf-8"))</code> gibi ifadelerle hesaplandı. Sık kullanılan Türkçe harflerin iki baytı tokenleştiricinin eğitiminde çoğu zaman birleşip tek parça olur; ama seyrek bir bağlamda geçen bir "ğ", iki ayrı bayta bölünüp iki token tutabilir.</p>
+
+<h2 class="s">Türkçe neden daha çok token tutar?</h2>
+
+<p>Aynı anlamı taşıyan iki metin, farklı dillerde çok farklı sayıda token tutabilir. Aleksandar Petrov ve arkadaşlarının 2023'te yayımladığı bir çalışma, aynı cümlelerin 200 dile çevrilmiş hâllerini (FLORES-200 veri kümesi) 17 farklı tokenleştiriciyle bölmüş ve bazı dil çiftlerinde token sayısının <strong>15 kata kadar</strong> farklılaştığını bulmuştur. En büyük farklar, İngilizceden çok uzak yazı sistemlerini kullanan dillerde görülmüştür. Çalışma Türkçe için ayrı bir oran vermiyor; bu yüzden burada Türkçe için bir sayı uydurmayacağız. Ama Türkçenin neden genellikle İngilizceden daha pahalıya geldiğini mekanizmadan anlayabiliriz. Üç neden üst üste biner.</p>
+
+<p><strong>Birincisi, ekli yapı.</strong> Türkçe bir kökün sonuna ekleri art arda dizer: ev, evler, evlerimiz, evlerimizden, evlerimizdekiler. İngilizce aynı anlamı çoğu zaman ayrı kelimelerle kurar: "from our houses". BPE en sık parçaları birleştirdiği için, sık görülen tek tek İngilizce kelimeler kolayca tek token olur. Türkçede ise aynı kökten türeyen biçimlerin her biri daha seyrektir; bu yüzden çoğu tek token olacak kadar sık görülmez ve parçalara bölünür. Oyuncak denememizde bunu gördün: Türkçe bir derlemle eğitilmiş olmasına rağmen tokenleştirici "evlerde"yi iki, ama derlemde olmayan "evlerimizde"yi altı tokene böldü.</p>
+
+<p><strong>İkincisi, eğitim verisindeki pay.</strong> Tokenleştiricinin sözlüğü de bir derlemden öğrenilir ve büyük modellerin derlemlerinde İngilizce çoğu zaman en büyük paya sahiptir. BPE sık olanı ödüllendirir; derlemde az yer tutan bir dilin parçaları sözlükte daha az yer bulur. Sözlüğün içeriği tokenleştiriciye göre değişir; çok dilli verilerle eğitilmiş tokenleştiricilerde fark azalabilir, ama Petrov ve arkadaşlarının bulgusuna göre çok dilli olmak için özel olarak eğitilmiş tokenleştiricilerde bile tamamen kaybolmaz.</p>
+
+<p><strong>Üçüncüsü, baytlar.</strong> Yukarıdaki tabloda gördüğün gibi Türkçeye özgü harfler UTF-8'de iki bayt tutar. Bayttan başlayan bir tokenleştiricide bu harfler seyrek bir bağlamda geçerse fazladan token harcanır.</p>
+
+<p>Bu neden önemli? Çünkü token aynı zamanda <strong>ölçü birimidir</strong>: birçok sağlayıcı kullanımı token başına fiyatlandırır (Parça 16), bağlam penceresi token cinsinden ölçülür ve cevap süresi token sayısına bağlıdır. Petrov ve arkadaşları bu yüzden konuyu bir <strong>adalet</strong> sorunu olarak koyar: aynı hizmet bazı dillerin konuşucularına daha pahalı, daha yavaş ve daha dar bir pencereyle sunulur. Parça 5'teki yanlılık tartışmasının dildeki bir karşılığıdır.</p>
+
+<h2 class="s">Modelin asıl işi: bir sonraki token için olasılık dağılımı</h2>
+
+<p>Şimdi tokenlerden modelin kendisine geçelim. Parça 10'un sonunda yalnız kod çözücü modeli anlatırken bir cümle kurmuştuk: model, kullanıcının yazdığını ve kendi ürettiğini tek bir uzun metin gibi görür ve bu metne bir parça daha ekler. Şimdi o "bir parça daha ekle" işinin içine bakıyoruz.</p>
+
+<p>Bir istekte olan şey sırasıyla şudur. Metin tokenleştirici tarafından numaralara çevrilir. Her numara bir gömme vektörüne dönüşür ve konum bilgisi eklenir. Vektörler transformer katmanlarından geçer; her katmanda maskeli öz-dikkatle her token yalnız kendisine ve öncesine bakar (Parça 10). En üst katmandan çıkan son tokenin vektörü bir doğrusal katmana verilir ve bu katman <strong>sözlükteki her token için bir puan</strong> üretir. Sözlükte 50.000 token varsa 50.000 puan çıkar. Bu ham puanlara İngilizcede <strong>logit</strong> denir. Son olarak Parça 3'te tanıdığın <strong>softmax</strong> bu puanları, toplamı 1 olan olasılıklara çevirir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir dil modelinin tek bir ileri beslemede ürettiği şey bir cevap değil, bir <strong>olasılık dağılımıdır</strong>: sözlükteki her token için "verilen metnin hemen ardından bu token gelir" olasılığı. "Bugün hava çok" metninden sonra "güzel"e yüksek, "sıcak"a biraz daha düşük, "masa"ya neredeyse sıfır olasılık verir. Modelin eğitimde öğrendiği tek şey, bu dağılımı gerçek metinlerdeki sonraki tokene olabildiğince yüksek olasılık verecek biçimde ayarlamaktır (Parça 7'de adı geçen çapraz entropi kaybı ve Parça 12'deki ön eğitim).</p></div>
+
+<p>"Yalnızca sonraki kelimeyi tahmin ediyor" demek modeli küçümsemek gibi gelebilir, ama tahmin işinin kendisi zordur. "Türkiye'nin başkenti" metninden sonra doğru tokeni bulmak bir bilgiyi, bir dedektif romanının son sayfasında katilin adını tahmin etmek bütün hikâyeyi takip etmeyi gerektirir. Eğitim bu tahmini ödüllendirdiği için model dolaylı olarak dilin yapısını ve birçok bilgiyi öğrenir. Ama ödüllendirilen şey <strong>olası</strong> metindir, <strong>doğru</strong> metin değil; bu farkın sonuçlarını Parça 14'te göreceğiz.</p>
+
+<h2 class="s">Otomatik tamamlama döngüsü: uzun cevap nasıl oluşur?</h2>
+
+<p>Tek bir ileri besleme yalnız bir sonraki token için dağılım veriyorsa, sayfalarca cevap nereden geliyor? Cevap basittir: aynı tahmin tekrar tekrar yapılır. Dağılımdan bir token seçilir, metnin sonuna eklenir ve uzamış metin yeniden modele verilir. Bu, telefonundaki klavyenin önerdiği kelimeye arka arkaya dokunmana benzer; farkı, öneriyi yapan sistemin çok daha güçlü olması ve metnin tamamına bakmasıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 380" role="img" aria-label="Otomatik tamamlama döngüsü: metin, model, olasılık dağılımı, token seçimi, metne ekleme ve başa dönüş">
+  <rect class="sv-k" x="70" y="12" width="260" height="46" rx="10"/>
+  <text class="sv-b" x="200" y="32" text-anchor="middle">Şimdiye kadarki metin</text><text class="sv-s" x="200" y="50" text-anchor="middle">istem + üretilen tokenler</text>
+  <path class="sv-c" d="M200 58V78"/>
+  <rect class="sv-l" x="70" y="78" width="260" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="98" text-anchor="middle">1. Model: tokenler → transformer</text><text class="sv-s" x="200" y="116" text-anchor="middle">maskeli öz-dikkat, katman katman</text>
+  <path class="sv-c" d="M200 124V144"/>
+  <rect class="sv-l" x="70" y="144" width="260" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="164" text-anchor="middle">2. Olasılık dağılımı</text><text class="sv-s" x="200" y="182" text-anchor="middle">her token için puan → softmax (sıcaklık)</text>
+  <path class="sv-c" d="M200 190V210"/>
+  <rect class="sv-a" x="70" y="210" width="260" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="230" text-anchor="middle">3. Bir token seç</text><text class="sv-s" x="200" y="248" text-anchor="middle">en olasıyı al ya da örnekle</text>
+  <path class="sv-c" d="M200 256V276"/>
+  <rect class="sv-m" x="70" y="276" width="260" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="296" text-anchor="middle">4. Tokeni metnin sonuna ekle</text><text class="sv-s" x="200" y="314" text-anchor="middle">metin bir token uzadı</text>
+  <path class="sv-cl" d="M70 299H56V35H70"/>
+  <text class="sv-s" x="28" y="170" text-anchor="middle">tekrar</text>
+  <path class="sv-c" d="M200 322V342"/>
+  <text class="sv-t" x="200" y="360" text-anchor="middle">Dur: "son" tokeni seçildiyse</text>
+  <text class="sv-s" x="200" y="376" text-anchor="middle">ya da token sınırına gelindiyse</text>
+</svg>
+<figcaption>Bir dil modelinin metin üretmesi bu döngüden ibarettir. Her turda model bütün metne bakar, tek bir token için dağılım üretir, bir token seçilir ve metne eklenir. Döngü, model özel bir "son" tokenini seçtiğinde ya da uygulamanın koyduğu en çok token sınırına ulaşıldığında durur.</figcaption>
+</figure>
+
+<p>İki ayrıntı önemlidir. Birincisi, <strong>döngü nasıl durur?</strong> Sözlükte metinde görünmeyen özel tokenler vardır; bunlardan biri "metin burada bitti" anlamına gelir. Model eğitimde metin sonlarında bu tokeni görmeyi öğrendiği için, bir cevabın bittiği yerde bu tokene yüksek olasılık verir. Seçildiğinde döngü durur. Ayrıca uygulamalar en çok kaç token üretileceğine bir sınır koyar; sınıra gelinirse cevap yarıda kesilir. Birçok sohbet modelinde "sistem", "kullanıcı" ve "asistan" bölümlerini ayıran da benzer özel tokenlerdir; bunların biçimi modele göre değişir.</p>
+
+<p>İkincisi, <strong>neden cevaplar ekrana parça parça akar?</strong> Senin yazdığın istem modele tek seferde verilir ve Parça 10'da gördüğün paralellikle bütün tokenleri birlikte işlenir. Cevap ise doğası gereği sıralıdır: ikinci tokeni tahmin etmek için birincinin seçilmiş olması gerekir. Parça 10'daki maskenin eğitimde taklit ettiği durum budur. Birçok uygulama her tokeni üretilir üretilmez gösterdiği için cevap ekranda akarak belirir.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python: döngünün kendisi</span>
+<p>Aşağıda bir dil modeli yok; yerine yalnız son tokene bakıp sonraki adaylara puan veren küçük bir tablo var. Ama döngü, gerçek modeldeki döngünün aynısıdır: puan → olasılık → seç → ekle → tekrar. Rastgele seçimlerin tekrarlanabilmesi için her satırda sabit bir tohum (seed) kullanılıyor; tohumu değiştirirsen sonuç değişebilir.</p>
+<pre class="kod" data-ad="python3 dongu.py">import numpy as np
+
+# Oyuncak "model": yalniz son tokene bakip sonraki adaylara puan verir.
+# (Gercek model metnin tamamina bakar; dongu ayni kalir.)
+tablo = {
+    "bugun": {"hava": 2.0, "ben": 1.0},
+    "hava":  {"cok": 2.0, "biraz": 1.5},
+    "ben":   {"cok": 1.0, "evde": 2.0},
+    "cok":   {"guzel": 2.0, "sicak": 1.5},
+    "biraz": {"serin": 2.0, "sicak": 1.0},
+    "evde":  {"kaldim": 2.0},
+    "guzel": {".": 2.0}, "sicak": {".": 2.0}, "serin": {".": 2.0},
+    "kaldim": {".": 2.0},
+    ".":     {"&lt;son&gt;": 3.0},
+}
+
+def sonraki(metin, T, rng):
+    adaylar = tablo[metin[-1]]
+    ad = list(adaylar)
+    puan = np.array(list(adaylar.values()))
+    if T == 0:                                  # acgozlu: en yuksek puan
+        return ad[int(np.argmax(puan))]
+    e = np.exp((puan - puan.max()) / T)
+    return rng.choice(ad, p=e / e.sum())
+
+for T, tohum in [(0, 0), (1.0, 1), (1.0, 2), (1.0, 4), (1.0, 10)]:
+    rng = np.random.default_rng(tohum)
+    metin = ["bugun"]                           # istem
+    while metin[-1] != "&lt;son&gt;":
+        metin.append(str(sonraki(metin, T, rng)))   # tahmin et, sona ekle
+    print(f"T={T}, tohum={tohum}:", " ".join(metin[:-1]))</pre>
+<pre class="cikti">T=0, tohum=0: bugun hava cok guzel .
+T=1.0, tohum=1: bugun hava biraz serin .
+T=1.0, tohum=2: bugun hava cok sicak .
+T=1.0, tohum=4: bugun ben evde kaldim .
+T=1.0, tohum=10: bugun ben cok sicak .</pre>
+<p><strong>Okuma.</strong> İlk satırda sıcaklık 0 yazdık ve kod bunu "her adımda en yüksek puanlıyı al" diye yorumluyor; bu yüzden sonuç her çalıştırmada aynıdır. Öbür dört satır olasılıklardan çekiliş yapıyor ve aynı başlangıçtan dört farklı cümle çıkıyor. Son satıra dikkat: "bugun ben cok sicak ." Türkçede tuhaf bir cümle. Nedeni, oyuncak modelin yalnız <strong>son</strong> tokene bakmasıdır: "cok" tokenini görünce "ben"i hatırlamaz. Gerçek modelin dikkat mekanizmasıyla bütün metne bakması (Parça 10) tam bu tür hataları önlemek içindir.</p></div>
+
+<h2 class="s">Sıcaklık ve örnekleme: aynı soruya neden farklı cevap?</h2>
+
+<p>Döngünün üçüncü adımı, "bir token seç", masum görünür ama çok şeyi belirler. İki temel yol vardır.</p>
+
+<p><strong>Açgözlü seçim</strong> (greedy): her adımda en olası tokeni al. Tekrarlanabilir ve basittir. Ama sorunları vardır: her adımda yerel olarak en olası tokeni seçmek, bütün olarak en iyi metni vermeyebilir; uzun metinlerde model aynı kalıba takılıp kendini tekrar edebilir ve dil sıkıcı, tek düze olur. Ari Holtzman ve arkadaşlarının 2019'da yayımladığı ve ICLR 2020'de sunulan çalışma bu "tekrara sarma" sorununu ayrıntıyla inceler.</p>
+
+<p><strong>Örnekleme</strong> (sampling): dağılımı bir zar gibi kullan. "güzel" %47 olasılıklıysa yüz çekilişte kabaca 47 kez onu seçersin, "sıcak" %29 ise 29 kez onu. Böylece metin daha çeşitli ve doğal olur. Bedeli, aynı soruya her seferinde farklı cevap gelmesidir. Bu parçanın başındaki soruda sorduğumuz şeyin cevabı budur: aynı soruya farklı cevap almanın temel nedeni, modelin her seferinde aynı dağılımı üretmesine rağmen o dağılımdan farklı çekilişler yapılmasıdır.</p>
+
+<p>Örneklemenin ne kadar "cesur" olacağını ayarlayan düğmeye <strong>sıcaklık</strong> (temperature) denir. Adı fizikten gelir: sıcak bir gazda moleküller düzensiz, soğukta düzenli davranır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Sıcaklıklı softmax:</strong> Softmax uygulanmadan önce bütün puanlar sıcaklık T'ye bölünür: olasılıklar = softmax(puanlar ÷ T). T = 1 iken dağılım modelin ürettiği gibidir. T &lt; 1 iken puanlar arasındaki farklar büyür, dağılım <strong>sivrileşir</strong>: en olası token daha da baskın olur. T &gt; 1 iken farklar küçülür, dağılım <strong>düzleşir</strong>: düşük olasılıklı tokenler daha sık seçilir. T sıfıra yaklaştıkça örnekleme açgözlü seçime yaklaşır.</p></div>
+
+<p>Neden böyle? Softmax, puanlar arasındaki <strong>farklarla</strong> çalışır: e<sup>x</sup> fonksiyonu büyük puanı küçük puandan çok daha fazla büyütür. Bütün puanları 0,5'e bölmek farkları iki katına çıkarır; 2'ye bölmek farkları yarıya indirir. Sıcaklık, puanların sırasını hiç değiştirmez; yalnız aralarındaki mesafeyi gerer ya da sıkıştırır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: sıcaklığı elle hesaplamak</span>
+<p><strong>Soru:</strong> Üç aday tokenin puanları 2, 1, 0 olsun. Parça 3'te softmax'ın bu puanlara 0,665; 0,245; 0,090 verdiğini hesaplamıştık. T = 0,5 ve T = 2 için olasılıklar ne olur?</p>
+<p><strong>Adım 1 (T = 0,5: puanları böl).</strong> 2 ÷ 0,5 = 4; 1 ÷ 0,5 = 2; 0 ÷ 0,5 = 0. Farklar iki katına çıktı.</p>
+<p><strong>Adım 2 (üs al).</strong> e<sup>4</sup> ≈ 54,598; e<sup>2</sup> ≈ 7,389; e<sup>0</sup> = 1. Toplam: 54,598 + 7,389 + 1 = 62,987.</p>
+<p><strong>Adım 3 (böl).</strong> 54,598 ÷ 62,987 ≈ 0,867; 7,389 ÷ 62,987 ≈ 0,117; 1 ÷ 62,987 ≈ 0,016.</p>
+<p><strong>Adım 4 (T = 2: puanları böl).</strong> 2 ÷ 2 = 1; 1 ÷ 2 = 0,5; 0 ÷ 2 = 0. Farklar yarıya indi.</p>
+<p><strong>Adım 5 (üs al).</strong> e<sup>1</sup> ≈ 2,718; e<sup>0,5</sup> ≈ 1,649; e<sup>0</sup> = 1. Toplam: 2,718 + 1,649 + 1 = 5,367.</p>
+<p><strong>Adım 6 (böl).</strong> 2,718 ÷ 5,367 ≈ 0,506; 1,649 ÷ 5,367 ≈ 0,307; 1 ÷ 5,367 ≈ 0,186.</p>
+<p><strong>Sonuç:</strong> En olası tokenin payı T = 0,5'te 0,867'ye çıktı, T = 2'de 0,506'ya indi. Sıra (birinci, ikinci, üçüncü) üç sıcaklıkta da aynı kaldı; değişen yalnız dağılımın ne kadar sivri olduğu.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Sıcaklık T</th><th>Puanlar ÷ T</th><th>1. token</th><th>2. token</th><th>3. token</th><th>Davranış</th></tr>
+<tr><td>0,1</td><td>20; 10; 0</td><td>≈ 1,000</td><td>≈ 0,000</td><td>≈ 0,000</td><td>neredeyse açgözlü</td></tr>
+<tr><td>0,5</td><td>4; 2; 0</td><td>0,867</td><td>0,117</td><td>0,016</td><td>sivri, tutarlı</td></tr>
+<tr><td>1</td><td>2; 1; 0</td><td>0,665</td><td>0,245</td><td>0,090</td><td>modelin kendi dağılımı</td></tr>
+<tr><td>2</td><td>1; 0,5; 0</td><td>0,506</td><td>0,307</td><td>0,186</td><td>düz, çeşitli</td></tr>
+<tr><td>10</td><td>0,2; 0,1; 0</td><td>0,367</td><td>0,332</td><td>0,301</td><td>neredeyse eşit, rastgeleye yakın</td></tr>
+</table></div>
+
+<p>Sıcaklığın yanında iki yaygın düğme daha vardır. <strong>top-k</strong>, yalnız en olası k tokeni aday bırakır, gerisini atar. <strong>top-p</strong> ya da <strong>çekirdek örnekleme</strong> (nucleus sampling), tokenleri olasılığa göre büyükten küçüğe dizer ve birikimli toplam p'yi (örneğin 0,9) geçene kadar olanları tutar, gerisini atar. Holtzman ve arkadaşlarının önerdiği bu yöntemin gerekçesi şudur: dağılımın "kuyruğunda" binlerce düşük olasılıklı token vardır ve her biri tek başına seyrek olsa da toplamları azımsanmayacak bir paydır; arada bir bu kuyruktan saçma bir token çekilir ve metin raydan çıkar. Kuyruğu kesmek bunu önler, ama tepedeki çeşitliliği korur.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python: sıcaklık, çekiliş ve top-p</span>
+<p>Beş aday ve elle kurulmuş puanlarla sıcaklığın etkisini, gerçek çekilişleri ve çekirdek örneklemeyi görelim. numpy kütüphanesi gerekir (<code>pip install numpy</code>). Çekilişler sabit tohumla yapıldığı için sende de aynı çıkmalıdır; numpy'nin çok farklı bir sürümünde çekilişler değişebilir.</p>
+<pre class="kod" data-ad="python3 sicaklik.py">import numpy as np
+
+# "Bugun hava cok ..." metninden sonra gelebilecek bes aday ve
+# modelin onlara verdigi ham puanlar (elle kurulmus oyuncak sayilar)
+adaylar = ["guzel", "sicak", "soguk", "bulutlu", "masa"]
+puan = np.array([3.0, 2.5, 2.0, 1.0, -2.0])
+
+def softmax(x, T=1.0):
+    z = x / T
+    e = np.exp(z - z.max())
+    return e / e.sum()
+
+for T in [0.5, 1.0, 2.0]:
+    p = softmax(puan, T)
+    print(f"T={T}:", "  ".join(f"{a}={q:.3f}" for a, q in zip(adaylar, p)))
+
+print()
+print("Acgozlu secim (her zaman en olasi):", adaylar[int(np.argmax(puan))])
+
+rng = np.random.default_rng(seed=7)
+for T in [0.5, 1.0, 2.0]:
+    p = softmax(puan, T)
+    print(f"T={T}, 8 cekilis:", " ".join(rng.choice(adaylar, size=8, p=p)))
+    say = np.bincount(rng.choice(5, size=1000, p=p), minlength=5)
+    print("        1000 cekiliste:", dict(zip(adaylar, say.tolist())))
+
+# Cekirdek (top-p) ornekleme: olasiliklari buyukten kucuge diz,
+# toplami 0.9'u gecene kadar al, gerisini at, kalanlari yeniden olcekle
+p = softmax(puan, 1.0)
+sira = np.argsort(-p)
+birikimli = np.cumsum(p[sira])
+kac = int(np.searchsorted(birikimli, 0.9) + 1)
+tut = sira[:kac]
+yeni = p[tut] / p[tut].sum()
+print()
+print("top-p=0.9 ile kalanlar:", "  ".join(f"{adaylar[i]}={q:.3f}" for i, q in zip(tut, yeni)))</pre>
+<pre class="cikti">T=0.5: guzel=0.657  sicak=0.242  soguk=0.089  bulutlu=0.012  masa=0.000
+T=1.0: guzel=0.472  sicak=0.287  soguk=0.174  bulutlu=0.064  masa=0.003
+T=2.0: guzel=0.353  sicak=0.275  soguk=0.214  bulutlu=0.130  masa=0.029
+
+Acgozlu secim (her zaman en olasi): guzel
+T=0.5, 8 cekilis: guzel sicak sicak guzel guzel sicak guzel sicak
+        1000 cekiliste: {'guzel': 663, 'sicak': 242, 'soguk': 83, 'bulutlu': 12, 'masa': 0}
+T=1.0, 8 cekilis: guzel soguk soguk guzel guzel guzel guzel guzel
+        1000 cekiliste: {'guzel': 478, 'sicak': 273, 'soguk': 180, 'bulutlu': 68, 'masa': 1}
+T=2.0, 8 cekilis: sicak bulutlu sicak sicak soguk sicak soguk guzel
+        1000 cekiliste: {'guzel': 342, 'sicak': 263, 'soguk': 224, 'bulutlu': 140, 'masa': 31}
+
+top-p=0.9 ile kalanlar: guzel=0.506  sicak=0.307  soguk=0.186</pre>
+<p><strong>Okuma.</strong> İlk üç satır sıcaklığın dağılımı nasıl gerip sıkıştırdığını gösteriyor. T = 0,5'te "masa" 0,000 görünüyor; aslında sıfır değil, yüz binde birkaç düzeyinde ve 1000 çekilişte hiç çıkmadı. T = 2'de 1000 çekilişin 31'inde "masa" seçildi: "Bugün hava çok masa." Yüksek sıcaklığın bedeli budur. 1000 çekilişteki sayılar, ilk satırlardaki olasılıklara yakın ama birebir eşit değil; çekiliş rastgeledir. Son satır top-p'dir: T = 1'deki dağılımda "güzel", "sıcak" ve "soğuk" birlikte 0,933'e ulaştığı için bu üçü tutuldu, "bulutlu" ve "masa" atıldı, kalanların olasılıkları toplamı 1 olacak biçimde yeniden ölçeklendi.</p></div>
+
+<p>Sıcaklık her üründe sana açık bir düğme değildir. Örneğin Anthropic'in API belgesi (14 Ekim 2026'da bakıldı) eski Claude modellerinde sıcaklığın 0 ile 1 arasında ayarlanabildiğini ve 0'da bile sonuçların "tamamen belirlenimci olmayacağını" yazar; aynı belgeye göre Claude Opus 4.6'dan sonra çıkan modellerde sıcaklık, top-p ve top-k ayarlanamıyor. Ürün ayrıntıları hızla değişir; kalıcı olan kavramdır: model bir dağılım üretir, o dağılımdan bir seçim yapılır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sıcaklığı sıfıra indirirsem model doğruyu söyler."</strong> Hayır. Düşük sıcaklık yalnızca modelin <strong>en olası</strong> bulduğu tokeni seçtirir. Model bir konuda yanlış bir şeyi en olası buluyorsa, düşük sıcaklık o yanlışı her seferinde aynı biçimde tekrarlatır. Tutarlılık doğruluk değildir.</p>
+<p><strong>"Sıcaklığı yükseltirsem model daha yaratıcı, daha akıllı olur."</strong> Sıcaklık modele yeni bir bilgi ya da yetenek eklemez; yalnız zarın ne kadar adil atılacağını değiştirir. Biraz yükseltmek metni çeşitlendirebilir, çok yükseltmek denemedeki "masa" gibi saçma tokenleri çağırır.</p></div>
+
+<h2 class="s">Bağlam penceresi: model bir seferde ne kadarını görür?</h2>
+
+<p>Döngüde her turda modele "şimdiye kadarki metin" veriliyordu. Bu metin sonsuz uzayamaz. Bir modelin tek bir istekte işleyebileceği en çok token sayısına <strong>bağlam penceresi</strong> (context window) denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Bağlam penceresi</strong>, modelin bir istekte görebildiği metnin token cinsinden üst sınırıdır. Bu sınıra girdideki her şey dahildir: sistem istemi, sohbetin bütün geçmişi, eklenen belgeler ve araç sonuçları; çoğu sistemde modelin o istekte üreteceği cevap da aynı pencereyi paylaşır. Pencerenin dışında kalan metin, o istek için model açısından yoktur.</p></div>
+
+<p>Pencere neden sınırlı? Üç neden var. Birincisi, Parça 10'da gördüğün gibi öz-dikkatin puan tablosu metin uzunluğunun karesiyle büyür; metin iki katına çıkınca tablo dört katına çıkar. Araştırmacılar bu maliyeti azaltan birçok hile geliştirdi, ama uzun metin hâlâ daha fazla bellek ve hesap demektir. İkincisi, model eğitimde hangi uzunlukta metin gördüyse o uzunlukta en iyi çalışır; konum bilgisinin çok daha uzun metinlere taşınması kendi başına bir mühendislik sorunudur. Üçüncüsü maliyettir: penceredeki her token işlenir ve token başına ücret ödenen sistemlerde parası ödenir.</p>
+
+<p>Pencere boyutları son yıllarda çok hızlı büyüdü. Aşağıdaki tablo, birincil kaynaklarından doğrulanabilen birkaç örnektir; sayılar yazıldığı tarih itibarıyladır ve büyük olasılıkla sen okurken değişmiş olacaktır.</p>
+
+<div class="tablo"><table>
+<tr><th>Model</th><th>Bağlam penceresi</th><th>Kaynak ve tarih</th></tr>
+<tr><td>GPT-2</td><td>1.024 token</td><td>OpenAI, 2019</td></tr>
+<tr><td>GPT-3</td><td>2.048 token</td><td>Brown ve ark., "Language Models are Few-Shot Learners", 2020</td></tr>
+<tr><td>GPT-4o</td><td>128.000 token</td><td>OpenAI'nin GPT-4.1 duyurusundaki karşılaştırma, 14 Nisan 2025</td></tr>
+<tr><td>GPT-4.1</td><td>1 milyon token'a kadar</td><td>OpenAI duyurusu, 14 Nisan 2025</td></tr>
+<tr><td>Güncel Claude modellerinin bir kısmı / öbürleri</td><td>1 milyon token / 200.000 token</td><td>Anthropic API belgesi, 14 Ekim 2026'da bakıldı</td></tr>
+</table></div>
+
+<p>Altı yılda yaklaşık bin kat. Ama büyük pencere, modelin pencerenin her yerini aynı iyilikte kullandığı anlamına gelmez. Nelson Liu ve arkadaşlarının 2023'te yayımladığı "Lost in the Middle" (Ortada kaybolmak) çalışması, sınadıkları modellerde aranan bilgi uzun bir girdinin başında ya da sonundayken başarının en yüksek olduğunu, ortadayken belirgin biçimde düştüğünü buldu; uzun girdiler için özel olarak tasarlanmış modellerde bile. Anthropic'in belgesi de benzer bir uyarı yapar: token sayısı arttıkça doğruluk ve hatırlama düşer; belge buna "context rot" (bağlam çürümesi) diyor ve pencereye neyin konduğunu seçmenin, ne kadar yer olduğu kadar önemli olduğunu söylüyor. Bu sonuçlar model kuşaklarıyla değişebilir; ama "pencereye sığdı, öyleyse model gördü ve kullandı" varsayımı güvenli değildir.</p>
+
+<p><strong>Pencere dolunca ne olur?</strong> Model pencereden uzun bir girdiyi işleyemez. Bir API'ye doğrudan istek atıyorsan istek hata ile reddedilir; Anthropic'in belgesi örneğin girdi tek başına pencereyi aşarsa "istem çok uzun" hatası döndüğünü, cevap üretilirken sınıra gelinirse üretimin durduğunu yazar. Sohbet uygulamaları ise en eski mesajları dışarıda bırakmak, eski kısmı bir özetle değiştirmek ya da yeni sohbet açmanı istemek gibi yollar kullanabilir; hangisini yaptığı ürüne bağlıdır. Sonuç hep aynıdır: pencereden çıkan bilgi o istekte modelin önünde değildir. Uzun sohbetin sonunda baştaki ayrıntının "unutulmasının" bir nedeni budur; öbürü, sığsa bile ortada kalan bilginin zayıf kullanılmasıdır.</p>
+
+<h2 class="s">Modelin hafızası yok: geçmiş her seferinde yeniden verilir</h2>
+
+<p>Bir sohbet modeliyle konuşurken karşında seni dinleyip aklında tutan biri varmış gibi gelir. Teknik gerçek farklıdır. Eğitim bittikten sonra modelin ağırlıkları sabittir; seninle konuşurken değişmez. Bir isteği işleyip cevabı ürettikten sonra model o konuşmadan hiçbir iz taşımaz. Bir sonraki mesajında "az önce ne demiştim?" diye sorduğunda modelin bunu bilebilmesinin tek yolu, az önceki konuşmanın <strong>bu yeni isteğin içinde yeniden verilmesidir</strong>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Dil modeli kendi başına <strong>durumsuzdur</strong> (stateless): her istek bağımsızdır. Sohbetin "hatırlanması", uygulamanın her yeni mesajda o ana kadarki bütün geçmişi (sistem istemi, önceki sorular ve cevaplar) modele yeniden göndermesiyle sağlanır. Anthropic'in Messages API belgesi bunu açıkça yazar: API durumsuzdur, bu yüzden konuşmanın tüm geçmişi her seferinde API'ye gönderilir.</p></div>
+
+<p>Üç sonucu var. Sohbet uzadıkça her istek daha çok token tutar, daha pahalı ve yavaş olur. Geçmiş pencereye sığmadığı an kırpma ya da özetleme devreye girer. Bazı ürünlerdeki "hafıza" özellikleri de modelin ağırlıklarına bir şey yazmaz; kavramsal olarak bilgi bir yerde saklanır ve sonraki isteklerin bağlamına metin olarak eklenir. Ayrıntı ürüne göre değişir; ilke aynıdır: model yalnız penceresinde olanı görür.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Her istekte sohbet geçmişinin yeniden gönderilmesi ve isteklerin uzayıp bağlam penceresini aşması">
+  <text class="sv-b" x="200" y="18" text-anchor="middle">Her istek bütün geçmişi taşır</text>
+  <text class="sv-t" x="10" y="58">1.</text>
+  <rect class="sv-k" x="30" y="42" width="60" height="24"/><rect class="sv-l" x="90" y="42" width="20" height="24"/>
+  <text class="sv-t" x="10" y="98">2.</text>
+  <rect class="sv-k" x="30" y="82" width="60" height="24"/><rect class="sv-l" x="90" y="82" width="20" height="24"/><rect class="sv-m" x="110" y="82" width="40" height="24"/><rect class="sv-l" x="150" y="82" width="20" height="24"/>
+  <text class="sv-t" x="10" y="138">3.</text>
+  <rect class="sv-k" x="30" y="122" width="60" height="24"/><rect class="sv-l" x="90" y="122" width="20" height="24"/><rect class="sv-m" x="110" y="122" width="40" height="24"/><rect class="sv-l" x="150" y="122" width="20" height="24"/><rect class="sv-m" x="170" y="122" width="40" height="24"/><rect class="sv-l" x="210" y="122" width="20" height="24"/>
+  <text class="sv-t" x="10" y="178">…</text>
+  <text class="sv-t" x="4" y="218">12.</text>
+  <rect class="sv-k" x="30" y="202" width="60" height="24"/>
+  <rect class="sv-m" x="90" y="202" width="250" height="24"/>
+  <rect class="sv-a" x="340" y="202" width="50" height="24"/>
+  <text class="sv-s" x="215" y="218" text-anchor="middle">11 soru + 11 cevap + yeni soru</text>
+  <line class="sv-cl" x1="340" y1="32" x2="340" y2="240"/>
+  <text class="sv-s" x="340" y="254" text-anchor="middle">pencere sınırı</text>
+  <rect class="sv-k" x="30" y="268" width="14" height="12"/><text class="sv-s" x="50" y="279">sistem</text>
+  <rect class="sv-l" x="110" y="268" width="14" height="12"/><text class="sv-s" x="130" y="279">soru</text>
+  <rect class="sv-m" x="180" y="268" width="14" height="12"/><text class="sv-s" x="200" y="279">eski cevap</text>
+  <rect class="sv-a" x="275" y="268" width="14" height="12"/><text class="sv-s" x="295" y="279">taşan kısım</text>
+</svg>
+<figcaption>Ölçekli değil, şematik. Her yeni soruda uygulama, sistem istemini ve bütün eski soru-cevapları yeniden gönderir. İstekler her turda uzar; bir noktada pencereye sığmaz (aşağıdaki örnekte 12. soruda). Taşan kısım için uygulama ya eskiyi atar ya özetler ya da hata verir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: pencere ne zaman dolar, ne kadar token harcanır?</span>
+<p><strong>Soru:</strong> Bağlam penceresi 8.000 token olan bir modelle bir sohbet uygulaması kuruyorsun (küçük bir sayı seçtik ki hesap elle yapılabilsin). Sistem istemi 1.000 token; her soru 200, her cevap 400 token. Her istekte bütün geçmiş yeniden gönderiliyor ve cevap da pencereye sığmak zorunda. (a) Kaçıncı soru, cevabıyla birlikte pencereye ilk kez sığmaz? (b) İlk 10 soruda modele toplam kaç girdi tokeni gönderilmiş olur?</p>
+<p><strong>Adım 1 (k. isteğin girdisi).</strong> k. soruda girdi = sistem + önceki (k − 1) soru-cevap çifti + yeni soru = 1.000 + (k − 1) × 600 + 200 = 1.200 + 600 × (k − 1). (Her çift 200 + 400 = 600 token.)</p>
+<p><strong>Adım 2 (cevabı ekle).</strong> Pencerede gereken yer = girdi + 400 = 1.600 + 600 × (k − 1).</p>
+<p><strong>Adım 3 (eşitsizliği kur).</strong> 1.600 + 600 × (k − 1) ≤ 8.000 ⇒ 600 × (k − 1) ≤ 6.400 ⇒ k − 1 ≤ 10,67 ⇒ k ≤ 11,67.</p>
+<p><strong>Adım 4 (kontrol).</strong> k = 11: 1.600 + 6.000 = 7.600 ≤ 8.000, sığar. k = 12: 1.600 + 6.600 = 8.200 &gt; 8.000, sığmaz. (a)'nın cevabı 12. soru.</p>
+<p><strong>Adım 5 (toplam girdi).</strong> İlk 10 sorunun girdileri 1.200, 1.800, 2.400, …, 6.600'dür. Bunlar her adımda 600 artan 10 sayıdır; toplamları (ilk + son) × adet ÷ 2 = (1.200 + 6.600) × 10 ÷ 2 = 39.000 token.</p>
+<p><strong>Sonuç:</strong> 12. soruda pencere taşar. İlk 10 soruda sen ve model toplam 1.000 + 10 × 600 = 7.000 tokenlik yeni metin yazdınız, ama modele 39.000 girdi tokeni gönderildi; çünkü eski konuşma her seferinde yeniden okundu. Uzun sohbetin neden pahalılaştığı ve yavaşladığı budur. Bazı sağlayıcılar, tekrar tekrar gönderilen aynı başlangıç kısmının işlenmesini ucuzlatan önbellekleme seçenekleri sunar; bu ürüne özgü ayrıntıyı Parça 16'da API'yi anlatırken anacağız.</p></div>
+
+<h2 class="s">Tokenleşmenin yan etkileri: model neden harf sayamaz?</h2>
+
+<p>Şimdi başa, "kitaplarımızdan" kelimesindeki "a"ları saymaya dönebiliriz. Oyuncak tokenleştiricimiz "kitaplarimiz" kelimesini <code>kitaplar | i | m | i | z</code> diye bölmüştü. Model bu kelimeyi beş harf grubu olarak bile görmez; beş numara ve beş vektör görür. "kitaplar" tokeninin içinde iki "a" olduğu bilgisi o tokenin numarasında yazmaz. Model bunu ancak eğitimde, örneğin bir kelimenin harf harf yazıldığı metinleri görerek, dolaylı olarak öğrenmiş olabilir. Öğrendiyse yapar; yeterince öğrenmediyse tahmin eder ve bu tahmin akıcı bir cümleyle sunulduğu için yanlışlığı göze batmaz.</p>
+
+<p>Aynı mekanizma birkaç başka zorluğu da açıklar:</p>
+<ul>
+<li><strong>Kelimeyi tersten yazmak:</strong> "kitaplar"ı tersten yazmak için tokenin içindeki harflerin sırasını bilmek gerekir; tokenin numarası bunu söylemez.</li>
+<li><strong>Kafiye, hece ve harf oyunları:</strong> Kafiye kelimenin sonundaki seslere bağlıdır; ama kelime sonu çoğu zaman bir tokenin ortasında kalır.</li>
+<li><strong>Sayılar ve aritmetik:</strong> Uzun bir sayı, tokenleştiriciye göre basamaklarına ya da düzensiz basamak gruplarına bölünebilir. "12345" ile "12346" çok farklı token dizilerine dönüşebilir ve basamakların hizası kaybolur. Bu, Parça 14'te göreceğimiz hesaplama hatalarının nedenlerinden biridir.</li>
+<li><strong>Yazım farkları:</strong> Aynı kelime büyük harfle, önünde boşlukla ya da bir yazım hatasıyla yazıldığında tamamen farklı tokenlere bölünebilir; model bunların aynı kelime olduğunu da ayrıca öğrenmek zorundadır.</li>
+</ul>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Harf sayamıyorsa, model metni hiç anlamıyordur."</strong> Bu çıkarım iki ayrı şeyi karıştırır. Harf saymak, girdinin biçimi yüzünden modele doğrudan verilmemiş bir bilgiyi gerektirir; bir paragrafın ne anlattığını söylemek ise token dizisinden çıkarılabilen bir bilgiyi. Doğrusu, zayıflığın kaynağını bilip ona göre çalışmaktır: harf ve basamak düzeyindeki işlerde modelden kelimeyi önce harf harf yazmasını istemek ya da işi bir koda yaptırmak (Parça 14 ve 16) çoğu zaman sorunu çözer. Yeni model kuşaklarında bu hatalar azalabilir, ama mekanizma aynıdır: model hâlâ token görür.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3'e:</strong> Modelin çıktısı bir olasılık dağılımıdır; softmax ham puanları olasılığa çevirir; sıcaklık softmax'tan önce puanları bölerek bu dağılımı sivriltir ya da düzleştirir.</p>
+<p><strong>Parça 5'e:</strong> Dillerin farklı token sayısı tutması, aynı hizmetin bazı dillerde daha pahalı ve daha dar olması demektir: verideki dengesizliğin yarattığı bir adalet sorunu.</p>
+<p><strong>Parça 9 ve 10'a:</strong> Alt kelime tokenleri, Türkçe eklerin tek sıcak gösterimde yarattığı sözlük patlamasına verilen cevaptır. Kod çözücünün en üstündeki doğrusal katman ve softmax sonraki tokenin dağılımını üretir; maskeli öz-dikkat üretimin neden soldan sağa, token token olduğunu açıklar; puan tablosunun n<sup>2</sup> ile büyümesi bağlam penceresini sınırlar.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 12'de bu "sonraki tokeni tahmin et" oyununun trilyonlarca tokenle oynanmasını, yani ön eğitimi göreceksin. Parça 13'te sistem isteminin ve sohbet biçiminin nasıl eğitildiği, Parça 14'te olası metin ile doğru metnin farkından doğan halüsinasyon ve hesap hataları var. Parça 15'te istem yazarken bağlam penceresini nasıl doldurduğun, Parça 16'da token başına ücretlendirme ve pencereye sığmayan belgeler için RAG gelecek.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Dil modelleri neden metni tam kelimelere ya da tek tek karakterlere değil, alt kelime tokenlerine böler?</summary><p>Tam kelimelerde sözlük çok büyür (Türkçede ekler yüzünden patlar) ve görülmemiş kelimeler "bilinmeyen" olup bilgisini kaybeder. Tek karakterlerde sözlük küçüktür ama dizi çok uzar; öz-dikkatin maliyeti uzunluğun karesiyle büyüdüğü için bu pahalıdır ve tek harf az anlam taşır. Alt kelime ortada durur: sık kelimeler tek token, seyrekler bilinen parçalara bölünür ve hiçbir girdi bilinmeyen kalmaz.</p></details>
+<details><summary>BPE sözlüğü nasıl kurar? Neden "ta" gibi anlamsız parçalar da sözlüğe girebilir?</summary><p>Derlemdeki kelimeleri karakterlerine (ya da baytlarına) böler, yan yana duran parça çiftlerini kelimelerin geçiş sayısıyla birlikte sayar, en sık çifti her yerde birleştirip sözlüğe ekler ve bunu istenen sözlük boyuna kadar tekrarlar. Yöntem dil bilgisi bilmez, yalnız sayar; bu yüzden bir ek kadar, bir kelimenin sık geçen anlamsız bir dilimi de sözlüğe girebilir.</p></details>
+<details><summary>Türkçe bir metnin aynı anlamdaki İngilizce metinden genellikle daha çok token tutmasının üç nedeni nedir ve bunun pratik sonuçları nelerdir?</summary><p>Ekli yapı aynı kökten çok sayıda seyrek kelime biçimi üretir ve bunlar parçalara bölünür; tokenleştiricinin eğitildiği derlemde İngilizce çoğu zaman daha büyük paya sahiptir; Türkçeye özgü harfler UTF-8'de iki bayt tutar. Sonuçları: token başına ücretlendirmede daha yüksek maliyet, daha uzun cevap süresi ve aynı bağlam penceresine daha az içerik sığması.</p></details>
+<details><summary>Bir modelin tek bir ileri beslemede ürettiği şey nedir ve uzun bir cevap bundan nasıl oluşur?</summary><p>Sözlükteki her token için, verilen metnin hemen ardından o tokenin gelme olasılığını veren bir dağılım üretir. Bu dağılımdan bir token seçilir, metnin sonuna eklenir ve uzamış metin yeniden modele verilir. Döngü, model "son" tokenini seçene ya da token sınırına gelinene kadar sürer; uzun cevap bu tek tokenlik adımların zinciridir.</p></details>
+<details><summary>Sıcaklık düşürülünce ve yükseltilince dağılıma ne olur? Sıcaklık tokenlerin olasılık sırasını değiştirir mi?</summary><p>Sıcaklık, softmax'tan önce puanları böler. Düşük sıcaklık puan farklarını büyütür, dağılım sivrileşir ve en olası token daha baskın olur; yüksek sıcaklık farkları küçültür, dağılım düzleşir ve seyrek tokenler daha sık seçilir. Sıra değişmez; yalnız tokenler arasındaki olasılık mesafesi gerilir ya da sıkışır.</p></details>
+<details><summary>Bağlam penceresine neler dahildir ve büyük bir pencere neden modelin içindeki her şeyi iyi kullandığı anlamına gelmez?</summary><p>Sistem istemi, sohbetin bütün geçmişi, eklenen belgeler ve araç sonuçları, çoğu sistemde de üretilecek cevap aynı pencereye dahildir. Araştırmalar (ör. 2023 tarihli "Lost in the Middle") uzun girdilerin ortasındaki bilginin başta ya da sondakinden daha zayıf kullanıldığını göstermiştir; Anthropic'in belgesi de token sayısı arttıkça doğruluk ve hatırlamanın düştüğünü yazar.</p></details>
+<details><summary>Bir sohbet modeli önceki mesajlarını nasıl "hatırlar"?</summary><p>Model kendi başına durumsuzdur; ağırlıkları konuşma sırasında değişmez ve bir istekten öbürüne iz taşımaz. Uygulama her yeni mesajda sistem istemini ve önceki bütün soru-cevapları yeniden gönderir; model geçmişi bu sayede, her seferinde baştan okuyarak görür. Bu yüzden sohbet uzadıkça istekler büyür ve bir noktada pencere dolar.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Token:</strong> modelin metni işlediği birim; kelime, kelime parçası, işaret ya da bayt olabilir. Model harf değil, token numaraları görür.</li>
+<li><strong>Neden alt kelime:</strong> kelime sözlüğü patlar ve bilinmeyen kelime doğurur; karakter dizisi çok uzar (dikkat maliyeti n<sup>2</sup>). Alt kelime ortası.</li>
+<li><strong>BPE:</strong> karakterlerden (baytlardan) başla, en sık yan yana çifti birleştir, tekrarla; kuralları öğrenildiği sırayla uygula. Dil bilgisi bilmez, sayar. Gage 1994 (sıkıştırma), Sennrich ve ark. 2015 (çeviri).</li>
+<li><strong>Türkçe daha çok token:</strong> ekli yapı (seyrek biçimler), İngilizce ağırlıklı derlem, iki baytlık harfler. Sonuç: maliyet, hız, pencere. Diller arası fark bazı çiftlerde 15 kata kadar (Petrov ve ark. 2023).</li>
+<li><strong>Asıl iş:</strong> sözlükteki her token için sonraki token olasılığı. Puanlar (logit) → softmax.</li>
+<li><strong>Döngü:</strong> dağılım → seç → sona ekle → tekrar; "son" tokeni ya da sınır durdurur. İstem paralel, cevap sıralı işlenir.</li>
+<li><strong>Sıcaklık:</strong> softmax(puan ÷ T). T küçük: sivri, tutarlı; T büyük: düz, çeşitli. Sıra değişmez. Aynı soruya farklı cevabın nedeni örneklemedir. top-k ve top-p kuyruğu keser.</li>
+<li><strong>Bağlam penceresi:</strong> bir istekte görülebilen en çok token; sistem istemi + geçmiş + belgeler + cevap. 2019'da 1.024, 2025–2026'da bazı modellerde 1 milyon. Ortadaki bilgi zayıf kullanılabilir.</li>
+<li><strong>Hafıza yok:</strong> model durumsuz; geçmiş her istekte yeniden gönderilir. Uzun sohbet pahalılaşır, pencere dolunca eski kısım atılır ya da özetlenir.</li>
+<li><strong>Yan etkiler:</strong> harf sayma, tersten yazma, kafiye, uzun sayılar zor; çare harf harf yazdırmak ya da koda yaptırmak.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-11">
+<h3>Quiz 11</h3>
+<p class="qa">Yirmi bir soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="A"><p class="q">Bir dil modelinin metni işlemeden önce yaptığı tokenleştirme için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Metni, sözlükte numarası olan parçalara böler; bir token bir kelimenin tamamı, bir kelime parçası ya da tek bir karakter veya bayt olabilir.</li><li>Metni her zaman tam kelimelere böler; sözlükte olmayan kelimeyi atar.</li><li>Metni her zaman tek tek harflere böler.</li><li>Metni hecelerine ayırır, çünkü sözlük dil bilgisi kurallarıyla elle yazılmıştır.</li><li>Metnin anlamını özetleyip tek bir sayıya çevirir.</li></ul>
+<div class="coz"><p>Doğru cevap A: bugünkü modeller alt kelime tokenleriyle çalışır; sık kelimeler tek token olur, seyrekler bilinen parçalara bölünür, en kötü durumda karakterlere ya da baytlara inilir. B, tam kelime sözlüğünün sorunudur ve bugünkü tokenleştiriciler hiçbir girdiyi atmaz. C, karakter düzeyidir; diziyi çok uzattığı için tercih edilmez. D yanlıştır: sözlük BPE gibi yöntemlerle veriden, sıklık sayarak öğrenilir, hece kuralıyla yazılmaz. E ise tokenleştirmeyle ilgisizdir; her token ayrı bir numara alır.</p></div></li>
+
+<li data-c="C"><p class="q">Yalnız kod çözücü bir dil modeli, kendisine verilen metin için tek bir ileri beslemenin sonunda doğrudan ne üretir?</p>
+<ul class="sec"><li>Cevabın tamamını tek seferde</li><li>Metnin doğru olup olmadığına dair evet/hayır kararı</li><li>Sözlükteki her token için, metnin hemen ardından o tokenin gelme olasılığını veren bir dağılım</li><li>Metindeki en önemli kelimenin numarası</li><li>Sohbeti kalıcı olarak saklayan bir hafıza kaydı</li></ul>
+<div class="coz"><p>Modelin en üst katmanı sözlükteki her token için bir puan üretir, softmax bu puanları toplamı 1 olan olasılıklara çevirir (C). Cevabın tamamı (A) bu tahminin döngüyle tekrar tekrar yapılmasıyla oluşur, tek ileri beslemede değil. B ve D modelin çıktısını yanlış tarif eder. E yanlıştır: model durumsuzdur, ağırlıkları konuşmada değişmez ve bir hafıza kaydı üretmez.</p></div></li>
+
+<li data-c="E"><p class="q">Bayt çifti birleştirme (BPE) ile tokenleştirici sözlüğü kurulurken her adımda ne yapılır?</p>
+<ul class="sec"><li>En uzun kelime sözlükten çıkarılır.</li><li>Dil bilgisi kitabındaki ekler sırayla sözlüğe eklenir.</li><li>Rastgele seçilen iki karakter birleştirilir.</li><li>Derlemde en az geçen çift birleştirilir ki nadir kelimeler korunsun.</li><li>Derlemde yan yana en sık geçen iki parça bulunur, her yerde birleştirilir ve yeni bir token olarak sözlüğe eklenir.</li></ul>
+<div class="coz"><p>BPE açgözlü bir sıkıştırma fikridir: en sık birlikte görülen iki parçayı tek token yapmak, aynı metni en az tokenle yazmanın yoludur (E). Birleştirme kuralları kaydedilir ve yeni metin tokenlenirken öğrenildikleri sırayla uygulanır. B yanlış: yöntem dil bilgisi bilmez; "lar" gibi ekler yalnız sık oldukları için ortaya çıkar. C'de rastgelelik yoktur; D tersini söyler. A'nın yöntemle ilgisi yoktur.</p></div></li>
+
+<li data-c="B"><p class="q">Aynı anlamdaki bir metnin Türkçesinin, çoğu tokenleştiricide İngilizcesinden daha çok token tutmasının nedenlerinden biri aşağıdakilerden hangisi <strong>değildir</strong>?</p>
+<ul class="sec"><li>Ekli yapı yüzünden aynı kökten çok sayıda kelime biçimi türer ve her biri daha seyrek geçer.</li><li>Türkçe kelimeler daha az anlam taşıdığı için tokenleştirici onları özellikle bölmeye programlanmıştır.</li><li>Tokenleştiricinin eğitildiği derlemde İngilizce çoğu zaman çok daha büyük yer tutar.</li><li>ç, ğ, ı, ö, ş, ü gibi harfler UTF-8'de iki bayt tutar.</li><li>Tek token olacak kadar sık görülmeyen kelime biçimleri parçalara bölünür.</li></ul>
+<div class="coz"><p>B uydurma bir gerekçedir: tokenleştirici hiçbir dili "anlamı az" diye bölmeye programlanmaz; yalnız derlemdeki sıklığı sayar. Öbür dördü gerçek nedenlerdir. Ekler seyrek biçimler üretir (A) ve seyrek biçimler parçalanır (E); BPE sık olanı ödüllendirdiği için derlemde çok yer tutan dil daha iyi temsil edilir (C); bayttan başlayan tokenleştiricilerde iki baytlık harfler fazladan token harcatabilir (D).</p></div></li>
+
+<li data-c="D"><p class="q">Üç aday tokenin puanları 2, 1 ve 0'dır. Sıcaklık T = 0,5 alınırsa, softmax'tan sonra en yüksek puanlı tokenin olasılığı yaklaşık kaçtır?</p>
+<ul class="sec"><li>0,665</li><li>0,506</li><li>1,000</li><li>0,867</li><li>0,333</li></ul>
+<div class="coz"><p>Puanlar 0,5'e bölünür: 4, 2, 0. Üsleri e<sup>4</sup> ≈ 54,598, e<sup>2</sup> ≈ 7,389, e<sup>0</sup> = 1; toplam 62,987. İlk tokenin payı 54,598 ÷ 62,987 ≈ 0,867 (D). A, sıcaklığı uygulamadan (T = 1) hesaplamaktır. B, puanları 0,5'e bölmek yerine 0,5 ile çarpmaktır, yani T = 2 sonucudur. C, düşük sıcaklığı "kesin açgözlü seçim" sanmaktır; 0,5 o kadar düşük değildir. E, üç tokene eşit pay vermektir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir sohbet modelinde sıcaklık 1'den 0,2'ye düşürülürse aşağıdakilerden hangisi beklenir?</p>
+<ul class="sec"><li>Dağılım sivrileşir; en olası token neredeyse her seferinde seçilir ve aynı soruya verilen cevaplar birbirine daha çok benzer.</li><li>Model daha doğru bilgi verir, çünkü düşük sıcaklık halüsinasyonu engeller.</li><li>Bağlam penceresi büyür.</li><li>Dağılım düzleşir ve olasılığı düşük tokenler daha sık seçilir.</li><li>Sıcaklık tokenleştirmeyi değiştirdiği için metin daha az tokene bölünür.</li></ul>
+<div class="coz"><p>Puanlar 0,2'ye bölününce aralarındaki farklar beş katına çıkar ve softmax ağırlığı en olası tokene yığar (A). B yaygın bir yanılgıdır: düşük sıcaklık en olası tokeni seçtirir, en doğruyu değil; model bir yanlışı en olası buluyorsa onu tutarlı biçimde tekrarlar. C ve E'de sıcaklığın bağlam penceresiyle ve tokenleştirmeyle ilgisi yoktur; yalnız seçim adımını etkiler. D, sıcaklık yükseltildiğinde olandır.</p></div></li>
+
+<li data-c="C"><p class="q">Bağlam penceresi 8.000 token olan bir modelle sohbet uygulaması yazıyorsun. Sistem istemi 1.000 token; her soru 200, her cevap 400 token. Her istekte bütün geçmiş yeniden gönderiliyor ve cevap da pencereye sığmak zorunda. Kaçıncı soru, cevabıyla birlikte pencereye ilk kez sığmaz?</p>
+<ul class="sec"><li>11</li><li>14</li><li>12</li><li>10</li><li>8</li></ul>
+<div class="coz"><p>k. soruda gereken yer: 1.000 (sistem) + (k − 1) × 600 (önceki soru-cevaplar) + 200 (yeni soru) + 400 (cevap) = 1.600 + 600 × (k − 1). k = 11 için 7.600 ≤ 8.000, sığar; k = 12 için 8.200 &gt; 8.000, sığmaz (C). A, son sığan soruyu cevap sanmaktır. B, sistem istemini unutup 8.000 ÷ 600 ≈ 13,3'ü yukarı yuvarlamaktır. D ve E, geçmişin ya da cevabın payını yanlış hesaplamaktan doğar.</p></div></li>
+
+<li data-c="E"><p class="q">Bir sohbet modeli "kitaplarımızdan" kelimesindeki "a" harflerini sayarken yanılıyor. Bunun en iyi açıklaması aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin sözlüğünde "a" harfi bulunmaz.</li><li>Sıcaklık çok düşük olduğu için model sayamaz.</li><li>Tek bir kelime bağlam penceresini doldurmuştur.</li><li>Model eğitimde hiç Türkçe metin görmemiştir.</li><li>Model kelimeyi harf harf değil birkaç tokenin numarası olarak görür; bir tokenin hangi harflerden oluştuğu ona doğrudan verilmez, bunu ancak eğitimde dolaylı öğrenmiş olabilir.</li></ul>
+<div class="coz"><p>"kitaplarımızdan" model için birkaç token numarasıdır; örneğin "kitaplar" tek bir numara olabilir ve içindeki iki "a" bu numarada yazmaz (E). A yanlış: bayttan başlayan tokenleştiricilerde her karakter temsil edilebilir; sorun harfin sözlükte olmaması değil, kelimenin harflerine ayrılmadan görülmesidir. B'de sıcaklık seçimi etkiler, modelin neyi gördüğünü değil. C'de tek kelime pencereyi dolduramaz. D gerekçesizdir; model Türkçe akıcı metin üretebiliyorken bile harf saymada yanılabilir.</p></div></li>
+
+<li data-c="D" data-k="yz-1"><p class="q">Dar yapay zekâ ile genel yapay zekâ (AGI) ayrımıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>AGI ilk kez 1956 Dartmouth toplantısında gerçekleştirilmiştir.</li><li>Dar yapay zekâ, kural tabanlı demektir; dar sistemler öğrenemez.</li><li>Bugünkü sohbet modelleri tanım gereği AGI'dir ve bu konuda uzlaşı vardır.</li><li>Satranç oynayan bir program dar yapay zekâ örneğidir; AGI ise çok geniş bir iş yelpazesinde insan düzeyinde başarılı olacak, tanımı hâlâ tartışmalı varsayımsal bir sistemdir.</li><li>Dar yapay zekâ ile AGI arasındaki fark yalnızca parametre sayısıdır.</li></ul>
+<div class="coz"><p>Dar YZ tek bir işte (satranç, yüz tanıma, çeviri) iyi olan sistemdir; AGI ise insanın yapabildiği zihinsel işlerin geniş bir yelpazesinde başarılı olacak varsayımsal sistemdir ve "hangi işler, hangi insanla kıyas" soruları yüzünden tanımı tartışmalıdır (D). A yanlış: Dartmouth alanın adını koyduğu toplantıdır, AGI üretmemiştir. B yanlış: öğrenen sistemlerin çoğu da dar YZ'dir. C'de uzlaşı yoktur. E, genelliği yalnız büyüklüğe indirger.</p></div></li>
+
+<li data-c="B" data-k="yz-2"><p class="q">Bir modelin son başarısını ölçmek için kullanılan test kümesinin ayrı tutulmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Test kümesi eğitimi hızlandırır.</li><li>Model test örneklerini ne eğitimde ne ayar yaparken görmelidir; aksi hâlde ölçülen şey genelleme değil ezber olur.</li><li>Test kümesi, doğrulama kümesinin başka bir adıdır.</li><li>Test kümesi yalnız etiketsiz örneklerden oluşur.</li><li>Test kümesi modelin parametrelerini güncellemek için kullanılır.</li></ul>
+<div class="coz"><p>Modelin asıl amacı görmediği veride iyi çalışmaktır; bunu ölçmenin tek dürüst yolu, hiç görmediği örneklerle sınamaktır (B). Eğitim kümesi parametreleri güncellemek (E'nin tarif ettiği), doğrulama kümesi ayar yapmak ve model seçmek içindir; test kümesi en sonda bir kez kullanılır. C bu ayrımı siler. A ve D yanlıştır: test kümesi eğitimi hızlandırmaz ve başarıyı ölçmek için etiketli olmak zorundadır.</p></div></li>
+
+<li data-c="A" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin ağırlıkları 16 bit (float16) sayılarla saklanırsa yalnız ağırlıklar yaklaşık ne kadar bellek tutar? (1 GB = 1 milyar bayt alınız.)</p>
+<ul class="sec"><li>14 GB</li><li>28 GB</li><li>7 GB</li><li>3,5 GB</li><li>112 GB</li></ul>
+<div class="coz"><p>16 bit 2 bayttır; 7 milyar × 2 bayt = 14 milyar bayt ≈ 14 GB (A). B, 32 bitlik (4 bayt) saklamanın sonucudur. C 8 bit (1 bayt), D 4 bit (yarım bayt) nicelemenin sonucudur. E, bit ile baytı karıştırıp 7 × 16 yapmaktır. Niceleme bu yüzden önemlidir: bit sayısını yarıya indirmek belleği yarıya indirir, bedeli biraz hassasiyet kaybıdır.</p></div></li>
+
+<li data-c="C" data-k="yz-4"><p class="q">k-en yakın komşu (k-NN) yöntemiyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Evet/hayır sorularıyla dallanan bir ağaç kurar.</li><li>Çok sayıda karar ağacının oylamasıdır.</li><li>Eğitimde bir şey öğrenmez, bütün veriyi saklar; yeni örneği ona en yakın k örneğe bakarak tahmin eder.</li><li>Özelliklerin ölçeğine hiç duyarlı değildir.</li><li>Noktalara en iyi uyan doğrunun eğimini ve kesişimini bulur.</li></ul>
+<div class="coz"><p>k-NN, "bana komşunu söyle" yöntemidir: veriyi olduğu gibi saklar, yeni bir örnek gelince ona en yakın k örneğin çoğunluk sınıfına (ya da değerlerinin ortalamasına) bakar (C). A karar ağacının, B rastgele ormanın, E doğrusal regresyonun tarifidir. D yanlıştır: k-NN uzaklıkla çalıştığı için, ölçeği büyük olan bir özellik (ör. metrekare) küçük ölçekli özellikleri ezer; bu yüzden özellikler ölçeklenmelidir.</p></div></li>
+
+<li data-c="E" data-k="yz-5"><p class="q">Bir spam filtresi 100 e-postaya "spam" dedi; bunların 90'ı gerçekten spamdı. Gelen kutusunda gerçekte toplam 120 spam vardı. Filtrenin kesinliği (precision) kaçtır?</p>
+<ul class="sec"><li>0,75</li><li>0,83</li><li>0,10</li><li>0,25</li><li>0,90</li></ul>
+<div class="coz"><p>Kesinlik, modelin "spam" dediklerinin ne kadarının gerçekten spam olduğudur: 90 ÷ 100 = 0,90 (E). A, duyarlılıktır (recall): gerçek spamlerin ne kadarı yakalandı, 90 ÷ 120 = 0,75. B, 100 ÷ 120 gibi anlamsız bir orandır. C, "spam" denenlerin içindeki yanlış alarm payıdır (10 ÷ 100). D, kaçırılan spamlerin payıdır (30 ÷ 120). Balıkçı ağı benzetmesiyle: kesinlik ağdan çıkanların ne kadarının balık olduğu, duyarlılık göldeki balıkların ne kadarının ağa girdiğidir.</p></div></li>
+
+<li data-c="D" data-k="yz-6"><p class="q">3 girdi alan ve 4 nörondan oluşan tam bağlı bir katmanda her nöronun bir sapması (bias) vardır. Bu katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>12</li><li>7</li><li>19</li><li>16</li><li>24</li></ul>
+<div class="coz"><p>Her nöron 3 girdinin her birine bir ağırlık taşır: 3 × 4 = 12 ağırlık. Her nöronun bir de sapması vardır: 4 sapma. Toplam 12 + 4 = 16 (D). A, sapmaları unutmaktır. B, 3 + 4 toplamıdır. C, sapma sayısını girdi sayısıyla karıştırıp 12 + 3 + 4 yapmaktır. E, ağırlık sayısını iki kez saymaktır. "70 milyar parametre" ifadesi, bu sayımın bütün katmanlar için yapılmış toplamıdır.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">Dropout için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Öğrenme oranını her dönemde yarıya indirir.</li><li>Eğitim sırasında her adımda nöronların bir kısmını rastgele devre dışı bırakır; böylece ağın birkaç nöronun özel ortaklığına dayanarak ezber yapmasını zorlaştırır; kullanımda uygulanmaz.</li><li>Doğrulama kaybı yükselmeye başlayınca eğitimi durdurur.</li><li>Eğitim resimlerini döndürüp kırparak veriyi çoğaltır.</li><li>Kullanımda da her tahminde nöronların yarısını kapatır.</li></ul>
+<div class="coz"><p>Dropout bir düzenlileştirme yöntemidir: eğitimde rastgele nöronlar kapatıldığı için hiçbir nöron belirli başka nöronlara güvenemez ve her biri tek başına da işe yarayan özellikler öğrenmek zorunda kalır (B). Kullanımda (çıkarımda) bütün nöronlar çalışır, bu yüzden E yanlıştır. A, öğrenme oranı zamanlamasının; C erken durdurmanın; D veri artırmanın tarifidir. Dördü de aşırı öğrenmeye karşı araçlardır ama birbirinden farklıdır.</p></div></li>
+
+<li data-c="A" data-k="yz-8"><p class="q">Bir öznitelik haritasındaki 2×2'lik bir bloğun değerleri 1, 3, 2 ve 0'dır. En büyük havuzlama (max pooling) bu bloktan hangi değeri çıkarır?</p>
+<ul class="sec"><li>3</li><li>1,5</li><li>6</li><li>0</li><li>2</li></ul>
+<div class="coz"><p>En büyük havuzlama bloktaki en büyük değeri alır: 3 (A). B, ortalama havuzlamanın sonucudur: (1 + 3 + 2 + 0) ÷ 4 = 1,5. C bloğun toplamıdır, D en küçük değeridir; ikisi de havuzlamanın işi değildir. E bir hesaba dayanmaz. Havuzlama haritayı küçültür ve bir desenin birkaç piksel kaymasını affeder: güçlü sinyal bloğun neresinde olursa olsun korunur.</p></div></li>
+
+<li data-c="C" data-k="yz-8"><p class="q">2012'de AlexNet'in ImageNet yarışmasını kazanmasının bir dönüm noktası sayılmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bir bilgisayarın ilk kez satrançta dünya şampiyonunu yenmesi</li><li>Transformer mimarisinin ilk kez kullanılması</li><li>Büyük etiketli veri, GPU'larla hızlı eğitim ve derin evrişimli ağ bir araya gelince hata oranının rakiplerin belirgin biçimde altına inmesi</li><li>Kural tabanlı uzman sistemlerin görüntü tanımada zirveye çıkması</li><li>Resimlerin gürültüden adım adım üretilmesi</li></ul>
+<div class="coz"><p>AlexNet ilk-5 hata oranında yaklaşık %15,3'e inerken ikinci gelen yöntem %26,2'de kalmıştı; bu farkı veri (ImageNet), hesap (GPU) ve derin ağın birleşimi sağladı ve derin öğrenme dönemini başlattı (C). A, 1997'deki Deep Blue'dur. B, 2017'nin konusudur. D tam tersidir: AlexNet öğrenen bir sistemdi. E, difüzyon modellerinin fikridir.</p></div></li>
+
+<li data-c="E" data-k="yz-9"><p class="q">Kelime gömmelerinin dildeki yanlılığı öğrenmesiyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Gömmeler yalnız sözlük tanımlarından öğrenildiği için yanlılık taşımaz.</li><li>Yanlılık yalnızca tek sıcak gösterimde görülür.</li><li>Gömme vektörleri insanlar tarafından elle yazıldığı için yanlılık yazarların bilinçli tercihidir.</li><li>Yanlılık yalnızca İngilizcede mümkündür.</li><li>Gömmeler, kelimelerin metinlerde hangi kelimelerle birlikte geçtiğinden öğrenildiği için metinlerdeki toplumsal kalıp yargıları da (ör. meslek ile cinsiyet ilişkileri) öğrenebilir.</li></ul>
+<div class="coz"><p>word2vec gibi yöntemler bir kelimeyi "arkadaşlarından", yani metinde yanında geçen kelimelerden tanır; metinlerdeki kalıp yargılar da bu birlikte geçme örüntülerinin içindedir ve vektörlere taşınır (E). A yanlış: gömmeler büyük metin yığınlarından öğrenilir. B yanlış: tek sıcak gösterimde kelimeler arasında hiçbir ilişki yoktur, yanlılık taşıyamaz. C yanlış: vektörleri kimse elle yazmaz. D yanlış: hangi dilde olursa olsun metin kalıp yargı içeriyorsa gömmeler onu öğrenebilir.</p></div></li>
+
+<li data-c="D" data-k="yz-9"><p class="q">Makine çevirisinin tarihindeki üç dönem doğru sırayla aşağıdakilerden hangisinde verilmiştir?</p>
+<ul class="sec"><li>Sinirsel → istatistiksel → kural tabanlı</li><li>İstatistiksel → kural tabanlı → sinirsel</li><li>Kural tabanlı → sinirsel → istatistiksel</li><li>Kural tabanlı → istatistiksel → sinirsel</li><li>Sinirsel → kural tabanlı → istatistiksel</li></ul>
+<div class="coz"><p>İlk sistemler dilbilimcilerin yazdığı sözlük ve kurallara dayanıyordu (kural tabanlı; 1954 Georgetown–IBM gösterisi). Sonra paralel metinlerden sayılan olasılıklarla çalışan istatistiksel sistemler geldi (öbek tabanlı sistemler, Google Çeviri'nin ilk hâli). 2014'ten itibaren tek bir ağın paralel metinlerle eğitildiği sinirsel çeviri öne çıktı (D). Dönemler kesin sınırlarla ayrılmaz, ama sıra budur; öbür seçenekler bu sırayı karıştırır.</p></div></li>
+
+<li data-c="B" data-k="yz-10"><p class="q">Bir kelimenin sorgu vektörü q = [1; 2], başka bir kelimenin anahtar vektörü k = [3; 1] ise, ölçeklemeden önceki dikkat puanı (q · k) kaçtır?</p>
+<ul class="sec"><li>[3; 2]</li><li>5</li><li>7</li><li>6</li><li>0</li></ul>
+<div class="coz"><p>Nokta çarpımı karşılıklı sayıları çarpıp toplar: 1 × 3 + 2 × 1 = 3 + 2 = 5 (B). A, çarpımları yapıp toplamayı unutmaktır; sonuç bir sayı olmalıdır, vektör değil. C, bütün sayıları toplamaktır (1 + 2 + 3 + 1). D, iki çarpımı toplamak yerine birbiriyle çarpmaktır. E, iki vektörü dik sanmaktır. Bu puan daha sonra √d'ye bölünür ve softmax'tan geçirilir.</p></div></li>
+
+<li data-c="A" data-k="yz-10"><p class="q">Bugünkü sohbet modellerinin (mimarisi açıklananların) çoğunun yalnız kod çözücü yapıda olmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Metin üretirler: maskeli öz-dikkatle yalnız öncesine bakarak sonraki kelimeyi tahmin ederler; soru ve cevap aynı metnin içinde olduğu için ayrı bir kodlayıcıya gerek kalmaz.</li><li>Kod çözücü metni iki yönlü görür ve sınıflandırmada en iyisidir.</li><li>Kodlayıcılar GPU'da çalışamaz.</li><li>Kod çözücülerde dikkat mekanizması yoktur, bu yüzden daha hızlıdırlar.</li><li>Kodlayıcı-kod çözücü yapısı 2017'den sonra tamamen terk edilmiştir.</li></ul>
+<div class="coz"><p>Sohbet modelinin işi metin üretmektir; kod çözücü maskeyle yalnız geriye bakar ve sonraki kelimeyi tahmin eder. Kullanıcının yazdığı ve modelin ürettiği tek bir metin gibi görüldüğü için ayrı bir kaynak cümleyi okuyacak kodlayıcıya ihtiyaç yoktur (A). B, yalnız kodlayıcıların (ör. BERT) tarifidir. C yanlış: kodlayıcılar da GPU'da çalışır. D yanlış: kod çözücünün çekirdeği maskeli öz-dikkattir. E abartıdır: kodlayıcı-kod çözücü yapısı çeviri gibi işlerde kullanılmaya devam eder.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-10">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-11">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-12">Sonraki parça: ön eğitim</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"byte pair encoding tokenization explained"</li>
+  <li>"LLM next token prediction temperature sampling top-p"</li>
+  <li>"context window explained large language models"</li>
+  <li>"tokenizer neden Türkçe daha fazla token"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>BPE'nin çeviriye uyarlanması: Sennrich, Haddow, Birch, "Neural Machine Translation of Rare Words with Subword Units", arXiv 1508.07909 (ilk sürüm 31 Ağustos 2015), özet sayfasından 14 Ekim 2026'da doğrulandı; özet, yöntemin "byte pair encoding sıkıştırma algoritmasına" dayandığını söylüyor. Makalenin ACL 2016'da yayımlandığı bilgisi ve Philip Gage'in 1994 tarihli sıkıştırma yazısı hafızadandır; Gage'in yazısını bu oturumda açmadım.</li>
+  <li>GPT-2'nin bayt düzeyinde BPE kullandığı ve 1.024 tokenlik bağlamı ikincil kaynaklardan (makaleyi özetleyen bir ders notu ve bir üniversite sunumu) doğrulandı; OpenAI'nin özgün PDF'ine bu ortamdan erişemedim. GPT-3'ün 2.048 tokenlik bağlam penceresi (n<sub>ctx</sub> = 2048) makalenin kendisinin bir kopyasından doğrulandı (Brown ve ark., 2020).</li>
+  <li>GPT-4.1'in 1 milyon tokene kadar bağlamı ve GPT-4o'nun 128.000 tokeni: OpenAI'nin "Introducing GPT-4.1 in the API" duyurusu, 14 Nisan 2025. Claude modellerinin 1 milyon / 200.000 tokenlik pencereleri, pencere aşılınca dönen hata ve "context rot" uyarısı: Anthropic'in "Context windows" belge sayfası, 14 Ekim 2026'da bakıldı. "API durumsuzdur, tüm geçmiş her seferinde gönderilir" cümlesi: Anthropic'in "Using the Messages API" sayfası, aynı tarih. Sıcaklığın 0–1 aralığı, varsayılan 1, "0'da bile tamamen belirlenimci değil" notu ve Claude Opus 4.6 sonrası modellerde sıcaklık/top-p/top-k'nin ayarlanamaması: Anthropic API başvuru belgesi, aynı tarih. Bu ürün bilgileri hızla değişir.</li>
+  <li>Petrov, La Malfa, Torr, Bibi, "Language Model Tokenizers Introduce Unfairness Between Languages", arXiv 2305.15425 (Mayıs 2023; NeurIPS 2023 bildiri kitabında da yer alıyor): 17 tokenleştirici, FLORES-200, "15 kata kadar" fark özetten doğrulandı. Makale Türkçe için sayısal bir oran vermiyor; bu yüzden metinde Türkçe için sayı verilmedi. Türkçenin genellikle daha çok token tuttuğu yargısı mekanizmaya dayalı bir genellemedir; gerçek oran tokenleştiriciye göre değişir ve bunu bu parçada ölçmedim (tiktoken ya da benzeri araçlar ortamda kurulu değildi ve gerçek bir sözlük indirmedim).</li>
+  <li>Holtzman ve ark., "The Curious Case of Neural Text Degeneration", arXiv 1904.09751 (Nisan 2019; ICLR 2020): çekirdek örneklemenin "dağılımın güvenilmez kuyruğunu keserek" dinamik bir çekirdekten örnekleme yaptığı özetten doğrulandı. Liu ve ark., "Lost in the Middle", arXiv 2307.03172 (Temmuz 2023): bilginin başta/sonda olunca daha iyi, ortada olunca daha kötü kullanıldığı bulgusu özetten doğrulandı.</li>
+  <li>Sözlük boyutlarının "on binlerden birkaç yüz bine" uzandığı, özel tokenlerin rolleri ayırdığı ve sayıların tokenleştiriciye göre düzensiz bölünebildiği bilgileri genel alan bilgisidir, belirli bir modelin belgesine dayandırılmadı. Ürünlerdeki "hafıza" özelliklerinin bilgiyi bağlama metin olarak eklediği kavramsal bir açıklamadır; belirli bir ürünün belgesiyle doğrulanmadı.</li>
+  <li>Bütün oyuncak sayılar (BPE derlemi, aday puanları, döngü tablosu) öğretim amaçlı elle kuruldu; gerçek bir modelden alınmadı. Üç Python betiği (<code>bpe.py</code>, <code>dongu.py</code>, <code>sicaklik.py</code>) bu ortamda Python 3.13 ve numpy 2.5 ile <code>python3 -I</code> kullanılarak gerçekten çalıştırıldı, çıktılar birebir kondu. Çözümlü örnek 1'deki çift sayımları, örnek 2'deki sıcaklık değerleri ve tablo, örnek 3'teki pencere ve toplam token hesabı, UTF-8 bayt tablosu ve quiz'deki sayısal cevaplar Python ile kontrol edildi.</li>
+</ul>
+</div>
+</div>
+</article>

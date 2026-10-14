@@ -52,6 +52,8 @@ var KONULAR = {
 };
 var DERS_ADLARI = Object.keys(KONULAR);
 
+/* 14 Ekim: sade düzen — Çalışma grubu gizli (verisi duruyor). */
+var GIZLI_BOLUM=["netler","defter","hafta","yil"];
 var BOLUMLER = [
   {id:"bugun",  ad:"Bugün",         kisa:"Bugün"},
   {id:"hafta",  ad:"Hafta",         kisa:"Hafta"},
@@ -126,7 +128,7 @@ IKON.spor='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-wid
   if(!(typeof KATALOG!=="undefined" && KATALOG.sadeceYks)) nav.appendChild(ab);
   var son=yerelOku("bolum","bugun");
   try{ var qb=new URLSearchParams(location.search).get("b"); if(qb) son=qb; }catch(e){}
-  if(BOLUMLER.some(function(b){return b.id===son;})) aktif=son;
+  if(BOLUMLER.some(function(b){return b.id===son;}) && GIZLI_BOLUM.indexOf(son)<0) aktif=son;
 })();
 
 function git(id){
@@ -156,6 +158,7 @@ function cizMast(){
   var simdi=new Date();
   var kalan=Math.max(0,Math.ceil((SINAV-simdi)/86400000));
   $("cdDays").textContent=kalan;
+  var ks=$("kalanSatir"); if(ks) ks.textContent=kalan+" gün";
   var bd=$("brand"); if(bd) bd.innerHTML=kalan+"<em>gün</em>";
   $("cdClock").textContent = pad(simdi.getHours())+":"+pad(simdi.getMinutes());
   var b=bugunTarih(), f=fazBul(b);
@@ -1433,14 +1436,16 @@ function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); 
 /* ============ düzen: dört ana başlık + ortada tek düğme ============
    Aynı amaca hizmet eden bölümler aynı başlık altında:
    Bugün (günün işi) · Çalışma (netler, defter, hafta, yıl) · Oku (arşiv, gündem) · Ben (düzen, beslenme, kurallar, ayarlar) */
+/* 14 Ekim: sade düzen. Çalışma (netler, defter, hafta, yıl) gizli; verisi duruyor. Geri açmak için satırı geri koy. */
 var GRUPLAR=[
   {id:"bugun",   ad:"Bugün",   alt:[["bugun","Bugün"]]},
-  {id:"calisma", ad:"Çalışma", alt:[["netler","Netler"],["defter","Defter"],["hafta","Hafta"],["yil","Yıl"]]},
-  {id:"oku",     ad:"Oku",     alt:[["ders","Oku"],["gundem","Gündem"]]},
+  {id:"oku",     ad:"Oku",     alt:[["ders","Oku"]]},
+  {id:"gundem",  ad:"Gündem",  alt:[["gundem","Gündem"]]},
   {id:"ben",     ad:"Ben",     alt:[["plan","Düzen","duzen"],["spor","Spor"],["plan","Beslenme","beslenme"],["plan","Kurallar","kurallar"],["plan","Ayarlar","ayarlar"]]}
 ];
 var GIKON={
   bugun:IKON.bugun, calisma:IKON.netler,
+  gundem:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.5" y="3" width="11" height="10" rx="1.6"/><path d="M5 6h6M5 8.5h6M5 11h3.5"/></svg>',
   oku:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5c2-.8 3.8-.8 5.5.4 1.7-1.2 3.5-1.2 5.5-.4v9c-2-.8-3.8-.8-5.5.4-1.7-1.2-3.5-1.2-5.5-.4zM8 3.9v9"/></svg>',
   ben:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5.6" r="2.6"/><path d="M3 13.4c.7-2.4 2.6-3.6 5-3.6s4.300 1.200 5 3.600"/></svg>'
 };

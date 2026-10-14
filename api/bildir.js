@@ -74,8 +74,8 @@ const SERT = [
   "Aynaya bakınca gurur duyacağın bir gün olsun bu.",
   "Ya bugün zor olur, ya haziran."
 ];
-const ARA_SAYI = 6;        // günde kaç ara mesaj
-const ARA_BOSLUK = 60;     // iki ara mesaj arası en az kaç dakika
+const ARA_SAYI = 2;        // günde kaç ara mesaj (14 Ekim: 6 → 2, göz alıştı)
+const ARA_BOSLUK = 180;    // iki ara mesaj arası en az kaç dakika
 
 const p2 = (n) => String(n).padStart(2, "0");
 function simdiTR(ms) {

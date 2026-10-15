@@ -1,0 +1,712 @@
+<article class="chapter ders" id="c-kod-4">
+<div class="prose">
+<div class="eyebrow">Kod · Parça 4 · Listeler ve demetler</div>
+<h1>Birden çok değeri tek adda tutmak: listeler ve demetler</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 15 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir sınıftaki otuz kişinin puanını tutacaksın. Otuz ayrı değişken mi açarsın: <code>puan1</code>, <code>puan2</code>, … <code>puan30</code>? Otuz bir kişi olunca ne olacak? Ortalamayı nasıl hesaplayacaksın? Üstelik bir arkadaşına "şu listenin kopyasını al" dediğinde, onun değiştirdiği şey neden bazen senin listeni de değiştiriyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (değişkenin bir kutu değil bir etiket oluşu, temel tipler), Parça 2 (<code>for</code>, <code>range</code>, <code>if</code>), Parça 3 (string indeksleme, dilimleme ve değişmezlik). Bu parça Parça 3'teki indeksleme bilgisinin üstüne kurulur; orada öğrendiğin <code>s[1:4]</code> kuralları burada aynen geçerli.</p>
+
+<h2 class="s">Önce büyük resim: bu parçada ne kuracağız?</h2>
+
+<p>Şu ana kadar her değişken tek bir şeyi gösteriyordu: bir sayı, bir metin, bir doğruluk değeri. Gerçek programlar ise neredeyse hiçbir zaman tek bir değerle çalışmaz. Bir günlük dosyasında binlerce satır, bir alışveriş sepetinde onlarca ürün, bir ağ taramasında bir port listesi vardır. Bu değerleri tek tek adlandırmak hem imkânsızdır hem de anlamsızdır, çünkü onlara aynı işi uygulamak istersin: hepsini topla, hepsini sırala, içinde şu var mı bak.</p>
+
+<p>Python bu iş için birkaç <strong>kap</strong> (container) tipi sunar. Bu parçada ikisini öğreneceğiz: <strong>liste</strong> (<code>list</code>) ve <strong>demet</strong> (<code>tuple</code>). İkisi de değerleri bir <strong>sıra</strong> içinde tutar; aralarındaki temel fark, listenin sonradan değiştirilebilmesi, demetin ise değiştirilememesidir. Bu tek fark, beklediğinden çok daha fazla şeyi belirler: hangisini ne zaman seçeceğini, bir fonksiyona verdiğinde ne olacağını, kopyalarken neye dikkat edeceğini.</p>
+
+<p>Sırasıyla şunları kuracağız: liste nasıl oluşturulur, indekslenir, dilimlenir ve iç içe konur; değiştirilebilir olmak ne demektir ve neden "yan etki" denen sürprizlere yol açar; listenin metotları ve <code>sort()</code> ile <code>sorted()</code> arasındaki önemli fark; <code>in</code>, <code>len</code>, <code>min</code>, <code>max</code>, <code>sum</code>; demet ve neden var olduğu; paketleme ve açma; liste kurucu; son olarak da en çok kafa karıştıran konu, kopya sorunu. Sonraki parçada sözlük ve kümeye geçeceğiz; orada "hangi yapıyı ne zaman seçerim" sorusunu bütün kaplar için birlikte cevaplayacağız.</p>
+
+<h2 class="s">1. Liste: sıralı ve değiştirilebilir bir kap</h2>
+
+<p>Liste köşeli parantezle yazılır; öğeler virgülle ayrılır. Bir listeyi, üzerinde sıra numarası yazılı bölmelerden oluşan bir raf gibi düşünebilirsin: her bölmede bir değer durur ve bölmelerin sırası önemlidir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Liste</strong>, sıfır ya da daha çok değeri belirli bir sırada tutan, sonradan öğe eklenip çıkarılabilen ve öğeleri değiştirilebilen Python nesnesidir. Köşeli parantezle yazılır: <code>[1, 2, 3]</code>. Boş liste <code>[]</code>'dir. Öğelerin aynı tipte olması gerekmez.</p></div>
+
+<pre class="kod" data-ad="python3 liste1.py">notlar = [72, 85, 90, 64]
+print(notlar)
+print(notlar[0], notlar[-1])
+print(notlar[1:3])
+print(len(notlar))
+karisik = [3, "elma", 2.5, True, None]
+print(karisik)
+bos = []
+print(bos, len(bos))
+print(list("kedi"))
+print(list(range(5)))</pre>
+<pre class="cikti">[72, 85, 90, 64]
+72 64
+[85, 90]
+4
+[3, 'elma', 2.5, True, None]
+[] 0
+['k', 'e', 'd', 'i']
+[0, 1, 2, 3, 4]</pre>
+
+<p>Satır satır bak. İndeksleme Parça 3'teki string indekslemesiyle birebir aynıdır: ilk öğe <code>0</code> numaradadır, son öğe <code>-1</code>. Neden sıfırdan başlar? Çünkü indeks aslında "baştan kaç adım ilerle" sorusunun cevabıdır; ilk öğeye ulaşmak için hiç ilerlemen gerekmez. Negatif indeks de sondan saymanın kısayoludur: <code>-1</code> sonuncu, <code>-2</code> sondan ikinci.</p>
+
+<p>Dilimleme de aynıdır: <code>notlar[1:3]</code> 1 numaralı öğeden başlar, 3 numaralı öğeye <strong>gelmeden</strong> durur; yani 1 ve 2 numaralı öğeleri verir. Parça 2'deki <code>range</code> ile aynı mantık: bitiş hep dışarıda kalır. Bu kuralın yararı, <code>a[0:3]</code> ile <code>a[3:6]</code>'nın arka arkaya, hiç çakışmadan ve boşluk bırakmadan listeyi bölmesidir. Bir fark var: dilimleme listeye uygulandığında sonuç da bir <strong>listedir</strong> (yeni bir liste); string'e uygulandığında string.</p>
+
+<p>Dördüncü satırdaki <code>karisik</code> listesi, Python'da bir listenin farklı tipleri bir arada tutabildiğini gösteriyor. Bunu yapabilirsin, ama pratikte çoğu listede tek tip veri tutulur (bütün puanlar, bütün dosya adları). Neden? Çünkü listeye genellikle "hepsine aynı işi uygula" diye bakarsın; tipleri karışık bir listede toplama ya da sıralama gibi işler hata verir. Farklı tipte ama birbirine ait değerleri (bir kişinin adı, yaşı, şehri) bir arada tutmak için demet daha uygundur; birazdan geleceğiz.</p>
+
+<p>Son iki satır, <code>list()</code> fonksiyonunun başka şeylerden liste üretebildiğini gösteriyor. Bir string'i verirsen karakterlerine ayırır; <code>range</code> verirsen sayıları tek tek listeye döker. Parça 2'de <code>range(5)</code>'in kendisini yazdırınca sayıları göremiyordun; <code>list(range(5))</code> onu görünür kılar.</p>
+
+<h3>Sınır dışına çıkmak: indeks hata verir, dilim vermez</h3>
+
+<pre class="kod" data-ad="python3 sinir.py">x = [1, 2, 3, 2]
+x.remove(2)
+print(x)
+try:
+    x.remove(5)
+except ValueError as e:
+    print("ValueError:", e)
+try:
+    x[10]
+except IndexError as e:
+    print("IndexError:", e)
+print(x[10:20])
+print(x[::-1])</pre>
+<pre class="cikti">[1, 3, 2]
+ValueError: list.remove(x): x not in list
+IndexError: list index out of range
+[]
+[2, 3, 1]</pre>
+
+<p>Burada henüz anlatmadığımız <code>try</code>/<code>except</code> yapısını yalnızca hata mesajını programı durdurmadan yazdırmak için kullandık; ayrıntısı Parça 8'de. Önemli olan sonuçlar: olmayan bir indekse (<code>x[10]</code>) erişmek <code>IndexError</code> verir, çünkü Python senden var olmayan bir öğeyi istediğini anlar ve sessizce uydurmak yerine durur. Dilim ise sınır dışına taşarsa hata vermez, yalnızca var olan kısmı (burada hiçbir şeyi) döndürür. Bu fark kasıtlıdır: dilim "şu aralıkta ne varsa ver" demektir ve "hiçbir şey yok" geçerli bir cevaptır; tek öğe istemek ise "tam şunu ver" demektir. <code>x[::-1]</code> Parça 3'teki ters çevirme hilesinin listedeki karşılığıdır. <code>remove</code>'un davranışına metotlar bölümünde döneceğiz.</p>
+
+<h3>İç içe liste: liste içinde liste</h3>
+
+<p>Bir listenin öğesi her şey olabilir, başka bir liste de. Bu, satır ve sütunu olan bir tabloyu (bir ızgarayı, bir elektronik tablonun küçük bir parçasını) kodda tutmanın en basit yoludur.</p>
+
+<pre class="kod" data-ad="python3 icice.py">tablo = [[1, 2, 3], [4, 5, 6]]
+print(tablo[1])
+print(tablo[1][2])
+print(len(tablo), len(tablo[0]))
+tablo[0][1] = 20
+print(tablo)</pre>
+<pre class="cikti">[4, 5, 6]
+6
+2 3
+[[1, 20, 3], [4, 5, 6]]</pre>
+
+<p><code>tablo[1][2]</code> ifadesini soldan sağa oku: önce <code>tablo[1]</code> hesaplanır ve ikinci satırı, yani <code>[4, 5, 6]</code> listesini verir; sonra o listenin <code>[2]</code> numaralı öğesi alınır: <code>6</code>. İki köşeli parantez iki ayrı adımdır. <code>len(tablo)</code> 2'dir, çünkü dış listenin iki öğesi vardır (iki satır); içteki öğeleri saymaz.</p>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="İç içe listenin bellekteki yapısı: dış liste iki öğe tutar, her öğe ayrı bir iç listeyi gösterir">
+  <text class="sv-b" x="20" y="24">tablo</text>
+  <line class="sv-cl" x1="66" y1="20" x2="96" y2="20"/>
+  <rect class="sv-l" x="96" y="6" width="120" height="30" rx="6"/>
+  <line class="sv-c" x1="156" y1="6" x2="156" y2="36"/>
+  <text class="sv-s" x="126" y="26" text-anchor="middle">[0]</text>
+  <text class="sv-s" x="186" y="26" text-anchor="middle">[1]</text>
+  <path class="sv-cl" d="M126 36V90H160"/>
+  <path class="sv-cl" d="M186 36V170H160"/>
+  <rect class="sv-m" x="160" y="74" width="210" height="32" rx="6"/>
+  <line class="sv-c" x1="230" y1="74" x2="230" y2="106"/>
+  <line class="sv-c" x1="300" y1="74" x2="300" y2="106"/>
+  <text class="sv-t" x="195" y="95" text-anchor="middle">1</text>
+  <text class="sv-t" x="265" y="95" text-anchor="middle">2</text>
+  <text class="sv-t" x="335" y="95" text-anchor="middle">3</text>
+  <rect class="sv-m" x="160" y="154" width="210" height="32" rx="6"/>
+  <line class="sv-c" x1="230" y1="154" x2="230" y2="186"/>
+  <line class="sv-c" x1="300" y1="154" x2="300" y2="186"/>
+  <text class="sv-t" x="195" y="175" text-anchor="middle">4</text>
+  <text class="sv-t" x="265" y="175" text-anchor="middle">5</text>
+  <text class="sv-b" x="335" y="175" text-anchor="middle">6</text>
+  <text class="sv-s" x="265" y="125" text-anchor="middle">iç liste: tablo[0]</text>
+  <text class="sv-s" x="265" y="206" text-anchor="middle">iç liste: tablo[1]</text>
+  <text class="sv-s" x="20" y="240">tablo[1][2]: önce [1] okunu izle, sonra o listenin [2] bölmesi</text>
+</svg>
+<figcaption>Dış liste öğeleri "içinde taşımaz", her bölmesi ayrı bir iç liste nesnesini gösterir. Bu resmi aklında tut: kopya sorununun bütün sırrı bu oklardadır.</figcaption>
+</figure>
+
+<h2 class="s">2. Değiştirilebilirlik ve yan etki</h2>
+
+<p>Parça 3'te string'in <strong>değişmez</strong> (immutable) olduğunu gördün: <code>s[0] = "K"</code> yazamıyordun; değişiklik istediğinde yeni bir string üretiyordun. Liste ise <strong>değiştirilebilir</strong>dir (mutable): aynı liste nesnesinin içeriği yerinde değişebilir.</p>
+
+<pre class="kod" data-ad="python3 degisir.py">renkler = ["kırmızı", "yeşil", "mavi"]
+renkler[1] = "sarı"
+print(renkler)
+s = "kedi"
+try:
+    s[0] = "K"
+except TypeError as e:
+    print("TypeError:", e)</pre>
+<pre class="cikti">['kırmızı', 'sarı', 'mavi']
+TypeError: 'str' object does not support item assignment</pre>
+
+<p>Neden iki farklı davranış var? Çünkü iki farklı ihtiyaç var. Bir listeyi çoğu zaman <strong>büyüyen, küçülen bir koleksiyon</strong> olarak kullanırsın: günlükten okudukça satır eklersin, işlendikçe öğe çıkarırsın. Her eklemede baştan yeni bir liste üretmek hem yavaş hem de zahmetli olurdu. Öte yandan bir metnin ya da bir koordinatın "yanlışlıkla" değişmemesi istenir; değişmezlik ona güvenlik verir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Liste <strong>değiştirilebilir</strong>dir: öğesine atama (<code>a[i] = …</code>), ekleme ve çıkarma aynı nesne üzerinde yapılır, yeni bir liste oluşmaz. String ve demet <strong>değişmez</strong>dir: içerik değiştirmeye çalışmak <code>TypeError</code> verir.</p></div>
+
+<h3>Aynı nesneye iki etiket: yan etkinin kaynağı</h3>
+
+<p>Parça 1'de değişkenin bir kutu değil bir <strong>etiket</strong> olduğunu söylemiştik: <code>x = 5</code> yazdığında 5'i <code>x</code> adlı bir kutuya koymazsın, bellekte duran bir 5 nesnesine <code>x</code> adını yapıştırırsın. Değişmez nesnelerde bu ayrım pek hissedilmez, çünkü nesne zaten değişemez. Değiştirilebilir nesnelerde ise her şeyi belirler: iki ad aynı listeye yapıştırılmışsa, birinden yapılan değişiklik öbüründen de görünür, çünkü ortada <strong>tek</strong> bir liste vardır.</p>
+
+<p>Bunun en sık karşına çıktığı yer fonksiyonlardır. Fonksiyonları Parça 6'da ayrıntılı göreceğiz; şimdilik şunu bilmen yeterli: <code>def</code> ile bir isim altında bir iş tanımlarsın, parantez içindeki ad (parametre) çağrılırken verdiğin değere yapıştırılan yeni bir etikettir.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 1</span>
+<p><strong>Soru:</strong> Aşağıdaki programda fonksiyon kendi parametresine bir şey ekliyor. Dışarıdaki <code>sayilar</code> listesi değişir mi?</p>
+<pre class="kod" data-ad="python3 yanetki.py">def iki_ekle(liste):
+    liste.append(2)
+
+sayilar = [1]
+iki_ekle(sayilar)
+print(sayilar)
+iki_ekle(sayilar)
+print(sayilar)</pre>
+<p><strong>Adım 1.</strong> <code>sayilar = [1]</code> satırı bellekte bir liste nesnesi oluşturur ve ona <code>sayilar</code> etiketini yapıştırır.</p>
+<p><strong>Adım 2.</strong> <code>iki_ekle(sayilar)</code> çağrısında Python listeyi kopyalamaz. Fonksiyonun içindeki <code>liste</code> adı, <strong>aynı</strong> nesneye yapıştırılmış ikinci bir etikettir.</p>
+<p><strong>Adım 3.</strong> <code>liste.append(2)</code> o tek nesnenin sonuna 2 ekler. Nesne yerinde değişti.</p>
+<p><strong>Adım 4.</strong> Fonksiyon bitince <code>liste</code> etiketi ortadan kalkar, ama nesne ve üzerindeki <code>sayilar</code> etiketi durur. <code>print(sayilar)</code> değişmiş nesneyi gösterir.</p>
+<p><strong>Adım 5.</strong> İkinci çağrı aynı şeyi bir kez daha yapar.</p>
+<pre class="cikti">[1, 2]
+[1, 2, 2]</pre>
+<p><strong>Sonuç:</strong> Evet, dışarıdaki liste değişir. Fonksiyonun, kendisine verilen değiştirilebilir nesneyi değiştirmesine <strong>yan etki</strong> denir. Bazen istenen budur (bir listeyi yerinde sıralamak), bazen gizli bir hatadır (fonksiyon "yalnızca hesap yapıyorum" der gibi görünüp senin verini bozar).</p></div>
+
+<p>Yan etki kötü bir şey değildir, ama <strong>görünür</strong> olmalıdır. İyi bir alışkanlık: bir fonksiyon kendisine verilen listeyi değiştiriyorsa bunu adında ya da açıklamasında söylesin; değiştirmemesi gerekiyorsa listenin bir kopyası üzerinde çalışsın ya da yeni bir liste döndürsün. Parça 6'da "saf fonksiyon" kavramıyla bu konuyu kapatacağız.</p>
+
+<h2 class="s">3. Liste metotları</h2>
+
+<p>Parça 3'te string metotlarını gördün: <code>s.upper()</code>, <code>s.split()</code>… Metot, bir nesneye bağlı fonksiyondur; nesnenin adından sonra nokta koyup çağırırsın. String metotları değişmez bir nesneye ait oldukları için hep <strong>yeni</strong> bir değer döndürür. Liste metotlarının çoğu ise listeyi <strong>yerinde</strong> değiştirir ve bir şey döndürmez (daha doğrusu <code>None</code> döndürür). Bu, bu parçanın en önemli ayrıntılarından biridir.</p>
+
+<div class="tablo"><table>
+<tr><th>Metot</th><th>Ne yapar</th><th>Ne döndürür</th></tr>
+<tr><td><code>a.append(x)</code></td><td>x'i sona tek öğe olarak ekler</td><td><code>None</code></td></tr>
+<tr><td><code>a.extend(y)</code></td><td>y'nin öğelerini tek tek sona ekler</td><td><code>None</code></td></tr>
+<tr><td><code>a.insert(i, x)</code></td><td>x'i i konumuna yerleştirir, gerisini kaydırır</td><td><code>None</code></td></tr>
+<tr><td><code>a.pop()</code> / <code>a.pop(i)</code></td><td>sondaki (ya da i'deki) öğeyi çıkarır</td><td>çıkarılan öğe</td></tr>
+<tr><td><code>a.remove(x)</code></td><td>x'e eşit <strong>ilk</strong> öğeyi çıkarır; yoksa <code>ValueError</code></td><td><code>None</code></td></tr>
+<tr><td><code>a.sort()</code></td><td>listeyi yerinde küçükten büyüğe sıralar</td><td><code>None</code></td></tr>
+<tr><td><code>a.reverse()</code></td><td>sırayı yerinde ters çevirir</td><td><code>None</code></td></tr>
+<tr><td><code>a.index(x)</code></td><td>x'in ilk görüldüğü indeksi bulur; yoksa <code>ValueError</code></td><td>indeks (int)</td></tr>
+<tr><td><code>a.count(x)</code></td><td>x'in kaç kez geçtiğini sayar</td><td>sayı (int)</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 2</span>
+<p><strong>Soru:</strong> Bir liste üzerinde metotları art arda uygulayalım. Her satırdan sonra liste nasıl görünür?</p>
+<pre class="kod" data-ad="python3 metotlar.py">x = [5, 1, 4]
+x.append(9)
+print(x)
+x.extend([7, 3])
+print(x)
+x.insert(0, 8)
+print(x)
+son = x.pop()
+print(son, x)
+ilk = x.pop(0)
+print(ilk, x)
+x.remove(4)
+print(x)
+print(x.index(9), x.count(1))
+x.sort()
+print(x)
+x.reverse()
+print(x)</pre>
+<p><strong>Adım 1.</strong> <code>append(9)</code>: 9 sona eklenir → <code>[5, 1, 4, 9]</code>.</p>
+<p><strong>Adım 2.</strong> <code>extend([7, 3])</code>: verilen listenin öğeleri tek tek sona eklenir → <code>[5, 1, 4, 9, 7, 3]</code>.</p>
+<p><strong>Adım 3.</strong> <code>insert(0, 8)</code>: 8, 0 numaralı konuma girer; öbür bütün öğeler bir sağa kayar → <code>[8, 5, 1, 4, 9, 7, 3]</code>.</p>
+<p><strong>Adım 4.</strong> <code>pop()</code>: sondaki 3 çıkarılır ve <strong>döndürülür</strong>; onu <code>son</code> adıyla yakalıyoruz.</p>
+<p><strong>Adım 5.</strong> <code>pop(0)</code>: baştaki 8 çıkarılır ve döndürülür.</p>
+<p><strong>Adım 6.</strong> <code>remove(4)</code>: değeri 4 olan öğe çıkarılır. Dikkat: <code>remove</code> <strong>değer</strong> alır, <code>pop</code> <strong>indeks</strong>.</p>
+<p><strong>Adım 7.</strong> Liste şimdi <code>[5, 1, 9, 7]</code>. 9 değeri 2 numaralı konumda; 1 değeri bir kez geçiyor.</p>
+<p><strong>Adım 8.</strong> <code>sort()</code> küçükten büyüğe sıralar, <code>reverse()</code> o sırayı ters çevirir.</p>
+<pre class="cikti">[5, 1, 4, 9]
+[5, 1, 4, 9, 7, 3]
+[8, 5, 1, 4, 9, 7, 3]
+3 [8, 5, 1, 4, 9, 7]
+8 [5, 1, 4, 9, 7]
+[5, 1, 9, 7]
+2 1
+[1, 5, 7, 9]
+[9, 7, 5, 1]</pre>
+<p><strong>Sonuç:</strong> Her adımda aynı liste nesnesi değişti; hiçbir satırda yeni bir liste atanmadı. Yalnızca <code>pop</code>, <code>index</code> ve <code>count</code> işe yarar bir değer döndürdü.</p></div>
+
+<p>Bir performans notu: <code>append</code> ve <code>pop()</code> listenin sonuyla çalıştığı için hızlıdır. <code>insert(0, …)</code> ve <code>pop(0)</code> ise baştaki konumla oynadığı için arkadaki bütün öğelerin kaydırılmasını gerektirir; birkaç öğede fark hissedilmez, milyonlarca öğede hissedilir. Başa sık ekleme ve baştan sık çıkarma gerekiyorsa standart kütüphanedeki <code>collections.deque</code> bu iş için tasarlanmıştır; Parça 9'daki standart kütüphane turunda adını yeniden göreceksin.</p>
+
+<h3><code>append</code> ile <code>extend</code> farkı</h3>
+
+<pre class="kod" data-ad="python3 append_extend.py">x = [3, 1, 2]
+x.append([4, 5])
+print(x)
+y = [3, 1, 2]
+y.extend([4, 5])
+print(y)
+z = [3, 1, 2]
+z.extend("ab")
+print(z)</pre>
+<pre class="cikti">[3, 1, 2, [4, 5]]
+[3, 1, 2, 4, 5]
+[3, 1, 2, 'a', 'b']</pre>
+
+<p><code>append</code> neyi verirsen onu <strong>tek bir öğe</strong> olarak ekler; ona bir liste verirsen listenin kendisi tek öğe olur ve iç içe liste oluşur. <code>x</code>'in uzunluğu artık 4'tür, 5 değil. <code>extend</code> ise verdiğin şeyin <strong>içindeki öğeleri</strong> tek tek ekler. Son satır bunun bir yan sonucunu gösteriyor: string de öğelerine (karakterlerine) ayrılabildiği için <code>extend("ab")</code> iki ayrı karakter ekler. "ab" metnini tek öğe olarak eklemek istiyorsan <code>append("ab")</code> yazmalısın.</p>
+
+<h3><code>sort()</code> ile <code>sorted()</code>: yerinde mi, yeni mi?</h3>
+
+<p>Sıralamanın iki yolu var ve aralarındaki fark, az önceki "yerinde değiştir, <code>None</code> döndür" kuralının ta kendisi.</p>
+
+<pre class="kod" data-ad="python3 sirala.py">a = [5, 1, 4]
+b = sorted(a)
+print(a, b)
+c = a.sort()
+print(a, c)
+print(sorted(["armut", "Elma", "ayva"]))
+print(sorted([5, 1, 4], reverse=True))</pre>
+<pre class="cikti">[5, 1, 4] [1, 4, 5]
+[1, 4, 5] None
+['Elma', 'armut', 'ayva']
+[5, 4, 1]</pre>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>sorted(a)</code> bir <strong>fonksiyondur</strong>: <code>a</code>'ya dokunmaz, sıralanmış <strong>yeni</strong> bir liste döndürür. Her türlü yinelenebilir şeyi alır (liste, demet, string, <code>range</code>) ve hep liste verir. <code>a.sort()</code> bir <strong>metottur</strong>: yalnızca listede vardır, <code>a</code>'yı yerinde sıralar ve <code>None</code> döndürür. İkisi de <code>reverse=True</code> ile büyükten küçüğe sıralayabilir.</p></div>
+
+<p>Neden iki ayrı araç var? Çünkü iki ayrı ihtiyaç var. Orijinal sırayı kaybetmek istemiyorsan (örneğin günlük satırlarının geliş sırası önemliyse) <code>sorted</code> kullanırsın. Liste büyükse ve eski sıraya ihtiyacın yoksa <code>sort()</code> ikinci bir liste için bellek ayırmadığından daha tutumludur. Metodun <code>None</code> döndürmesi de bilinçli bir tasarım kararıdır: Python, "bu işlem nesneyi yerinde değiştirdi" mesajını, sonuç döndürmeyerek verir. Böylece <code>b = a.sort()</code> yazıp <code>b</code>'nin sıralı liste olduğunu sanan kişi, ilk kullanımda <code>None</code> ile karşılaşıp hatasını hemen fark eder.</p>
+
+<p>Üçüncü satırdaki sonuç da şaşırtabilir: <code>'Elma'</code> en başta. String'ler karakter kodlarına göre karşılaştırılır (Parça 3'teki <code>ord</code>): büyük harflerin kodu küçük harflerinkinden küçüktür, bu yüzden büyük harfle başlayan sözcükler öne geçer. Türkçe alfabe sırası ve büyük/küçük harften bağımsız sıralama için <code>sorted(..., key=...)</code> ile bir anahtar fonksiyonu vermek gerekir; o konu Parça 6'nın işidir. Python'ın sıralaması ayrıca <strong>kararlıdır</strong> (stable): eşit sayılan iki öğenin önceki göreli sırası korunur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>a = a.sort()</code> yazarsam a sıralanmış olur."</strong> Olmaz; <code>a.sort()</code> listeyi gerçekten sıralar ama <code>None</code> döndürür ve sen bu <code>None</code>'ı <code>a</code> etiketine yapıştırırsın. Sıralı liste etiketsiz kalır ve kaybolur; <code>a</code> artık <code>None</code>'dır. Aynı hata <code>append</code>, <code>extend</code>, <code>reverse</code>, <code>insert</code>, <code>remove</code> için de geçerlidir. Doğrusu ya yalnızca <code>a.sort()</code> yazmak (yerinde) ya da <code>a = sorted(a)</code> yazmaktır (yeni liste). Bu kuralı string metotlarıyla karıştırma: <code>s = s.upper()</code> doğrudur, çünkü string metotları yeni değer döndürür.</p></div>
+
+<h2 class="s">4. Listeyle sık kullanılan yerleşik işlemler: <code>in</code>, <code>len</code>, <code>min</code>, <code>max</code>, <code>sum</code></h2>
+
+<p>Bunlar metot değil, her kapla çalışan genel araçlardır; bu yüzden nokta ile değil, listeyi parantez içine vererek çağrılır (<code>in</code> ise bir operatördür).</p>
+
+<pre class="kod" data-ad="python3 genel.py">puanlar = [72, 85, 90, 64, 85]
+print(85 in puanlar, 100 in puanlar, 100 not in puanlar)
+print(len(puanlar), min(puanlar), max(puanlar), sum(puanlar))
+print(sum(puanlar) / len(puanlar))
+print(min(["armut", "elma", "ayva"]))
+try:
+    max([])
+except ValueError as e:
+    print("ValueError:", e)</pre>
+<pre class="cikti">True False True
+5 64 90 396
+79.2
+armut
+ValueError: max() iterable argument is empty</pre>
+
+<p><code>in</code> Parça 3'te string içinde parça arıyordu; listede ise "bu değere <strong>eşit</strong> bir öğe var mı" diye bakar ve <code>bool</code> döndürür. Bunu yapmak için Python listeyi baştan sona tek tek gezer; yani liste uzadıkça arama da uzar. Çok sayıda üyelik sorgusu yapacaksan Parça 5'teki küme (<code>set</code>) çok daha hızlıdır; orada nedenini göreceğiz.</p>
+
+<p>Ortalama için ayrı bir yerleşik fonksiyon yok; <code>sum / len</code> yeterli. Parça 1'den hatırla: <code>/</code> sonucu her zaman <code>float</code>'tur, bu yüzden 79.2 çıktı. <code>min</code> ve <code>max</code> sayılar dışında karşılaştırılabilen her şeyle çalışır (string'lerde alfabe değil karakter kodu sırası). Boş bir listenin en büyüğü tanımsız olduğundan <code>max([])</code> hata verir; <code>sum([])</code> ise 0 döndürür, çünkü "hiçbir şeyin toplamı" matematikte 0'dır. Programında liste boş kalabiliyorsa bunu önceden <code>if puanlar:</code> ile denetle (Parça 2'deki doğruluk kuralı: boş liste yanlış sayılır).</p>
+
+<h2 class="s">5. Demet (tuple): değişmez sıra</h2>
+
+<p>Demet, listenin değişmez kardeşidir. Normal parantezle (ya da yalnızca virgülle) yazılır. İndeksleme, dilimleme, <code>in</code>, <code>len</code>, <code>min</code>, <code>max</code>, <code>sum</code>, <code>index</code>, <code>count</code> aynen çalışır; değiştiren işlemlerin hiçbiri çalışmaz.</p>
+
+<pre class="kod" data-ad="python3 demet.py">nokta = (3, 4)
+print(nokta[0], len(nokta))
+try:
+    nokta[0] = 5
+except TypeError as e:
+    print("TypeError:", e)
+tek = (7,)
+degil = (7)
+print(type(tek), type(degil))
+p = 1, 2, 3
+print(p, type(p))
+def bol(a, b):
+    return a // b, a % b
+print(bol(17, 5))</pre>
+<pre class="cikti">3 2
+TypeError: 'tuple' object does not support item assignment
+&lt;class 'tuple'&gt; &lt;class 'int'&gt;
+(1, 2, 3) &lt;class 'tuple'&gt;
+(3, 2)</pre>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Demet</strong> (<code>tuple</code>), değerleri sırayla tutan ama oluşturulduktan sonra öğesi eklenemeyen, çıkarılamayan, değiştirilemeyen nesnedir. Demeti oluşturan şey asıl olarak <strong>virgüldür</strong>; parantez çoğu zaman yalnızca okunurluk ve gruplama içindir. Tek öğeli demet sondaki virgülle yazılır: <code>(7,)</code>. Boş demet <code>()</code>'dir.</p></div>
+
+<p>Çıktının üçüncü satırı bu tanımın kanıtı: <code>(7)</code> bir demet değil, parantez içine alınmış 7 sayısıdır; tıpkı <code>(2 + 3) * 4</code>'teki parantez gibi işlem önceliği parantezi olarak okunur. Virgül koyduğunda Python bunun bir demet olduğunu anlar. Dördüncü satırda parantez hiç yok, yalnızca virgüller var; sonuç yine demet.</p>
+
+<h3>Değişmez bir şeye neden ihtiyaç var?</h3>
+
+<p>Liste her işi görüyorsa demet neden var? Üç somut gerekçe:</p>
+
+<p><strong>Birincisi, anlam ve güvenlik.</strong> Bazı veriler doğası gereği sabittir: bir noktanın koordinatları <code>(x, y)</code>, bir rengin RGB değeri <code>(255, 128, 0)</code>, haftanın günleri, bir sunucunun <code>("127.0.0.1", 8080)</code> biçiminde adres ve portu. Bunları demet olarak tutmak okura "bu bir koleksiyon değil, tek bir şeyin parçaları ve değişmeyecek" der. Kodun başka bir yerinde yanlışlıkla değiştirilmeye kalkışılırsa program sessizce bozulmak yerine hemen <code>TypeError</code> verir.</p>
+
+<p><strong>İkincisi, çoklu dönüş.</strong> Bir fonksiyon <code>return a // b, a % b</code> yazdığında aslında tek bir şey döndürür: iki öğeli bir demet. Örnekte <code>bol(17, 5)</code> sonucu <code>(3, 2)</code> oldu: 17'nin 5'e bölümü 3, kalanı 2. Python'da "birden çok değer döndürmek" diye ayrı bir mekanizma yoktur; demet bu işi görür.</p>
+
+<p><strong>Üçüncüsü, sözlük anahtarı olabilmek.</strong> Parça 5'te göreceğin sözlükler anahtar olarak yalnızca değişmez değerleri kabul eder; demet anahtar olabilir, liste olamaz. Bir de küçük bir bonus: demetler sabit olduğu için Python onları biraz daha az bellekle ve biraz daha hızlı işleyebilir; ama demet seçmenin asıl nedeni hız değil anlamdır.</p>
+
+<p>Pratikteki kaba ayrım şöyle: <strong>aynı türden, sayısı değişebilen</strong> şeylerin koleksiyonu için liste (bütün puanlar, bütün satırlar); <strong>farklı anlamları olan, sayısı sabit</strong> parçalardan oluşan tek bir kayıt için demet (bir kişinin adı ve yaşı, bir noktanın x ve y'si).</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Demet değişmezse, içindeki hiçbir şey değişemez."</strong> Tam doğru değil. Demetin değişmezliği, <strong>hangi nesneleri gösterdiğinin</strong> değişmemesidir. Demetin öğelerinden biri bir liste ise, o listenin içeriği yine değişebilir: <code>t = ([1], 2)</code> için <code>t[0].append(9)</code> çalışır ve <code>t</code> artık <code>([1, 9], 2)</code> gibi görünür. Demet hâlâ aynı listeyi gösteriyor; değişen o listenin kendisi. Bu yüzden içinde liste olan bir demet sözlük anahtarı da olamaz. Gerçekten hiç değişmeyecek bir kayıt istiyorsan içine de yalnızca değişmez değerler (sayı, string, demet) koy.</p></div>
+
+<h2 class="s">6. Paketleme ve açma (unpacking)</h2>
+
+<p>Değerleri virgülle yan yana yazıp tek bir demette toplamaya <strong>paketleme</strong> (packing) denir: <code>p = 1, 2, 3</code>. Tersi, bir demetin ya da listenin öğelerini tek hamlede ayrı adlara dağıtmaktır: <strong>açma</strong> (unpacking).</p>
+
+<pre class="kod" data-ad="python3 acma.py">def bol(a, b):
+    return a // b, a % b
+
+bolum, kalan = bol(17, 5)
+print(bolum, kalan)
+a, b = 1, 2
+a, b = b, a
+print(a, b)
+ilk, *orta, son = [10, 20, 30, 40, 50]
+print(ilk, orta, son)
+bas, *geri = "abc"
+print(bas, geri)
+*hepsi, son = [9]
+print(hepsi, son)
+try:
+    x, y = [1, 2, 3]
+except ValueError as e:
+    print("ValueError:", e)</pre>
+<pre class="cikti">3 2
+2 1
+10 [20, 30, 40] 50
+a ['b', 'c']
+[] 9
+ValueError: too many values to unpack (expected 2)</pre>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Atamanın solunda virgülle ayrılmış birden çok ad varsa, sağdaki değer açılır ve öğeleri sırayla bu adlara dağıtılır. Soldaki ad sayısı ile sağdaki öğe sayısı <strong>tam eşit</strong> olmalıdır; değilse <code>ValueError</code> verilir. Soldaki adlardan <strong>bir tanesi</strong> yıldızlı olabilir (<code>*orta</code>); o ad, öbür adlara dağıtıldıktan sonra artan bütün öğeleri bir <strong>liste</strong> olarak alır (hiç artan yoksa boş liste).</p></div>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 3</span>
+<p><strong>Soru:</strong> <code>a, b = b, a</code> satırı iki değişkenin değerini nasıl takas ediyor? Başka dillerde neden geçici bir değişken gerekir?</p>
+<p><strong>Adım 1.</strong> Başlangıçta <code>a</code> 1'i, <code>b</code> 2'yi gösteriyor.</p>
+<p><strong>Adım 2.</strong> Python bir atamada <strong>önce sağ tarafı bütünüyle hesaplar</strong>. Sağ taraf <code>b, a</code>: bu, o anki değerlerle paketlenmiş <code>(2, 1)</code> demetidir.</p>
+<p><strong>Adım 3.</strong> Sonra sol taraf işlenir: demet açılır, ilk öğe (2) <code>a</code>'ya, ikinci öğe (1) <code>b</code>'ye yapıştırılır.</p>
+<p><strong>Adım 4.</strong> Sağ taraf atama başlamadan önce hazırlandığı için, <code>a</code>'nın değişmesi <code>b</code>'ye gidecek değeri etkilemez.</p>
+<p><strong>Sonuç:</strong> Çıktıdaki <code>2 1</code> takasın gerçekleştiğini gösteriyor. Tek tek atamaya dayalı dillerde <code>a = b</code> yazdığın anda <code>a</code>'nın eski değeri kaybolur; bu yüzden önce <code>gecici = a</code> diye saklamak gerekir. Python'da paketleme-açma bu geçici değişkeni senin yerine kurar.</p></div>
+
+<p>Yıldızla açma, uzunluğu önceden bilinmeyen bir dizinin baş ve sonunu almak için kullanışlıdır. Örneğin bir günlük satırını boşluklardan bölüp (Parça 3'teki <code>split</code>) ilk alanı tarih, son alanı durum kodu, aradakileri de mesaj olarak ayırabilirsin. Çıktıdaki iki ayrıntıya dikkat et: <code>"abc"</code> bir string olduğu hâlde yıldızlı ad yine <strong>liste</strong> aldı (<code>['b', 'c']</code>); ve <code>[9]</code> açılırken artan öğe kalmadığı için <code>hepsi</code> boş liste oldu, hata vermedi. Aynı satırda iki yıldızlı ad yazamazsın; Python artan öğeleri ikisi arasında nasıl bölüştüreceğini bilemez.</p>
+
+<p>Açma <code>for</code> döngüsünde de çalışır ve en sık orada görürsün. Elinde demetlerden oluşan bir liste varsa, örneğin <code>kayitlar = [("ali", 72), ("ece", 85)]</code>, <code>for ad, puan in kayitlar:</code> yazarak her turda demeti iki ada açabilirsin. Parça 5'teki sözlükte <code>items()</code> ile dolaşırken bu kalıbı sürekli kullanacağız.</p>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="Yıldızla açma: beş öğeli liste ilk, orta ve son adlarına dağıtılıyor; orta bir liste alıyor">
+  <rect class="sv-k" x="20" y="20" width="360" height="40" rx="8"/>
+  <line class="sv-c" x1="92" y1="20" x2="92" y2="60"/>
+  <line class="sv-c" x1="164" y1="20" x2="164" y2="60"/>
+  <line class="sv-c" x1="236" y1="20" x2="236" y2="60"/>
+  <line class="sv-c" x1="308" y1="20" x2="308" y2="60"/>
+  <text class="sv-t" x="56" y="45" text-anchor="middle">10</text>
+  <text class="sv-t" x="128" y="45" text-anchor="middle">20</text>
+  <text class="sv-t" x="200" y="45" text-anchor="middle">30</text>
+  <text class="sv-t" x="272" y="45" text-anchor="middle">40</text>
+  <text class="sv-t" x="344" y="45" text-anchor="middle">50</text>
+  <line class="sv-cl" x1="56" y1="60" x2="56" y2="120"/>
+  <path class="sv-cl" d="M128 60V96H272V60"/>
+  <line class="sv-cl" x1="200" y1="96" x2="200" y2="120"/>
+  <line class="sv-cl" x1="344" y1="60" x2="344" y2="120"/>
+  <rect class="sv-l" x="20" y="120" width="72" height="36" rx="8"/>
+  <text class="sv-b" x="56" y="143" text-anchor="middle">ilk</text>
+  <rect class="sv-m" x="130" y="120" width="140" height="36" rx="8"/>
+  <text class="sv-b" x="200" y="143" text-anchor="middle">*orta</text>
+  <rect class="sv-l" x="308" y="120" width="72" height="36" rx="8"/>
+  <text class="sv-b" x="344" y="143" text-anchor="middle">son</text>
+  <text class="sv-s" x="56" y="178" text-anchor="middle">10</text>
+  <text class="sv-s" x="200" y="178" text-anchor="middle">[20, 30, 40] (liste)</text>
+  <text class="sv-s" x="344" y="178" text-anchor="middle">50</text>
+</svg>
+<figcaption><code>ilk, *orta, son = [10, 20, 30, 40, 50]</code>: önce yıldızsız adlar baştan ve sondan kendi öğelerini alır, yıldızlı ad aradaki her şeyi bir liste olarak toplar.</figcaption>
+</figure>
+
+<h2 class="s">7. Liste kurucu (list comprehension)</h2>
+
+<p>Parça 2'de akümülatör kalıbını gördün: boş bir başlangıç, bir döngü ve her turda biriktirme. Liste için bu kalıp "boş liste aç, döngüde her öğeye bir iş uygula, sonucu <code>append</code> et" biçimini alır. Bu iş o kadar sık yapılır ki Python ona kısa bir söz dizimi ayırmıştır.</p>
+
+<pre class="kod" data-ad="python3 kurucu.py">kareler = []
+for n in range(1, 6):
+    kareler.append(n * n)
+print(kareler)
+print([n * n for n in range(1, 6)])
+print([n for n in range(10) if n % 2 == 0])
+print(["çift" if n % 2 == 0 else "tek" for n in range(4)])
+sozcukler = ["  Elma", "armut ", " AYVA "]
+print([s.strip().lower() for s in sozcukler])
+print([(x, y) for x in range(2) for y in range(3)])</pre>
+<pre class="cikti">[1, 4, 9, 16, 25]
+[1, 4, 9, 16, 25]
+[0, 2, 4, 6, 8]
+['çift', 'tek', 'çift', 'tek']
+['elma', 'armut', 'ayva']
+[(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)]</pre>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Liste kurucunun genel biçimi <code>[ifade for ad in kaynak if koşul]</code>'dur. Sağdan değil soldan değil, <strong>ortadan</strong> oku: "kaynaktaki her <em>ad</em> için, <em>koşul</em> doğruysa, <em>ifade</em>'nin sonucunu listeye koy." <code>if koşul</code> kısmı isteğe bağlıdır ve bir <strong>süzgeçtir</strong> (bazı öğeleri atar). Her öğe için iki sonuçtan birini seçmek istiyorsan koşullu ifade baştaki <em>ifade</em> kısmına yazılır: <code>[A if koşul else B for ad in kaynak]</code>. Sonuç her zaman <strong>yeni</strong> bir listedir.</p></div>
+
+<p>İlk iki çıktı aynı: dört satırlık döngü ile tek satırlık kurucu aynı listeyi üretti. Kurucu, niyetini daha doğrudan söyler ("karelerin listesi") ve Python'ın içinde biraz daha hızlı çalışır. Üçüncü satır süzgeç örneği: yalnızca çift sayılar listeye girdi, liste kısaldı. Dördüncü satırda ise süzgeç yok; her öğe listeye girdi ama her biri için iki değerden biri seçildi, liste kısalmadı. Bu iki biçimi karıştırmamak önemli: <strong>sondaki <code>if</code> atar, baştaki <code>if … else</code> seçer.</strong> Sondaki <code>if</code>'e <code>else</code> yazamazsın; baştaki koşullu ifade ise <code>else</code>'siz yazılamaz.</p>
+
+<p>Beşinci satır, Parça 3'teki string metotlarının zincirlenmesini her öğeye uyguluyor: kullanıcıdan ya da dosyadan gelen dağınık metinleri temizlemenin tipik yolu. Son satırda iki <code>for</code> var; tıpkı iç içe döngü gibi, soldaki <code>for</code> dıştaki döngüdür. Sonuçta 2 × 3 = 6 demet oluştu.</p>
+
+<h3>Liste kurucu ne zaman okunabilirliği bozar?</h3>
+
+<p>Kurucunun amacı kodu <strong>kısaltmak değil, okunur kılmaktır</strong>. Tek bir dönüşüm ve en fazla bir süzgeç olduğunda bir bakışta anlaşılır. Ama iki <code>for</code>, iki <code>if</code> ve bir koşullu ifade aynı satıra sıkışınca okuyan kişi (altı ay sonraki sen de dahil) satırı parçalara ayırmak zorunda kalır. Pratik ölçüt: kurucuyu yüksek sesle tek cümleyle söyleyemiyorsan normal bir <code>for</code> döngüsüne çevir. Bir de şu var: kurucu bir <strong>liste üretmek</strong> içindir. Yalnızca ekrana yazdırmak ya da bir dosyaya yazmak gibi yan etkili işler için kurucu kullanma (<code>[print(x) for x in a]</code> gibi); bu hem gereksiz bir <code>None</code> listesi üretir hem de niyeti saklar. Böyle işler için düz <code>for</code> doğru araçtır.</p>
+
+<h2 class="s">8. Kopya sorunu: <code>b = a</code> kopya değildir</h2>
+
+<p>Bu parçanın başındaki soruya geldik: bir listenin "kopyasını" alıp değiştirdiğinde neden bazen orijinal de değişiyor? Cevap, Parça 1'deki etiket fikrinde ve yukarıdaki yan etki örneğinde zaten saklı.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 4</span>
+<p><strong>Soru:</strong> <code>b = a</code>, <code>a[:]</code>, <code>list(a)</code> ve <code>a.copy()</code> arasındaki fark nedir?</p>
+<pre class="kod" data-ad="python3 kopya1.py">a = [1, 2, 3]
+b = a
+b.append(4)
+print(a)
+print(a is b)
+c = a[:]
+d = list(a)
+e = a.copy()
+c.append(99)
+print(a, c)
+print(a is c, a == d, a is e)</pre>
+<p><strong>Adım 1.</strong> <code>b = a</code> yeni bir liste <strong>oluşturmaz</strong>; yalnızca aynı listeye ikinci bir etiket yapıştırır.</p>
+<p><strong>Adım 2.</strong> <code>b.append(4)</code> o tek listeyi değiştirir; <code>a</code> da aynı listeyi gösterdiği için <code>[1, 2, 3, 4]</code> görünür.</p>
+<p><strong>Adım 3.</strong> <code>a is b</code> <code>True</code> verir. <code>is</code> operatörü "bu iki ad <strong>aynı nesneyi</strong> mi gösteriyor?" diye sorar; <code>==</code> ise "içerikleri eşit mi?" diye. Bu ayrımı Parça 10'da nesnelerle birlikte daha ayrıntılı göreceğiz.</p>
+<p><strong>Adım 4.</strong> <code>a[:]</code> (baştan sona dilim), <code>list(a)</code> ve <code>a.copy()</code> üçü de <strong>yeni</strong> bir liste nesnesi oluşturup öğeleri ona yerleştirir.</p>
+<p><strong>Adım 5.</strong> <code>c.append(99)</code> yalnızca yeni listeyi değiştirir; <code>a</code> etkilenmez.</p>
+<p><strong>Adım 6.</strong> <code>a is c</code> yanlış (farklı nesneler), <code>a == d</code> doğru (içerik aynı), <code>a is e</code> yanlış.</p>
+<pre class="cikti">[1, 2, 3, 4]
+True
+[1, 2, 3, 4] [1, 2, 3, 4, 99]
+False True False</pre>
+<p><strong>Sonuç:</strong> Atama asla kopyalamaz; kopya istiyorsan bunu açıkça <code>a[:]</code>, <code>list(a)</code> ya da <code>a.copy()</code> ile istersin.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>b = a</code> bir <strong>takma ad</strong> (alias) oluşturur: tek nesne, iki ad. <code>a[:]</code>, <code>list(a)</code> ve <code>a.copy()</code> bir <strong>sığ kopya</strong> (shallow copy) oluşturur: yeni bir dış liste, ama içindeki öğeler orijinaldeki <strong>aynı</strong> nesnelerdir. İç içe değiştirilebilir nesnelerin de bağımsız kopyası gerekiyorsa <code>copy.deepcopy(a)</code> kullanılır (<strong>derin kopya</strong>).</p></div>
+
+<h3>Sığ kopyanın sınırı</h3>
+
+<p>"Sığ" sözcüğü, kopyanın yalnızca bir kat derine indiğini anlatır. Dış liste yenidir; ama bölmelerdeki oklar, şekil 1'deki gibi, hâlâ eski iç nesneleri gösterir. İçteki nesneler değişmezse (sayı, string, demet) bu fark etmez, çünkü onları zaten kimse değiştiremez. İçteki nesneler liste ise fark eder.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 5</span>
+<p><strong>Soru:</strong> İç içe bir listenin sığ kopyasında iç listeyi değiştirirsek ne olur? Derin kopya neyi çözer?</p>
+<pre class="kod" data-ad="python3 kopya2.py">a = [[1, 2], [3, 4]]
+b = a[:]
+b[0].append(99)
+b.append([5])
+print(a)
+print(b)
+print(a[0] is b[0])
+import copy
+c = copy.deepcopy(a)
+c[0].append(7)
+print(a)
+print(c)</pre>
+<p><strong>Adım 1.</strong> <code>b = a[:]</code> yeni bir dış liste kurar. Bu yeni dış listenin 0. bölmesi, <code>a</code>'nın 0. bölmesiyle <strong>aynı</strong> <code>[1, 2]</code> nesnesini gösterir.</p>
+<p><strong>Adım 2.</strong> <code>b[0].append(99)</code> o ortak iç listeyi değiştirir. <code>a</code> da onu gösterdiği için <code>a</code>'da da 99 görünür.</p>
+<p><strong>Adım 3.</strong> <code>b.append([5])</code> ise <code>b</code>'nin <strong>dış</strong> listesine yeni bir öğe ekler. Dış listeler farklı nesneler olduğu için <code>a</code> bundan etkilenmez.</p>
+<p><strong>Adım 4.</strong> <code>a[0] is b[0]</code> <code>True</code> verir: iç listeler gerçekten ortak.</p>
+<p><strong>Adım 5.</strong> <code>copy.deepcopy(a)</code> (<code>import copy</code> ile standart kütüphaneden alınır; <code>import</code>'un ayrıntısı Parça 9'da) dış listeyi de, her iç listeyi de yeniden kurar. <code>c[0].append(7)</code> yalnızca <code>c</code>'yi etkiler.</p>
+<pre class="cikti">[[1, 2, 99], [3, 4]]
+[[1, 2, 99], [3, 4], [5]]
+True
+[[1, 2, 99], [3, 4]]
+[[1, 2, 99, 7], [3, 4]]</pre>
+<p><strong>Sonuç:</strong> Sığ kopya dış listeyi ayırır, iç nesneleri paylaşır. İç içe değiştirilebilir veriyi tamamen ayırmak için derin kopya gerekir. Derin kopya daha yavaştır ve daha çok bellek harcar; bu yüzden varsayılan değildir, yalnızca gerçekten gerektiğinde kullanılır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 280" role="img" aria-label="Takma ad, sığ kopya ve derin kopyanın karşılaştırması">
+  <text class="sv-b" x="10" y="20">b = a (takma ad)</text>
+  <text class="sv-t" x="20" y="52">a</text><text class="sv-t" x="20" y="76">b</text>
+  <line class="sv-cl" x1="34" y1="48" x2="90" y2="60"/>
+  <line class="sv-cl" x1="34" y1="72" x2="90" y2="62"/>
+  <rect class="sv-l" x="90" y="46" width="100" height="30" rx="6"/>
+  <text class="sv-s" x="140" y="66" text-anchor="middle">tek dış liste</text>
+  <text class="sv-b" x="10" y="112">b = a[:] (sığ kopya)</text>
+  <rect class="sv-l" x="20" y="124" width="90" height="28" rx="6"/><text class="sv-s" x="65" y="143" text-anchor="middle">a'nın dışı</text>
+  <rect class="sv-l" x="20" y="164" width="90" height="28" rx="6"/><text class="sv-s" x="65" y="183" text-anchor="middle">b'nin dışı</text>
+  <line class="sv-cl" x1="110" y1="138" x2="170" y2="156"/>
+  <line class="sv-cl" x1="110" y1="178" x2="170" y2="160"/>
+  <rect class="sv-a" x="170" y="144" width="90" height="28" rx="6"/><text class="sv-s" x="215" y="163" text-anchor="middle">ortak iç liste</text>
+  <text class="sv-b" x="10" y="222">deepcopy(a) (derin kopya)</text>
+  <rect class="sv-l" x="20" y="234" width="80" height="28" rx="6"/><text class="sv-s" x="60" y="253" text-anchor="middle">a'nın dışı</text>
+  <line class="sv-cl" x1="100" y1="248" x2="122" y2="248"/>
+  <rect class="sv-m" x="122" y="234" width="60" height="28" rx="6"/><text class="sv-s" x="152" y="253" text-anchor="middle">iç</text>
+  <rect class="sv-l" x="208" y="234" width="80" height="28" rx="6"/><text class="sv-s" x="248" y="253" text-anchor="middle">c'nin dışı</text>
+  <line class="sv-cl" x1="288" y1="248" x2="310" y2="248"/>
+  <rect class="sv-m" x="310" y="234" width="70" height="28" rx="6"/><text class="sv-s" x="345" y="253" text-anchor="middle">yeni iç</text>
+</svg>
+<figcaption>Üç durum: takma adda tek nesne var; sığ kopyada dış listeler ayrı ama iç nesne ortak (turuncu); derin kopyada her kat ayrı.</figcaption>
+</figure>
+
+<h3>Çarpmayla liste kurarken aynı tuzak</h3>
+
+<p>Parça 3'te <code>"ab" * 3</code> ile string tekrarını gördün; aynı işlem listede de çalışır. Ama iç içe listeyle birleşince sığ kopya tuzağının en sinsi biçimi ortaya çıkar.</p>
+
+<pre class="kod" data-ad="python3 carpma.py">satir = [0] * 3
+print(satir)
+izgara = [[0] * 3] * 2
+izgara[0][0] = 1
+print(izgara)
+dogru = [[0] * 3 for _ in range(2)]
+dogru[0][0] = 1
+print(dogru)</pre>
+<pre class="cikti">[0, 0, 0]
+[[1, 0, 0], [1, 0, 0]]
+[[1, 0, 0], [0, 0, 0]]</pre>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>[[0] * 3] * 2</code> iki ayrı satırlık bir ızgara kurar."</strong> Kurmaz. Liste çarpması öğeleri kopyalamaz, aynı öğeye giden oku tekrarlar. İç liste <code>[0, 0, 0]</code> bir kez oluşturulur ve dış listenin iki bölmesi de <strong>aynı</strong> iç listeyi gösterir; bu yüzden bir satırı değiştirince öbürü de değişti. <code>[0] * 3</code>'te sorun yoktu, çünkü 0 değişmez bir sayıdır. Doğrusu, her satırı ayrı ayrı oluşturan bir liste kurucudur: <code>[[0] * 3 for _ in range(2)]</code>. Burada kurucu her turda <code>[0] * 3</code> ifadesini yeniden hesaplar ve her seferinde yeni bir iç liste üretir. <code>_</code> adı, "döngü değişkenine ihtiyacım yok" demek için kullanılan yaygın bir gelenektir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Yazım</th><th>Yeni dış liste?</th><th>İç nesneler</th><th>Ne zaman</th></tr>
+<tr><td><code>b = a</code></td><td>Hayır</td><td>ortak (zaten tek nesne)</td><td>Aynı listeye ikinci ad gerektiğinde</td></tr>
+<tr><td><code>a[:]</code>, <code>list(a)</code>, <code>a.copy()</code></td><td>Evet</td><td>ortak (sığ)</td><td>Öğeler değişmezse (sayı, string, demet) tam yeterli</td></tr>
+<tr><td><code>copy.deepcopy(a)</code></td><td>Evet</td><td>yeniden kurulur (derin)</td><td>İç içe değiştirilebilir veri tamamen ayrılacaksa</td></tr>
+<tr><td><code>[[0] * n] * m</code></td><td>Evet</td><td>bütün satırlar aynı nesne</td><td>İç içe listede hiçbir zaman</td></tr>
+</table></div>
+
+<h2 class="s">9. Liste mi, demet mi?</h2>
+
+<p>Bütün parçayı bir tabloyla toparlayalım. Bu tablo yalnızca ikisi arasındaki seçimi gösteriyor; sözlük ve kümeyi de içeren büyük kıyas Parça 5'te.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Liste (<code>list</code>)</th><th>Demet (<code>tuple</code>)</th></tr>
+<tr><td>Yazım</td><td><code>[1, 2]</code>, boş: <code>[]</code></td><td><code>(1, 2)</code> ya da <code>1, 2</code>; tek: <code>(1,)</code>; boş: <code>()</code></td></tr>
+<tr><td>Sonradan değişir mi?</td><td>Evet (mutable)</td><td>Hayır (immutable)</td></tr>
+<tr><td>İndeks, dilim, <code>in</code>, <code>len</code></td><td>Var</td><td>Var</td></tr>
+<tr><td><code>append</code>, <code>sort</code>, <code>pop</code>…</td><td>Var</td><td>Yok (yalnız <code>index</code>, <code>count</code>)</td></tr>
+<tr><td>Sözlük anahtarı olabilir mi?</td><td>Hayır</td><td>Evet (içi de değişmezse)</td></tr>
+<tr><td>Tipik kullanım</td><td>Aynı türden, sayısı değişen öğeler</td><td>Sabit sayıda, anlamı farklı parçalar; çoklu dönüş</td></tr>
+</table></div>
+
+<p>Bir kısayol: "Buna ileride öğe ekleyecek miyim ya da sıralayacak mıyım?" sorusunun cevabı evetse liste; "Bu, tek bir şeyin sabit parçaları mı?" sorusunun cevabı evetse demet. Emin değilsen liste ile başla; değişmezliğin gerçekten işine yaradığı yeri gördüğünde demete çevirmek kolaydır (<code>tuple(a)</code>).</p>
+
+<p>Son bir güvenlik notu, ileride siber rafında karşına çıkacak bir fikrin tohumu olarak: programına dışarıdan gelen bir liste (kullanıcı girdisi, dosya, ağ) her zaman <strong>beklediğin uzunlukta ve tipte olmayabilir</strong>. <code>x, y = satir.split(",")</code> gibi bir açma, satırda üç virgül varsa <code>ValueError</code> ile çöker; <code>liste[5]</code> kısa bir satırda <code>IndexError</code> verir. Bu parçada bu hataları gördük; onlara karşı nasıl sağlam kod yazılacağını Parça 8'deki hata yönetiminde öğreneceğiz. Şimdilik alışkanlık şu olsun: dışarıdan gelen bir listenin uzunluğunu kullanmadan önce <code>len</code> ile denetle.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1–3'e:</strong> Değişkenin etiket oluşu, burada takma ad ve kopya sorununun temeli oldu. Parça 2'deki <code>for</code>, <code>range</code> ve akümülatör kalıbı liste kurucunun kendisine dönüştü. Parça 3'teki indeksleme, dilimleme, <code>in</code>, <code>len</code> ve değişmezlik bilgisi listeye ve demete aynen taşındı; fark yalnızca listenin değiştirilebilir oluşunda.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 5'te sözlük ve küme gelecek; demetin sözlük anahtarı olabilmesi, <code>in</code>'in listede yavaş kümede hızlı oluşu orada önem kazanacak. Parça 6'da fonksiyonlar, yan etki, değiştirilebilir varsayılan değer tuzağı ve <code>sorted(key=...)</code> bu parçanın üstüne kurulacak. Parça 7'de dosya satırlarını liste olarak okuyup işleyeceğiz. Parça 8'de burada gördüğün <code>IndexError</code> ve <code>ValueError</code>'ı yakalamayı öğreneceğiz.</p>
+<p><strong>Öbür raflara:</strong> C'de diziler (Parça 27) sabit boyutludur ve sınırı denetlenmez; Python listesinin <code>IndexError</code> vermesi, ileride bellek güvenliği konusunda neden önemli bir koruma olduğunu göreceğin bir farktır. JavaScript dizileri (Parça 22) ve Go dilimleri (Parça 31) de listeye çok benzer ve aynı takma ad davranışını taşır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary><code>a = [1, 2, 3]</code> için <code>a[1:2]</code> ile <code>a[1]</code> arasındaki fark nedir?</summary><p><code>a[1]</code> tek bir öğeyi, yani 2 sayısını verir. <code>a[1:2]</code> bir dilimdir ve sonucu her zaman bir listedir: tek öğeli <code>[2]</code> listesi. Ayrıca indeks sınır dışına çıkınca <code>IndexError</code> verir, dilim ise boş liste döndürür.</p></details>
+
+<details><summary>Bir fonksiyona verdiğin listeyi fonksiyon içinde <code>append</code> ile değiştirirsen dışarıdaki liste neden değişir?</summary><p>Çünkü fonksiyon listenin kopyasını almaz; parametre adı aynı liste nesnesine yapıştırılmış ikinci bir etikettir. Liste değiştirilebilir olduğundan <code>append</code> o tek nesneyi yerinde değiştirir ve dışarıdaki ad da aynı nesneyi gösterdiği için değişikliği görür. Buna yan etki denir.</p></details>
+
+<details><summary><code>sorted(a)</code> ile <code>a.sort()</code> arasındaki iki farkı söyle.</summary><p>Birincisi, <code>sorted(a)</code> orijinale dokunmadan yeni bir sıralı liste döndürür; <code>a.sort()</code> listeyi yerinde sıralar ve <code>None</code> döndürür. İkincisi, <code>sorted</code> her yinelenebilir şeyle (demet, string, range) çalışır ve hep liste verir; <code>sort</code> yalnızca listenin metodudur.</p></details>
+
+<details><summary><code>(7)</code> ile <code>(7,)</code> arasındaki fark nedir ve neden?</summary><p><code>(7)</code> parantez içine alınmış 7 sayısıdır, tipi <code>int</code>'tir; parantez burada işlem önceliği parantezi gibi okunur. <code>(7,)</code> tek öğeli bir demettir. Demeti oluşturan şey parantez değil virgüldür.</p></details>
+
+<details><summary><code>ilk, *orta, son = [1, 2]</code> çalışırsa <code>orta</code> ne olur?</summary><p><code>ilk</code> 1'i, <code>son</code> 2'yi alır; yıldızlı ada artan öğe kalmadığı için <code>orta</code> boş liste <code>[]</code> olur. Hata vermez. Ama <code>x, y = [1, 2, 3]</code> gibi yıldızsız bir açmada sayılar tutmazsa <code>ValueError</code> verilir.</p></details>
+
+<details><summary><code>[n for n in a if n &gt; 0]</code> ile <code>[n if n &gt; 0 else 0 for n in a]</code> arasındaki fark nedir?</summary><p>Birincisinde sondaki <code>if</code> bir süzgeçtir: pozitif olmayan öğeler listeye hiç girmez, sonuç kısalabilir. İkincisinde baştaki <code>if … else</code> her öğe için iki değerden birini seçer: pozitif olmayanların yerine 0 konur, sonuç orijinalle aynı uzunluktadır.</p></details>
+
+<details><summary>Sığ kopya hangi durumda yeterli, hangi durumda yetersizdir?</summary><p>Öğeler değişmez nesnelerse (sayı, string, demet) sığ kopya tam yeterlidir, çünkü paylaşılan öğeleri zaten kimse değiştiremez. Öğeler liste gibi değiştirilebilir nesnelerse sığ kopya iç nesneleri orijinalle paylaşır ve iç değişiklik iki yerde de görünür; o zaman <code>copy.deepcopy</code> gerekir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span><ul>
+<li>Liste <code>[ ]</code> ile yazılır, sıralıdır, değiştirilebilirdir. İndeks 0'dan başlar, <code>-1</code> sonuncudur; dilimde bitiş dışarıda kalır ve sonuç yeni bir listedir.</li>
+<li>Sınır dışı indeks <code>IndexError</code>, sınır dışı dilim boş liste verir.</li>
+<li>İç içe listede <code>t[i][j]</code>: önce satır, sonra sütun.</li>
+<li>Değiştirilebilir nesneye birden çok ad bağlıysa, birinden yapılan değişiklik hepsinden görünür. Fonksiyona verilen liste kopyalanmaz: yan etki.</li>
+<li><code>append</code>, <code>extend</code>, <code>insert</code>, <code>remove</code>, <code>sort</code>, <code>reverse</code> listeyi yerinde değiştirir ve <code>None</code> döndürür. <code>pop</code> çıkardığını döndürür; <code>remove</code> değer, <code>pop</code> indeks alır.</li>
+<li><code>append(x)</code> tek öğe ekler; <code>extend(y)</code> y'nin öğelerini tek tek ekler.</li>
+<li><code>sorted(a)</code> yeni liste, <code>a.sort()</code> yerinde ve <code>None</code>. <code>a = a.sort()</code> listeyi kaybettirir.</li>
+<li><code>in</code> eşit öğe arar (listede baştan sona gezerek); <code>min max sum len</code> yerleşiktir; boş listede <code>max</code> hata, <code>sum</code> 0.</li>
+<li>Demet değişmezdir; virgül oluşturur; tek öğe <code>(7,)</code>. Sabit kayıt, çoklu dönüş, sözlük anahtarı için. İçindeki liste yine değişebilir.</li>
+<li>Açma: sol ve sağ sayısı eşit olmalı; tek bir <code>*ad</code> artanları liste olarak toplar. <code>a, b = b, a</code> takas eder.</li>
+<li>Liste kurucu: <code>[ifade for ad in kaynak if koşul]</code>. Sondaki <code>if</code> süzer, baştaki <code>if … else</code> seçer. Tek cümleyle söylenemiyorsa düz döngü yaz.</li>
+<li><code>b = a</code> kopya değil takma addır. <code>a[:]</code>/<code>list(a)</code>/<code>a.copy()</code> sığ kopya; <code>copy.deepcopy</code> derin kopya. <code>[[0]*3]*2</code> yerine <code>[[0]*3 for _ in range(2)]</code>.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="kod-4">
+<h3>Quiz 4</h3>
+<p class="qa">On dört soru: sekizi bu parçadan, altısı önceki parçalardan tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q"><code>x = [10, 20, 30, 40]</code> için <code>print(x[-2])</code> ne yazdırır?</p>
+<ul class="sec"><li>20</li><li>40</li><li>30</li><li><code>[30, 40]</code></li><li><code>IndexError</code></li></ul>
+<div class="coz"><p>Negatif indeks sondan sayar: <code>-1</code> son öğe (40), <code>-2</code> sondan ikinci öğedir, yani 30. A'daki 20, <code>-2</code>'yi baştan ikinci sanan birinin cevabıdır (o <code>x[1]</code> olurdu). B, <code>-1</code> ile karıştırmaktır. D bir dilim sonucudur (<code>x[-2:]</code>), tek indeks liste değil tek öğe verir. E yanlıştır, çünkü <code>-2</code> geçerli bir indekstir; dört öğeli listede -4'e kadar negatif indeks kullanılabilir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">a = [3, 1, 2]
+b = a.sort()
+print(b)</pre>
+<ul class="sec"><li><code>None</code></li><li><code>[1, 2, 3]</code></li><li><code>[3, 1, 2]</code></li><li><code>[3, 2, 1]</code></li><li><code>TypeError</code></li></ul>
+<div class="coz"><p><code>sort()</code> listeyi yerinde sıralar ve <code>None</code> döndürür; <code>b</code>'ye yapıştırılan şey bu <code>None</code>'dır. <code>a</code> gerçekten <code>[1, 2, 3]</code> olur ama soru <code>b</code>'yi yazdırıyor; B bunu karıştıranın cevabıdır. C, sıralamanın hiç olmadığını sanmaktır. D büyükten küçüğe sıralamadır, bunun için <code>reverse=True</code> gerekirdi. Kodda hata yok, E yanlış. Yeni sıralı liste istenseydi <code>b = sorted(a)</code> yazılmalıydı.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki kod çalıştırıldığında ne yazdırır?</p>
+<pre class="kod">a = [1, 2]
+b = a
+b.append(3)
+print(a)</pre>
+<ul class="sec"><li><code>[1, 2]</code></li><li><code>[3]</code></li><li><code>[1, 2, [3]]</code></li><li><code>[1, 2, 3]</code></li><li><code>None</code></li></ul>
+<div class="coz"><p><code>b = a</code> bir kopya oluşturmaz, aynı liste nesnesine ikinci bir ad yapıştırır. <code>b.append(3)</code> o tek nesneyi değiştirdiğinden <code>a</code> da <code>[1, 2, 3]</code> gösterir. A, atamanın kopyaladığını sanan birinin cevabıdır; bu, parçanın en önemli yanılgısıdır. C, <code>append(3)</code>'ün 3'ü listeye sararak eklediğini sanmaktır; 3 bir sayı olduğu için tek öğe olarak eklenir. B ve E'nin dayanağı yoktur. Kopya isteseydik <code>b = a[:]</code> yazardık.</p></div></li>
+
+<li data-c="B"><p class="q"><code>x = [1, 2]</code> iken <code>x.append([3, 4])</code> çalıştırılıyor. <code>len(x)</code> kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>4</li><li>5</li><li>Hata verir</li></ul>
+<div class="coz"><p><code>append</code> neyi verirsen onu tek bir öğe olarak ekler; burada <code>[3, 4]</code> listesinin kendisi tek öğe olur ve <code>x</code> <code>[1, 2, [3, 4]]</code> hâline gelir. Dış listenin üç öğesi var. C'deki 4, <code>append</code>'i <code>extend</code> ile karıştırmaktır; <code>extend([3, 4])</code> olsaydı uzunluk 4 olurdu. A, eklemenin olmadığını; D, iç öğeleri de saydığını sanmaktır (<code>len</code> yalnızca dış katı sayar). Listeye liste eklemek geçerlidir, E yanlış.</p></div></li>
+
+<li data-c="E"><p class="q"><code>ilk, *orta, son = [1, 2, 3, 4]</code> satırından sonra <code>orta</code> nedir?</p>
+<ul class="sec"><li><code>2</code></li><li><code>(2, 3)</code></li><li><code>[1, 2, 3]</code></li><li><code>ValueError</code></li><li><code>[2, 3]</code></li></ul>
+<div class="coz"><p>Yıldızsız adlar önce kendi öğelerini alır: <code>ilk</code> 1'i, <code>son</code> 4'ü. Yıldızlı ad aradaki bütün öğeleri toplar ve bunu her zaman bir <strong>liste</strong> olarak yapar: <code>[2, 3]</code>. B, yıldızlı adın demet aldığını sanmaktır; kaynak demet olsa bile sonuç listedir. A yalnızca bir öğe alır, C ise <code>son</code>'u hesaba katmaz. Yıldızlı ad olduğu için sayılar tutmasa bile hata oluşmaz, D yanlış.</p></div></li>
+
+<li data-c="C"><p class="q">Demet (<code>tuple</code>) için aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Bir fonksiyon <code>return a, b</code> yazdığında aslında tek bir demet döndürür.</li><li>Tek öğeli demet <code>(7,)</code> biçiminde yazılır.</li><li>Bir demetin öğesine <code>t[0] = 5</code> ile yeni değer atanabilir.</li><li>İçinde yalnızca değişmez değerler olan bir demet sözlük anahtarı olabilir.</li><li>Demet de indekslenebilir ve dilimlenebilir.</li></ul>
+<div class="coz"><p>Kök olumsuz: yanlış olanı arıyoruz. Demet değişmezdir; <code>t[0] = 5</code> <code>TypeError: 'tuple' object does not support item assignment</code> verir, bu yüzden C yanlıştır. A doğru: virgülle yazılan dönüş değeri paketlenip tek demet olur. B doğru: <code>(7)</code> yalnızca bir sayıdır, demeti virgül kurar. D doğru: sözlük anahtarı değişmez olmalıdır ve böyle bir demet bu şartı sağlar. E doğru: okuma işlemlerinin hepsi demette de çalışır.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">print([n * 2 for n in range(5) if n % 2])</pre>
+<ul class="sec"><li><code>[2, 6]</code></li><li><code>[0, 4, 8]</code></li><li><code>[1, 3]</code></li><li><code>[0, 2, 4, 6, 8]</code></li><li><code>SyntaxError</code></li></ul>
+<div class="coz"><p><code>range(5)</code> 0–4 sayılarını verir. Süzgeç <code>n % 2</code>: kalan 1 olan tek sayılarda doğru, kalan 0 olan çift sayılarda yanlış sayılır (Parça 2'deki doğruluk kuralı: 0 yanlıştır). Yalnızca 1 ve 3 geçer ve her biri 2 ile çarpılır: <code>[2, 6]</code>. B, süzgecin çiftleri seçtiğini sanmaktır. C, çarpmayı unutmaktır. D, süzgeci hiç uygulamamaktır. Söz dizimi doğru, E yanlış.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki kod çalıştırıldığında <code>a</code> ne yazdırır?</p>
+<pre class="kod">a = [[1], [2]]
+b = a[:]
+b[0].append(9)
+b[1] = [5]
+print(a)</pre>
+<ul class="sec"><li><code>[[1], [2]]</code></li><li><code>[[1, 9], [5]]</code></li><li><code>[[1], [5]]</code></li><li><code>[[1, 9], [2]]</code></li><li><code>[[1, 9], [2], [5]]</code></li></ul>
+<div class="coz"><p><code>a[:]</code> sığ kopyadır: yeni bir dış liste, ama iç listeler ortak. <code>b[0].append(9)</code> ortak iç listeyi değiştirir, bu yüzden <code>a</code>'nın ilk öğesi de <code>[1, 9]</code> olur. <code>b[1] = [5]</code> ise yalnızca <code>b</code>'nin dış listesindeki bölmeye yeni bir liste koyar; <code>a</code>'nın dış listesi ayrı olduğu için etkilenmez. A, sığ kopyayı derin kopya sanmaktır. B, <code>b = a</code> (takma ad) olsaydı doğru olurdu. C iki işlemi ters değerlendirir. E, <code>b[1] = …</code> atamasını <code>append</code> sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="kod-1"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">print(7 // 2, 7 % 2)</pre>
+<ul class="sec"><li><code>3.5 1</code></li><li><code>3 1</code></li><li><code>3 0</code></li><li><code>3.5 0.5</code></li><li><code>1 3</code></li></ul>
+<div class="coz"><p><code>//</code> tam bölmedir: 7'nin içinde 2 tam üç kez vardır, sonuç 3. <code>%</code> kalanı verir: 7 = 2 × 3 + 1 olduğu için kalan 1. A, <code>//</code>'yi normal bölme <code>/</code> ile karıştırır; <code>/</code> 3.5 verirdi. C kalanı yanlış hesaplar. D iki operatörü de yanlış yorumlar. E sırayı ters çevirir: <code>print</code> değerleri yazıldıkları sırayla basar.</p></div></li>
+
+<li data-c="E" data-k="kod-1"><p class="q">Kullanıcı klavyeden <code>42</code> yazıp Enter'a bastığında <code>x = input()</code> satırından sonra <code>type(x)</code> nedir?</p>
+<ul class="sec"><li><code>int</code></li><li><code>float</code></li><li><code>bool</code></li><li><code>None</code></li><li><code>str</code></li></ul>
+<div class="coz"><p><code>input()</code> kullanıcı ne yazarsa yazsın her zaman metin, yani <code>str</code> döndürür; yazılan şey sayıya benzese bile <code>"42"</code> bir string'dir. Sayı olarak kullanmak için <code>int(x)</code> ya da <code>float(x)</code> ile açıkça dönüştürmek gerekir; dönüşmeyecek bir metin verilirse <code>ValueError</code> oluşur. A ve B, Python'ın girdinin tipini kendiliğinden tahmin ettiğini sanmaktır. C ve D'nin dayanağı yoktur.</p></div></li>
+
+<li data-c="C" data-k="kod-2"><p class="q"><code>for i in range(2, 10, 3): print(i)</code> hangi sayıları yazdırır?</p>
+<ul class="sec"><li>2, 5, 8, 11</li><li>2, 3, 4, …, 9</li><li>2, 5, 8</li><li>3, 6, 9</li><li>2, 5, 8, 10</li></ul>
+<div class="coz"><p><code>range(başlangıç, bitiş, adım)</code> başlangıçtan başlar, adım kadar artar ve bitişe ulaşmadan durur; bitiş dışarıda kalır. 2'den başla, 3'er artır: 2, 5, 8; sıradaki 11 bitiş olan 10'u geçtiği için alınmaz. A, bitiş sınırını yok sayar. B adımı unutur. D başlangıcı yanlış alır. E, bitişin kendisini listeye eklemektir; bitiş hiçbir zaman dahil değildir.</p></div></li>
+
+<li data-c="A" data-k="kod-2"><p class="q">Aşağıdaki değerlerden hangisi bir <code>if</code> koşulunda <strong>doğru</strong> (True) sayılır?</p>
+<ul class="sec"><li><code>" "</code> (tek boşluktan oluşan string)</li><li><code>0</code></li><li><code>""</code></li><li><code>None</code></li><li><code>[]</code></li></ul>
+<div class="coz"><p>Python'da boş diziler (<code>""</code>, <code>[]</code>), sayısal sıfır ve <code>None</code> yanlış sayılır; geri kalan her şey doğrudur. <code>" "</code> boş değildir: içinde bir boşluk karakteri vardır, uzunluğu 1'dir; bu yüzden doğru sayılır (<code>bool(" ")</code> → <code>True</code>). B, C, D ve E'nin hepsi tam olarak yanlış sayılan değerlerdir. Bu soru, "boşluk" ile "boş"un aynı şey sanılmasını yokluyor.</p></div></li>
+
+<li data-c="D" data-k="kod-3"><p class="q"><code>s = "Python"</code> için <code>s[1:4]</code> nedir?</p>
+<ul class="sec"><li><code>"Pyt"</code></li><li><code>"ytho"</code></li><li><code>"Pyth"</code></li><li><code>"yth"</code></li><li><code>"y"</code></li></ul>
+<div class="coz"><p>Dilim başlangıç indeksinden başlar, bitiş indeksine gelmeden durur. İndeksler P=0, y=1, t=2, h=3, o=4, n=5; <code>[1:4]</code> 1, 2 ve 3 numaralı karakterleri verir: <code>"yth"</code>. A ve C, indeksin 1'den başladığını sanmaktır. B, bitişi dahil etmektir. E, dilimi tek indeksle (<code>s[1]</code>) karıştırmaktır.</p></div></li>
+
+<li data-c="B" data-k="kod-3"><p class="q"><code>print(f"{3.14159:.2f}")</code> ne yazdırır?</p>
+<ul class="sec"><li><code>3.14159</code></li><li><code>3.14</code></li><li><code>3.1</code></li><li><code>3.142</code></li><li><code>{3.14159:.2f}</code></li></ul>
+<div class="coz"><p>f-string içindeki <code>:.2f</code> biçim belirteci, sayıyı ondalık noktadan sonra 2 basamakla, yuvarlayarak yazdırır: 3.14159 → 3.14. A biçimlendirmenin hiç uygulanmadığını sanmaktır. C, <code>.2</code>'yi toplam iki basamak sanmaktır. D üç basamaktır (<code>.3f</code> olurdu). E, başındaki <code>f</code> harfini unutmuş bir string'in çıktısı olurdu; burada <code>f</code> var.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#kod-3">← Önceki parça</a>
+  <button class="btn ok" data-done="kod-4">Bu bölümü okudum</button>
+  <a class="btn" href="#kod-5">Sonraki parça: sözlük ve küme</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"python list methods append extend sort sorted"</li>
+  <li>"python tuple unpacking star expression"</li>
+  <li>"python list comprehension tutorial"</li>
+  <li>"python shallow copy vs deep copy mutable"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Parçadaki bütün kod blokları (17 betik) <code>/tmp/yazar/kod-4/</code> altında gerçek dosyalara konup Python 3.13.16 ile <code>python3 -I</code> olarak çalıştırıldı; çıktılar birebir, sadeleştirmeden aktarıldı. Hiçbir örnekte rastgelelik ya da ortama bağlı değer yok; Python 3.12 ve sonrasında aynı çıktıyı beklerim, ama hata mesajlarının sözcükleri sürümler arasında küçük farklar gösterebilir.</li>
+  <li>Quiz'deki bütün kod okuma soruları ve tekrar sorularındaki hesaplar (tam bölme, <code>range</code>, doğruluk, dilim, f-string) aynı ortamda çalıştırılarak doğrulandı; çeldiricilerin yanlışlığı da aynı denemeyle görüldü.</li>
+  <li><code>list.sort</code>'un yerinde sıralayıp <code>None</code> döndürdüğü ve kararlı olduğu, <code>list.copy</code>'nin sığ kopya döndürdüğü ve <code>copy</code> modülünün sığ/derin kopya ayrımı, yerel Python kurulumundaki resmî belge dizgelerinden (<code>list.sort.__doc__</code>, <code>list.copy.__doc__</code>, <code>copy.__doc__</code>) okunarak doğrulandı. docs.python.org'daki öğretici sayfasına bu oturumda ağ kısıtı yüzünden erişemedim; geri kalan söz dizimi bilgisi (tek öğeli demette virgül, yıldızla açma, liste kurucu biçimi) çalıştırılan örneklerle sınandı.</li>
+  <li>Hafızadan yazılan ve çalıştırılarak ölçülmeyen iddialar: <code>insert(0, …)</code>/<code>pop(0)</code>'ın uzun listede yavaş, <code>append</code>/<code>pop()</code>'un hızlı olduğu; liste kurucunun eşdeğer döngüden biraz daha hızlı çalıştığı; demetlerin biraz daha az bellek kullandığı. Bunlar yaygın kabul gören ve resmî belgelerde de geçen bilgiler, ama burada ölçüm yapılmadı.</li>
+  <li>Sorular bu parça için yazıldı. Tekrar soruları yalnızca Parça 1–3'ün kapsam satırlarındaki konulardan (aritmetik, <code>input</code>'un tipi, <code>range</code>, doğruluk, dilimleme, f-string) seçildi.</li>
+</ul>
+</div>
+</div>
+</article>

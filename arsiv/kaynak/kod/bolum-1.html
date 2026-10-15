@@ -1,0 +1,526 @@
+<article class="chapter ders" id="c-kod-1">
+<div class="prose">
+<div class="eyebrow">Kod · Parça 1 · Python'a giriş</div>
+<h1>İlk satırdan ilk programa: yorumlayıcı, değişken, tip ve aritmetik</h1>
+<p class="time">Okuma ve deneme yaklaşık 60 dakika · Yazım 15 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bilgisayar yalnızca sıfır ve birlerle çalışan bir makine. Sen ise ona "kullanıcının yaşını sor, bir ekle, ekrana yaz" demek istiyorsun. Bu isteği makinenin yapabileceği bir şeye kim çeviriyor, sen ne yazmalısın ve <code>7 / 2</code> neden <code>3</code> değil de <code>3.5</code> çıkıyor?</p></div>
+<p class="hint">Bu, Kod rafının ilk parçası; öncesinde bilmen gereken bir şey yok. Bilgisayarında bir terminal (komut satırı) açık olsun: her örneği kendin yaz ve çalıştır. Okuyarak değil, yazarak öğrenilir.</p>
+
+<h2 class="s">Önce büyük resim: kod nedir, bu parça ne kuracak?</h2>
+
+<p>Bilgisayar çok hızlı ama çok aptal bir işçidir. Ne istediğini tahmin etmez; ona verilen komutları sırayla, harfi harfine uygular. <strong>Kod</strong>, bu komutları bir insanın yazabileceği ve okuyabileceği bir dilde yazılmış hâlidir. Bu dile <strong>programlama dili</strong> denir. Türkçe ya da İngilizce gibi doğal dillerden farkı, hiçbir belirsizliğe izin vermemesidir: "biraz", "aşağı yukarı", "anladın sen onu" yoktur. Her işaretin tek bir anlamı vardır.</p>
+
+<p>Bu rafta önce Python öğreneceğiz. Python'u seçmemizin nedeni, söz diziminin (yazım kurallarının) sade olması ve gerçek dünyada çok yaygın kullanılmasıdır: veri işleme, otomasyon, web arka ucu, bilimsel hesap ve güvenlik araçlarının büyük bölümü Python'la yazılır. Sonra kabuk (Bash), SQL, JavaScript, C, Go ve Git gelecek; hepsinde bu parçada kurduğun temel kavramlar (değişken, tip, işlem) tekrar karşına çıkacak.</p>
+
+<p>Bu parçada sırasıyla şunları kuracağız: kaynak kod ile çalışan program arasındaki fark; Python'un nasıl kurulduğu ve sürümünün nasıl öğrenildiği; etkileşimli kabuk ile dosyadan çalıştırma; <code>print()</code>; değişken ve atama; beş temel tip; aritmetik ve işlem önceliği; <code>input()</code> ve tip dönüştürme; yorum ve isimlendirme; son olarak ilk hataları okumak. Parçanın sonunda kullanıcıdan sayı alan, hesap yapan ve sonucu yazan küçük programları kendin yazabileceksin.</p>
+
+<h2 class="s">Kaynak kod ve çalışan program</h2>
+
+<p>İşlemci (CPU) yalnızca kendi <strong>makine dilini</strong> anlar: "şu adresteki sayıyı al, şuna ekle, sonucu şuraya yaz" gibi çok küçük, sayılarla kodlanmış komutlar. İnsanın bu dilde büyük bir program yazması neredeyse imkânsızdır. Bu yüzden araya bir çevirmen konur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kaynak kod</strong>, programcının bir metin dosyasına yazdığı, insanın okuyabileceği komutlardır (ör. <code>selam.py</code> dosyasının içeriği). <strong>Çalışan program</strong> ise bu komutların bilgisayarda gerçekten yürütülmesidir. İkisini birbirine bağlayan araç ya bir <strong>derleyici</strong> (kaynağı önceden makine diline çevirip ayrı bir çalıştırılabilir dosya üretir) ya da bir <strong>yorumlayıcıdır</strong> (kaynağı okur ve o anda yürütür).</p></div>
+
+<p>Python'u çalıştıran standart program bir yorumlayıcıdır ve adı <code>python3</code>'tür. Teknik olarak o da kaynağı önce kendi iç biçimine (bayt koduna) çevirir, sonra bu bayt kodunu adım adım yürütür; ama senin açından sonuç şudur: ayrı bir derleme adımı yok, dosyayı verirsin ve program hemen çalışır. C ve Go parçalarında (Parça 26 ve 31) ayrı bir derleme adımı göreceksin; farkı orada daha iyi hissedeceksin.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Kaynak koddan çalışan programa: dosya, python3 yorumlayıcısı, bayt kodu ve çıktı">
+  <rect class="sv-k" x="20" y="20" width="160" height="60" rx="8"/>
+  <text class="sv-b" x="100" y="45" text-anchor="middle">selam.py</text>
+  <text class="sv-s" x="100" y="65" text-anchor="middle">kaynak kod (metin)</text>
+  <rect class="sv-l" x="220" y="20" width="160" height="60" rx="8"/>
+  <text class="sv-b" x="300" y="45" text-anchor="middle">python3</text>
+  <text class="sv-s" x="300" y="65" text-anchor="middle">yorumlayıcı</text>
+  <line class="sv-cl" x1="180" y1="50" x2="220" y2="50"/>
+  <rect class="sv-m" x="220" y="120" width="160" height="60" rx="8"/>
+  <text class="sv-b" x="300" y="145" text-anchor="middle">bayt kodu</text>
+  <text class="sv-s" x="300" y="165" text-anchor="middle">iç biçim, adım adım</text>
+  <line class="sv-cl" x1="300" y1="80" x2="300" y2="120"/>
+  <rect class="sv-a" x="20" y="220" width="360" height="60" rx="8"/>
+  <text class="sv-b" x="200" y="245" text-anchor="middle">çalışan program</text>
+  <text class="sv-s" x="200" y="265" text-anchor="middle">ekrana yazı, hesap, hata mesajı</text>
+  <line class="sv-cl" x1="300" y1="180" x2="300" y2="220"/>
+  <text class="sv-s" x="100" y="130" text-anchor="middle">sen yazarsın</text>
+  <text class="sv-s" x="100" y="150" text-anchor="middle">yorumlayıcı yürütür</text>
+</svg>
+<figcaption>Sen yalnızca soldaki metin dosyasını yazarsın. <code>python3</code> onu okur, iç biçimine çevirir ve yürütür; ekranda gördüğün her şey çalışan programın ürünüdür.</figcaption>
+</figure>
+
+<h2 class="s">Python'ı kurmak ve sürümü öğrenmek</h2>
+
+<p>Python'un iki büyük kuşağı vardı: Python 2 ve Python 3. Python 2'nin desteği 2020'nin başında sona erdi; bugün yazılan her şey Python 3'tür. Pek çok Linux ve macOS sisteminde komutun adı bu yüzden açıkça <code>python3</code>'tür; <code>python</code> adı bazı sistemlerde hiç yoktur, bazılarında eski sürümü gösterebilir. Bu rafta her yerde <code>python3</code> yazacağız.</p>
+
+<p>Linux'ta Python çoğu zaman hazır gelir; değilse dağıtımın paket yöneticisiyle kurulur. Windows ve macOS'ta python.org'daki resmî kurulum paketi kullanılır (Windows'ta komutun adı <code>py</code> ya da <code>python</code> olabilir). Kurulu olup olmadığını ve sürümünü öğrenmek için terminale şunu yaz:</p>
+
+<pre class="kod" data-ad="$ komut">python3 --version</pre>
+<pre class="cikti">Python 3.13.16</pre>
+
+<p>Sendeki sayı farklı olabilir; bu rafın örnekleri Python 3.12 ve sonrasında aynı davranır. Sürüm üç parçalıdır: ana sürüm (3), küçük sürüm (13) ve düzeltme sürümü (16). Dil özellikleri küçük sürümle gelir; düzeltme sürümü yalnızca hata düzeltir.</p>
+
+<h2 class="s">İki çalıştırma yolu: etkileşimli kabuk ve dosya</h2>
+
+<p>Python'la konuşmanın iki yolu vardır ve ikisinin de yeri ayrıdır.</p>
+
+<p><strong>Etkileşimli kabuk (REPL).</strong> Terminale yalnızca <code>python3</code> yazıp Enter'a basarsan Python bir istem (prompt) gösterir: <code>&gt;&gt;&gt;</code>. REPL, "oku, değerlendir, yazdır, tekrarla" (read–eval–print loop) demektir: yazdığın satırı okur, hesaplar, sonucu yazar ve yeni satır bekler. Küçük bir şeyi denemek, bir işlemin sonucunu merak etmek için idealdir.</p>
+
+<pre class="kod" data-ad="python3 (etkileşimli)">&gt;&gt;&gt; 7 / 2
+3.5
+&gt;&gt;&gt; type(7 / 2)
+&lt;class 'float'&gt;
+&gt;&gt;&gt; x = 10
+&gt;&gt;&gt; x * 3
+30
+&gt;&gt;&gt; exit()</pre>
+
+<p>Bak: <code>print</code> yazmadığın hâlde sonuçlar ekrana geldi. REPL, bir <strong>ifadenin</strong> (değer üreten bir parça kodun) değerini kendiliğinden gösterir. <code>x = 10</code> satırı bir değer göstermedi, çünkü atama bir ifade değil, bir <strong>deyimdir</strong>: bir iş yapar ama değer döndürmez. Kabuktan <code>exit()</code> ile ya da Linux/macOS'ta Ctrl+D ile çıkarsın. Kabuğa yazdığın her şey kapattığında kaybolur.</p>
+
+<p><strong>Dosyadan çalıştırma.</strong> Kalıcı bir program yazmak için kodu bir metin dosyasına koyarsın; adı <code>.py</code> ile biter. Sonra terminalde <code>python3 dosya.py</code> yazarsın. Python dosyayı yukarıdan aşağı, satır satır yürütür ve son satırda durur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Dosyadan çalıştırılan programda ekrana <strong>yalnızca açıkça yazdırdığın</strong> şey çıkar. REPL'deki "değeri kendiliğinden gösterme" davranışı dosyada yoktur. Neden? Bir program yüzlerce ara hesap yapar; hepsi ekrana dökülse çıktı okunmaz hâle gelir. Program neyi göstermek istediğine kendisi karar vermelidir.</p></div>
+
+<p>Bunu sınamak için içinde yalnızca <code>5 * 3</code> yazan bir <code>sadece.py</code> dosyası yap ve <code>python3 sadece.py</code> ile çalıştır. Ekranda hiçbir şey görmezsin: Python 15'i hesapladı ama kimse ona "yaz" demedi. Bu, yeni başlayanların ilk şaşkınlığıdır.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>Etkileşimli kabuk (REPL)</th><th>Dosyadan çalıştırma</th></tr>
+<tr><td>Nasıl başlar</td><td><code>python3</code></td><td><code>python3 dosya.py</code></td></tr>
+<tr><td>İstem</td><td><code>&gt;&gt;&gt;</code> görünür</td><td>istem yok</td></tr>
+<tr><td>İfadenin değeri</td><td>kendiliğinden yazılır</td><td>yalnızca <code>print()</code> ile</td></tr>
+<tr><td>Kalıcılık</td><td>kapatınca kaybolur</td><td>dosyada durur, tekrar çalışır</td></tr>
+<tr><td>Ne için</td><td>deneme, hızlı hesap, merak</td><td>gerçek program, tekrar kullanım</td></tr>
+</table></div>
+
+<h2 class="s">İlk satır: print()</h2>
+
+<p><code>print</code>, Python'un hazır gelen (yerleşik) bir <strong>fonksiyonudur</strong>. Fonksiyon, adı olan ve çağrıldığında bir iş yapan bir kod parçasıdır; ayrıntısını Parça 6'da göreceğiz. Çağırmak için adını yazar, hemen ardından parantez açar, içine ona vereceğin değerleri (argümanları) koyar ve parantezi kapatırsın. Bir metin dosyası aç, adını <code>selam.py</code> koy ve şunu yaz:</p>
+
+<pre class="kod" data-ad="selam.py">print("Merhaba, dünya")
+print("Python", 3, "sürümü")
+print(2 + 3)</pre>
+
+<pre class="kod" data-ad="$ komut">python3 selam.py</pre>
+<pre class="cikti">Merhaba, dünya
+Python 3 sürümü
+5</pre>
+
+<p>Üç ayrıntıya dikkat et. Birincisi, tırnak içindeki <code>"Merhaba, dünya"</code> bir <strong>metindir</strong>; Python onu olduğu gibi yazar, tırnakları göstermez. İkincisi, <code>print</code>'e virgülle ayırarak birden çok değer verebilirsin; aralarına kendiliğinden birer boşluk koyar ve en sonda satırı bitirir. Üçüncüsü, <code>print(2 + 3)</code> önce içerideki işlemi hesaplar, sonra sonucu (<code>5</code>) yazar; tırnak olmadığı için <code>2 + 3</code> metin değil, bir hesaptır. <code>print("2 + 3")</code> yazsaydın ekrana harfi harfine <code>2 + 3</code> çıkardı.</p>
+
+<h2 class="s">Değişken ve atama: kutu değil, etiket</h2>
+
+<p>Bir programın işe yaraması için değerleri bir yerde tutması ve sonra onlara adıyla ulaşması gerekir. "Kullanıcının yaşı", "toplam fiyat" gibi. Bunun aracı <strong>değişkendir</strong>.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Atama</strong>, <code>ad = değer</code> biçiminde yazılır: Python önce eşittir işaretinin <strong>sağını</strong> hesaplar, bir değer (nesne) üretir, sonra soldaki adı bu değere bağlar. <code>=</code> matematikteki "eşittir" değildir; "sağdaki değere bu adı ver" demektir. Değişken, bir değere yapıştırılmış bir <strong>etikettir</strong>.</p></div>
+
+<p>Okullarda değişken çoğu zaman "içine değer konan bir kutu" diye anlatılır. Python için bu benzetme yanıltıcıdır, çünkü Python'da değerler bellekte kendi başlarına durur ve adlar onlara iliştirilmiş etiketlerdir. Bir değere birden çok etiket yapışabilir; bir etiketi söküp başka değere yapıştırabilirsin. Şunu çalıştır:</p>
+
+<pre class="kod" data-ad="etiket.py">x = 5
+y = x
+x = 6
+print(x, y)
+print(id(y) == id(5))
+sayac = 0
+sayac = sayac + 1
+sayac = sayac + 1
+print(sayac)
+deger = 10
+deger = "on"
+print(deger, type(deger))</pre>
+<pre class="cikti">6 5
+True
+2
+on &lt;class 'str'&gt;</pre>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 1</span>
+<p><strong>Soru:</strong> Yukarıdaki programda <code>x = 6</code> satırından sonra <code>y</code> neden hâlâ 5?</p>
+<p><strong>Adım 1.</strong> <code>x = 5</code>: bellekte 5 değeri var; <code>x</code> etiketi ona yapıştırılır.</p>
+<p><strong>Adım 2.</strong> <code>y = x</code>: sağ taraf hesaplanır; <code>x</code>'in gösterdiği değer 5'tir. <code>y</code> etiketi de <strong>aynı</strong> 5'e yapıştırılır. Artık iki etiket bir değeri gösteriyor.</p>
+<p><strong>Adım 3.</strong> <code>x = 6</code>: <code>x</code> etiketi 5'ten sökülür, 6'ya yapıştırılır. 5'e dokunulmadı ve <code>y</code> hâlâ ona yapışık.</p>
+<p><strong>Adım 4.</strong> <code>print(x, y)</code> çıktısı <code>6 5</code>. Beşinci satır bunu doğrular: <code>id()</code> bir nesnenin kimlik numarasını verir ve <code>y</code>'nin gösterdiği nesneyle 5 aynı kimliği taşıyor (<code>True</code>). (Bu kimlik eşitliği küçük tamsayılarda CPython'un bir uygulama ayrıntısıdır; mantığı göstermek için kullandık, programlarında buna güvenme.)</p>
+<p><strong>Sonuç:</strong> Atama bir değeri kopyalamaz; adı bir değere bağlar. <code>sayac = sayac + 1</code> satırı da aynı mantıkla çalışır: önce sağ taraf (eski değer + 1) hesaplanır, sonra <code>sayac</code> etiketi yeni değere taşınır. Matematikte "<code>x = x + 1</code>" saçmadır; Python'da "x'i bir artır" demektir.</p></div>
+
+<p>Bu ayrım şimdilik küçük görünüyor, ama Parça 4'te listeler gibi <strong>değiştirilebilen</strong> değerlere geldiğinde çok önemli olacak: iki etiket aynı listeyi gösteriyorsa, birinden yapılan değişiklik öbüründen de görünür. Şimdi etiket benzetmesini oturt ki orada şaşırma.</p>
+
+<p>Son iki satır da önemli: <code>deger</code> önce 10'u, sonra <code>"on"</code> metnini gösterdi. Python'da <strong>tip değere aittir, ada değil</strong>. Bir ad hayatı boyunca farklı tipte değerleri gösterebilir. Buna dinamik tipleme denir. C ve Go'da durum farklıdır; orada bir değişkenin tipi baştan bildirilir ve değişmez.</p>
+
+<h2 class="s">Temel tipler ve type()</h2>
+
+<p>Her değerin bir <strong>tipi</strong> vardır ve tip, o değerle neler yapılabileceğini belirler. İki sayı toplanabilir; iki metin uç uca eklenebilir; ama bir metne sayı eklemek anlamsızdır. Python bu yüzden her değerin tipini bilir ve sen de <code>type()</code> ile sorabilirsin.</p>
+
+<pre class="kod" data-ad="tipler.py">yas = 30
+boy = 1.78
+ad = "Deniz"
+ogrenci_mi = True
+adres = None
+print(type(yas))
+print(type(boy))
+print(type(ad))
+print(type(ogrenci_mi))
+print(type(adres))
+print(type("30"))</pre>
+<pre class="cikti">&lt;class 'int'&gt;
+&lt;class 'float'&gt;
+&lt;class 'str'&gt;
+&lt;class 'bool'&gt;
+&lt;class 'NoneType'&gt;
+&lt;class 'str'&gt;</pre>
+
+<div class="tablo"><table>
+<tr><th>Tip</th><th>Ne tutar</th><th>Örnek değer</th><th>Dikkat</th></tr>
+<tr><td><code>int</code></td><td>tamsayı</td><td><code>30</code>, <code>-7</code>, <code>0</code></td><td>sınırı yok; <code>2 ** 100</code> bile tam hesaplanır</td></tr>
+<tr><td><code>float</code></td><td>ondalık (kayan noktalı) sayı</td><td><code>1.78</code>, <code>3.0</code></td><td>ondalık ayırıcı <strong>nokta</strong>; küçük yuvarlama hataları olur</td></tr>
+<tr><td><code>str</code></td><td>metin (karakter dizisi)</td><td><code>"Deniz"</code>, <code>'30'</code></td><td>tek ya da çift tırnak; <code>"30"</code> sayı değildir</td></tr>
+<tr><td><code>bool</code></td><td>doğru/yanlış</td><td><code>True</code>, <code>False</code></td><td>büyük harfle başlar; tırnaksız</td></tr>
+<tr><td><code>NoneType</code></td><td>"değer yok"</td><td><code>None</code></td><td>tek değeri vardır: <code>None</code></td></tr>
+</table></div>
+
+<p>Birkaç noktayı açalım. <strong>Ondalık ayırıcı</strong>: Türkçede 1,78 yazarız ama Python'da <code>1.78</code> yazılır; virgül Python'da değerleri ayırmaya yarar (<code>print(1,78)</code> iki ayrı sayı yazar: <code>1 78</code>). <strong><code>"30"</code> ile <code>30</code></strong>: tırnak içindeki her şey metindir; <code>"30"</code> bir sayı gibi görünse de "üç" ve "sıfır" karakterlerinden oluşan bir metindir ve onunla hesap yapılamaz. Son satırın çıktısı bunu doğruluyor. <strong><code>None</code></strong>: "henüz bir değer yok" ya da "sonuç yok" demenin yoludur; sıfır da boş metin de değildir. Örneğin adresi bilinmeyen bir kişinin adresi <code>None</code> olabilir. <strong><code>bool</code></strong>: Parça 2'de karşılaştırmaların sonucu olarak sürekli göreceğin tiptir; <code>True</code> ve <code>False</code> tırnaksız ve büyük harfle başlar, <code>true</code> yazarsan Python bunu tanımadığı bir ad sanır.</p>
+
+<h2 class="s">Aritmetik: yedi işlem ve iki sürpriz</h2>
+
+<p>Python bir hesap makinesi gibi kullanılabilir. Yedi temel aritmetik işleç (operatör) vardır:</p>
+
+<div class="tablo"><table>
+<tr><th>İşleç</th><th>Anlamı</th><th>Örnek</th><th>Sonuç</th></tr>
+<tr><td><code>+</code></td><td>toplama</td><td><code>7 + 2</code></td><td><code>9</code></td></tr>
+<tr><td><code>-</code></td><td>çıkarma</td><td><code>7 - 2</code></td><td><code>5</code></td></tr>
+<tr><td><code>*</code></td><td>çarpma</td><td><code>7 * 2</code></td><td><code>14</code></td></tr>
+<tr><td><code>/</code></td><td>bölme (gerçek bölme)</td><td><code>7 / 2</code></td><td><code>3.5</code></td></tr>
+<tr><td><code>//</code></td><td>tam bölme (bölüm, aşağı yuvarlanmış)</td><td><code>7 // 2</code></td><td><code>3</code></td></tr>
+<tr><td><code>%</code></td><td>kalan (mod)</td><td><code>7 % 2</code></td><td><code>1</code></td></tr>
+<tr><td><code>**</code></td><td>üs alma</td><td><code>2 ** 10</code></td><td><code>1024</code></td></tr>
+</table></div>
+
+<p>Hepsini bir dosyada sınayalım; birkaç sürprizi de içine koydum:</p>
+
+<pre class="kod" data-ad="aritmetik.py">print(7 + 2, 7 - 2, 7 * 2)
+print(7 / 2)
+print(6 / 3)
+print(7 // 2)
+print(7 % 2)
+print(2 ** 10)
+print(-7 // 2, -7 % 2)
+print(2 + 3 * 4, (2 + 3) * 4)
+print(2 ** 3 ** 2, (2 ** 3) ** 2)
+print(-2 ** 2)
+print(0.1 + 0.2)
+print(3 + 2.0)
+print(10 / 4 * 2)
+print(2 ** 100)</pre>
+<pre class="cikti">9 5 14
+3.5
+2.0
+3
+1
+1024
+-4 1
+14 20
+512 64
+-4
+0.30000000000000004
+5.0
+5.0
+1267650600228229401496703205376</pre>
+
+<h3>Birinci sürpriz: <code>/</code> her zaman float verir</h3>
+
+<p><code>6 / 3</code> sonucu <code>2</code> değil <code>2.0</code>. Neden? Bölme işleminin sonucu genelde tam çıkmaz (7 / 2 = 3,5). Python'un tasarımcıları, sonucun tipinin <strong>sayıların değerine göre</strong> değişmesini istemediler: bir işlemin sonucu bazen <code>int</code>, bazen <code>float</code> olursa, bunu kullanan kod öngörülemez davranır. Bu yüzden Python 3'te kural basittir:</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>/</code> işlecinin sonucu, işlenenler tamsayı olsa ve bölme tam çıksa bile <strong>her zaman <code>float</code></strong>'tur. Tamsayı bölüm istiyorsan <code>//</code>, kalanı istiyorsan <code>%</code> kullanırsın. Ayrıca bir işlemde <code>int</code> ile <code>float</code> karışırsa sonuç <code>float</code> olur (<code>3 + 2.0</code> → <code>5.0</code>), çünkü ondalık kısım kaybolmasın diye geniş olan tipe geçilir.</p></div>
+
+<p>Eski Python 2'de <code>7 / 2</code> sonucu <code>3</code> idi; internette eski kod görürsen bu farkı hatırla.</p>
+
+<h3>Tam bölme ve kalan</h3>
+
+<p><code>//</code> ve <code>%</code> ilkokuldaki bölmenin iki sonucudur: 7'yi 2'ye böldüğünde bölüm 3, kalan 1'dir; çünkü 2 × 3 + 1 = 7. Bu ikisi her zaman şu bağıntıyı sağlar: <code>(a // b) * b + (a % b) == a</code>.</p>
+
+<p>Negatif sayılarda dikkat: <code>//</code> sonucu <strong>aşağıya</strong>, yani eksi sonsuza doğru yuvarlar; sıfıra doğru değil. −7 / 2 = −3,5 ve bunun aşağısı −4'tür; bu yüzden <code>-7 // 2</code> sonucu <code>-4</code>'tür, <code>-3</code> değil. Kalan da bağıntıyı korumak için <code>1</code> çıkar: (−4) × 2 + 1 = −7. Bazı dillerde (C gibi) tamsayı bölme sıfıra doğru keser ve sonuç −3 olur; dil değiştirince bu fark seni yakalayabilir.</p>
+
+<p>Kalan işlecinin gündelik işlerde çok kullanımı vardır: bir sayının çift olup olmadığı (<code>n % 2</code> sıfır mı?), saniyeyi dakikaya çevirme, bir dizide başa dönme. Bir örnekle görelim.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 2</span>
+<p><strong>Soru:</strong> 7384 saniye kaç saat, kaç dakika, kaç saniyedir? Bunu <code>//</code> ve <code>%</code> ile hesaplayan program yaz.</p>
+<pre class="kod" data-ad="dakika.py"># Toplam saniyeyi saat, dakika ve saniyeye ayırır
+toplam_saniye = 7384
+saat = toplam_saniye // 3600
+kalan = toplam_saniye % 3600
+dakika = kalan // 60
+saniye = kalan % 60
+print(saat, "saat", dakika, "dakika", saniye, "saniye")</pre>
+<p><strong>Adım 1.</strong> Bir saatte 60 × 60 = 3600 saniye var. <code>7384 // 3600</code> = 2 (iki tam saat sığıyor).</p>
+<p><strong>Adım 2.</strong> Saatlerden artan: <code>7384 % 3600</code> = 7384 − 7200 = 184 saniye.</p>
+<p><strong>Adım 3.</strong> 184 saniyede kaç tam dakika var: <code>184 // 60</code> = 3.</p>
+<p><strong>Adım 4.</strong> Dakikalardan artan: <code>184 % 60</code> = 184 − 180 = 4 saniye.</p>
+<pre class="cikti">2 saat 3 dakika 4 saniye</pre>
+<p><strong>Sonuç:</strong> Bir büyüklüğü büyük birimden küçüğe doğru parçalamanın kalıbı hep budur: tam bölmeyle büyük birimi al, kalanla geri kalanı bir alt birime devret. Sağlamasını yap: 2 × 3600 + 3 × 60 + 4 = 7384.</p></div>
+
+<h3>İkinci sürpriz: <code>0.1 + 0.2</code></h3>
+
+<p>Çıktıda <code>0.30000000000000004</code> gördün. Bu Python'un hatası değil; bilgisayarların ondalık sayıları tutma biçiminin doğal sonucudur. <code>float</code> değerler bellekte <strong>ikilik</strong> (taban 2) kesirlerle saklanır. 1/3'ün onluk tabanda sonlu yazılamaması (0,333…) gibi, 0,1 de ikilik tabanda sonlu yazılamaz; bellekte ona çok yakın bir sayı durur. Toplayınca küçük farklar birikir ve ekranda görünür hâle gelir. Bu davranış Python'a özgü değildir; JavaScript, C ve neredeyse bütün dillerde aynıdır.</p>
+
+<p>Pratik sonucu şudur: <code>float</code> değerleri ekrana yazarken yuvarla (aşağıda <code>round()</code> göreceğiz) ve iki <code>float</code>'ın tam eşitliğine güvenme. Para gibi kuruşu kuruşuna doğru olması gereken işlerde Python'un <code>decimal</code> modülü kullanılır; standart kütüphaneyi Parça 9'da tanıyacaksın. Buna karşılık <code>int</code> tipinde bu sorun yoktur ve sınır da yoktur: <code>2 ** 100</code> sonucunu 31 basamağıyla eksiksiz verdi.</p>
+
+<h3>İşlem önceliği ve parantez</h3>
+
+<p><code>2 + 3 * 4</code> neden 20 değil de 14? Çünkü Python, matematikteki gibi bir <strong>öncelik sırası</strong> izler: önce üs, sonra çarpma-bölme ailesi, en son toplama-çıkarma. Aynı düzeydeki işlemler soldan sağa yapılır: <code>10 / 4 * 2</code> önce 10 / 4 = 2,5, sonra 2,5 × 2 = 5,0.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Öncelik sırası (yüksekten düşüğe): <strong>1)</strong> parantez <code>( )</code>; <strong>2)</strong> üs <code>**</code> (sağdan sola gruplanır); <strong>3)</strong> işaret eksisi <code>-x</code>; <strong>4)</strong> <code>*</code> <code>/</code> <code>//</code> <code>%</code> (soldan sağa); <strong>5)</strong> <code>+</code> <code>-</code> (soldan sağa). Emin olmadığın her yerde parantez kullan: parantez hem sırayı zorlar hem de kodu okuyanın kafasını karıştırmaz.</p></div>
+
+<p>İki ince nokta çıktıda göründü. <code>2 ** 3 ** 2</code> sonucu 512'dir, çünkü üs <strong>sağdan</strong> gruplanır: önce 3 ** 2 = 9, sonra 2 ** 9 = 512. Matematikte de 2<sup>3<sup>2</sup></sup> böyle okunur. Soldan istiyorsan <code>(2 ** 3) ** 2</code> = 64 yazarsın. İkincisi <code>-2 ** 2</code> sonucunun −4 olmasıdır: üs, baştaki eksiden önce gelir, yani bu ifade −(2<sup>2</sup>) demektir. (−2)<sup>2</sup> = 4 istiyorsan parantez şarttır.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="2 + 3 * 2 ** 2 ifadesinin öncelik sırasına göre adım adım hesaplanması">
+  <rect class="sv-k" x="40" y="15" width="320" height="44" rx="8"/>
+  <text class="sv-b" x="200" y="43" text-anchor="middle">2 + 3 * 2 ** 2</text>
+  <line class="sv-cl" x1="200" y1="59" x2="200" y2="85"/>
+  <rect class="sv-l" x="40" y="85" width="320" height="44" rx="8"/>
+  <text class="sv-b" x="200" y="113" text-anchor="middle">2 + 3 * 4</text>
+  <text class="sv-s" x="350" y="80" text-anchor="end">1) önce üs: 2 ** 2 = 4</text>
+  <line class="sv-cl" x1="200" y1="129" x2="200" y2="155"/>
+  <rect class="sv-m" x="40" y="155" width="320" height="44" rx="8"/>
+  <text class="sv-b" x="200" y="183" text-anchor="middle">2 + 12</text>
+  <text class="sv-s" x="350" y="150" text-anchor="end">2) sonra çarpma: 3 * 4 = 12</text>
+  <line class="sv-cl" x1="200" y1="199" x2="200" y2="225"/>
+  <rect class="sv-a" x="40" y="225" width="320" height="44" rx="8"/>
+  <text class="sv-b" x="200" y="253" text-anchor="middle">14</text>
+  <text class="sv-s" x="350" y="220" text-anchor="end">3) en son toplama</text>
+</svg>
+<figcaption>Python bir ifadeyi tek seferde değil, öncelik sırasına göre adım adım indirger. Her adımda en yüksek öncelikli işlem hesaplanır ve yerine sonucu konur.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Ortalamada parantezi unutmak.</strong> Üç notun ortalaması için <code>not1 + not2 + not3 / 3</code> yazmak çok yaygındır. Bölme toplamadan önce yapıldığı için yalnızca üçüncü not 3'e bölünür:</p>
+<pre class="kod" data-ad="ortalama_yanlis.py">not1, not2, not3 = 70, 80, 95
+print(not1 + not2 + not3 / 3)
+print((not1 + not2 + not3) / 3)</pre>
+<pre class="cikti">181.66666666666666
+81.66666666666667</pre>
+<p>Notların ortalaması 100'ü geçemez; 181 çıktıysa bir şey yanlıştır. Doğrusu toplamı parantez içine almaktır. (İlk satırdaki <code>not1, not2, not3 = 70, 80, 95</code> üç değişkene aynı anda değer verir; bu "açma" kalıbını Parça 4'te ayrıntılı göreceksin.) Genel ders: sonucun mantıklı bir aralıkta olup olmadığını her zaman gözle denetle.</p></div>
+
+<h2 class="s">Kullanıcıdan veri almak: input() ve tip dönüştürme</h2>
+
+<p>Şimdiye kadarki programlar hep aynı sayılarla çalıştı. Gerçek programlar kullanıcıdan veri alır. Bunun yerleşik aracı <code>input()</code> fonksiyonudur: parantez içine yazdığın metni ekrana bir soru olarak basar, kullanıcının bir şey yazıp Enter'a basmasını bekler ve yazılanı geri verir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>input()</code> her zaman bir <strong><code>str</code></strong> (metin) döndürür; kullanıcı rakam yazsa bile. Neden? Klavyeden gelen şey karakterlerdir. Kullanıcı "29" da yazabilir, "yirmi dokuz" da, "29 yaşındayım" da; Python ne geleceğini bilemez, bu yüzden hiçbir yorum yapmadan metni olduğu gibi verir. Sayı olarak kullanmak istiyorsan bunu <strong>sen</strong> açıkça dönüştürürsün: <code>int(metin)</code> ya da <code>float(metin)</code>.</p></div>
+
+<p>Önce dönüştürmeyi unutan programa bakalım:</p>
+
+<pre class="kod" data-ad="yas_hatali.py">yas = input("Kaç yaşındasın? ")
+print(yas + 1)</pre>
+<pre class="cikti">Kaç yaşındasın? 29
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-1/yas_hatali.py", line 2, in &lt;module&gt;
+    print(yas + 1)
+          ~~~~^~~
+TypeError: can only concatenate str (not "int") to str</pre>
+
+<p>Python, <code>"29"</code> metniyle <code>1</code> sayısını toplayamayacağını söylüyor: <code>+</code> iki metin arasında "uç uca ekleme" (concatenate) anlamına gelir ve bir metne sayı eklenemez. Python, ne istediğini tahmin etmeye çalışmaz; "29"u sessizce sayıya çevirseydi, başka bir yerde "29 yaşındayım" girildiğinde ne yapacağı belirsiz kalırdı. Açık olmak, sessizce yanlış sonuç üretmekten iyidir. Doğrusu şöyle:</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 3</span>
+<p><strong>Soru:</strong> Kullanıcının yaşını soran ve gelecek yıl kaç yaşında olacağını yazan bir program yaz; aradaki tipi de göster.</p>
+<pre class="kod" data-ad="yas.py">yas_metni = input("Kaç yaşındasın? ")
+print(type(yas_metni))
+yas = int(yas_metni)
+print("Gelecek yıl", yas + 1, "yaşında olacaksın.")</pre>
+<p><strong>Adım 1.</strong> <code>input</code> soruyu yazar ve bekler. Kullanıcı <code>29</code> yazıp Enter'a basar; <code>yas_metni</code> etiketi <code>"29"</code> metnine bağlanır.</p>
+<p><strong>Adım 2.</strong> <code>type(yas_metni)</code> bunu doğrular: <code>str</code>.</p>
+<p><strong>Adım 3.</strong> <code>int(yas_metni)</code>, "2" ve "9" karakterlerini okuyup 29 tamsayısını üretir; <code>yas</code> bu sayıya bağlanır. Metni ayrı, sayıyı ayrı bir adla tutmak, hangisinin hangisi olduğunu karıştırmanı önler.</p>
+<p><strong>Adım 4.</strong> <code>yas + 1</code> artık iki tamsayının toplamıdır: 30.</p>
+<pre class="cikti">Kaç yaşındasın? 29
+&lt;class 'str'&gt;
+Gelecek yıl 30 yaşında olacaksın.</pre>
+<p><strong>Sonuç:</strong> Kullanıcıdan gelen her değer önce metindir; hesaba girmeden önce dönüştürülür. Çıktıdaki ilk satırda görünen <code>29</code>, kullanıcının yazdığıdır; program onu yazdırmadı, terminal gösterdi.</p></div>
+
+<h3>Dönüşüm ve dönüşüm hatası</h3>
+
+<p>Dönüşüm fonksiyonları, adı tipin adıyla aynı olan fonksiyonlardır: <code>int()</code>, <code>float()</code>, <code>str()</code>. Neyi kabul ettiklerini bilmek gerekir:</p>
+
+<pre class="kod" data-ad="donusum.py">print(int("42") + 1)
+print(float("3.5") * 2)
+print(int(3.9))
+print(int("  17  "))
+print(str(12) + "3")
+print(int("3.5"))</pre>
+<pre class="cikti">43
+7.0
+3
+17
+123
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-1/donusum.py", line 6, in &lt;module&gt;
+    print(int("3.5"))
+          ~~~^^^^^^^
+ValueError: invalid literal for int() with base 10: '3.5'</pre>
+
+<p>Satır satır okuyalım. <code>int("42")</code> metni tamsayıya çevirir. <code>float("3.5")</code> ondalık metni çevirir. <code>int(3.9)</code> bir <code>float</code>'ı tamsayıya çevirirken <strong>yuvarlamaz, ondalık kısmı atar</strong>: sonuç 3, 4 değil. (Yuvarlama istiyorsan <code>round()</code> var.) <code>int("  17  ")</code> baştaki ve sondaki boşlukları hoş görür. <code>str(12) + "3"</code> sayıyı metne çevirdiği için toplama değil uç uca ekleme olur: <code>"123"</code>. Son satır ise çöker: <code>int()</code>'e verilen metin bir tamsayı gibi yazılmamış. <code>"3.5"</code> ondalık bir sayıdır ama <code>int()</code> metinden doğrudan ondalık okuyamaz. Aynı biçimde <code>int("otuz")</code> ya da boş metin de <code>ValueError</code> verir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kullanıcı hep düzgün sayı girer" varsaymak.</strong> <code>yas.py</code> programına <code>otuz</code> yazarsan program çöker:</p>
+<pre class="cikti">Kaç yaşındasın? otuz
+&lt;class 'str'&gt;
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-1/yas.py", line 3, in &lt;module&gt;
+    yas = int(yas_metni)
+ValueError: invalid literal for int() with base 10: 'otuz'</pre>
+<p>Kullanıcı girdisi her zaman beklenmedik olabilir: yanlışlıkla, dikkatsizlikle ya da kasten. Programın girdiyi <strong>doğrulaması</strong> gerekir. Bunun aracı olan <code>try / except</code>'i Parça 8'de öğreneceksin; şimdilik bilmen gereken, dönüştürme satırının bir çökme noktası olduğudur. Güvenlik açısından da bu bir alışkanlık meselesidir: dışarıdan gelen her veriye kuşkuyla bakmak, ileride siber güvenlik rafında karşına çıkacak en temel ilkedir. (Bu çıktıyı terminalde aldım. Öbür örneklerde hatalı parçanın altını çizen <code>~~~^^^</code> işaretleri burada çıkmadı; Python bu işaretleri her satırda basmaz ve hangi durumda atladığı senin için önemli değil. Hata izinin tam biçimi sürüme göre küçük farklar gösterebilir.)</p></div>
+
+<p>Hepsini birleştiren küçük bir program: üç notun ortalaması. Burada <code>float()</code> kullanıyoruz ki 72,5 gibi notlar da girilebilsin; <code>round(sayi, 2)</code> ise sayıyı virgülden sonra iki basamağa yuvarlar.</p>
+
+<pre class="kod" data-ad="ortalama.py"># Üç notun ortalamasını hesaplar
+not1 = float(input("Birinci not: "))
+not2 = float(input("İkinci not: "))
+not3 = float(input("Üçüncü not: "))
+ortalama = (not1 + not2 + not3) / 3
+print("Ortalama:", ortalama)
+print("Yuvarlanmış:", round(ortalama, 2))</pre>
+<pre class="cikti">Birinci not: 70
+İkinci not: 85
+Üçüncü not: 92
+Ortalama: 82.33333333333333
+Yuvarlanmış: 82.33</pre>
+
+<p><code>float(input("…"))</code> satırında iki fonksiyon iç içe çağrılmış: önce içteki <code>input</code> çalışır ve metni döndürür, sonra dıştaki <code>float</code> bu metni sayıya çevirir. İç içe çağrılar her zaman içten dışa doğru çözülür, tıpkı matematikteki parantezler gibi.</p>
+
+<h2 class="s">Yorum satırı ve isimlendirme</h2>
+
+<p>Kod iki okur için yazılır: bilgisayar ve insan. Bilgisayar her şeyi harfi harfine okur; insan ise <strong>neden</strong> böyle yazıldığını anlamak ister. Altı ay sonra kendi koduna baktığında o insan sen olacaksın.</p>
+
+<p><strong>Yorum</strong>, Python'un görmezden geldiği, yalnızca insana yönelik nottur. <code>#</code> işaretinden satır sonuna kadar olan her şey yorumdur. <code>dakika.py</code> ve <code>ortalama.py</code> dosyalarının ilk satırları birer yorumdur. Bir satırın sonuna da yorum eklenebilir: <code>saat = toplam // 3600  # bir saatte 3600 saniye</code>. İyi yorum kodun <strong>ne</strong> yaptığını tekrarlamaz (onu kod zaten söylüyor), <strong>neden</strong> yaptığını açıklar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Ad kuralları (zorunlu):</strong> bir değişken adı harf ya da alt çizgiyle başlar, rakamla başlamaz; içinde yalnızca harf, rakam ve alt çizgi bulunur (boşluk, tire, nokta olmaz); büyük-küçük harfe duyarlıdır (<code>yas</code> ile <code>Yas</code> farklı adlardır); <code>if</code>, <code>for</code>, <code>True</code>, <code>None</code> gibi Python'un ayrılmış sözcükleri ad olarak kullanılamaz.<br><strong>Ad geleneği (PEP 8):</strong> değişken ve fonksiyon adları küçük harfle, sözcükler alt çizgiyle ayrılarak yazılır: <code>toplam_fiyat</code>, <code>kullanici_adi</code>. PEP 8, Python topluluğunun resmî yazım biçimi önerisidir.</p></div>
+
+<p>Kurallar neden var? Python, bir satırı okurken nerede bir adın bittiğini ve nerede bir işlemin başladığını kesin bilmek zorundadır. <code>toplam-fiyat</code> yazarsan, Python bunu "toplam eksi fiyat" diye okur; <code>2fiyat</code> yazarsan, bir sayının mı yoksa bir adın mı başladığını ayıramaz. İkisi de <code>SyntaxError</code> verir. Gelenek ise zorunlu değildir (<code>ToplamFiyat</code> geçerli bir addır), ama herkes aynı biçimde yazınca başkasının kodu kendi kodun kadar kolay okunur. Python'da <code>BuBicim</code> (her sözcüğün baş harfi büyük) geleneksel olarak sınıf adlarına ayrılmıştır; onu Parça 10'da göreceksin.</p>
+
+<p><strong>Anlamlı ad</strong> bir kuraldan çok bir alışkanlıktır. <code>a = b * c</code> satırı hiçbir şey anlatmaz; <code>toplam_fiyat = birim_fiyat * adet</code> satırı kendi kendini açıklar ve yorum gerektirmez. Kısa adlar (<code>i</code>, <code>x</code>) yalnızca çok kısa ömürlü ve anlamı açık yerlerde (bir sayaç, matematiksel bir değişken) kabul görür. Bu rafta kodda Türkçe karakter kullanmayacağız: <code>yaş</code> yerine <code>yas</code>, <code>öğrenci</code> yerine <code>ogrenci</code>. Python 3 aslında Türkçe harfli adları kabul eder, ama her klavyede yazılamaz, bazı araçlarda sorun çıkarır ve dünyadaki yaygın alışkanlık ASCII adlardır. Metinlerin (tırnak içinin) ve yorumların Türkçe olmasında ise hiçbir sakınca yoktur.</p>
+
+<h2 class="s">İlk hatalar: SyntaxError ve NameError, hata mesajını okumak</h2>
+
+<p>Hata yapmak programlamanın normal hâlidir; deneyimli programcı hata yapmayan değil, hatayı hızlı okuyandır. Python bir hatayla karşılaşınca durur ve sana neyin nerede ters gittiğini anlatan bir mesaj verir. Bu mesajı okumayı şimdiden alışkanlık edin.</p>
+
+<p>Hatalar iki büyük gruba ayrılır. <strong>Söz dizimi hatası</strong> (<code>SyntaxError</code>), kodun dilin yazım kurallarına uymamasıdır; Python dosyayı <strong>çalıştırmaya başlamadan önce</strong>, okurken fark eder, bu yüzden tek bir satır bile çalışmaz. <strong>Çalışma zamanı hatası</strong> ise kod kurallara uygundur ama yürütülürken bir şey olmaz: tanımsız bir ad (<code>NameError</code>), uyumsuz tipler (<code>TypeError</code>), dönüştürülemeyen değer (<code>ValueError</code>), sıfıra bölme (<code>ZeroDivisionError</code>). Bunlarda hata satırına kadarki satırlar çalışmıştır.</p>
+
+<pre class="kod" data-ad="sozdizimi.py">print("Merhaba"
+print("dünya")</pre>
+<pre class="cikti">  File "/tmp/yazar/kod-1/sozdizimi.py", line 1
+    print("Merhaba"
+         ^
+SyntaxError: '(' was never closed</pre>
+
+<p>Python, birinci satırda açılan parantezin hiç kapanmadığını söylüyor ve şapka işaretiyle (<code>^</code>) o parantezi gösteriyor. Dikkat: unutulan kapanış parantezinde hata bazen <strong>bir sonraki satırda</strong> bildirilebilir, çünkü Python ancak oraya gelince bir şeyin eksik kaldığını anlar. Bu yüzden belirtilen satırda bir şey göremezsen <strong>bir üstteki satıra</strong> bak. Python 3.10 ve sonrası bu mesajları çok iyileştirdi; eski sürümlerde yalnızca <code>invalid syntax</code> yazabilir.</p>
+
+<pre class="kod" data-ad="adhata.py">fiyat = 120
+indirim = 20
+print(fiyat - indrim)</pre>
+<pre class="cikti">Traceback (most recent call last):
+  File "/tmp/yazar/kod-1/adhata.py", line 3, in &lt;module&gt;
+    print(fiyat - indrim)
+                  ^^^^^^
+NameError: name 'indrim' is not defined. Did you mean: 'indirim'?</pre>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Hata mesajı aşağıdan yukarı okunur.</strong> 1) En alttaki satır <strong>ne oldu</strong>: hatanın tipi (<code>NameError</code>) ve açıklaması. 2) Üstündeki satırlar <strong>nerede oldu</strong>: dosya adı, satır numarası (<code>line 3</code>) ve o satırın kendisi; işaretler sorunlu parçanın altını çizer. 3) "Traceback (most recent call last)" başlığı, bunun bir hata izi olduğunu söyler; programın hangi yollardan geçerek o satıra vardığını gösterir (fonksiyonları öğrenince bu iz uzayacak; Parça 8'de ayrıntısıyla okuyacağız). 4) Hata tipini ve satırı bulunca o satıra git, mesajın söylediğini sına.</p></div>
+
+<p>Bu örnekte en alt satır her şeyi söylüyor: <code>indrim</code> adında bir şey tanımlanmamış ve Python, yakın yazılmış <code>indirim</code>'i kastetmiş olabileceğini öneriyor. <code>NameError</code>'ın üç tipik nedeni vardır: yazım yanlışı, değişkeni tanımlamadan kullanmak (atama satırı kullanımdan sonra gelmiş) ve büyük-küçük harf farkı (<code>Fiyat</code> yazmak). Tırnak unutmak da <code>NameError</code> doğurur: <code>print(Merhaba)</code> yazarsan Python <code>Merhaba</code>'yı metin değil, bir değişken adı sanır ve bulamaz.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2'ye:</strong> Burada gördüğün <code>bool</code> tipi, karşılaştırmaların (<code>==</code>, <code>&lt;</code>) sonucu olarak koşulların ve döngülerin temelini oluşturacak. Kalan işleci <code>%</code> orada asal sayı ve çift-tek denetiminde iş görecek.</p>
+<p><strong>Parça 3, 4 ve 8'e:</strong> <code>str</code> tipinin ayrıntıları (dilimleme, metotlar, f-string ile <code>print</code>'ten daha düzgün biçimlendirme) Parça 3'te; "ad bir etikettir" fikrinin asıl önemi listelerle Parça 4'te; <code>int("otuz")</code> çökmesini zarifçe yakalamak Parça 8'de.</p>
+<p><strong>Öbür raflara:</strong> Değişken, tip, tip dönüştürme ve işlem önceliği Bash, SQL, JavaScript, C ve Go'da da var; farkları (C'de tamsayı bölmenin sıfıra doğru kesmesi, JavaScript'in tipleri sessizce dönüştürmesi gibi) Python'u temel alarak kıyaslayacağız. Dışarıdan gelen girdiye güvenmeme alışkanlığı ise siber güvenlik rafının ilk ilkelerinden biridir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç. Daha iyisi: cevabı REPL'de dene.</p>
+
+<details><summary>REPL'de <code>5 * 3</code> yazınca 15 görünür, aynı satırı bir dosyaya koyup çalıştırınca hiçbir şey görünmez. Neden?</summary><p>REPL, yazılan bir ifadenin değerini kendiliğinden ekrana basar. Dosyadan çalışan programda ise yalnızca açıkça yazdırılan şey görünür; Python 15'i hesaplar ama <code>print()</code> olmadığı için göstermez.</p></details>
+<details><summary><code>input()</code> hangi tipte değer döndürür ve kullanıcı rakam yazarsa bu değişir mi?</summary><p>Her zaman <code>str</code> döndürür; kullanıcı rakam yazsa da değişmez, çünkü klavyeden gelen şey karakterlerdir. Hesap yapmak için <code>int()</code> ya da <code>float()</code> ile açıkça dönüştürmek gerekir.</p></details>
+<details><summary><code>7 / 2</code>, <code>7 // 2</code> ve <code>7 % 2</code> ifadelerinin sonuçları ve tipleri nedir?</summary><p>Sırasıyla <code>3.5</code> (<code>float</code>), <code>3</code> (<code>int</code>, bölüm) ve <code>1</code> (<code>int</code>, kalan). <code>/</code> bölme tam çıksa bile her zaman <code>float</code> verir.</p></details>
+<details><summary><code>x = 5</code>, <code>y = x</code>, <code>x = 6</code> satırlarından sonra <code>y</code> kaçtır ve neden?</summary><p>5'tir. Atama bir değeri kopyalamaz, adı bir değere bağlar: <code>y</code> 5'e bağlandı; sonra <code>x</code> etiketi 6'ya taşındı, <code>y</code>'ye ve 5'e dokunulmadı.</p></details>
+<details><summary>Bir hata mesajını okumaya nereden başlarsın ve orada ne bulursun?</summary><p>En alttaki satırdan: hatanın tipi (ör. <code>NameError</code>, <code>ValueError</code>) ve açıklaması orada yazar. Üstündeki satırlar dosyayı, satır numarasını ve sorunlu satırı gösterir.</p></details>
+<details><summary><code>toplam-fiyat = 10</code> satırı neden hata verir, doğrusu nasıl yazılır?</summary><p>Tire, Python'da çıkarma işlecidir; satır "toplam eksi fiyat'a 10 ata" gibi okunur ve bir işleme değer atanamayacağı için <code>SyntaxError</code> çıkar. PEP 8'e uygun doğrusu <code>toplam_fiyat = 10</code>.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Kaynak kod</strong> senin yazdığın metin; <code>python3</code> yorumlayıcısı onu okuyup yürütür. Sürüm: <code>python3 --version</code>.</li>
+<li><strong>REPL</strong> (<code>&gt;&gt;&gt;</code>) deneme içindir, ifadenin değerini kendiliğinden yazar. <strong>Dosya</strong> (<code>python3 dosya.py</code>) kalıcıdır; yalnızca <code>print()</code> ile yazdırılan görünür.</li>
+<li><strong><code>print(a, b)</code></strong> değerleri aralarına boşluk koyarak yazar ve satırı bitirir.</li>
+<li><strong>Atama</strong> <code>ad = değer</code>: önce sağ hesaplanır, sonra ad değere bağlanır. Ad bir <strong>etikettir</strong>; tip ada değil değere aittir.</li>
+<li><strong>Tipler:</strong> <code>int</code> (sınırsız tamsayı), <code>float</code> (nokta ile ondalık, küçük yuvarlama hataları), <code>str</code> (tırnak içi metin), <code>bool</code> (<code>True</code>/<code>False</code>), <code>None</code> (değer yok). Sorgu: <code>type()</code>.</li>
+<li><strong>Aritmetik:</strong> <code>+ - * / // % **</code>. <code>/</code> hep <code>float</code>; <code>//</code> aşağı yuvarlar (<code>-7 // 2</code> = −4); <code>int</code> + <code>float</code> → <code>float</code>.</li>
+<li><strong>Öncelik:</strong> parantez → <code>**</code> (sağdan) → işaret eksisi → <code>* / // %</code> → <code>+ -</code>. Emin değilsen parantez.</li>
+<li><strong><code>input()</code> hep <code>str</code></strong> verir; <code>int()</code>/<code>float()</code> ile dönüştür. <code>int("3.5")</code> ve <code>int("otuz")</code> → <code>ValueError</code>; <code>int(3.9)</code> → 3 (keser).</li>
+<li><strong>Yorum</strong> <code>#</code> ile; "neden"i anlatır. <strong>Ad:</strong> harf/alt çizgiyle başlar, boşluk ve tire yok; PEP 8: <code>kucuk_harf_alt_cizgi</code>, anlamlı.</li>
+<li><strong>Hata mesajı aşağıdan yukarı okunur:</strong> en alt satır ne oldu, üstü nerede oldu. <code>SyntaxError</code> çalışmadan önce, <code>NameError</code> (yazım yanlışı, tanımsız ad, unutulan tırnak) çalışırken.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="kod-1">
+<h3>Quiz 1</h3>
+<p class="qa">Sekiz soru. Önce kâğıtta çöz ya da kendi bilgisayarında dene, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>print(type(8 / 4))</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>&lt;class 'int'&gt;</code></li><li><code>&lt;class 'float'&gt;</code></li><li><code>2</code></li><li><code>2.0</code></li><li><code>&lt;class 'str'&gt;</code></li></ul>
+<div class="coz"><p><code>/</code> işleci, bölme tam çıksa bile her zaman <code>float</code> üretir; 8 / 4 sonucu <code>2.0</code>'dır ve tipi <code>float</code>'tır. A, "tam çıkan bölme tamsayı verir" yanılgısıdır; bu Python 2'de böyleydi, Python 3'te değil. C ve D, <code>type()</code>'ın değeri değil tipi yazdığını gözden kaçıranların seçeneğidir; D bölmenin sonucudur, sorulan ise tipidir. E'de hiçbir metin yok.</p></div></li>
+
+<li data-c="D"><p class="q"><code>print(17 // 5, 17 % 5)</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>3.4 2</code></li><li><code>3 3</code></li><li><code>2 3</code></li><li><code>3 2</code></li><li><code>3.4 0.4</code></li></ul>
+<div class="coz"><p><code>//</code> tam bölmedir: 17'nin içinde 5, üç kez sığar, bölüm 3. <code>%</code> kalandır: 17 − 5 × 3 = 2. Sağlama: 3 × 5 + 2 = 17. A ve E, <code>//</code>'yi gerçek bölme (<code>/</code>) sanıp 3,4 bulanların seçeneğidir; B kalanı yanlış hesaplar, C ise bölüm ile kalanın yerini karıştırır.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki ifadelerden hangisi çalıştırıldığında <code>ValueError</code> hatası verir?</p>
+<ul class="sec"><li><code>int("12")</code></li><li><code>float("2.5")</code></li><li><code>int("2.5")</code></li><li><code>int(2.5)</code></li><li><code>str(5)</code></li></ul>
+<div class="coz"><p><code>int()</code> bir metinden doğrudan ondalık sayı okuyamaz; <code>"2.5"</code> metni tamsayı gibi yazılmadığı için <code>ValueError</code> çıkar. A geçerli bir tamsayı metnidir (12). B'de <code>float()</code> ondalık metni okur (2.5). D'deki 2.5 metin değil <code>float</code>'tır ve <code>int()</code> onu hatasız 2'ye keser; C ile D'yi ayıran şey tırnaktır. E sayıyı metne çevirir (<code>"5"</code>) ve hiçbir zaman hata vermez.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki değişken adlarından hangisi hem Python'da geçerlidir hem de PEP 8 geleneğine uygundur?</p>
+<ul class="sec"><li><code>2fiyat</code></li><li><code>toplam-fiyat</code></li><li><code>toplam fiyat</code></li><li><code>ToplamFiyat</code></li><li><code>toplam_fiyat</code></li></ul>
+<div class="coz"><p>E küçük harfle ve alt çizgiyle yazılmış, PEP 8'in önerdiği biçimdir. A rakamla başladığı için, B tire çıkarma işleci sayıldığı için, C boşluk içerdiği için <code>SyntaxError</code> verir. D geçerli bir addır, yani Python onu kabul eder; ama PEP 8'de her sözcüğü büyük harfle başlayan bu biçim sınıf adlarına ayrılmıştır, değişkene yakışmaz. Soru "hem geçerli hem uygun" dediği için D elenir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki kodun çıktısı nedir?</p><pre class="kod">a = 3
+b = a
+a = a + 4
+print(a, b)</pre>
+<ul class="sec"><li><code>7 3</code></li><li><code>7 7</code></li><li><code>3 7</code></li><li><code>3 3</code></li><li><code>4 3</code></li></ul>
+<div class="coz"><p><code>b = a</code> satırında <code>b</code> etiketi, o anda <code>a</code>'nın gösterdiği 3 değerine bağlanır. <code>a = a + 4</code> sağ tarafı hesaplar (7) ve yalnızca <code>a</code> etiketini 7'ye taşır; <code>b</code> hâlâ 3'ü gösterir. B, değişkeni "a'ya bağlı bir kutu" sanıp <code>b</code>'nin de değişeceğini düşünen yanılgıdır. C sırayı ters okur, D atamanın hiç etkisi olmadığını sanar, E ise <code>a + 4</code> yerine yalnızca 4 alır.</p></div></li>
+
+<li data-c="C"><p class="q"><code>print(2 + 3 * 2 ** 2)</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>20</code></li><li><code>64</code></li><li><code>14</code></li><li><code>38</code></li><li><code>100</code></li></ul>
+<div class="coz"><p>Öncelik sırasıyla: önce üs, 2 ** 2 = 4; sonra çarpma, 3 × 4 = 12; en son toplama, 2 + 12 = 14. A, işlemleri soldan sağa yapıp (2 + 3) × 2 ** 2 = 20 bulanın sonucudur. D, çarpmayı üsten önce yapanınkidir: 2 + (3 × 2) ** 2 = 38. B tüm toplamı en son kareye alır: (2 + 3 × 2) ** 2 = 64. E'nin dayanağı yok. Hepsi çalıştırılarak doğrulandı.</p></div></li>
+
+<li data-c="E"><p class="q">İçinde yalnızca <code>5 * 3</code> satırı bulunan <code>sadece.py</code> dosyası <code>python3 sadece.py</code> ile çalıştırılıyor. Ne olur?</p>
+<ul class="sec"><li>Ekrana <code>15</code> yazılır.</li><li>Ekrana <code>5 * 3</code> yazılır.</li><li><code>SyntaxError</code> verir, çünkü <code>print</code> yok.</li><li><code>NameError</code> verir.</li><li>Program hatasız biter ama ekrana hiçbir şey yazılmaz.</li></ul>
+<div class="coz"><p>Python ifadeyi hesaplar (15), ama dosyadan çalışan bir programda yalnızca açıkça yazdırılan şey görünür; burada <code>print()</code> olmadığı için çıktı boştur ve program hatasız biter. A, REPL davranışını dosyaya taşıyan yanılgıdır: değeri kendiliğinden yazan REPL'dir. B tırnak olmadan metin yazılacağını sanır. C yanlıştır, çünkü tek başına bir ifade söz dizimine uygundur. D yanlıştır, çünkü hiçbir ad kullanılmıyor.</p></div></li>
+
+<li data-c="A"><p class="q"><code>print(-7 // 2, -7 % 2)</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>-4 1</code></li><li><code>-3 -1</code></li><li><code>-3 1</code></li><li><code>-4 -1</code></li><li><code>-3.5 1</code></li></ul>
+<div class="coz"><p>Python'da <code>//</code> sonucu aşağıya, yani eksi sonsuza doğru yuvarlar: −7 / 2 = −3,5 ve aşağısı −4. Kalan, <code>(a // b) * b + (a % b) == a</code> bağıntısını korur: (−4) × 2 + kalan = −7, demek ki kalan 1. B, C'deki gibi sıfıra doğru kesen dillerin sonucudur (−3 ve −1); C ise iki kuralı karıştırır. D bağıntıyı sağlamaz: (−4) × 2 + (−1) = −9. E, <code>//</code>'yi gerçek bölme sanır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ev">← Kütüphane</a>
+  <button class="btn ok" data-done="kod-1">Bu bölümü okudum</button>
+  <a class="btn" href="#kod-2">Sonraki parça: koşullar ve döngüler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"python dersleri sıfırdan değişkenler ve veri tipleri"</li>
+  <li>"python input int float tip dönüşümü"</li>
+  <li>"python floor division modulo operator precedence"</li>
+  <li>"how to read python traceback error messages beginners"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bütün kod örnekleri bu oturumda Python 3.13.16 (Linux) ile <code>python3 -I</code> kullanılarak gerçekten çalıştırıldı; çıktılar birebir yapıştırıldı. Hata izlerindeki dosya yolları çalıştırdığım geçici klasörü gösterir; sende kendi yolun görünür.</li>
+  <li><code>input()</code> kullanan örneklerin ve REPL oturumunun çıktıları, kullanıcının yazdığı değerlerin ekranda göründüğü gerçek bir terminal oturumu (<code>script</code> aracı) içinde alındı. REPL'in açılış satırları ve renkli istemi sadeleştirildi.</li>
+  <li>Quiz'deki her kod sorusu ve çeldiricileri (<code>-7 // 2</code>, öncelik sırası çeldiricileri 20/38/64, dönüşüm hataları, ad geçerliliği) çalıştırılarak denetlendi.</li>
+  <li>docs.python.org'a bu oturumda ağ kısıtı nedeniyle erişemedim. <code>/</code> işlecinin her zaman <code>float</code> vermesi, <code>//</code>'nin aşağı yuvarlaması, <code>**</code>'nin sağdan gruplanıp işaret eksisinden önce gelmesi ve PEP 8 adlandırma geleneği, belgelerdeki yerleşik bilgiye dayanarak hafızadan yazıldı ve çalıştırılan örneklerle sınandı; resmî metinle satır satır karşılaştırılmadı.</li>
+  <li>Hafızadan, doğrulanmadan yazılanlar: Python 2 desteğinin 2020 başında bittiği; hata mesajlarının Python 3.10'da iyileştiği ve altı çizen <code>^~</code> işaretlerinin 3.11'de geldiği; Windows'ta komut adının <code>py</code>/<code>python</code> olabileceği. <code>id()</code> eşitliğinin küçük tamsayılarda sağlanması CPython uygulama ayrıntısıdır, dil güvencesi değildir.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,689 @@
+<article class="chapter ders" id="c-kod-2">
+<div class="prose">
+<div class="eyebrow">Kod · Parça 2 · Koşullar ve döngüler</div>
+<h1>Programın karar vermesi ve tekrar etmesi: koşullar ve döngüler</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 15 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Parça 1'deki programlar yukarıdan aşağıya bir kez akıp bitiyordu: her satır tam bir kez çalışıyordu. Oysa gerçek bir program "parola kısaysa uyar, değilse kabul et" diye karar verir, bir dosyadaki bir milyon satırın her birine aynı işi uygular, aradığını bulunca durur. Satırları sırayla çalıştırmaktan başka bir şey bilmeyen bir makineye "bazen şunu yap, bazen bunu" ve "bunu yüz kez yap" demeyi nasıl öğretirsin?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (yorumlayıcı, <code>print()</code>, değişken ve atama, <code>int</code>/<code>float</code>/<code>str</code>/<code>bool</code>/<code>None</code> tipleri, aritmetik işleçler, özellikle <code>%</code> ile kalan). Örnekleri bir dosyaya yazıp <code>python3 dosya.py</code> ile çalıştır; çıktın buradakiyle aynı olmalı.</p>
+
+<h2 class="s">Önce büyük resim: akış nedir, neden denetlenir?</h2>
+
+<p>Python bir dosyayı çalıştırırken en üstteki satırdan başlar ve birer birer aşağı iner. Bu sıraya <strong>akış</strong> (control flow) denir. Parça 1'de yazdığın her program düz bir çizgiydi: üç satır varsa üç satır çalışır, program biter. Bu düzende program hiçbir şeye tepki veremez; girdi ne olursa olsun aynı adımları atar.</p>
+
+<p>Bütün programlama dillerinde akışı değiştirmenin yalnızca iki temel yolu vardır ve bu parça ikisini de baştan sona kurar:</p>
+
+<p><strong>Dallanma (koşul).</strong> Bir soruyu sor, cevabına göre ya bu satır grubunu ya şu satır grubunu çalıştır. Python'da <code>if</code>, <code>elif</code>, <code>else</code>.</p>
+
+<p><strong>Tekrar (döngü).</strong> Bir satır grubunu ya bir koşul doğru kaldıkça ya da bir dizinin her elemanı için yeniden çalıştır. Python'da <code>while</code> ve <code>for</code>.</p>
+
+<p>Bu ikisinin temelinde aynı şey yatar: makinenin "evet mi hayır mı" diye cevaplayabileceği bir soru. O yüzden işe karşılaştırmayla ve Parça 1'de adını koyduğumuz <code>bool</code> tipiyle başlayacağız. Sonra soruları birleştirmeyi (<code>and</code>, <code>or</code>, <code>not</code>), sonra Python'ın blokları nasıl tanıdığını (girinti), sonra iki döngüyü ve döngüyü yönlendiren üç sözcüğü (<code>break</code>, <code>continue</code>, döngüye bağlı <code>else</code>) göreceğiz. En sonda hepsini bir araya getirip bir sayının asal olup olmadığını bulan küçük bir program yazacağız.</p>
+
+<h2 class="s">1. Karşılaştırma: makinenin sorabileceği soru</h2>
+
+<p>Bir karar vermek için önce bir soru gerekir: "Puan 50'den büyük mü?", "Kullanıcının yazdığı parola kayıtlı olanla aynı mı?" Bu soruları altı karşılaştırma işleci (operator) ile sorarsın. Her biri iki değeri alır ve tek bir cevap üretir: <code>True</code> (doğru) ya da <code>False</code> (yanlış). Bu iki değer, Parça 1'de tanıdığın <code>bool</code> tipinin yalnızca iki üyesidir.</p>
+
+<div class="tablo"><table>
+<tr><th>İşleç</th><th>Anlamı</th><th>Örnek</th><th>Sonuç</th></tr>
+<tr><td><code>==</code></td><td>eşit mi</td><td><code>7 == 7.0</code></td><td><code>True</code></td></tr>
+<tr><td><code>!=</code></td><td>eşit değil mi</td><td><code>2 != 2</code></td><td><code>False</code></td></tr>
+<tr><td><code>&lt;</code></td><td>küçük mü</td><td><code>3 &lt; 5</code></td><td><code>True</code></td></tr>
+<tr><td><code>&lt;=</code></td><td>küçük ya da eşit mi</td><td><code>10 &lt;= 9</code></td><td><code>False</code></td></tr>
+<tr><td><code>&gt;</code></td><td>büyük mü</td><td><code>7 &gt; 3</code></td><td><code>True</code></td></tr>
+<tr><td><code>&gt;=</code></td><td>büyük ya da eşit mi</td><td><code>18 &gt;= 18</code></td><td><code>True</code></td></tr>
+</table></div>
+
+<pre class="kod" data-ad="python3 k1.py">print(7 &gt; 3)
+print(7 == 7.0)
+print(2 != 2)
+print("elma" &lt; "armut")
+sonuc = 10 &lt;= 9
+print(sonuc, type(sonuc))</pre>
+<pre class="cikti">True
+True
+False
+False
+False &lt;class 'bool'&gt;</pre>
+
+<p>Dört şeye dikkat et. Birincisi, karşılaştırmanın sonucu da bir değerdir; onu bir değişkene koyabilir (<code>sonuc = 10 &lt;= 9</code>), yazdırabilir, tipini sorabilirsin. İkincisi, <code>7 == 7.0</code> doğrudur: biri <code>int</code>, öbürü <code>float</code> olsa da Python sayıları değerleriyle karşılaştırır. Üçüncüsü, metinler de karşılaştırılabilir; Python onları harf harf, karakterlerin sayı kodlarına göre sıralar (ayrıntısı Parça 3'te). "elma" "armut"tan küçük değildir, çünkü ilk harflerde e, a'dan sonra gelir. Dördüncüsü ve en önemlisi: eşitlik iki eşittir işaretiyle yazılır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>=</code> atamadır: "sağdaki değeri soldaki ada bağla" der ve bir şey sormaz. <code>==</code> karşılaştırmadır: "bu iki değer eşit mi" diye sorar ve <code>True</code> ya da <code>False</code> üretir. Neden iki ayrı işaret? Çünkü dil, bir satırın bir şeyi <em>değiştirmek</em> mi yoksa bir şeyi <em>sormak</em> mı istediğini kesin bilmek zorundadır. Python bu yüzden <code>if x = 5:</code> yazdığında programı hiç çalıştırmaz ve bir <code>SyntaxError</code> verir; yanlışlıkla atama yapıp sessizce yanlış karar vermene izin vermez.</p></div>
+
+<p>Python'ın küçük bir kolaylığı daha var: karşılaştırmaları matematikteki gibi zincirleyebilirsin. <code>13 &lt;= yas &lt; 65</code> ifadesi "<code>13 &lt;= yas</code> ve <code>yas &lt; 65</code>" anlamına gelir. Bu zincir okunurluğu artırır ama başka dillerin çoğunda yoktur; C'ye geldiğimizde (Parça 26) aynı yazım bambaşka bir sonuç verecek.</p>
+
+<h2 class="s">2. Soruları birleştirmek: and, or, not</h2>
+
+<p>Çoğu karar tek bir sorudan oluşmaz. "Yaş 18 ile 65 arasında mı" iki sorudur: 18'den büyük ya da eşit mi <strong>ve</strong> 65'ten küçük mü. "Hafta sonu mu ya da tatil mi" yine iki sorudur, ama bu sefer biri yeterlidir. Bu birleşimler için üç mantıksal işleç vardır ve İngilizce sözcük olarak yazılır.</p>
+
+<div class="tablo"><table>
+<tr><th>İşleç</th><th>Ne zaman <code>True</code></th><th>Örnek (<code>yas = 20</code>)</th><th>Sonuç</th></tr>
+<tr><td><code>a and b</code></td><td>ikisi de doğruysa</td><td><code>yas &gt;= 18 and yas &lt; 65</code></td><td><code>True</code></td></tr>
+<tr><td><code>a or b</code></td><td>en az biri doğruysa</td><td><code>yas &lt; 13 or yas &gt; 64</code></td><td><code>False</code></td></tr>
+<tr><td><code>not a</code></td><td><code>a</code> yanlışsa</td><td><code>not yas &gt; 30</code></td><td><code>True</code></td></tr>
+</table></div>
+
+<pre class="kod" data-ad="python3 k2.py">yas = 20
+print(yas &gt;= 18 and yas &lt; 65)
+print(not yas &gt; 30)
+print(yas &lt; 13 or yas &gt; 64)
+print(13 &lt;= yas &lt; 65)</pre>
+<pre class="cikti">True
+True
+False
+True</pre>
+
+<p>Öncelik sırası şöyledir: önce aritmetik (<code>+ - * /</code>), sonra karşılaştırmalar, sonra <code>not</code>, sonra <code>and</code>, en son <code>or</code>. Yani <code>not yas &gt; 30</code>, "<code>not yas</code>" değil "<code>not (yas &gt; 30)</code>" olarak okunur. <code>a or b and c</code> ise <code>a or (b and c)</code> demektir. Bu sırayı ezberlemek yerine, iki işleci bir arada kullandığın her yerde parantez koy. Parantez programı yavaşlatmaz, okuyanı ise yanlış anlamaktan korur.</p>
+
+<h3>Kısa devre: Python gereğinden fazlasına bakmaz</h3>
+
+<p>Şu iki gözlemi yap. <code>False and herhangi_bir_sey</code> her durumda yanlıştır; sağ tarafın ne olduğunun önemi yoktur. <code>True or herhangi_bir_sey</code> her durumda doğrudur. Python bunu bilir ve sonucun belli olduğu anda durur; sağ tarafı hiç hesaplamaz. Buna <strong>kısa devre değerlendirme</strong> (short-circuit evaluation) denir.</p>
+
+<p>Bu yalnızca bir hız kazancı değil, bir güvenlik aracıdır. Sıfıra bölme Parça 1'de gördüğün gibi programı çökertir. Aşağıda sol taraf, sağ tarafın tehlikeli olup olmadığını önceden denetliyor:</p>
+
+<pre class="kod" data-ad="python3 k3.py">x = 0
+print(x != 0 and 10 / x &gt; 1)
+print(x == 0 or 10 / x &gt; 1)</pre>
+<pre class="cikti">False
+True</pre>
+
+<p>İki satırda da <code>10 / x</code> hiç çalışmadı. Birincide <code>x != 0</code> yanlış çıktı, <code>and</code> durdu. İkincide <code>x == 0</code> doğru çıktı, <code>or</code> durdu. Şimdi sırayı ters çevir:</p>
+
+<pre class="kod" data-ad="python3 k3c.py">x = 0
+print(10 / x &gt; 1 and x != 0)</pre>
+<pre class="cikti">Traceback (most recent call last):
+  File "/tmp/yazar/kod-2/k3c.py", line 2, in &lt;module&gt;
+    print(10 / x &gt; 1 and x != 0)
+          ~~~^~~
+ZeroDivisionError: division by zero</pre>
+
+<p>Mantık olarak aynı iki koşul, ama sıra yanlış olduğu için bölme önce denendi ve program çöktü. (Çıktıdaki dosya yolu bendeki çalışma klasörüdür, sende farklı görünür.)</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>and</code> ve <code>or</code> soldan sağa değerlendirilir ve sonuç belli olunca durur. Bu yüzden bir koşulun güvenle hesaplanabilmesi başka bir koşula bağlıysa, <strong>koruyucu koşulu sola</strong> yaz: "sıfır değilse ve bölümü şuysa", "dosya varsa ve boyutu şuysa".</p></div>
+
+<p>Bir ayrıntı daha: <code>and</code> ve <code>or</code> aslında her zaman <code>True</code>/<code>False</code> döndürmez; işlenenlerden (operand) <em>birini</em> olduğu gibi döndürür. <code>or</code>, doğru sayılan ilk değeri; <code>and</code>, yanlış sayılan ilk değeri (hiçbiri yoksa sonuncuyu) verir. "Doğru sayılan" ne demek, bir sonraki bölümde netleşecek; şimdilik sonucu gör:</p>
+
+<pre class="kod" data-ad="python3 k4.py">print(0 or "varsayilan")
+print("Ayse" or "varsayilan")
+print(5 and 0)
+print(None and 1 / 0)</pre>
+<pre class="cikti">varsayilan
+Ayse
+0
+None</pre>
+
+<p>Son satırda <code>1 / 0</code> yine hiç çalışmadı: <code>None</code> yanlış sayıldığı için <code>and</code> orada durdu ve <code>None</code>'ı döndürdü. <code>ad or "varsayilan"</code> kalıbı gerçek kodda sık görülür: "ad boşsa yerine varsayılanı kullan" demektir.</p>
+
+<h2 class="s">3. if, elif, else: dallanma</h2>
+
+<p>Elinde artık evet/hayır üreten sorular var. Şimdi bu cevaba göre farklı satırları çalıştırmayı öğreneceğiz. En yalın biçim:</p>
+
+<pre class="kod" data-ad="sözdizimi">if KOŞUL:
+    koşul doğruysa çalışacak satırlar
+else:
+    koşul yanlışsa çalışacak satırlar</pre>
+
+<p>Üç parçaya bak: <code>if</code> sözcüğü, ardından koşul, satırın sonunda iki nokta üst üste <code>:</code>. İki nokta "buradan sonra bir blok başlıyor" demektir. Blok, alt satırlarda <strong>içeriye kaydırılmış</strong> satırlardan oluşur. <code>else:</code> isteğe bağlıdır; yazmazsan koşul yanlışken hiçbir şey yapılmaz ve akış blokun altından devam eder.</p>
+
+<p>İkiden fazla yol olduğunda araya istediğin kadar <code>elif</code> ("else if" kısaltması) koyarsın. Python koşulları yukarıdan aşağı sırayla dener, <strong>doğru çıkan ilk</strong> koşulun blokunu çalıştırır ve geri kalanların hepsini atlar. Hiçbiri doğru değilse <code>else</code> çalışır.</p>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="if elif else akış şeması: koşullar yukarıdan aşağı denenir, doğru çıkan ilk koşulun bloku çalışır ve akış sona atlar">
+  <rect class="sv-k" x="130" y="10" width="140" height="30" rx="6" />
+  <text class="sv-t" x="200" y="30" text-anchor="middle">puan = 72</text>
+  <line class="sv-c" x1="200" y1="40" x2="200" y2="58" />
+  <polygon class="sv-l" points="200,58 280,88 200,118 120,88" />
+  <text class="sv-t" x="200" y="93" text-anchor="middle">puan &gt;= 85 ?</text>
+  <line class="sv-c" x1="280" y1="88" x2="310" y2="88" />
+  <rect class="sv-k" x="310" y="74" width="80" height="28" rx="6" />
+  <text class="sv-t" x="350" y="93" text-anchor="middle">harf = A</text>
+  <text class="sv-s" x="292" y="80" text-anchor="middle">evet</text>
+  <line class="sv-c" x1="200" y1="118" x2="200" y2="138" />
+  <text class="sv-s" x="215" y="132">hayır</text>
+  <polygon class="sv-m" points="200,138 280,168 200,198 120,168" />
+  <text class="sv-t" x="200" y="173" text-anchor="middle">puan &gt;= 70 ?</text>
+  <line class="sv-cl" x1="280" y1="168" x2="310" y2="168" />
+  <rect class="sv-m" x="310" y="154" width="80" height="28" rx="6" />
+  <text class="sv-b" x="350" y="173" text-anchor="middle">harf = B</text>
+  <text class="sv-s" x="292" y="160" text-anchor="middle">evet</text>
+  <line class="sv-c" x1="200" y1="198" x2="200" y2="218" />
+  <text class="sv-s" x="215" y="212">hayır</text>
+  <polygon class="sv-l" points="200,218 280,248 200,278 120,248" />
+  <text class="sv-t" x="200" y="253" text-anchor="middle">puan &gt;= 50 ?</text>
+  <line class="sv-c" x1="280" y1="248" x2="310" y2="248" />
+  <rect class="sv-k" x="310" y="234" width="80" height="28" rx="6" />
+  <text class="sv-t" x="350" y="253" text-anchor="middle">harf = C</text>
+  <line class="sv-c" x1="120" y1="248" x2="40" y2="248" />
+  <rect class="sv-k" x="4" y="234" width="72" height="28" rx="6" />
+  <text class="sv-t" x="40" y="253" text-anchor="middle">harf = F</text>
+  <text class="sv-s" x="98" y="240" text-anchor="middle">hayır</text>
+  <line class="sv-cl" x1="350" y1="182" x2="350" y2="325" />
+  <rect class="sv-a" x="150" y="312" width="100" height="28" rx="6" />
+  <text class="sv-t" x="200" y="331" text-anchor="middle">print(...)</text>
+  <line class="sv-cl" x1="350" y1="325" x2="250" y2="325" />
+</svg>
+<figcaption>Koşullar tepeden aşağı denenir. 72 için ilk soru "hayır", ikinci soru "evet" çıkar; B atanır ve akış doğrudan sona atlar. Üçüncü soru (<code>puan &gt;= 50</code>) hiç sorulmaz; 72 bu koşulu da sağladığı hâlde.</figcaption>
+</figure>
+
+<pre class="kod" data-ad="python3 k5.py">puan = 72
+
+if puan &gt;= 85:
+    harf = "A"
+elif puan &gt;= 70:
+    harf = "B"
+elif puan &gt;= 50:
+    harf = "C"
+else:
+    harf = "F"
+
+print("Puan:", puan, "Harf:", harf)</pre>
+<pre class="cikti">Puan: 72 Harf: B</pre>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"elif'lerin sırası önemli değil, hepsi zaten ayrı koşul."</strong> Önemli. Python doğru çıkan ilk dalda durduğu için geniş koşulu üste koyarsan dar koşullara hiç sıra gelmez. Aynı programda sırayı ters çevir:</p>
+<pre class="kod" data-ad="python3 k5b.py">puan = 72
+
+if puan &gt;= 50:
+    harf = "C"
+elif puan &gt;= 70:
+    harf = "B"
+elif puan &gt;= 85:
+    harf = "A"
+else:
+    harf = "F"
+
+print("Puan:", puan, "Harf:", harf)</pre>
+<pre class="cikti">Puan: 72 Harf: C</pre>
+<p>Program hata vermedi, sessizce yanlış sonuç üretti; bu en tehlikeli hata türüdür. Bu programda 50 ve üstü her puan C alır, A ve B asla verilmez. Doğrusu: eşik karşılaştırmalarında koşulları <strong>en dardan en genişe</strong> (burada büyükten küçüğe) diz ya da her dalı tam aralıkla yaz (<code>70 &lt;= puan &lt; 85</code>).</p></div>
+
+<p>Bir de ayrı <code>if</code>'lerle <code>elif</code> zincirinin farkını gör. Üç ayrı <code>if</code> yazarsan üçü de bağımsız olarak denenir ve birden çoğu çalışabilir. <code>elif</code> zincirinde ise en çok bir dal çalışır. "Bu durumlardan yalnızca biri geçerli" diyorsan <code>elif</code>, "her biri ayrı ayrı denetlensin" diyorsan ayrı <code>if</code>'ler kullan.</p>
+
+<h2 class="s">4. Girinti: Python bloku nereden tanır?</h2>
+
+<p>Bir <code>if</code>'ten sonra hangi satırların o koşula ait olduğunu makine nereden bilecek? Birçok dil bunu süslü parantezle yapar: <code>{</code> blok başlar, <code>}</code> biter; girinti yalnızca okuyan insan içindir ve makine onu görmezden gelir. Bu durumda girinti ile parantez birbirini tutmayabilir ve göz yanlış şeyi okur. Python bu sorunu kökünden kesmek için başka bir yol seçmiştir: <strong>girinti sözdiziminin kendisidir.</strong> Aynı miktarda içeri kaydırılmış ardışık satırlar bir bloktur; ilk geri çekilen satır blokun bittiğini gösterir. Gözün gördüğü yapı ile makinenin anladığı yapı her zaman aynıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>İki nokta <code>:</code> ile biten her satırın (<code>if</code>, <code>elif</code>, <code>else</code>, <code>while</code>, <code>for</code>) altında en az bir satırlık, içeri kaydırılmış bir blok olmalıdır. Bir blokun bütün satırları <strong>tam olarak aynı</strong> miktarda kaydırılır. Python'ın resmî biçem rehberi PEP 8, her düzey için <strong>dört boşluk</strong> ister ve sekme (Tab) karakteriyle boşluğun karıştırılmamasını söyler. Dil teknik olarak iki boşluğu da kabul eder; ama dört boşluk ortak gelenektir, kodun başkalarınınkiyle aynı görünmesini sağlar ve iç içe bloklarda düzeyleri gözle ayırmayı kolaylaştırır. Kod düzenleyicin Tab tuşuna basınca dört boşluk koyacak biçimde ayarlı olsun.</p></div>
+
+<p>Girintiyi bozduğunda Python programı <em>hiç çalıştırmaz</em>, daha baştan <code>IndentationError</code> verir (bu, Parça 1'de gördüğün <code>SyntaxError</code>'ın bir alt türüdür). İki tipik durum:</p>
+
+<pre class="kod" data-ad="python3 k6b.py">sicaklik = 30
+if sicaklik &gt; 25:
+print("sicak")</pre>
+<pre class="cikti">  File "/tmp/yazar/kod-2/k6b.py", line 3
+    print("sicak")
+    ^^^^^
+IndentationError: expected an indented block after 'if' statement on line 2</pre>
+
+<pre class="kod" data-ad="python3 k6.py">sicaklik = 30
+if sicaklik &gt; 25:
+    print("sicak")
+  print("su ic")</pre>
+<pre class="cikti">  File "/tmp/yazar/kod-2/k6.py", line 4
+    print("su ic")
+                  ^
+IndentationError: unindent does not match any outer indentation level</pre>
+
+<p>Birincide <code>if</code>'in altı boş kaldı: Python "2. satırdaki if'ten sonra içeri kaydırılmış bir blok bekliyordum" diyor. İkincide 4. satır iki boşlukla geri çekilmiş; ne bloğun içinde (dört boşluk) ne dışında (sıfır boşluk). Hata mesajını Parça 1'de öğrendiğin gibi oku: önce satır numarası, sonra en alttaki satırdaki açıklama.</p>
+
+<p>Blokun nerede bittiğinin anlamı da büyüktür. Aşağıdaki iki program yalnızca son satırın girintisiyle ayrılır ama farklı davranır:</p>
+
+<pre class="kod" data-ad="iki ayrı anlam">if sicaklik &gt; 25:
+    print("sicak")
+    print("su ic")      # yalnız sıcaksa çalışır
+
+if sicaklik &gt; 25:
+    print("sicak")
+print("su ic")          # her durumda çalışır</pre>
+
+<h2 class="s">5. Doğruluk (truthiness): bool olmayan değerler koşulda</h2>
+
+<p><code>if</code>'in arkasına illa bir karşılaştırma yazmak zorunda değilsin; herhangi bir değer koyabilirsin. Python o değeri koşul yerine kullanırken kendine sorar: "Bu değer doğru sayılır mı, yanlış mı?" Neden böyle bir kural var? Çünkü programlarda en sık sorulan sorulardan biri "burada bir şey var mı, yoksa boş mu"dur: kullanıcı bir şey yazdı mı, liste dolu mu, sayaç sıfırdan farklı mı. Python bu soruyu kısa sorabilmen için her değere bir doğruluk anlamı verir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Koşulda <strong>yanlış</strong> sayılanlar: <code>False</code>, <code>None</code>, her türden sıfır (<code>0</code>, <code>0.0</code>), boş metin <code>""</code> ve boş diziler/kaplar (boş liste <code>[]</code>, boş demet, boş sözlük, boş küme; bunları Parça 4–5'te tanıyacaksın). <strong>Geri kalan her şey doğru</strong> sayılır. Bir değerin hangi tarafta olduğunu <code>bool(deger)</code> ile sorabilirsin.</p></div>
+
+<pre class="kod" data-ad="python3 k7.py">degerler = [0, 0.0, "", " ", "0", [], [0], None, 42, -1]
+for d in degerler:
+    print(repr(d), "-&gt;", bool(d))</pre>
+<pre class="cikti">0 -&gt; False
+0.0 -&gt; False
+'' -&gt; False
+' ' -&gt; True
+'0' -&gt; True
+[] -&gt; False
+[0] -&gt; True
+None -&gt; False
+42 -&gt; True
+-1 -&gt; True</pre>
+
+<p>(Bu küçük betikte henüz görmediğimiz iki şey var: köşeli parantezle yazılan liste ve <code>for</code> döngüsü. Listeyi şimdilik "değerlerin sıralı dizisi" diye düşün; <code>for</code>'u birazdan göreceğiz. <code>repr()</code> ise değeri, metinse tırnaklarıyla yazdırır ki boş metin ile boşluk karakterini ayırt edebilesin.)</p>
+
+<div class="tablo"><table>
+<tr><th>Değer</th><th>Doğruluk</th><th>Neden şaşırtabilir</th></tr>
+<tr><td><code>" "</code> (bir boşluk)</td><td>doğru</td><td>Gözle boş görünür ama içinde bir karakter vardır; boş değildir.</td></tr>
+<tr><td><code>"0"</code></td><td>doğru</td><td>Bu bir sayı değil, bir karakterlik metindir. Metin yalnız boşsa yanlıştır.</td></tr>
+<tr><td><code>"False"</code></td><td>doğru</td><td>Yine dolu bir metin; içindeki yazının anlamına bakılmaz.</td></tr>
+<tr><td><code>[0]</code></td><td>doğru</td><td>İçinde sıfır olsa da liste boş değil, bir elemanı var.</td></tr>
+<tr><td><code>-1</code></td><td>doğru</td><td>Yalnız sıfır yanlıştır; negatif sayılar doğrudur.</td></tr>
+</table></div>
+
+<p>Gerçek kullanım şöyle görünür:</p>
+
+<pre class="kod" data-ad="python3 k8.py">ad = ""
+if ad:
+    print("Merhaba,", ad)
+else:
+    print("Ad bos birakilmis")</pre>
+<pre class="cikti">Ad bos birakilmis</pre>
+
+<p><code>if ad:</code>, <code>if ad != "":</code> yazmanın kısa ve Python'da yerleşik biçimidir. Ama dikkat: <code>input()</code>'tan gelen değer her zaman metin olduğundan (Parça 1), kullanıcı "0" yazdığında <code>if girdi:</code> doğru çıkar. Sayıya çevirmeden önceki metni "sıfır mı" diye denetleyemezsin.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong><code>if x == True:</code> ya da <code>if x == None:</code> yazmak.</strong> İlki gereksizdir ve yanıltıcıdır: <code>x</code> zaten bir <code>bool</code> ise <code>if x:</code> yeter; <code>x</code> örneğin 42 ise <code>42 == True</code> yanlış çıkar ama <code>if 42:</code> doğrudur, yani iki yazım farklı sonuç verir. <code>None</code> denetimi için PEP 8'in önerdiği yazım <code>if x is None:</code> ya da <code>if x is not None:</code> biçimidir (<code>is</code>'in ne olduğunu Parça 10'da göreceğiz). Bir de şuna dikkat: <code>if sayi:</code> sıfırı "yok" sayar. Değerin sıfır olabildiği ama "yok" anlamına gelmediği yerde (sıcaklık, hesap bakiyesi) açıkça <code>if sayi is not None:</code> yaz.</p></div>
+
+<h2 class="s">6. while döngüsü: koşul doğru kaldıkça tekrar</h2>
+
+<p>Şimdi tekrar etmeye geçiyoruz. <code>while</code>, <code>if</code>'e çok benzer; tek fark, blok bitince akışın aşağı inmek yerine <strong>başa dönüp koşulu yeniden sorması</strong>dır. Koşul doğru oldukça blok yeniden çalışır; yanlış çıktığı ilk anda akış döngünün altına geçer.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="while döngüsünün akışı: koşul sorulur, doğruysa gövde çalışır ve başa dönülür, yanlışsa döngüden çıkılır">
+  <rect class="sv-k" x="130" y="10" width="140" height="30" rx="6" />
+  <text class="sv-t" x="200" y="30" text-anchor="middle">sayac = 3</text>
+  <line class="sv-c" x1="200" y1="40" x2="200" y2="70" />
+  <polygon class="sv-l" points="200,70 285,105 200,140 115,105" />
+  <text class="sv-t" x="200" y="110" text-anchor="middle">sayac &gt; 0 ?</text>
+  <line class="sv-cl" x1="200" y1="140" x2="200" y2="170" />
+  <text class="sv-s" x="215" y="160">doğru</text>
+  <rect class="sv-m" x="110" y="170" width="180" height="56" rx="6" />
+  <text class="sv-t" x="200" y="192" text-anchor="middle">print("Kalan:", sayac)</text>
+  <text class="sv-b" x="200" y="214" text-anchor="middle">sayac = sayac - 1</text>
+  <polyline class="sv-cl" points="110,198 40,198 40,105 115,105" />
+  <text class="sv-s" x="44" y="94">başa dön</text>
+  <line class="sv-c" x1="285" y1="105" x2="340" y2="105" />
+  <line class="sv-c" x1="340" y1="105" x2="340" y2="255" />
+  <text class="sv-s" x="345" y="125">yanlış</text>
+  <rect class="sv-a" x="250" y="255" width="140" height="30" rx="6" />
+  <text class="sv-t" x="320" y="275" text-anchor="middle">print("Bitti")</text>
+</svg>
+<figcaption>Döngünün gövdesi, koşulun kendisini değiştiren bir adım (kalın satır) içermelidir. O satır olmasaydı <code>sayac</code> hep 3 kalır, koşul hiç yanlış olmaz ve ok sonsuza dek başa dönerdi.</figcaption>
+</figure>
+
+<pre class="kod" data-ad="python3 k9.py">sayac = 3
+while sayac &gt; 0:
+    print("Kalan:", sayac)
+    sayac = sayac - 1
+print("Bitti, sayac =", sayac)</pre>
+<pre class="cikti">Kalan: 3
+Kalan: 2
+Kalan: 1
+Bitti, sayac = 0</pre>
+
+<p>Burada <code>sayac</code> bir <strong>döngü değişkeni</strong>dir: döngünün ne zaman biteceğini belirleyen ve her turda değişen değer. Her döngüde üç şeyi açıkça görebilmelisin: döngü değişkeninin <strong>başlangıç</strong> değeri (<code>sayac = 3</code>), <strong>koşul</strong> (<code>sayac &gt; 0</code>) ve koşulu sona doğru götüren <strong>güncelleme</strong> (<code>sayac = sayac - 1</code>). Güncellemeyi kısaca <code>sayac -= 1</code> diye de yazabilirsin; <code>+=</code>, <code>-=</code>, <code>*=</code> gibi birleşik atamalar "değişkenin eski değerine şunu uygula ve yine ona ata" demektir.</p>
+
+<p><code>while</code>'ın asıl gücü, kaç tur döneceğini <em>önceden bilmediğin</em> durumlardır. "Bir para yıllık yüzde 10 büyürse kaç yılda ikiye katlanır?" sorusunun cevabını bilmiyorsun; tam da bu yüzden döngü yazıyorsun:</p>
+
+<pre class="kod" data-ad="python3 k10.py">para = 1000
+yil = 0
+while para &lt; 2000:
+    para = para * 1.10
+    yil += 1
+print(yil, "yilda", round(para, 2), "oldu")</pre>
+<pre class="cikti">8 yilda 2143.59 oldu</pre>
+
+<p>(<code>round(sayi, 2)</code> sayıyı virgülden sonra iki basamağa yuvarlar. Ondalık sayılardaki küçük yuvarlama farkları yüzünden <code>round</code> olmadan uzun bir kuyruk görürdün; bu Parça 1'de değindiğimiz <code>float</code> doğasıdır.)</p>
+
+<h3>Sonsuz döngü ve ondan kaçınmak</h3>
+
+<p>Koşul hiç yanlış olmazsa döngü hiç bitmez: buna <strong>sonsuz döngü</strong> denir. Program donmuş gibi görünür, ya da ekrana durmaksızın yazar. Üç tipik nedeni vardır: güncelleme satırını unutmak; güncellemeyi yanlış yöne yapmak (<code>sayac &gt; 0</code> koşulunda <code>sayac += 1</code>); ya da güncellemeyi bloğun dışına, yanlış girintiyle yazmak. Bir sonsuz döngüye düştüğünde terminalde <strong>Ctrl+C</strong>'ye bas: Python çalışmayı keser ve <code>KeyboardInterrupt</code> mesajıyla durur. Bu bir felaket değildir, yalnızca programını yeniden gözden geçirme işaretidir.</p>
+
+<p>Bazen bilerek "sonsuz" bir döngü yazılır: <code>while True:</code>. Bir sunucu sürekli istek bekler, bir menü kullanıcı "çık" diyene dek tekrar sorar. Böyle bir döngü her zaman içeride bir çıkış noktası (birazdan göreceğin <code>break</code>) taşır. Çıkışı olmayan <code>while True:</code> bir hatadır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Ondalık sayıyla tam eşitliği döngü koşulu yapmak.</strong> <code>x = 0.0</code> ile başlayıp her turda <code>x += 0.1</code> ekleyen ve <code>while x != 1.0:</code> diye dönen bir döngü durmaz: Parça 1'de gördüğün gibi <code>0.1</code> bilgisayarda tam temsil edilmez ve toplam hiçbir zaman tam olarak <code>1.0</code>'a eşit olmaz, onu atlayıp geçer. Doğrusu: koşulu eşitsizlikle kur (<code>while x &lt; 1.0:</code>) ya da tamsayıyla say (<code>i</code>'yi 0'dan 10'a götür ve <code>x = i / 10</code> hesapla).</p></div>
+
+<h2 class="s">7. for döngüsü ve range</h2>
+
+<p>Döngülerin çok büyük kısmı aslında "şu dizinin her elemanı için bir şey yap" der: bir metnin her harfi, bir listenin her sayısı, bir dosyanın her satırı. Bunu <code>while</code> ile, bir sayaç tutup elle ilerleterek yapabilirsin, ama başlangıç, koşul ve güncellemeden birini yanlış yazmak çok kolaydır. <code>for</code> bu üçünü senin yerine yapar: diziden sıradaki elemanı alır, döngü değişkenine bağlar, gövdeyi çalıştırır; eleman kalmayınca durur. Bu dolaşmaya <strong>yineleme</strong> (iteration) denir; üzerinde dolaşılabilen değere de yinelenebilir (iterable) denir.</p>
+
+<pre class="kod" data-ad="python3 k11.py">for harf in "kod":
+    print(harf)
+for sayi in [4, 8, 15]:
+    print(sayi * 2)</pre>
+<pre class="cikti">k
+o
+d
+8
+16
+30</pre>
+
+<p>Söz dizimi <code>for DEĞİŞKEN in YİNELENEBİLİR:</code> biçimindedir. <code>harf</code> adını sen seçtin; Python her turda ona bir sonraki karakteri bağlar. Döngü değişkenine de anlamlı bir ad ver: <code>for harf in metin</code>, <code>for satir in dosya</code>. Kısa döngülerde <code>i</code>, <code>j</code> gelenekseldir.</p>
+
+<h3>range: sayı dizisi üretmek</h3>
+
+<p>Ya bir diziyi değil, "beş kez" ya da "1'den 100'e kadar" dolaşmak istiyorsan? Bunun için <code>range()</code> vardır. <code>range</code> bir sayı dizisini temsil eder ama sayıları bellekte tek tek tutmaz; istendikçe üretir. Bu yüzden <code>range(1_000_000_000)</code> bile yer kaplamaz. Görmek için onu <code>list()</code> ile listeye çevirip yazdırıyoruz.</p>
+
+<pre class="kod" data-ad="python3 k12.py">print(list(range(5)))
+print(list(range(2, 6)))
+print(list(range(1, 10, 3)))
+print(list(range(10, 0, -3)))
+print(list(range(5, 2)))
+print(len(range(0, 100)))</pre>
+<pre class="cikti">[0, 1, 2, 3, 4]
+[2, 3, 4, 5]
+[1, 4, 7]
+[10, 7, 4, 1]
+[]
+100</pre>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>range(bitis)</code>, <code>range(baslangic, bitis)</code>, <code>range(baslangic, bitis, adim)</code>. Başlangıç verilmezse 0'dır, adım verilmezse 1'dir. <strong>Başlangıç dahil, bitiş hariçtir.</strong> Adım negatifse sayılar azalır. Başlangıç bitişe adım yönünde hiç ulaşamıyorsa dizi boştur ve döngü bir kez bile dönmez.</p></div>
+
+<p>Bitiş neden dışarıda kalıyor? Çünkü Python'da sayma 0'dan başlar ve bu seçimle birlikte "bitiş hariç" kuralı üç kolaylık getirir. Bir: <code>range(n)</code> tam olarak <code>n</code> eleman üretir (0'dan n−1'e); "beş kez yap" demek için <code>range(5)</code> yeter. İki: eleman sayısı her zaman <code>bitis − baslangic</code> kadardır (<code>range(2, 6)</code>: 6 − 2 = 4 eleman). Üç: ardışık aralıklar boşluksuz ve çakışmasız birleşir: <code>range(0, 5)</code> ile <code>range(5, 10)</code> birlikte tam 0–9'u verir. Parça 3'te metin dilimlemede (<code>s[1:4]</code>) aynı kuralı göreceksin; bir kez oturttun mu her yerde işine yarar. 1'den 10'a kadar (10 dahil) saymak istiyorsan bu yüzden <code>range(1, 11)</code> yazarsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> <code>range(10, 0, -3)</code> hangi sayıları üretir? Elle bul, sonra çalıştırarak doğrula.</p>
+<p><strong>Adım 1.</strong> Başlangıç 10; ilk eleman 10'dur (başlangıç dahil).</p>
+<p><strong>Adım 2.</strong> Adım −3: 10 − 3 = 7. Bitiş 0 ve adım negatif olduğundan sayı 0'dan büyük kaldıkça devam edilir. 7 > 0, dahil.</p>
+<p><strong>Adım 3.</strong> 7 − 3 = 4 > 0, dahil. 4 − 3 = 1 > 0, dahil.</p>
+<p><strong>Adım 4.</strong> 1 − 3 = −2; bu bitişi (0'ı) geçti, dahil edilmez ve dizi biter. 0 zaten hiçbir zaman dahil edilmezdi (bitiş hariç).</p>
+<p><strong>Sonuç:</strong> 10, 7, 4, 1. Yukarıdaki çıktının dördüncü satırı bunu doğruluyor.</p></div>
+
+<p>Hangi döngüyü ne zaman seçeceğin basit bir soruya bağlıdır: <strong>tur sayısını ya da dolaşacağın diziyi döngüye girmeden biliyor musun?</strong> Biliyorsan <code>for</code>: bir dizinin her elemanı, n kez, belli bir aralık. Bilmiyorsan, yani döngü bir şey olana dek sürecekse <code>while</code>: kullanıcı doğru girene dek, para ikiye katlanana dek. <code>for</code> sonsuz döngüye düşmez (dizi bitince durur); bu yüzden ikisi de iş görüyorsa <code>for</code>'u seç.</p>
+
+<h2 class="s">8. Döngüyü yönlendirmek: break, continue ve döngüye bağlı else</h2>
+
+<p>Bazen döngünün ortasında planı değiştirmen gerekir. Aradığını buldun, kalan elemanlara bakmanın anlamı yok. Ya da bu eleman ilgisiz, gövdenin geri kalanını atla, sıradakine geç. Bunlar için iki sözcük vardır:</p>
+
+<pre class="kod" data-ad="python3 k13.py">sayilar = [3, 8, -1, 12, 5]
+for s in sayilar:
+    if s &lt; 0:
+        print("Negatif bulundu, duruyorum")
+        break
+    print("islendi:", s)
+print("---")
+for s in sayilar:
+    if s % 2 == 0:
+        continue
+    print("tek:", s)</pre>
+<pre class="cikti">islendi: 3
+islendi: 8
+Negatif bulundu, duruyorum
+---
+tek: 3
+tek: -1
+tek: 5</pre>
+
+<p>İlk döngüde <code>break</code>, −1'e gelince döngüyü tamamen bitirdi; 12 ve 5'e hiç bakılmadı. İkinci döngüde <code>continue</code>, çift sayılarda (2'ye bölümünden kalan 0 olanlarda; <code>%</code> işlecini Parça 1'de gördün) gövdenin kalanını atladı ve sıradaki elemana geçti. −1 de tek sayıdır: Python'da <code>-1 % 2</code> sonucu 1'dir.</p>
+
+<p>Python'ın daha az bilinen bir özelliği, döngülere de bir <code>else</code> takılabilmesidir. Adı yanıltıcıdır; "döngü dönmezse" anlamına gelmez. Anlamı şudur: <strong>döngü <code>break</code> ile kesilmeden, doğal biçimde sona ererse</strong> <code>else</code> bloku çalışır. <code>break</code> ile çıkılırsa çalışmaz. Bu, "aradım ama bulamadım" durumunu yakalamak için yapılmıştır:</p>
+
+<pre class="kod" data-ad="python3 k14.py">liste = [7, 3, 9]
+hedef = 4
+for i in range(len(liste)):
+    if liste[i] == hedef:
+        print(hedef, "bulundu, sira", i)
+        break
+else:
+    print(hedef, "listede yok")</pre>
+<pre class="cikti">4 listede yok</pre>
+
+<p>Dikkat: <code>else</code>, <code>if</code>'in hizasında değil, <code>for</code>'un hizasında yazılmıştır; girinti onun döngüye ait olduğunu söyler. (<code>len(liste)</code> listenin eleman sayısıdır; <code>liste[i]</code> ile <code>i</code>'inci elemana erişiriz, ikisi de Parça 4'ün konusu.) <code>hedef = 9</code> yapsaydın döngü 2. sırada <code>break</code> ile kesilir, "9 bulundu, sira 2" yazar ve <code>else</code> hiç çalışmazdı.</p>
+
+<div class="tablo"><table>
+<tr><th>Sözcük</th><th>Ne yapar</th><th>Akış nereye gider</th></tr>
+<tr><td><code>break</code></td><td>İçinde bulunduğu en yakın döngüyü hemen bitirir.</td><td>Döngünün (ve varsa <code>else</code>'inin) altındaki ilk satıra.</td></tr>
+<tr><td><code>continue</code></td><td>Bu turun kalanını atlar.</td><td>Döngünün başına: <code>for</code>'da sıradaki elemana, <code>while</code>'da koşul sorusuna.</td></tr>
+<tr><td>döngü <code>else</code></td><td>Döngü <code>break</code> görmeden bittiyse çalışır.</td><td>Döngü bittikten sonra, bir kez.</td></tr>
+</table></div>
+
+<p>Bir uyarı: <code>while</code> döngüsünde <code>continue</code> kullanırken güncelleme satırının <code>continue</code>'dan <em>önce</em> yapıldığından emin ol. Güncelleme gövdenin sonundaysa ve <code>continue</code> onu atlıyorsa, döngü değişkeni hiç değişmez ve sonsuz döngüye düşersin. <code>for</code>'da bu tehlike yoktur, çünkü bir sonraki elemanı <code>for</code> kendisi alır.</p>
+
+<h2 class="s">9. İç içe döngüler ve karmaşıklık</h2>
+
+<p>Bir döngünün gövdesine başka bir döngü koyabilirsin. Dış döngünün <em>her</em> turunda iç döngü baştan sona bir kez döner. Tablo gibi iki boyutlu yapılar (satır ve sütun), "her şeyi her şeyle karşılaştır" türü işler böyle yazılır.</p>
+
+<pre class="kod" data-ad="python3 k15.py">for satir in range(1, 4):
+    for sutun in range(1, 4):
+        print(satir * sutun, end="\t")
+    print()
+
+adim = 0
+n = 100
+for i in range(n):
+    for j in range(n):
+        adim += 1
+print("n =", n, "icin ic govde", adim, "kez calisti")</pre>
+<pre class="cikti">1	2	3
+2	4	6
+3	6	9
+n = 100 icin ic govde 10000 kez calisti</pre>
+
+<p>İki yeni ayrıntı: <code>print(..., end="\t")</code>, satır sonuna her zamanki gibi alt satıra geçme yerine bir sekme koyar, böylece aynı satıra yan yana yazarız. Boş <code>print()</code> ise yalnızca alt satıra geçer; girintisine bak, iç döngünün değil dış döngünün gövdesinde, yani her satır bitince bir kez çalışıyor.</p>
+
+<p>İkinci yarı önemli bir alışkanlığın başlangıcıdır: <strong>işin büyüklüğünü saymak</strong>. Dış döngü n kez, iç döngü her seferinde n kez dönerse iç gövde n × n kez çalışır. n = 100 için 10.000, n = 10.000 için 100 milyon. Girdi 100 kat büyüyünce iş 10.000 kat büyür. Tek döngülü bir çözüm ise iş miktarını girdiyle aynı oranda büyütür. Bu ilişkiye <strong>karmaşıklık</strong> denir ve ileride ölçmeyi öğreneceksin; şimdilik iç içe bir döngü yazdığında kendine "girdi büyürse bu kaç kez çalışır?" diye sormayı alışkanlık edin. Küçük veride fark görünmez, gerçek veride programın saatler sürmesinin en sık nedeni budur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Aşağıdaki kodda <code>sayac</code> en sonda kaç olur?</p>
+<pre class="kod" data-ad="python3">sayac = 0
+for i in range(3):
+    for j in range(i):
+        sayac += 1
+print(sayac)</pre>
+<p><strong>Adım 1.</strong> Dış döngü <code>i</code>'yi sırayla 0, 1, 2 yapar (<code>range(3)</code>, 3 hariç).</p>
+<p><strong>Adım 2.</strong> <code>i = 0</code>: iç döngü <code>range(0)</code>, yani boş dizi; hiç dönmez. Sayaç 0 kalır.</p>
+<p><strong>Adım 3.</strong> <code>i = 1</code>: iç döngü <code>range(1)</code> = 0; bir kez döner. Sayaç 1.</p>
+<p><strong>Adım 4.</strong> <code>i = 2</code>: iç döngü <code>range(2)</code> = 0, 1; iki kez döner. Sayaç 3.</p>
+<p><strong>Sonuç:</strong> 0 + 1 + 2 = 3. Çalıştırınca <code>3</code> yazar. İç döngünün tur sayısı dış değişkene bağlı olduğunda her dış turu ayrı say.</p></div>
+
+<h2 class="s">10. Akümülatör kalıbı: toplam, sayaç, en büyük</h2>
+
+<p>Döngülerle yapılan işlerin çoğu tek bir kalıba uyar: döngüden <em>önce</em> bir değişkeni başlangıç değeriyle kur, döngünün <em>içinde</em> her elemanla güncelle, döngüden <em>sonra</em> sonucu kullan. Bu değişkene <strong>akümülatör</strong> (biriktirici) denir. Toplam için başlangıç 0'dır (toplamaya hiçbir şey katmayan değer); sayaç için 0; çarpım için 1; en büyük değer için dizinin ilk elemanı.</p>
+
+<pre class="kod" data-ad="python3 k16.py">notlar = [70, 85, 40, 95, 60]
+toplam = 0
+gecen = 0
+en_yuksek = notlar[0]
+for n in notlar:
+    toplam += n
+    if n &gt;= 50:
+        gecen += 1
+    if n &gt; en_yuksek:
+        en_yuksek = n
+print("Toplam:", toplam)
+print("Ortalama:", toplam / len(notlar))
+print("Gecen:", gecen)
+print("En yuksek:", en_yuksek)</pre>
+<pre class="cikti">Toplam: 350
+Ortalama: 70.0
+Gecen: 4
+En yuksek: 95</pre>
+
+<p>Tek bir döngü üç akümülatörü birlikte güncelledi. Sayaç (<code>gecen</code>) koşullu biriktirmenin örneğidir: döngünün içindeki <code>if</code> yalnız uygun elemanları sayar. Ortalamanın <code>70.0</code> çıktığına bak: <code>/</code> her zaman <code>float</code> verir (Parça 1).</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Akümülatör <strong>döngünün dışında</strong>, döngüden önce başlatılır. İçeride başlatırsan her turda sıfırlanır ve sonunda yalnız son elemanı görürsün. Başlangıç değerini işlemin "etkisiz" değerinden seç: toplamada 0, çarpmada 1. En büyük/en küçük için 0 seçme: bütün değerler negatifse en büyük yanlışlıkla 0 çıkar; ilk elemanla başla.</p></div>
+
+<p>Python'da bunların hazır karşılıkları da var (<code>sum</code>, <code>max</code>, <code>len</code>; Parça 4'te gelecek). Yine de kalıbı elle kurabilmek gerekir, çünkü hazır işlevin olmadığı her soru ("geçenlerin ortalaması", "art arda en uzun artış") bu kalıpla çözülür. Log analizi projesinde (Parça 7) her durum kodunu sayarken de aynı kalıbı kullanacaksın.</p>
+
+<h2 class="s">11. Hepsi bir arada: bir sayı asal mı?</h2>
+
+<p>Asal sayı, 1'den büyük olan ve 1 ile kendisinden başka hiçbir pozitif tamsayıya tam bölünmeyen sayıdır: 2, 3, 5, 7, 11… Bir sayının asal olup olmadığını bulmak için ondan küçük sayılara tek tek bölmeyi deneriz; bir tanesi tam bölerse (kalan 0 ise) asal değildir. Bu küçük problem bu parçadaki her şeyi kullanır: karşılaştırma, kalan işleci, <code>if</code>, <code>while</code>, <code>break</code> ve bir doğru/yanlış bayrağı.</p>
+
+<p>Önce bir kısaltmayı anla. 91'i ele al. Bir bölen bulursak, mesela 7, eşi de vardır: 91 = 7 × 13. Bölenler hep çift olarak gelir ve çiftin küçük olanı sayının karekökünü geçemez; ikisi de karekökten büyük olsaydı çarpımları sayıdan büyük olurdu. Öyleyse <code>bolen × bolen &lt;= n</code> olduğu sürece denemek yeter. 97 için 2'den 99'a kadar değil, yalnız 2'den 9'a kadar bölmek yeterlidir (10 × 10 = 100 > 97).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir <code>n</code> sayısının asal olup olmadığını bulan, asal değilse ilk böleni yazan programı adım adım kur ve 91 ile 97 için çalıştır.</p>
+<p><strong>Adım 1.</strong> Bayrak kur: <code>asal = n &gt;= 2</code>. 0 ve 1 tanım gereği asal değildir; bu satır onları baştan <code>False</code> yapar. Diğer sayılar için "bir bölen bulana dek asal kabul et" diyoruz.</p>
+<p><strong>Adım 2.</strong> Döngü değişkeni <code>bolen = 2</code>. Kaç tur süreceği önceden belli değil (bölen bulunursa erken biter), o yüzden <code>while</code> seçiyoruz; koşul <code>bolen * bolen &lt;= n</code>.</p>
+<p><strong>Adım 3.</strong> Gövdede <code>n % bolen == 0</code> ise bölen bulundu: bayrağı <code>False</code> yap, böleni yaz, <code>break</code> ile çık; artık başka bölen aramak gereksiz.</p>
+<p><strong>Adım 4.</strong> Bölmüyorsa <code>bolen += 1</code> ile sıradakine geç. Bu güncelleme olmazsa sonsuz döngü olur.</p>
+<pre class="kod" data-ad="python3 k17.py">n = 91
+asal = n &gt;= 2
+bolen = 2
+while bolen * bolen &lt;= n:
+    if n % bolen == 0:
+        asal = False
+        print(n, "sayisi", bolen, "ile bolunuyor")
+        break
+    bolen += 1
+print(n, "asal mi?", asal)</pre>
+<pre class="cikti">91 sayisi 7 ile bolunuyor
+91 asal mi? False</pre>
+<p><strong>Adım 5.</strong> İz sür: 91 % 2 = 1, 91 % 3 = 1, 91 % 4 = 3, 91 % 5 = 1, 91 % 6 = 1, 91 % 7 = 0. Yedinci denemede bulundu, döngü kırıldı. Şimdi ilk satırı <code>n = 97</code> yap:</p>
+<pre class="cikti">97 asal mi? True</pre>
+<p><strong>Adım 6.</strong> 97 için bölen 2'den 9'a kadar denendi, hiçbiri kalansız bölmedi; 10 × 10 = 100 > 97 olunca koşul yanlış çıktı ve döngü doğal yoldan bitti. Bayrak <code>True</code> kaldı.</p>
+<p><strong>Sonuç:</strong> 91 asal değil (7 × 13), 97 asal. Kod en çok ⌊√n⌋ − 1 deneme yapar.</p></div>
+
+<p>Aynı işi döngüye bağlı <code>else</code> ile bayraksız da yazabilirsin. Aşağıdaki program 2'den 19'a kadar bütün asalları yazar: dış döngü sayıları, iç döngü bölenleri dolaşır; iç döngü <code>break</code> görmeden biterse, yani hiç bölen bulunamazsa, <code>else</code> sayıyı yazar.</p>
+
+<pre class="kod" data-ad="python3 k18.py">for n in range(2, 20):
+    for bolen in range(2, n):
+        if n % bolen == 0:
+            break
+    else:
+        print(n, end=" ")
+print()</pre>
+<pre class="cikti">2 3 5 7 11 13 17 19 </pre>
+
+<p>Bu sürüm kısa ve okunaklıdır ama her sayı için <code>n − 2</code>'ye kadar bölen dener; yani karekök kısaltmasını kullanmaz. Bir önceki bölümdeki soruyu sor: sayılar milyona çıkınca bu iç içe döngü ne kadar iş yapar? Bu parçanın amacı en hızlı yöntemi bulmak değil, aynı problemin birden çok doğru yazımı olduğunu ve aralarındaki farkı sayarak görebildiğini fark etmektir. 2 için iç döngü <code>range(2, 2)</code>, yani boştur; hiç dönmez, <code>break</code> görmez ve <code>else</code> çalışır. 2 böylece kendiliğinden doğru yere düşer.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1'e:</strong> Koşulların hepsi <code>bool</code> tipine dayanır; <code>%</code> işleci tek/çift ve bölünebilirlik sorularının temel aracıdır; <code>input()</code>'tan gelen metnin doğruluğu sayının doğruluğundan farklıdır.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 3'te bir metnin her karakterini <code>for</code> ile dolaşıp parola gücü denetleyicide büyük harf, rakam ve sembolleri akümülatörle sayacaksın; <code>range</code>'in "bitiş hariç" kuralı dilimlemede yeniden karşına çıkacak. Parça 4'te liste kurucu, <code>for</code> ve <code>if</code>'in tek satırlık birleşimidir. Parça 6'da bu parçadaki asal denetimini bir fonksiyona sararak yeniden kullanılabilir yapacaksın. Parça 7'de bir dosyayı satır satır <code>for</code> ile okuyacaksın.</p>
+<p><strong>Öbür dillere:</strong> Bash (Parça 17), JavaScript (Parça 22), C (Parça 26) ve Go (Parça 31) aynı kavramları farklı yazımla kurar: blokları girinti yerine süslü parantez ya da <code>do/done</code> belirler; Go'da tek döngü <code>for</code>'dur. Kavramı burada oturtursan orada yalnızca yazımı öğrenirsin. İleride siber rafında, bir girdinin "boş mu, geçerli mi" denetimini atlamanın ya da sonu gelmeyen bir döngünün bir programı nasıl kırılgan kıldığını göreceksin.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary><code>=</code> ile <code>==</code> arasındaki fark nedir ve Python <code>if x = 5:</code> yazınca ne yapar?</summary><p><code>=</code> sağdaki değeri soldaki ada bağlar (atama), bir şey sormaz. <code>==</code> iki değerin eşit olup olmadığını sorar ve True ya da False üretir. Python <code>if x = 5:</code> satırını kabul etmez, programı hiç çalıştırmadan SyntaxError verir; böylece yanlışlıkla yapılmış bir atama sessiz bir yanlış karara dönüşmez.</p></details>
+
+<details><summary>Kısa devre değerlendirme nedir, neden koruyucu koşul sola yazılır?</summary><p>and ve or soldan sağa değerlendirilir ve sonuç belli olunca durur: and'de sol taraf yanlışsa, or'da sol taraf doğruysa sağ taraf hiç hesaplanmaz. Bu yüzden "x != 0 and 10 / x > 1" güvenlidir; x sıfırsa bölme hiç denenmez. Sıra ters olsaydı önce bölme denenir ve program ZeroDivisionError ile çökerdi.</p></details>
+
+<details><summary>Koşulda yanlış sayılan değerler hangileridir? " ", "0" ve [0] neden doğrudur?</summary><p>False, None, her türden sıfır (0, 0.0), boş metin "" ve boş kaplar (boş liste, demet, sözlük, küme) yanlış sayılır; geri kalan her şey doğrudur. " " bir boşluk karakteri içerir, "0" bir karakterlik metindir, [0] bir elemanlı listedir; üçü de boş değildir. Python metnin ya da listenin içindeki değerin anlamına değil, yalnız boş olup olmadığına bakar.</p></details>
+
+<details><summary>range(2, 11, 3) hangi sayıları üretir ve bitiş neden hariçtir?</summary><p>2, 5, 8 üretir; 11 bitiş olduğu için ve hariç tutulduğu için dahil edilmez, 8 + 3 = 11 zaten sınırdır. Bitişin hariç olması range(n)'in tam n eleman vermesini, eleman sayısının bitiş eksi başlangıç olmasını ve ardışık aralıkların boşluksuz, çakışmasız birleşmesini sağlar.</p></details>
+
+<details><summary>break ile continue arasındaki fark nedir? Döngüye bağlı else ne zaman çalışır?</summary><p>break içinde bulunduğu döngüyü hemen ve tamamen bitirir; continue yalnızca bu turun kalanını atlayıp sıradaki tura geçer. Döngüye bağlı else, döngü break ile kesilmeden doğal yoldan bittiğinde bir kez çalışır; break ile çıkılırsa çalışmaz. Bu yüzden "aradım ama bulamadım" durumunu yakalamakta kullanılır.</p></details>
+
+<details><summary>while döngüsünün sonsuz döngüye düşmemesi için hangi üç öğeyi denetlersin?</summary><p>Döngü değişkeninin başlangıç değerini, koşulu ve koşulu sona doğru götüren güncellemeyi. Güncelleme unutulursa, yanlış yöne yapılırsa ya da yanlış girintiyle blokun dışında kalırsa (veya bir continue onu atlatırsa) koşul hiç yanlış olmaz. Takılırsan Ctrl+C programı keser.</p></details>
+
+<details><summary>Asallık denetiminde neden yalnızca bolen * bolen &lt;= n olana dek denemek yeter?</summary><p>Bölenler çift olarak gelir: n = a × b ise a ile b'den en az biri √n'den büyük olamaz, çünkü ikisi de büyük olsaydı çarpımları n'yi aşardı. Dolayısıyla √n'ye kadar bir bölen bulunamadıysa daha büyük bir bölen de yoktur. bolen * bolen &lt;= n koşulu karekök almadan bunu sınar.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Akış:</strong> Python satırları yukarıdan aşağı çalıştırır; onu değiştirmenin iki yolu dallanma (<code>if</code>) ve tekrardır (<code>while</code>, <code>for</code>).</li>
+<li><strong>Karşılaştırma</strong> (<code>== != &lt; &lt;= &gt; &gt;=</code>) bir <code>bool</code> üretir. <code>=</code> atama, <code>==</code> soru. Zincir: <code>13 &lt;= yas &lt; 65</code>.</li>
+<li><strong>and / or / not:</strong> öncelik not → and → or; karışık kullanımda parantez koy. <strong>Kısa devre:</strong> sonuç belli olunca durur; koruyucu koşulu sola yaz.</li>
+<li><strong>if / elif / else:</strong> doğru çıkan <em>ilk</em> dal çalışır, gerisi atlanır. Eşik koşullarını dardan genişe diz.</li>
+<li><strong>Girinti sözdizimidir:</strong> <code>:</code> ile biten satırın altına dört boşlukla kaydırılmış blok. Bozuk girinti → <code>IndentationError</code>.</li>
+<li><strong>Doğruluk:</strong> <code>False None 0 0.0 ""</code> ve boş kaplar yanlış; gerisi doğru (<code>" "</code>, <code>"0"</code>, <code>[0]</code>, <code>-1</code> doğru). None için <code>is None</code>.</li>
+<li><strong>while:</strong> başlangıç + koşul + güncelleme. Güncelleme yoksa sonsuz döngü (Ctrl+C). Tur sayısı belli değilse <code>while</code>.</li>
+<li><strong>for + range:</strong> <code>range(baslangic, bitis, adim)</code>; başlangıç dahil, bitiş hariç; 1'den 10'a = <code>range(1, 11)</code>. Dizi ya da tur sayısı belliyse <code>for</code>.</li>
+<li><strong>break</strong> döngüyü bitirir, <strong>continue</strong> sıradaki tura geçer, döngü <strong>else</strong>'i yalnız break olmadan bitince çalışır.</li>
+<li><strong>İç içe döngü:</strong> n × n iş. Girdi büyüyünce kaç kez çalışacağını say.</li>
+<li><strong>Akümülatör:</strong> döngüden önce başlat (toplam 0, çarpım 1, en büyük = ilk eleman), içeride güncelle, sonra kullan.</li>
+<li><strong>Asallık:</strong> 2'den √n'ye kadar böl; kalan 0 çıkarsa asal değil, <code>break</code>.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="kod-2">
+<h3>Quiz 2</h3>
+<p class="qa">Sekiz yeni soru ve Parça 1'den iki tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="D"><p class="q">Aşağıdaki değerlerden hangisi bir <code>if</code> koşulunda <strong>doğru</strong> sayılır?</p>
+<ul class="sec"><li><code>0</code></li><li><code>""</code></li><li><code>None</code></li><li><code>"False"</code></li><li><code>0.0</code></li></ul>
+<div class="coz"><p><code>"False"</code> beş karakterlik dolu bir metindir; Python metnin içindeki sözcüğün anlamına bakmaz, yalnız boş olup olmadığına bakar, bu yüzden doğrudur. <code>0</code> ve <code>0.0</code> sıfır oldukları için, <code>""</code> boş metin olduğu için, <code>None</code> da "değer yok" anlamında olduğu için yanlış sayılır. Çalıştırınca <code>bool("False")</code> True, öbür dördü False verir. Bu soru "metnin içeriği önemlidir" yanılgısını yokluyor.</p></div></li>
+
+<li data-c="B"><p class="q"><code>print(list(range(2, 11, 3)))</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>[2, 5, 8, 11]</code></li><li><code>[2, 5, 8]</code></li><li><code>[3, 6, 9]</code></li><li><code>[2, 3, 4, 5, 6, 7, 8, 9, 10]</code></li><li><code>[5, 8, 11]</code></li></ul>
+<div class="coz"><p>Başlangıç 2 dahildir; 3'er artarak 5 ve 8 gelir; 8 + 3 = 11 bitiştir ve bitiş hariç olduğu için listeye girmez. Sonuç <code>[2, 5, 8]</code>. A bitişi dahil sayma hatasıdır; C sayıları 3'ün katları sanmaktır; D adımı görmezden gelmektir; E başlangıcı dışarıda bırakmaktır. Kural: başlangıç dahil, bitiş hariç.</p></div></li>
+
+<li data-c="A"><p class="q"><code>x = 15</code> iken aşağıdaki kod ne yazdırır?</p>
+<pre class="kod">if x &gt; 10:
+    print("a")
+elif x &gt; 5:
+    print("b")
+else:
+    print("c")</pre>
+<ul class="sec"><li>yalnızca <code>a</code></li><li><code>a</code> ve alt satırda <code>b</code></li><li>yalnızca <code>b</code></li><li><code>a</code>, <code>b</code> ve <code>c</code></li><li>hiçbir şey</li></ul>
+<div class="coz"><p>İlk koşul <code>15 &gt; 10</code> doğrudur, <code>a</code> yazılır ve zincirin geri kalanı atlanır. <code>15 &gt; 5</code> de doğru olduğu hâlde <code>elif</code> hiç denenmez, çünkü if/elif/else zincirinde en çok bir dal çalışır. B, zinciri ayrı ayrı <code>if</code>'ler gibi okumaktır; ayrı <code>if</code>'ler olsaydı B doğru olurdu. C ve D sırayı ve tek dal kuralını, E koşulun doğruluğunu karıştırır.</p></div></li>
+
+<li data-c="C"><p class="q"><code>x = 0</code> iken <code>print(x and 10 / x)</code> ne yapar?</p>
+<ul class="sec"><li><code>ZeroDivisionError</code> verip çöker</li><li><code>False</code> yazar</li><li><code>0</code> yazar</li><li><code>None</code> yazar</li><li><code>0.0</code> yazar</li></ul>
+<div class="coz"><p><code>and</code> sol tarafa bakar: <code>0</code> yanlış sayılır, sonuç belli olduğu için sağ taraf (<code>10 / x</code>) hiç hesaplanmaz; kısa devre. <code>and</code> True/False değil işlenenlerden birini döndürdüğü için sonuç sol değerin kendisi, yani <code>0</code> olur. A kısa devreyi bilmemekten, B and'in her zaman bool döndürdüğünü sanmaktan, D ve E de dönen değeri uydurmaktan gelir. Çalıştırınca <code>0</code> yazdığı doğrulandı.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">toplam = 0
+i = 1
+while i &lt;= 4:
+    toplam += i
+    i += 2
+print(toplam)</pre>
+<ul class="sec"><li><code>10</code></li><li><code>6</code></li><li><code>9</code></li><li><code>1</code></li><li><code>4</code></li></ul>
+<div class="coz"><p><code>i</code> 1 iken koşul doğru: toplam 1, <code>i</code> 3. <code>i</code> 3 iken koşul doğru: toplam 4, <code>i</code> 5. <code>i</code> 5 iken <code>5 &lt;= 4</code> yanlış, döngü biter; çıktı 4. A, adımı 1 sanıp 1+2+3+4 toplamaktır; C, 5'i de eklemek yani koşulu yanlış okumaktır; D, döngünün bir kez döndüğünü sanmaktır; B ise 2 ve 4'ü (çiftleri) toplamaktır. Her turda değişkenlerin değerini bir tabloya yazarak iz sürmek bu tür soruların güvenli yoludur.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">for i in range(6):
+    if i == 2:
+        continue
+    if i == 4:
+        break
+    print(i, end=" ")</pre>
+<ul class="sec"><li><code>0 1 3</code></li><li><code>0 1</code></li><li><code>0 1 3 5</code></li><li><code>0 1 2 3</code></li><li><code>0 1 3 4</code></li></ul>
+<div class="coz"><p>0 ve 1 yazılır. <code>i == 2</code> iken <code>continue</code> turun kalanını atlar, 2 yazılmaz ama döngü sürer. 3 yazılır. <code>i == 4</code> iken <code>break</code> döngüyü tamamen bitirir; 4 ve 5 yazılmaz. Sonuç <code>0 1 3</code>. B, continue'yu break sanmaktır; C, break'i continue sanmaktır; D continue'yu, E de break'in print'ten önce geldiğini görmezden gelir.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki kodun çıktısı nedir?</p>
+<pre class="kod">for n in [4, 6, 9]:
+    if n % 2:
+        print("tek", n)
+        break
+else:
+    print("hepsi cift")</pre>
+<ul class="sec"><li><code>hepsi cift</code></li><li><code>tek 9</code> ve alt satırda <code>hepsi cift</code></li><li>hiçbir şey</li><li><code>tek 9</code></li><li><code>tek 4</code></li></ul>
+<div class="coz"><p><code>n % 2</code> 4 ve 6 için 0'dır, yani yanlış sayılır; 9 için 1'dir, doğru sayılır. 9'da "tek 9" yazılır ve <code>break</code> çalışır. Döngüye bağlı <code>else</code> yalnız döngü break görmeden biterse çalıştığından "hepsi cift" yazılmaz. B, döngü else'inin her durumda çalıştığını sanmaktır; A, 9'un tek olduğunu kaçırmaktır; E ise <code>n % 2</code>'nin doğruluğunu ters okumaktır.</p></div></li>
+
+<li data-c="B"><p class="q">Aşağıdaki kodun sonunda <code>sayac</code> kaçtır?</p>
+<pre class="kod">sayac = 0
+for i in range(3):
+    for j in range(i):
+        sayac += 1</pre>
+<ul class="sec"><li><code>9</code></li><li><code>3</code></li><li><code>6</code></li><li><code>0</code></li><li><code>2</code></li></ul>
+<div class="coz"><p>Dış döngü i'yi 0, 1, 2 yapar. İç döngü <code>range(i)</code> kadar döner: i = 0'da 0 kez, i = 1'de 1 kez, i = 2'de 2 kez. Toplam 0 + 1 + 2 = 3. A, iç döngünün hep 3 kez döndüğünü (3 × 3) sanmaktır; C, i'yi 1'den 3'e saymaktır (1+2+3); D, range(0)'ın boş olmasını bütün döngüye genellemektir; E son turu tek başına saymaktır.</p></div></li>
+
+<li data-c="C" data-k="kod-1"><p class="q"><code>print(7 // 2, 7 % 2, 2 ** 3)</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li><code>3.5 1 6</code></li><li><code>3 1 6</code></li><li><code>3 1 8</code></li><li><code>3.5 0 8</code></li><li><code>4 1 8</code></li></ul>
+<div class="coz"><p><code>//</code> tam bölmedir ve ondalık kısmı atar: 7 // 2 = 3. <code>%</code> kalanı verir: 7 = 2 × 3 + 1, kalan 1. <code>**</code> üs almadır: 2 ** 3 = 8. A ve D, <code>//</code>'yi <code>/</code> ile karıştırır; B, <code>**</code>'yi çarpma sanmaktır (2 × 3); E, tam bölmenin yuvarladığını sanmaktır, oysa aşağı doğru keser.</p></div></li>
+
+<li data-c="E" data-k="kod-1"><p class="q"><code>x = input()</code> ve <code>print(x * 2)</code> satırlarından oluşan programa kullanıcı <code>5</code> yazarsa çıktı nedir?</p>
+<ul class="sec"><li><code>10</code></li><li><code>10.0</code></li><li><code>TypeError</code> hatası</li><li><code>5 5</code></li><li><code>55</code></li></ul>
+<div class="coz"><p><code>input()</code> kullanıcı ne yazarsa yazsın değeri her zaman <code>str</code> olarak döndürür; <code>x</code> burada "5" metnidir. Bir metni bir tamsayıyla çarpmak onu o kadar kez tekrarlar: "5" * 2 = "55". Sayı olarak 10 istiyorsan önce <code>int(x)</code> ile dönüştürmen gerekir. A ve B, dönüşümün kendiliğinden yapıldığını sanmaktır; C, metin ile sayının çarpılamayacağını sanmaktır (toplanamaz ama çarpılabilir); D tekrarın araya boşluk koyduğunu sanmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#kod-1">← Önceki parça</a>
+  <button class="btn ok" data-done="kod-2">Bu bölümü okudum</button>
+  <a class="btn" href="#kod-3">Sonraki parça: metin işleme</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"Python if elif else girinti dersi"</li>
+  <li>"Python while for döngüsü range break continue"</li>
+  <li>"Python truthy falsy short circuit evaluation"</li>
+  <li>"Python asal sayı bulma döngü"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bu parçadaki her kod bloğu (k1–k18) <code>/tmp/yazar/kod-2/</code> altında dosya olarak <code>python3 -I</code> ile Python 3.13.16'da çalıştırıldı ve çıktısı birebir kondu. Hata çıktılarındaki dosya yolu yazarın çalışma klasörüdür; sende farklı olur. Hata mesajlarının ifadesi ve <code>^</code> işaretlerinin yeri Python sürümleri arasında biraz değişebilir (ör. 3.10 öncesi sürümler daha kısa mesaj verir). "İki ayrı anlam" ve "sözdizimi" başlıklı bloklar çalıştırılmak için değil, yapıyı göstermek için yazıldı.</li>
+  <li>Quiz'deki bütün kod soruları (1–8 ve iki tekrar sorusu) çalıştırılarak doğrulandı; <code>input()</code> sorusu girdi olarak <code>5</code> verilerek çalıştırıldı ve <code>55</code> yazdığı görüldü.</li>
+  <li>Doğruluk testi kuralları, <code>and</code>/<code>or</code>'un işlenenlerden birini döndürmesi, kısa devre, karşılaştırma zincirleme, <code>range</code>'in yarı açık aralığı ve döngüye bağlı <code>else</code> Python resmî belgesindeki (docs.python.org: "Built-in Types / Truth Value Testing, Boolean Operations", "The for statement", "range") anlatımla uyumludur; ancak bu oturumda docs.python.org sayfasını getirmeye çalıştığımda ağ/izin kısıtı yüzünden açamadım. Bu yüzden bu iddialar hafızadan yazıldı ve davranışları yukarıdaki betikler çalıştırılarak sınandı.</li>
+  <li>Dört boşluk girinti, sekme ile boşluğu karıştırmama ve <code>None</code> için <code>is</code> kullanma önerileri PEP 8'den hafızadan aktarıldı; PEP 8 metniyle bu oturumda karşılaştırılmadı. İşleç öncelik sırası (karşılaştırma → not → and → or) Python dil başvurusundaki sıradır; yine hafızadan.</li>
+  <li><code>-1 % 2</code> sonucunun 1 olması Python'a özgüdür (kalan, bölenin işaretini alır); C'de aynı ifade −1 verir. Bu ayrım Parça 26'da ele alınacak.</li>
+</ul>
+</div>
+</div>
+</article>

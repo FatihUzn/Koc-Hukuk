@@ -1,0 +1,685 @@
+<article class="chapter ders" id="c-kod-3">
+<div class="prose">
+<div class="eyebrow">Kod · Parça 3 · Metin işleme</div>
+<h1>Metinle çalışmak: string, dilim, biçimlendirme ve karakterin baytları</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 15 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir programa "Kedi2026" yazdığında, program bunun 8 karakter olduğunu, içinde bir büyük harf ve dört rakam bulunduğunu nasıl anlar? Aynı "ş" harfi neden ekranda bir karakter, diske yazılınca iki bayt tutar? Ve bir başka bilgisayarda neden "ÅŸeker" gibi anlamsız bir şeye dönüşebilir?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (değişken, <code>str</code> tipi, <code>print()</code>, <code>input()</code> ve dönüşüm), Parça 2 (<code>if/elif/else</code>, <code>for</code> döngüsü, akümülatör kalıbı). Yanında bir terminal açık olsun; her kod bloğunu kendin yazıp çalıştır.</p>
+
+<h2 class="s">Önce büyük resim: neden metin bu kadar önemli?</h2>
+
+<p>Bilgisayarın dünyayla konuştuğu şeylerin çoğu metindir. Kullanıcının klavyeden yazdığı her şey, bir dosyadaki her satır, bir web sayfasının kaynağı, bir sunucunun tuttuğu günlük (log) kayıtları, bir yapılandırma dosyası, ağdan gelen bir yanıtın başlıkları: hepsi önce birer metin olarak programına girer. Parça 1'de gördüğün gibi <code>input()</code> sana her zaman <code>str</code> verir; kullanıcı "42" yazsa bile elindeki şey sayı değil, iki karakterlik bir metindir. Yani programlama işinin büyük bölümü, eline gelen metni parçalamak, temizlemek, içinde bir şey aramak ve sonunda yine okunur bir metin üretmektir.</p>
+
+<p>Bu parçada Python'ın metin tipi <code>str</code>'yi baştan sona kuracağız: nasıl yazıldığı (tırnaklar, kaçış dizileri, ham string), nasıl birleştirildiği, içinden nasıl parça alındığı (indeksleme ve dilimleme), neden değiştirilemediği, en sık kullanılan metotları, çıktıyı nasıl düzgün biçimlendireceğin (f-string) ve en altta yatan katman: bir karakterin bilgisayarda aslında bir sayı, diske yazılırken de bir bayt dizisi olması. Sonunda bunların hepsini bir araya getirip küçük bir proje yazacağız: bir parolanın gücünü ölçen bir denetleyici. Bu proje Parça 12'de düzenli ifadelerle sağlamlaştırılacak.</p>
+
+<h2 class="s">String nedir, nasıl yazılır?</h2>
+
+<p>Python'da metin tutan tipin adı <code>str</code>'dir (İngilizce "string", yani "dizi, ip" sözcüğünden; karakterlerin bir ipe dizilmiş boncuklar gibi art arda durmasından). Bir string, sıralı bir <strong>karakter dizisidir</strong>: her karakterin bir yeri, bir sırası vardır. "kedi" ile "deki" aynı dört harfi taşır ama sıra farklı olduğu için farklı stringlerdir.</p>
+
+<p>Python'a bir yazının kod değil veri olduğunu söylemek için onu tırnak içine alırsın. Tırnak olmasa Python <code>Merhaba</code> sözcüğünü bir değişken adı sanar ve Parça 1'de gördüğün <code>NameError</code> hatasını verir. Tırnak, "buradan şuraya kadar olan her şey olduğu gibi bir metindir" anlamına gelen bir çittir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Tek tırnak (<code>'...'</code>) ve çift tırnak (<code>"..."</code>) Python'da tamamen aynı stringi üretir; aralarında anlam farkı yoktur. İkisinin birden bulunmasının nedeni pratiktir: metnin içinde bir tür tırnak geçiyorsa, dışını öbür türle yazarsın ve hiçbir şeyi kaçırmak zorunda kalmazsın. Üç tırnak (<code>"""..."""</code> ya da <code>'''...'''</code>) ise birden çok satıra yayılan metin içindir; satır sonları metnin parçası olur.</p></div>
+
+<pre class="kod" data-ad="python3 tirnak.py">a = 'Merhaba'
+b = "Merhaba"
+print(a == b)
+c = "Ali'nin kitabı"
+d = 'O "tamam" dedi'
+print(c)
+print(d)
+e = """Birinci satır
+İkinci satır"""
+print(e)</pre>
+<pre class="cikti">True
+Ali'nin kitabı
+O "tamam" dedi
+Birinci satır
+İkinci satır</pre>
+
+<p>İlk satırdaki <code>True</code>, iki yazımın aynı değeri ürettiğini gösteriyor. "Ali'nin" içinde kesme işareti (tek tırnakla aynı karakter) var; dışını çift tırnakla yazdığımız için Python o kesmeyi metnin sonu sanmadı. Tersini yapsaydın, yani <code>'Ali'nin kitabı'</code> yazsaydın, Python ikinci tırnakta metni bitmiş sayar, ardından gelen <code>nin</code>'i anlamsız bir kod olarak görür ve <code>SyntaxError</code> verirdi. Hangi tırnağı seçeceğin konusunda PEP 8 (Parça 1'de gördüğün yazım rehberi) birini dayatmaz; yalnızca bir projede birini seçip tutarlı kalmanı ister.</p>
+
+<h3>Kaçış dizileri: görünmeyen karakterleri yazmak</h3>
+
+<p>Bazı karakterleri klavyeden doğrudan stringin içine yazamazsın ya da yazarsan kodun okunmaz olur: satır sonu, sekme (tab), tırnağın kendisi. Bunun için ters bölü (<code>\</code>) ile başlayan özel iki karakterlik yazımlar vardır. Ters bölü Python'a "bir sonraki karakteri olduğu gibi alma, ona özel bir anlam ver" der; bu yüzden bunlara <strong>kaçış dizisi</strong> (escape sequence) denir: karakter, normal anlamından "kaçırılır".</p>
+
+<div class="tablo"><table>
+<tr><th>Yazım</th><th>Anlamı</th><th>Not</th></tr>
+<tr><td><code>\n</code></td><td>yeni satır (newline)</td><td>imleç alt satırın başına geçer</td></tr>
+<tr><td><code>\t</code></td><td>sekme (tab)</td><td>bir sonraki sekme durağına atlar</td></tr>
+<tr><td><code>\\</code></td><td>tek bir ters bölü</td><td>ters bölünün kendisini yazmanın yolu</td></tr>
+<tr><td><code>\'</code> ve <code>\"</code></td><td>tırnağın kendisi</td><td>dış tırnakla aynı türü içeride kullanmak için</td></tr>
+<tr><td><code>\u015f</code></td><td>kod noktasıyla karakter (burada "ş")</td><td>aşağıda Unicode bölümünde</td></tr>
+</table></div>
+
+<pre class="kod" data-ad="python3 kacis.py">print("ad:\tAyşe\nsoyad:\tKaya")
+print("C:\\notlar\\tarih")
+print(r"C:\notlar\tarih")
+print("C:\notlar\tarih")
+print(len("\n"), len(r"\n"))</pre>
+<pre class="cikti">ad:	Ayşe
+soyad:	Kaya
+C:\notlar\tarih
+C:\notlar\tarih
+C:
+otlar	arih
+1 2</pre>
+
+<p>Bu çıktıyı satır satır oku, çünkü bu parçanın en sinsi tuzağı burada. İlk <code>print</code> tek bir string yazdırdı ama ekrana iki satır düştü: <code>\n</code> satırı kırdı, <code>\t</code> bir sekme boşluğu bıraktı. İkinci satırda her ters bölüyü iki kere yazdık (<code>\\</code>); her çift tek bir ters bölüye dönüştü ve doğru yol çıktı. Dördüncü satırda ise ters bölüleri tek yazdık; Python <code>\n</code>'yi (<code>\notlar</code>'ın başı) satır sonu, <code>\t</code>'yi (<code>\tarih</code>'in başı) sekme sandı. Sonuç bozuk bir yol oldu. Hiçbir hata mesajı yok; program sessizce yanlış şeyi yaptı. Son satır da bunu sayıyla gösteriyor: <code>"\n"</code> tek bir karakterdir (uzunluğu 1), oysa aşağıda göreceğin <code>r"\n"</code> iki karakterdir: bir ters bölü ve bir "n".</p>
+
+<h3>Ham string: ters bölüye dokunma</h3>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Ham string</strong> (raw string), tırnağın önüne <code>r</code> harfi konarak yazılır: <code>r"..."</code>. Ham stringin içinde ters bölü kaçış başlatmaz; yazdığın her ters bölü olduğu gibi metne girer. Neden var: Windows dosya yolları ve Parça 12'de göreceğin düzenli ifadeler ters bölüyle doludur; her birini ikiye katlamak hem yorucu hem hataya açıktır.</p></div>
+
+<p>Yukarıdaki üçüncü satır (<code>r"C:\notlar\tarih"</code>) tam olarak yazdığımızı yazdırdı. Ham stringin tek bir kısıtı var: ham string tek sayıda ters bölüyle bitemez, çünkü sondaki ters bölü kapanış tırnağını kaçırmaya çalışır ve string kapanmamış olur. Yol sonuna ters bölü gerekiyorsa onu ayrıca eklersin.</p>
+
+<p>Ters bölünün ardından Python'ın tanımadığı bir harf gelirse ne olur? Python 3.12'den itibaren bu durumda bir <strong>uyarı</strong> (SyntaxWarning) verir ama programı çalıştırır:</p>
+
+<pre class="kod" data-ad="python3 uyari.py">print("a\d")</pre>
+<pre class="cikti">/tmp/yazar/kod-3/uyari.py:1: SyntaxWarning: invalid escape sequence '\d'
+  print("a\d")
+a\d</pre>
+
+<p>Bazı harflerde ise uyarı değil doğrudan hata alırsın, çünkü <code>\U</code> gibi diziler gerçekten bir anlam taşır (ardından sekiz haneli bir karakter kodu bekler). Windows'ta en sık rastlanan hata budur:</p>
+
+<pre class="kod" data-ad="python3 yol.py">print("C:\Users\deniz")</pre>
+<pre class="cikti">  File "/tmp/yazar/kod-3/yol.py", line 1
+    print("C:\Users\deniz")
+          ^^^^^^^^^^^^^^^^
+SyntaxError: (unicode error) 'unicodeescape' codec can't decode bytes in position 2-3: truncated \UXXXXXXXX escape</pre>
+
+<p>Hata mesajı karışık görünür ama Parça 1'de öğrendiğin gibi en alt satırı oku: "kesilmiş bir \UXXXXXXXX kaçışı". Yani Python <code>\U</code>'dan sonra sekiz haneli bir kod bekliyordu, "sers" buldu. Çözüm: <code>r"C:\Users\deniz"</code>.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Dosya yolunu tırnak içine aldım, olduğu gibi kalır."</strong> Kalmaz. Normal stringde ters bölü her zaman bir kaçış başlatır; <code>\n</code>, <code>\t</code> gibi geçerli dizilerde hiçbir uyarı vermeden metni bozar. Doğrusu: yollarda ve desenlerde ham string (<code>r"..."</code>) kullan, ya da her ters bölüyü ikiye katla (<code>\\</code>). Parça 7'de göreceğin <code>pathlib</code> ise bu sorunu kökten çözer, çünkü yolu ayraç yazmadan kurar.</p></div>
+
+<h2 class="s">Birleştirme ve tekrar</h2>
+
+<p>Parça 1'de <code>+</code> ve <code>*</code> işlemlerini sayılarla gördün. Python aynı işaretlere stringlerde de bir anlam verir; bu, bir işaretin üzerinde çalıştığı tipe göre farklı iş yapmasıdır. <code>+</code> iki stringi uç uca ekler (birleştirme, concatenation); <code>*</code> bir stringi bir tamsayı kadar tekrarlar.</p>
+
+<pre class="kod" data-ad="python3 birlestir.py">ad = "Deniz"
+print("Merhaba, " + ad + "!")
+print("-" * 20)
+yas = 30
+print("Yaş: " + str(yas))
+print("Yaş: " + yas)</pre>
+<pre class="cikti">Merhaba, Deniz!
+--------------------
+Yaş: 30
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-3/birlestir.py", line 6, in &lt;module&gt;
+    print("Yaş: " + yas)
+          ~~~~~~~~^~~~~
+TypeError: can only concatenate str (not "int") to str</pre>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>+</code> yalnızca iki stringi birleştirir; bir string ile bir sayıyı birleştirmez. Python burada senin yerine tahmin yürütmez, çünkü <code>"3" + 4</code> işleminin "34" mü yoksa 7 mi olması gerektiğini bilemez. Sayıyı metne katmak istiyorsan onu açıkça <code>str()</code> ile metne çevirirsin, ya da (daha iyisi) aşağıda göreceğin f-string'i kullanırsın.</p></div>
+
+<p>Hata mesajındaki küçük işaretler (<code>~~~~^~~~</code>) Python 3.11'den beri gelen bir yardımdır: hatanın satırın tam hangi parçasında olduğunu gösterir. Burada şapka <code>+</code>'nın altında; sorun toplamada.</p>
+
+<h2 class="s">İndeksleme: bir karakteri sırasıyla almak</h2>
+
+<p>String sıralı bir dizi olduğu için her karakterin bir sıra numarası, yani <strong>indeksi</strong> vardır. Python'da (ve çoğu programlama dilinde) sayma <strong>0'dan</strong> başlar. Neden 1'den değil? İndeksi "başlangıçtan kaç adım ötede" diye düşün: ilk karakter başlangıçtan sıfır adım uzaktadır. Bu bakış açısı birazdan dilimlemeyi çok kolaylaştıracak.</p>
+
+<p>Python ayrıca sondan saymaya da izin verir: <code>-1</code> son karakter, <code>-2</code> sondan ikinci. Negatif indeksi "uzunluktan çıkar" diye oku: 6 karakterlik bir stringde <code>s[-1]</code>, <code>s[6 - 1]</code> yani <code>s[5]</code> ile aynıdır. Böylece bir stringin uzunluğunu bilmeden sonuna ulaşabilirsin.</p>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="PYTHON stringinin karakterleri, üstte 0'dan 5'e pozitif indeksler, altta -6'dan -1'e negatif indeksler ve aradaki kesim noktaları">
+  <text class="sv-s" x="20" y="28">pozitif indeks</text>
+  <rect class="sv-l" x="20" y="60" width="60" height="44" />
+  <rect class="sv-l" x="80" y="60" width="60" height="44" />
+  <rect class="sv-l" x="140" y="60" width="60" height="44" />
+  <rect class="sv-l" x="200" y="60" width="60" height="44" />
+  <rect class="sv-l" x="260" y="60" width="60" height="44" />
+  <rect class="sv-l" x="320" y="60" width="60" height="44" />
+  <text class="sv-t" x="50" y="50" text-anchor="middle">0</text>
+  <text class="sv-t" x="110" y="50" text-anchor="middle">1</text>
+  <text class="sv-t" x="170" y="50" text-anchor="middle">2</text>
+  <text class="sv-t" x="230" y="50" text-anchor="middle">3</text>
+  <text class="sv-t" x="290" y="50" text-anchor="middle">4</text>
+  <text class="sv-t" x="350" y="50" text-anchor="middle">5</text>
+  <text class="sv-b" x="50" y="88" text-anchor="middle">P</text>
+  <text class="sv-b" x="110" y="88" text-anchor="middle">Y</text>
+  <text class="sv-b" x="170" y="88" text-anchor="middle">T</text>
+  <text class="sv-b" x="230" y="88" text-anchor="middle">H</text>
+  <text class="sv-b" x="290" y="88" text-anchor="middle">O</text>
+  <text class="sv-b" x="350" y="88" text-anchor="middle">N</text>
+  <text class="sv-t" x="50" y="124" text-anchor="middle">−6</text>
+  <text class="sv-t" x="110" y="124" text-anchor="middle">−5</text>
+  <text class="sv-t" x="170" y="124" text-anchor="middle">−4</text>
+  <text class="sv-t" x="230" y="124" text-anchor="middle">−3</text>
+  <text class="sv-t" x="290" y="124" text-anchor="middle">−2</text>
+  <text class="sv-t" x="350" y="124" text-anchor="middle">−1</text>
+  <line class="sv-cl" x1="80" y1="140" x2="80" y2="160" />
+  <line class="sv-cl" x1="260" y1="140" x2="260" y2="160" />
+  <line class="sv-cl" x1="80" y1="160" x2="260" y2="160" />
+  <text class="sv-t" x="170" y="182" text-anchor="middle">s[1:4] → "YTH"</text>
+  <text class="sv-s" x="20" y="144">negatif</text>
+</svg>
+<figcaption>Kutuların üstündeki sayılar pozitif, altındakiler negatif indekslerdir. Dilimi kutuların arasındaki çizgilerden kesmek gibi düşün: <code>s[1:4]</code>, 1 numaralı kesimden 4 numaralı kesime kadar olan üç kutuyu alır; 4 numaralı kutu ("O") dışarıda kalır.</figcaption>
+</figure>
+
+<h2 class="s">Dilimleme: bir parçayı kesip almak</h2>
+
+<p>Tek karakter yerine bir parça almak istersen <strong>dilim</strong> (slice) yazarsın: <code>s[başlangıç:bitiş]</code>. Parça 2'de <code>range()</code> ile gördüğün kural burada da geçerlidir: başlangıç dahil, bitiş <strong>hariçtir</strong>. Bunun nedeni aynı: <code>s[0:3]</code> dediğinde uzunluğu tam 3 olan bir parça alırsın (bitiş − başlangıç = uzunluk), ve <code>s[:3] + s[3:]</code> stringin tamamını boşluksuz, çakışmasız yeniden kurar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Dilim söz dizimi <code>s[başlangıç:bitiş:adım]</code>. Başlangıç yazılmazsa en baş (0), bitiş yazılmazsa en son, adım yazılmazsa 1 kabul edilir. Adım negatifse dizi sondan başa doğru okunur; bu yüzden <code>s[::-1]</code> stringi ters çevirir. Dilim, sınırların dışına taşsa bile hata vermez, yalnızca var olan kısmı verir; tek bir karakteri ise var olmayan bir indeksle istemek <code>IndexError</code> verir.</p></div>
+
+<pre class="kod" data-ad="python3 dilim.py">s = "PYTHON"
+print(s[0], s[1], s[5])
+print(s[-1], s[-2])
+print(s[1:4])
+print(s[:3], s[3:])
+print(s[::2])
+print(s[::-1])
+print(s[2:100])
+print(repr(s[4:2]))
+print(s[6])</pre>
+<pre class="cikti">P Y N
+N O
+YTH
+PYT HON
+PTO
+NOHTYP
+THON
+''
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-3/dilim.py", line 10, in &lt;module&gt;
+    print(s[6])
+          ~^^^
+IndexError: string index out of range</pre>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Yukarıdaki çıktının her satırını, kodu çalıştırmadan elle bulabilir misin? Özellikle <code>s[::2]</code>, <code>s[2:100]</code>, <code>s[4:2]</code> ve <code>s[6]</code> satırları neden böyle?</p>
+<p><strong>Adım 1.</strong> Stringi indeksleriyle yaz: P=0, Y=1, T=2, H=3, O=4, N=5. Uzunluk 6.</p>
+<p><strong>Adım 2.</strong> <code>s[0], s[1], s[5]</code>: P, Y, N. <code>s[-1]</code> = <code>s[6-1]</code> = <code>s[5]</code> = N; <code>s[-2]</code> = <code>s[4]</code> = O.</p>
+<p><strong>Adım 3.</strong> <code>s[1:4]</code>: 1, 2, 3 indeksleri (4 hariç) = Y, T, H → "YTH". <code>s[:3]</code> = 0, 1, 2 = "PYT"; <code>s[3:]</code> = 3'ten sona = "HON". İkisi yan yana konunca "PYTHON" geri gelir.</p>
+<p><strong>Adım 4.</strong> <code>s[::2]</code>: baştan sona, ikişer adımla: 0, 2, 4 = P, T, O → "PTO".</p>
+<p><strong>Adım 5.</strong> <code>s[::-1]</code>: adım −1, yani sondan başa: N, O, H, T, Y, P → "NOHTYP".</p>
+<p><strong>Adım 6.</strong> <code>s[2:100]</code>: 100 numaralı indeks yok ama dilim taşmayı sessizce keser; 2'den sona kadar "THON" döner.</p>
+<p><strong>Adım 7.</strong> <code>s[4:2]</code>: adım +1 iken başlangıç bitişten büyük; ileri doğru yürüyerek 4'ten 2'ye varılamaz, sonuç boş string. <code>print</code> boş stringi görünmez yazacağı için <code>repr()</code> ile sarmaladık; <code>repr</code> değeri tırnaklarıyla gösterir: <code>''</code>.</p>
+<p><strong>Adım 8.</strong> <code>s[6]</code>: tek bir karakter istendi, en büyük geçerli indeks 5. Python burada tahmin yürütmez, <code>IndexError</code> verir.</p>
+<p><strong>Sonuç:</strong> Dilim affedicidir (taşmayı keser, olmayan aralıkta boş döner), tekil indeks affetmez. Bir gün döngüyle karakter gezerken <code>IndexError</code> görürsen ilk bakacağın yer, indeksin <code>len(s) - 1</code>'i aşıp aşmadığıdır.</p>
+</div>
+
+<h2 class="s">Değişmezlik: string yerinde değiştirilemez</h2>
+
+<p>"PYTHON"un ilk harfini değiştirmek istedin diyelim. Akla gelen ilk yol <code>s[0] = "J"</code> yazmaktır. Python buna izin vermez, çünkü <code>str</code> <strong>değişmez</strong> (immutable) bir tiptir: bir string nesnesi bir kez oluştuktan sonra içindeki karakterler bir daha değişmez.</p>
+
+<pre class="kod" data-ad="python3 degismez.py">s = "kedi"
+t = s.upper()
+print(s, t)
+s = "b" + s[1:]
+print(s)
+s[0] = "K"</pre>
+<pre class="cikti">kedi KEDI
+bedi
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-3/degismez.py", line 6, in &lt;module&gt;
+    s[0] = "K"
+    ~^^^
+TypeError: 'str' object does not support item assignment</pre>
+
+<p>Neden böyle tasarlanmış? Birkaç nedeni var. Birincisi güvenlik ve öngörülebilirlik: Parça 1'de değişkenin bir kutu değil bir <strong>etiket</strong> olduğunu gördün. Aynı stringe iki etiket yapıştırılmış olabilir; biri onu yerinde değiştirebilseydi, öbür etiketin gösterdiği metin de habersizce değişirdi. Değişmezlik bu sürprizi baştan kaldırır. İkincisi, değişmez değerler Parça 5'te göreceğin sözlüklerde anahtar olarak kullanılabilir; anahtarı sonradan değişebilen bir şey bir sözlüğü bozardı. Üçüncüsü, Python aynı kısa stringleri bellekte paylaşarak yer kazanabilir.</p>
+
+<p>Peki <code>s = "b" + s[1:]</code> satırı nasıl çalıştı? O satır eski stringi değiştirmedi. "b" ile "edi"yi birleştirerek <strong>yepyeni</strong> bir string üretti ve <code>s</code> etiketini o yeni stringe taşıdı. Eski "kedi" nesnesi yerinde duruyor; ona bakan etiket kalmayınca Python onu bellekten temizler. Aynı şekilde <code>s.upper()</code> da <code>s</code>'yi değiştirmedi: çıktının ilk satırında <code>s</code> hâlâ "kedi".</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Hiçbir string metodu özgün stringi değiştirmez; hepsi <strong>yeni</strong> bir değer döndürür. Sonucu kullanmak istiyorsan onu bir değişkene atamalısın: <code>ad = ad.strip()</code>. Bu kuralı aklında tut; Parça 4'te göreceğin listeler değiştirilebilir (mutable) olduğu için orada metotların çoğu tam tersine özgün nesneyi değiştirir ve <code>None</code> döndürür.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>ad.strip()</code> yazdım, boşluklar silindi."</strong> Silinmedi. <code>ad.strip()</code> boşluksuz yeni bir string üretti ve o string hiçbir yere atanmadığı için hemen kayboldu; <code>ad</code> hâlâ boşluklu. Bu hata hiçbir mesaj üretmez, program yalnızca yanlış çalışır. Doğrusu: <code>ad = ad.strip()</code>, ya da sonucu doğrudan kullan: <code>print(ad.strip())</code>.</p></div>
+
+<h2 class="s">Sık kullanılan metotlar</h2>
+
+<p><strong>Metot</strong>, bir değere bağlı çalışan bir işlevdir; değerin arkasına nokta koyup adıyla çağrılır: <code>s.lower()</code>. Parantez zorunludur: parantezsiz <code>s.lower</code> metodu çağırmaz, yalnızca metodun kendisini gösterir. Bir metodun içine verdiğin değerlere <strong>argüman</strong> denir (fonksiyonları ve argümanları Parça 6'da ayrıntılı göreceğiz). Aşağıdaki tablo bu parçada kullanacağın metotları ve <code>len()</code> ile <code>in</code>'i topluyor. <code>len</code> bir metot değil, yerleşik bir fonksiyondur; bu yüzden <code>s.len()</code> değil <code>len(s)</code> yazılır.</p>
+
+<div class="tablo"><table>
+<tr><th>Yazım</th><th>Ne yapar</th><th>Döndürdüğü</th></tr>
+<tr><td><code>s.lower()</code> / <code>s.upper()</code></td><td>tüm harfleri küçük / büyük yapar</td><td>yeni <code>str</code></td></tr>
+<tr><td><code>s.strip()</code></td><td>baştaki ve sondaki boşlukları (boşluk, sekme, satır sonu) atar</td><td>yeni <code>str</code></td></tr>
+<tr><td><code>s.split(ayrac)</code></td><td>stringi ayraçtan böler; ayraç verilmezse her türlü boşluk dizisinden böler</td><td>stringlerden oluşan bir liste</td></tr>
+<tr><td><code>ayrac.join(parcalar)</code></td><td>parçaları aralarına ayracı koyarak birleştirir</td><td>yeni <code>str</code></td></tr>
+<tr><td><code>s.replace(eski, yeni)</code></td><td>her <code>eski</code>yi <code>yeni</code> ile değiştirir</td><td>yeni <code>str</code></td></tr>
+<tr><td><code>s.find(parca)</code></td><td>parçanın ilk geçtiği indeksi arar</td><td>indeks; bulamazsa <code>-1</code></td></tr>
+<tr><td><code>s.startswith(x)</code> / <code>s.endswith(x)</code></td><td><code>x</code> ile başlıyor / bitiyor mu</td><td><code>bool</code></td></tr>
+<tr><td><code>len(s)</code></td><td>karakter sayısı</td><td><code>int</code></td></tr>
+<tr><td><code>x in s</code></td><td><code>x</code>, <code>s</code>'nin içinde art arda geçiyor mu</td><td><code>bool</code></td></tr>
+</table></div>
+
+<pre class="kod" data-ad="python3 metotlar.py">s = "  Merhaba Dünya  "
+print(repr(s.strip()))
+print(s.strip().lower())
+print(s.strip().upper())
+print(s.strip().replace("Dünya", "Python"))
+print(s.strip().split())
+print("elma,armut,,ayva".split(","))
+print("-".join(["2026", "10", "15"]))
+print(s.find("Dünya"), s.find("Ay"))
+print("rapor_ekim.pdf".endswith(".pdf"), "rapor_ekim.pdf".startswith("rapor"))
+print(len(s), len(s.strip()))
+print("ba" in "araba", "BA" in "araba")
+print(s)</pre>
+<pre class="cikti">'Merhaba Dünya'
+merhaba dünya
+MERHABA DÜNYA
+Merhaba Python
+['Merhaba', 'Dünya']
+['elma', 'armut', '', 'ayva']
+2026-10-15
+10 -1
+True True
+17 13
+True False
+  Merhaba Dünya  </pre>
+
+<p>Birkaç ayrıntıya dikkat et. <code>split()</code> köşeli parantezli bir sonuç verdi: bu bir <strong>liste</strong>, Parça 4'ün konusu; şimdilik "sıralı bir öğe dizisi" demen yeter. <code>"elma,armut,,ayva".split(",")</code> dört öğe verdi, çünkü iki virgül arasında boş bir alan var ve <code>split</code> onu da boş string olarak verir. Bu, bir CSV dosyasında boş bir hücreyi kaybetmemek için doğru davranıştır. <code>join</code> ise <code>split</code>'in tersidir ve ilk bakışta tuhaf durur: metot ayraç üzerinde çağrılır (<code>"-".join(...)</code>), parçalar argüman olarak verilir. <code>find</code>, "Dünya"yı 10. indekste buldu (baştaki iki boşluk da sayılıyor), "Ay"ı bulamayınca <code>-1</code> döndü; hata vermez, bu yüzden sonucu kullanmadan önce <code>-1</code> olup olmadığını denetlemelisin. <code>in</code> büyük/küçük harfe duyarlıdır: "BA", "araba"da yok. Son satır, başta yaptığımız hiçbir işlemin <code>s</code>'yi değiştirmediğini gösteriyor.</p>
+
+<h3>Zincirleme</h3>
+
+<p>Her metot yeni bir string döndürdüğü için, dönen stringin üzerinde hemen bir sonraki metodu çağırabilirsin. Buna <strong>zincirleme</strong> denir ve soldan sağa okunur: önce en soldaki işlem yapılır, sonucu bir sonrakine geçer.</p>
+
+<pre class="kod" data-ad="python3 zincir.py">satir = "  KULLANICI=Deniz;ROL=yonetici  "
+temiz = satir.strip().lower().replace(";", " ")
+print(temiz)
+print(temiz.split())</pre>
+<pre class="cikti">kullanici=deniz rol=yonetici
+['kullanici=deniz', 'rol=yonetici']</pre>
+
+<p>Okuma sırası: boşlukları at → hepsini küçült → noktalı virgülleri boşluğa çevir. Zincir okunaklı olduğu sürece iyidir; dört beş halkayı geçince ara sonuçları ayrı değişkenlere koymak hem okumayı hem hata ayıklamayı kolaylaştırır, çünkü her ara değeri <code>print</code> ile görebilirsin.</p>
+
+<h3>Türkçe harflerde küçültme ve büyütme</h3>
+
+<p>Metin karşılaştırırken büyük/küçük farkını yok etmek için ikisini de <code>lower()</code> ile küçültmek yaygın bir alışkanlıktır. Türkçede bu alışkanlığın bir pürüzü var: İngilizcede "I"nın küçüğü "i"dir, Türkçede "ı". Python dilden habersiz, Unicode standardının varsayılan kurallarını uygular:</p>
+
+<pre class="kod" data-ad="python3 turkce.py">print("İSTANBUL".lower())
+print(len("İSTANBUL".lower()))
+print("ırmak".upper())
+print("I".lower())</pre>
+<pre class="cikti">i̇stanbul
+9
+IRMAK
+i</pre>
+
+<p>"I".lower() Türkçe beklentinin tersine "i" verdi. Daha ilginci ilk iki satır: "İ" küçültülünce tek bir karakter olmadı, "i" ile onun üstüne binen görünmez bir nokta işaretine (birleşen nokta) dönüştü; bu yüzden 8 harflik sözcüğün uzunluğu 9 çıktı. Ekranda çoğu zaman sıradan "istanbul" gibi görünür ama <code>"İSTANBUL".lower() == "istanbul"</code> sonucu <code>False</code> olur. Türkçe metinleri karşılaştırırken bunu bil; dile duyarlı dönüşüm için standart kütüphane dışı araçlar gerekir ve bu parçanın konusu değildir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Kullanıcı bir dosya adı giriyor; başında sonunda boşluk olabilir, uzantısı ".PDF" ya da ".pdf" olabilir. Adın bir PDF olup olmadığını ve uzantısız kısmını nasıl bulursun? Girdi: <code>"  Rapor_Ekim.PDF "</code>.</p>
+<p><strong>Adım 1.</strong> Boşlukları at: <code>ad = girdi.strip()</code> → <code>"Rapor_Ekim.PDF"</code>. Atamayı unutma; yoksa strip boşa gider.</p>
+<p><strong>Adım 2.</strong> Uzantı denetimini harf büyüklüğünden bağımsız yap: <code>ad.lower().endswith(".pdf")</code>. <code>ad.lower()</code> = <code>"rapor_ekim.pdf"</code>, ".pdf" ile bitiyor → <code>True</code>. <code>ad</code>'ın kendisi değişmedi.</p>
+<p><strong>Adım 3.</strong> Uzantısız kısım: ".pdf" 4 karakter, o hâlde sondan 4 karakteri dilimle at: <code>ad[:-4]</code> → <code>"Rapor_Ekim"</code>. Negatif bitiş "sondan 4 karakter öncesine kadar" demektir.</p>
+<p><strong>Adım 4.</strong> Kendin dene: <code>girdi = "  Rapor_Ekim.PDF "</code>, <code>ad = girdi.strip()</code>, <code>print(ad.lower().endswith(".pdf"), ad[:-4])</code>.</p>
+<p><strong>Sonuç:</strong> <code>True Rapor_Ekim</code>. Temizle → küçült (yalnız karşılaştırma için) → dilimle sırası, metin işlemenin en sık kalıbıdır.</p>
+</div>
+
+<h2 class="s">f-string ile biçimlendirme</h2>
+
+<p>Bir metnin içine değişken değerleri yerleştirmek, <code>+</code> ve <code>str()</code> ile hızla okunmaz hâle gelir: <code>"Toplam: " + str(adet) + " ürün, " + str(tutar) + " TL"</code>. Python 3.6'dan beri bunun temiz yolu <strong>f-string</strong>'dir (formatted string literal). Tırnağın önüne <code>f</code> koyarsın; süslü parantez içine yazdığın her ifade hesaplanır ve sonucu metne yerleştirilir. Sayıyı metne çevirmeyi de Python kendisi yapar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f-string içinde <code>{ifade}</code> ifadenin değerini, <code>{ifade:biçim}</code> ise o değeri bir <strong>biçim belirtecine</strong> göre yazar. Biçim belirtecinin sık kullanılan parçaları: hizalama (<code>&lt;</code> sola, <code>&gt;</code> sağa, <code>^</code> ortaya), genişlik (toplam kaç karakterlik alan), dolgu (<code>0</code> ile sıfır doldurma), basamak (<code>.2f</code>: virgülden sonra 2 basamak, ondalık yazım), binlik ayraç (<code>,</code>) ve yüzde (<code>%</code>). Sıra şöyledir: <code>{deger:hizalama genişlik , .basamak tip}</code>.</p></div>
+
+<pre class="kod" data-ad="python3 fstring.py">ad = "Deniz"
+sayi = 3.14159
+adet = 7
+print(f"{ad} {sayi:.2f}")
+print(f"{adet} ürün, toplam {adet * 12.5:.1f} TL")
+print(f"[{ad:&lt;10}]")
+print(f"[{ad:&gt;10}]")
+print(f"[{ad:^10}]")
+print(f"[{adet:05d}]")
+print(f"[{sayi:8.3f}]")
+print(f"{1234567.891:,.2f}")
+print(f"{0.256:.1%}")
+print(f"{ad=}")</pre>
+<pre class="cikti">Deniz 3.14
+7 ürün, toplam 87.5 TL
+[Deniz     ]
+[     Deniz]
+[  Deniz   ]
+[00007]
+[   3.142]
+1,234,567.89
+25.6%
+ad='Deniz'</pre>
+
+<p>Satır satır: <code>.2f</code> sayıyı 2 basamağa yuvarlayarak yazdı (değişkenin kendisi değişmedi, yalnızca görünüşü). İkinci satırda süslü parantezin içinde bir işlem (<code>adet * 12.5</code>) var; f-string içine herhangi bir ifade yazılabilir. Köşeli parantezleri, alanın nerede başlayıp bittiğini görmen için koyduk: 10 karakterlik bir alanda "Deniz" sola, sağa ve ortaya yaslandı; kalan yer boşlukla doldu. <code>05d</code>, tamsayıyı (<code>d</code>) 5 genişlikte, boşluk yerine sıfırla doldurarak yazdı. <code>8.3f</code> hem genişlik hem basamak: toplam 8 karakter, virgülden sonra 3 basamak. <code>,</code> binlikleri ayırdı; <code>%</code> sayıyı 100 ile çarpıp yüzde işareti ekledi. Son satırdaki <code>=</code> (Python 3.8'den beri) hata ayıklama içindir: ifadenin kendisini ve değerini birlikte yazar.</p>
+
+<p>Bir uyarı: Python ondalık ayırıcı olarak nokta, binlik ayraç olarak virgül kullanır (İngilizce gelenek). Türkçe yazımda bunun tersi geçerlidir; Python'ın varsayılan biçimlendirmesi dilden habersizdir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Üç ürünün adını, fiyatını ve adedini hizalı sütunlar hâlinde, fiyat iki basamaklı olacak şekilde yazdır.</p>
+<p><strong>Adım 1.</strong> Sütun genişliklerini seç: ad 10 karakter sola yaslı, fiyat 8 karakter sağa yaslı, adet 6 karakter sağa yaslı. Sayılar sağa yaslanır ki basamaklar alt alta gelsin.</p>
+<p><strong>Adım 2.</strong> Başlığı aynı genişliklerle yaz; başlık sözcüklerini f-string içinde tırnakla vermek için dış tırnak çift, iç tırnak tek olmalı.</p>
+<p><strong>Adım 3.</strong> Ayırıcı çizgiyi tekrarla üret: 10 + 8 + 6 = 24 karakter, <code>"-" * 24</code>.</p>
+<p><strong>Adım 4.</strong> Ürünleri <code>for</code> ile gez. Aşağıdaki <code>for ad, fiyat, adet in urunler</code> satırı her öğeyi üç değişkene açıyor; bu "açma" (unpacking) işlemi Parça 4'ün konusu, şimdilik kalıp olarak kabul et.</p>
+<pre class="kod" data-ad="python3 tablo.py">urunler = [("Kalem", 12.5, 3), ("Defter", 45.0, 2), ("Silgi", 7.25, 10)]
+print(f"{'Ürün':&lt;10}{'Fiyat':&gt;8}{'Adet':&gt;6}")
+print("-" * 24)
+for ad, fiyat, adet in urunler:
+    print(f"{ad:&lt;10}{fiyat:&gt;8.2f}{adet:&gt;6}")</pre>
+<pre class="cikti">Ürün         Fiyat  Adet
+------------------------
+Kalem        12.50     3
+Defter       45.00     2
+Silgi         7.25    10</pre>
+<p><strong>Sonuç:</strong> Genişlik ve hizalamayı her satırda aynı tuttuğun için sütunlar alt alta düştü. 12.5 bile "12.50" olarak yazıldı, çünkü biçim yalnız görünüşü belirler.</p>
+</div>
+
+<h2 class="s">Karakter, kod noktası ve bayt</h2>
+
+<p>Buraya kadar karakteri en küçük birim gibi ele aldık. Oysa bilgisayar yalnızca sayı saklar; bir "A" harfini bellekte tutmanın yolu, ona bir sayı karşılık getirmektir. Dünyadaki neredeyse bütün yazı sistemlerinin karakterlerine birer numara veren uluslararası standardın adı <strong>Unicode</strong>'dur. Her karaktere verilen numaraya <strong>kod noktası</strong> (code point) denir ve genellikle onaltılık (hexadecimal) yazılır: "A" U+0041, "ş" U+015F, "€" U+20AC.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><code>ord(k)</code> tek bir karakterin kod noktasını (bir tamsayı) verir; <code>chr(n)</code> bir kod noktasından karakteri geri üretir. İkisi birbirinin tersidir: <code>chr(ord("ş")) == "ş"</code>. Python 3'te bir <code>str</code>, bir Unicode kod noktaları dizisidir; <code>len()</code> da bunları sayar.</p></div>
+
+<p>Ama kod noktası bir numaradır, henüz diske yazılabilecek bir şey değildir. Bir dosyaya, ağa ya da belleğe yazılan şey <strong>bayt</strong>lardır: her biri 0–255 arası değer alan 8 bitlik kutucuklar. 351 sayısı ("ş") tek bir bayta sığmaz. Kod noktalarını bayt dizisine çevirme kuralına <strong>kodlama</strong> (encoding) denir; bugün metin için fiilen standart olan kodlama <strong>UTF-8</strong>'dir. UTF-8 değişken uzunlukludur: İngilizce harfler ve rakamlar (ASCII) 1 bayt, Türkçe harfler 2 bayt, "€" gibi semboller 3 bayt, emojiler 4 bayt tutar. Bu tasarım sayesinde salt İngilizce metin eski ASCII dosyalarıyla bayt bayt aynı kalır.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Karakterden kod noktasına, kod noktasından UTF-8 baytlarına dönüşüm: encode ileri, decode geri yönde">
+  <rect class="sv-l" x="10" y="40" width="110" height="70" rx="8" />
+  <rect class="sv-m" x="145" y="40" width="110" height="70" rx="8" />
+  <rect class="sv-a" x="280" y="40" width="110" height="70" rx="8" />
+  <text class="sv-b" x="65" y="30" text-anchor="middle">karakter</text>
+  <text class="sv-b" x="200" y="30" text-anchor="middle">kod noktası</text>
+  <text class="sv-b" x="335" y="30" text-anchor="middle">UTF-8 bayt</text>
+  <text class="sv-b" x="65" y="82" text-anchor="middle">ş</text>
+  <text class="sv-t" x="200" y="72" text-anchor="middle">351</text>
+  <text class="sv-s" x="200" y="94" text-anchor="middle">U+015F</text>
+  <text class="sv-t" x="335" y="72" text-anchor="middle">C5 9F</text>
+  <text class="sv-s" x="335" y="94" text-anchor="middle">2 bayt</text>
+  <line class="sv-cl" x1="120" y1="75" x2="145" y2="75" />
+  <line class="sv-cl" x1="255" y1="75" x2="280" y2="75" />
+  <text class="sv-s" x="132" y="130" text-anchor="middle">ord</text>
+  <text class="sv-s" x="132" y="146" text-anchor="middle">chr</text>
+  <line class="sv-c" x1="10" y1="170" x2="390" y2="170" />
+  <polygon class="sv-k" points="390,170 380,165 380,175" />
+  <text class="sv-t" x="200" y="190" text-anchor="middle">str.encode("utf-8") → bytes</text>
+  <line class="sv-c" x1="10" y1="205" x2="390" y2="205" />
+  <polygon class="sv-k" points="10,205 20,200 20,210" />
+  <text class="sv-t" x="200" y="225" text-anchor="middle">bytes.decode("utf-8") → str</text>
+</svg>
+<figcaption>Programın içinde metin <code>str</code> (kod noktaları) olarak yaşar; dışarı çıkarken (dosya, ağ) <code>encode</code> ile bayta çevrilir, içeri girerken <code>decode</code> ile geri çözülür. Kodlama adı (burada UTF-8) iki yönde de aynı olmalıdır.</figcaption>
+</figure>
+
+<pre class="kod" data-ad="python3 unicode.py">for k in "Aş€😀":
+    b = k.encode("utf-8")
+    print(k, ord(k), hex(ord(k)), b, len(b))
+s = "Işık"
+b = s.encode("utf-8")
+print(len(s), len(b))
+print(b)
+print(b.decode("utf-8"))
+print(chr(65), chr(351), chr(8364))
+print(ord("a") - ord("A"))</pre>
+<pre class="cikti">A 65 0x41 b'A' 1
+ş 351 0x15f b'\xc5\x9f' 2
+€ 8364 0x20ac b'\xe2\x82\xac' 3
+😀 128512 0x1f600 b'\xf0\x9f\x98\x80' 4
+4 6
+b'I\xc5\x9f\xc4\xb1k'
+Işık
+A ş €
+32</pre>
+
+<p><code>encode</code> sonucu başında <code>b</code> olan bir değerdir: bu, <code>str</code> değil <code>bytes</code> tipidir. Python baytları yazarken ASCII aralığındakileri harf olarak (<code>I</code>, <code>k</code>), öbürlerini <code>\x</code> ile onaltılık sayı olarak gösterir. "Işık" 4 karakterdir ama 6 bayttır: "I" ve "k" birer, "ş" ve "ı" ikişer bayt. Demek ki "metnin uzunluğu" sorusunun iki cevabı vardır: karakter sayısı ve bayt sayısı. Bir veritabanı sütununun ya da bir ağ paketinin sınırı genellikle bayt cinsindendir; Türkçe metinde bu ikisi farklıdır. Son satır da küçük bir gerçeği gösteriyor: ASCII'de küçük harfler büyüklerden tam 32 ileridedir.</p>
+
+<h3>Yanlış kodlama: karakter bozulması</h3>
+
+<p>Baytlar kendi kodlamalarını taşımaz. Elinde yalnız "C5 9F" varsa, bunun UTF-8 "ş" mi yoksa başka bir kodlamada iki ayrı karakter mi olduğunu baytlara bakarak bilemezsin. Yanlış kodlamayla çözersen ya hata alırsın ya da anlamsız karakterler:</p>
+
+<pre class="kod" data-ad="python3 bozulma.py">b = "şeker".encode("utf-8")
+print(b.decode("cp1254"))
+print(b.decode("ascii"))</pre>
+<pre class="cikti">ÅŸeker
+Traceback (most recent call last):
+  File "/tmp/yazar/kod-3/bozulma.py", line 3, in &lt;module&gt;
+    print(b.decode("ascii"))
+          ~~~~~~~~^^^^^^^^^
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xc5 in position 0: ordinal not in range(128)</pre>
+
+<p>cp1254, eski Windows sistemlerinde Türkçe için kullanılan tek baytlı kodlamadır; her baytı ayrı bir karakter sayar ve C5'i "Å", 9F'yi "Ÿ" olarak okur. "ÅŸeker" gibi bozulmaları e-postalarda ve eski sitelerde görmüşsündür; nedeni budur. ASCII ise yalnız 0–127 aralığını bilir, C5'i (197) hiç tanımaz ve hata verir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kodlamayı belirtmeye gerek yok, Python kendisi bilir."</strong> Bilmez; tahmin eder ve tahmin işletim sistemine göre değişebilir. Aynı program bir makinede doğru, ötekinde bozuk metin üretir. Doğrusu: metni dışarı yazarken ve içeri okurken kodlamayı her zaman açıkça söyle; bu, Parça 7'de <code>open(..., encoding="utf-8")</code> olarak karşına çıkacak. Bayt ile metni de karıştırma: dışarıdan gelen baytı önce doğru kodlamayla <code>decode</code> et, işini <code>str</code> üzerinde yap, çıkarken yeniden <code>encode</code> et.</p></div>
+
+<h2 class="s">Proje: parola gücü denetleyici (1. kısım)</h2>
+
+<p>Şimdi bu parçadaki her şeyi bir araya getirelim. Amaç: kullanıcıdan bir parola al, uzunluğunu ölç, içinde kaç büyük harf, küçük harf, rakam ve sembol olduğunu say, bunlara göre bir puan ve bir açıklama yazdır. Neden önemli? Bir parolayı tahmin etmeye çalışan biri her olasılığı tek tek dener; parola uzadıkça ve kullandığı karakter çeşidi arttıkça denenmesi gereken olasılık sayısı katlanarak büyür. Bu denetleyici o fikrin kaba bir ölçüsüdür. Parolalarla ilgili güvenlik tarafı (nasıl saklanır, neden özetlenir) siber rafında ayrıca ele alınacak; burada amacımız metin işleme.</p>
+
+<h3>Tasarım</h3>
+
+<p>Karakter türünü anlamak için üç yeni metot kullanacağız: <code>k.isupper()</code> (büyük harf mi), <code>k.islower()</code> (küçük harf mi), <code>k.isdigit()</code> (rakam mı). Hepsi <code>bool</code> döndürür ve Unicode'u bilir, yani "Ş" de büyük harf sayılır. Sembol için hazır bir karakter listesini string olarak yazıp <code>in</code> ile soracağız. Parça 2'deki akümülatör kalıbıyla her tür için bir sayaç tutacağız: sayaçlar 0'dan başlar, döngü her karakterde uygun sayacı bir artırır.</p>
+
+<pre class="kod" data-ad="python3 parola.py"># Parola gücü denetleyici (Parça 3 sürümü)
+SEMBOLLER = "!@#$%^&amp;*()-_=+[]{};:'\",.&lt;&gt;/?\\|`~"
+
+parola = input("Parola: ")
+
+uzunluk = len(parola)
+buyuk = 0
+kucuk = 0
+rakam = 0
+sembol = 0
+diger = 0
+
+for k in parola:
+    if k.isupper():
+        buyuk += 1
+    elif k.islower():
+        kucuk += 1
+    elif k.isdigit():
+        rakam += 1
+    elif k in SEMBOLLER:
+        sembol += 1
+    else:
+        diger += 1
+
+puan = 0
+if uzunluk &gt;= 8:
+    puan += 1
+if uzunluk &gt;= 12:
+    puan += 1
+if buyuk &gt; 0:
+    puan += 1
+if kucuk &gt; 0:
+    puan += 1
+if rakam &gt; 0:
+    puan += 1
+if sembol &gt; 0:
+    puan += 1
+if uzunluk &lt; 8 and puan &gt; 2:
+    puan = 2
+YAYGIN = " 123456 123456789 qwerty password parola sifre abc123 "
+if f" {parola.lower()} " in YAYGIN:
+    puan = 0
+
+if puan &lt;= 2:
+    aciklama = "zayıf"
+elif puan &lt;= 4:
+    aciklama = "orta"
+else:
+    aciklama = "güçlü"
+
+print(f"{'Uzunluk':&lt;14}{uzunluk:&gt;4}")
+print(f"{'Büyük harf':&lt;14}{buyuk:&gt;4}")
+print(f"{'Küçük harf':&lt;14}{kucuk:&gt;4}")
+print(f"{'Rakam':&lt;14}{rakam:&gt;4}")
+print(f"{'Sembol':&lt;14}{sembol:&gt;4}")
+print(f"{'Diğer':&lt;14}{diger:&gt;4}")
+print(f"Puan: {puan}/6 ({aciklama})")</pre>
+
+<p>Kodu yukarıdan aşağı oku. <code>SEMBOLLER</code> büyük harfle yazıldı: PEP 8'e göre programın değiştirmeyeceği sabitler böyle adlandırılır. İçinde hem tek hem çift tırnak var; çift tırnağı <code>\"</code>, ters bölüyü <code>\\</code> diye kaçırdık. Döngüde <code>elif</code> zinciri kullandık, çünkü bir karakter yalnız bir türe girer ve bulunduğu ilk dalda durmak yeterlidir. Hiçbir türe uymayan karakterler (boşluk gibi) <code>diger</code>'e düşer.</p>
+
+<p>Puanlama bölümünde iki koruma var. Birincisi: 8 karakterden kısa bir parola, ne kadar çeşitli olursa olsun 2'den fazla puan alamaz; çünkü kısa bir parolayı her türlü karakterle denemek yine hızlıdır. İkincisi yaygın parola denetimi ve bu parçanın asıl inceliği orada.</p>
+
+<h3>Neden boşluklu <code>in</code>?</h3>
+
+<p>Yaygın parolaları bir string içinde topladık ve <code>parola.lower() in YAYGIN</code> diye sorabilirdik. Ama yukarıdaki <code>in</code> tanımını hatırla: "art arda geçiyor mu". Bu, <strong>alt dizi</strong> araması demektir, sözcük araması değil:</p>
+
+<pre class="kod" data-ad="python3 in_testi.py">print("a" in "parola sifre")
+print(" a " in " parola sifre ")
+print(" sifre " in " parola sifre ")</pre>
+<pre class="cikti">True
+False
+True</pre>
+
+<p>"a" harfi "parola"nın içinde geçtiği için ilk satır <code>True</code> verdi: boşluksuz yazsaydık "a" parolası da, "ola" parolası da yaygın sayılırdı. Çözüm olarak listenin başına, sonuna ve her öğenin arasına boşluk koyduk, aranan parolayı da iki yanından boşlukla sardık. Artık yalnızca iki boşluk arasında <strong>bütün olarak</strong> duran bir sözcük eşleşir. Bu bir geçici çözümdür: parolanın kendisinde boşluk varsa yine yanılabilir. Parça 5'te göreceğin küme (<code>set</code>) bu işin doğru aracıdır ve Parça 12'de bu denetleyici düzenli ifadelerle sağlamlaştırılacak.</p>
+
+<h3>Çalıştırma</h3>
+
+<p>Programı dört farklı parolayla çalıştırdık. Parolayı klavyeden yazmak yerine borudan (<code>printf ... |</code>) verdik ki çıktı tekrar üretilebilir olsun; bu yüzden aşağıda "Parola: " isteminin ardından yazdığın metin görünmüyor, ilk satır istemle aynı satırda başlıyor. Terminalde kendin yazarsan yazdığın parolayı da istemin yanında görürsün.</p>
+
+<pre class="kod" data-ad="bash">printf '%s\n' 'Kedi2026' | python3 parola.py</pre>
+<pre class="cikti">Parola: Uzunluk          8
+Büyük harf       1
+Küçük harf       3
+Rakam            4
+Sembol           0
+Diğer            0
+Puan: 4/6 (orta)</pre>
+
+<pre class="kod" data-ad="bash">printf '%s\n' 'Mavi.Deniz-Kiyisi7' | python3 parola.py</pre>
+<pre class="cikti">Parola: Uzunluk         18
+Büyük harf       3
+Küçük harf      12
+Rakam            1
+Sembol           2
+Diğer            0
+Puan: 6/6 (güçlü)</pre>
+
+<pre class="kod" data-ad="bash">printf '%s\n' 'Şş 12' | python3 parola.py</pre>
+<pre class="cikti">Parola: Uzunluk          5
+Büyük harf       1
+Küçük harf       1
+Rakam            2
+Sembol           0
+Diğer            1
+Puan: 2/6 (zayıf)</pre>
+
+<pre class="kod" data-ad="bash">printf '%s\n' 'parola' | python3 parola.py</pre>
+<pre class="cikti">Parola: Uzunluk          6
+Büyük harf       0
+Küçük harf       6
+Rakam            0
+Sembol           0
+Diğer            0
+Puan: 0/6 (zayıf)</pre>
+
+<p>"Kedi2026" 8 karakter olduğu için uzunluk puanının ilkini aldı, büyük, küçük ve rakamdan birer puan daha topladı: 4. "Şş 12" örneği Unicode'un işini gösteriyor: "Ş" büyük, "ş" küçük harf sayıldı, boşluk "diğer"e düştü; ham puan 3 iken kısa parola kuralı onu 2'ye indirdi. "parola" yaygın listede bütün sözcük olarak geçtiği için sıfırlandı.</p>
+
+<p>Bu ölçüt kabadır ve bunu bilerek kullan: "Kedi2026" bir sözcük artı bir yıldan oluşur ve tahmin edilmesi, puanının düşündürdüğünden kolaydır; uzun ve sıradan sözcüklerden oluşan bir parola ise sembolsüz olsa bile çok güçlü olabilir. Bugünkü yaygın öneriler, karakter türü zorunluluklarından çok uzunluğu ve bilinen sızmış parolalarla karşılaştırmayı öne çıkarır. Denetleyicimizi bir öğrenme aracı olarak gör, bir güvenlik ölçümü olarak değil.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki <code>input()</code>'un her zaman <code>str</code> döndürmesi, bu parçadaki her işlemin çıkış noktası oldu; Parça 2'deki <code>for</code> döngüsü ve akümülatör kalıbı, parolayı karakter karakter saymamızı sağladı; <code>range</code>'in bitişi dışarıda bırakma kuralı, dilimde aynen karşımıza çıktı.</p>
+<p><strong>Sonraki parçalara:</strong> <code>split()</code>'in döndürdüğü liste Parça 4'ün konusu; değişmez <code>str</code> ile değiştirilebilir <code>list</code> arasındaki fark orada önem kazanacak. Yaygın parola listesinin doğru aracı olan küme Parça 5'te. <code>encoding="utf-8"</code> Parça 7'de dosya okurken, ters bölü ve ham string Parça 12'de düzenli ifadelerde, bayt ile metin ayrımı Parça 13'te ağdan gelen yanıtı çözerken geri dönecek. Parolaların nasıl saklandığı ve neden özetlendiği ise ileride siber rafında.</p>
+</div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Tek tırnak ile çift tırnak arasında anlam farkı var mı? Neden ikisi de var?</summary><p>Anlam farkı yok, ikisi de aynı stringi üretir. İkisinin de bulunması, metnin içinde bir tür tırnak geçtiğinde dışını öbür türle yazıp kaçış kullanmadan yazabilmek içindir: "Ali'nin" gibi.</p></details>
+<details><summary>"C:\notlar" stringi neden bozuk yazdırılır, iki çözümü nedir?</summary><p>Normal stringde \n bir kaçış dizisidir ve satır sonuna dönüşür. Çözüm ya ham string kullanmak (r"C:\notlar") ya da ters bölüyü ikiye katlamaktır ("C:\\notlar").</p></details>
+<details><summary>s = "PYTHON" için s[1:4], s[-2] ve s[::-1] nedir?</summary><p>s[1:4] 1, 2 ve 3 indekslerini alır: "YTH" (4 hariç). s[-2] sondan ikinci karakter "O"dur. s[::-1] stringi ters çevirir: "NOHTYP".</p></details>
+<details><summary>String değişmez ise ad = ad.strip() satırı nasıl çalışıyor?</summary><p>strip eski stringi değiştirmez, boşluksuz yeni bir string üretir. Atama, ad etiketini bu yeni stringe taşır; eski string olduğu gibi kalır ve artık ona bakan etiket yoksa bellekten temizlenir.</p></details>
+<details><summary>"Işık" kaç karakter, UTF-8'de kaç bayttır? Neden farklı?</summary><p>4 karakter, 6 bayt. UTF-8 değişken uzunlukludur: I ve k ASCII aralığında olduğu için birer bayt, ş ve ı ise ikişer bayt tutar.</p></details>
+<details><summary>Projede yaygın parolaları neden boşluklarla sarıp aradık?</summary><p>in alt dizi araması yapar; "a" in "parola sifre" True verir. Her öğeyi ve aranan parolayı boşlukla sararak yalnız bütün sözcüklerin eşleşmesini sağladık. Doğru araç Parça 5'teki kümedir.</p></details>
+<details><summary>f"{7:05d}" ve f"{0.256:.1%}" ne yazar?</summary><p>İlki tamsayıyı 5 genişlikte sıfırla doldurur: 00007. İkincisi sayıyı 100 ile çarpar, bir basamakla yüzde olarak yazar: 25.6%.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span><ul>
+<li><code>str</code> sıralı, değişmez bir karakter dizisidir. Tek ve çift tırnak aynıdır; üç tırnak çok satırlıdır.</li>
+<li>Kaçış dizileri: <code>\n</code> satır sonu, <code>\t</code> sekme, <code>\\</code> ters bölü. Ham string <code>r"..."</code> ters bölüye dokunmaz; yollar ve desenler için.</li>
+<li><code>+</code> birleştirir (yalnız str + str), <code>*</code> tekrarlar. Sayıyı katmak için <code>str()</code> ya da f-string.</li>
+<li>İndeks 0'dan başlar; <code>-1</code> son karakter. Dilim <code>s[baş:bit:adım]</code>, bitiş hariç; <code>s[::-1]</code> ters çevirir. Dilim taşmayı keser, tekil indeks <code>IndexError</code> verir.</li>
+<li>Metotlar özgün stringi değiştirmez, yeni değer döndürür: sonucu ata. <code>find</code> bulamazsa <code>-1</code>; <code>in</code> alt dizi arar ve harf büyüklüğüne duyarlıdır.</li>
+<li>f-string: <code>{x:&lt;10}</code> sola, <code>{x:&gt;10}</code> sağa, <code>{x:^10}</code> ortaya; <code>.2f</code> iki basamak, <code>05d</code> sıfır dolgu, <code>,</code> binlik, <code>%</code> yüzde, <code>{x=}</code> hata ayıklama.</li>
+<li>Karakter → <code>ord</code> → kod noktası; <code>encode("utf-8")</code> → <code>bytes</code>; <code>decode</code> geri. UTF-8'de ASCII 1, Türkçe harf 2, € 3, emoji 4 bayt.</li>
+<li>Yanlış kodlamayla çözme bozuk metin (ÅŸ) ya da <code>UnicodeDecodeError</code> verir: kodlamayı her zaman açıkça yaz.</li>
+<li>Türkçe: <code>"I".lower()</code> "i" verir, "İ".lower() iki kod noktası olur; karşılaştırmalarda dikkat.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="kod-3">
+<h3>Quiz 3</h3>
+<p class="qa">On iki soru: sekizi bu parçadan, dördü önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>s = "Merhaba"</code> iken <code>print(s[1:4])</code> ne yazar?</p>
+<ul class="sec"><li>Mer</li><li>erh</li><li>erha</li><li>rha</li><li>Merh</li></ul>
+<div class="coz"><p>İndeksler M=0, e=1, r=2, h=3, a=4. Dilim başlangıcı dahil, bitişi hariç tutar; 1, 2 ve 3 alınır: "erh". C seçeneği bitişi de dahil sanan birinin cevabıdır ("erha"). A ve E indeksin 1'den başladığını sanmaktan, D ise başlangıcı bir kaydırmaktan doğar. Kuralı hatırlamanın kısa yolu: dilim uzunluğu bitiş − başlangıç = 3.</p></div></li>
+
+<li data-c="D"><p class="q"><code>s = "kedi"</code> tanımlandıktan sonra aşağıdaki satırlardan hangisi <strong>hata verir</strong>?</p>
+<ul class="sec"><li><code>t = s.upper()</code></li><li><code>s = "b" + s[1:]</code></li><li><code>print(s[::-1])</code></li><li><code>s[0] = "K"</code></li><li><code>print(s * 2)</code></li></ul>
+<div class="coz"><p>String değişmezdir; bir karakterine atama yapılamaz. D, "TypeError: 'str' object does not support item assignment" verir. A yeni bir büyük harfli string üretir, B yeni bir string kurup s etiketini ona taşır (eski string değişmez), C ters çevrilmiş yeni bir string yazar, E "kedikedi" yazar. Değiştirmek istiyorsan yeni bir string üretip atarsın, B'deki gibi.</p></div></li>
+
+<li data-c="A"><p class="q"><code>"elma,armut,,ayva".split(",")</code> kaç öğeli bir liste döndürür?</p>
+<ul class="sec"><li>4</li><li>3</li><li>5</li><li>2</li><li>1</li></ul>
+<div class="coz"><p>split ayraç olarak verilen her virgülden böler; ardışık iki virgülün arası boş bir alandır ve boş string olarak listeye girer: ['elma', 'armut', '', 'ayva']. Üç virgül dört parça üretir. 3 diyenler boş alanın atlandığını sanar; split'i argümansız çağırsaydın boşluk dizilerinde boş öğe üretmezdi ama burada ayraç açıkça verildi. Boş alanı korumak, tablo verisinde boş hücreyi kaybetmemek için önemlidir.</p></div></li>
+
+<li data-c="C"><p class="q"><code>print(f"[{'ab':&gt;5}]")</code> satırının çıktısı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[ab   ]</li><li>[ ab  ]</li><li>[   ab]</li><li>[ab]</li><li>[00000ab]</li></ul>
+<div class="coz"><p>&gt; sağa yaslama, 5 ise toplam alan genişliğidir. "ab" 2 karakter olduğu için solda 3 boşluk kalır: "[   ab]". A sola yaslamanın (&lt;), B ortalamanın (^) sonucudur. D genişliğin yok sayıldığını, E ise sıfır dolgunun ve sayının karıştırıldığını varsayar; sıfır dolgu ancak 0 açıkça yazılırsa olur. Köşeli parantezler alanın sınırlarını görmeye yarar.</p></div></li>
+
+<li data-c="E"><p class="q"><code>len("ş")</code> ve <code>len("ş".encode("utf-8"))</code> sırasıyla kaçtır?</p>
+<ul class="sec"><li>1 ve 1</li><li>2 ve 2</li><li>2 ve 1</li><li>1 ve 3</li><li>1 ve 2</li></ul>
+<div class="coz"><p>len bir str üzerinde karakter (kod noktası) sayar: "ş" tek karakterdir, 1. encode ile elde edilen bytes üzerinde ise bayt sayar: "ş" (U+015F) UTF-8'de C5 9F olmak üzere 2 bayttır. A, UTF-8'in her karakteri 1 baytta tuttuğunu sanmaktır; bu yalnız ASCII için doğrudur. D "€" gibi 3 baytlık bir karakterle karışıklıktır. C ve B karakter ile baytı ters ya da aynı sanır.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki ifadelerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li><code>ad.strip()</code> çağrısı, <code>ad</code> değişkenindeki boşlukları yerinde siler.</li><li><code>"Ay" in "Dünya"</code> ifadesi <code>False</code> verir.</li><li><code>s.find("x")</code>, <code>x</code> bulunamazsa <code>-1</code> döndürür.</li><li><code>"-".join(["a", "b"])</code> sonucu <code>"a-b"</code> olur.</li><li><code>r"\n"</code> iki karakterlik bir stringdir.</li></ul>
+<div class="coz"><p>A yanlıştır: string değişmez olduğu için hiçbir metot özgün stringi değiştirmez; strip boşluksuz yeni bir string döndürür ve onu ad'a atamazsan kaybolur. B doğrudur, çünkü in büyük/küçük harfe duyarlıdır ve "Dünya"da küçük harfle "ya" var, "Ay" yok. C find'ın bilinen davranışıdır. D'de join ayracı parçaların arasına koyar. E'de ham string ters bölüyü kaçış saymaz: ters bölü ve n, iki karakter.</p></div></li>
+
+<li data-c="C"><p class="q"><code>s = "Python"</code> iken <code>print(s[-2:] + s[:2])</code> ne yazar?</p>
+<ul class="sec"><li>nPy</li><li>hoPy</li><li>onPy</li><li>onPyt</li><li>Pyon</li></ul>
+<div class="coz"><p>s[-2:] sondan ikinci karakterden sona kadar alır: "on". s[:2] baştan 2 numaralı indekse kadar (hariç) alır: "Py". Birleşince "onPy". A, -2'den yalnız bir karakter alındığını, B indekslerin bir kaydığını varsayar. D bitişi dahil sanmanın sonucudur. E iki parçanın sırasını ters çevirir; + soldan sağa birleştirir.</p></div></li>
+
+<li data-c="D"><p class="q">Parola denetleyicide yaygın parolalar <code>YAYGIN = " 123456 parola sifre "</code> biçiminde tutulup <code>f" {parola.lower()} " in YAYGIN</code> ile aranıyor. Boşlukla sarmanın amacı nedir?</p>
+<ul class="sec"><li>Parolanın baştaki ve sondaki boşluklarını silmek</li><li>Aramayı büyük/küçük harfe duyarsız yapmak</li><li>Aramayı hızlandırmak</li><li>"a" ya da "ola" gibi, bir sözcüğün parçası olan parolaların yaygın sayılmasını önlemek</li><li>Türkçe karakterlerin doğru karşılaştırılmasını sağlamak</li></ul>
+<div class="coz"><p>in alt dizi araması yapar: "a" in "parola sifre" True verir. Her sözcüğü ve aranan parolayı boşlukla sararak yalnız iki boşluk arasında bütün olarak duran sözcüğün eşleşmesini sağlarız: " a " aranırsa bulunmaz. A yanlış, çünkü boşluk eklemek silmek değildir. B'yi lower() sağlar, boşluk değil. C ve E ile boşlukların ilgisi yoktur. Bu yöntem geçici bir çözümdür; asıl doğru araç Parça 5'teki kümedir.</p></div></li>
+
+<li data-c="B" data-k="kod-1"><p class="q">Kullanıcı <code>x = input()</code> satırında klavyeden 5 yazıp Enter'a basıyor. Ardından <code>print(x * 2)</code> ne yazar?</p>
+<ul class="sec"><li>10</li><li>55</li><li>5 5</li><li>TypeError verir</li><li>25</li></ul>
+<div class="coz"><p>input() her zaman str döndürür; x, "5" metnidir. Bir string bir tamsayıyla çarpılınca tekrarlanır: "55". 10 almak için önce int(x) ile sayıya çevirmek gerekirdi; A bu dönüşümün kendiliğinden yapıldığını sanmaktır. str * int geçerli olduğu için hata yoktur (D); hata, str + int gibi bir işlemde çıkar. C araya boşluk koyulduğunu, E üs alındığını varsayar.</p></div></li>
+
+<li data-c="E" data-k="kod-1"><p class="q"><code>print(7 // 2, 7 % 2)</code> satırının çıktısı nedir?</p>
+<ul class="sec"><li>3.5 1</li><li>3.5 0</li><li>3 0</li><li>4 1</li><li>3 1</li></ul>
+<div class="coz"><p>// tam bölmedir: 7 içinde 2, 3 kez vardır, sonuç 3. % kalandır: 7 − 2 × 3 = 1. A ve B, // ile /'yi karıştırır; / sonucu 3.5 olurdu. C kalanı yanlış hesaplar. D tam bölmenin yukarı yuvarladığını sanır; pozitif sayılarda aşağı (tabana) yuvarlar.</p></div></li>
+
+<li data-c="A" data-k="kod-2"><p class="q"><code>print(list(range(2, 10, 3)))</code> ne yazar?</p>
+<ul class="sec"><li>[2, 5, 8]</li><li>[2, 5, 8, 11]</li><li>[3, 6, 9]</li><li>[2, 5]</li><li>[2, 3, 4, 5, 6, 7, 8, 9]</li></ul>
+<div class="coz"><p>range(başlangıç, bitiş, adım): 2'den başlar, 3'er artar ve bitiş olan 10'a ulaşmadan durur: 2, 5, 8. Bir sonraki 11 olurdu ve 10'u aştığı için dışarıda kalır (B bunu dahil eder). C başlangıcı yok sayar, D sayıyı erken keser, E adımı görmezden gelir. Bitiş her zaman dışarıda kalır.</p></div></li>
+
+<li data-c="C" data-k="kod-2"><p class="q">Aşağıdaki ifadelerden hangisi <code>True</code> değerini verir?</p>
+<ul class="sec"><li><code>bool("")</code></li><li><code>bool(0)</code></li><li><code>bool("0")</code></li><li><code>bool(None)</code></li><li><code>bool([])</code></li></ul>
+<div class="coz"><p>Doğruluk kuralında boş string, 0, None ve boş dizi yanlış sayılır; A, B, D ve E bu yüzden False verir. "0" ise içinde bir karakter bulunan dolu bir stringdir; değerinin sayısal anlamı önemli değildir, boş olmadığı için True verir. Bu tuzak, input()'tan gelen "0" metnini sayı sanıp if içinde yanlış sayılacağını düşünenleri yakalar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#kod-2">← Önceki parça</a>
+  <button class="btn ok" data-done="kod-3">Bu bölümü okudum</button>
+  <a class="btn" href="#kod-4">Sonraki parça: listeler ve demetler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"python string slicing indexing tutorial"</li>
+  <li>"python f-string format specifier alignment"</li>
+  <li>"unicode utf-8 encoding explained bytes"</li>
+  <li>"python string metotları split join strip"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bu parçadaki bütün kod blokları /tmp/yazar/kod-3/ altında Python 3.13.16 ile <code>python3 -I</code> kullanılarak çalıştırıldı; çıktılar birebir yapıştırıldı. Hata mesajlarındaki dosya yolları yazarın geçici klasörüdür; senin yolun farklı olur. Hata satırındaki ~~~^ işaretleri 3.11 ve sonrasında görünür, daha eski sürümde görünmez.</li>
+  <li>Parola projesi dört girdiyle (ayrıca "a" girdisiyle) çalıştırıldı; girdi borudan verildiği için yazılan parola çıktıda görünmüyor, metinde belirtildi.</li>
+  <li>Quiz'deki tüm kod okuma soruları (dilim, split, f-string hizalama, bayt uzunluğu, range, //, %, bool) ve çeldiriciler çalıştırılarak denetlendi.</li>
+  <li>Söz dizimi ve davranışlar (tırnaklar, kaçış dizileri, ham stringin tek ters bölüyle bitememesi, geçersiz kaçışta Python 3.12'den beri SyntaxWarning, f-string'in 3.6, = belirtecinin 3.8'de gelmesi, biçim belirteci sırası) Python belgelerine (docs.python.org: lexical analysis, string methods, format specification mini-language) dayanır; bu oturumda belge sayfasına ağ kısıtı nedeniyle erişilemedi, bu yüzden bu sürüm bilgileri bilgime dayanıyor; davranışların kendisi çalıştırılarak doğrulandı.</li>
+  <li>isdigit() yalnızca 0–9'u değil başka yazı sistemlerinin rakamlarını da True sayar (örneğin Arapça-Hint rakamı ٣ için True verdiğini denedim); denetleyicide bu küçük bir farktır.</li>
+  <li>Parola önerileriyle ilgili cümle (uzunluk ve sızmış parola karşılaştırmasının öne çıkması) güncel kılavuzların genel eğilimini aktarır; bu oturumda bir belgeyle satır satır karşılaştırılmadı. Ayrıntısı siber rafında.</li>
+  <li>Saldırı sınırı: projede yalnız okurun kendi girdiği parolanın yapısı ölçülür; parola deneme ya da kırma yöntemi anlatılmadı.</li>
+</ul>
+</div>
+</div>
+</article>

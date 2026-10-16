@@ -1,0 +1,552 @@
+<article class="chapter ders" id="c-siber-6">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 6 · Kullanıcılar, gruplar ve izinler</div>
+<h1>Kim, neye, ne kadar dokunabilir: Linux'ta kullanıcılar, gruplar ve izinler</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Aynı Linux makinesinde bir web sunucusu, bir veritabanı, iki insan kullanıcı ve onlarca arka plan hizmeti birlikte çalışıyor. Hepsi aynı diske yazıyor. Web sunucusundaki bir hata, neden bütün parolaların hash'lerini okumaya ya da sistem dosyalarını silmeye yetmez? Yetiyorsa, nerede bir yanlış yapılmıştır?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (çekirdek ve kullanıcı alanı, süreç, ayrıcalık kavramının doğuşu), Parça 5 (dosya sistemi hiyerarşisi, <code>/etc</code>, <code>/tmp</code>, "her şey dosyadır"). Kod rafı Parça 15'te <code>ls -l</code> çıktısını ve <code>chmod</code>'u kısaca görmüştün; burada onu baştan, ayrıntısıyla kuruyoruz. Bütün denemeleri kendi makinende ya da Parça 4'te kurduğun laboratuvar sanal makinesinde, kendine ait bir deneme klasöründe yap.</p>
+
+<h2 class="s">Önce büyük resim: izinler neden var?</h2>
+
+<p>Parça 2'de işletim sisteminin bir paylaştırıcı olduğunu gördük: işlemciyi, belleği ve diski aynı anda çalışan birçok süreç arasında böler. Paylaşılan bir kaynakta hemen bir soru doğar: <strong>kim, neye dokunabilir?</strong> Bellek için bunun cevabı sanal bellekti; her süreç kendi adres uzayını görür, komşusunun belleğini göremez. Disk için de bir cevap gerekir, çünkü dosyalar süreçlerden uzun yaşar ve herkes aynı dosya sistemini görür. Linux'un cevabı üç parçalıdır: <strong>kullanıcılar</strong> (kim olduğun), <strong>gruplar</strong> (hangi topluluklara üye olduğun) ve her dosyanın üstüne yazılmış <strong>izinler</strong> (bu dosyada kime ne yapma hakkı tanındığı).</p>
+
+<p>Bu düzen, Linux'un atası Unix'in çok kullanıcılı bir makine için tasarlanmasından gelir: tek bir bilgisayara birçok kişi aynı anda bağlanıyordu ve birinin ötekinin ödevini silmemesi gerekiyordu. Bugün tek kişilik bir dizüstünde bile aynı düzen işler, ama "kullanıcı"ların çoğu artık insan değildir: web sunucusu, veritabanı, yazdırma hizmeti ayrı ayrı kullanıcı kimlikleriyle çalışır. Böylece bir hizmet ele geçirilse bile, saldırgan yalnızca o hizmetin kimliğinin dokunabildiği dosyalara dokunabilir. Güvenliğin en eski ve hâlâ en etkili fikri budur: <strong>hasarı kimliğe göre sınırla.</strong></p>
+
+<h2 class="s">Kullanıcı ve grup: sistemin kimlik kartları</h2>
+
+<p>Bir insan için kullanıcı adı "ayse" gibi bir sözcüktür, ama çekirdek ada bakmaz; sayıya bakar. Her kullanıcının bir <strong>kullanıcı kimliği (UID)</strong>, her grubun bir <strong>grup kimliği (GID)</strong> vardır. Dosyanın sahibi diske ad olarak değil, sayı olarak yazılır. <code>ls</code> gibi araçlar bu sayıyı ekranda gösterirken bir tabloya bakıp ada çevirir. Bu yüzden bir dosyayı başka bir makineye taşıdığında, orada aynı sayının başka bir kullanıcıya ait olması mümkündür; bu ayrıntı yedek ve taşıma işlerinde sürpriz yaratır.</p>
+
+<div class="kural"><span class="et">Tanım</span><p><strong>Kullanıcı</strong>, sistemde işlem yapan bir kimliktir (insan ya da hizmet) ve bir UID sayısıyla tanınır. <strong>Grup</strong>, kullanıcıların bir kümesidir ve bir GID ile tanınır. Her kullanıcının bir <strong>birincil grubu</strong> vardır, ayrıca istediği kadar <strong>ek gruba</strong> üye olabilir. Her süreç, onu başlatan kullanıcının UID ve GID'lerini taşır; çekirdek bir dosyaya erişim istendiğinde bu kimliklere bakar. <strong>UID 0</strong> olan kullanıcı <code>root</code>'tur, süper kullanıcıdır: çekirdek onun için izin denetimlerinin çoğunu atlar.</p></div>
+
+<p>Bir kullanıcının kimliğini <code>id</code> komutuyla görürsün. Laboratuvar makinemdeki <code>ubuntu</code> kullanıcısına baktım:</p>
+
+<pre class="kod" data-ad="bash">id ubuntu</pre>
+<pre class="cikti">uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev)</pre>
+
+<p>Okuyalım: UID 1000, birincil grup 1000 (kullanıcıyla aynı adlı bir grup; Ubuntu ve Debian her kullanıcıya böyle kişisel bir grup açar). Ek grupların her biri bir yetki demektir: <code>adm</code> üyeleri <code>/var/log</code> altındaki bazı günlükleri okuyabilir (Parça 9), <code>sudo</code> üyeleri yönetici komutu çalıştırabilir (aşağıda). Yani bir kullanıcıyı gruba eklemek, ona sessizce bir yetki vermektir; grup üyelikleri de denetlenmesi gereken bir listedir.</p>
+
+<h3>Sistem kullanıcıları ve root</h3>
+
+<p>Linux'ta UID'ler kabaca ikiye ayrılır: küçük sayılar (Ubuntu'da 1000'in altı) <strong>sistem kullanıcılarıdır</strong>; insanlar için değil hizmetler için açılır, çoğunun oturum açacak bir kabuğu bile yoktur. Örneğin <code>nobody</code> kullanıcısı (UID 65534) hiçbir şeye sahip olmaması için vardır: bir hizmeti "hiç yetkisi olmayan biri" olarak çalıştırmak istediğinde kullanılır.</p>
+
+<p><code>root</code> ise öbür uçtur. Dosya izinlerini atlayabilir, her dosyayı okuyup silebilir, başka kullanıcıların süreçlerini durdurabilir, ağ ayarlarını değiştirebilir, çekirdeğe modül yükleyebilir. Parça 2'deki çekirdek modu ile kullanıcı modu ayrımını hatırla: <code>root</code> hâlâ kullanıcı modunda çalışan bir süreçtir, ama çekirdek ondan gelen isteklerin neredeyse hepsini kabul eder. Bu yüzden saldırganın nihai hedefi çoğu zaman <code>root</code> olmaktır ve savunmanın ana işi bu kapıyı olabildiğince az açık tutmaktır.</p>
+
+<h2 class="s">Kullanıcılar nerede yazılı: /etc/passwd ve /etc/shadow</h2>
+
+<p>Parça 5'te yapılandırmanın <code>/etc</code> altında düz metin dosyalarında durduğunu gördük. Kullanıcı listesi de böyledir: <code>/etc/passwd</code>. Her satır bir kullanıcıdır, alanlar iki noktayla ayrılır:</p>
+
+<pre class="kod" data-ad="bash">getent passwd ubuntu</pre>
+<pre class="cikti">ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash</pre>
+
+<p>Sırasıyla: kullanıcı adı, parola alanı (<code>x</code>), UID, birincil GID, açıklama, ev dizini, oturum açınca çalışacak kabuk. <code>nobody</code> satırında son alan <code>/usr/sbin/nologin</code>'dir; bu "bu hesapla etkileşimli oturum açılamaz" demektir ve hizmet hesaplarında doğru varsayılandır.</p>
+
+<p>Dosyanın adı "passwd" ama içinde parola yok: ikinci alandaki <code>x</code>, "parolanın karşılığı başka yerde" anlamına gelir. Neden ayrı bir yer? Çünkü <code>/etc/passwd</code> herkesin okuyabileceği bir dosya olmak zorundadır: <code>ls</code> UID'yi ada çevirmek için ona bakar, her kullanıcının programları ona bakar. Eskiden parola hash'leri de bu dosyada dururdu; herkes okuyabildiği için, herkes hash'leri alıp kendi bilgisayarında tahmin denemesi yapabiliyordu. Çözüm, hash'leri yalnızca <code>root</code>'un (ve parola denetimi yapan birkaç özel programın) okuyabileceği ayrı bir dosyaya taşımak oldu: <code>/etc/shadow</code>.</p>
+
+<pre class="kod" data-ad="bash">ls -l /etc/passwd /etc/shadow</pre>
+<pre class="cikti">-rw-r--r-- 1 root root   3333 Oct  2 18:43 /etc/passwd
+-rw-r----- 1 root shadow 1379 Oct  2 18:43 /etc/shadow</pre>
+
+<p>Aradaki fark tam bu parçanın konusudur ve birazdan harf harf okuyacağız: <code>passwd</code>'yi herkes okuyabilir, <code>shadow</code>'u yalnız sahibi (<code>root</code>) ve <code>shadow</code> grubu. Yetkisiz bir kullanıcıyla denedim:</p>
+
+<pre class="kod" data-ad="bash  (nobody kullanıcısı olarak)">cat /etc/shadow
+head -1 /etc/passwd</pre>
+<pre class="cikti">cat: /etc/shadow: Permission denied
+root:x:0:0:root:/root:/bin/bash</pre>
+
+<p><code>/etc/shadow</code> satırlarının alanları da iki noktayla ayrılır: kullanıcı adı, parolanın hash'i, son parola değişikliğinin tarihi (1970'ten bu yana gün sayısı), en kısa ve en uzun parola yaşı, uyarı süresi, hareketsizlik süresi, hesabın son kullanma tarihi. Parola alanı <code>!</code> ile başlıyorsa parola kilitlidir; <code>*</code> gibi geçerli bir hash olmayan bir değer varsa o hesapla parolayla girilemez. Laboratuvarımdaki <code>ubuntu</code> hesabının parola alanı yalnızca <code>!</code>'ten ibaretti, yani parolayla giriş kapalı.</p>
+
+<p>Burada iki ayrımı karıştırma (Parça 3'teki uyarının devamı): <code>shadow</code>'da duran şey parolanın kendisi de, şifrelenmiş hâli de değildir; <strong>hash</strong>'idir, yani tek yönlü bir parmak izi. Sistem giriş sırasında yazdığın parolanın hash'ini hesaplayıp kayıtlıyla karşılaştırır. Hash'in neden "tuzlu" ve kasıtlı olarak yavaş üretildiğini kripto parçalarında (Parça 25) göreceksin. Buradaki ders izin dersidir: <strong>hash bile gizli tutulur</strong>, çünkü eline geçen biri sınırsız tahmin deneyebilir.</p>
+
+<h2 class="s">Dosya izinleri: dokuz harfin okunuşu</h2>
+
+<p>Her dosyanın bir sahibi (kullanıcı), bir grubu ve bir izin kümesi vardır. İzinler üç işlem içindir:</p>
+
+<ul>
+<li><strong>r (read, okuma):</strong> dosyanın içeriğini okumak.</li>
+<li><strong>w (write, yazma):</strong> içeriği değiştirmek.</li>
+<li><strong>x (execute, çalıştırma):</strong> dosyayı program olarak çalıştırmak.</li>
+</ul>
+
+<p>Bu üç hak üç kez yazılır, çünkü üç ayrı kitle vardır: <strong>sahip</strong> (u, user), <strong>grup</strong> (g, group) ve <strong>diğerleri</strong> (o, others: sahip olmayan ve grupta da bulunmayan herkes).</p>
+
+<p>Bir deneme klasöründe bir dosya ve bir dizin oluşturup baktım:</p>
+
+<pre class="kod" data-ad="bash">umask 022
+echo "merhaba" &gt; notlar.txt
+mkdir proje
+ls -l notlar.txt
+ls -ld proje
+stat -c '%A %a %U %G %n' notlar.txt proje</pre>
+<pre class="cikti">-rw-r--r-- 1 root root 8 Oct 16 14:06 notlar.txt
+drwxr-xr-x 2 root root 4096 Oct 16 14:06 proje
+-rw-r--r-- 644 root root notlar.txt
+drwxr-xr-x 755 root root proje</pre>
+
+<p>(Denemeleri laboratuvar makinesinde <code>root</code> olarak hazırladım; yetkisiz kullanıcı denemelerini ayrıca <code>nobody</code> ve <code>ubuntu</code> kimliğine geçerek yaptım. Sen kendi makinende bunları normal kullanıcınla yapabilirsin; sahip sütununda kendi adını görürsün.)</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="ls -l çıktısındaki izin dizgisinin parçaları: tür harfi, sahip, grup ve diğerleri için üçer harf ve sayısal karşılıkları">
+<rect class="sv-k" x="10" y="20" width="40" height="44" rx="6" />
+<rect class="sv-l" x="58" y="20" width="102" height="44" rx="6" />
+<rect class="sv-m" x="168" y="20" width="102" height="44" rx="6" />
+<rect class="sv-a" x="278" y="20" width="102" height="44" rx="6" />
+<text class="sv-b" x="30" y="48" text-anchor="middle">-</text>
+<text class="sv-b" x="109" y="48" text-anchor="middle">r w x</text>
+<text class="sv-b" x="219" y="48" text-anchor="middle">r - x</text>
+<text class="sv-b" x="329" y="48" text-anchor="middle">r - -</text>
+<text class="sv-s" x="30" y="84" text-anchor="middle">tür</text>
+<text class="sv-t" x="109" y="84" text-anchor="middle">sahip (u)</text>
+<text class="sv-t" x="219" y="84" text-anchor="middle">grup (g)</text>
+<text class="sv-t" x="329" y="84" text-anchor="middle">diğerleri (o)</text>
+<text class="sv-s" x="30" y="102" text-anchor="middle">- dosya</text>
+<text class="sv-s" x="30" y="118" text-anchor="middle">d dizin</text>
+<text class="sv-s" x="109" y="108" text-anchor="middle">4 + 2 + 1</text>
+<text class="sv-s" x="219" y="108" text-anchor="middle">4 + 0 + 1</text>
+<text class="sv-s" x="329" y="108" text-anchor="middle">4 + 0 + 0</text>
+<line class="sv-c" x1="70" y1="124" x2="370" y2="124" />
+<text class="sv-b" x="109" y="150" text-anchor="middle">7</text>
+<text class="sv-b" x="219" y="150" text-anchor="middle">5</text>
+<text class="sv-b" x="329" y="150" text-anchor="middle">4</text>
+<text class="sv-t" x="200" y="186" text-anchor="middle">-rwxr-xr--  =  754</text>
+<text class="sv-s" x="200" y="210" text-anchor="middle">r = 4, w = 2, x = 1; her üçlü kendi içinde toplanır</text>
+</svg>
+<figcaption>İzin dizgisinin anatomisi. İlk karakter türü, sonraki dokuz karakter üç kitlenin haklarını gösterir. Her üçlünün sayısal değeri, açık olan harflerin değerlerinin toplamıdır.</figcaption>
+</figure>
+
+<p><code>-rw-r--r--</code> şöyle okunur: ilk karakter tür (<code>-</code> sıradan dosya, <code>d</code> dizin, <code>l</code> sembolik bağ); sonra sahip için <code>rw-</code> (okur, yazar, çalıştıramaz), grup için <code>r--</code> (yalnız okur), diğerleri için <code>r--</code> (yalnız okur). Harf yerine <code>-</code> varsa o hak yok demektir. Sütunlar sabittir: hangi konumda hangi harfin olacağı bellidir, yalnızca var ya da yok.</p>
+
+<h3>Çekirdek hangi üçlüye bakar?</h3>
+
+<p>Burada çok kişinin yanlış bildiği bir ayrıntı var. Çekirdek üç üçlüyü toplayıp "en cömert olanı" seçmez. Sırayla sorar: <strong>süreç dosyanın sahibi mi?</strong> Evetse yalnız sahip üçlüsüne bakar ve karar verir. Değilse <strong>sürecin gruplarından biri dosyanın grubu mu?</strong> Evetse yalnız grup üçlüsüne bakar. Hiçbiri değilse diğerleri üçlüsüne bakar. İlk eşleşen kitle kararı verir, diğerlerine bakılmaz.</p>
+
+<div class="kural"><span class="et">Kural</span><p>Erişim denetimi <strong>sahip → grup → diğerleri</strong> sırasıyla yapılır ve <strong>ilk eşleşen kitlenin üçlüsü</strong> geçerlidir. Bu yüzden bir dosyanın sahibine diğerlerinden <em>daha az</em> hak tanımak mümkündür ve o durumda sahip, "diğerleri"ne açık bir dosyayı bile okuyamaz. Bu denetimin tek büyük istisnası <code>root</code>'tur: sıradan okuma ve yazma izinleri ona uygulanmaz.</p></div>
+
+<p>Bunu gördüğüm deneme şuydu: dosyayı <code>ubuntu</code> kullanıcısına verdim, bütün izinleri kaldırdım, önce sahibi olarak, sonra <code>root</code> olarak okumayı denedim.</p>
+
+<pre class="kod" data-ad="bash">chown ubuntu:ubuntu notlar.txt; ls -l notlar.txt
+chmod 000 notlar.txt;          ls -l notlar.txt
+cat notlar.txt        # ubuntu olarak
+cat notlar.txt        # root olarak</pre>
+<pre class="cikti">-rw-r--r-- 1 ubuntu ubuntu 8 Oct 16 14:06 notlar.txt
+---------- 1 ubuntu ubuntu 8 Oct 16 14:06 notlar.txt
+cat: notlar.txt: Permission denied
+merhaba</pre>
+
+<p>Sahibi kendi dosyasını okuyamadı, ama sahip olduğu için <code>chmod</code> ile izni geri verebilirdi; dosyanın izinlerini değiştirme hakkı izin bitlerinden değil, sahiplikten gelir. <code>root</code> ise hiçbir izin olmamasına rağmen okudu. Bu son satır bu parçanın en önemli güvenlik dersidir: <strong>izinler <code>root</code>'a karşı koruma sağlamaz.</strong> Bir süreç <code>root</code> olarak çalışıyorsa, dosya izinleri onun önünde durmaz. Bu yüzden asıl savunma, <code>root</code> olarak çalışan şeylerin sayısını azaltmaktır.</p>
+
+<h2 class="s">İzinleri yazmak: simgesel ve sayısal gösterim, chmod</h2>
+
+<p>İzinleri <code>chmod</code> (change mode) ile değiştirirsin. İki yazım biçimi vardır ve ikisini de okuyabilmen gerekir, çünkü belgelerde, betiklerde ve hata mesajlarında ikisi de karşına çıkar.</p>
+
+<h3>Simgesel gösterim</h3>
+
+<p>Simgesel biçim "kime, ne yap, hangi hak" diye kurulur: kitle harfi (<code>u</code>, <code>g</code>, <code>o</code> ya da hepsi için <code>a</code>), işlem (<code>+</code> ekle, <code>-</code> çıkar, <code>=</code> tam olarak bu olsun) ve hak harfleri. Virgülle birden çok değişiklik yazılır. Avantajı: yalnızca söylediğin bitlere dokunur, geri kalanı korur. Mevcut iznin ne olduğunu bilmeden "gruptan yazmayı al" diyebilirsin.</p>
+
+<h3>Sayısal (sekizlik, octal) gösterim</h3>
+
+<p>Sayısal biçim, Parça 1'deki ikili sayılardan doğrudan gelir. Her üçlü üç bittir; üç bit 0'dan 7'ye kadar bir sayı eder, yani tam bir sekizlik (octal) basamak. Bitlerin değerleri soldan sağa 4, 2, 1'dir: <code>r</code> = 4, <code>w</code> = 2, <code>x</code> = 1. Bir üçlünün değeri açık bitlerin toplamıdır. Üç basamak yan yana yazılınca tüm izin tek sayıyla ifade edilir. Avantajı: kesindir; "tam olarak şu olsun" der ve eski durum ne olursa olsun aynı sonucu verir.</p>
+
+<div class="tablo"><table>
+<tr><th>Sayı</th><th>İkili</th><th>Harfler</th><th>Anlamı (dosya için)</th></tr>
+<tr><td>0</td><td>000</td><td>---</td><td>hiçbir hak yok</td></tr>
+<tr><td>1</td><td>001</td><td>--x</td><td>yalnız çalıştırma (pratikte nadir)</td></tr>
+<tr><td>2</td><td>010</td><td>-w-</td><td>yalnız yazma (nadir)</td></tr>
+<tr><td>4</td><td>100</td><td>r--</td><td>yalnız okuma</td></tr>
+<tr><td>5</td><td>101</td><td>r-x</td><td>okuma ve çalıştırma</td></tr>
+<tr><td>6</td><td>110</td><td>rw-</td><td>okuma ve yazma</td></tr>
+<tr><td>7</td><td>111</td><td>rwx</td><td>bütün haklar</td></tr>
+</table></div>
+
+<p>Sık göreceğin birleşimler: <code>644</code> (sahip yazar, herkes okur; sıradan belge), <code>600</code> (yalnız sahip okur ve yazar; özel anahtarlar, parola dosyaları), <code>755</code> (sahip her şeyi yapar, herkes okuyup çalıştırır; programlar ve dizinler), <code>700</code> (yalnız sahip; özel dizinler), <code>640</code> (sahip yazar, grup okur, diğerleri hiçbir şey; <code>/etc/shadow</code>'un izni).</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 1: aynı dosyada iki gösterim</span>
+<p><strong>Soru:</strong> <code>notlar.txt</code> şu an <code>644</code>. Önce simgesel biçimle sahibe çalıştırma ekle, grup ve diğerlerinden okumayı kaldır. Sonra sayısal biçimle "sahip okur-yazar, grup okur, diğerleri hiçbir şey" yap. Her adımda sonucu önceden tahmin et.</p>
+<p><strong>Adım 1.</strong> Başlangıç <code>rw-r--r--</code>. <code>u+x</code> sahibe <code>x</code> ekler: <code>rwx</code>. <code>g-r</code> gruptan <code>r</code>'yi alır: <code>---</code>. <code>o-r</code> diğerlerinden alır: <code>---</code>. Tahmin: <code>rwx------</code>, yani 700.</p>
+<p><strong>Adım 2.</strong> İkinci hedef: sahip <code>rw-</code> = 4 + 2 = 6, grup <code>r--</code> = 4, diğerleri <code>---</code> = 0. Tahmin: <code>chmod 640</code> sonucu <code>rw-r-----</code>.</p>
+<p><strong>Adım 3.</strong> <code>a=r</code> denersek: <code>=</code> "tam olarak bu" dediği için her kitlede yalnız <code>r</code> kalır, sahibin yazma hakkı bile gider: <code>r--r--r--</code> (444).</p>
+<p><strong>Adım 4.</strong> Çalıştırıp doğrula:</p>
+<pre class="kod" data-ad="bash">chmod u+x,g-r,o-r notlar.txt; ls -l notlar.txt
+chmod 640 notlar.txt;         ls -l notlar.txt
+chmod a=r notlar.txt;         ls -l notlar.txt
+chmod 644 notlar.txt;         ls -l notlar.txt</pre>
+<pre class="cikti">-rwx------ 1 root root 8 Oct 16 14:06 notlar.txt
+-rw-r----- 1 root root 8 Oct 16 14:06 notlar.txt
+-r--r--r-- 1 root root 8 Oct 16 14:06 notlar.txt
+-rw-r--r-- 1 root root 8 Oct 16 14:06 notlar.txt</pre>
+<p><strong>Sonuç:</strong> Dört tahmin de tuttu. Simgesel biçim değişikliği tarif eder (<code>+</code>, <code>-</code> mevcut duruma göre çalışır), sayısal biçim ve <code>=</code> son durumu tarif eder. Betiklerde, sonucun önceki durumdan bağımsız olması istendiği için çoğu zaman sayısal biçim tercih edilir.</p></div>
+
+<h3>Sahibi ve grubu değiştirmek: chown</h3>
+
+<p><code>chown kullanici:grup dosya</code> dosyanın sahibini ve grubunu değiştirir (yalnız grubu değiştirmek için <code>chgrp</code> de vardır). Linux'ta bir dosyanın sahibini değiştirmek <code>root</code>'a özgüdür, çünkü sahiplik bir kimlik iddiasıdır; onu ancak sistemin yöneticisi değiştirebilir. Sahip ise dosyasının grubunu, kendi üyesi olduğu gruplardan birine çevirebilir.</p>
+
+<h3>Yeni dosyalar neden 644 doğuyor: umask</h3>
+
+<p>Yukarıda <code>echo</code> ile yarattığım dosya kendiliğinden <code>644</code>, dizin <code>755</code> oldu. Bunu belirleyen, her sürecin taşıdığı <strong>umask</strong> (izin maskesi) değeridir. Programlar dosya yaratırken genelde en geniş izni ister (sıradan dosya için <code>666</code>, dizin için <code>777</code>); çekirdek umask'ta açık olan bitleri bu istekten <strong>siler</strong>. Bir çıkarma değil, bit bit maskelemedir: umask'ta 1 olan bit, sonuçta 0 olur.</p>
+
+<div class="kural"><span class="et">Formül</span><p>Yeni dosyanın izni = programın istediği izin, umask'ta açık olan bitler kapatılarak. Sıradan dosyalar genelde <code>666</code>, dizinler <code>777</code> ister. <code>umask 022</code> → dosya <code>644</code>, dizin <code>755</code>. <code>umask 077</code> → dosya <code>600</code>, dizin <code>700</code>. umask yalnız <em>yeni</em> yaratılan dosyaları etkiler; var olanlara dokunmaz. Kabukta <code>umask</code> komutu değeri gösterir ya da (o kabuk ve onun açtığı süreçler için) değiştirir.</p></div>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 2: umask'ı değiştirip sonucu öngörmek</span>
+<p><strong>Soru:</strong> Mevcut umask'ı öğren. Sonra <code>umask 077</code> ve <code>umask 027</code> ile birer dosya ve dizin yarat; izinlerini önceden hesapla.</p>
+<p><strong>Adım 1.</strong> <code>077</code>: grup ve diğerleri üçlülerinin bütün bitleri maskede açık. Dosya: <code>666</code>'dan sahip kısmı (6) kalır, öbürleri silinir → <code>600</code>. Dizin: <code>777</code> → <code>700</code>.</p>
+<p><strong>Adım 2.</strong> <code>027</code>: sahip için maske 0 (hiçbir şey silinmez), grup için 2 (yazma silinir), diğerleri için 7 (her şey silinir). Dosya: sahip 6, grup 6'dan w gider → 4, diğerleri 0 → <code>640</code>. Dizin: sahip 7, grup 7'den w gider → 5, diğerleri 0 → <code>750</code>.</p>
+<p><strong>Adım 3.</strong> Parantez içindeki komutlar alt kabukta çalışır; umask değişikliği yalnız orada geçerli olur, ana kabuğu bozmaz. Çalıştır:</p>
+<pre class="kod" data-ad="bash">umask
+(umask 077; touch ozel.txt; mkdir ozeldizin)
+ls -ld ozel.txt ozeldizin
+(umask 027; touch q.txt; mkdir qdir)
+stat -c '%A %a %n' q.txt qdir</pre>
+<pre class="cikti">0022
+-rw------- 1 root root    0 Oct 16 14:06 ozel.txt
+drwx------ 2 root root 4096 Oct 16 14:06 ozeldizin
+-rw-r----- 640 q.txt
+drwxr-x--- 750 qdir</pre>
+<p><strong>Sonuç:</strong> Dört hesap da tuttu. Baştaki fazladan <code>0</code> özel bitler basamağıdır (aşağıda). Güvenlik dersi: çok kullanıcılı bir sunucuda <code>022</code> herkesin yeni dosyalarını herkese okunur kılar; gizli veri üreten bir hizmet için daha sıkı bir umask (<code>027</code> ya da <code>077</code>) seçmek, her dosyayı sonradan tek tek kapatmaktan daha güvenilirdir, çünkü unutulan dosya olmaz.</p></div>
+
+<h2 class="s">Dizinlerde aynı harfler, başka anlamlar</h2>
+
+<p>Parça 5'teki "her şey dosyadır" ilkesine göre dizin de bir dosyadır: içinde "ad → dosya" eşleşmelerinin listesi tutan özel bir dosya. İzin harfleri aynıdır, ama bu listeye uygulandıkları için anlamları değişir. Bu, izin hatalarının en büyük kaynağıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Harf</th><th>Dosyada</th><th>Dizinde</th></tr>
+<tr><td>r</td><td>içeriği okumak</td><td>içindeki adları <strong>listelemek</strong> (<code>ls</code>)</td></tr>
+<tr><td>w</td><td>içeriği değiştirmek</td><td>içinde ad <strong>yaratmak, silmek, yeniden adlandırmak</strong> (yalnız <code>x</code> ile birlikte işe yarar)</td></tr>
+<tr><td>x</td><td>program olarak çalıştırmak</td><td>dizine <strong>girmek</strong> ve içindeki bir ada <strong>adıyla erişmek</strong> (arama izni)</td></tr>
+</table></div>
+
+<p>Dikkat edilecek iki sonuç var. Birincisi: bir dosyayı silmek, <em>dosyanın</em> değil <em>dizinin</em> yazma iznine bağlıdır. Silmek, dizindeki listeden bir satırı kaldırmaktır; dosyanın içeriğine dokunmaz. Bu yüzden salt okunur bir dosya, yazılabilir bir dizinde silinebilir; tersine, herkesin yazabildiği bir dosya, yazılamayan bir dizinde silinemez. İkincisi: <code>r</code> ve <code>x</code> bağımsızdır. <code>x</code> olmadan <code>r</code> yalnızca ad listesini verir, dosyalara ulaşamazsın; <code>r</code> olmadan <code>x</code> ise listeyi göstermez ama adını <em>bildiğin</em> dosyaya ulaşmana izin verir.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 3: üç dizin izninde yetkisiz kullanıcının gördüğü</span>
+<p><strong>Soru:</strong> <code>root</code>'a ait <code>kasa</code> dizininde <code>644</code> izinli <code>rapor.txt</code> var. Dizin izni sırayla <code>755</code>, <code>711</code> ve <code>700</code> olduğunda, <code>nobody</code> kullanıcısı dizini listeleyebilir mi, dosyayı okuyabilir mi? Son olarak dizin <code>755</code>'ken dosyayı silebilir mi?</p>
+<p><strong>Adım 1.</strong> <code>nobody</code> ne sahip ne grupta; her seferinde "diğerleri" üçlüsüne bakılır.</p>
+<p><strong>Adım 2.</strong> <code>755</code>: diğerleri <code>r-x</code>. Listeleme var (<code>r</code>), girip adla erişme var (<code>x</code>), dosya da herkese okunur. Tahmin: ikisi de başarılı.</p>
+<p><strong>Adım 3.</strong> <code>711</code>: diğerleri <code>--x</code>. Listeleme yok; ama adla erişim var ve dosyanın kendi izni okumaya açık. Tahmin: <code>ls</code> reddedilir, <code>cat kasa/rapor.txt</code> çalışır.</p>
+<p><strong>Adım 4.</strong> <code>700</code>: diğerleri <code>---</code>. Dizine hiç girilemez; dosyanın izni ne olursa olsun yola çıkılamaz. Tahmin: ikisi de reddedilir.</p>
+<p><strong>Adım 5.</strong> Silme: dizin <code>755</code>'te diğerlerinin <code>w</code>'si yok. Tahmin: reddedilir.</p>
+<p><strong>Adım 6.</strong> Çalıştır (her komut <code>nobody</code> kimliğiyle):</p>
+<pre class="kod" data-ad="bash">for m in 755 711 700; do chmod $m kasa; ls kasa; cat kasa/rapor.txt; done
+chmod 755 kasa; rm kasa/rapor.txt</pre>
+<pre class="cikti">== kasa: drwxr-xr-x (755) ==
+rapor.txt
+gizli
+== kasa: drwx--x--x (711) ==
+ls: cannot open directory 'kasa': Permission denied
+gizli
+== kasa: drwx------ (700) ==
+ls: cannot open directory 'kasa': Permission denied
+cat: kasa/rapor.txt: Permission denied
+== silme denemesi (dizin 755, sahibi root) ==
+rm: cannot remove 'kasa/rapor.txt': Permission denied</pre>
+<p>(Kod bloğu sadeleştirilmiş hâlidir; çıktıdaki <code>==</code> başlıklarını betik yazdırdı ve kimlik değişimi için <code>setpriv</code> kullandım; tam betik "Kaynak ve doğrulama"da anılıyor.)</p>
+<p><strong>Sonuç:</strong> Bütün tahminler tuttu. <code>711</code> durumu özellikle öğreticidir: listelenemeyen bir dizin <strong>gizli değildir</strong>; adı tahmin edilebilen ya da bir yerde sızmış bir dosya hâlâ okunabilir. Bir şeyi korumak istiyorsan dosyanın kendi iznini ya da yolun tamamını kapat; "kimse adını bilmez" diye güvenme. Bu, web güvenliğinde "gizleme güvenlik değildir" (Parça 21) diye karşına yeniden çıkacak.</p></div>
+
+<p>Yolun tamamı meselesini de netleştirelim: <code>/home/ayse/belgeler/rapor.txt</code> dosyasına ulaşmak için yoldaki <em>her</em> dizinde (<code>/</code>, <code>/home</code>, <code>/home/ayse</code>, <code>/home/ayse/belgeler</code>) <code>x</code> iznin olmalıdır. Zincirdeki tek bir kapalı halka, altındaki her şeyi korur. Ev dizinini <code>700</code> ya da <code>750</code> yapmak bu yüzden pratik bir savunmadır: içindeki dosyaların izinleri tek tek yanlış ayarlanmış olsa bile, dışarıdan yola çıkılamaz.</p>
+
+<h2 class="s">Özel bitler: SUID, SGID ve sticky</h2>
+
+<p>Dokuz izin bitinin üstünde, dördüncü bir sekizlik basamakta üç özel bit daha vardır. Sayısal gösterimde bu basamak en sola yazılır (<code>4755</code> gibi) ve değerleri yine 4, 2, 1'dir: SUID = 4, SGID = 2, sticky = 1. <code>umask</code> çıktısındaki <code>0022</code>'nin baştaki sıfırı bu basamaktır. Bu bitler az kullanılır, ama güvenlik açısından dokuz bitin hepsinden daha kritiktir, çünkü yanlış yerde açık olduklarında kimlik sınırını delebilirler.</p>
+
+<h3>SUID (set-user-ID): çalıştıranın değil, sahibin yetkisiyle</h3>
+
+<p>Bir sorun düşün: parolanı değiştirmek istiyorsun. Yeni hash <code>/etc/shadow</code>'a yazılmalı, ama o dosyaya yalnız <code>root</code> yazabilir. Ya her kullanıcıya <code>shadow</code>'a yazma hakkı vereceksin (o zaman herkes herkesin parolasını değiştirir), ya da bir aracı gerekecek. Unix'in çözümü SUID bitidir: bir program dosyasında SUID açıksa, o programı kim çalıştırırsa çalıştırsın süreç, <strong>dosyanın sahibinin kimliğiyle</strong> (etkin kullanıcı kimliği, effective UID) çalışır. <code>passwd</code> programı <code>root</code>'a aittir ve SUID'lidir; sen çalıştırdığında süreç geçici olarak <code>root</code> yetkisi kazanır, ama programın kendi kodu yalnız <em>senin</em> parolanı değiştirmene izin verir.</p>
+
+<pre class="kod" data-ad="bash">ls -l /usr/bin/passwd /usr/bin/sudo</pre>
+<pre class="cikti">-rwsr-xr-x 1 root root  64152 May 30  2024 /usr/bin/passwd
+-rwsr-xr-x 1 root root 282032 Sep 21 21:37 /usr/bin/sudo</pre>
+
+<p>Sahip üçlüsündeki <code>x</code>'in yerinde <code>s</code> var: bu SUID'in işaretidir (küçük <code>s</code>, "SUID açık ve çalıştırma izni de var" demektir). Etkiyi kendi laboratuvarımda zararsız bir programla gördüm: sistemin <code>id</code> programını deneme klasörüne kopyaladım, <code>root</code>'a ait hâliyle SUID'ini açıp <code>nobody</code> olarak çalıştırdım, sonra bitini hemen kaldırdım ve kopyayı sildim:</p>
+
+<pre class="kod" data-ad="bash  (yalnız kendi laboratuvarında)">./kimim            # nobody olarak, SUID yok
+chmod u+s kimim; ls -l kimim
+./kimim            # nobody olarak, SUID var
+chmod u-s kimim; ls -l kimim</pre>
+<pre class="cikti">uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
+-rwsr-xr-x 1 root root 39432 Oct 16 14:07 kimim
+uid=65534(nobody) gid=65534(nogroup) euid=0(root) groups=65534(nogroup)
+-rwxr-xr-x 1 root root 39432 Oct 16 14:07 kimim</pre>
+
+<p>Üçüncü satıra bak: gerçek kimlik hâlâ <code>nobody</code>, ama <code>euid=0(root)</code>, yani etkin kimlik <code>root</code>. Çekirdek erişim kararlarını etkin kimliğe göre verir. Bu küçük deney, SUID'in neden bu kadar dikkat istediğini tek satırda gösteriyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="SUID biti kapalı ve açıkken aynı kullanıcının başlattığı sürecin etkin kimliğinin karşılaştırması">
+<text class="sv-b" x="100" y="22" text-anchor="middle">SUID kapalı</text>
+<text class="sv-b" x="300" y="22" text-anchor="middle">SUID açık (sahibi root)</text>
+<rect class="sv-k" x="30" y="36" width="140" height="40" rx="6" />
+<text class="sv-t" x="100" y="61" text-anchor="middle">nobody çalıştırır</text>
+<rect class="sv-k" x="230" y="36" width="140" height="40" rx="6" />
+<text class="sv-t" x="300" y="61" text-anchor="middle">nobody çalıştırır</text>
+<line class="sv-c" x1="100" y1="76" x2="100" y2="104" />
+<line class="sv-c" x1="300" y1="76" x2="300" y2="104" />
+<rect class="sv-m" x="30" y="104" width="140" height="56" rx="6" />
+<text class="sv-t" x="100" y="126" text-anchor="middle">süreç</text>
+<text class="sv-b" x="100" y="146" text-anchor="middle">euid = nobody</text>
+<rect class="sv-a" x="230" y="104" width="140" height="56" rx="6" />
+<text class="sv-t" x="300" y="126" text-anchor="middle">süreç</text>
+<text class="sv-b" x="300" y="146" text-anchor="middle">euid = root</text>
+<line class="sv-c" x1="100" y1="160" x2="100" y2="188" />
+<line class="sv-cl" x1="300" y1="160" x2="300" y2="188" />
+<rect class="sv-k" x="30" y="188" width="140" height="44" rx="6" />
+<text class="sv-s" x="100" y="207" text-anchor="middle">nobody'nin hakları</text>
+<text class="sv-s" x="100" y="223" text-anchor="middle">kadar erişim</text>
+<rect class="sv-l" x="230" y="188" width="140" height="44" rx="6" />
+<text class="sv-s" x="300" y="207" text-anchor="middle">root'un hakları; sınırı</text>
+<text class="sv-s" x="300" y="223" text-anchor="middle">yalnız programın kodu çizer</text>
+<text class="sv-s" x="200" y="252" text-anchor="middle">Çekirdek erişim kararını etkin kimliğe (euid) göre verir</text>
+</svg>
+<figcaption>SUID'in etkisi. Bit açıkken, programı kim başlatırsa başlatsın süreç dosya sahibinin kimliğini taşır. Bu durumda kullanıcıyı sınırlayan tek şey programın kendi kodudur.</figcaption>
+</figure>
+
+<h3>Neden kritik: bütün güvenlik programın koduna kalır</h3>
+
+<p>Şekilde sağ sütunun son kutusu önemli. SUID'li bir <code>root</code> programında, çekirdeğin izin denetimi artık seni korumaz; korumayı programın kendisi yapmak zorundadır. <code>passwd</code> gibi programlar bu iş için yazılmış, yıllardır incelenmiş, girdilerini dikkatle denetleyen küçük programlardır. Sorun, SUID'in yanlış programa verilmesiyle başlar. Bir dosya düzenleyicisi, bir kabuk, bir betik yorumlayıcısı ya da dosya kopyalayan genel bir araç, kullanıcıya "istediğin dosyayı aç, istediğin komutu çalıştır" der; SUID'li <code>root</code> olduklarında bu "istediğin şeyi <code>root</code> olarak yap" anlamına gelir. Aynı şekilde, SUID'li bir programdaki bir hata (kod rafı Parça 30'daki bellek hataları gibi) doğrudan <code>root</code> yetkisine giden bir hataya dönüşür.</p>
+
+<p>Bunun adı <strong>yetki yükseltme</strong>dir (privilege escalation): sınırlı bir kimlikle başlayan birinin daha yüksek bir kimliğin haklarını elde etmesi. Biz bu rafta nasıl yapıldığını değil, neden mümkün olduğunu ve nasıl kapatıldığını konuşuyoruz; her durumda kök neden aynıdır: <strong>bir kimliğe gereğinden fazla yetki verilmiştir</strong>. SUID'li yanlış program, herkesin yazabildiği ama <code>root</code>'un çalıştırdığı bir betik, yanlış ayarlanmış bir <code>sudo</code> kuralı aynı hatanın üç yüzüdür.</p>
+
+<div class="kural"><span class="et">Kural</span><p>SUID'li (özellikle sahibi <code>root</code> olan) her program, sistemin güvenlik sınırının bir parçasıdır. Bu yüzden: SUID'i yalnız bunun için tasarlanmış, dağıtımın paketlediği programlarda bırak; kendi yazdığın programa, betiklere, düzenleyicilere, kabuklara ve genel araçlara asla verme; SUID'li dosyaların <strong>envanterini</strong> çıkar ve beklenmeyen her girişi incele; kullanıcıların dosya yazabildiği bölümleri (ör. <code>/tmp</code>, ev dizinleri, takılan diskler) gerekiyorsa <code>nosuid</code> seçeneğiyle bağla, böylece oraya konan bir SUID biti etkisiz kalır.</p></div>
+
+<p>Envanteri <code>find</code> ile çıkarırsın. <code>-perm -4000</code> "en azından SUID biti açık", <code>-perm -2000</code> "en azından SGID biti açık" demektir. Laboratuvar makinemin program dizinlerinde çıkan liste:</p>
+
+<pre class="kod" data-ad="bash">find /usr/bin /usr/sbin -perm -4000 -type f
+find /usr/bin /usr/sbin -perm -2000 -type f</pre>
+<pre class="cikti">/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/fusermount3
+/usr/bin/gpasswd
+/usr/bin/mount
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/su
+/usr/bin/sudo
+/usr/bin/umount
+/usr/bin/chage
+/usr/bin/expiry
+/usr/sbin/pam_extrausers_chkpwd
+/usr/sbin/unix_chkpwd</pre>
+
+<p>(İki komutun çıktısı arka arkaya; ilk on satır SUID, son dört satır SGID listesidir. Sendeki liste dağıtıma ve kurulu paketlere göre farklı olabilir.) Hepsi tanıdık: parola ve hesap değiştirme (<code>passwd</code>, <code>chfn</code>, <code>chsh</code>, <code>chage</code>), kimlik değiştirme (<code>su</code>, <code>sudo</code>, <code>newgrp</code>), disk bağlama (<code>mount</code>). Sağlıklı bir sistemde liste kısa ve açıklanabilirdir. Savunmacının alışkanlığı, bu listeyi bir kez kaydedip düzenli aralıklarla yeniden karşılaştırmaktır: listeye yeni giren bir dosya ya bir güncellemedir ya da araştırılması gereken bir değişiklik. Kod rafında yazdığın dosya bütünlüğü izleyicisi (Parça 14/18) ve Parça 9'daki değişiklik izleme tam bu işe yarar. Bütün diski taramak istersen <code>find / -xdev -perm -4000 -type f</code> gibi bir biçim kullanılır; yalnız kendi makinende çalıştır.</p>
+
+<h3>SGID (set-group-ID): programda ve dizinde</h3>
+
+<p>SGID aynı fikrin grup hâlidir. Bir programda açıksa süreç dosyanın <em>grubunun</em> kimliğini kazanır; yukarıdaki <code>unix_chkpwd</code> bu yüzden <code>shadow</code> grubundadır ve SGID'lidir: parolayı denetlemek için <code>/etc/shadow</code>'u okuyabilir (<code>shadow</code> grubunun <code>r</code> hakkı vardı, hatırla), ama <code>root</code> olmaz. Bu, <code>root</code> yerine daha dar bir grup yetkisi vermenin, yani en az yetkinin güzel bir örneğidir.</p>
+
+<p>Dizinde SGID'in anlamı başkadır ve ekip çalışmasında çok kullanılır: SGID'li bir dizinde yaratılan yeni dosyalar, yaratanın birincil grubunu değil, <strong>dizinin grubunu</strong> alır. Böylece ortak bir proje dizinindeki her dosya otomatik olarak proje grubuna ait olur.</p>
+
+<pre class="kod" data-ad="bash">mkdir ekip; chown root:ubuntu ekip; chmod 2775 ekip; ls -ld ekip
+touch ekip/yeni.txt; ls -l ekip/yeni.txt</pre>
+<pre class="cikti">drwxrwsr-x 2 root ubuntu 4096 Oct 16 14:07 ekip
+-rw-r--r-- 1 root ubuntu 0 Oct 16 14:07 ekip/yeni.txt</pre>
+
+<p>Grup üçlüsünde <code>x</code>'in yerinde <code>s</code> var. Dosyayı <code>root</code> yarattı, ama grubu <code>root</code> değil <code>ubuntu</code> oldu: dizinden miras.</p>
+
+<h3>Sticky bit: ortak dizinde herkes yalnız kendininkini silsin</h3>
+
+<p>Dizin bölümünde silmenin dizinin yazma iznine bağlı olduğunu gördük. Peki herkesin dosya bırakması gereken ortak bir dizin (<code>/tmp</code> gibi) ne olacak? Herkese yazma hakkı verirsen, herkes herkesin dosyasını da silebilir ya da yeniden adlandırabilir. Sticky bit (resmî adıyla "kısıtlı silme bayrağı") bunu çözer: bir dizinde açıkken, içindeki bir dosyayı yalnız <strong>dosyanın sahibi</strong>, <strong>dizinin sahibi</strong> ya da <code>root</code> silebilir veya yeniden adlandırabilir. Bunu iki kullanıcıyla sınadım: <code>ubuntu</code> ortak dizine bir dosya bıraktı, <code>nobody</code> silmeye çalıştı.</p>
+
+<pre class="kod" data-ad="bash">ls -ld ortak
+rm ortak/ubuntu.txt      # nobody olarak, sticky YOK
+chmod +t ortak; ls -ld ortak
+rm ortak/ubuntu.txt      # nobody olarak, sticky VAR
+stat -c '%A %a %n' ortak /tmp</pre>
+<pre class="cikti">drwxrwxrwx 2 root root 4096 Oct 16 14:06 ortak
+drwxrwxrwt 2 root root 4096 Oct 16 14:06 ortak
+rm: cannot remove 'ortak/ubuntu.txt': Operation not permitted
+drwxrwxrwt 1777 ortak
+drwxrwxrwt 1777 /tmp</pre>
+
+<p>Sticky yokken <code>nobody</code>'nin <code>rm</code>'i hiçbir hata vermeden başkasının dosyasını sildi (ikinci denemeden önce dosyayı yeniden yarattım). Sticky açıkken reddedildi. Son satır <code>/tmp</code>'nin de tam olarak <code>1777</code> olduğunu gösteriyor: herkes yazar, herkes yalnız kendininkini siler. Diğerleri üçlüsündeki <code>t</code> bu bitin işaretidir.</p>
+
+<div class="tablo"><table>
+<tr><th>Bit</th><th>Değer</th><th>ls'te görünüş</th><th>Dosyada</th><th>Dizinde</th></tr>
+<tr><td>SUID</td><td>4000</td><td>sahip üçlüsünde <code>s</code> / <code>S</code></td><td>süreç dosya sahibinin kimliğiyle çalışır</td><td>Linux'ta genelde anlamı yok</td></tr>
+<tr><td>SGID</td><td>2000</td><td>grup üçlüsünde <code>s</code> / <code>S</code></td><td>süreç dosyanın grubunun kimliğini alır</td><td>yeni dosyalar dizinin grubunu alır</td></tr>
+<tr><td>Sticky</td><td>1000</td><td>diğerleri üçlüsünde <code>t</code> / <code>T</code></td><td>Linux'ta anlamı yok</td><td>yalnız sahibi (ya da dizin sahibi, root) silebilir/adını değiştirebilir</td></tr>
+</table></div>
+
+<p>Büyük harfli biçimler bir uyarıdır: <code>S</code> ya da <code>T</code>, özel bitin açık ama altındaki <code>x</code>'in kapalı olduğunu söyler. Çalıştırılamayan bir dosyada SUID işe yaramaz; büyük <code>S</code> görürsen büyük olasılıkla biri yanlış bir sayı yazmıştır:</p>
+
+<pre class="kod" data-ad="bash">chmod 4644 notlar.txt; ls -l notlar.txt</pre>
+<pre class="cikti">-rwSr--r-- 1 root root 8 Oct 16 14:06 notlar.txt</pre>
+
+<div class="hata"><span class="et">Sık yapılan hata</span><p><strong>"İzin hatası alıyorum, <code>chmod -R 777</code> yapayım geçsin."</strong> Bu bir çözüm değil, sorunun gizlenmesidir. <code>777</code> herkese yazma hakkı verir: aynı makinedeki her kullanıcı ve her hizmet (ele geçirilmiş bir web sunucusu dahil) o dosyaları değiştirebilir. O dosyalardan biri <code>root</code>'un çalıştırdığı bir betik ya da bir yapılandırma ise, herkesin yazabildiği bir dosya, herkesin <code>root</code> olarak kod çalıştırabilmesi demektir. <code>-R</code> ile bütün ağaca yapılınca, içerdeki özel anahtarlar ve parola dosyaları da açılır. Doğrusu: önce <strong>kim</strong>in erişmesi gerektiğini bul (<code>ls -l</code>, <code>id</code>), sonra yalnız o kimliğe, yalnız gereken hakkı ver: dosyayı doğru kullanıcıya <code>chown</code> et ya da doğru gruba al ve <code>640</code>/<code>750</code> gibi dar bir izin seç. Herkesin yazabildiği dosyaları <code>find … -perm -o+w</code> ile bulup gözden geçirmek iyi bir denetim alışkanlığıdır.</p></div>
+
+<h2 class="s">sudo ve en az yetki ilkesi</h2>
+
+<p>Yönetici işleri (paket kurmak, servis yeniden başlatmak, <code>/etc</code>'deki bir dosyayı düzenlemek) <code>root</code> yetkisi ister. Bunun en kötü yolu doğrudan <code>root</code> olarak oturum açıp bütün günü öyle geçirmektir. Neden kötü? Çünkü o oturumdaki her şey (tarayıcı, indirilen bir betik, yanlış yazılmış bir <code>rm</code>, bir yazım hatası) sınırsız yetkiyle çalışır ve sistem seni hiçbir yerde durdurmaz. Ayrıca birden çok yönetici aynı <code>root</code> parolasını paylaşırsa, günlükte kimin ne yaptığı görünmez.</p>
+
+<p><code>sudo</code> bunun yerine şunu yapar: normal kullanıcı olarak çalışırsın, tek bir komutun yönetici yetkisi gerektirdiğinde başına <code>sudo</code> yazarsın; <code>sudo</code> (kendisi SUID'li bir <code>root</code> programıdır, yukarıdaki listede gördün) senin kim olduğunu doğrular, yapılandırmasındaki kurallara bakar, izin varsa <em>yalnız o komutu</em> hedef kimlikle çalıştırır ve olayı kaydeder. Kurallar <code>/etc/sudoers</code> dosyasında ve <code>/etc/sudoers.d/</code> altındadır. Laboratuvarımdaki iki temel satır:</p>
+
+<pre class="kod" data-ad="bash">grep -E "^(root|%sudo)" /etc/sudoers</pre>
+<pre class="cikti">root	ALL=(ALL:ALL) ALL
+%sudo	ALL=(ALL:ALL) ALL</pre>
+
+<p>Her satır "kim, nerede = (kimin adına) ne" biçimindedir. <code>%sudo</code>: başındaki <code>%</code> bunun bir grup olduğunu söyler; <code>sudo</code> grubunun bütün üyeleri. İlk <code>ALL</code>: her makinede (aynı dosya birden çok makineye dağıtılabildiği için). <code>(ALL:ALL)</code>: herhangi bir kullanıcı ve herhangi bir grup adına. Son <code>ALL</code>: herhangi bir komut. Yani bu satır "<code>sudo</code> grubundakiler her şeyi yapabilir" der; masaüstü bir makinede yöneticinin kendisi için kabul edilebilir bir varsayılandır. Bir kullanıcının ne yapabileceğini <code>sudo -l</code> gösterir:</p>
+
+<pre class="kod" data-ad="bash">sudo -l -U ubuntu</pre>
+<pre class="cikti">Matching Defaults entries for ubuntu on vm:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    use_pty
+
+User ubuntu may run the following commands on vm:
+    (ALL : ALL) ALL</pre>
+
+<p><code>sudo</code> yalnız <code>root</code> olmak için değildir; <code>-u</code> ile başka bir kullanıcı adına komut çalıştırırsın. Bir hizmetin dosyalarını o hizmetin kimliğiyle denetlemek, kendin <code>root</code> olup bakmaktan daha doğru bir sınamadır, çünkü hizmetin gerçekte neyi görebildiğini gösterir:</p>
+
+<pre class="kod" data-ad="bash">sudo -u ubuntu id</pre>
+<pre class="cikti">uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),4(adm),20(dialout),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev)</pre>
+
+<div class="kural"><span class="et">Kural</span><p><strong>En az yetki ilkesi:</strong> her kullanıcıya, her sürece ve her hizmete, işini yapmasına yetecek <em>en dar</em> yetki, <em>gerektiği süre</em> kadar verilir. Linux'ta bunun somut biçimleri: günlük işte normal kullanıcıyla çalış, yönetici yetkisini tek tek komutlar için <code>sudo</code> ile iste; her hizmeti kendi ayrı, oturum açamayan sistem kullanıcısıyla çalıştır; dosyaları yalnız ihtiyacı olan kullanıcı ya da gruba aç; <code>sudo</code> kurallarını gerektiğinde "her şey" yerine belirli komutlarla sınırla; kimseye gerekmeyen grup üyeliği ve SUID bırakma.</p></div>
+
+<p>Neden bu kadar önemli? Çünkü bir saldırının ne kadar zarar verdiği büyük ölçüde ele geçirilen kimliğin yetkisine bağlıdır. Kendi kullanıcısıyla çalışan ve yalnız kendi dizinine yazabilen bir web sunucusu ele geçirilirse, kayıp o dizinle sınırlı kalabilir; <code>root</code> olarak çalışan bir web sunucusu ele geçirilirse, bütün makine kaybedilir. En az yetki saldırıyı önlemez, ama <strong>hasarın çapını</strong> küçültür ve yetki yükseltmeyi ayrı, zor ve gürültülü bir adım hâline getirir. Kurumsal ortamda (Parça 37) aynı ilke yönetici hesaplarının ayrılması olarak karşına çıkacak.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span><p><strong>"<code>sudo</code> kuralını daraltırım: kullanıcıya yalnızca bir düzenleyiciyi, bir sayfalayıcıyı ya da bir betik yorumlayıcısını <code>sudo</code> ile açma izni veririm, nasılsa 'her şey' değil."</strong> Görünüşte dar, gerçekte geniş bir kuraldır. Düzenleyiciler, sayfalayıcılar ve yorumlayıcılar başka komut çalıştırmaya ya da istenen herhangi bir dosyayı açıp yazmaya izin veren araçlardır; <code>root</code> olarak açıldıklarında, kullanıcının elindeki yetki fiilen "her şey" olur. <code>sudoers</code> belgesi de <code>ALL</code>'ın tehlikesini ve "her şey, şunlar hariç" biçimindeki olumsuzlamaların nadiren amaçlandığı gibi çalıştığını açıkça uyarır. Doğrusu: dosya düzenleme yetkisi gerekiyorsa <code>sudoedit</code> kullan (düzenleyici normal kullanıcı olarak çalışır, yalnız kaydetme yetkili yapılır); bir iş gerekiyorsa o işi yapan, argümanları sabit, dar bir komutu izinle; <code>sudoers</code>'ı yalnız sözdizimini denetleyen <code>visudo</code> ile düzenle; ve verdiğin her kuralı, "bu komutla kullanıcı başka ne yapabilir?" sorusuyla sına.</p></div>
+
+<h2 class="s">Yanlış izinleri denetlemek: bir kontrol listesi</h2>
+
+<p>Bu parçadaki her şeyi savunmacının gözüyle tek bir listede toplayalım. Bunları kendi makinende ya da laboratuvarında düzenli aralıklarla sorabilirsin; başkasına ait bir sisteme ancak yazılı izinle bakılır (Parça 41–42).</p>
+
+<ul>
+<li><strong>SUID/SGID envanteri:</strong> <code>find … -perm -4000</code> ve <code>-2000</code> listesi kısa ve açıklanabilir mi, son kayıttan bu yana yeni giren var mı?</li>
+<li><strong>Herkesin yazabildiği dosya ve dizinler:</strong> <code>-perm -o+w</code> ile bul; dizin ise sticky açık mı, dosya ise neden herkese yazılabilir?</li>
+<li><strong>Hassas dosyaların izni:</strong> <code>/etc/shadow</code> <code>640</code> ya da daha dar mı, özel anahtarlar ve parola dosyaları <code>600</code> mü, ev dizinleri başkalarına kapalı mı?</li>
+<li><strong><code>root</code>'un çalıştırdığı her şey</strong> (zamanlanmış görevler ve servis betikleri, Parça 7) yalnız <code>root</code>'un yazabildiği bir yerde mi? Zincirdeki her dizin de dahil.</li>
+<li><strong>Grup üyelikleri:</strong> <code>sudo</code>, <code>adm</code> gibi yetki veren gruplarda yalnız gerekenler mi var?</li>
+<li><strong><code>sudo</code> kuralları:</strong> <code>sudo -l</code> çıktısı beklenenle aynı mı, düzenleyici veya yorumlayıcı izni var mı?</li>
+</ul>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki ikili ve sekizlik sayılar, izinlerin sayısal gösterimidir. Parça 2'de doğan "ayrıcalık" kavramı, burada UID 0 ile somutlaşır. Parça 3'teki "hash şifreleme değildir" ayrımı <code>/etc/shadow</code>'da yeniden göründü. Parça 5'teki <code>/etc</code>, <code>/tmp</code> ve "her şey dosyadır" ilkesi, dizin izinlerinin ve sticky bitin zeminidir.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 7'de servislerin ve zamanlanmış görevlerin hangi kullanıcıyla çalıştığını, Parça 9'da <code>sudo</code> ve giriş kayıtlarını ve sertleştirmeyi göreceksin. Parola hash'lerinin nasıl üretildiği Parça 25'te, web uygulamalarında yetkilendirme ve yetki yükseltme Parça 21 ve 32'de, Windows'taki karşılıkları (UAC, NTFS izinleri) Parça 35'te, kurumsal en az yetki Parça 37'de.</p>
+<p><strong>Kod rafına:</strong> Parça 15'teki <code>ls -l</code> ve <code>chmod</code>'un ayrıntısı buydu; Parça 14/18'deki dosya bütünlüğü izleyicisi SUID envanterini izlemek için kullanılabilir; Parça 21'deki "uygulama kullanıcısına yalnız gereken haklar" ve Parça 30'daki bellek hataları, burada SUID'li programın neden kusursuz olması gerektiğiyle birleşir. Bu parçadaki bütün denemeler kendi laboratuvarın içindir; başkasının sistemindeki izinleri yoklamanın hukuki sınırı Parça 41'de.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Çekirdek bir dosyaya erişim isteğinde kullanıcı adına mı, başka bir şeye mi bakar?</summary><p>Kullanıcı adına değil, sürecin taşıdığı sayısal kimliklere (UID ve GID'ler, tam olarak etkin kimliğe) bakar. Dosyanın sahibi de diske sayı olarak yazılır; adlar yalnızca ekranda gösterim için /etc/passwd'den çevrilir. UID 0 root'tur.</p></details>
+
+<details><summary>Parola hash'leri neden /etc/passwd'de değil de /etc/shadow'da durur?</summary><p>/etc/passwd'yi herkesin okuyabilmesi gerekir, çünkü programlar UID'leri ada çevirmek için ona bakar. Hash'ler orada olsaydı herkes onları alıp kendi bilgisayarında sınırsız tahmin deneyebilirdi. Bu yüzden hash'ler yalnız root'un ve shadow grubunun okuyabildiği (640) ayrı bir dosyaya taşındı; passwd'deki "x" bu yönlendirmedir.</p></details>
+
+<details><summary>-rw-r----- izninin sayısal karşılığı nedir ve kim ne yapabilir?</summary><p>640'tır: sahip okur ve yazar (4+2=6), grup yalnız okur (4), diğerleri hiçbir şey yapamaz (0). /etc/shadow'un izni budur.</p></details>
+
+<details><summary>Salt okunur bir dosyayı silmek mümkün müdür? Neye bağlıdır?</summary><p>Mümkündür, çünkü silmek dosyanın içeriğine değil dizindeki ad listesine yapılan bir değişikliktir. Silme yetkisi dizinin yazma (ve arama) iznine bağlıdır. Dizinde sticky bit açıksa ayrıca dosyanın ya da dizinin sahibi (ya da root) olmak gerekir.</p></details>
+
+<details><summary>Bir dizinde x var ama r yoksa ne olur?</summary><p>Dizin listelenemez, ama adını bildiğin bir dosyaya adıyla ulaşabilirsin ve dosyanın kendi izni elveriyorsa onu okuyabilirsin. Bu yüzden listelenemeyen dizin gizli sayılmaz; koruma için dosyanın ya da yolun izni kapatılmalıdır.</p></details>
+
+<details><summary>umask 077 iken yaratılan yeni dosya ve dizinin izni ne olur?</summary><p>Dosya 600, dizin 700 olur. Programlar genelde dosya için 666, dizin için 777 ister; umask'ta açık olan bitler (grup ve diğerlerinin bütün bitleri) bu istekten silinir.</p></details>
+
+<details><summary>SUID'li bir root programı neden sistemin güvenlik sınırının parçası sayılır?</summary><p>Çünkü onu kim çalıştırırsa çalıştırsın süreç root'un etkin kimliğiyle çalışır ve çekirdeğin dosya izinleri artık kullanıcıyı sınırlamaz; sınırı yalnızca programın kodu çizer. Programda bir hata varsa ya da program genel amaçlı bir araçsa (düzenleyici, kabuk, yorumlayıcı), bu doğrudan yetki yükseltmeye yol açar. Savunma: SUID'i yalnız bunun için tasarlanmış programlarda bırakmak, envanter çıkarıp değişiklikleri izlemek, kullanıcıların yazabildiği bölümleri nosuid bağlamak.</p></details>
+
+<details><summary>Neden günlük işte root kullanılmaz; sudo bunun yerine ne sağlar?</summary><p>Root oturumunda her program ve her hata sınırsız yetkiyle çalışır ve sistem hiçbir yerde durdurmaz; ortak root parolası kimin ne yaptığını da görünmez kılar. sudo ile normal kullanıcı olarak çalışılır, yönetici yetkisi yalnızca tek tek komutlar için, kurallara göre ve kimlik doğrulanarak verilir ve her kullanım günlüğe kaydedilir. Bu, en az yetki ilkesinin uygulanmasıdır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span><ul>
+<li>Kimlik sayıdır: UID ve GID. UID 0 = root; izin denetimlerinin çoğu ona uygulanmaz. Hizmetler ayrı, oturum açamayan sistem kullanıcılarıyla çalışır.</li>
+<li>/etc/passwd herkese okunur (ad, x, UID, GID, açıklama, ev, kabuk); parola hash'leri /etc/shadow'da, 640 root:shadow. Hash bile gizli tutulur.</li>
+<li>İzin dizgisi: tür + sahip/grup/diğerleri için rwx. r=4, w=2, x=1; her üçlü toplanır. 644, 600, 755, 700, 640 sık birleşimler.</li>
+<li>Denetim sırası: sahip → grup → diğerleri; ilk eşleşen kitle karar verir.</li>
+<li>chmod: simgesel (u/g/o/a, + − =) değişikliği, sayısal son durumu yazar. chown sahipliği değiştirir (root). umask yeni dosyalardan bit siler: 022 → 644/755, 027 → 640/750, 077 → 600/700.</li>
+<li>Dizinde: r = listele, w = ad yarat/sil/yeniden adlandır, x = gir ve adla eriş. Silme dizinin iznine bağlıdır. Yoldaki her dizinde x gerekir.</li>
+<li>Özel bitler: SUID 4000 (sahibin kimliğiyle çalış), SGID 2000 (grubun kimliği; dizinde grup mirası), sticky 1000 (ortak dizinde yalnız sahibi siler; /tmp = 1777). Büyük S/T: altındaki x kapalı.</li>
+<li>SUID'li root programı güvenlik sınırıdır: yalnız tasarlanmış programlarda, envanter (find -perm -4000), değişiklik izleme, nosuid.</li>
+<li>777 çözüm değildir; kimin neye ihtiyacı olduğunu bul, yalnız onu ver.</li>
+<li>En az yetki: normal kullanıcıyla çalış, sudo ile tek komut; sudo kuralları dar ve sınanmış (düzenleyici/yorumlayıcı izni yok, sudoedit, visudo); sudo kullanımı günlüğe düşer.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-6">
+<h3>Quiz 6</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 8 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>ls -l</code> çıktısında izin kısmı <code>-rw-r-----</code> olan dosyanın sayısal izni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>604</li><li>640</li><li>644</li><li>460</li><li>750</li></ul>
+<div class="coz"><p>Sahip üçlüsü rw- = 4 + 2 = 6, grup r-- = 4, diğerleri --- = 0; sonuç 640. 604 grup ile diğerlerinin yerini karıştırır. 644 diğerlerine de okuma verirdi (son üçlü r-- olurdu). 460 üçlülerin sırasını bozar; sıra her zaman sahip, grup, diğerleridir. 750 sahibe çalıştırma ve gruba çalıştırma ekler, dizgide x yok.</p></div></li>
+
+<li data-c="D"><p class="q"><code>chmod 754 betik.sh</code> komutundan sonra <code>ls -l</code> izin kısmını nasıl gösterir?</p>
+<ul class="sec"><li>-rwxr--r-x</li><li>-rw-r-xr--</li><li>-rwxrw-r--</li><li>-rwxr-xr--</li><li>-r-xr-xrwx</li></ul>
+<div class="coz"><p>7 = 4+2+1 = rwx (sahip), 5 = 4+1 = r-x (grup), 4 = r-- (diğerleri); sonuç -rwxr-xr--. Bunu laboratuvarda chmod 754 ile çalıştırıp stat çıktısında rwxr-xr-- olarak doğruladım. -rwxr--r-x grup ile diğerlerini ters koyar. -rw-r-xr-- sahibin 7'sini 6 gibi okur. -rwxrw-r-- 5'i 6 gibi okur (r-x yerine rw-). -r-xr-xrwx sırayı tersten yazar.</p></div></li>
+
+<li data-c="A"><p class="q">Root'a ait <code>kasa</code> dizininin izni <code>711</code>, içindeki <code>rapor.txt</code> dosyasının izni <code>644</code>. Sistemdeki başka bir kullanıcı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li><code>ls kasa</code> reddedilir, ama <code>cat kasa/rapor.txt</code> dosyayı okur.</li><li>Hem <code>ls kasa</code> hem <code>cat kasa/rapor.txt</code> reddedilir.</li><li><code>ls kasa</code> çalışır, ama <code>cat kasa/rapor.txt</code> reddedilir.</li><li>İkisi de çalışır ve kullanıcı dosyayı silebilir.</li><li>Dizinde x olduğu için kullanıcı dizine yeni dosya da yaratabilir.</li></ul>
+<div class="coz"><p>Diğerleri üçlüsü --x'tir: listeleme (r) yok, ama adla erişim (x) var; dosyanın kendi izni de herkese okumaya açık. Bu yüzden ls reddedilir, cat çalışır; laboratuvar denemesinde tam olarak bu görüldü. İkisinin birden reddedilmesi 700 durumudur. "ls çalışır, cat reddedilir" r'nin olup x'in olmadığı (ör. 744) durumda olur. Silme ve yeni dosya yaratma dizinde w ister; 711'de diğerlerinin w'si yoktur.</p></div></li>
+
+<li data-c="C"><p class="q">Kabukta <code>umask 027</code> verildikten sonra <code>touch rapor.txt</code> ile yaratılan dosyanın izni ne olur? (touch dosya için 666 ister.)</p>
+<ul class="sec"><li>750</li><li>027</li><li>640</li><li>644</li><li>666</li></ul>
+<div class="coz"><p>umask, istenen izinden maskede açık olan bitleri siler: sahip 6'dan hiçbir şey silinmez (0), grup 6'dan w silinir (2) → 4, diğerleri 6'dan her şey silinir (7) → 0; sonuç 640. Laboratuvarda umask 027 ile touch sonrası stat 640 gösterdi. 750 aynı umask ile yaratılan bir dizinin iznidir (777'den başlar). 027 maskenin kendisidir, izin değil. 644 umask 022'nin sonucudur. 666 umask'ın hiç uygulanmadığını varsayar.</p></div></li>
+
+<li data-c="E"><p class="q"><code>ali</code> kullanıcısının sahibi olduğu, izni <code>644</code> olan <code>ali.txt</code>, root'a ait ve izni <code>755</code> olan bir dizinde duruyor. <code>ali</code> bu dosyayı silmek istiyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Silebilir, çünkü dosyanın sahibidir.</li><li>Silebilir, çünkü dosyada sahibin w izni vardır.</li><li>Silemez, çünkü dosyada x izni yoktur.</li><li>Silebilir, ama yalnız dizinde sticky bit açıksa.</li><li>Silemez, çünkü silme dizinin yazma iznine bağlıdır ve diğerlerinin dizinde w'si yoktur.</li></ul>
+<div class="coz"><p>Silmek dizindeki ad listesinden bir satırı kaldırmaktır; bunun için dizinde w (ve x) gerekir. Dizin root'a ait ve 755, ali için diğerleri üçlüsü r-x'tir; w yoktur, silme reddedilir. Dosya sahipliği ve dosyadaki w, içeriği değiştirmeye izin verir, silmeye değil. Dosyadaki x çalıştırmayla ilgilidir. Sticky bit silmeyi kısıtlar, genişletmez; w olmayan dizinde hiçbir işe yaramaz.</p></div></li>
+
+<li data-c="B"><p class="q"><code>/tmp</code> dizininin izni <code>drwxrwxrwt</code> (1777) şeklindedir. Sondaki <code>t</code> ile sağlanan koruma aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Dizindeki dosyalar yeniden başlatmada otomatik silinir.</li><li>Herkes dizine yazabilse de bir dosyayı yalnız sahibi, dizinin sahibi ya da root silebilir veya yeniden adlandırabilir.</li><li>Dizindeki programlar dizin sahibinin kimliğiyle çalışır.</li><li>Dizinde yaratılan dosyalar dizinin grubunu alır.</li><li>Dizindeki dosyaları yalnız sahipleri okuyabilir.</li></ul>
+<div class="coz"><p>t sticky bittir (kısıtlı silme bayrağı): herkesin yazabildiği ortak dizinde kullanıcıların birbirinin dosyasını silmesini ya da adını değiştirmesini önler. Laboratuvarda sticky yokken başka kullanıcı dosyayı sildi, açıkken "Operation not permitted" aldı. Yeniden başlatmada temizlik ayrı bir yapılandırmanın işidir, sticky bitin değil. "Sahibin kimliğiyle çalışma" SUID'dir, "grup mirası" dizinde SGID'dir. Okuma izni dosyanın kendi bitlerine bağlıdır; sticky okumayı etkilemez.</p></div></li>
+
+<li data-c="D"><p class="q">Bir yönetici, sunucusunda beklenmeyen bir yetki yükseltme yolu kalmadığından emin olmak istiyor. Aşağıdakilerden hangisi SUID bitiyle ilgili <strong>en uygun</strong> savunma yaklaşımıdır?</p>
+<ul class="sec"><li>Bütün SUID'li programları silmek; böylece hiçbir risk kalmaz.</li><li>Kendi yazdığı yönetim betiklerine SUID vererek kullanıcıların sudo'ya ihtiyacını ortadan kaldırmak.</li><li>SUID'li dosyaları listelenemeyen (711) bir dizine taşımak.</li><li>SUID'li dosyaların envanterini çıkarmak, beklenmeyenleri incelemek, listeyi düzenli karşılaştırmak ve kullanıcıların yazabildiği bölümleri nosuid ile bağlamak.</li><li>Bütün programları chmod -R 777 ile açarak izin hatalarını önlemek.</li></ul>
+<div class="coz"><p>Doğru savunma envanter ve izlemedir: find … -perm -4000 ile liste çıkarmak, her girişi açıklamak, değişiklikleri izlemek ve kullanıcıların dosya koyabildiği yerlerde SUID'i nosuid ile etkisiz kılmak. Bütün SUID'leri silmek passwd, sudo gibi gerekli araçları bozar. Kendi betiğine SUID vermek tam olarak kaçınılması gereken risktir. Listelenemeyen dizin gizlilik sağlamaz; adı bilinen program yine çalıştırılır. 777 herkese yazma verir ve sorunu büyütür.</p></div></li>
+
+<li data-c="A"><p class="q">Bir şirkette destek ekibinin yalnızca web sunucusu servisini yeniden başlatabilmesi gerekiyor. En az yetki ilkesine göre aşağıdaki sudo yaklaşımlarından hangisi <strong>en doğrudur</strong>?</p>
+<ul class="sec"><li>Ekibe yalnızca o servisi yeniden başlatan, argümanları sabit tek bir komutu sudo ile çalıştırma izni vermek.</li><li>Ekibi sudo grubuna eklemek; nasılsa yalnızca o komutu kullanacaklar.</li><li>Ekibe root parolasını vermek ve işten sonra parolayı değiştirmek.</li><li>Ekibe bir metin düzenleyicisini sudo ile açma izni vermek; servis dosyasını onunla düzenlesinler.</li><li>"Her şey, şu birkaç tehlikeli komut hariç" biçiminde bir kural yazmak.</li></ul>
+<div class="coz"><p>En az yetki, işi yapmaya yetecek en dar izni ister: tek, argümanları sabit bir komut. sudo grubuna eklemek (varsayılan ALL kuralıyla) her şeye izin verir; "kullanmayacaklar" bir güvence değildir. Ortak root parolası hem sınırsız yetki verir hem de günlükte kimin ne yaptığını gizler. Root olarak açılan düzenleyici her dosyayı yazmaya ve başka komut çalıştırmaya imkân verir, fiilen "her şey" demektir. sudoers belgesi, olumsuzlamayla "hepsi hariç şunlar" kurallarının nadiren amaçlandığı gibi çalıştığını uyarır.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Onaltılık (hex) <code>0x2F</code> sayısının onluk ve ikili karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>32 ve 0010 0000</li><li>215 ve 1101 0111</li><li>47 ve 0010 1111</li><li>45 ve 0010 1101</li><li>47 ve 1111 0010</li></ul>
+<div class="coz"><p>Onaltılıkta 2F = 2·16 + 15 = 47 (F = 15). Her hex basamağı dört bite karşılık gelir: 2 = 0010, F = 1111; yan yana 0010 1111. 32 yalnız 0x20'dir, F'yi atlar. 215 ve 1101 0111 onluk/onaltılık karıştırması (0xD7) sonucudur. 45, F'yi 13 sayma hatasıdır. 1111 0010 basamakların yerini değiştirir (0xF2 = 242). Python'da int("2F", 16) ile 47 ve bin(47) ile 0b101111 doğrulanır.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir kullanıcı programı diske bir dosya yazmak istediğinde, bu işi doğrudan donanıma erişerek değil de hangi yolla yaptırır?</p>
+<ul class="sec"><li>Başka bir sürecin belleğine yazarak</li><li>Aygıt sürücüsünü kendi adres uzayına kopyalayarak</li><li>Önyükleme sırasında ayrılan alana doğrudan yazarak</li><li>Kullanıcı modunda kalarak disk denetleyicisine komut göndererek</li><li>Bir sistem çağrısıyla (syscall) çekirdekten bu hizmeti isteyerek</li></ul>
+<div class="coz"><p>Kullanıcı alanındaki programlar donanıma doğrudan erişemez; çekirdek modundaki işletim sisteminden sistem çağrısıyla hizmet ister ve çekirdek isteği denetleyip yerine getirir. Bu ayrım güvenliğin temelidir: çekirdek her istekte yetkiyi kontrol edebilir (bu parçadaki dosya izinleri de tam bu noktada denetlenir). Başka sürecin belleğine yazmak süreç yalıtımı yüzünden mümkün değildir. Sürücüyü kopyalamak ya da kullanıcı modunda donanıma komut göndermek ayrıcalıklı işlemlerdir. Önyükleme alanına doğrudan yazmak da kullanıcı programına açık değildir.</p></div></li>
+
+<li data-c="B" data-k="siber-3"><p class="q">Bir geliştirici, yapılandırma dosyasındaki veritabanı parolasını Base64 ile yazdığı için parolanın "korunduğunu" söylüyor. Aşağıdakilerden hangisi bu düşünceyi doğru değerlendirir?</p>
+<ul class="sec"><li>Doğrudur; Base64 anahtarsız çözülemeyen bir şifrelemedir.</li><li>Yanlıştır; Base64 bir kodlamadır, anahtar gerektirmeden herkes geri çevirebilir, gizlilik sağlamaz.</li><li>Doğrudur; Base64 tek yönlü bir hash'tir, geri çevrilemez.</li><li>Yanlıştır; Base64 yalnızca sıkıştırma yapar, dosya boyutunu küçültür.</li><li>Doğrudur; Base64 çıktısı okunamaz karakterlerden oluştuğu için güvenlidir.</li></ul>
+<div class="coz"><p>Base64, ikili veriyi metin karakterleriyle göstermek için kullanılan bir kodlamadır; algoritması herkese açıktır ve anahtar yoktur, bu yüzden herkes anında geri çevirebilir. Kodlama, şifreleme ve hash üç ayrı şeydir. Şifreleme anahtar ister (A yanlış), hash tek yönlüdür ama Base64 tamamen geri çevrilebilir (C yanlış). Base64 boyutu küçültmez, yaklaşık üçte bir büyütür (D yanlış). Çıktısının tuhaf görünmesi gizlilik değildir; tam bu "yanlış güven duygusu" Parça 3'ün uyarısıdır.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Uzantısı <code>.jpg</code> olan bir dosyanın gerçekte ne tür olduğunu anlamak için aşağıdakilerden hangisine bakmak <strong>en güvenilir</strong> yoldur?</p>
+<ul class="sec"><li>Dosyanın başındaki sihirli baytlara (magic bytes)</li><li>Dosya adındaki uzantıya</li><li>Dosyanın boyutuna</li><li>Dosyanın son değiştirilme tarihine</li><li>Dosyanın bulunduğu dizinin adına</li></ul>
+<div class="coz"><p>Birçok dosya biçimi, içeriğin en başına sabit bir bayt dizisi (sihirli bayt) koyar; türü içerikten tanımanın yolu budur ve file gibi araçlar bunu kullanır. Uzantı yalnızca adın bir parçasıdır, herkes istediği gibi değiştirebilir; bu yüzden güvenlikte tek başına güvenilmez. Boyut, tarih ve dizin adı türle ilgili bir bilgi vermez. Bu ayrım web parçalarındaki dosya yükleme denetiminde (Parça 22) yeniden kullanılacak.</p></div></li>
+
+<li data-c="D" data-k="siber-4"><p class="q">Laboratuvar sanal makinesinde bir deneme yapmadan önce anlık görüntü (snapshot) almanın temel yararı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Sanal makinenin ana makineden daha hızlı çalışmasını sağlar.</li><li>Sanal makineyi internete güvenle açmayı mümkün kılar.</li><li>Sanal makinenin diskini şifreler.</li><li>Deneme sistemi bozarsa makineyi görüntünün alındığı ana tek adımda geri döndürmeyi sağlar.</li><li>Sanal makineyi bir konteynere dönüştürür.</li></ul>
+<div class="coz"><p>Anlık görüntü, sanal makinenin belirli bir andaki durumunu kaydeder; deneme bir şeyi bozarsa o ana geri dönülür. Laboratuvarın güvenli olmasının bir dayanağı budur. Görüntü hızı artırmaz, ağ yalıtımı sağlamaz (o, ağ ayarının işidir), şifreleme yapmaz. VM ile konteyner farklı yalıtım biçimleridir; görüntü birini ötekine çevirmez. Görüntünün yedeğin yerini tutmadığını da hatırla: aynı diskte dururlar.</p></div></li>
+
+<li data-c="C" data-k="siber-4"><p class="q">Laboratuvar sanal makinesinin ağ ayarı için "yalnız-host" (host-only) ya da yalıtık bir ağ seçilmesinin gerekçesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Sanal makinenin internetten güncelleme indirmesini hızlandırmak</li><li>Sanal makineye ana makineden daha fazla bellek ayırmak</li><li>Denemelerin etkisini ana makine ile laboratuvar arasında tutup ev ağına ve internete yayılmasını önlemek</li><li>Sanal makinenin ana makinenin dosyalarını doğrudan okuyabilmesini sağlamak</li><li>Hipervizörü tip 2'den tip 1'e çevirmek</li></ul>
+<div class="coz"><p>Yalnız-host ya da yalıtık ağ, sanal makinenin yalnızca ana makineyle (ya da öbür laboratuvar makineleriyle) konuşabildiği kapalı bir ağdır; denemeler ev ağındaki başka cihazlara ve internete taşmaz, böylece hem güvenlik hem yasal sınır korunur. Bu ayar internete erişimi hızlandırmaz, tersine keser. Bellek ayırma ve hipervizör türü ağ ayarıyla ilgili değildir. Ana makinenin dosyalarına doğrudan erişim yalıtımı zayıflatır, amacın tersidir.</p></div></li>
+
+<li data-c="E" data-k="siber-5"><p class="q">Linux dosya sistemi hiyerarşisinde sistem genelindeki yapılandırma dosyalarının (ör. kullanıcı listesi, hizmet ayarları) bulunduğu yer aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><code>/tmp</code></li><li><code>/home</code></li><li><code>/proc</code></li><li><code>/var</code></li><li><code>/etc</code></li></ul>
+<div class="coz"><p>Sistem genelindeki yapılandırma /etc altında, çoğunlukla düz metin dosyalarında durur; bu parçadaki /etc/passwd, /etc/shadow ve /etc/sudoers buna örnektir. /tmp geçici dosyalar içindir ve herkes yazabilir. /home kullanıcıların ev dizinleridir; oradaki gizli dosyalar kişisel yapılandırmadır, sistem geneli değil. /proc çekirdeğin süreç ve sistem bilgisini dosya gibi gösterdiği sanal bir dosya sistemidir. /var değişken veriler (günlükler, kuyruklar, önbellekler) içindir.</p></div></li>
+
+<li data-c="A" data-k="siber-5"><p class="q">Paket yöneticisi bir yazılımı resmî depodan kurarken paketin dijital imzasını doğrular. Bu doğrulamanın asıl amacı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Paketin gerçekten depo sahibinden geldiğini ve yolda değiştirilmediğini güvenceye almak</li><li>Paketin indirilmesini hızlandırmak</li><li>Paketin boyutunu küçültmek</li><li>Paketin içeriğini gizli tutmak</li><li>Paketi kuran kullanıcının parolasını doğrulamak</li></ul>
+<div class="coz"><p>İmza doğrulama, paketin kaynağını (güvendiğin deponun anahtarıyla imzalanmış olduğunu) ve bütünlüğünü (imzadan sonra değişmediğini) güvenceye alır; araya giren biri paketi değiştirirse imza tutmaz. İmza hızla ya da boyutla ilgili değildir. Gizlilik sağlamaz; paket içeriği herkese açık olabilir, imza yalnız kimlik ve bütünlük kanıtıdır. Kullanıcı parolasını doğrulamak sudo'nun işidir, paket imzasının değil. İmzanın matematiği kripto parçalarında (Parça 26).</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-5">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-6">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-7">Sonraki parça: Süreçler, hizmetler ve zamanlanmış görevler →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+<li>"Linux dosya izinleri chmod chown anlatım"</li>
+<li>"Linux permissions explained rwx octal umask"</li>
+<li>"SUID SGID sticky bit explained"</li>
+<li>"sudo sudoers least privilege Linux"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+<li>Bütün komutlar Ubuntu 24.04.5 LTS laboratuvar ortamında (çekirdek 6.18, coreutils, sudo 1.9.15p5) <code>/tmp/yazar/siber-6/</code> altındaki betiklerle (<code>deneme1.sh</code>–<code>deneme7.sh</code>) gerçekten çalıştırıldı; çıktılar birebir aktarıldı. Ortam root olarak açıldığı için denemeler root ile hazırlandı; "başka kullanıcı" denemeleri <code>setpriv --reuid … --regid …</code> ile <code>nobody</code> (65534) ve <code>ubuntu</code> (1000) kimliğine geçilerek yapıldı. Metindeki kod blokları bu betiklerin sadeleştirilmiş hâlidir (kimlik değişim öneki ve başlık satırları ayrıca anıldı). Zaman damgaları, boyutlar ve makine adı (<code>vm</code>) ortama özgüdür; sendeki çıktı farklı olabilir.</li>
+<li>SUID gösterimi, sistemin <code>id</code> programının deneme klasöründeki bir kopyasıyla yapıldı; bit hemen kaldırıldı ve kopya silindi. Metinde yetki yükseltme yalnız neden mümkün olduğu ve nasıl önlendiği düzeyinde anlatıldı; hiçbir istismar adımı, araç ya da hedef verilmedi.</li>
+<li>chmod sayısal gösterimi (ilk basamak SUID 4, SGID 2, sticky 1), sticky bitin "kısıtlı silme bayrağı" olarak ayrıcalıksız kullanıcıların dizindeki dosyayı silmesini/yeniden adlandırmasını önlemesi, chmod'un dizinlerde SUID/SGID'i açıkça istenmedikçe koruması: chmod(1) man sayfası (man7.org). S_ISUID/S_ISGID/S_ISVTX anlamları, dizinde x'in "arama" izni olması, yazmada SUID/SGID'in bazı dosya sistemlerinde düşürülebilmesi: chmod(2) man sayfası (man7.org).</li>
+<li><code>/etc/shadow</code> alanlarının sırası ve <code>!</code> ile başlayan parola alanının kilitli parola anlamına gelmesi: shadow(5) man sayfası (man7.org). <code>*</code> için belge yalnızca "geçerli bir crypt sonucu olmayan değer" örneği verir; bu yüzden metinde "parolayla girilemez" diye genel biçimde yazıldı.</li>
+<li>sudoers satır biçimi ("kim nerede = (kimin adına) ne"), <code>%</code> ile grup, <code>ALL</code> kullanımının tehlikesi, olumsuzlamalı kuralların nadiren amaçlandığı gibi çalışması, düzenleyici/sayfalayıcı gibi kabuk kaçışına izin veren komutlara dair uyarılar, NOPASSWD etiketi: Ubuntu noble sudoers(5) man sayfası. Metinde NOPASSWD'ye girilmedi.</li>
+<li>Hafızadan yazılıp ayrıca resmî belgeyle doğrulanmayanlar: sudo kullanımının Ubuntu'da varsayılan olarak syslog üzerinden <code>/var/log/auth.log</code>'a ve journal'a düşmesi; sahiplik değiştirmenin Linux'ta root'a (CAP_CHOWN) özgü olması; sistem kullanıcılarının Ubuntu'da 1000 altındaki UID'lerle açılması; umask'ın bit maskelemesi (deneyle doğrulandı, man sayfasıyla ayrıca karşılaştırılmadı); <code>nosuid</code> bağlama seçeneğinin etkisi (bu ortamda denenmedi). Bunlar yaygın ve yerleşik bilgilerdir, ama kesin ayrıntı için ilgili man sayfasına (sudo(8), chown(2), mount(8), umask(2)) bakılmalıdır.</li>
+<li>Quiz'deki hesaplar (640, 754, umask 027 → 640, 0x2F = 47 = 0010 1111) çalıştırılarak ya da elle iki kez denetlendi; 754 ve umask 027 sonuçları laboratuvarda <code>stat</code> ile alındı.</li>
+<li>ACL'ler, Linux yetenekleri (capabilities), SELinux/AppArmor gibi ek erişim denetimleri bu parçanın kapsamı dışında bırakıldı; metinde anılmadı.</li>
+</ul>
+</div>
+</div>
+</article>

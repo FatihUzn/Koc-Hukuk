@@ -1,0 +1,489 @@
+<article class="chapter ders" id="c-siber-1">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 1 · Donanım, ikili sistem, bellek</div>
+<h1>Bilgisayar nasıl çalışır: donanım, ikili sistem ve bellek</h1>
+<p class="time">Okuma ve çözme yaklaşık 50 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir parola, bir fotoğraf, bir program ve bir web sayfası; hepsi aynı makinenin içinde, aynı tür parçalarda duruyor. Bilgisayar bunları nasıl birbirinden ayırıyor, neyi nerede tutuyor ve bir saldırganın ya da savunmacının "belleğe bakmak", "diske bakmak" derken baktığı şey tam olarak ne?</p></div>
+<p class="hint">Bu, siber güvenlik rafının ilk parçası; öncesinde bu raftan bilmen gereken bir şey yok. Kod rafını okuduysan Python'ın etkileşimli kabuğunu (kod rafı Parça 1) ve metnin baytlara dönüşmesini (kod rafı Parça 3) hatırlaman işine yarar; okumadıysan da bu parça kendi başına anlaşılır. Örnekleri yalnızca kendi bilgisayarında çalıştır.</p>
+
+<h2 class="s">Önce büyük resim: güvenlik neden donanımdan başlar?</h2>
+
+<p>Siber güvenlik denince akla çoğu zaman parolalar, virüsler ya da ekranda akan yeşil yazılar gelir. Oysa bütün bu konuların altında tek bir soru yatar: <strong>bir bilgi bilgisayarın içinde nerede duruyor ve kim ona ulaşabiliyor?</strong> Bir parolayı çalmak, bir dosyayı silmek, bir programı kandırmak; hepsi sonunda bellekte ya da diskte duran bir dizi bitin okunması ya da değiştirilmesidir. Bu bitlerin nerede yaşadığını, ne kadar süre yaşadığını ve nasıl adreslendiğini bilmeyen biri güvenliği ancak ezberler, anlayamaz.</p>
+
+<p>Bu yüzden raf, saldırılarla değil makinenin kendisiyle başlıyor. Bu parçada sırasıyla şunları kuracağız: bir bilgisayarın parçaları ve her birinin işi; işlemcinin bir komutu nasıl yürüttüğü (getir-çöz-yürüt döngüsü); neden her şeyin ikili, yani sıfır ve birlerden oluştuğu; ikili, onluk ve onaltılık sayı sistemleri ve aralarında dönüşüm; bellek hiyerarşisi ve hız ile boyut arasındaki ödünleşim; uçucu ve kalıcı bellek farkı; adres kavramı; son olarak bir dosyanın diskte ve bir programın bellekte nasıl göründüğü. Sonraki parça, bu donanımı yöneten işletim sistemine geçecek; orada göreceğin "her sürecin kendi bellek alanı" fikri burada kuracağımız adres kavramının üstüne oturur.</p>
+
+<p>Bir uyarıyla başlayalım, çünkü bütün raf boyunca geçerli: bu rafta yapacağın her deneme <strong>yalnızca kendi bilgisayarında ya da açıkça izin verilmiş bir laboratuvarda</strong> yapılır. Bu parçadaki örnekler zaten yalnızca kendi makinenin donanımını ve kendi yazdığın küçük dosyaları inceler; başka hiçbir sisteme dokunmaz. Neden bu sınırın yasal bir zorunluluk olduğunu rafın sonundaki hukuk parçalarında (41–43) ayrıntısıyla göreceğiz.</p>
+
+<h2 class="s">1. Bilgisayarın parçaları ve her birinin işi</h2>
+
+<p>Bir bilgisayarı en sade hâliyle şöyle düşün: bir yerden <strong>veri</strong> alır, onu bir <strong>talimat listesine</strong> göre işler, sonucu bir yere koyar. Bunu yapmak için birbirinden çok farklı hızlarda ve boyutlarda çalışan parçalar bir arada çalışır. Bu parçaların her biri ayrı bir iş için vardır ve güvenlik açısından her birinin ayrı bir önemi vardır.</p>
+
+<p><strong>İşlemci (CPU, merkezî işlem birimi)</strong> hesap yapan ve kararı veren parçadır. İki sayıyı toplar, iki değeri karşılaştırır, bir sonraki talimata ya da başka bir yere atlar. İşlemcinin içinde <strong>yazmaç</strong> (register) denen, sayısı az ama son derece hızlı küçük saklama hücreleri bulunur; işlemci o anda üzerinde çalıştığı değerleri burada tutar. Bugünkü işlemcilerin çoğunda birden çok <strong>çekirdek</strong> vardır; her çekirdek kendi talimat akışını yürütebilen bağımsız bir işlem birimidir.</p>
+
+<p><strong>Ana bellek (RAM)</strong> işlemcinin çalışma masasıdır. Açık programlar, düzenlediğin belge, tarayıcıdaki sayfa ve o an kullanılan her veri buradadır. RAM, işlemciye göre yavaş ama diske göre çok hızlıdır. En önemli özelliği <strong>uçucu</strong> olmasıdır: elektrik kesildiğinde içeriği kaybolur.</p>
+
+<p><strong>Kalıcı saklama</strong> (SSD ya da sabit disk, HDD) bilgisayar kapandığında da kalması gereken her şeyi tutar: işletim sistemi, programların dosyaları, belgelerin, fotoğrafların. RAM'den çok daha büyük ve çok daha yavaştır.</p>
+
+<p><strong>Anakart</strong> bütün bu parçaların takıldığı ve birbirine bağlandığı devre kartıdır. Parçalar arasında veriyi taşıyan yolları (veriyolu, bus) ve bilgisayar açılırken ilk çalışan küçük yazılımı (bugün çoğunlukla UEFI denen ürün yazılımı) taşır. Açılışın ayrıntısı Parça 2'nin konusudur.</p>
+
+<p><strong>Giriş-çıkış (I/O) aygıtları</strong> bilgisayarın dış dünyayla konuştuğu yerdir: klavye, fare, ekran, ağ kartı, USB girişleri, mikrofon, kamera. Güvenlik açısından bu çok önemli bir noktadır, çünkü dışarıdan gelen her şey bu kapılardan girer. Ağ kartı, internetten gelen veriyi; USB girişi, tanımadığın bir bellekten gelen dosyayı içeri alır. Bir sistemi korurken ilk sorulan sorulardan biri "veri hangi kapıdan giriyor?" sorusudur; rafın ilerisinde buna <strong>saldırı yüzeyi</strong> diyeceğiz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İşlemci</strong> talimatları yürütür, <strong>RAM</strong> o an kullanılan veriyi ve programları geçici olarak tutar, <strong>kalıcı saklama</strong> (SSD/HDD) veriyi elektrik olmadan da saklar, <strong>anakart</strong> parçaları birbirine bağlar, <strong>giriş-çıkış aygıtları</strong> bilgisayarı dış dünyaya bağlar. Bir program çalışmadan önce diskten RAM'e yüklenir; işlemci onu RAM'den okuyarak yürütür.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Bilgisayarın parçaları: işlemci, RAM, disk ve giriş-çıkış aygıtları anakart üzerindeki yollarla bağlı">
+  <rect class="sv-k" x="10" y="10" width="380" height="280" rx="12" />
+  <text class="sv-s" x="200" y="30" text-anchor="middle">anakart</text>
+  <rect class="sv-l" x="30" y="50" width="150" height="80" rx="8" />
+  <text class="sv-b" x="105" y="80" text-anchor="middle">İşlemci (CPU)</text>
+  <text class="sv-s" x="105" y="100" text-anchor="middle">yazmaçlar</text>
+  <text class="sv-s" x="105" y="116" text-anchor="middle">önbellek</text>
+  <rect class="sv-m" x="220" y="50" width="150" height="80" rx="8" />
+  <text class="sv-b" x="295" y="85" text-anchor="middle">RAM</text>
+  <text class="sv-s" x="295" y="105" text-anchor="middle">uçucu çalışma alanı</text>
+  <line class="sv-cl" x1="180" y1="90" x2="220" y2="90" />
+  <line class="sv-c" x1="105" y1="130" x2="105" y2="170" />
+  <line class="sv-c" x1="295" y1="130" x2="295" y2="170" />
+  <line class="sv-c" x1="105" y1="170" x2="295" y2="170" />
+  <line class="sv-c" x1="200" y1="170" x2="200" y2="190" />
+  <text class="sv-s" x="215" y="185">veriyolu</text>
+  <rect class="sv-a" x="30" y="200" width="150" height="70" rx="8" />
+  <text class="sv-b" x="105" y="230" text-anchor="middle">SSD / HDD</text>
+  <text class="sv-s" x="105" y="250" text-anchor="middle">kalıcı saklama</text>
+  <rect class="sv-k" x="220" y="200" width="150" height="70" rx="8" />
+  <text class="sv-b" x="295" y="225" text-anchor="middle">Giriş-çıkış</text>
+  <text class="sv-s" x="295" y="245" text-anchor="middle">klavye, ekran,</text>
+  <text class="sv-s" x="295" y="260" text-anchor="middle">ağ kartı, USB</text>
+  <line class="sv-c" x1="105" y1="190" x2="295" y2="190" />
+  <line class="sv-c" x1="105" y1="190" x2="105" y2="200" />
+  <line class="sv-c" x1="295" y1="190" x2="295" y2="200" />
+</svg>
+<figcaption>Parçaların hepsi anakart üzerindeki yollarla bağlıdır. İşlemci ile RAM arasındaki yol en yoğun kullanılan yoldur (kalın çizgi). Disk ve giriş-çıkış aygıtları daha yavaştır; dışarıdan gelen her veri giriş-çıkış kapılarından içeri girer.</figcaption>
+</figure>
+
+<p>Kendi makinende bu parçaların özelliklerini görebilirsin. Aşağıdaki iki komut Linux'ta işlemciyi ve belleği tanıtır; yalnızca kendi bilgisayarın hakkında bilgi verir, hiçbir şeyi değiştirmez.</p>
+
+<pre class="kod" data-ad="bash">lscpu | grep -iE 'model name|^CPU\(s\)|L1d|L2|L3|Byte Order'
+free -h</pre>
+<pre class="cikti">Byte Order:                              Little Endian
+CPU(s):                                  2
+Model name:                              Intel(R) Xeon(R) Processor @ 2.10GHz
+L1d cache:                               96 KiB (2 instances)
+L2 cache:                                4 MiB (2 instances)
+L3 cache:                                260 MiB (1 instance)
+               total        used        free      shared  buff/cache   available
+Mem:           7.8Gi       594Mi       7.1Gi        14Mi       368Mi       7.3Gi
+Swap:             0B          0B          0B</pre>
+
+<p>Bu çıktı bu parçanın yazıldığı sanal makineden alındı; senin bilgisayarında işlemci modeli, çekirdek sayısı ve bellek boyutu farklı çıkacak, çünkü bunlar donanıma bağlıdır. Satırları tek tek oku: "CPU(s): 2" iki işlem birimi olduğunu, "L1d", "L2", "L3" satırları işlemcinin üç kat önbelleğini (aşağıda göreceğiz), "Mem" satırı ise toplam RAM'i gösteriyor. "Byte Order: Little Endian" satırını şimdilik aklında tut; parçanın sonuna doğru ne anlama geldiğini göreceğiz. Windows kullanıyorsan aynı bilgileri Görev Yöneticisi'nin Performans sekmesinde bulursun.</p>
+
+<h2 class="s">2. İşlemci bir komutu nasıl yürütür: getir-çöz-yürüt</h2>
+
+<p>İşlemci zeki değildir; son derece hızlı ama son derece basit bir işi tekrar tekrar yapar. Bir program, işlemcinin anladığı küçük talimatların (makine komutlarının) bir listesidir ve bu liste RAM'de durur. İşlemci bu listeyi bir döngüyle işler. Buna <strong>komut döngüsü</strong> ya da <strong>getir-çöz-yürüt döngüsü</strong> (fetch-decode-execute) denir.</p>
+
+<p>Döngünün kalbinde <strong>program sayacı</strong> (program counter; x86 işlemcilerde "instruction pointer" adıyla da geçer) denen özel bir yazmaç vardır. Bu yazmaç, sıradaki talimatın RAM'deki <strong>adresini</strong> tutar. Döngü şöyle işler:</p>
+
+<p><strong>Getir (fetch):</strong> İşlemci program sayacının gösterdiği adresteki talimatı bellekten okur ve program sayacını bir sonraki talimatı gösterecek şekilde ilerletir.</p>
+<p><strong>Çöz (decode):</strong> Okunan bitlerin hangi işi anlattığı çözülür: "toplama mı, karşılaştırma mı, atlama mı; hangi yazmaçlar, hangi adres?"</p>
+<p><strong>Yürüt (execute):</strong> İş yapılır. Sonuç bir yazmaca ya da belleğe yazılır. Talimat bir "atlama" ise program sayacına yeni bir adres yazılır; işlemci bir sonraki turda oradan devam eder.</p>
+
+<p>Sonra döngü baştan başlar ve saniyede milyarlarca kez döner. İşlemcinin "2,10 GHz" gibi hız değeri, saniyedeki saat vuruşu sayısını anlatır; bir talimatın kaç vuruş sürdüğü talimata ve işlemciye göre değişir. Gerçek işlemciler bu döngüyü çok daha karmaşık biçimde (birden çok talimatı aynı anda farklı aşamalarda, hatta sıra dışı) yürütür, ama kavram olarak döngü budur ve güvenliği anlamak için yeterlidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>İşlemci, <strong>program sayacının</strong> gösterdiği adresten talimatı <strong>getirir</strong>, ne olduğunu <strong>çözer</strong>, <strong>yürütür</strong> ve bir sonraki talimata geçer. Programın akışını belirleyen şey, program sayacına hangi adresin yazıldığıdır.</p></div>
+
+<p>Bu son cümle neden bu kadar önemli? Çünkü işlemci, bellekteki bitlerin "talimat" mı yoksa "veri" mi olduğunu kendi başına bilemez. Program sayacı nereyi gösterirse oradaki bitleri talimat olarak yorumlar. Bu tasarımda programlar ve veriler aynı bellekte durur (bilgisayar biliminde bu fikir von Neumann mimarisi adıyla anılır). Güvenlikte çok sayıda tehlikeli açığın temelinde tam olarak bu yatar: bir programın akışı, kontrolü saldırganın elindeki bir adrese kayarsa, işlemci oradaki veriyi talimat sanıp yürütebilir. Kod rafı Parça 30'da tampon taşmasını kavram olarak göreceksin; orada, bir dizinin sınırının denetlenmemesinin komşu belleği bozabileceğini ve bunun neden bu kadar ciddi olduğunu bu döngüye bağlayacaksın. Bugünkü işletim sistemleri ve işlemciler buna karşı katmanlı savunmalar kullanır; örneğin bellek bölgelerini "yalnız veri, yürütülemez" olarak işaretlemek. Bu savunmaların ayrıntısı Parça 2'de ve kod rafının bellek parçalarında gelecek.</p>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="Getir, çöz, yürüt adımlarından oluşan döngü ve döngünün merkezinde program sayacı">
+  <rect class="sv-l" x="140" y="15" width="120" height="50" rx="10" />
+  <text class="sv-b" x="200" y="38" text-anchor="middle">1. Getir</text>
+  <text class="sv-s" x="200" y="55" text-anchor="middle">adresten talimatı oku</text>
+  <rect class="sv-m" x="265" y="150" width="125" height="50" rx="10" />
+  <text class="sv-b" x="327" y="173" text-anchor="middle">2. Çöz</text>
+  <text class="sv-s" x="327" y="190" text-anchor="middle">bu bitler ne iş?</text>
+  <rect class="sv-a" x="10" y="150" width="125" height="50" rx="10" />
+  <text class="sv-b" x="72" y="173" text-anchor="middle">3. Yürüt</text>
+  <text class="sv-s" x="72" y="190" text-anchor="middle">hesapla, yaz, atla</text>
+  <line class="sv-cl" x1="260" y1="55" x2="310" y2="150" />
+  <line class="sv-cl" x1="265" y1="185" x2="135" y2="185" />
+  <line class="sv-cl" x1="90" y1="150" x2="140" y2="55" />
+  <polygon class="sv-k" points="310,150 298,140 312,136" />
+  <polygon class="sv-k" points="135,185 147,178 147,192" />
+  <polygon class="sv-k" points="140,55 128,62 142,68" />
+  <rect class="sv-k" x="150" y="95" width="100" height="40" rx="6" />
+  <text class="sv-t" x="200" y="113" text-anchor="middle">program</text>
+  <text class="sv-t" x="200" y="128" text-anchor="middle">sayacı</text>
+  <text class="sv-s" x="200" y="230" text-anchor="middle">atlama talimatı program sayacına yeni adres yazar;</text>
+  <text class="sv-s" x="200" y="246" text-anchor="middle">döngü saniyede milyarlarca kez döner</text>
+</svg>
+<figcaption>Komut döngüsü. Ortadaki program sayacı, getirilecek bir sonraki talimatın adresini tutar. İşlemci bitlerin talimat mı veri mi olduğunu kendiliğinden ayırmaz; program sayacının gösterdiği yeri talimat sayar. Bu yüzden akışın kontrolü güvenliğin temel sorularından biridir.</figcaption>
+</figure>
+
+<h2 class="s">3. Neden her şey ikili: bit ve bayt</h2>
+
+<p>Bilgisayarın en küçük bilgi birimi <strong>bit</strong>tir (İngilizce "binary digit", ikili basamak). Bir bit yalnızca iki değer alabilir: 0 ya da 1. Neden on değil de iki? Çünkü bir elektronik devrede iki durumu birbirinden ayırmak çok kolay ve çok güvenilirdir: bir hatta gerilim ya "yüksek" ya "düşük", bir transistör ya "iletiyor" ya "iletmiyor", bir manyetik bölge ya bir yöne ya öbür yöne dönük. On farklı gerilim düzeyini ayırt etmeye çalışsaydık, en küçük elektriksel gürültü 6'yı 7'ye çevirirdi. İki uç değer arasında ise geniş bir güvenlik payı vardır; gürültü "yüksek"i kolay kolay "düşük"e çeviremez. Yani ikili sistem bir tercih değil, güvenilir ve ucuz donanım yapmanın sonucudur.</p>
+
+<p>Tek bit çok az şey anlatır, bu yüzden bitler gruplanır. Sekiz bitlik gruba <strong>bayt</strong> (byte) denir. Bugünkü bilgisayarlarda bellek bayt bayt adreslenir: her baytın kendi adresi vardır. Bir baytla kaç farklı değer anlatılabilir? Her bit iki değer alır ve bitler birbirinden bağımsızdır; sekiz bit için 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = 2<sup>8</sup> = 256 farklı dizilim vardır. Bu yüzden bir bayt 0'dan 255'e kadar bir sayıyı tutabilir. Genel kural: <strong>n bit, 2<sup>n</sup> farklı değer</strong> anlatır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>1 bayt = 8 bit. <strong>n bit 2<sup>n</sup> farklı değer</strong> anlatabilir; işaretsiz bir sayı olarak bu, 0'dan 2<sup>n</sup> − 1'e kadardır. 8 bit: 0–255; 16 bit: 0–65.535; 32 bit: 0–4.294.967.295.</p></div>
+
+<p>Burada çok önemli bir nokta var: <strong>bitlerin kendi başına anlamı yoktur.</strong> 01000001 dizisi bir sayı olarak okunursa 65'tir; metin olarak okunursa (ASCII'de) "A" harfidir; bir resmin içinde ise bir pikselin renk değerinin bir parçası olabilir; işlemci onu talimat olarak okursa bambaşka bir şey olur. Anlamı belirleyen, bitleri <strong>kimin, hangi kurala göre okuduğudur</strong>. Parça 3'te karakter kodlamasını, dosya biçimlerini ve bir dosyanın türünün nasıl anlaşıldığını görürken bu fikre geri döneceğiz; güvenlikte birçok karışıklık, aynı baytların farklı yerlerde farklı yorumlanmasından doğar.</p>
+
+<p>Sınırlı sayıda bitin bir sonucu daha var: bir sayaç tutabileceği en büyük değeri aşarsa ne olur? 8 bitlik bir hücrede 255'e 1 eklersen sonuç 256 olamaz, çünkü 256 dokuz bit ister. Fazla bit atılır ve hücre 0'a döner. Buna <strong>taşma</strong> (overflow) denir. Python'ın kendi tam sayıları sınırsız büyüyebildiği için bunu Python'da görmek için sonucu 8 bite elle kırpmamız gerekir:</p>
+
+<pre class="kod" data-ad="python3 -I tasma.py">sayac = 255
+yeni = (sayac + 1) &amp; 0xFF
+print(sayac, "+ 1 =", yeni, "(8 bitte)")
+print(2**8, 2**16, 2**32)</pre>
+<pre class="cikti">255 + 1 = 0 (8 bitte)
+256 65536 4294967296</pre>
+
+<p><code>&amp; 0xFF</code> işlemi sonucun yalnızca en düşük 8 bitini bırakır; bu, 8 bitlik bir donanım hücresinin yaptığını taklit eder. Taşma, C gibi sabit boyutlu tam sayı kullanan dillerde gerçek bir hata kaynağıdır: bir uzunluk hesabı taşıp çok küçük bir sayıya dönerse, program gereğinden küçük bir alan ayırıp sonra o alana sığmayacak kadar veri yazabilir. Savunması, sınır değerlerini önceden denetlemek ve dilin ya da derleyicinin taşma denetimi olanaklarını kullanmaktır; ayrıntısı kod rafının C parçalarındadır (Parça 26–30).</p>
+
+<p>Bayttan büyük birimler de var ve burada sık bir karışıklık yaşanır. Uluslararası Elektroteknik Komisyonu (IEC) iki ayrı ön ek takımı tanımlamıştır: onluk ön ekler (kilo = 1.000, mega = 1.000.000, giga = 10<sup>9</sup>) ve ikili ön ekler (kibi = 1.024, mebi = 1.024<sup>2</sup>, gibi = 1.024<sup>3</sup>). Disk üreticileri kutuya genellikle onluk birimi yazar; bazı işletim sistemleri ise ikili birimle hesaplayıp yine de "GB" yazar. Bu yüzden "500 GB" diye satılan bir disk, ikili birimle yaklaşık 465,7 GiB görünür; kaybolan bir şey yoktur, yalnızca iki farklı ölçü vardır. Yukarıdaki <code>lscpu</code> çıktısında "KiB", "MiB" yazması bu ikili birimlerin kullanıldığını gösteriyor; <code>free -h</code> çıktısındaki "Gi" de aynı şekilde gibibayt demektir.</p>
+
+<div class="tablo"><table>
+<tr><th>Birim</th><th>Onluk (SI)</th><th>İkili (IEC)</th><th>Fark</th></tr>
+<tr><td>kilo / kibi</td><td>1 kB = 1.000 bayt</td><td>1 KiB = 1.024 bayt</td><td>%2,4</td></tr>
+<tr><td>mega / mebi</td><td>1 MB = 10<sup>6</sup> bayt</td><td>1 MiB = 1.048.576 bayt</td><td>%4,9</td></tr>
+<tr><td>giga / gibi</td><td>1 GB = 10<sup>9</sup> bayt</td><td>1 GiB = 1.073.741.824 bayt</td><td>%7,4</td></tr>
+</table></div>
+
+<h2 class="s">4. Sayı sistemleri: ikili, onluk, onaltılık</h2>
+
+<p>Günlük hayatta kullandığımız <strong>onluk</strong> sistemde on rakam vardır (0–9) ve her basamak bir öncekinin on katı değerindedir. 347 sayısı aslında 3 × 100 + 4 × 10 + 7 × 1'dir; basamak değerleri sağdan sola 10<sup>0</sup>, 10<sup>1</sup>, 10<sup>2</sup> diye gider. Bu fikre <strong>konumsal sayı sistemi</strong> denir: bir rakamın değeri, hangi konumda durduğuna bağlıdır. Burada "on" sayısının özel bir yanı yoktur; muhtemelen on parmağımız olduğu için seçilmiştir. Aynı düzen herhangi bir taban için kurulabilir.</p>
+
+<p><strong>İkili</strong> (taban 2) sistemde yalnızca iki rakam vardır, 0 ve 1, ve basamak değerleri sağdan sola 1, 2, 4, 8, 16, 32, 64, 128 diye ikişer kat büyür. 11001000 ikili sayısı şöyle okunur: en soldaki 1, 128'lik basamakta; sonraki 1, 64'lük basamakta; sonra iki sıfır; sonra 8'lik basamakta bir 1; sonra üç sıfır. Toplam 128 + 64 + 8 = 200.</p>
+
+<p><strong>Onaltılık</strong> (hex, taban 16) sistemde on altı rakam gerekir. 0–9'dan sonra gelen altı rakam için harf kullanılır: A = 10, B = 11, C = 12, D = 13, E = 14, F = 15. Basamak değerleri 1, 16, 256, 4.096 diye on altışar kat büyür. Neden bu sistem güvenlikte ve programlamada bu kadar yaygın? Çünkü 16 = 2<sup>4</sup>'tür; yani <strong>bir onaltılık rakam tam olarak dört biti</strong> anlatır. Bir bayt sekiz bit olduğuna göre <strong>bir bayt tam iki onaltılık rakamla</strong> yazılır: 00'dan FF'ye. İkili gösterim insan gözü için çok uzun ve yorucudur (11001000), onluk gösterim ise bit yapısını gizler (200). Onaltılık ikisinin arasında ideal bir orta yoldur: kısa (C8) ve her rakamı doğrudan dört bite karşılık gelir. Bellek adresleri, renk kodları, ağ kartı adresleri (MAC, Parça 12), hash değerleri (Parça 3 ve 25) hep onaltılık yazılır.</p>
+
+<p>Yazarken hangi tabanda olduğunu belli etmek gerekir; "10" onlukta on, ikilide iki, onaltılıkta on altıdır. Programlama dillerinde bunun için ön ek kullanılır: <code>0b</code> ikili, <code>0x</code> onaltılık, Python'da <code>0o</code> sekizlik (sekizlik sistemi Parça 6'daki dosya izinlerinde göreceksin). Metin içinde bazen alt indis kullanılır: 1010<sub>2</sub>, C8<sub>16</sub>.</p>
+
+<div class="tablo"><table>
+<tr><th>Onluk</th><th>İkili (4 bit)</th><th>Onaltılık</th><th>Onluk</th><th>İkili (4 bit)</th><th>Onaltılık</th></tr>
+<tr><td>0</td><td>0000</td><td>0</td><td>8</td><td>1000</td><td>8</td></tr>
+<tr><td>1</td><td>0001</td><td>1</td><td>9</td><td>1001</td><td>9</td></tr>
+<tr><td>2</td><td>0010</td><td>2</td><td>10</td><td>1010</td><td>A</td></tr>
+<tr><td>3</td><td>0011</td><td>3</td><td>11</td><td>1011</td><td>B</td></tr>
+<tr><td>4</td><td>0100</td><td>4</td><td>12</td><td>1100</td><td>C</td></tr>
+<tr><td>5</td><td>0101</td><td>5</td><td>13</td><td>1101</td><td>D</td></tr>
+<tr><td>6</td><td>0110</td><td>6</td><td>14</td><td>1110</td><td>E</td></tr>
+<tr><td>7</td><td>0111</td><td>7</td><td>15</td><td>1111</td><td>F</td></tr>
+</table></div>
+
+<p>Bu tabloyu ezberlemen gerekmez ama birkaç kez kendi elinle yazarsan birkaç gün içinde kendiliğinden oturur; sonraki bütün parçalarda işini çok kolaylaştırır. Şimdi dönüşüm yöntemlerine geçelim.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>İkili ya da onaltılıktan onluğa:</strong> her rakamı kendi basamak değeriyle çarp ve topla. <strong>Onluktan ikiliye:</strong> sayıyı tekrar tekrar 2'ye böl, kalanları yaz, kalanları <strong>aşağıdan yukarıya</strong> oku. <strong>İkili ile onaltılık arasında:</strong> ikili sayıyı sağdan başlayarak dörderli gruplara ayır, her grubu tek bir onaltılık rakama çevir (ya da tersini yap).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Onluk 200 sayısını ikiliye ve onaltılığa çevir, sonra Python ile doğrula.</p>
+<p><strong>Adım 1.</strong> 200'ü 2'ye böl: bölüm 100, kalan 0. (Çift sayının 2'ye bölümünden kalan 0'dır.)</p>
+<p><strong>Adım 2.</strong> Bölümleri 2'ye bölmeyi sürdür: 100 → 50 kalan 0; 50 → 25 kalan 0; 25 → 12 kalan 1; 12 → 6 kalan 0; 6 → 3 kalan 0; 3 → 1 kalan 1; 1 → 0 kalan 1. (Bölüm 0 olunca dur.)</p>
+<p><strong>Adım 3.</strong> Kalanları sondan başa oku: 1, 1, 0, 0, 1, 0, 0, 0 → 11001000. (İlk bulunan kalan en düşük basamaktır, bu yüzden en sağa yazılır.)</p>
+<p><strong>Adım 4.</strong> Sağlamasını yap: 128 + 64 + 8 = 200. (Birlerin olduğu basamakların değerlerini topladık.)</p>
+<p><strong>Adım 5.</strong> Onaltılığa geçmek için dörderli grupla: 1100 | 1000. Tablodan 1100 = C, 1000 = 8 → C8. (Her dört bit tek onaltılık rakamdır.)</p>
+<p><strong>Adım 6.</strong> Sağlaması: C × 16 + 8 = 12 × 16 + 8 = 192 + 8 = 200. (Onaltılıkta basamak değerleri 16 ve 1.)</p>
+<p><strong>Adım 7.</strong> Aynı bölme işlemini adım adım yazdıran küçük bir betikle ve Python'ın hazır işlevleriyle doğrula:</p>
+<pre class="kod" data-ad="python3 -I bol2.py">n = 200
+kalanlar = []
+while n &gt; 0:
+    print(f"{n:3d} // 2 = {n // 2:3d}   kalan {n % 2}")
+    kalanlar.append(n % 2)
+    n = n // 2
+print("aşağıdan yukarı:", "".join(str(k) for k in reversed(kalanlar)))</pre>
+<pre class="cikti">200 // 2 = 100   kalan 0
+100 // 2 =  50   kalan 0
+ 50 // 2 =  25   kalan 0
+ 25 // 2 =  12   kalan 1
+ 12 // 2 =   6   kalan 0
+  6 // 2 =   3   kalan 0
+  3 // 2 =   1   kalan 1
+  1 // 2 =   0   kalan 1
+aşağıdan yukarı: 11001000</pre>
+<pre class="kod" data-ad="python3 -I donusum.py">sayi = 200
+print(bin(sayi), hex(sayi), oct(sayi))
+print(int("11001000", 2), int("c8", 16), int("0xC8", 16))
+print(format(sayi, "08b"), format(sayi, "02x"))</pre>
+<pre class="cikti">0b11001000 0xc8 0o310
+200 200 200
+11001000 c8</pre>
+<p><strong>Sonuç:</strong> 200 = 11001000<sub>2</sub> = C8<sub>16</sub>. <code>bin()</code> ve <code>hex()</code> sonucu ön ekiyle metin olarak verir; <code>int(metin, taban)</code> tersini yapar ve küçük-büyük harfe ya da <code>0x</code> ön ekine aldırmaz; <code>format(sayi, "08b")</code> ise ön eksiz, sekiz basamağa sıfırla doldurulmuş biçim verir. Bu sonuncusu bir baytı tam sekiz bit olarak görmek istediğinde işe yarar.</p>
+</div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> 16 bitlik 1011011011110001 ikili değerini onaltılık yaz.</p>
+<p><strong>Adım 1.</strong> Sağdan başlayarak dörderli gruplara ayır: 1011 | 0110 | 1111 | 0001. (16 bit tam dört grup eder; eksik kalsaydı en sol gruba soldan sıfır eklerdik.)</p>
+<p><strong>Adım 2.</strong> Her grubu çevir: 1011 = 8 + 2 + 1 = 11 = B; 0110 = 4 + 2 = 6; 1111 = 15 = F; 0001 = 1. (Dört bitlik basamak değerleri 8, 4, 2, 1.)</p>
+<p><strong>Adım 3.</strong> Rakamları aynı sırayla yan yana yaz: B6F1. (Grup sırası korunur; en soldaki grup en soldaki rakam olur.)</p>
+<p><strong>Adım 4.</strong> Python ile doğrula:</p>
+<pre class="kod" data-ad="python3 -I hexgrup.py">ikili = "1011011011110001"
+gruplar = [ikili[i:i+4] for i in range(0, len(ikili), 4)]
+for g in gruplar:
+    print(g, "-&gt;", format(int(g, 2), "x"))
+print("sonuç:", hex(int(ikili, 2)))</pre>
+<pre class="cikti">1011 -&gt; b
+0110 -&gt; 6
+1111 -&gt; f
+0001 -&gt; 1
+sonuç: 0xb6f1</pre>
+<p><strong>Sonuç:</strong> 1011011011110001<sub>2</sub> = B6F1<sub>16</sub>. Bu değer iki bayttır: B6 ve F1. Hiç onluğa geçmeden çevirdiğine dikkat et; onaltılığın gücü budur.</p>
+</div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kalanları bulduğum sırayla yazarım."</strong> Onluktan ikiliye çevirirken ilk bulunan kalan en düşük basamaktır (1'ler basamağı), bu yüzden en sağa gider. Kalanları yukarıdan aşağıya okursan sayıyı ters yazmış olursun: 200 için 00010011 bulursun, bu da 19'dur. Doğrusu: kalanları <strong>aşağıdan yukarıya</strong> oku ve her zaman basamak değerlerini toplayarak sağlamasını yap.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"0x3F otuz üç demek, ya da 36 gibi bir şey."</strong> Onaltılık rakamları onluk gibi okumak çok yaygın bir hatadır. 0x3F = 3 × 16 + 15 = 63'tür. Aynı biçimde 0x10 on değil on altıdır, 0x100 yüz değil 256'dır. Bir günlük kaydında, bir bellek adresinde ya da bir hata kodunda gördüğün sayının önünde <code>0x</code> varsa onu asla onluk gibi okuma; emin değilsen Python'da <code>int("3f", 16)</code> yazıp bak.</p></div>
+
+<h2 class="s">5. Bellek hiyerarşisi: hız ile boyutun ödünleşimi</h2>
+
+<p>İdeal bir dünyada bütün bellek hem çok hızlı, hem çok büyük, hem ucuz, hem de kalıcı olurdu. Gerçekte bu dört özellik birbirine karşı çalışır. Çok hızlı bellek (işlemcinin içindeki devreler) pahalıdır, çok yer kaplar ve çok ısınır; bu yüzden küçük tutulur. Çok büyük ve ucuz bellek (disk) ise yavaştır. Mühendislik çözümü, belleği bir <strong>hiyerarşi</strong> hâlinde dizmektir: işlemcinin en yakınında küçük ve çok hızlı katlar, uzaklaştıkça büyüyen ve yavaşlayan katlar.</p>
+
+<p><strong>Yazmaçlar</strong> işlemcinin içindedir ve en hızlıdır; işlemci bunlara bir saat vuruşu içinde erişebilir, ama sayıları yalnızca onlarcadır. <strong>Önbellek</strong> (cache) yine işlemcinin içinde ya da hemen yanındadır ve katlara ayrılır: L1 en küçük ve en hızlı (çekirdek başına onlarca KiB), L2 daha büyük ve biraz yavaş, L3 çoğunlukla bütün çekirdeklerin paylaştığı en büyük önbellektir (birkaç MiB'den yüzlerce MiB'e). Yukarıdaki <code>lscpu</code> çıktısı tam olarak bu katları gösteriyordu. <strong>RAM</strong> birkaç GiB'den onlarca GiB'e kadardır ve işlemcinin bakış açısından önbellekten belirgin biçimde yavaştır. <strong>Disk</strong> ise yüzlerce GiB'den birkaç TB'a kadar çıkar ve RAM'den katbekat yavaştır; SSD, dönen plakalı HDD'den çok daha hızlıdır ama yine de RAM'in hızına yaklaşamaz.</p>
+
+<p>Hiyerarşi neden işe yarıyor? Çünkü programlar belleği rastgele değil, belirli kalıplarla kullanır. Az önce kullanılan bir veri büyük olasılıkla kısa süre sonra yine kullanılır (zamansal yerellik); bir adresteki veri kullanıldıysa yanındaki adresler de büyük olasılıkla kullanılacaktır (uzamsal yerellik; bir dizinin elemanlarını sırayla dolaşmak gibi). Önbellek bu yüzden RAM'den veriyi tek tek bayt olarak değil, komşularıyla birlikte küçük bloklar hâlinde çeker ve en son kullanılanları elinde tutar. Böylece işlemcinin isteklerinin büyük çoğunluğu yavaş RAM'e gitmeden hızlı önbellekten karşılanır.</p>
+
+<div class="tablo"><table>
+<tr><th>Kat</th><th>Nerede</th><th>Tipik boyut</th><th>Hız</th><th>Uçucu mu?</th></tr>
+<tr><td>Yazmaç</td><td>İşlemcinin içi</td><td>Bayt düzeyinde, onlarca adet</td><td>En hızlı</td><td>Evet</td></tr>
+<tr><td>Önbellek (L1/L2/L3)</td><td>İşlemcinin içi/yanı</td><td>KiB – yüzlerce MiB</td><td>Çok hızlı</td><td>Evet</td></tr>
+<tr><td>RAM</td><td>Anakart üzerindeki modüller</td><td>Birkaç – onlarca GiB</td><td>Hızlı</td><td>Evet</td></tr>
+<tr><td>SSD</td><td>Kalıcı saklama</td><td>Yüzlerce GB – birkaç TB</td><td>Yavaş</td><td>Hayır</td></tr>
+<tr><td>HDD</td><td>Kalıcı saklama</td><td>Birkaç TB ve üstü</td><td>En yavaş</td><td>Hayır</td></tr>
+</table></div>
+
+<p>Tablodaki boyutlar yalnızca bugünkü tipik masaüstü ve dizüstü bilgisayarlar için kabaca bir fikir verir; her nesil değişir. Önemli olan sıralamadır: yukarı çıktıkça hız artar, boyut azalır, bit başına maliyet artar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bellek hiyerarşisi:</strong> yazmaç → önbellek → RAM → disk. İşlemciden uzaklaştıkça bellek <strong>büyür, ucuzlar ve yavaşlar</strong>. Hiyerarşi, programların aynı ve yakın verileri tekrar tekrar kullanmasına (yerellik) dayanır. Yalnızca en alttaki kat (disk) kalıcıdır.</p></div>
+
+<p>Bu konunun güvenlikle ilgisi ilk bakışta görünmeyebilir, ama derin bir ilgisi var. Önbellek, aynı işlemciyi paylaşan programlar arasında ortak bir kaynaktır. Bir verinin önbellekte olup olmadığı, erişimin ne kadar sürdüğünden anlaşılabilir. 2018'de kamuoyuna açıklanan Spectre ve Meltdown adlı işlemci açıkları, tam olarak bu tür <strong>zamanlama farklarının</strong> başka bir programın verisi hakkında bilgi sızdırabileceğini gösterdi. Bu sınıfa <strong>yan kanal</strong> (side channel) açığı denir: veriye doğrudan değil, dolaylı bir iz (süre, güç tüketimi, ses) üzerinden ulaşılır. Burada nasıl yapıldığını değil, yalnızca neden mümkün olduğunu bilmen yeterli; savunması işlemci üreticilerinin ürün yazılımı güncellemeleri, işletim sistemi yamaları ve tarayıcıların zamanlama ölçümlerini bilerek kabalaştırması gibi katmanlı önlemlerdir. Pratik ders sade: işletim sistemi ve ürün yazılımı güncellemelerini ertelememek. Bu konu rafta yalnızca kavram olarak geçer.</p>
+
+<h2 class="s">6. Uçucu ve kalıcı bellek: güvenlik açısından ne değişir?</h2>
+
+<p>RAM'in uçucu, diskin kalıcı olması basit bir teknik ayrıntı gibi görünür ama güvenlikte iki büyük sonucu vardır.</p>
+
+<p><strong>Birinci sonuç: RAM'deki bilgi, çalışırken orada açık hâldedir.</strong> Diskteki bir dosyayı şifreleyebilirsin; ama bir programın o dosyayı kullanabilmesi için onu çözüp RAM'e alması gerekir. Parolanı bir kutuya yazdığında, şifreli disk kullansan bile, o parola bir süre RAM'de düz metin olarak durur. Bu yüzden işletim sistemleri bir programın başka bir programın belleğini okumasını engeller (Parça 2'nin ana konusu), ve olay müdahalesinde bazen ilk iş, bilgisayarı kapatmadan önce belleğin bir kopyasını almaktır: kapatınca kaybolacak izler orada olabilir (Parça 40). Ayrıca RAM içeriğinin elektrik kesildikten hemen sonra kısa bir süre tamamen sıfırlanmadığı, özellikle soğutulduğunda bir süre okunabilir kaldığı araştırmalarla gösterilmiştir ("cold boot" araştırmaları). Bu yüzden "kapattım, RAM boşaldı" düşüncesi kesin bir güvence sayılmaz; disk şifreleme anahtarlarını donanımsal modüllerde tutmak gibi savunmalar bunun için vardır.</p>
+
+<p><strong>İkinci sonuç: diskteki bilgi, sandığından uzun yaşar.</strong> Bir dosyayı sildiğinde çoğu dosya sistemi o dosyanın baytlarını hemen sıfırlamaz; yalnızca dosyanın kaydını kaldırır ve o alanı "boş, üzerine yazılabilir" diye işaretler. Baytların kendisi, üzerine başka bir şey yazılana kadar diskte kalabilir. Adli bilişimcilerin silinmiş dosyaları kurtarabilmesi bundandır. SSD'lerde durum daha karmaşıktır: SSD'ler yazmayı farklı hücrelere dağıtır ve işletim sistemi boşalan blokları SSD'ye bildirdiğinde (TRIM) SSD bu blokları kendi zamanlamasıyla temizleyebilir; yani silinen verinin kalıp kalmayacağı aygıta ve ayarlara göre değişir. Bu belirsizlik yüzünden güvenli yol, hassas veriyi baştan <strong>şifreli</strong> bir diskte tutmaktır: disk şifreliyse, silinmiş baytlar kalsa bile anahtar olmadan anlamsızdır. Eski bir bilgisayarı ya da diski elden çıkarmadan önce de bu yüzden yalnızca dosyaları silmek yetmez.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Uçucu bellek (RAM)</strong> elektrik kesilince içeriğini kaybeder ama çalışırken içindeki veri çoğu zaman şifresiz durur. <strong>Kalıcı bellek (SSD/HDD)</strong> veriyi saklar ve silinen veri bile bir süre kalabilir. Savunma: başka süreçlerin belleğe erişimini işletim sistemiyle engelle, kalıcı veriyi şifreli diskte tut, aygıtı elden çıkarırken güvenli silme ya da şifreleme anahtarını yok etme yöntemini kullan.</p></div>
+
+<h2 class="s">7. Adres kavramı</h2>
+
+<p>RAM'i çok uzun bir sıra hâlinde dizilmiş, her biri bir bayt tutan kutular olarak düşün. Her kutunun bir numarası vardır; bu numaraya <strong>adres</strong> denir. Adresler 0'dan başlar ve birer birer artar. İşlemci bir veriyi okumak ya da yazmak istediğinde "şu adresteki baytı ver" ya da "şu adrese şunu yaz" der. Getir-çöz-yürüt döngüsündeki program sayacı da tam olarak böyle bir adres tutar.</p>
+
+<p>Bir bayttan büyük veriler (örneğin 4 baytlık bir tam sayı) art arda gelen birkaç adrese yerleşir ve ilk baytın adresiyle anılır. Bir dizinin elemanları bellekte yan yana durur; dizinin 0. elemanı bir adresteyse, 1. elemanı tam olarak bir eleman boyu sonra gelir. Bunu C dilinde doğrudan görebiliriz, çünkü C bir değişkenin adresini <code>&amp;</code> işleciyle verir. Kod rafı Parça 28'de işaretçileri (pointer) ayrıntısıyla öğreneceksin; burada yalnızca adreslerin gerçekten var olduğunu ve düzenli dizildiğini görmek istiyoruz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Dört elemanlı bir tam sayı dizisinin elemanları bellekte nasıl dizilir? Aynı programı iki kez çalıştırınca adresler aynı mı çıkar?</p>
+<p><strong>Adım 1.</strong> Dizinin her elemanını ve adresini yazdıran küçük bir C programı yaz. (Bu program yalnızca kendi süreci içindeki belleğe bakar; başka hiçbir programa dokunmaz.)</p>
+<pre class="kod" data-ad="adres.c">#include &lt;stdio.h&gt;
+
+int main(void) {
+    int dizi[4] = {10, 20, 30, 40};
+    printf("int boyutu: %zu bayt\n", sizeof(int));
+    for (int i = 0; i &lt; 4; i++) {
+        printf("dizi[%d] = %d  adres %p\n", i, dizi[i], (void *)&amp;dizi[i]);
+    }
+    return 0;
+}</pre>
+<p><strong>Adım 2.</strong> Derle ve iki kez çalıştır. (<code>-Wall -Wextra</code> derleyicinin olası hataları uyarmasını sağlar.)</p>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o adres adres.c &amp;&amp; ./adres &amp;&amp; ./adres</pre>
+<pre class="cikti">int boyutu: 4 bayt
+dizi[0] = 10  adres 0x7ffded012b20
+dizi[1] = 20  adres 0x7ffded012b24
+dizi[2] = 30  adres 0x7ffded012b28
+dizi[3] = 40  adres 0x7ffded012b2c
+int boyutu: 4 bayt
+dizi[0] = 10  adres 0x7ffdc78aecc0
+dizi[1] = 20  adres 0x7ffdc78aecc4
+dizi[2] = 30  adres 0x7ffdc78aecc8
+dizi[3] = 40  adres 0x7ffdc78aeccc</pre>
+<p><strong>Adım 3.</strong> Bir çalıştırma içinde adresleri karşılaştır: ...b20, ...b24, ...b28, ...b2c. Her adım onaltılıkta 4 artıyor. (Bir <code>int</code> bu sistemde 4 bayttır; 0x20 + 4 = 0x24, 0x28 + 4 = 0x2c. Onaltılıkta 8'den sonra 9, A, B, C geldiği için 0x28'den 4 ileri 0x2c'dir.)</p>
+<p><strong>Adım 4.</strong> İki çalıştırmayı karşılaştır: elemanlar arasındaki fark yine 4, ama başlangıç adresi tamamen farklı (0x7ffded012b20 ve 0x7ffdc78aecc0). (Bu rastlantı değil; aşağıda açıklanıyor.)</p>
+<p><strong>Sonuç:</strong> Dizinin elemanları bellekte yan yana, eleman boyu kadar aralıkla durur; adresler onaltılık yazılır. Programın her çalışmasında başlangıç adresinin değişmesi, işletim sisteminin bilerek uyguladığı bir savunmadır. Sendeki adresler kesinlikle farklı çıkacak; bu da aynı nedenle.</p>
+</div>
+
+<p>Adım 4'teki değişimin adı <strong>adres alanı düzeninin rastgeleleştirilmesi</strong>dir (ASLR, address space layout randomization). İşletim sistemi bir programı her başlattığında, programın yığın (stack), öbek (heap) ve kütüphanelerinin bellekte nereye yerleşeceğini rastgele seçer. Neden? Yukarıda gördük: bir saldırganın amacı çoğu zaman programın akışını belirli bir adrese yöneltmektir. O adres her çalışmada değişirse, saldırganın "şu adrese git" diye önceden hazırladığı bir plan büyük olasılıkla boşa çıkar. ASLR tek başına her şeyi çözmez, ama derinlemesine savunmanın önemli katmanlarından biridir. Yığın ve öbek kavramlarını kod rafı Parça 29'da, işletim sisteminin her sürece ayrı bir sanal adres uzayı vermesini Parça 2'de göreceksin. Bir not: buradaki adresler gerçek fiziksel RAM adresleri değil, işletim sisteminin bu sürece verdiği <strong>sanal adreslerdir</strong>; iki farklı program aynı sanal adresi kullanabilir ve birbirinin belleğini görmez. Bunun nasıl sağlandığı Parça 2'nin konusu.</p>
+
+<h3>Çok baytlı değerlerin sırası: little-endian</h3>
+
+<p>Parçanın başındaki <code>lscpu</code> çıktısında "Little Endian" yazıyordu. 4 baytlık 0x12345678 sayısını belleğe yazmanın iki yolu vardır: en anlamlı bayt (12) en düşük adrese gelir (<strong>big-endian</strong>, "büyük uç önce"), ya da en anlamsız bayt (78) en düşük adrese gelir (<strong>little-endian</strong>, "küçük uç önce"). Bugünkü yaygın masaüstü ve telefon işlemcilerinin büyük çoğunluğu (x86-64 ve çoğu ARM yapılandırması) little-endian çalışır; ağ protokolleri ise geleneksel olarak big-endian sırayı kullanır ve buna "ağ bayt sırası" denir (Parça 11–15'te karşına çıkacak).</p>
+
+<pre class="kod" data-ad="python3 -I sira.py">sayi = 0x12345678
+print(sayi.to_bytes(4, "little").hex(" "))
+print(sayi.to_bytes(4, "big").hex(" "))</pre>
+<pre class="cikti">78 56 34 12
+12 34 56 78</pre>
+
+<p>Bu neden önemli? Bir bellek dökümüne ya da bir dosyanın ham baytlarına baktığında sayıları "ters" görebilirsin. Bunu bilmeyen biri bir adresi ya da uzunluğu yanlış okur ve yanlış sonuç çıkarır. Bayt sırası, bitlerin anlamının okuma kuralına bağlı olduğunun bir örneğidir daha.</p>
+
+<h2 class="s">8. Dosyanın diskteki, programın bellekteki hâli</h2>
+
+<p>Bir dosya, sonunda diskte duran bir <strong>bayt dizisidir</strong>; o kadar. "Metin dosyası", "resim", "program" ayrımı baytların kendisinde değil, onları nasıl yorumladığımızdadır. Bir dosyanın adı, boyutu, sahibi, oluşturulma zamanı gibi bilgiler (üst veri, metadata) ve baytların diskte hangi bloklarda durduğu ise <strong>dosya sistemi</strong> tarafından ayrıca tutulur; dosya sistemini Parça 2 ve Parça 5'te göreceksin.</p>
+
+<p>Bir metin dosyasının gerçekten bayt dizisi olduğunu kendi makinende görelim. Aşağıdaki betik geçici klasörüne "Selam" yazan küçük bir dosya oluşturuyor, sonra onu metin olarak değil <strong>ikili kipte</strong> (<code>"rb"</code>) okuyup baytlarını gösteriyor. Kod rafı Parça 7'de metin ile ikili kip farkını görmüştün; burada aynı şeye güvenlik gözüyle bakıyoruz.</p>
+
+<pre class="kod" data-ad="python3 -I dosya.py">with open("not.txt", "w", encoding="utf-8") as f:
+    f.write("Selam\n")
+with open("not.txt", "rb") as f:
+    veri = f.read()
+print(veri)
+print(len(veri), "bayt")
+print(veri.hex(" "))
+print([b for b in veri])</pre>
+<pre class="cikti">b'Selam\n'
+6 bayt
+53 65 6c 61 6d 0a
+[83, 101, 108, 97, 109, 10]</pre>
+
+<p>Beş harf ve bir satır sonu karakteri; toplam 6 bayt. Her harf bir bayta karşılık geliyor: "S" = 0x53 = 83, "e" = 0x65 = 101, satır sonu = 0x0a = 10. Aynı baytları kabukta <code>od</code> aracıyla da görebilirsin; bu araç dosyayı hiç yorumlamadan ham hâliyle gösterir:</p>
+
+<pre class="kod" data-ad="bash">od -A x -t x1z not.txt</pre>
+<pre class="cikti">000000 53 65 6c 61 6d 0a                                &gt;Selam.&lt;
+000006</pre>
+
+<p>En soldaki sütun dosyanın içindeki konumu (ofset, burada onaltılık), ortadaki sütun baytları onaltılık, sağdaki bölüm ise basılabilir karakterleri gösteriyor; basılamayan satır sonu nokta olarak görünüyor. Bu tür gösterime <strong>hex dökümü</strong> (hex dump) denir ve güvenlikte en temel inceleme yöntemlerinden biridir: bir dosyanın uzantısı ya da simgesi yalan söyleyebilir, ama baytları söylemez. "Selam" sözcüğünde Türkçe karakter olmadığı için her harf tek bayt çıktı; "ş" ya da "ğ" gibi harflerin UTF-8'de iki bayt tuttuğunu, dosya türünün ilk baytlardan ("sihirli baytlar") nasıl anlaşıldığını Parça 3'te göreceksin.</p>
+
+<p>Bir <strong>program</strong> da diskte duran bir dosyadır; içinde işlemcinin anlayacağı makine talimatları, programın sabit verileri ve işletim sisteminin onu nasıl yükleyeceğini anlatan başlık bilgileri bulunur (Linux'ta bu biçime ELF, Windows'ta PE denir). Program diskteyken yalnızca baytlardır; hiçbir şey yapmaz. Onu çalıştırdığında işletim sistemi bu dosyayı okur, talimatlarını ve verilerini RAM'e yerleştirir, program için bir yığın (stack) ve gerektiğinde öbek (heap) alanı ayırır ve işlemcinin program sayacını programın başlangıç adresine ayarlar. O andan sonra getir-çöz-yürüt döngüsü programın talimatlarını yürütmeye başlar. Çalışan programa artık <strong>süreç</strong> (process) denir; süreç kavramı Parça 2'nin konusu.</p>
+
+<p>Bu ayrımın güvenlik açısından önemi şu: bir zararlı yazılım diskte durduğu sürece onu tarayıp inceleyebilirsin; çalıştığı anda ise bellekte canlı bir süreç olur ve kendi bellek alanında, diske hiç yazılmayan şeyler yapabilir. Bu yüzden savunmada hem disk (dosyalar) hem bellek (çalışan süreçler) izlenir. Tanımadığın bir dosyayı "açıp bakmak" ile "çalıştırmak" arasındaki fark tam da budur: hex dökümü baytları yalnızca okur, çalıştırmak ise onları işlemciye talimat olarak verir. Bilinmeyen dosyaları ana makinende değil, Parça 4'te kuracağın yalıtılmış laboratuvarda incelemenin nedeni de budur.</p>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Diskteki program dosyası çalıştırılınca RAM'e yüklenir ve süreç olur">
+  <rect class="sv-a" x="10" y="40" width="140" height="150" rx="10" />
+  <text class="sv-b" x="80" y="62" text-anchor="middle">Disk</text>
+  <rect class="sv-k" x="25" y="75" width="110" height="34" rx="5" />
+  <text class="sv-t" x="80" y="97" text-anchor="middle">program dosyası</text>
+  <rect class="sv-k" x="25" y="120" width="110" height="34" rx="5" />
+  <text class="sv-t" x="80" y="142" text-anchor="middle">not.txt (6 bayt)</text>
+  <text class="sv-s" x="80" y="178" text-anchor="middle">kalıcı, durağan baytlar</text>
+  <line class="sv-cl" x1="150" y1="92" x2="230" y2="92" />
+  <polygon class="sv-k" points="230,92 220,86 220,98" />
+  <text class="sv-s" x="190" y="82" text-anchor="middle">çalıştır:</text>
+  <text class="sv-s" x="190" y="112" text-anchor="middle">yükle</text>
+  <rect class="sv-m" x="235" y="20" width="155" height="200" rx="10" />
+  <text class="sv-b" x="312" y="42" text-anchor="middle">RAM: süreç</text>
+  <rect class="sv-k" x="250" y="55" width="125" height="30" rx="5" />
+  <text class="sv-t" x="312" y="75" text-anchor="middle">talimatlar (kod)</text>
+  <rect class="sv-k" x="250" y="92" width="125" height="30" rx="5" />
+  <text class="sv-t" x="312" y="112" text-anchor="middle">sabit veriler</text>
+  <rect class="sv-k" x="250" y="129" width="125" height="30" rx="5" />
+  <text class="sv-t" x="312" y="149" text-anchor="middle">öbek (heap)</text>
+  <rect class="sv-k" x="250" y="166" width="125" height="30" rx="5" />
+  <text class="sv-t" x="312" y="186" text-anchor="middle">yığın (stack)</text>
+  <text class="sv-s" x="312" y="212" text-anchor="middle">uçucu, canlı, adresli</text>
+  <text class="sv-s" x="200" y="242" text-anchor="middle">ASLR: bölgelerin yeri her çalıştırmada rastgele seçilir</text>
+</svg>
+<figcaption>Diskteki bir program yalnızca baytlardır. Çalıştırıldığında işletim sistemi onu RAM'e yükler; talimatlar, veriler, öbek ve yığın ayrı bölgelere yerleşir ve bu bölgelerin adresleri her çalıştırmada değişir. Bölgelerin gerçek sırası işletim sistemine göre değişir; şekil yalnızca ayrımı gösterir.</figcaption>
+</figure>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2'ye:</strong> Burada adresi, RAM'i ve "program çalışınca süreç olur" fikrini kurduk. İşletim sistemi, her sürece kendi sanal adres uzayını vererek süreçleri birbirinden yalıtır ve çekirdek modu ile kullanıcı modu ayrımıyla ayrıcalığı doğurur. ASLR ve "yürütülemez bellek" gibi savunmalar orada yerine oturacak.</p>
+<p><strong>Parça 3'e:</strong> "Bitlerin anlamı okuma kuralına bağlıdır" fikri; karakter kodlaması, sihirli baytlar ve kodlama-şifreleme-hash ayrımı bunun üstüne kurulur. Bugün gördüğün hex dökümü orada her gün kullanacağın araçtır.</p>
+<p><strong>İlerideki parçalara:</strong> Onaltılık ve ikili sayılar MAC adreslerinde (Parça 12), IP adreslerinde ve alt ağlamada (Parça 13–14, orada ikili hesap ağır biçimde geri gelecek), hash değerlerinde (Parça 25) karşına çıkacak. Uçucu-kalıcı bellek ayrımı olay müdahalesinde (Parça 40) delilin nerede aranacağını belirler.</p>
+<p><strong>Kod rafına:</strong> Metnin baytlara dönüşmesi (kod Parça 3), metin ve ikili dosya kipleri (Parça 7), C'de adres ve işaretçi (Parça 28), yığın ve öbek (Parça 29), tampon taşmasının kavramı ve savunması (Parça 30).</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Bilgisayarlar neden onluk değil ikili sistemi kullanır?</summary><p>Çünkü elektronik devrelerde iki durumu (yüksek/düşük gerilim, iletiyor/iletmiyor) ayırt etmek çok kolay ve gürültüye karşı güvenilirdir; on farklı düzeyi ayırt etmek ise küçük elektriksel gürültülerle karışır. İkili sistem, ucuz ve güvenilir donanım yapmanın doğal sonucudur.</p></details>
+
+<details><summary>Getir-çöz-yürüt döngüsünde program sayacının işi nedir ve güvenlikle ilgisi ne?</summary><p>Program sayacı, işlemcinin getireceği bir sonraki talimatın adresini tutar; atlama talimatları ona yeni bir adres yazar. İşlemci, program sayacının gösterdiği bitleri talimat sayar; bu yüzden programın akışının saldırganın seçtiği bir adrese kayması çok ciddi bir açıktır ve ASLR gibi savunmalar bunu zorlaştırmak için vardır.</p></details>
+
+<details><summary>Bir bayt neden tam olarak iki onaltılık rakamla yazılır?</summary><p>Bir onaltılık rakam 16 = 2 üzeri 4 değer alır, yani tam dört biti anlatır. Bir bayt sekiz bit olduğu için iki onaltılık rakam eder; 00'dan FF'ye, yani 0'dan 255'e.</p></details>
+
+<details><summary>Bellek hiyerarşisini hızlıdan yavaşa sırala ve hiyerarşinin neden işe yaradığını söyle.</summary><p>Yazmaç, önbellek (L1, L2, L3), RAM, disk (SSD, sonra HDD). Programlar az önce kullandıkları ve yakın adreslerdeki verileri tekrar tekrar kullandığı için (yerellik), küçük ama hızlı katlar isteklerin büyük çoğunluğunu karşılayabilir.</p></details>
+
+<details><summary>Bir dosyayı silmek neden verinin kesin olarak yok olduğu anlamına gelmez?</summary><p>Çoğu dosya sistemi silinen dosyanın baytlarını hemen sıfırlamaz, yalnızca kaydını kaldırıp alanı boş işaretler; baytlar üzerine yazılana kadar kalabilir. SSD'lerde durum aygıta ve TRIM'e göre değişir. Güvenli yol, hassas veriyi baştan şifreli diskte tutmaktır.</p></details>
+
+<details><summary>Aynı C programını iki kez çalıştırınca değişken adreslerinin farklı çıkması neyi gösterir?</summary><p>İşletim sisteminin ASLR (adres alanı düzeninin rastgeleleştirilmesi) savunmasını uyguladığını gösterir: programın bellek bölgelerinin yeri her çalıştırmada rastgele seçilir, böylece önceden bilinen bir adrese dayanan saldırılar zorlaşır. Elemanlar arasındaki aralık ise değişmez, çünkü o veri tipinin boyutuna bağlıdır.</p></details>
+
+<details><summary>Little-endian bir makinede 0x12345678 sayısı belleğe hangi bayt sırasıyla yazılır?</summary><p>En anlamsız bayt en düşük adrese gelir: 78 56 34 12. Big-endian sırada ise 12 34 56 78 olur; ağ protokolleri geleneksel olarak bu ikinci sırayı kullanır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span><ul>
+<li>Parçalar: <strong>CPU</strong> talimatı yürütür, <strong>RAM</strong> o anki veriyi uçucu olarak tutar, <strong>SSD/HDD</strong> kalıcı saklar, <strong>anakart</strong> bağlar, <strong>giriş-çıkış</strong> dış dünyaya açılan kapıdır (saldırı yüzeyinin başladığı yer).</li>
+<li><strong>Getir-çöz-yürüt:</strong> program sayacının gösterdiği adresten talimatı getir, çöz, yürüt, ilerle. İşlemci veri ile talimatı kendiliğinden ayırmaz; akışın kontrolü güvenliğin temel konusudur.</li>
+<li><strong>Bit</strong> 0/1; <strong>bayt</strong> 8 bit; n bit 2<sup>n</sup> değer (bayt: 0–255). Sınırı aşan değer <strong>taşar</strong> (255 + 1 → 0, 8 bitte).</li>
+<li>Bitlerin anlamı yoktur; anlamı <strong>okuma kuralı</strong> verir (sayı, harf, piksel, talimat).</li>
+<li><strong>Onaltılık:</strong> 0–9, A–F; bir rakam = 4 bit, bir bayt = 2 rakam. Ön ekler: <code>0b</code>, <code>0x</code>, <code>0o</code>.</li>
+<li>Dönüşüm: onluk→ikili 2'ye böl, kalanları <strong>aşağıdan yukarı</strong> oku; ikili↔onaltılık <strong>dörderli grup</strong>; her zaman basamak değeriyle sağlama yap.</li>
+<li>kB = 1.000 bayt, KiB = 1.024 bayt; disk kutusundaki "GB" ile işletim sisteminin gösterdiği değer bu yüzden farklı çıkar.</li>
+<li><strong>Hiyerarşi:</strong> yazmaç → önbellek → RAM → disk; aşağı indikçe büyür, ucuzlar, yavaşlar. Önbellek zamanlama farkları yan kanal açıklarına (Spectre/Meltdown) yol açabilir: güncel tut.</li>
+<li><strong>Uçucu RAM:</strong> çalışırken veri açık durur; <strong>kalıcı disk:</strong> silinen veri kalabilir. Savunma: süreç yalıtımı, disk şifreleme, güvenli elden çıkarma.</li>
+<li><strong>Adres:</strong> her baytın numarası, onaltılık yazılır; dizi elemanları eleman boyu aralıkla yan yana durur. <strong>ASLR</strong> bölgelerin yerini her çalıştırmada değiştirir. Little-endian: küçük bayt önce.</li>
+<li>Dosya diskte bayt dizisidir; <strong>hex dökümü</strong> onu yorumlamadan gösterir. Program çalıştırılınca RAM'e yüklenip <strong>süreç</strong> olur. Bilinmeyen dosyayı çalıştırma; yalıtılmış laboratuvarda incele.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-1">
+<h3>Quiz 1</h3>
+<p class="qa">Sekiz soru. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">8 bitlik (1 baytlık) bir hücre en fazla kaç farklı değer tutabilir?</p>
+<ul class="sec"><li>255</li><li>256</li><li>8</li><li>128</li><li>512</li></ul>
+<div class="coz"><p>n bit 2<sup>n</sup> farklı değer anlatır; 2<sup>8</sup> = 256. Bu değerler 0'dan 255'e kadardır; 255 en büyük değerdir ama değer sayısı değildir, A şıkkı bu karışıklığı yoklar. 8 bit sayısının kendisidir, değer sayısı değil. 128 yedi bitin (2<sup>7</sup>), 512 dokuz bitin (2<sup>9</sup>) değer sayısıdır. "Kaç değer" ile "en büyük değer" arasındaki 1 farkını hep aklında tut.</p></div></li>
+
+<li data-c="D"><p class="q">İkili 101101 sayısının onluk karşılığı nedir?</p>
+<ul class="sec"><li>41</li><li>54</li><li>52</li><li>45</li><li>47</li></ul>
+<div class="coz"><p>Basamak değerleri sağdan sola 1, 2, 4, 8, 16, 32'dir. Birlerin olduğu basamaklar: 32, 8, 4 ve 1; toplam 32 + 8 + 4 + 1 = 45 (Python: <code>int("101101", 2)</code> → 45). 41, 4'lük basamağı atlamaktan (32 + 8 + 1); 47, 2'lik basamağı da 1 sanmaktan (32 + 8 + 4 + 2 + 1) doğar. 54 doğru sonucun rakamlarını yer değiştirerek yazmak, 52 ise 1'lik basamağı 8'lik sanmak gibi dikkatsizliklerin ürünüdür. Her zaman basamak değerlerini yazıp yalnızca 1 olanları topla.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdakilerden hangisi elektrik kesildiğinde içeriğini kaybeden (uçucu) bellektir?</p>
+<ul class="sec"><li>RAM</li><li>SSD</li><li>Sabit disk (HDD)</li><li>USB bellek</li><li>Optik disk (DVD)</li></ul>
+<div class="coz"><p>RAM uçucudur: çalışırken o anki programları ve verileri tutar, elektrik kesilince içeriği kaybolur. SSD ve USB bellek (ikisi de flaş bellek kullanır), dönen plakalı HDD ve DVD kalıcı saklama ortamlarıdır; veriyi elektrik olmadan da saklarlar. Güvenlik açısından bu fark önemlidir: RAM'deki izler bilgisayar kapanınca büyük ölçüde kaybolur, diskteki veri ise silinse bile bir süre kalabilir.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki Python kodunun çıktısı nedir? <code>print(hex(0b11111111))</code></p>
+<ul class="sec"><li>0x11111111</li><li>255</li><li>0xff</li><li>0o377</li><li>ff</li></ul>
+<div class="coz"><p><code>0b11111111</code> sekiz tane 1'den oluşan ikili sayıdır, yani 255. <code>hex()</code> bir tam sayıyı <code>0x</code> ön ekli, küçük harfli onaltılık metne çevirir: <code>0xff</code> (bu kod çalıştırılarak doğrulandı). A, ikili rakamları olduğu gibi onaltılık sanmaktır. B, <code>hex()</code> yerine sayının onluk değeridir. D, <code>oct()</code> işlevinin çıktısıdır. E, <code>format(255, "x")</code> çıktısı olurdu; <code>hex()</code> ise her zaman ön ek koyar.</p></div></li>
+
+<li data-c="E"><p class="q">Bellek hiyerarşisinin en hızlıdan en yavaşa doğru doğru sıralaması hangisidir?</p>
+<ul class="sec"><li>RAM, yazmaç, önbellek, SSD</li><li>Önbellek, yazmaç, RAM, SSD</li><li>Yazmaç, RAM, önbellek, SSD</li><li>SSD, RAM, önbellek, yazmaç</li><li>Yazmaç, önbellek, RAM, SSD</li></ul>
+<div class="coz"><p>En hızlı bellek işlemcinin içindeki yazmaçlardır; ardından işlemcinin içinde ya da yanında duran önbellek (L1, L2, L3), sonra anakart üzerindeki RAM, en sonda kalıcı saklama (SSD) gelir. B, yazmaç ile önbelleğin yerini değiştirmiştir; C, önbelleği RAM'in arkasına atmıştır. D tam tersi, yani yavaştan hızlıya sıralamadır. A'da RAM'in en başa konması, "RAM hızlıdır" bilgisini mutlak sanmaktan doğar; RAM diske göre hızlı ama işlemcinin içindeki katlara göre yavaştır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir günlük kaydında <code>0x3F</code> değerini görüyorsun. Bu değerin onluk karşılığı nedir?</p>
+<ul class="sec"><li>36</li><li>63</li><li>48</li><li>15</li><li>39</li></ul>
+<div class="coz"><p>Onaltılıkta basamak değerleri 16 ve 1'dir; F = 15. 0x3F = 3 × 16 + 15 = 48 + 15 = 63 (Python: <code>int("3f", 16)</code> → 63). 36, rakamları onluk gibi okuyup F'yi 6'ya benzetmekten doğan bir karışıklıktır. 48 yalnızca 3 × 16'dır, F basamağı unutulmuştur (0x30). 15 yalnızca F'nin değeridir. 39 ise basamakları onluk sanıp F'yi 9 gibi okumaktır (3 × 10 + 9). <code>0x</code> ön eki gördüğün her sayıyı onaltılık oku.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki C programında <code>int</code> 4 bayttır ve <code>dizi[0]</code>'ın adresi <code>0x7ffc0020</code> olarak yazdırılmıştır. <code>dizi[2]</code>'nin adresi nedir? <code>int dizi[4] = {1, 2, 3, 4};</code></p>
+<ul class="sec"><li>0x7ffc0022</li><li>0x7ffc0021</li><li>0x7ffc0030</li><li>0x7ffc0028</li><li>0x7ffc002c</li></ul>
+<div class="coz"><p>Dizi elemanları bellekte yan yana, eleman boyu kadar aralıkla durur. <code>dizi[2]</code>, başlangıçtan 2 × 4 = 8 bayt sonradır: 0x20 + 8 = 0x28. Parçadaki gerçek çalıştırmada da adresler 4'er artıyordu (...b20, ...b24, ...b28). A, indeksi bayt sayısı sanmaktır (her elemanı 1 bayt kabul etmek). B anlamsız bir 1 baytlık kaymadır. C, 8 yerine 16 eklemektir (onluk 20 + 8 = 28'i yanlışlıkla 0x30'a yuvarlamak gibi). E, <code>dizi[3]</code>'ün adresidir (0x20 + 12 = 0x2c).</p></div></li>
+
+<li data-c="A"><p class="q">Bir dosyanın silinmesiyle ilgili aşağıdaki ifadelerden hangisi doğrudur?</p>
+<ul class="sec"><li>Çoğu dosya sisteminde silme, dosyanın kaydını kaldırıp alanını boş işaretler; baytlar üzerine yazılana kadar diskte kalabilir.</li><li>Silinen dosyanın baytları her zaman anında sıfırlanır, bu yüzden geri getirilemez.</li><li>Silinen dosya RAM'e taşınır ve bilgisayar kapanınca kaybolur.</li><li>Dosyayı silmek, disk şifrelemeyle aynı korumayı sağlar.</li><li>SSD'lerde silinen veri her koşulda kalıcı olarak diskte durur.</li></ul>
+<div class="coz"><p>Çoğu dosya sistemi silinen dosyanın baytlarını hemen silmez; kaydı kaldırır ve alanı yeniden kullanılabilir işaretler. Bu yüzden silinmiş dosyalar bazen kurtarılabilir. B bu davranışın tersini söyler. C, silmeyle RAM'i karıştırır; silme diskte olur, RAM'e taşınma yoktur. D yanlıştır: şifreleme veriyi anahtar olmadan anlamsız yapar, silme ise baytları yerinde bırakabilir. E de aşırı genellemedir: SSD'lerde TRIM ve aygıtın iç temizliği silinen blokları zamanla temizleyebilir; sonuç aygıta göre değişir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ev">← Kütüphane</a>
+  <button class="btn ok" data-done="siber-1">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-2">Sonraki parça: işletim sistemi ne yapar</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"fetch decode execute cycle explained"</li>
+  <li>"ikili onaltılık sayı sistemi dönüşüm"</li>
+  <li>"memory hierarchy cache RAM disk explained"</li>
+  <li>"ASLR nedir address space layout randomization"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Bütün kod örnekleri bu parçanın yazıldığı Linux sanal makinesinde (Python 3.13, gcc) gerçekten çalıştırıldı ve çıktıları birebir kondu: <code>tasma.py</code>, <code>bol2.py</code>, <code>donusum.py</code>, <code>hexgrup.py</code>, <code>sira.py</code>, <code>dosya.py</code>, <code>od</code>, <code>adres.c</code> (iki çalıştırma), <code>lscpu</code>/<code>free</code>. Donanım çıktısı ve adresler makineye ve çalıştırmaya göre değişir; metinde bu belirtildi. Quiz'deki sayısal cevaplar (256, 45, 0xff, 63, 0x28) Python ile hesaplanarak doğrulandı.</li>
+  <li>IEC ikili ön ekleri (KiB, MiB, GiB) NIST'in birimler sayfasından (physics.nist.gov, "Prefixes for binary multiples") doğrulandı. Getir-çöz-yürüt döngüsünün tanımı ve program sayacının rolü, FOLDOC ve bilgisayar bilimi eğitim kaynaklarıyla karşılaştırıldı.</li>
+  <li>Hafızadan yazılan ve bu oturumda ayrıca birincil kaynakla satır satır doğrulanmayanlar: Spectre/Meltdown'un 2018'de açıklanmış olması; "cold boot" araştırmalarının (RAM'in kapatıldıktan sonra kısa süre okunabilir kalması) bulguları; x86-64 ve çoğu ARM yapılandırmasının little-endian olması; ELF/PE dosya biçimi adları. Bunlar yaygın kabul görmüş bilgilerdir ama ayrıntıları için ilgili makalelere bakılmalıdır.</li>
+  <li>Bellek hiyerarşisi tablosundaki boyutlar bilerek kaba aralıklar olarak verildi; kesin gecikme süreleri (nanosaniye) işlemciye göre çok değiştiği için yazılmadı.</li>
+  <li>SSD'lerde silinen verinin kalıp kalmadığı TRIM desteğine, dosya sistemine ve aygıtın denetleyicisine bağlıdır; burada kesin bir genelleme yapılmadı, tartışmalı ve aygıta özgü bir konudur.</li>
+  <li>Saldırı sınırı: parçada istismar tekniği verilmedi; tampon taşması, yan kanal ve ASLR yalnızca neden var oldukları ve savunma yönleriyle anlatıldı. Bütün örnekler yalnızca kendi makinede, kendi oluşturulan dosyalar ve kendi süreç belleği üzerinde çalışır.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,551 @@
+<article class="chapter ders" id="c-siber-3">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 3 · Kodlama, hash, şifreleme</div>
+<h1>Veri gösterimi: kodlama, hash ve şifreleme birbirine karışmasın</h1>
+<p class="time">Okuma ve çözme yaklaşık 55 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir yapılandırma dosyasında <code>cGFyb2xhMTIz</code> diye bir satır görüyorsun ve yanında "parola şifrelenmiştir" yazıyor. Bu gerçekten şifreli mi? Okunmaz görünen her dizi gizli midir? Bir veriyi baytlara çevirmek, onu gizlemek ve onun parmak izini almak neden üç ayrı iştir ve bunları karıştırmak neden gerçek sistemlerde parolaların açığa çıkmasına yol açar?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (bit, bayt, onaltılık gösterim), Parça 2 (dosya sistemi, programın çekirdekten hizmet istemesi). Kod rafından Parça 3 (str, <code>encode/decode</code>, <code>ord/chr</code>), Parça 7 (metin ile ikili dosya, <code>encoding="utf-8"</code>) ve Parça 18 (<code>sha256sum</code>) bu parçanın zeminidir. Örneklerin hepsini kendi bilgisayarında, kendi oluşturduğun dosyalarla çalıştır.</p>
+
+<h2 class="s">Önce büyük resim: üç ayrı soru, üç ayrı işlem</h2>
+
+<p>Parça 1'de bilgisayarın içinde her şeyin bit ve bayt olduğunu gördük. Bir harf, bir fotoğraf, bir parola, bir program: diskte ve bellekte hepsi 0 ile 255 arasındaki sayıların dizisidir. Ama insanlar harf okur, programlar dosya türü bekler, ağlar yalnızca belirli karakterleri taşıyabilir. Bu yüzden veriyi bir biçimden ötekine sürekli çeviririz. Bu çevirilerin bazıları yalnızca <strong>gösterimi</strong> değiştirir, bazıları veriyi <strong>gizler</strong>, bazıları da verinin <strong>kısa bir parmak izini</strong> çıkarır.</p>
+
+<p>Güvenlikte en sık rastlanan yanılgılardan biri bu üçünü aynı şey sanmaktır. Okunmaz görünen bir dizi gören biri onu "şifreli" sanar; oysa o dizi herkesin saniyeler içinde geri çevirebileceği bir kodlama olabilir. Bir geliştirici parolaları "şifreleyerek" sakladığını söyler; oysa parolanın şifrelenmesi değil, özel bir biçimde özetlenmesi gerekir. Bu parçanın amacı, her biri için şu üç soruyu sormayı alışkanlık hâline getirmek:</p>
+
+<p><strong>1. Geri çevrilebilir mi?</strong> <strong>2. Geri çevirmek için bir sır (anahtar) gerekir mi?</strong> <strong>3. Bu işlem neyi korumak için tasarlandı?</strong></p>
+
+<p>Bu üç sorunun cevabı kodlamada "evet, hayır, hiçbir şeyi", şifrelemede "evet, evet, gizliliği", hash'te "hayır, uygulanamaz, bütünlüğü" çıkar. Sırayla kuracağız: önce karakter kodlaması (harften bayta), sonra metin ile ikili dosya ve dosya türünün nasıl anlaşıldığı, sonra Base64, şifreleme, hash ve sıkıştırma, en sonda da bu kavramların neden sürekli karıştırıldığı.</p>
+
+<h2 class="s">1. Karakter kodlaması: bir harf nasıl bayta dönüşür?</h2>
+
+<p>Bilgisayar harf bilmez, yalnızca sayı bilir. Bir harfi saklamak için önce "hangi harf hangi sayıdır" diye bir anlaşma yapmak gerekir. Bu anlaşmanın adı <strong>karakter kümesi</strong>, o sayının baytlara nasıl yazılacağı kuralının adı da <strong>kodlama</strong>dır (encoding).</p>
+
+<h3>ASCII: 128 karakterlik ilk anlaşma</h3>
+
+<p>1960'larda yaygınlaşan ASCII, 0'dan 127'ye kadar 128 sayıya birer karakter atadı: İngiliz alfabesinin büyük ve küçük harfleri, rakamlar, noktalama ve satır sonu gibi denetim karakterleri. "A" 65'tir (onaltılıkta 41), "a" 97'dir (61). 128 değer 7 bite sığar; bir bayt 8 bit olduğu için her ASCII karakteri tek bayttır ve en üst bit hep 0'dır.</p>
+
+<p>Sorun açıktı: "ş", "ğ", "é", "€" ya da Çince bir işaret ASCII'de yoktur. Her ülke kalan 128 değeri (128–255) kendine göre doldurdu ve ortaya onlarca birbiriyle uyuşmayan "kod sayfası" çıktı. Aynı 0xFE baytı bir kod sayfasında "ş", başka birinde bambaşka bir harfti. Bir ülkede yazılan dosya başka bir ülkede bozuk görünüyordu.</p>
+
+<h3>Unicode: her karaktere tek bir numara</h3>
+
+<p>Unicode bu karmaşayı çözmek için dünyadaki bütün yazı sistemlerindeki karakterlere tek, evrensel bir numara verir. Bu numaraya <strong>kod noktası</strong> denir ve <code>U+</code> ile onaltılık yazılır: "A" U+0041, "ş" U+015F, "€" U+20AC. Kod noktaları U+0000'dan U+10FFFF'e kadar uzanır. Dikkat: Unicode bir <em>numaralandırma</em>dır; bu numaranın diske kaç bayt olarak yazılacağını söylemez. O işi kodlamalar yapar ve bugün açık ara en yaygını UTF-8'dir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Karakter</strong> soyut bir işarettir ("ş"). <strong>Kod noktası</strong> Unicode'un ona verdiği numaradır (U+015F). <strong>Kodlama</strong> o numarayı bayt dizisine çeviren kuraldır; UTF-8'de "ş" iki bayttır: <code>c5 9f</code>. Kodlama geri çevrilebilir bir gösterim değişikliğidir; hiçbir sır içermez ve hiçbir şeyi gizlemez.</p></div>
+
+<h3>UTF-8 nasıl çalışır?</h3>
+
+<p>UTF-8, kod noktasının büyüklüğüne göre 1 ile 4 arasında bayt kullanır. Neden değişken uzunluk? Çünkü metinlerin büyük kısmı ASCII karakterlerinden oluşur ve her karakter için sabit 4 bayt harcamak savurganlıktır. Daha önemlisi, UTF-8 ASCII ile <strong>geriye uyumludur</strong>: U+0000–U+007F aralığı tek bayttır ve ASCII'deki değeriyle aynıdır. Yani eski ASCII metinleri hiç değişmeden geçerli UTF-8 metnidir.</p>
+
+<div class="tablo"><table>
+<tr><th>Kod noktası aralığı</th><th>Bayt sayısı</th><th>Bit kalıbı</th><th>Örnek</th></tr>
+<tr><td>U+0000 – U+007F</td><td>1</td><td><code>0xxxxxxx</code></td><td>A → 41</td></tr>
+<tr><td>U+0080 – U+07FF</td><td>2</td><td><code>110xxxxx 10xxxxxx</code></td><td>ş → c5 9f</td></tr>
+<tr><td>U+0800 – U+FFFF</td><td>3</td><td><code>1110xxxx 10xxxxxx 10xxxxxx</code></td><td>€ → e2 82 ac</td></tr>
+<tr><td>U+10000 – U+10FFFF</td><td>4</td><td><code>11110xxx</code> + üç tane <code>10xxxxxx</code></td><td>😀 → f0 9f 98 80</td></tr>
+</table></div>
+
+<p>Kalıba bak: ilk baytın başındaki 1'lerin sayısı dizinin kaç bayt olduğunu söyler (<code>110</code> iki, <code>1110</code> üç). Devam baytları hep <code>10</code> ile başlar. Bu sayede bir okuyucu, akışın ortasından bile başlasa, bir karakterin nerede başladığını bulabilir. Parça 1'deki ikili ve onaltılık dönüşümü burada doğrudan kullanıyoruz.</p>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="ş harfinin U+015F kod noktasının bitlerinin UTF-8'in iki baytlık kalıbına yerleştirilmesi: c5 ve 9f">
+  <rect class="sv-l" x="140" y="10" width="120" height="40" rx="8"/>
+  <text class="sv-b" x="200" y="36" text-anchor="middle">ş = U+015F</text>
+  <line class="sv-c" x1="200" y1="50" x2="200" y2="70"/>
+  <rect class="sv-k" x="40" y="70" width="320" height="44" rx="8"/>
+  <text class="sv-s" x="200" y="88" text-anchor="middle">11 bitlik ikili hâli</text>
+  <text class="sv-b" x="130" y="106" text-anchor="middle">00101</text>
+  <text class="sv-b" x="270" y="106" text-anchor="middle">011111</text>
+  <line class="sv-cl" x1="130" y1="114" x2="110" y2="150"/>
+  <line class="sv-cl" x1="270" y1="114" x2="290" y2="150"/>
+  <rect class="sv-m" x="30" y="150" width="160" height="50" rx="8"/>
+  <text class="sv-s" x="110" y="168" text-anchor="middle">1. bayt</text>
+  <text class="sv-b" x="110" y="190" text-anchor="middle">110 00101</text>
+  <rect class="sv-m" x="210" y="150" width="160" height="50" rx="8"/>
+  <text class="sv-s" x="290" y="168" text-anchor="middle">2. bayt</text>
+  <text class="sv-b" x="290" y="190" text-anchor="middle">10 011111</text>
+  <rect class="sv-a" x="70" y="215" width="80" height="36" rx="8"/>
+  <text class="sv-b" x="110" y="238" text-anchor="middle">c5</text>
+  <rect class="sv-a" x="250" y="215" width="80" height="36" rx="8"/>
+  <text class="sv-b" x="290" y="238" text-anchor="middle">9f</text>
+</svg>
+<figcaption>"ş" iki bayta böyle yerleşir: kod noktasının 11 biti, UTF-8'in iki baytlık kalıbındaki boş yerlere (x'lere) soldan sağa yazılır. Başlardaki <code>110</code> ve <code>10</code> kalıbın sabit işaretleridir; veri taşımazlar.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 1: harflerin baytları</span>
+<p><strong>Soru:</strong> "A", "a", "ş", "€" ve bir emoji UTF-8'de kaç bayt tutar ve bu baytlar nedir?</p>
+<p><strong>Adım 1.</strong> Kod rafı Parça 3'te gördüğün <code>ord()</code> bir karakterin kod noktasını, <code>encode("utf-8")</code> da onun UTF-8 baytlarını verir. <code>.hex(' ')</code> baytları aralarında boşlukla onaltılık yazar.</p>
+<pre class="kod" data-ad="python3 kodlama.py">for harf in ["A", "a", "ş", "€", "😀"]:
+    b = harf.encode("utf-8")
+    print(f"{harf!r:6} kod noktası U+{ord(harf):04X}  {len(b)} bayt  {b.hex(' ')}")</pre>
+<pre class="cikti">'A'    kod noktası U+0041  1 bayt  41
+'a'    kod noktası U+0061  1 bayt  61
+'ş'    kod noktası U+015F  2 bayt  c5 9f
+'€'    kod noktası U+20AC  3 bayt  e2 82 ac
+'😀'    kod noktası U+1F600  4 bayt  f0 9f 98 80</pre>
+<p><strong>Adım 2.</strong> Tabloyla karşılaştır: U+0041 ilk aralıkta, tek bayt. U+015F ikinci aralıkta, iki bayt. U+20AC üçüncü aralıkta, üç bayt. U+1F600 dördüncü aralıkta, dört bayt.</p>
+<p><strong>Adım 3.</strong> "A" ile "a" arasında yalnızca bir bit fark var: 0x41 = 0100 0001, 0x61 = 0110 0001. Büyük-küçük harf farkı ASCII'de tek bir bittir.</p>
+<p><strong>Sonuç:</strong> Bir metnin karakter sayısı ile bayt sayısı aynı şey değildir. Python'da <code>len(metin)</code> karakteri, <code>len(metin.encode("utf-8"))</code> baytı sayar. Bir veritabanı alanı ya da ağ protokolü "en çok 16 bayt" diyorsa, 16 Türkçe harf oraya sığmayabilir.</p></div>
+
+<h3>Kodlama uyuşmazlığı: bozuk karakterler</h3>
+
+<p>Kodlama bir anlaşma olduğu için, yazan ile okuyan farklı kodlama varsayarsa metin bozulur. Yazan UTF-8 kullanmış, okuyan ise Windows'un eski Batı Avrupa kod sayfasını (cp1252) varsaymışsa, iki baytlık her Türkçe harf iki ayrı garip karaktere dönüşür. Bunu kendin üret:</p>
+
+<pre class="kod" data-ad="python3 bozuk.py">metin = "Şifre güçlü"
+b = metin.encode("utf-8")
+print(len(metin), "karakter,", len(b), "bayt")
+print(b)
+print(b.decode("cp1252"))
+print(b.decode("utf-8"))</pre>
+<pre class="cikti">11 karakter, 15 bayt
+b'\xc5\x9eifre g\xc3\xbc\xc3\xa7l\xc3\xbc'
+Åžifre gÃ¼Ã§lÃ¼
+Şifre güçlü</pre>
+
+<p>Baytlar hiç değişmedi; değişen tek şey onları hangi kurala göre okuduğumuz. "Ã¼" gördüğün her yerde büyük olasılıkla UTF-8 baytları yanlış kodlamayla okunmuştur. Kod rafı Parça 7'de dosya açarken <code>encoding="utf-8"</code> yazmanın neden önemli olduğunu söylemiştik; işte nedeni bu: yazmazsan Python işletim sisteminin varsayılanını kullanır ve o varsayılan her makinede aynı olmayabilir.</p>
+
+<h3>Kodlamanın güvenlik yüzü</h3>
+
+<p>Kodlama gizlilik sağlamaz ama güvenlikle ilgisiz de değildir. UTF-8'in tanımlandığı belge (RFC 3629), geçersiz bayt dizilerinin <strong>reddedilmesi</strong> gerektiğini açıkça yazar. Nedeni şudur: bir güvenlik denetimi metni bir biçimde, onu kullanan program başka bir biçimde yorumlarsa denetim boşa çıkar. Geçmişte bazı web sunucuları, kuralına aykırı biçimde uzatılmış UTF-8 dizilerini kabul ettiği için "bu yolda yasak karakter var mı" denetimi atlatılmıştı. Benzer biçimde, aynı görünen metin farklı bayt dizileriyle yazılabilir: "é" tek bir kod noktası (U+00E9) olabileceği gibi "e" ile bir birleşen vurgu işaretinin ardışığı da olabilir. Kullanıcı adı karşılaştıran bir sistem bunu hesaba katmazsa, aynı görünen iki ad farklı hesaplara gider.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir girdiyi <strong>önce tek ve belirli bir biçime çevir (kodlamayı çöz, normalleştir), sonra denetle, sonra kullan</strong>; ve denetlediğin biçimle kullandığın biçim aynı olsun. Geçersiz kodlamayı "düzeltmeye" çalışma, reddet. Neden: denetim ile kullanım arasında yorum farkı kalırsa, saldırgan o farkın içinden geçer. Bu ilke Parça 22'de (girdi, çıktı ve güven sınırları) genelleşecek.</p></div>
+
+<h2 class="s">2. Metin dosyası, ikili dosya ve sihirli baytlar</h2>
+
+<p>Kod rafı Parça 7'de metin ile ikili dosya farkını görmüştük. Burada güvenlik gözüyle tekrar bakalım. Diskte hiçbir dosya "metin" ya da "resim" etiketi taşımaz; hepsi bayt dizisidir. <strong>Metin dosyası</strong>, baytlarının tamamı bir karakter kodlamasına göre okunabilir karakterlere karşılık gelen dosyadır. <strong>İkili dosya</strong> ise baytları karakter olarak okunmak için değil, bir programın kendi biçim kuralına göre yorumlaması için dizilmiş dosyadır: resim, ses, sıkıştırılmış arşiv, çalıştırılabilir program.</p>
+
+<p>Peki bir program, elindeki dosyanın ne olduğunu nereden bilir? İki yol vardır. Birincisi dosya adının uzantısıdır (<code>.png</code>, <code>.zip</code>). Bu yalnızca bir addır; dosyanın içeriğiyle hiçbir bağı yoktur ve herkes istediği gibi değiştirebilir. İkincisi dosyanın kendisidir: çoğu ikili biçim, dosyanın en başına sabit birkaç bayt koyar. Bunlara <strong>sihirli bayt</strong> (magic bytes, magic number) ya da imza denir. Bir PNG dosyası her zaman <code>89 50 4e 47</code> ile başlar; bunun ikinci, üçüncü ve dördüncü baytı ASCII'de "PNG" demektir.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 2: dosyanın türünü içeriğinden tanımak</span>
+<p><strong>Soru:</strong> Kendi oluşturduğumuz bir metin dosyası, bir gzip dosyası, bir ZIP arşivi ve PNG imzası taşıyan bir dosyanın ilk baytları nedir? Bir ZIP dosyasının adını <code>.jpg</code> yaparsak tür değişir mi?</p>
+<p><strong>Adım 1.</strong> Dört dosyayı Python'ın standart kütüphanesiyle (kod rafı Parça 9) kendi klasöründe üret ve her birinin ilk 8 baytını yazdır.</p>
+<pre class="kod" data-ad="python3 sihirli.py">import gzip, zipfile, io
+from pathlib import Path
+Path("not.txt").write_text("merhaba\n", encoding="utf-8")
+Path("not.gz").write_bytes(gzip.compress(b"merhaba\n", mtime=0))
+with zipfile.ZipFile("arsiv.zip", "w") as z:
+    z.writestr("not.txt", "merhaba\n")
+Path("resim.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 8)
+for ad in ["not.txt", "not.gz", "arsiv.zip", "resim.png"]:
+    print(f"{ad:10} ilk 8 bayt: {Path(ad).read_bytes()[:8].hex(' ')}")</pre>
+<pre class="cikti">not.txt    ilk 8 bayt: 6d 65 72 68 61 62 61 0a
+not.gz     ilk 8 bayt: 1f 8b 08 00 00 00 00 00
+arsiv.zip  ilk 8 bayt: 50 4b 03 04 14 00 00 00
+resim.png  ilk 8 bayt: 89 50 4e 47 0d 0a 1a 0a</pre>
+<p><strong>Adım 2.</strong> Metin dosyasının baytları doğrudan harflerdir: 6d "m", 65 "e", 72 "r"…, sondaki 0a satır sonu. Sihirli bayt yoktur; metnin kendisi vardır. (PNG dosyası burada yalnızca imzayı taşıyan bir taklittir; gerçek bir resim değildir.)</p>
+<p><strong>Adım 3.</strong> ZIP'i kopyalayıp adını <code>tatil.jpg</code> yap ve Linux'un <code>file</code> komutuna sor. <code>file</code> uzantıya değil içeriğe bakar.</p>
+<pre class="kod" data-ad="bash">cp arsiv.zip tatil.jpg
+file not.txt not.gz arsiv.zip tatil.jpg</pre>
+<pre class="cikti">not.txt:   ASCII text
+not.gz:    gzip compressed data, max compression, original size modulo 2^32 8
+arsiv.zip: Zip archive data, at least v2.0 to extract, compression method=store
+tatil.jpg: Zip archive data, at least v2.0 to extract, compression method=store</pre>
+<p><strong>Sonuç:</strong> Adı <code>.jpg</code> olan dosya hâlâ bir ZIP arşividir. Uzantı bir iddiadır, içerik ise gerçektir. Sendeki <code>file</code> sürümü açıklamaları biraz farklı sözcüklerle yazabilir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Biçim</th><th>İlk baytlar (onaltılık)</th><th>Not</th></tr>
+<tr><td>PNG resmi</td><td><code>89 50 4e 47 0d 0a 1a 0a</code></td><td>2.–4. bayt ASCII "PNG"</td></tr>
+<tr><td>ZIP arşivi</td><td><code>50 4b 03 04</code></td><td>ASCII "PK"; .docx, .xlsx, .jar, .apk de ZIP tabanlıdır</td></tr>
+<tr><td>gzip</td><td><code>1f 8b</code></td><td>.gz, .tar.gz</td></tr>
+<tr><td>PDF</td><td><code>25 50 44 46</code></td><td>ASCII "%PDF"</td></tr>
+<tr><td>Linux çalıştırılabilir (ELF)</td><td><code>7f 45 4c 46</code></td><td>bu ortamda <code>/bin/ls</code>'in ilk dört baytı</td></tr>
+<tr><td>Düz metin</td><td>(imza yok)</td><td>baytlar doğrudan karakterlerdir</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Dosyanın uzantısı .jpg, demek ki resimdir."</strong> Uzantı dosyanın adının bir parçasıdır ve göndereni tarafından seçilir. Bir web uygulaması yüklenen dosyanın türüne yalnızca adına bakarak karar verirse, resim beklediği yere başka bir şey kabul etmiş olur. Sihirli baytlara bakmak daha iyidir ama o da tek başına yetmez, çünkü bir dosya hem geçerli bir resim imzası taşıyıp hem de sonunda başka veri barındırabilir. Doğrusu katmanlı savunmadır: izin verilen türleri dar tut, içeriği gerçekten o biçimde ayrıştırabildiğini doğrula, boyutu sınırla, dosyaya sunucuda yeni bir ad ver ve yüklenen dosyaları programların çalıştırıldığı yerden ayrı bir yerde sakla. Bunun ayrıntısı Parça 22'de (dosya yükleme riskleri) gelecek.</p></div>
+
+<h2 class="s">3. Üç ayrı şey: kodlama, şifreleme, hash</h2>
+
+<p>Şimdi parçanın asıl ayrımına geldik. Üçünün de girdisi bir bayt dizisi, çıktısı da çoğu zaman okunmaz görünen bir bayt dizisidir. Dışarıdan bakınca benzerler. Farkları, <strong>geri dönüşün mümkün olup olmadığı</strong> ve <strong>geri dönüş için bir sırrın gerekip gerekmediğidir</strong>.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Üç işlemin karşılaştırması: kodlama anahtarsız geri döner, şifreleme yalnız anahtarla geri döner, hash geri dönmez">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Kodlama (ör. UTF-8, Base64)</text>
+  <rect class="sv-k" x="20" y="32" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="70" y="57" text-anchor="middle">parola123</text>
+  <rect class="sv-m" x="150" y="32" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="57" text-anchor="middle">kural (açık)</text>
+  <rect class="sv-k" x="280" y="32" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="330" y="57" text-anchor="middle">cGFyb2xh…</text>
+  <line class="sv-cl" x1="120" y1="52" x2="150" y2="52"/>
+  <line class="sv-cl" x1="250" y1="52" x2="280" y2="52"/>
+  <text class="sv-s" x="200" y="92" text-anchor="middle">geri dönüş: herkes, sırsız</text>
+
+  <text class="sv-b" x="200" y="125" text-anchor="middle">Şifreleme (ör. AES)</text>
+  <rect class="sv-k" x="20" y="137" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="70" y="162" text-anchor="middle">parola123</text>
+  <rect class="sv-l" x="150" y="137" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="155" text-anchor="middle">algoritma</text>
+  <text class="sv-t" x="200" y="171" text-anchor="middle">+ ANAHTAR</text>
+  <rect class="sv-k" x="280" y="137" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="330" y="162" text-anchor="middle">U2FsdGVk…</text>
+  <line class="sv-cl" x1="120" y1="157" x2="150" y2="157"/>
+  <line class="sv-cl" x1="250" y1="157" x2="280" y2="157"/>
+  <text class="sv-s" x="200" y="197" text-anchor="middle">geri dönüş: yalnız anahtarı bilen</text>
+
+  <text class="sv-b" x="200" y="230" text-anchor="middle">Hash (ör. SHA-256)</text>
+  <rect class="sv-k" x="20" y="242" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="70" y="267" text-anchor="middle">parola123</text>
+  <rect class="sv-a" x="150" y="242" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="267" text-anchor="middle">tek yönlü</text>
+  <rect class="sv-k" x="280" y="242" width="100" height="40" rx="8"/>
+  <text class="sv-t" x="330" y="267" text-anchor="middle">a3a2754f…</text>
+  <line class="sv-cl" x1="120" y1="262" x2="150" y2="262"/>
+  <line class="sv-cl" x1="250" y1="262" x2="280" y2="262"/>
+  <text class="sv-s" x="200" y="302" text-anchor="middle">geri dönüş: yok; yalnız aynı girdiyle</text>
+  <text class="sv-s" x="200" y="318" text-anchor="middle">yeniden hesaplayıp karşılaştırılır</text>
+</svg>
+<figcaption>Üç işlemin çıktısı da "anlamsız" görünür; ayıran şey ortadaki kutudur. Kodlamada kural herkese açıktır, şifrelemede geri dönüşün anahtarı sırdır, hash'te geri dönüş yolu hiç yoktur. Şekildeki çıktılar bu parçadaki gerçek çalıştırmalardan alınmıştır.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th></th><th>Kodlama</th><th>Şifreleme</th><th>Hash (özet)</th></tr>
+<tr><td>Amaç</td><td>veriyi başka bir ortama uygun biçime sokmak</td><td>gizlilik: yetkisiz kişi içeriği okuyamasın</td><td>bütünlük: veri değişti mi anlamak; parmak izi</td></tr>
+<tr><td>Geri çevrilir mi?</td><td>evet</td><td>evet</td><td>hayır</td></tr>
+<tr><td>Sır gerekir mi?</td><td>hayır</td><td>evet (anahtar)</td><td>hayır (ama parolalarda tuz kullanılır)</td></tr>
+<tr><td>Çıktı uzunluğu</td><td>girdiye bağlı</td><td>girdiye bağlı (biraz fazlası)</td><td>sabit (SHA-256'da 32 bayt)</td></tr>
+<tr><td>Örnekler</td><td>UTF-8, Base64, URL kodlama, onaltılık</td><td>AES, ChaCha20</td><td>SHA-256, SHA-3; parola için argon2id, scrypt, bcrypt</td></tr>
+<tr><td>Bu rafta ayrıntısı</td><td>bu parça</td><td>Parça 24–27</td><td>Parça 25</td></tr>
+</table></div>
+
+<h2 class="s">4. Base64: okunmaz görünür, ama gizli değildir</h2>
+
+<p>Bazı ortamlar yalnızca sınırlı bir karakter kümesini güvenle taşıyabilir. E-posta tarihsel olarak yalnızca metin taşımak için tasarlandı; bir resmi e-postaya eklemek için resmin rastgele baytlarını güvenli harflere çevirmek gerekiyordu. Bir web adresine, bir JSON dosyasına ya da bir HTTP başlığına ikili veri koymak istediğinde de aynı sorun çıkar. <strong>Base64</strong> bu iş için yapılmış bir kodlamadır: herhangi bir bayt dizisini yalnızca 64 güvenli karakterden (A–Z, a–z, 0–9, <code>+</code> ve <code>/</code>) oluşan bir metne çevirir. Tanımı RFC 4648'dedir.</p>
+
+<h3>Nasıl çalışır?</h3>
+
+<p>64 = 2<sup>6</sup> olduğu için her Base64 karakteri tam 6 bit taşır. Üç bayt 24 bittir; 24 bit de dört tane 6 bitlik gruba bölünür. Yani Base64 her 3 baytı 4 karaktere çevirir ve çıktı girdiden yaklaşık üçte bir daha uzundur. Girdinin uzunluğu 3'ün katı değilse son grup <code>=</code> ile doldurulur.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 250" role="img" aria-label="par sözcüğünün üç baytının 24 bitinin dört tane altı bitlik gruba bölünüp c G F y karakterlerine dönüşmesi">
+  <text class="sv-s" x="20" y="22">3 bayt (8'er bit)</text>
+  <rect class="sv-k" x="20" y="32" width="196" height="50" rx="8"/>
+  <text class="sv-b" x="118" y="52" text-anchor="middle">p = 0x70</text>
+  <text class="sv-t" x="118" y="72" text-anchor="middle">01110000</text>
+  <rect class="sv-k" x="222" y="32" width="196" height="50" rx="8"/>
+  <text class="sv-b" x="320" y="52" text-anchor="middle">a = 0x61</text>
+  <text class="sv-t" x="320" y="72" text-anchor="middle">01100001</text>
+  <rect class="sv-k" x="424" y="32" width="196" height="50" rx="8"/>
+  <text class="sv-b" x="522" y="52" text-anchor="middle">r = 0x72</text>
+  <text class="sv-t" x="522" y="72" text-anchor="middle">01110010</text>
+  <text class="sv-s" x="20" y="112">aynı 24 bit, 6'şar bitlik dört grup</text>
+  <rect class="sv-m" x="20" y="122" width="145" height="50" rx="8"/>
+  <text class="sv-t" x="92" y="142" text-anchor="middle">011100</text>
+  <text class="sv-s" x="92" y="162" text-anchor="middle">= 28</text>
+  <rect class="sv-m" x="172" y="122" width="145" height="50" rx="8"/>
+  <text class="sv-t" x="244" y="142" text-anchor="middle">000110</text>
+  <text class="sv-s" x="244" y="162" text-anchor="middle">= 6</text>
+  <rect class="sv-m" x="324" y="122" width="145" height="50" rx="8"/>
+  <text class="sv-t" x="396" y="142" text-anchor="middle">000101</text>
+  <text class="sv-s" x="396" y="162" text-anchor="middle">= 5</text>
+  <rect class="sv-m" x="476" y="122" width="144" height="50" rx="8"/>
+  <text class="sv-t" x="548" y="142" text-anchor="middle">110010</text>
+  <text class="sv-s" x="548" y="162" text-anchor="middle">= 50</text>
+  <text class="sv-s" x="20" y="200">alfabedeki sırası (0=A … 25=Z, 26=a … 51=z, 52=0 …)</text>
+  <rect class="sv-a" x="62" y="208" width="60" height="34" rx="8"/>
+  <text class="sv-b" x="92" y="231" text-anchor="middle">c</text>
+  <rect class="sv-a" x="214" y="208" width="60" height="34" rx="8"/>
+  <text class="sv-b" x="244" y="231" text-anchor="middle">G</text>
+  <rect class="sv-a" x="366" y="208" width="60" height="34" rx="8"/>
+  <text class="sv-b" x="396" y="231" text-anchor="middle">F</text>
+  <rect class="sv-a" x="518" y="208" width="60" height="34" rx="8"/>
+  <text class="sv-b" x="548" y="231" text-anchor="middle">y</text>
+</svg>
+<figcaption>"par" üç baytı dört Base64 karakterine, <code>cGFy</code>'ye dönüşür. Hiçbir adımda sır yok: bit dizisi yalnızca 8'erli yerine 6'şarlı okunmuş ve her grup sabit, herkesçe bilinen bir alfabeden harfe çevrilmiştir. Tersini yapmak için aynı tabloyu geriye okumak yeter.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 3: "şifrelenmiş" parolanın gerçeği</span>
+<p><strong>Soru:</strong> Parçanın başındaki <code>cGFyb2xhMTIz</code> satırı gerçekten şifreli mi?</p>
+<p><strong>Adım 1.</strong> Kendi parolamızı Base64'e kodlayıp sonra geri çözelim. Anahtar ya da parola istemeyen bu iki satıra dikkat et.</p>
+<pre class="kod" data-ad="python3 b64.py">import base64
+gizli = "parola123"
+kodlu = base64.b64encode(gizli.encode("utf-8"))
+print(kodlu)
+print(base64.b64decode(kodlu).decode("utf-8"))
+print(len(gizli), "->", len(kodlu))</pre>
+<pre class="cikti">b'cGFyb2xhMTIz'
+parola123
+9 -> 12</pre>
+<p><strong>Adım 2.</strong> Aynı şeyi Linux'ta hazır gelen <code>base64</code> komutuyla yap. Python'a bile gerek yok.</p>
+<pre class="kod" data-ad="bash">printf 'parola123' | base64
+echo 'cGFyb2xhMTIz' | base64 -d; echo</pre>
+<pre class="cikti">cGFyb2xhMTIz
+parola123</pre>
+<p><strong>Adım 3.</strong> 9 bayt 12 karakter oldu: 3 bayt başına 4 karakter, tam beklenen. Uzunluk 3'ün katı olduğu için sonda <code>=</code> yok.</p>
+<p><strong>Sonuç:</strong> O satır şifreli değil, yalnızca kodlanmış. Dosyayı görebilen herkes parolayı da görmüş sayılır. "Şifrelenmiştir" notu yanlış bir güven duygusu yaratıyor; asıl zarar da buradan gelir, çünkü kimse o dosyayı gerçekten gizli bir şeymiş gibi korumaz.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Base64 bir kodlamadır; gizlilik sağlamaz.</strong> Anahtar içermez ve herkes tarafından geri çevrilebilir. Base64 gördüğünde "bu veri bir taşıma biçimine sokulmuş" de, "bu veri korunuyor" deme. Gizlilik gerekiyorsa gerçek şifreleme kullanılır; Base64 en fazla şifreli baytları metin olarak taşımak için onun üstüne eklenir (aşağıdaki örnekte göreceğin gibi).</p></div>
+
+<p>Bu yanılgının yaygın bir yansıması web'de görülür: HTTP'nin en eski kimlik doğrulama yöntemi olan "Basic" kimlik doğrulama, kullanıcı adı ile parolayı yalnızca Base64'le kodlayıp her istekte başlıkta gönderir. Bu yöntemin kabul edilebilir olmasının tek koşulu, bağlantının HTTPS ile şifrelenmesidir; düz HTTP üzerinden giden Base64'lü parola, yolu dinleyebilen herkes için düz metindir (Parça 17 ve 23). Aynı şekilde Parça 20'de göreceğin JWT belirteçlerinin içi de Base64 türevi bir kodlamayla yazılır ve <strong>okunabilir</strong>; JWT'nin güvencesi içeriği gizlemesi değil, imzayla değiştirilmesini fark ettirmesidir.</p>
+
+<h2 class="s">5. Şifreleme: anahtarı olmayan geri çeviremez</h2>
+
+<p>Şifrelemenin amacı gizliliktir: veriyi, yalnızca doğru <strong>anahtarı</strong> bilen birinin geri çevirebileceği bir biçime sokmak. Şifreleme algoritmalarının nasıl çalıştığı herkese açıktır; güvenlik algoritmanın gizliliğine değil, anahtarın gizliliğine dayanır. Bu ilkenin adı Kerckhoffs ilkesidir ve Parça 24'te ayrıntılı işlenecek. Burada yalnızca davranışı görmek istiyoruz: anahtarla geri döner, anahtarsız dönmez.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 4: aynı veriyi gerçekten şifrelemek</span>
+<p><strong>Soru:</strong> Aynı <code>parola123</code> verisini bir anahtarla şifrelersek ne görürüz? Doğru ve yanlış anahtarla çözmeye çalışınca ne olur?</p>
+<p><strong>Adım 1.</strong> Kendi klasöründe, <code>openssl</code> komutuyla AES-256 kullanarak şifrele. <code>-pbkdf2</code>, verdiğimiz parola cümlesinden asıl anahtarı yavaş ve tuzlu bir yöntemle türetir; <code>-base64</code> ise çıkan ikili baytları ekrana basılabilir hâle getirir. (Bu bir deneme anahtarıdır; gerçek bir sırrı asla komut satırına yazma, aşağıdaki hata kutusuna bak.)</p>
+<pre class="kod" data-ad="bash sifrele.sh">printf 'parola123' &gt; gizli.txt
+openssl enc -aes-256-cbc -pbkdf2 -pass pass:deneme-anahtari -in gizli.txt -base64 -out sifreli.b64
+cat sifreli.b64
+openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:deneme-anahtari -in sifreli.b64 -base64; echo
+openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:yanlis-anahtar -in sifreli.b64 -base64 &gt; /dev/null 2&gt;&amp;1
+echo "yanlış anahtarla çıkış kodu: $?"</pre>
+<pre class="cikti">U2FsdGVkX192Ii7+mA4TAMQ4xE/DY24Sz/zCd7KlKfc=
+parola123
+yanlış anahtarla çıkış kodu: 1</pre>
+<p><strong>Adım 2.</strong> Betiği bir kez daha çalıştır.</p>
+<pre class="cikti">U2FsdGVkX1+U+5zQpsAi0COIr3j2NYe9jQT0aloI5ck=
+parola123
+yanlış anahtarla çıkış kodu: 1</pre>
+<p><strong>Adım 3.</strong> Aynı veri, aynı anahtar, ama şifreli çıktı farklı. Nedeni, <code>openssl</code>'in her çalıştırmada rastgele bir <strong>tuz</strong> seçmesidir; tuz, anahtar türetmeye karışır ve sonucu değiştirir. Senin çıktın da bu ikisinden farklı olacak. Çıktıların ikisinin de <code>U2FsdGVkX1</code> ile başladığına dikkat et: bu, Base64'le yazılmış "Salted__" sözcüğüdür, yani <code>openssl</code>'in kendi dosya başlığı. Bir tür sihirli bayt.</p>
+<p><strong>Adım 4.</strong> Yanlış anahtarla çözme başarısız oldu ve komut 1 çıkış koduyla bitti (kod rafı Parça 17'de gördüğün <code>$?</code>). Ancak bunu bir güvence sanma: bu kipte yanlış anahtar bazen hata vermeden anlamsız bayt da üretebilir. Verinin değiştirilmediğini garanti etmek ayrı bir iştir ve Parça 25'te (HMAC, kimlik doğrulamalı şifreleme) işlenecek.</p>
+<p><strong>Sonuç:</strong> Base64 örneğiyle karşılaştır. Orada <code>base64 -d</code> herkese parolayı verdi. Burada şifreli metnin kendisi tamamen açık olsa da, anahtarı bilmeyen ondan parolayı çıkaramaz. Bu çıktıda Base64 de var, ama yalnızca şifreli baytları taşımak için; gizliliği sağlayan Base64 değil, AES'tir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Anahtarı ya da parolayı komutun içine, kaynak koduna ya da şifreli verinin yanına yazmak.</strong> Yukarıdaki örnekte <code>-pass pass:…</code> yalnızca deneme olduğu için kullanıldı. Gerçek bir sırrı komut satırına yazarsan kabuk geçmişine kaydedilir ve komut çalışırken aynı makinedeki başka kullanıcılar süreç listesinde görebilir (Parça 7'deki <code>ps</code>). Anahtar kaynak koduna gömülürse, kod nereye kopyalanırsa sır da oraya gider (kod rafı Git Parça 35'te depoya giren sırrın neden geri alınamadığı anlatılıyor). Şifreli veriyle anahtarı aynı yerde tutmak ise kapıyı kilitleyip anahtarı kilidin üstünde bırakmaktır. Doğrusu: sırrı ayrı ve izinleri dar bir dosyada ya da bir sır kasasında tutmak, araç izin veriyorsa onu etkileşimli olarak ya da dosyadan okutmak. Parça 10 (sır saklama) ve Parça 27 (anahtar yönetimi) bunu derinleştirecek.</p></div>
+
+<h2 class="s">6. Hash: verinin parmak izi</h2>
+
+<p>Hash fonksiyonu (Türkçede özet fonksiyonu) her uzunlukta bir girdi alır ve <strong>sabit uzunlukta</strong> bir çıktı üretir. Bu çıktıya özet (digest) ya da hash değeri denir. İyi bir kriptografik hash fonksiyonunun üç temel özelliği vardır: aynı girdi her zaman aynı özeti verir; özetten girdiye geri gitmenin pratik bir yolu yoktur (tek yönlülük); ve girdideki en küçük değişiklik özeti tanınmayacak kadar değiştirir (çığ etkisi). Bir de aynı özeti veren iki farklı girdi bulmak pratikte imkânsız olmalıdır (çakışma direnci). Bu özelliklerin matematiği Parça 25'in konusu; burada davranışı görelim.</p>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 5: SHA-256'nın davranışı</span>
+<p><strong>Soru:</strong> "merhaba", "Merhaba", "merhaba!" ve "merhaba"nın 10.000 kez tekrarının SHA-256 özetleri neye benzer?</p>
+<p><strong>Adım 1.</strong> Python'ın <code>hashlib</code> modülüyle dört özeti hesapla. Hash baytlar üzerinde çalışır, bu yüzden metni önce UTF-8'le kodluyoruz; burada bile birinci bölümdeki kodlama kararı devrede.</p>
+<pre class="kod" data-ad="python3 ozet.py">import hashlib
+for metin in ["merhaba", "Merhaba", "merhaba!", "merhaba" * 10000]:
+    h = hashlib.sha256(metin.encode("utf-8")).hexdigest()
+    print(f"{len(metin):6} karakter -> {h}")</pre>
+<pre class="cikti">     7 karakter -> 4c6bcdd55f3153e1939669ab1ec039e4059174dc25abdfcb2f58868849b4d61b
+     7 karakter -> 7fdc9f4717c5fe66df286c700fab969b4d6209d03aa84624c5f8f58c17c9c058
+     8 karakter -> f1b3d7c4f9bf47d412ee584081ca5eda31b9af1682a23e988d46a3376542180f
+ 70000 karakter -> 96bc0794a6b49e8dc7b07022fde9db0538e775c434bb8a281cfde10bd20fb514</pre>
+<p><strong>Adım 2.</strong> Uzunluğa bak: 7 karakterlik girdi de 70.000 karakterlik girdi de 64 onaltılık hane, yani 32 bayt özet verdi. Özet, girdinin sıkıştırılmış hâli değildir; içinde girdinin tamamı yoktur.</p>
+<p><strong>Adım 3.</strong> İlk iki satırı karşılaştır: yalnızca bir harfin büyük-küçük durumu (tek bir bit, örnek 1'den hatırla) değişti, ama iki özet arasında görünür hiçbir benzerlik yok. Çığ etkisi budur.</p>
+<p><strong>Adım 4.</strong> Aynı özeti Linux'un <code>sha256sum</code> komutuyla doğrula (kod rafı Parça 18). <code>printf</code> kullanıyoruz, çünkü <code>echo</code> sona satır sonu ekler ve o tek bayt özeti tamamen değiştirirdi.</p>
+<pre class="kod" data-ad="bash">printf 'merhaba' | sha256sum</pre>
+<pre class="cikti">4c6bcdd55f3153e1939669ab1ec039e4059174dc25abdfcb2f58868849b4d61b  -</pre>
+<p><strong>Sonuç:</strong> Python ile <code>sha256sum</code> aynı özeti verdi; hash fonksiyonu belirlenimcidir ve kimin hesapladığına bağlı değildir. Bu yüzden indirdiğin bir dosyanın özetini yayımlanan özetle karşılaştırıp dosyanın değişmediğini anlayabilirsin (Parça 10).</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Hash gizlemez, doğrular.</strong> Hash geri çevrilemez, bu yüzden bir veriyi saklamak ve sonra geri almak için kullanılamaz; o şifrelemenin işidir. Hash'in işi "bu iki veri aynı mı?" sorusuna, verinin kendisini taşımadan cevap vermektir. Ama dikkat: hash'in içinde sır yoktur. Bir dosyayı değiştiren kişi yeni özeti de hesaplayabilir. Bu yüzden özet, ancak <strong>güvendiğin ayrı bir yoldan</strong> geldiğinde bütünlük kanıtıdır.</p></div>
+
+<p>Bir uyarı daha: her hash fonksiyonu bugün güvenli değildir. MD5 ve SHA-1 için aynı özeti veren farklı girdiler üretilebildiği gösterilmiştir; bu yüzden güvenlik amaçlı yeni işlerde kullanılmazlar. Kod rafı Parça 18'de <code>md5sum</code>'ın neden artık yeterli görülmediğinden söz etmiştik; teknik nedeni Parça 25'te göreceksin.</p>
+
+<h3>Parolalar: neden "şifrelenmez", neden düz hash de yetmez?</h3>
+
+<p>Bir sistem parolanı neden saklar? Sen giriş yaparken yazdığını kontrol edebilmek için. Kontrol etmek için parolanın kendisini bilmek gerekmez; yazdığının, kayıt olurken yazdığınla aynı olduğunu anlamak yeter. Bu tam olarak hash'in yaptığı iştir. Bu yüzden parolalar <strong>şifrelenmez</strong>: şifrelenmiş parola anahtarla geri çevrilebilir ve o anahtar sunucuda bir yerde durmak zorundadır; veritabanını ele geçiren anahtara da ulaşırsa bütün parolalar açığa çıkar. Parola özetlenirse, veritabanı sızsa bile içinde parolaların kendisi yoktur. Linux da kullanıcı parolalarını bu yüzden <code>/etc/shadow</code>'da özet olarak tutar (Parça 6).</p>
+
+<p>Ama SHA-256 gibi sıradan bir hash bu iş için yetmez ve nedenini anlamak önemli. Birincisi, sıradan hash fonksiyonları <strong>hızlı</strong> olmak için tasarlanmıştır; dosya doğrularken istediğimiz budur. Veritabanını ele geçiren biri ise elindeki özetlerle eşleşen bir parola bulmak için çok sayıda tahmini dener; fonksiyon ne kadar hızlıysa, saniyede o kadar çok tahmin yapabilir. İkincisi, aynı parola her zaman aynı özeti verir. İki kullanıcının özeti aynıysa parolaları da aynıdır ve yaygın parolaların özetleri önceden hesaplanıp tablolara konmuş olabilir. Savunma bu iki zayıflığı ayrı ayrı kapatır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Parola saklamanın doğru yolu: <strong>her parola için ayrı, rastgele bir tuz (salt) üret; parolayı tuzla birlikte, kasıtlı olarak yavaş ve bellek isteyen bir parola özetleme fonksiyonundan geçir; tuzu ve özeti birlikte sakla.</strong> OWASP'ın parola saklama rehberi ilk tercih olarak argon2id'i, o yoksa scrypt'i, yalnızca eski sistemlerde bcrypt'i önerir. Tuz gizli değildir; işi, aynı parolanın her hesapta farklı özet vermesini sağlamak ve önceden hesaplanmış tabloları işe yaramaz kılmaktır. Yavaşlık ise meşru kullanıcıya bir girişte birkaç yüz milisaniyeye mal olur ama milyonlarca tahmin yapmak isteyen için aynı çarpanla büyür.</p></div>
+
+<div class="orn"><span class="et">Çalıştırılmış örnek 6: tuzlu ve yavaş parola özeti</span>
+<p><strong>Soru:</strong> İki hesap aynı parolayı kullanıyorsa, doğru saklama yönteminde veritabanında ne görünür? Giriş sırasında doğrulama nasıl yapılır? Sıradan hash ile parola özetleme fonksiyonu arasındaki hız farkı ne kadardır?</p>
+<p><strong>Adım 1.</strong> Python'ın standart kütüphanesinde scrypt hazır gelir (<code>hashlib.scrypt</code>). Parametreleri OWASP rehberindeki scrypt önerisine göre seçtik: N = 2<sup>17</sup>, r = 8, p = 1; bu ayar yaklaşık 128 MiB bellek ister, bu yüzden <code>maxmem</code> sınırını yükselttik. Örnek tekrarlanabilir olsun diye tuzları sabit yazdık; gerçek bir sistemde her hesap için <code>os.urandom(16)</code> ile rastgele üretilir.</p>
+<pre class="kod" data-ad="python3 parola.py">import hashlib, hmac
+
+def ozet_uret(parola, tuz):
+    return hashlib.scrypt(parola.encode("utf-8"), salt=tuz,
+                          n=2**17, r=8, p=1, dklen=32,
+                          maxmem=2**28)
+
+tuz1 = bytes.fromhex("a1" * 16)    # gerçekte: os.urandom(16)
+tuz2 = bytes.fromhex("b2" * 16)
+kayit1 = ozet_uret("parola123", tuz1)
+kayit2 = ozet_uret("parola123", tuz2)
+print("hesap 1:", kayit1.hex())
+print("hesap 2:", kayit2.hex())
+print("düz SHA-256:", hashlib.sha256(b"parola123").hexdigest())
+
+def dogrula(girilen, tuz, kayitli):
+    return hmac.compare_digest(ozet_uret(girilen, tuz), kayitli)
+
+print(dogrula("parola123", tuz1, kayit1))
+print(dogrula("Parola123", tuz1, kayit1))</pre>
+<pre class="cikti">hesap 1: 897f4aa9fad9ca217edd6b37151e5d260849973136c71671e7072eb5a8fbc16a
+hesap 2: 69ebb25698757449d849d2ccb8324aaf5f307957be955392bf0b80c4593a9cc3
+düz SHA-256: a3a2754f94b4f8c1ca8d29290bc37ba90cedf0e13a9e702a829740835e5ed564
+True
+False</pre>
+<p><strong>Adım 2.</strong> İki hesap aynı parolayı kullanıyor ama kayıtları tamamen farklı. Veritabanına bakan biri iki parolanın aynı olduğunu göremez. Düz SHA-256 satırı ise bu parolayı kullanan dünyadaki her sistemde aynıdır; tuzun kapattığı açık budur.</p>
+<p><strong>Adım 3.</strong> Doğrulama, parolayı geri çevirmekle değil, girilen parolayı <strong>aynı tuzla</strong> yeniden özetleyip kayıtlı özetle karşılaştırmakla yapılır. Doğru parola <code>True</code>, tek harfi farklı olan <code>False</code> verdi. Karşılaştırmada <code>==</code> yerine <code>hmac.compare_digest</code> kullandık: bu işlev, iki değerin kaçıncı baytta ayrıldığına bağlı olarak süresi değişmeyecek biçimde karşılaştırır; böylece yanıt süresinden bilgi sızmaz.</p>
+<p><strong>Adım 4.</strong> Hız farkını ölç.</p>
+<pre class="kod" data-ad="python3 hiz.py">import hashlib, time
+t = time.perf_counter()
+for _ in range(1000):
+    hashlib.sha256(b"parola123").digest()
+a = time.perf_counter() - t
+t = time.perf_counter()
+for _ in range(10):
+    hashlib.scrypt(b"parola123", salt=b"x"*16, n=2**17, r=8, p=1, maxmem=2**28)
+b = (time.perf_counter() - t) / 10
+print(f"bir SHA-256: {a/1000*1e6:.2f} mikrosaniye")
+print(f"bir scrypt : {b*1e3:.1f} milisaniye")
+print(f"oran       : yaklaşık {b/(a/1000):,.0f} kat")</pre>
+<pre class="cikti">bir SHA-256: 0.35 mikrosaniye
+bir scrypt : 421.1 milisaniye
+oran       : yaklaşık 1,213,725 kat</pre>
+<p><strong>Sonuç:</strong> Bu ortamda bir scrypt hesabı, bir SHA-256 hesabından yaklaşık bir milyon kat uzun sürdü. Senin makinendeki sayılar donanıma göre farklı çıkacak; önemli olan oranın büyüklüğüdür. Giriş yapan kullanıcı için yarım saniye fark edilmez; çok sayıda tahmin denemek isteyen için her tahmin aynı bedeli öder. Bu parçanın konusu parolayı doğru saklamaktır; kimlik doğrulamanın geri kalanı (MFA, oran sınırlama) Parça 20 ve 30'da.</p></div>
+
+<h2 class="s">7. Sıkıştırma: küçültür, gizlemez</h2>
+
+<p>Sıkıştırma, verideki tekrarları ve öngörülebilir kalıpları daha kısa biçimde yazarak boyutu küçültür. Bir günlük dosyasında aynı satır binlerce kez geçiyorsa, sıkıştırıcı "bu satır, şu kadar kez" demenin bir yolunu bulur. Sıkıştırma da kodlama gibi <strong>anahtarsız ve geri çevrilebilirdir</strong>: <code>.zip</code> ya da <code>.gz</code> dosyasını açmak için herkesin elinde aynı araç vardır. Sıkıştırılmış bir dosyanın içi okunmaz görünür, ama bu gizlilik değildir.</p>
+
+<pre class="kod" data-ad="python3 sikistir.py">import zlib, os
+tekrar = ("GET /index.html 200\n" * 500).encode()
+rastgele = os.urandom(len(tekrar))
+for ad, veri in [("tekrarlı günlük", tekrar), ("rastgele bayt", rastgele)]:
+    s = zlib.compress(veri, 9)
+    print(f"{ad:16} {len(veri)} bayt -> {len(s)} bayt")
+print(zlib.decompress(zlib.compress(tekrar))[:20])</pre>
+<pre class="cikti">tekrarlı günlük  10000 bayt -> 76 bayt
+rastgele bayt    10000 bayt -> 10011 bayt
+b'GET /index.html 200\n'</pre>
+
+<p>Tekrarlı günlük 10.000 bayttan 76 bayta indi ve son satırda anahtarsız geri açıldı. Rastgele baytlar ise hiç küçülmedi, hatta biraz büyüdü: içinde tekrar ya da kalıp yoktur, sıkıştırıcının yakalayacağı bir şey bulunmaz. (Rastgele girdi her çalıştırmada değiştiği için ikinci satırdaki sayı sende birkaç bayt farklı çıkabilir.) Bu gözlem önemli bir sonuç verir: iyi şifrelenmiş veri rastgele görünür ve bu yüzden sıkışmaz. Bir veriyi hem sıkıştırıp hem şifreleyeceksen, sıkıştırma önce yapılır; şifreli veriyi sıkıştırmaya çalışmak boşunadır.</p>
+
+<h2 class="s">8. Neden sürekli karıştırılıyor ve neden tehlikeli?</h2>
+
+<p>Bu kavramların karışmasının birkaç nedeni var. Birincisi görüntü: Base64, şifreli metin, sıkıştırılmış dosya ve hash özeti, hepsi insan gözüne aynı derecede anlamsız görünür. Gözümüz "okuyamıyorum" ile "okunamaz" arasında ayrım yapmaz. İkincisi dil: gündelik konuşmada "şifre" sözcüğü hem parola hem şifreleme anlamında kullanılır; "şifreyi şifreledik" demek kolaydır ama ne yapıldığını söylemez. İngilizcede de "encrypt", "encode" ve "hash" sözcükleri belgelerde ve forumlarda sık sık birbirinin yerine kullanılır. Üçüncüsü araçlar: birçok program bu işlemleri tek bir düğmenin ya da komutun arkasına saklar, yukarıdaki <code>openssl</code> örneğinde olduğu gibi aynı çıktıda hem şifreleme hem Base64 bulunur.</p>
+
+<p>Tehlike, yanlış ad konulan işlemin yanlış bir güven duygusu yaratmasıdır. Base64'lü bir parolayı "şifreli" sanan ekip, o dosyayı herkese açık bir depoya koymakta sakınca görmez. Parolaları SHA-256 ile özetleyen bir geliştirici "hash'ledik, geri çevrilemez" diyerek rahatlar; oysa tuzsuz ve hızlı bir özetin parolayı ne kadar az koruduğunu görmüştük. Bir dosyanın yanına SHA-256 özetini koyan biri "artık değiştirilemez" sanır; oysa dosyayı değiştiren özeti de değiştirebilir. Her üç durumda da teknik işlem doğru çalışıyor; yanlış olan, işlemden beklenen koruma.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Okunmaz bir veri gördüğünde ya da biri "şifreledik" dediğinde, parçanın başındaki üç soruyu sor: <strong>Geri çevrilebilir mi? Bunun için bir sır gerekiyor mu? Bu işlem hangi tehdide karşı seçildi?</strong> Cevap "evet, hayır" ise orada gizlilik yoktur. Cevap "hayır" ise orada saklanan veri geri alınamaz; yalnızca karşılaştırılabilir. Gizlilik isteniyorsa şifreleme ve korunan bir anahtar; bütünlük isteniyorsa güvenilir yoldan gelen özet ya da anahtarlı bir doğrulama (Parça 25–26); parola saklanacaksa tuzlu ve yavaş bir parola özeti.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Gördüğün</th><th>Büyük olasılıkla</th><th>Nasıl anlarsın</th><th>Ne korur?</th></tr>
+<tr><td>Yalnız harf, rakam, <code>+ /</code>, sonda <code>=</code> olabilir</td><td>Base64</td><td>uzunluk 4'ün katı; <code>base64 -d</code> anlamlı bir şey verir</td><td>hiçbir şeyi</td></tr>
+<tr><td>Tam 64 onaltılık hane</td><td>SHA-256 özeti</td><td>uzunluk sabit, girdi ne olursa olsun aynı</td><td>bütünlük (güvenilir yoldan geldiyse)</td></tr>
+<tr><td><code>$argon2id$…</code> ya da <code>$2b$…</code> ile başlayan dizi</td><td>parola özeti, tuz ve ayarlar içinde</td><td>başındaki önek algoritmayı söyler</td><td>sızıntıda parolayı (doğru ayarlanmışsa)</td></tr>
+<tr><td>Rastgele görünen, sıkışmayan baytlar</td><td>şifreli ya da sıkıştırılmış veri</td><td>sihirli bayt ve biçim başlığına bak</td><td>şifreliyse gizlilik (anahtar korunuyorsa)</td></tr>
+<tr><td><code>Ã¼</code>, <code>Åž</code> gibi garip harfler</td><td>yanlış kodlamayla okunmuş UTF-8</td><td>baytları UTF-8 olarak çöz</td><td>(güvenlik işlemi değil)</td></tr>
+</table></div>
+
+<p>Tablodaki "büyük olasılıkla" sözcüğü önemlidir: bir dizinin görünüşü yalnızca ipucudur, kanıt değildir. Tam 64 onaltılık hane rastgele bir anahtar da olabilir; Base64 alfabesine uyan her dizi Base64 değildir. Emin olmanın yolu, verinin hangi sistemden ve hangi belgeyle geldiğine bakmaktır.</p>
+
+<p>Bu ayrımları bütün raf boyunca kullanacağız. Linux'ta parola dosyasında, SSH anahtar dosyalarında (Base64'le yazılmış anahtar baytları), HTTPS sertifikalarında (yine Base64), web uygulamalarının oturum belirteçlerinde ve olay müdahalesinde delilin değişmediğini kanıtlarken (Parça 40) hep aynı soruyu soracaksın: bu kodlama mı, şifreleme mi, özet mi? Bir de sınır: bu parçadaki her örnek yalnızca senin kendi oluşturduğun dosyalar ve verilerle yapıldı. Başkasına ait bir sistemden alınmış parola özetleri ya da şifreli verilerle uğraşmak, hem etik hem hukuki olarak bu rafın dışındadır (Parça 41).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki bit, bayt ve onaltılık gösterim, UTF-8 kalıplarını ve Base64'ün 6 bitlik gruplarını okumanın aracıydı. Parça 2'deki dosya sistemi kavramı, burada "dosyanın türü adında değil içeriğindedir" fikrine dönüştü.</p>
+<p><strong>Sonraki siber parçalarına:</strong> Parça 6'da <code>/etc/shadow</code>'daki parola özetlerini, Parça 10'da indirilen dosyanın özetle doğrulanmasını ve SSH anahtarlarını, Parça 17 ve 23'te HTTPS'in neden Base64'lü parolayı korumak için şart olduğunu, Parça 20 ve 30'da parola saklamanın web uygulamasındaki yerini, Parça 22'de dosya yükleme denetimini, Parça 24–27'de şifreleme ve hash'in matematiğini ve pratiğini, Parça 40'ta delil bütünlüğünü göreceksin.</p>
+<p><strong>Kod rafına:</strong> Parça 3'teki <code>encode/decode</code>, <code>ord/chr</code> ve parola gücü denetleyicisi; Parça 7'deki metin-ikili ayrımı ve <code>encoding="utf-8"</code>; Parça 9'daki standart kütüphane (<code>hashlib</code>, <code>base64</code>, <code>zlib</code> buradan); Parça 18'deki <code>sha256sum</code> ile dosya bütünlüğü izleyicisi ve Parça 21'deki veritabanında parola saklama bu parçanın doğrudan uygulamasıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Unicode ile UTF-8 aynı şey mi?</summary><p>Hayır. Unicode her karaktere bir numara (kod noktası) verir; UTF-8 bu numarayı 1–4 bayta yazma kuralıdır. Aynı Unicode karakteri UTF-16 gibi başka kodlamalarla farklı baytlara da yazılabilir.</p></details>
+
+<details><summary>"ş" harfi Python'da len() ile 1, ama encode("utf-8") sonrası 2 çıkıyor. Neden?</summary><p>len() bir str üzerinde karakter sayar, bytes üzerinde bayt sayar. "ş" tek karakterdir ama kod noktası U+015F, UTF-8'in iki baytlık aralığına düşer: c5 9f.</p></details>
+
+<details><summary>Bir dosyanın türünü anlamak için uzantıya bakmak neden yetmez?</summary><p>Uzantı dosya adının bir parçasıdır ve istenildiği gibi değiştirilebilir; içerikle bağı yoktur. İçeriğin başındaki sihirli baytlar daha güvenilir bir ipucudur, ama dosyanın gerçekten o biçimde ayrıştırılabildiği ayrıca doğrulanmalıdır.</p></details>
+
+<details><summary>Base64 neden gizlilik sağlamaz?</summary><p>Çünkü anahtar içermez: bitleri 6'şarlı gruplara bölüp herkesçe bilinen sabit bir alfabeyle harfe çevirir. Herkes aynı tabloyla geri çevirebilir; amacı ikili veriyi metin taşıyan ortamlara uygun hâle getirmektir.</p></details>
+
+<details><summary>Şifreleme ile hash arasındaki temel fark nedir?</summary><p>Şifreleme geri çevrilebilir ve geri çevirmek için anahtar gerekir; amacı gizliliktir. Hash geri çevrilemez, sabit uzunlukta bir parmak izi üretir; amacı iki verinin aynı olup olmadığını anlamaktır.</p></details>
+
+<details><summary>Parolalar neden şifrelenerek değil özetlenerek saklanır ve neden düz SHA-256 yetmez?</summary><p>Şifreli parola, sunucuda duran anahtarla geri çevrilebilir; özet ise geri çevrilemez. Düz SHA-256 hem çok hızlıdır hem de aynı parolaya her yerde aynı özeti verir; bu yüzden her parola için ayrı rastgele tuz ve argon2id ya da scrypt gibi yavaş bir parola özeti kullanılır.</p></details>
+
+<details><summary>Bir dosyanın yanına SHA-256 özetini koymak onu değiştirilmeye karşı korur mu?</summary><p>Tek başına korumaz. Dosyayı değiştiren kişi yeni özeti de hesaplayıp yanına koyabilir. Özet, ancak dosyadan ayrı ve güvendiğin bir yoldan geldiğinde ya da anahtarlı bir doğrulamayla birlikte kullanıldığında bütünlük kanıtıdır.</p></details>
+
+<details><summary>Rastgele baytlar neden sıkışmaz ve bundan ne çıkar?</summary><p>Sıkıştırma tekrar ve kalıpları kısaltır; rastgele veride bunlar yoktur. İyi şifrelenmiş veri de rastgele göründüğü için sıkışmaz; bu yüzden ikisi birlikte yapılacaksa önce sıkıştırılır, sonra şifrelenir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span><ul>
+<li><strong>Üç soru:</strong> Geri çevrilir mi? Sır gerekir mi? Neyi korumak için?</li>
+<li><strong>Kodlama</strong> (UTF-8, Base64): geri çevrilir, sır yok, hiçbir şeyi gizlemez; yalnızca biçim değiştirir.</li>
+<li><strong>Şifreleme</strong> (AES): geri çevrilir, anahtar şart; gizlilik sağlar. Güvenlik anahtardadır, anahtarı koda ve komut satırına yazma.</li>
+<li><strong>Hash</strong> (SHA-256): geri çevrilmez, sabit uzunluk, çığ etkisi; bütünlük ve karşılaştırma için. İçinde sır yok. MD5/SHA-1 güvenlik için emekli.</li>
+<li><strong>Parola:</strong> şifrelenmez; her hesaba ayrı rastgele tuz + yavaş parola özeti (argon2id, yoksa scrypt, eskide bcrypt). Doğrulama: aynı tuzla yeniden özetle, sabit sürede karşılaştır.</li>
+<li><strong>Sıkıştırma:</strong> küçültür, gizlemez; rastgele/şifreli veri sıkışmaz; önce sıkıştır, sonra şifrele.</li>
+<li><strong>UTF-8:</strong> 1–4 bayt, ASCII ile uyumlu; karakter sayısı ≠ bayt sayısı. "Ã¼" görürsen kodlama uyuşmazlığı.</li>
+<li><strong>Dosya türü:</strong> uzantı iddiadır, sihirli bayt ipucudur (PNG 89 50 4e 47, ZIP 50 4b, gzip 1f 8b, PDF %PDF, ELF 7f 45 4c 46); ayrıştırarak doğrula.</li>
+<li><strong>Girdi:</strong> önce tek biçime çevir, sonra denetle, sonra kullan; geçersiz kodlamayı reddet.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-3">
+<h3>Quiz 3</h3>
+<p class="qa">On iki soru: sekizi bu parçadan, dördü Parça 1–2'den tekrar. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Aşağıdakilerden hangisi bir kodlamadır ve tek başına <strong>hiçbir</strong> gizlilik sağlamaz?</p>
+<ul class="sec"><li>AES-256 ile şifreleme</li><li>Base64</li><li>argon2id parola özeti</li><li>Anahtarla yapılan HMAC</li><li>TLS ile şifrelenmiş bağlantı</li></ul>
+<div class="coz"><p>Base64, bitleri 6'şarlı gruplara bölüp herkesçe bilinen bir alfabeyle harfe çeviren bir kodlamadır; anahtarsız geri çevrilir. AES ve TLS gerçek şifrelemedir, anahtar olmadan içerik okunamaz. argon2id bir parola özetleme fonksiyonudur, geri çevrilmez. HMAC anahtarlı bir bütünlük denetimidir. Okunmaz görünmek ile korunmak aynı şey değildir; bu soru o ayrımı yokluyor.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki kodun çıktısı nedir?<br><code>s = "şeker"</code><br><code>print(len(s), len(s.encode("utf-8")))</code></p>
+<ul class="sec"><li>5 5</li><li>6 6</li><li>5 10</li><li>5 6</li><li>Hata verir; str'de encode yoktur.</li></ul>
+<div class="coz"><p>Bu ortamda çalıştırıldığında çıktı <code>5 6</code>'dır. "şeker" beş karakterdir; str üzerinde len() karakter sayar. UTF-8'de "e", "k", "e", "r" birer bayt, "ş" (U+015F) iki bayttır; toplam 6. "5 5" karakterle baytı aynı sanmaktır; "5 10" her karakteri iki bayt sanmaktır. str'nin encode metodu vardır, hata vermez.</p></div></li>
+
+<li data-c="A"><p class="q">Bir yapılandırma dosyasında <code>parola: cGFyb2xhMTIz</code> satırı var ve yanında "şifreli" yazıyor. Bu durumla ilgili hangisi doğrudur?</p>
+<ul class="sec"><li>Değer Base64'tür; dosyayı okuyabilen herkes parolayı anahtarsız elde edebilir.</li><li>Değer bir SHA-256 özetidir; parola geri elde edilemez.</li><li>Değer AES ile şifrelenmiştir; anahtar olmadan okunamaz.</li><li>Değer tuzlu bir parola özetidir; güvenli saklanmıştır.</li><li>Değer sıkıştırılmıştır; açmak için parola gerekir.</li></ul>
+<div class="coz"><p>Bu dizi Base64'le kodlanmış <code>parola123</code>'tür; <code>base64 -d</code> ile anında geri çevrilir. SHA-256 özeti tam 64 onaltılık hanedir, bu 12 karakterlik dizi değil. AES çıktısı olsaydı anahtarsız anlamlı bir şey vermezdi. Tuzlu parola özetleri genellikle algoritmayı belirten bir önekle ve çok daha uzun yazılır. Sıkıştırma da anahtarsız açılır. "Şifreli" etiketi yanlış güven yaratıyor.</p></div></li>
+
+<li data-c="E"><p class="q">İlk dört baytı <code>50 4b 03 04</code> olan ve adı <code>rapor.jpg</code> olan bir dosya için hangisi doğrudur?</p>
+<ul class="sec"><li>Bir JPEG resmidir, çünkü uzantısı .jpg'dir.</li><li>Bozuk bir JPEG'dir, çünkü imzası yanlıştır ama yine resimdir.</li><li>Bir PNG resmidir.</li><li>Bir metin dosyasıdır, çünkü baytlar harf olarak okunabilir.</li><li>İçeriğe bakılırsa bir ZIP tabanlı arşivdir; uzantı yanıltıcıdır.</li></ul>
+<div class="coz"><p><code>50 4b 03 04</code> ZIP biçiminin imzasıdır (ASCII "PK"). Bu parçadaki örnekte bir ZIP'in adı <code>.jpg</code> yapıldığında <code>file</code> komutu yine "Zip archive data" dedi. Uzantı yalnızca addır ve türü belirlemez. PNG'nin imzası <code>89 50 4e 47</code>'dir. 50 ve 4b ASCII'de harftir ama 03 ve 04 basılabilir karakter değildir; dosya metin değildir.</p></div></li>
+
+<li data-c="C"><p class="q">SHA-256 gibi bir kriptografik hash fonksiyonu için aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Aynı girdi her zaman aynı özeti verir.</li><li>Girdinin uzunluğu ne olursa olsun özet aynı uzunluktadır.</li><li>Doğru anahtar bilinirse özetten girdi geri elde edilir.</li><li>Girdideki tek bir harf değişikliği özeti tamamen değiştirir.</li><li>Dosyanın değişip değişmediğini anlamakta kullanılabilir.</li></ul>
+<div class="coz"><p>Hash fonksiyonunun anahtarı yoktur ve geri çevrilemez; "anahtarla geri elde etmek" şifrelemenin özelliğidir. Örnekte 7 ve 70.000 karakterlik girdiler aynı 32 baytlık uzunlukta özet verdi; "merhaba" ile "Merhaba"nın özetleri benzemiyordu (çığ etkisi). Belirlenimci olduğu için Python ve <code>sha256sum</code> aynı sonucu verdi; bu da onu bütünlük denetiminde kullanışlı yapar.</p></div></li>
+
+<li data-c="A"><p class="q">Bir sayfada "güçlü" yerine "gÃ¼Ã§lÃ¼" görünüyor. En olası neden hangisidir?</p>
+<ul class="sec"><li>UTF-8 ile yazılmış baytlar, tek baytlık eski bir kod sayfasına göre okunmuştur.</li><li>Metin Base64'le kodlanmıştır.</li><li>Metin AES ile şifrelenmiştir.</li><li>Dosya sıkıştırılmış, ama açılmamıştır.</li><li>Metnin SHA-256 özeti alınmıştır.</li></ul>
+<div class="coz"><p>"ü" UTF-8'de iki bayttır (c3 bc). Bu baytlar cp1252 gibi tek baytlık bir kod sayfasıyla okunursa her biri ayrı karakter olur: "Ã" ve "¼". Örnekte "Şifre güçlü" tam olarak böyle bozuldu. Baytlar değişmemiştir; okuma kuralı yanlıştır. Base64 çıktısı yalnızca harf, rakam ve <code>+ / =</code> içerir; şifreleme, sıkıştırma ve hash ise metnin okunur kısımlarını korumaz.</p></div></li>
+
+<li data-c="E"><p class="q">Bir web uygulaması kullanıcı parolalarını saklayacak. Hangisi doğru savunmadır?</p>
+<ul class="sec"><li>Parolaları Base64'e kodlayıp veritabanına yazmak</li><li>Parolaları AES ile şifreleyip anahtarı kaynak koduna gömmek</li><li>Parolaların tuzsuz SHA-256 özetini saklamak</li><li>Bütün kullanıcılar için aynı sabit tuzu kullanıp MD5 ile özetlemek</li><li>Her hesap için ayrı rastgele tuz üretip parolayı argon2id ile özetlemek ve tuzla birlikte saklamak</li></ul>
+<div class="coz"><p>OWASP'ın önerisi her parola için benzersiz rastgele tuz ve argon2id gibi yavaş, bellek isteyen bir parola özetidir (yoksa scrypt). Base64 anahtarsız geri çevrilir. Şifreleme geri çevrilebilir ve gömülü anahtar kodla birlikte sızar. Tuzsuz SHA-256 hem hızlıdır hem aynı parolaya her yerde aynı özeti verir. Sabit tuz aynı parolalı hesapları yine aynı gösterir ve MD5 güvenlik amaçlı emekli bir algoritmadır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir ekip şöyle diyor: "Günlük dosyasını önce sıkıştırdık, sonra Base64'ledik, yanına da SHA-256 özetini aynı klasöre koyduk. Böylece dosya hem gizli hem de değiştirilemez oldu." Bu iddia için hangisi doğrudur?</p>
+<ul class="sec"><li>İddia doğrudur; üç katman birlikte hem gizlilik hem bütünlük sağlar.</li><li>Ne gizlilik ne de güvenilir bütünlük vardır: sıkıştırma ve Base64 anahtarsız geri çevrilir, dosyayı değiştiren özeti de yeniden hesaplayabilir.</li><li>Gizlilik vardır, çünkü sıkıştırılmış ve Base64'lü veri okunamaz; yalnızca bütünlük eksiktir.</li><li>Bütünlük tamdır, çünkü SHA-256 kırılmamıştır; yalnızca gizlilik eksiktir.</li><li>İddia doğrudur, ama yalnızca sıra tersine çevrilirse (önce Base64, sonra sıkıştırma).</li></ul>
+<div class="coz"><p>Sıkıştırma ve Base64 herkesin elindeki araçlarla, sır olmadan geri açılır; gizlilik yoktur. SHA-256'nın kendisi sağlam olsa da özet aynı klasörde duruyor: dosyayı değiştiren kişi yeni özeti hesaplayıp onu da değiştirebilir. Özet ancak güvenilir, ayrı bir yoldan geldiğinde ya da anahtarlı bir doğrulamayla bütünlük kanıtıdır. Gizlilik için şifreleme ve korunan anahtar gerekir. Sıranın değişmesi hiçbirini düzeltmez.</p></div></li>
+
+<li data-c="D" data-k="siber-1"><p class="q">Onaltılık (hex) <code>2A</code> sayısının onluk karşılığı nedir?</p>
+<ul class="sec"><li>12</li><li>20</li><li>32</li><li>42</li><li>210</li></ul>
+<div class="coz"><p>Onaltılıkta her basamak 16'nın kuvvetidir: 2 × 16 + A × 1 = 2 × 16 + 10 = 42. Python'da <code>0x2A</code> yazınca 42 çıkıyor (bu parça yazılırken çalıştırıldı). 12 ve 20, A'yı 10 değil 0 sayıp basamakları karıştırmaktır; 32 yalnız 2 × 16'dır, A'yı unutur; 210 ise basamakları onluk gibi yan yana yazmaktır.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Bellek hiyerarşisinde en hızlı ama en küçük kapasiteli katman hangisidir?</p>
+<ul class="sec"><li>SSD</li><li>Ana bellek (RAM)</li><li>İşlemci yazmaçları</li><li>Sabit disk (HDD)</li><li>İşlemci önbelleği</li></ul>
+<div class="coz"><p>Yazmaçlar işlemcinin içinde, doğrudan işlem yapılan birkaç düzine küçük bellek hücresidir; en hızlı ve en küçük katman onlardır. Önbellek yazmaçlardan yavaş ama daha büyüktür; RAM önbellekten yavaş ve büyüktür; SSD ve HDD kalıcıdır, en büyük ve en yavaştır. Hiyerarşi bir hız-boyut ödünleşimidir: hızlandıkça pahalılaşır ve küçülür.</p></div></li>
+
+<li data-c="A" data-k="siber-2"><p class="q">Kullanıcı modu ile çekirdek modu ayrımı için hangisi doğrudur?</p>
+<ul class="sec"><li>Sıradan programlar kullanıcı modunda çalışır ve donanıma doğrudan değil, sistem çağrısıyla çekirdekten hizmet isteyerek erişir.</li><li>Bütün programlar çekirdek modunda çalışır; ayrım yalnızca hız içindir.</li><li>Kullanıcı modundaki bir program başka bir sürecin belleğini serbestçe değiştirebilir.</li><li>Çekirdek modu yalnızca önyükleme sırasında kullanılır, sonra kapanır.</li><li>Aygıt sürücüleri her zaman kullanıcı modunda, kısıtsız çalışır.</li></ul>
+<div class="coz"><p>İşletim sistemi programları kısıtlı kullanıcı modunda çalıştırır; disk, ağ ya da bellek gibi ayrıcalıklı işler için program bir sistem çağrısıyla çekirdekten istekte bulunur. Bu ayrım, hatalı ya da kötü niyetli bir programın bütün sistemi bozmasını engeller ve güvenliğin temelidir. Ayrım hız için değil, koruma içindir. Süreçler yalıtılmıştır, birbirlerinin belleğine serbestçe yazamaz. Çekirdek çalıştığı sürece etkindir; sürücüler genellikle çekirdek tarafında, yüksek ayrıcalıkla çalışır.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Sanal bellekte "her sürecin kendi adres uzayı" olmasının güvenlik açısından temel yararı nedir?</p>
+<ul class="sec"><li>Programların daha az RAM kullanmasını sağlar.</li><li>Diskteki dosyaları şifreler.</li><li>Bütün süreçlerin aynı belleği paylaşmasına izin verir.</li><li>Süreçlerin root yetkisiyle çalışmasını sağlar.</li><li>Bir süreç başka bir sürecin belleğini doğrudan göremez ve değiştiremez; süreçler birbirinden yalıtılır.</li></ul>
+<div class="coz"><p>Her süreç kendi sanal adreslerini görür ve işletim sistemi bunları farklı fiziksel belleğe eşler; bu yüzden bir süreç başkasının belleğine doğrudan ulaşamaz. Bu yalıtım, bir programdaki hatanın ya da ele geçirilmenin ötekilere yayılmasını sınırlar. Sanal bellek bellek tasarrufu için değildir, dosya şifrelemez, paylaşımı varsayılan yapmaz ve ayrıcalık vermez.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-2">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-3">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-4">Sonraki parça: sanallaştırma ve güvenli laboratuvar</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"encoding vs encryption vs hashing explained"</li>
+  <li>"UTF-8 nasıl çalışır Unicode kod noktası"</li>
+  <li>"base64 encoding how it works"</li>
+  <li>"password hashing salt argon2 bcrypt explained"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>UTF-8 bayt aralıkları, U+10FFFF üst sınırı, ASCII uyumu, geçersiz dizilerin reddedilmesi zorunluluğu, uzatılmış dizilerle denetim atlatma örneği ve aynı metnin farklı kod noktası dizileriyle yazılabilmesi: RFC 3629 (rfc-editor.org) metninden doğrulandı.</li>
+  <li>Base64'ün 6 bitlik grupları, 3 bayt → 4 karakter, <code>=</code> dolgusu ve yaklaşık üçte bir büyüme: MDN Base64 sözlük sayfasından doğrulandı; tanımın RFC 4648'de olduğu arama sonuçlarıyla teyit edildi, RFC metni bu oturumda doğrudan açılamadı (ağ erişim kısıtı).</li>
+  <li>Parola saklama önerileri (argon2id öncelikli; yoksa scrypt N=2<sup>17</sup>, r=8, p=1; bcrypt yalnız eski sistemlerde; benzersiz rastgele tuz; parolaların şifrelenmemesi): OWASP Password Storage Cheat Sheet'ten doğrulandı. Örnekteki scrypt parametreleri bu öneriye göre seçildi.</li>
+  <li>Çalıştırılan örnekler (hepsi bu Linux ortamında, Python 3.13 ve OpenSSL 3.0.13 ile, <code>/tmp/yazar/siber-3/</code> altında gerçekten koştu; çıktılar birebir): kodlama.py, bozuk.py, sihirli.py ve <code>file</code>, b64.py ve <code>base64</code>, sifrele.sh (iki kez), ozet.py ve <code>sha256sum</code>, parola.py, hiz.py, sikistir.py; quiz'deki <code>len("şeker")</code> ve <code>0x2A</code> cevapları da çalıştırılarak doğrulandı. Değişken çıktılar: sifrele.sh (rastgele tuz), hiz.py (donanıma bağlı süreler), sikistir.py'nin rastgele satırı; metinde belirtildi. <code>file</code> komutunun açıklama metni sürüme göre değişebilir. ELF imzası bu ortamdaki <code>/bin/ls</code>'den okundu.</li>
+  <li>Hafızadan yazılan ve bu oturumda ayrıca kaynağa bakılmayanlar: ASCII'nin tarihçesi; PDF ve gzip imzaları (gzip imzası çalıştırmayla görüldü, PDF'inki görülmedi); HTTP Basic kimlik doğrulamanın Base64 kullanması (RFC 7617); JWT'nin Base64url ile yazılıp imzayla korunması; MD5 ve SHA-1 için çakışma üretilebildiği; <code>openssl enc</code>'in "Salted__" başlığı (çıktının çözülmesiyle görüldü) ve CBC kipinde yanlış anahtarın ara sıra hata vermeden anlamsız çıktı üretebileceği; <code>hmac.compare_digest</code>'in sabit süreli karşılaştırma amacı (Python belgesinde böyle anlatıldığını hatırlıyorum, bu oturumda açmadım).</li>
+  <li>Saldırı sınırı: parola ya da hash kırma yöntemi, araç ya da adım anlatılmadı; yalnızca hızlı ve tuzsuz özetin neden zayıf olduğu kavram düzeyinde ve doğru savunma (tuzlu, yavaş parola özeti) anlatıldı. Bütün örnekler okurun kendi oluşturduğu verilerle yapılır.</li>
+</ul>
+</div>
+</div>
+</article>

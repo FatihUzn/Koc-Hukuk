@@ -1,0 +1,679 @@
+<article class="chapter ders" id="c-siber-1">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 1 · Sayılar ve veri</div>
+<h1>Sayılar ve veri: bit, bayt, ikili ve onaltılık</h1>
+<p class="time">Okuma ve uygulama yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir metin dosyasının içine "ham" olarak baktığında <code>53 65 6c 61 6d 0a</code> gibi harf ve rakam çiftleri görürsün. Bir sayaç 255'e geldikten sonra bir artınca 256 değil 0 olur. Satın aldığın 1 TB'lık disk, bilgisayarında 931 "GB" görünür. Bir C programında iki pozitif sayıyı çarparsın, sonuç ikisinden de küçük çıkar. Bunların hepsi aynı kökten gelir: bilgisayar her şeyi sabit sayıda bitle tutar. O bitler nasıl okunur, nerede sınırları vardır ve bu sınırlar neden güvenlik hatalarına dönüşebilir?</p></div>
+<p class="hint">Bu, siber güvenlik rafının ilk parçası; bu raftan bilmen gereken bir şey yok. Kod rafını okuduysan Python'ın etkileşimli kabuğu (kod rafı Parça 1), <code>encode</code> ile metnin baytlara dönüşmesi (kod rafı Parça 3), C'deki temel tipler ve <code>sizeof</code> (kod rafı Parça 26) ve kabukta boru kullanımı (kod rafı Parça 15–16) işine yarar. Okumadıysan da bu parça kendi başına anlaşılır; komutları yazdığın gibi çalıştırman yeter.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Siber güvenlikte baktığın her şey sonunda bir bayt dizisidir: bir dosya, bir ağ paketi, bellekteki bir parola, bir programın kendisi. Bir savunmacı dosya incelerken, ağ yakalaması okurken ya da "tamsayı taşması" diye bir hata raporu görünce aynı dili konuşur: bitler, baytlar, onaltılık rakamlar ve sabit genişlikli kutular.</p>
+
+<p>Sıra şöyle: neden ikili, bit, bayt ve kelime; onluk, ikili ve onaltılık sistemler ve aralarında elle dönüşüm; negatif sayılar için <strong>ikiye tümleyen</strong>; sabit genişliğin sonucu olan <strong>taşma</strong> ve <strong>sarma</strong>, gerçek bir C programında ve derleyici denetimiyle, güvenlik etkisiyle birlikte; bit işlemleri ve XOR'un kriptografideki yerine ön bakış; KiB ile kB farkı. En sonda kendi makinende <code>xxd</code> ve <code>od</code> ile bir dosyanın baytlarına adım adım bakacaksın.</p>
+
+<p>Raf boyunca geçerli bir sınırı baştan koyalım: bu rafta yapacağın her deneme <strong>yalnızca kendi bilgisayarında ya da açıkça izin verilmiş bir laboratuvarda</strong> yapılır. Bu parçadaki örnekler zaten yalnız kendi yazdığın küçük dosyalara ve programlara dokunuyor. Bu sınırın neden yasal bir zorunluluk olduğu rafın sonundaki hukuk ve etik parçalarında (Parça 72–73) ayrıntısıyla anlatılıyor.</p>
+
+<h2 class="s">Neden her şey ikili?</h2>
+
+<p>Bilgisayarın içinde sayı, harf ya da renk yoktur; yalnızca elektrik vardır. İşlemcinin ve belleğin içindeki milyarlarca küçük anahtar (transistör) bir telden akım geçirir ya da geçirmez, bir hücredeki gerilim yüksektir ya da alçaktır. Bunu iki durumla sınırlamak bir tercih ve çok iyi bir tercih: gerçek devrelerde gerilim hiçbir zaman tam istenen değerde durmaz, ısı ve parazit yüzünden biraz oynar. Yalnız iki durum varsa aralarına geniş bir güvenlik payı koyabilirsin: belli bir eşiğin altı "0", üstü "1" sayılır ve küçük oynamalar sonucu değiştirmez. On ayrı gerilim düzeyi kullanmaya kalksaydın düzeyler birbirine çok yaklaşır, parazit bir rakamı ötekine kaydırırdı.</p>
+
+<p>İkinci neden mantıktır: iki durum doğrudan "doğru/yanlış"a karşılık gelir; VE, VEYA, DEĞİL işlemleri birkaç transistörle kurulur ve birleştirilerek toplama devresi, bellek hücresi gibi büyük yapılar elde edilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Bit</strong> (binary digit, ikili rakam), yalnız iki değer alabilen en küçük bilgi birimidir: 0 ya da 1. <strong>Bayt</strong> (byte), bugün neredeyse bütün sistemlerde <strong>8 bitlik</strong> gruptur ve belleğin adreslenebilen en küçük birimidir: bellekte her baytın kendi adresi vardır, tek tek bitlerin yoktur. 4 bitlik yarım bayta <strong>nibble</strong> denir. <strong>Kelime</strong> (word), bir işlemcinin tek seferde doğal olarak işlediği bit sayısıdır; bugünkü 64 bitlik işlemcilerde 64 bittir.</p></div>
+
+<p>Bu tanımlarda iki incelik var. Birincisi, baytın 8 bit olması doğa yasası değil, yerleşmiş bir gelenektir; eski bazı makinelerde 6, 7 ya da 9 bitlik "baytlar" vardı. Bu yüzden ağ standartları belirsizliği önlemek için tam 8 bitlik birime ayrıca <strong>octet</strong> der; ağ parçalarında (Parça 20 ve sonrası) bu sözcüğe sık rastlayacaksın. İkincisi, "kelime" bağlama göre değişir: x86 belgelerinde ve Windows programlamasında <code>WORD</code> tarihsel nedenle 16 bit, <code>DWORD</code> 32 bit, <code>QWORD</code> 64 bittir, çünkü bu adlar 16 bitlik işlemciler döneminde konmuş ve geriye uyumluluk için değiştirilmemiştir. İşlemcinin kelimeyi yazmaçlarında nasıl işlediği Parça 2'nin konusu.</p>
+
+<h3>n bit kaç farklı değer tutar?</h3>
+
+<p>Bir bit iki durum tutar. İki bit yan yana konunca her birinin iki durumu olduğu için 2 × 2 = 4 birleşim çıkar: 00, 01, 10, 11. Üç bitte 8, dört bitte 16. Her yeni bit, durum sayısını ikiye katlar. Genel kural: <strong>n bit, 2<sup>n</sup> farklı durum</strong> tutar. Bu durumlara hangi anlamı verdiğin (sayı, harf, renk, izin) tamamen yoruma bağlıdır; bitlerin kendisi anlam taşımaz.</p>
+
+<p>Sayı olarak yorumlarsan ve 0'dan başlarsan, n bitle 0'dan 2<sup>n</sup> − 1'e kadar sayabilirsin. "Eksi bir" kısmı sık karışır: 8 bit 256 durum tutar, ama en büyük değer 255'tir, çünkü durumlardan biri 0 için harcanmıştır.</p>
+
+<div class="tablo"><table>
+<tr><th>Bit sayısı</th><th>Durum sayısı (2<sup>n</sup>)</th><th>İşaretsiz aralık</th><th>İşaretli aralık (ikiye tümleyen)</th></tr>
+<tr><td>1</td><td>2</td><td>0 … 1</td><td>−1 … 0</td></tr>
+<tr><td>4 (nibble)</td><td>16</td><td>0 … 15</td><td>−8 … 7</td></tr>
+<tr><td>8 (bayt)</td><td>256</td><td>0 … 255</td><td>−128 … 127</td></tr>
+<tr><td>16</td><td>65.536</td><td>0 … 65.535</td><td>−32.768 … 32.767</td></tr>
+<tr><td>32</td><td>4.294.967.296</td><td>0 … 4.294.967.295</td><td>−2.147.483.648 … 2.147.483.647</td></tr>
+<tr><td>64</td><td>≈ 1,8 × 10<sup>19</sup></td><td>0 … 18.446.744.073.709.551.615</td><td>−9.223.372.036.854.775.808 … 9.223.372.036.854.775.807</td></tr>
+</table></div>
+
+<p>Tablonun son sütununu aşağıda açacağız. Şimdilik iki sayıyı akılda tut: <strong>255</strong> (bir baytın en büyük işaretsiz değeri) ve <strong>2.147.483.647</strong> (32 bitlik işaretli bir sayının en büyük değeri). İkisi de bu parçada birkaç kez gerçek hatalarla karşına çıkacak.</p>
+
+<h2 class="s">Sayı sistemleri: onluk, ikili, onaltılık</h2>
+
+<p>Gündelik hayatta kullandığın onluk sistem <strong>konumsal</strong> bir sistemdir: bir rakamın değeri, hangi basamakta durduğuna bağlıdır. 347 sayısında 3 aslında 300'dür, çünkü yüzler basamağındadır: 347 = 3 × 10<sup>2</sup> + 4 × 10<sup>1</sup> + 7 × 10<sup>0</sup>. Burada 10'a <strong>taban</strong> denir; sağdan sola her basamağın ağırlığı tabanın bir üst kuvvetidir ve her basamakta 0'dan taban − 1'e kadar rakam kullanılır.</p>
+
+<p>Aynı fikir her tabanda çalışır. <strong>İkili</strong> (taban 2) sistemde yalnız 0 ve 1 vardır ve basamak ağırlıkları sağdan sola 1, 2, 4, 8, 16, 32, 64, 128… diye gider. <strong>Onaltılık</strong> (hexadecimal, kısaca hex, taban 16) sistemde on altı rakam gerekir; 0–9 yetmediği için 10'dan 15'e kadar olan değerler A, B, C, D, E, F harfleriyle yazılır. Basamak ağırlıkları 1, 16, 256, 4096… olur. Bunların yanında <strong>sekizli</strong> (octal, taban 8) sistem de vardır; bugün özellikle Linux dosya izinlerinde (<code>755</code>, <code>644</code>) karşına çıkar ve Parça 12'de ayrıntısıyla gelecek.</p>
+
+<p>Aynı rakam dizisi farklı tabanlarda farklı sayıdır: "10" onlukta on, ikilide iki, onaltılıkta on altıdır. Bu yüzden yazarken tabanı belli edersin. Programlama dillerinde ve güvenlik araçlarında yerleşik gösterim şudur: ikili için <code>0b</code> öneki (<code>0b1010</code>), onaltılık için <code>0x</code> öneki (<code>0x2F</code>), sekizli için Python'da <code>0o</code> (<code>0o755</code>). Matematik metinlerinde alt indis de kullanılır: 1010<sub>2</sub>, 2F<sub>16</sub>.</p>
+
+<div class="tablo"><table>
+<tr><th>Onluk</th><th>İkili (4 bit)</th><th>Hex</th><th>Onluk</th><th>İkili (4 bit)</th><th>Hex</th></tr>
+<tr><td>0</td><td>0000</td><td>0</td><td>8</td><td>1000</td><td>8</td></tr>
+<tr><td>1</td><td>0001</td><td>1</td><td>9</td><td>1001</td><td>9</td></tr>
+<tr><td>2</td><td>0010</td><td>2</td><td>10</td><td>1010</td><td>A</td></tr>
+<tr><td>3</td><td>0011</td><td>3</td><td>11</td><td>1011</td><td>B</td></tr>
+<tr><td>4</td><td>0100</td><td>4</td><td>12</td><td>1100</td><td>C</td></tr>
+<tr><td>5</td><td>0101</td><td>5</td><td>13</td><td>1101</td><td>D</td></tr>
+<tr><td>6</td><td>0110</td><td>6</td><td>14</td><td>1110</td><td>E</td></tr>
+<tr><td>7</td><td>0111</td><td>7</td><td>15</td><td>1111</td><td>F</td></tr>
+</table></div>
+
+<p>Çapa noktaları: <code>8 = 1000</code>, <code>A = 1010</code>, <code>C = 1100</code>, <code>F = 1111</code>; gerisini bir ekleyip çıkararak bulursun.</p>
+
+<h3>Neden onaltılık? Bir bayt, iki hex hane</h3>
+
+<p>İkili sistem bilgisayarın doğal dilidir ama insan için çok uzundur: 32 bitlik bir sayı otuz iki tane 0 ve 1 demektir ve tek bir rakamı kaydırmak kolaydır. Onluk sistem kısadır ama bitlerle arasında temiz bir ilişki yoktur; 200 sayısına bakıp hangi bitlerin açık olduğunu göremezsin. Onaltılık iki dünyanın arasında durur, çünkü 16 = 2<sup>4</sup>'tür: <strong>bir hex hane tam olarak 4 bite</strong> karşılık gelir. Hiçbir hesap yapmadan, yalnız 4'lü grupları yukarıdaki tabloyla değiştirerek ikiliden hex'e, hex'ten ikiliye geçersin.</p>
+
+<p>Bir bayt 8 bit, yani iki nibble olduğu için <strong>her bayt tam olarak iki hex haneyle</strong> yazılır: en küçüğü <code>00</code>, en büyüğü <code>FF</code>. Ne eksik ne fazla. Bu yüzden bellek dökümleri, ağ paketleri, MAC adresleri (Parça 21), özet (hash) çıktıları (Parça 44) ve dosya incelemeleri neredeyse her zaman hex ile gösterilir: her iki karakter bir bayttır ve baytları saymak kolaylaşır.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="200 sayısının bir baytta gösterimi: sekiz bitin basamak ağırlıkları 128'den 1'e; soldaki dört bit 1100, yani C; sağdaki dört bit 1000, yani 8; sonuç 0xC8">
+  <text class="sv-s" x="44" y="40" text-anchor="middle">128</text>
+  <text class="sv-s" x="88" y="40" text-anchor="middle">64</text>
+  <text class="sv-s" x="132" y="40" text-anchor="middle">32</text>
+  <text class="sv-s" x="176" y="40" text-anchor="middle">16</text>
+  <text class="sv-s" x="220" y="40" text-anchor="middle">8</text>
+  <text class="sv-s" x="264" y="40" text-anchor="middle">4</text>
+  <text class="sv-s" x="308" y="40" text-anchor="middle">2</text>
+  <text class="sv-s" x="352" y="40" text-anchor="middle">1</text>
+  <text class="sv-s" x="200" y="18" text-anchor="middle">basamak ağırlıkları (2'nin kuvvetleri)</text>
+  <rect class="sv-l" x="24" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-l" x="68" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-k" x="112" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-k" x="156" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-l" x="200" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-k" x="244" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-k" x="288" y="50" width="40" height="40" rx="5" />
+  <rect class="sv-k" x="332" y="50" width="40" height="40" rx="5" />
+  <text class="sv-b" x="44" y="75" text-anchor="middle">1</text>
+  <text class="sv-b" x="88" y="75" text-anchor="middle">1</text>
+  <text class="sv-b" x="132" y="75" text-anchor="middle">0</text>
+  <text class="sv-b" x="176" y="75" text-anchor="middle">0</text>
+  <text class="sv-b" x="220" y="75" text-anchor="middle">1</text>
+  <text class="sv-b" x="264" y="75" text-anchor="middle">0</text>
+  <text class="sv-b" x="308" y="75" text-anchor="middle">0</text>
+  <text class="sv-b" x="352" y="75" text-anchor="middle">0</text>
+  <line class="sv-cl" x1="26" y1="102" x2="194" y2="102" />
+  <line class="sv-cl" x1="202" y1="102" x2="370" y2="102" />
+  <line class="sv-c" x1="110" y1="102" x2="110" y2="118" />
+  <line class="sv-c" x1="286" y1="102" x2="286" y2="118" />
+  <text class="sv-t" x="110" y="136" text-anchor="middle">üst nibble: 1100</text>
+  <text class="sv-b" x="110" y="156" text-anchor="middle">8 + 4 = 12 = C</text>
+  <text class="sv-t" x="286" y="136" text-anchor="middle">alt nibble: 1000</text>
+  <text class="sv-b" x="286" y="156" text-anchor="middle">8 = 8</text>
+  <rect class="sv-m" x="80" y="176" width="240" height="40" rx="8" />
+  <text class="sv-b" x="200" y="194" text-anchor="middle">128 + 64 + 8 = 200</text>
+  <text class="sv-t" x="200" y="210" text-anchor="middle">ikili 11001000 = hex C8</text>
+</svg>
+<figcaption>Bir bayt sekiz kutudur; her kutunun ağırlığı sağdan sola ikiye katlanır. Açık (1) olan kutuların ağırlıklarını toplayınca onluk değeri bulursun: 200. Aynı baytı ortadan ikiye bölüp her yarıyı ayrı okursan iki hex hane çıkar: C ve 8. Hex'e geçmek için hiçbir bölme yapmadın; yalnız 4'lü grupları okudun.</figcaption>
+</figure>
+
+<h3>Elle dönüşüm yöntemleri</h3>
+
+<p>Bir aracın verdiği sonucu körü körüne kabul etmemek için dönüşümleri elle yapabilmelisin. Aşağıdaki yöntemlerin hepsi aynı ilkeye dayanır: konumsal sistemde bir sayı, rakamların basamak ağırlıklarıyla çarpılıp toplanmasıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>İkili veya hex → onluk:</strong> Her rakamı kendi basamak ağırlığıyla çarp ve topla. İkilide yalnız 1 olan basamakların ağırlıklarını toplamak yeter.</p>
+<p><strong>Onluk → ikili:</strong> Sayıyı 2'ye böl, kalanı yaz; bölümü yeniden 2'ye böl; bölüm 0 olana kadar sürdür. Kalanları <strong>sondan başa</strong> okursan ikili gösterimi bulursun. Alternatif: sayıya sığan en büyük 2 kuvvetini çıkar, o basamağa 1 yaz, kalanla devam et.</p>
+<p><strong>Onluk → hex:</strong> Aynı bölme yöntemini 16 ile yap; 10–15 arası kalanları A–F diye yaz. Ya da önce ikiliye çevirip 4'lü gruplara ayır.</p>
+<p><strong>İkili ↔ hex:</strong> İkili sayıyı <strong>sağdan</strong> başlayarak 4'lü gruplara ayır (soldaki grup eksik kalırsa başına 0 ekle) ve her grubu tek hex haneye çevir. Tersi için her hex haneyi 4 bitlik grubuna aç.</p></div>
+
+<p>Bölme yönteminin neden çalıştığını görmek önemli. Bir sayıyı 2'ye böldüğünde kalan, sayının tek mi çift mi olduğunu söyler; bu da tam olarak en sağdaki bitin değeridir (çünkü sağdaki bit dışındaki bütün basamaklar 2'nin katıdır). Bölüm ise sayının bir basamak sağa kaydırılmış hâlidir. Her adımda en sağdaki biti koparıp ayırıyorsun; ilk kopardığın en sağdaki bit olduğu için kalanları sondan başa okursun.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> 200 sayısını ikiliye ve onaltılığa çevir; sonucu ters yönde denetle.</p>
+<p><strong>Adım 1.</strong> 200 ÷ 2 = 100, kalan 0 (200 çift).</p>
+<p><strong>Adım 2.</strong> 100 ÷ 2 = 50, kalan 0.</p>
+<p><strong>Adım 3.</strong> 50 ÷ 2 = 25, kalan 0.</p>
+<p><strong>Adım 4.</strong> 25 ÷ 2 = 12, kalan 1 (25 tek).</p>
+<p><strong>Adım 5.</strong> 12 ÷ 2 = 6, kalan 0.</p>
+<p><strong>Adım 6.</strong> 6 ÷ 2 = 3, kalan 0.</p>
+<p><strong>Adım 7.</strong> 3 ÷ 2 = 1, kalan 1.</p>
+<p><strong>Adım 8.</strong> 1 ÷ 2 = 0, kalan 1 (bölüm 0 oldu, dur).</p>
+<p><strong>Adım 9.</strong> Kalanları sondan başa oku: 1, 1, 0, 0, 1, 0, 0, 0 → <code>11001000</code> (sekiz bit, tam bir bayt).</p>
+<p><strong>Adım 10.</strong> Sağdan 4'lü gruplara ayır: <code>1100</code> ve <code>1000</code>. Tablodan 1100 = C, 1000 = 8 → <code>0xC8</code>.</p>
+<p><strong>Adım 11 (denetim).</strong> Hex'ten onluğa: C × 16 + 8 × 1 = 12 × 16 + 8 = 192 + 8 = 200. İkiliden onluğa: 1 olan basamakların ağırlıkları 128, 64 ve 8; toplamı 200.</p>
+<p><strong>Sonuç:</strong> 200 = <code>0b11001000</code> = <code>0xC8</code>.</p></div>
+
+<p>Elle bulduğunu Python'a denetletebilirsin. <code>bin()</code> ve <code>hex()</code> önekli metin döndürür; <code>format()</code> öneksiz ve istediğin genişlikte yazar; <code>int(metin, taban)</code> ters yönde çevirir. Örnekleri kendi makinende bir çalışma klasöründe (örneğin <code>~/lab/siber-1</code>) dene.</p>
+
+<pre class="kod" data-ad="python3 donusum.py"># Elle yaptigin donusumleri Python'a denetlet.
+sayi = 200
+print("onluk  :", sayi)
+print("ikili  :", bin(sayi))           # 0b on ekiyle
+print("hex    :", hex(sayi))           # 0x on ekiyle
+print("8 hane :", format(sayi, "08b"))  # on eksiz, 8 haneye tamamla
+print("2 hane :", format(sayi, "02X"))  # buyuk harfli iki hex hane
+
+# Ters yon: metinden sayiya, tabani soyleyerek
+print(int("11001000", 2), int("C8", 16), int("2F3A", 16))
+print(0b11001000 == 0xC8 == 200)</pre>
+<pre class="cikti">onluk  : 200
+ikili  : 0b11001000
+hex    : 0xc8
+8 hane : 11001000
+2 hane : C8
+200 200 12090
+True</pre>
+
+<p>Çıktıyı oku. <code>hex()</code> küçük harf kullanıyor (<code>0xc8</code>); hex rakamlarında büyük ve küçük harf aynı anlama gelir, araçlar ikisini de kullanır. <code>"08b"</code> biçimi "ikili yaz, 8 haneye kadar soldan sıfırla doldur" demektir; bunu kullanmasaydın 5 gibi küçük bir sayı <code>101</code> diye çıkar, baytın üst bitlerinin 0 olduğunu göremezdin. Son satırdaki <code>True</code>, üç farklı yazımın aynı tamsayı olduğunu gösteriyor: önek yalnızca kaynak kodda sayıyı nasıl yazdığını belirler, bellekteki değer değişmez. Ortadaki <code>12090</code> bir sonraki örneğin cevabı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> <code>0x2F3A</code> sayısını onluğa ve ikiliye çevir. Kaç bayt yer kaplar?</p>
+<p><strong>Adım 1.</strong> Haneleri ve ağırlıklarını yaz (sağdan sola 1, 16, 256, 4096): 2 → 4096, F → 256, 3 → 16, A → 1.</p>
+<p><strong>Adım 2.</strong> Harfleri sayıya çevir: F = 15, A = 10.</p>
+<p><strong>Adım 3.</strong> Çarp: 2 × 4096 = 8192; 15 × 256 = 3840; 3 × 16 = 48; 10 × 1 = 10.</p>
+<p><strong>Adım 4.</strong> Topla: 8192 + 3840 = 12032; 12032 + 48 = 12080; 12080 + 10 = 12090.</p>
+<p><strong>Adım 5.</strong> İkiliye geçmek için her haneyi 4 bite aç: 2 → 0010, F → 1111, 3 → 0011, A → 1010. Yan yana: <code>0010 1111 0011 1010</code>.</p>
+<p><strong>Adım 6.</strong> Dört hex hane, iki hanede bir bayt olduğu için iki bayttır: <code>2F</code> ve <code>3A</code> (16 bit).</p>
+<p><strong>Sonuç:</strong> <code>0x2F3A</code> = 12090 = <code>0b0010111100111010</code>; 2 bayt. Yukarıdaki Python çıktısındaki <code>int("2F3A", 16)</code> de 12090 verdi.</p></div>
+
+<p>Bu iki baytın bellekte hangi sırayla durduğu (<code>2F 3A</code> mı, <code>3A 2F</code> mi) ayrı bir sorudur; buna bayt sırası (endianness) denir ve Parça 3'te belleğin düzeniyle birlikte anlatılıyor. Burada yalnız şunu bil: sayının değeri tek başına bayt sırasını belirlemez.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Öneki yok sayıp "0x10 on demektir" sanmak.</strong> <code>0x10</code> on altıdır, <code>0b10</code> ikidir, <code>10</code> ondur. Güvenlik çıktılarında sayılar çoğu zaman öneksiz hex yazılır (<code>xxd</code> çıktısındaki <code>0a</code> gibi); hangi tabanda olduğunu bağlamdan çıkarman gerekir. <code>0a</code> içinde harf olduğu için hex olduğu bellidir, ama <code>10</code> ya da <code>20</code> gibi yalnız rakamlı bir değer her iki tabanda da okunabilir. Doğrusu: bir sayıyı not ederken tabanını mutlaka yaz (<code>0x20</code> ya da "32 onluk"); bir aracın çıktısını okurken aracın belgesinde hangi tabanı kullandığına bak.</p>
+<p><strong>Gruplamayı soldan başlatmak.</strong> <code>101101</code> sayısını soldan <code>1011 01</code> diye bölüp "B1" demek yanlıştır. Gruplar sağdan kurulur: <code>10 1101</code> → <code>0010 1101</code> → <code>0x2D</code> (45). Soldaki eksik grup başa sıfır eklenerek tamamlanır, çünkü baştaki sıfırlar değeri değiştirmez; sondaki sıfırlar ise değiştirir.</p></div>
+
+<h2 class="s">İşaretsiz ve işaretli sayılar: ikiye tümleyen</h2>
+
+<p>Şu ana kadar bütün bit desenlerini 0'dan başlayan pozitif sayılar olarak okuduk. Buna <strong>işaretsiz</strong> (unsigned) yorum denir. Peki −42'yi nasıl tutacağız? Bellekte eksi işareti için ayrı bir yer yok; ne varsa bitlerin içinde olmalı.</p>
+
+<p>İlk akla gelen fikir, en soldaki biti işaret için ayırmaktır (işaret-büyüklük gösterimi). İki kusuru var: iki ayrı sıfır çıkar (<code>00000000</code> ve <code>10000000</code>) ve toplama devresi işaretlere bakıp ayrı kurallar uygulamak zorunda kalır. Bitleri tersine çeviren "birler tümleyeni" de iki sıfır üretir.</p>
+
+<p>Bugün neredeyse bütün işlemcilerin kullandığı çözüm <strong>ikiye tümleyen</strong>dir (two's complement). Fikri bir saat kadranı gibi düşün: 8 bitte 256 durum var ve sayılar bir çember üstünde diziliyor. 0'dan saat yönünde ilerledikçe 1, 2, 3… diye artar. 0'dan <strong>bir adım geriye</strong> gidersen çemberin öbür ucundaki <code>11111111</code> desenine düşersin. Bu desene "255" demek yerine "−1" dersen, toplama devresi hiç değişmeden negatif sayılarla da doğru çalışır: <code>11111111</code> + <code>00000001</code> = <code>1 00000000</code>; dokuzuncu bit 8 bitlik kutuya sığmadığı için atılır, geriye <code>00000000</code> kalır. Yani −1 + 1 = 0, tam olması gerektiği gibi.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İkiye tümleyen (n bit):</strong> En soldaki bitin ağırlığı +2<sup>n−1</sup> yerine <strong>−2<sup>n−1</sup></strong> sayılır, öbür bitlerin ağırlıkları aynı kalır. 8 bitte en soldaki bit −128'dir: <code>11010110</code> = −128 + 64 + 16 + 4 + 2 = −42. Aralık −2<sup>n−1</sup> … 2<sup>n−1</sup> − 1'dir (8 bitte −128 … 127); tek bir sıfır vardır.</p>
+<p><strong>Bir sayının negatifini almak:</strong> bütün bitleri ters çevir (0 → 1, 1 → 0) ve 1 ekle. Aynı işlemi iki kez yaparsan başa dönersin.</p>
+<p><strong>Okuma kolaylığı:</strong> En soldaki bit 1 ise sayı negatiftir; 0 ise pozitiftir ya da sıfırdır. Bu bite <strong>işaret biti</strong> denir, ama işaret-büyüklükteki gibi ayrı bir "eksi işareti" değildir: ağırlığı negatif olan sıradan bir basamaktır.</p></div>
+
+<p>Aralığın asimetrik olduğuna dikkat et: 8 bitte −128 var ama +128 yok. Nedeni sıfırın pozitif tarafa "harcanmasıdır": 256 durumun 128'i negatif (−128 … −1), 1'i sıfır, 127'si pozitiftir (1 … 127). Bu asimetrinin bir sonucu şudur: −128'in negatifini almaya çalışırsan (tersle ve 1 ekle) yine −128 bulursun, çünkü +128 bu kutuya sığmaz. C'de bunun 32 bitlik karşılığı olan <code>-INT_MIN</code> işlemi tanımsız davranıştır; küçük bir köşe gibi görünür ama mutlak değer hesaplayan kodlarda gerçek hatalara yol açmıştır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> −42'yi 8 bitlik ikiye tümleyenle yaz; bulduğun deseni hem işaretsiz hem işaretli olarak oku.</p>
+<p><strong>Adım 1.</strong> Önce +42'yi ikiliye çevir: 42 = 32 + 8 + 2 → <code>00101010</code>.</p>
+<p><strong>Adım 2.</strong> Bütün bitleri ters çevir: <code>11010101</code>.</p>
+<p><strong>Adım 3.</strong> 1 ekle: <code>11010101</code> + 1 = <code>11010110</code> (en sağdaki 1 + 1 = 10, 0 yaz 1 elde; sonraki 0 + 1 = 1).</p>
+<p><strong>Adım 4.</strong> İşaretli oku: en soldaki bit −128, öbür 1'ler 64, 16, 4, 2 → −128 + 86 = −42. Doğru.</p>
+<p><strong>Adım 5.</strong> Aynı deseni işaretsiz oku: 128 + 64 + 16 + 4 + 2 = 214.</p>
+<p><strong>Adım 6.</strong> İki okuma arasındaki farka bak: 214 − (−42) = 256 = 2<sup>8</sup>. Bu bir rastlantı değil: negatif bir değer x, işaretsiz okunduğunda her zaman x + 256'dır.</p>
+<p><strong>Sonuç:</strong> −42 = <code>11010110</code> = <code>0xD6</code>. Aynı bayt işaretsiz okunursa 214'tür; bitler aynı, yorum farklı.</p></div>
+
+<pre class="kod" data-ad="python3 tumleyen.py"># Ayni bayt, iki yorum: isaretsiz ve isaretli (ikiye tumleyen).
+def isaretli8(b):
+    # 0..255 araligindaki bayti -128..127 olarak oku
+    return b - 256 if b >= 128 else b
+
+for b in (0x00, 0x2A, 0x7F, 0x80, 0xD6, 0xFF):
+    print(f"{b:08b}  0x{b:02X}  isaretsiz={b:3d}  isaretli={isaretli8(b):4d}")
+
+# -42'yi 8 bitte yazmak: tersle ve 1 ekle
+x = 42
+ters = ~x &amp; 0xFF          # yalniz alttaki 8 biti tut
+print(f"42      = {x:08b}")
+print(f"ters    = {ters:08b}")
+print(f"ters+1  = {(ters + 1) &amp; 0xFF:08b}")
+print(f"-42 &amp; 0xFF = {-42 &amp; 0xFF:08b}")</pre>
+<pre class="cikti">00000000  0x00  isaretsiz=  0  isaretli=   0
+00101010  0x2A  isaretsiz= 42  isaretli=  42
+01111111  0x7F  isaretsiz=127  isaretli= 127
+10000000  0x80  isaretsiz=128  isaretli=-128
+11010110  0xD6  isaretsiz=214  isaretli= -42
+11111111  0xFF  isaretsiz=255  isaretli=  -1
+42      = 00101010
+ters    = 11010101
+ters+1  = 11010110
+-42 &amp; 0xFF = 11010110</pre>
+
+<p>Tablonun ilk dört satırında desen 0'dan 127'ye kadar iki yorumda aynı sayıyı veriyor; en soldaki bit 0 olduğu sürece işaretli ile işaretsiz okuma çakışır. <code>0x80</code> satırında yollar ayrılıyor: işaretsiz 128, işaretli −128. <code>0xFF</code> işaretsiz 255, işaretli −1. Alttaki dört satır, elle yaptığın "tersle, 1 ekle" adımlarının aynısını gösteriyor.</p>
+
+<p>Koddaki <code>&amp; 0xFF</code> neden gerekli? Python'un tamsayıları sınırsız büyüklüktedir; Python belgeleri bit işlemlerinin "sonsuz sayıda işaret biti varmış gibi" ikiye tümleyende hesaplandığını söyler. Yani Python'da <code>~42</code> yalnız 8 bit değil, sola doğru sonsuza uzanan 1'lerle −43'tür. <code>&amp; 0xFF</code> ile yalnız alttaki 8 biti tutup bir baytın göreceği deseni elde ediyoruz. Bu ayrıntı bir sonraki bölümün de anahtarı: Python sayıları taşmaz, ama C'nin ve donanımın sayıları sabit genişliklidir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Bu baytın değeri 255" diye kesin konuşmak.</strong> <code>0xFF</code> baytının tek başına bir değeri yoktur; işaretsiz 8 bitlik tamsayı olarak 255, işaretli olarak −1, bir metin dosyasında başka bir şey, bir resimde bir pikselin parlaklığıdır. Bitleri anlamlandıran, onları okuyan programın yorumudur. Güvenlikte bu karışıklık doğrudan hata kaynağıdır: bir program bir uzunluk alanını işaretli okursa <code>0xFFFFFFFF</code> "−1" olur ve "uzunluk 100'den küçük mü?" denetimini geçer; aynı değer başka bir yerde işaretsiz okunup 4 milyardan büyük bir sayıya dönüşür. Doğrusu: her sayısal alanın genişliğini ve işaretli mi işaretsiz mi olduğunu açıkça belirle, bir alanı farklı yerlerde farklı yorumlama.</p></div>
+
+<h2 class="s">Taşma ve sarma</h2>
+
+<p>Sabit genişlikli bir kutuya sığmayan bir sonuç ürettiğinde ne olur? Matematikte 255 + 1 = 256'dır, ama 256'yı yazmak için 9 bit gerekir (<code>1 00000000</code>) ve kutuda yalnız 8 yer vardır. Donanım fazla biti atar; geriye <code>00000000</code> kalır. Bu olaya <strong>taşma</strong> (overflow), sonucun çemberin öbür ucuna dönmesine <strong>sarma</strong> (wraparound) denir. Arabaların eski mekanik kilometre sayaçlarını düşün: 999999'dan sonra 000000'a döner; sayaç bozulmamıştır, yalnızca yeterli hanesi yoktur.</p>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="8 bitlik değerlerin çemberi: tepede 0x00, sağda 0x40, altta 0x80, solda 0xC0; tepede işaretsiz sarma noktası 255'ten 0'a, altta işaretli taşma noktası 127'den eksi 128'e">
+  <circle class="sv-c" cx="200" cy="180" r="120" />
+  <line class="sv-cl" x1="200" y1="46" x2="200" y2="74" />
+  <line class="sv-cl" x1="200" y1="286" x2="200" y2="314" />
+  <circle class="sv-a" cx="320" cy="180" r="5" />
+  <circle class="sv-a" cx="80" cy="180" r="5" />
+  <text class="sv-b" x="200" y="18" text-anchor="middle">işaretsiz sarma: 255 → 0</text>
+  <text class="sv-s" x="200" y="36" text-anchor="middle">0xFF | 0x00</text>
+  <text class="sv-s" x="200" y="330" text-anchor="middle">0x7F | 0x80</text>
+  <text class="sv-b" x="200" y="350" text-anchor="middle">işaretli taşma: 127 → −128</text>
+  <text class="sv-t" x="332" y="176" text-anchor="start">0x40</text>
+  <text class="sv-s" x="332" y="194" text-anchor="start">64 | 64</text>
+  <text class="sv-t" x="68" y="176" text-anchor="end">0xC0</text>
+  <text class="sv-s" x="68" y="194" text-anchor="end">192 | −64</text>
+  <text class="sv-t" x="200" y="150" text-anchor="middle">+1, saat yönünde</text>
+  <text class="sv-t" x="200" y="172" text-anchor="middle">bir adım</text>
+  <text class="sv-s" x="200" y="200" text-anchor="middle">256 adımda tam tur</text>
+  <text class="sv-s" x="200" y="222" text-anchor="middle">"işaretsiz | işaretli"</text>
+  <text class="sv-s" x="290" y="98" text-anchor="middle">sağ yarı:</text>
+  <text class="sv-s" x="290" y="114" text-anchor="middle">0 … 127</text>
+  <text class="sv-s" x="110" y="98" text-anchor="middle">sol yarı:</text>
+  <text class="sv-s" x="110" y="114" text-anchor="middle">128…255 | −128…−1</text>
+</svg>
+<figcaption>Bir baytın 256 değeri bir çember üstünde. Saat yönünde her adım 1 eklemektir. İşaretsiz okumada kopukluk tepededir: 255'ten sonra 0 gelir. İşaretli okumada kopukluk alttadır: 127'den sonra −128 gelir. Toplama devresi ikisinde de aynı işi yapar; "taşmanın" nerede olduğunu senin yorumun belirler.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Sabit genişlikli aritmetik, modüler aritmetiktir.</strong> n bitlik işaretsiz bir işlemin sonucu, gerçek sonucun 2<sup>n</sup>'ye bölümünden kalandır: 8 bitte 255 + 1 = 256 mod 256 = 0; 0 − 1 = 255. İşaretli sayılarda ikiye tümleyen donanımı aynı deseni üretir (127 + 1 → −128), ama bunun dildeki anlamı dile göre değişir.</p>
+<p><strong>C dilinde:</strong> İşaretsiz tamsayılarda sarma standartça <strong>tanımlıdır</strong> (sonuç mod 2<sup>n</sup>). İşaretli tamsayılarda taşma <strong>tanımsız davranıştır</strong> (undefined behavior): derleyici "bu asla olmaz" diye varsayıp kodu buna göre iyileştirebilir, sonuç beklediğin sarma olmayabilir. Bir değeri sığmadığı daha dar bir işaretli tipe <strong>dönüştürmek</strong> ise uygulamaya bağlıdır; GCC bu durumda değeri mod 2<sup>n</sup>'ye indirger.</p>
+<p><strong>Python'da:</strong> <code>int</code> sınırsız büyüklüktedir, kendi tamsayıların taşmaz. Ama Python bir dosyaya, ağ paketine ya da C kütüphanesine sabit genişlikli değer yazarken aynı sınırlarla karşılaşır.</p></div>
+
+<p>Kuralı gerçek bir C programında görelim. Kod rafı Parça 26'da gördüğün <code>stdint.h</code> başlığı genişliği adında yazan tipler verir: <code>uint8_t</code> 8 bit işaretsiz, <code>int8_t</code> 8 bit işaretli, <code>uint32_t</code> 32 bit işaretsiz.</p>
+
+<pre class="kod" data-ad="tasma.c">#include &lt;stdint.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void) {
+    uint8_t sayac = 255;     /* 8 bit, isaretsiz: 0..255 */
+    sayac = sayac + 1;       /* 256 sigmaz, sarar */
+    printf("uint8_t 255 + 1  = %u\n", sayac);
+
+    uint8_t az = 0;
+    az = az - 1;             /* asagi dogru da sarar */
+    printf("uint8_t 0 - 1    = %u\n", az);
+
+    int8_t kucuk = (int8_t)200;   /* 200 isaretli 8 bite sigmaz */
+    printf("(int8_t)200      = %d\n", kucuk);
+
+    uint32_t adet = 70000, boyut = 70000;
+    uint32_t toplam = adet * boyut;  /* 4 900 000 000 &gt; 2^32 - 1 */
+    printf("70000 * 70000    = %u (32 bit)\n", toplam);
+    printf("dogrusu          = %llu\n",
+           (unsigned long long)adet * boyut);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o tasma tasma.c &amp;&amp; ./tasma</pre>
+<pre class="cikti">uint8_t 255 + 1  = 0
+uint8_t 0 - 1    = 255
+(int8_t)200      = -56
+70000 * 70000    = 605032704 (32 bit)
+dogrusu          = 4900000000</pre>
+
+<p>Satır satır oku. 255 + 1 sıfıra sardı; 0 − 1 aşağıdan 255'e sardı. <code>(int8_t)200</code> −56 oldu: 200'ün deseni <code>11001000</code>'dir ve bu desen işaretli okunduğunda −128 + 64 + 8 = −56'dır (200 − 256 = −56). Dördüncü satır en önemlisi: 70.000 × 70.000 = 4.900.000.000 ama 32 bitlik işaretsiz tipin sınırı 4.294.967.295. Sonuç 2<sup>32</sup>'ye göre kalanına indi: 4.900.000.000 − 4.294.967.296 = 605.032.704. İki pozitif sayının çarpımı, sessizce, gerçek değerin yaklaşık sekizde biri çıktı. Derleyici <code>-Wall -Wextra</code> ile bile tek bir uyarı vermedi; taşma derleme anında değil, çalışma anında oluyor.</p>
+
+<h3>Taşma neden güvenlik hatalarının kökünde olabilir?</h3>
+
+<p>Son satırdaki durumu bir programın içinde düşün. Bir dosya biçimi "içimde şu kadar kayıt var, her biri şu kadar bayt" diye bir başlık taşıyor; program bu iki sayıyı dosyadan okuyor, çarpıyor ve o kadar bellek ayırıyor. Sayılar dışarıdan, yani güvenilmeyen bir kaynaktan geliyor. Çarpım taşarsa program gereğinden <strong>çok daha küçük</strong> bir alan ayırır; sonra kayıtları tek tek okuyup bu alana yazmaya başladığında ayrılan alanın sonunu geçer ve komşu belleğin üstüne yazar. Bu, bir <strong>tamsayı taşmasının bellek bozulmasına dönüşmesidir</strong>. C'de dizi sınırları otomatik denetlenmediği için bu tür bir bozulma programın çökmesine, verinin bozulmasına, en kötü durumda programın davranışının dışarıdan yönlendirilmesine kadar gidebilir. Burada yalnızca nedeni konuşuyoruz; bellek düzeni Parça 3'te, bellek güvenliği açıkları ve savunmaları Parça 60'ta (ve kod rafı Parça 30'da) kavram düzeyinde anlatılıyor.</p>
+
+<p>Taşma her zaman bellekle ilgili de değildir; yalnız yanlış bir sayı bile yeter. Ariane 5 roketinin ilk uçuşu 4 Haziran 1996'da başarısızlıkla bitti; soruşturma kurulu raporuna göre, yön bilgisi veren sistemdeki yazılımda 64 bitlik kayan noktalı bir değer 16 bitlik işaretli tamsayıya dönüştürülürken değer sığmadı, bu dönüşüm korumasızdı ve ortaya çıkan hata, ana motor ateşlemesinden yaklaşık 37 saniye sonra sistemi durdurdu. Bir başka örnek ise henüz gelmedi: zamanı 1 Ocak 1970'ten bu yana geçen saniye olarak 32 bitlik işaretli bir sayıda tutan sistemler, 19 Ocak 2038 saat 03:14:07'de (UTC) 2.147.483.647 sınırına ulaşır; bir saniye sonra sayı sarar ve tarih 13 Aralık 1901'e düşer. Bu "2038 sorunu" zaman damgasına dayanan sertifika ve oturum denetimlerini etkiler; çözümü zamanı 64 bitle tutmaktır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Savunma: işlemi yapmadan önce sonucun sığıp sığmayacağını sor.</strong> Dışarıdan gelen iki sayıyı çarpacaksan, önce <code>adet &gt; UINT32_MAX / boyut</code> olup olmadığını denetle; öyleyse işlemi reddet. Toplamada <code>a &gt; MAX − b</code> aynı işi görür. Sonucu sonradan "pozitif mi?" diye denetlemek yetmez, çünkü taşmış sonuç pozitif ve makul görünebilir (yukarıda 605.032.704). Yeterince geniş bir tip seç, girdinin üst sınırını baştan belirle, derleyicinin hazır taşma denetimli işlevlerini ve çalışma anı denetleyicilerini kullan.</p></div>
+
+<pre class="kod" data-ad="guvenli.c">#include &lt;stdint.h&gt;
+#include &lt;stdio.h&gt;
+
+/* Savunma: carpmadan once sonucun sigip sigmayacagini sor. */
+static int boyut_hesapla(uint32_t adet, uint32_t boyut, uint32_t *sonuc) {
+    if (boyut != 0 &amp;&amp; adet &gt; UINT32_MAX / boyut) {
+        return -1;               /* sigmaz: reddet */
+    }
+    *sonuc = adet * boyut;
+    return 0;
+}
+
+int main(void) {
+    uint32_t s;
+    if (boyut_hesapla(1000, 16, &amp;s) == 0)
+        printf("1000 x 16    -&gt; %u bayt\n", s);
+    if (boyut_hesapla(70000, 70000, &amp;s) != 0)
+        printf("70000 x 70000 -&gt; reddedildi (32 bite sigmaz)\n");
+
+    /* Ayni denetimi derleyicinin hazir islevi de yapar (GCC/Clang). */
+    if (__builtin_mul_overflow((uint32_t)70000, (uint32_t)70000, &amp;s))
+        printf("__builtin_mul_overflow: tasma var\n");
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o guvenli guvenli.c &amp;&amp; ./guvenli</pre>
+<pre class="cikti">1000 x 16    -&gt; 16000 bayt
+70000 x 70000 -&gt; reddedildi (32 bite sigmaz)
+__builtin_mul_overflow: tasma var</pre>
+
+<p>Denetimin mantığı şu: <code>adet × boyut ≤ UINT32_MAX</code> olmasını istiyoruz; ama bunu çarparak denetleyemeyiz, çünkü çarpım zaten taşabilir. İki tarafı <code>boyut</code>'a bölünce <code>adet ≤ UINT32_MAX / boyut</code> çıkar ve bölme taşmaz. <code>boyut != 0</code> koşulu sıfıra bölmeyi önler. Makul istek (1000 × 16) geçti, sığmayan istek reddedildi. GCC ve Clang'ın <code>__builtin_mul_overflow</code> işlevi aynı denetimi kendisi yapar ve taşma varsa doğru döner.</p>
+
+<p>İşaretli taşmanın tanımsız olduğunu da görelim. Aşağıdaki program 32 bitlik <code>int</code>'in en büyük değerine 1 ekliyor. Önce düz derliyoruz, sonra GCC'nin <strong>tanımsız davranış denetleyicisiyle</strong> (<code>-fsanitize=undefined</code>, kısaca UBSan) derliyoruz; bu denetleyici programa çalışma anında sınama kodu ekler.</p>
+
+<pre class="kod" data-ad="isaretli.c">#include &lt;limits.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void) {
+    int x = INT_MAX;         /* 2147483647 */
+    printf("INT_MAX     = %d\n", x);
+    x = x + 1;               /* isaretli tasma: C'de tanimsiz davranis */
+    printf("INT_MAX + 1 = %d\n", x);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -O0 -o isaretli isaretli.c &amp;&amp; ./isaretli
+gcc -Wall -Wextra -fsanitize=undefined -o isaretli_ub isaretli.c &amp;&amp; ./isaretli_ub</pre>
+<pre class="cikti">INT_MAX     = 2147483647
+INT_MAX + 1 = -2147483648
+INT_MAX     = 2147483647
+isaretli.c:7:7: runtime error: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'
+INT_MAX + 1 = -2147483648</pre>
+
+<p>İlk çalıştırmada sonuç sessizce −2.147.483.648'e sardı; bu makinede ve bu derleme ayarında böyle oldu, ama standart bunu garanti etmez: iyileştirme açıkken derleyici "işaretli taşma olmaz" varsayımıyla taşma denetimini tümden silebilir. İkinci çalıştırmada UBSan, kaynak dosyanın 7. satırını gösterip taşmayı yakaladı. Clang'da işaretsiz taşmalar için de ayrı bir denetim var; <code>tasma.c</code>'yi onunla derlediğimde 70.000 × 70.000 satırını işaretledi:</p>
+
+<pre class="kod" data-ad="bash">clang -Wall -Wextra -fsanitize=unsigned-integer-overflow -o tasma_cl tasma.c &amp;&amp; ./tasma_cl</pre>
+<pre class="cikti">uint8_t 255 + 1  = 0
+uint8_t 0 - 1    = 255
+(int8_t)200      = -56
+tasma.c:17:28: runtime error: unsigned integer overflow: 70000 * 70000 cannot be represented in type 'uint32_t' (aka 'unsigned int')
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior tasma.c:17:28
+70000 * 70000    = 605032704 (32 bit)
+dogrusu          = 4900000000</pre>
+
+<p>İlk iki satırdaki 8 bitlik sarmalar işaretlenmedi: C, <code>uint8_t</code> gibi dar tipleri işlemden önce <code>int</code>'e yükseltir, toplama taşmadan yapılır, sonuç geri yazılırken kesilir. Bu bir "daraltıcı dönüşüm"dür ve ayrı bir denetim ister. Tek bir araç her şeyi yakalamaz; asıl savunma, sınırı kodda açıkça denetlemektir. Çıktılar gcc 15.2 ve clang 21.1 ile alındı; başka sürümde mesaj biçimi farklı olabilir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"İşaretsiz tip kullanırsam taşma sorunu biter" sanmak.</strong> İşaretsiz tipte sarma tanımlıdır, yani program çökmez ve derleyici şaşırtıcı iyileştirmeler yapmaz; ama sonuç yine <strong>yanlıştır</strong>. Yukarıdaki 605.032.704 işaretsiz bir sonuçtu ve bellek ayırmak için kullanılsaydı tehlikeliydi. Hatta işaretsiz tip yeni bir tuzak ekler: <code>uzunluk - 1</code> ifadesinde uzunluk 0 ise sonuç −1 değil, tipin en büyük değeridir. Doğrusu: tip seçimi sınır denetiminin yerini tutmaz; dışarıdan gelen her sayının aralığını işlemden önce denetle.</p>
+<p><strong>"Python kullanıyorum, taşma beni ilgilendirmez" sanmak.</strong> Python'un <code>int</code>'i taşmaz, ama bir dosya biçimine, ağ paketine ya da 32 bitlik bir veritabanı sütununa yazdığın değer o alanın sınırına tabidir.</p></div>
+
+<h2 class="s">Bit işlemleri: VE, VEYA, XOR, DEĞİL, kaydırma</h2>
+
+<p>Aritmetik işlemler sayıyı bir bütün olarak ele alır. <strong>Bit işlemleri</strong> ise iki sayının aynı konumdaki bitlerini tek tek, birbirinden bağımsız olarak işler. İşlemci bunları tek komutla ve çok hızlı yapar. Güvenlikte her yerdedirler: dosya izinleri, ağ maskeleri, bayraklar, özet ve şifreleme algoritmalarının iç adımları.</p>
+
+<div class="tablo"><table>
+<tr><th>a</th><th>b</th><th>a VE b (<code>&amp;</code>)</th><th>a VEYA b (<code>|</code>)</th><th>a XOR b (<code>^</code>)</th><th>DEĞİL a (<code>~</code>)</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+</table></div>
+
+<p>Tabloyu sözle oku. <strong>VE</strong> yalnız iki bit de 1 ise 1 verir; bu yüzden "seçme" ya da "maskeleme" için kullanılır: bir sayıyı <code>0x0F</code> ile VE'lersen üst dört bit sıfırlanır, alt dört bit olduğu gibi kalır. <strong>VEYA</strong> bitlerden biri 1 ise 1 verir; bir biti "açmak" için kullanılır. <strong>XOR</strong> (dışlayıcı veya) bitler <strong>farklıysa</strong> 1 verir; bir biti "çevirmek" için kullanılır: 1 ile XOR'lanan bit tersine döner, 0 ile XOR'lanan bit değişmez. <strong>DEĞİL</strong> tek bir sayının bütün bitlerini ters çevirir.</p>
+
+<p><strong>Kaydırma</strong> bitleri sola ya da sağa kaydırır. <code>x &lt;&lt; k</code> bitleri k basamak sola kaydırır, sağdan 0 girer; her basamak 2 ile çarpmak demektir (<code>5 &lt;&lt; 3</code> = 5 × 8 = 40). <code>x &gt;&gt; k</code> sağa kaydırır, sağdaki bitler düşer; işaretsiz sayılarda 2<sup>k</sup>'ye tam bölmedir (<code>200 &gt;&gt; 2</code> = 50). Sola kaydırma da taşabilir: sabit genişlikte soldan düşen bitler kaybolur; C'de işaretli sayıyı taşacak biçimde sola kaydırmak da tanımsız davranıştır.</p>
+
+<pre class="kod" data-ad="python3 bitler.py">a, b = 0b1100, 0b1010
+print(f"a      = {a:04b}")
+print(f"b      = {b:04b}")
+print(f"a &amp; b  = {a &amp; b:04b}  (VE)")
+print(f"a | b  = {a | b:04b}  (VEYA)")
+print(f"a ^ b  = {a ^ b:04b}  (XOR)")
+print(f"~a&amp;0xF = {~a &amp; 0xF:04b}  (DEGIL, 4 bitte)")
+
+bayt = 0xC8
+print(f"ust yarim: {bayt &gt;&gt; 4:X}   alt yarim: {bayt &amp; 0x0F:X}")
+print(f"5 &lt;&lt; 3 = {5 &lt;&lt; 3}   200 &gt;&gt; 2 = {200 &gt;&gt; 2}")
+
+izin = 0o750                       # Linux izinleri: rwx r-x ---
+print("grup yazabilir mi?", bool(izin &amp; 0o020))
+print("grup okuyabilir mi?", bool(izin &amp; 0o040))
+
+# XOR'un geri donusu: ayni anahtarla iki kez XOR'la, basa don
+mesaj = b"Selam"
+anahtar = bytes([0x5A, 0x13, 0xC4, 0x7E, 0x21])
+karisik = bytes(m ^ k for m, k in zip(mesaj, anahtar))
+geri = bytes(c ^ k for c, k in zip(karisik, anahtar))
+print("karisik:", karisik.hex(" "))
+print("geri   :", geri)</pre>
+<pre class="cikti">a      = 1100
+b      = 1010
+a &amp; b  = 1000  (VE)
+a | b  = 1110  (VEYA)
+a ^ b  = 0110  (XOR)
+~a&amp;0xF = 0011  (DEGIL, 4 bitte)
+ust yarim: C   alt yarim: 8
+5 &lt;&lt; 3 = 40   200 &gt;&gt; 2 = 50
+grup yazabilir mi? False
+grup okuyabilir mi? True
+karisik: 09 76 a8 1f 4c
+geri   : b'Selam'</pre>
+
+<p>Çıktıyı oku. 1100 ile 1010'un yalnız en soldaki biti ikisinde de 1, VE 1000 verdi; VEYA en az birinde 1 olan üç biti açtı; XOR yalnız farklı olan iki konumu 1 yaptı. <code>~a</code>'yı yine <code>&amp; 0xF</code> ile 4 bite indirdik, çünkü Python'da <code>~</code> sonsuz işaret bitine uygulanır. <code>0xC8 &gt;&gt; 4</code> üst nibble'ı (C), <code>0xC8 &amp; 0x0F</code> alt nibble'ı (8) verdi; bir baytı iki hex haneye bölmenin makine yolu budur. İzin satırlarında <code>0o750</code> sekizli yazımı Linux'ta "sahibi okur-yazar-çalıştırır, grup okur-çalıştırır, diğerleri hiçbir şey yapamaz" demektir; tek bir izin bitini VE ile sorguladık (ayrıntısı Parça 12'de). Ağdaki alt ağ maskesi de aynı fikirdir: bir IP adresini maskeyle VE'leyip ağ kısmını çıkarırsın (Parça 25).</p>
+
+<h3>XOR'un özel yeri: kriptografiye ön bakış</h3>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>XOR'un üç özelliği:</strong> (1) a ⊕ 0 = a (sıfırla XOR değiştirmez); (2) a ⊕ a = 0 (kendisiyle XOR siler); (3) değişme ve birleşme özelliği vardır, sıra önemli değildir. Bunlardan şu çıkar: <strong>(m ⊕ k) ⊕ k = m</strong>. Bir veriyi bir anahtarla XOR'larsan karışık bir dizi elde edersin; aynı anahtarla bir kez daha XOR'larsan veri geri gelir. Aynı işlem hem "karıştırma" hem "çözme" olur.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="XOR ile karıştırma ve geri çevirme akışı: S harfinin baytı 0x53, anahtar 0x5A ile XOR'lanınca 0x09 olur; 0x09 yine 0x5A ile XOR'lanınca 0x53 geri gelir">
+  <rect class="sv-m" x="8" y="80" width="84" height="40" rx="6" />
+  <text class="sv-b" x="50" y="105" text-anchor="middle">0x53 "S"</text>
+  <text class="sv-s" x="50" y="140" text-anchor="middle">mesaj</text>
+  <text class="sv-s" x="50" y="160" text-anchor="middle">01010011</text>
+  <line class="sv-cl" x1="92" y1="100" x2="111" y2="100" />
+  <circle class="sv-a" cx="125" cy="100" r="14" />
+  <text class="sv-b" x="125" y="105" text-anchor="middle">⊕</text>
+  <rect class="sv-k" x="95" y="18" width="60" height="40" rx="6" />
+  <text class="sv-t" x="125" y="35" text-anchor="middle">anahtar</text>
+  <text class="sv-b" x="125" y="52" text-anchor="middle">0x5A</text>
+  <line class="sv-c" x1="125" y1="58" x2="125" y2="86" />
+  <line class="sv-cl" x1="139" y1="100" x2="160" y2="100" />
+  <rect class="sv-l" x="160" y="80" width="80" height="40" rx="6" />
+  <text class="sv-b" x="200" y="105" text-anchor="middle">0x09</text>
+  <text class="sv-s" x="200" y="140" text-anchor="middle">karışık</text>
+  <text class="sv-s" x="200" y="160" text-anchor="middle">00001001</text>
+  <line class="sv-cl" x1="240" y1="100" x2="261" y2="100" />
+  <circle class="sv-a" cx="275" cy="100" r="14" />
+  <text class="sv-b" x="275" y="105" text-anchor="middle">⊕</text>
+  <rect class="sv-k" x="245" y="18" width="60" height="40" rx="6" />
+  <text class="sv-t" x="275" y="35" text-anchor="middle">anahtar</text>
+  <text class="sv-b" x="275" y="52" text-anchor="middle">0x5A</text>
+  <line class="sv-c" x1="275" y1="58" x2="275" y2="86" />
+  <line class="sv-cl" x1="289" y1="100" x2="310" y2="100" />
+  <rect class="sv-m" x="310" y="80" width="84" height="40" rx="6" />
+  <text class="sv-b" x="352" y="105" text-anchor="middle">0x53 "S"</text>
+  <text class="sv-s" x="352" y="140" text-anchor="middle">geri gelen</text>
+  <text class="sv-s" x="352" y="160" text-anchor="middle">01010011</text>
+  <text class="sv-s" x="200" y="190" text-anchor="middle">aynı anahtarla iki kez XOR = hiçbir şey yapmamak</text>
+</svg>
+<figcaption>Python örneğindeki ilk baytın yolculuğu. "S" harfinin baytı 0x53 (01010011), anahtarın ilk baytı 0x5A (01011010). Farklı olan bitler 1 olur: 00001001 = 0x09; çıktıdaki "karisik" satırının ilk baytı budur. Aynı anahtarla bir kez daha XOR'layınca farklılıklar geri alınır ve 0x53 döner.</figcaption>
+</figure>
+
+<p>Bu özellik, modern şifrelemenin pek çok yerinde kullanılır. Örneğin akış şifreleri ve bazı çalışma kipleri, gerçek veriyi güvenli bir yöntemle üretilmiş, rastgele görünen uzun bir "anahtar akışı" ile XOR'lar (Parça 43). Ama XOR kendi başına bir şifreleme değildir; güvenliği tamamen anahtarın nasıl üretildiğine ve <strong>bir kez kullanılıp kullanılmadığına</strong> bağlıdır. Aynı anahtar iki farklı mesajda kullanılırsa, iki karışık diziyi birbiriyle XOR'lamak anahtarı yok eder (k ⊕ k = 0) ve geriye iki mesajın XOR'u kalır; bu da mesajlar hakkında ciddi bilgi sızdırır. Yukarıdaki beş baytlık anahtar bu yüzden yalnız bir gösterimdir, gerçek bir koruma değildir. Kriptografinin altın kuralı ("kendi şifrelemeni uydurma") Parça 42'de; doğru araçlar Parça 43'te.</p>
+
+<h2 class="s">KiB ve kB: iki ayrı "kilo"</h2>
+
+<p>Uluslararası Birimler Sistemi'nde (SI) <strong>kilo</strong> her yerde 1000 demektir: kilometre 1000 metre, kilogram 1000 gram. Bilgisayarcılar ise uzun süre "kilobayt"ı 1024 bayt için kullandı, çünkü bellek boyutları 2'nin kuvvetleridir ve 2<sup>10</sup> = 1024, 1000'e yakındır. Kilo düzeyinde fark yüzde 2,4'tür; tera düzeyinde yüzde 10'a çıkar.</p>
+
+<p>Bu karışıklığı gidermek için Uluslararası Elektroteknik Komisyonu (IEC) Aralık 1998'de ayrı <strong>ikili önekler</strong> kabul etti: kibi (Ki, 2<sup>10</sup>), mebi (Mi, 2<sup>20</sup>), gibi (Gi, 2<sup>30</sup>), tebi (Ti, 2<sup>40</sup>) ve devamı. Sondaki "bi", "binary" (ikili) sözcüğünü hatırlatır; bu önekler SI'nın parçası değildir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Ondalık (SI) önekler:</strong> kB = 10<sup>3</sup> B, MB = 10<sup>6</sup> B, GB = 10<sup>9</sup> B, TB = 10<sup>12</sup> B. <strong>İkili (IEC) önekler:</strong> KiB = 2<sup>10</sup> = 1024 B, MiB = 2<sup>20</sup> B, GiB = 2<sup>30</sup> B, TiB = 2<sup>40</sup> B. Büyük <strong>B</strong> bayt, küçük <strong>b</strong> bit demektir: 100 Mb/s (megabit/saniye) bir ağ hızıdır ve yaklaşık 12,5 MB/s'ye (megabayt/saniye) karşılık gelir, çünkü bir bayt 8 bittir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Ondalık önek</th><th>Değeri (bayt)</th><th>İkili önek</th><th>Değeri (bayt)</th><th>İkili / ondalık</th></tr>
+<tr><td>kB (kilo)</td><td>1.000</td><td>KiB (kibi)</td><td>1.024</td><td>1,024 (%2,4 fazla)</td></tr>
+<tr><td>MB (mega)</td><td>1.000.000</td><td>MiB (mebi)</td><td>1.048.576</td><td>≈ 1,049 (%4,9)</td></tr>
+<tr><td>GB (giga)</td><td>10<sup>9</sup></td><td>GiB (gibi)</td><td>1.073.741.824</td><td>≈ 1,074 (%7,4)</td></tr>
+<tr><td>TB (tera)</td><td>10<sup>12</sup></td><td>TiB (tebi)</td><td>1.099.511.627.776</td><td>≈ 1,100 (%10,0)</td></tr>
+</table></div>
+
+<p>Gündelik karışıklığın kaynağı şudur: disk üreticileri kapasiteyi ondalık öneklerle yazar (1 TB = 10<sup>12</sup> bayt), ama Windows dosya gezgini kapasiteyi 1024'ün kuvvetleriyle hesaplayıp yine "GB" diye gösterir. 10<sup>12</sup> ÷ 2<sup>30</sup> ≈ 931,3 olduğu için yeni diskin "931 GB" görünür. Disk eksik değildir; aynı bayt sayısı iki farklı birimle yazılmıştır (gizli kurtarma bölümleri ayrıca biraz yer tutabilir). Linux araçlarında ise ayrım genellikle seçeneklerle yapılır; aşağıdaki denemede <code>numfmt</code> ile göreceksin.</p>
+
+<p>Güvenlikle ilgisi: bir yükleme sınırı "10 MB" diye yazılıp bir yerde 10.000.000, başka yerde 10.485.760 bayt olarak uygulanırsa iki denetim arasında gerçek bir boşluk açılır. Sınır yazarken birimi açık yaz.</p>
+
+<h2 class="s">Kendi makinende dene: bir dosyanın baytlarına bakmak</h2>
+
+<p>Şimdi öğrendiklerini kendi bilgisayarında kullanacaksın. Linux'ta (ya da Windows'ta WSL içinde) bir terminal aç. Komutlar yalnız bu alıştırma için açtığın klasörde, kendi oluşturduğun dosyalarla çalışıyor; tek istisna 5. adımda sistemdeki <code>/bin/ls</code> programının ilk 16 baytını <strong>okumak</strong>, ki bu hiçbir şeyi değiştirmez. <code>xxd</code> çoğu dağıtımda <code>vim</code> paketiyle (bazılarında ayrı <code>xxd</code> paketiyle) gelir; <code>od</code> ve <code>numfmt</code> GNU coreutils'in parçasıdır ve her Linux'ta vardır.</p>
+
+<h3>Adım 1: küçük bir dosya oluştur ve boyutunu ölç</h3>
+<pre class="kod" data-ad="bash">mkdir -p ~/lab/siber-1 &amp;&amp; cd ~/lab/siber-1
+printf 'Selam\n' &gt; selam.txt
+wc -c selam.txt</pre>
+<pre class="cikti">6 selam.txt</pre>
+<p><code>printf</code> beş harfi ve bir satır sonu karakterini (<code>\n</code>) dosyaya yazdı. <code>wc -c</code> bayt sayar: 6. Beş harf beş bayt, satır sonu bir bayt. Dosyada "Selam" yazısından başka bir şey olmadığını sanırdın; görünmeyen satır sonu da bir bayttır.</p>
+
+<h3>Adım 2: <code>xxd</code> ile hex dökümü</h3>
+<pre class="kod" data-ad="bash">xxd selam.txt</pre>
+<pre class="cikti">00000000: 5365 6c61 6d0a                           Selam.</pre>
+<p>Satırı üç sütun olarak oku. <strong>Soldaki</strong> <code>00000000:</code>, satırın dosyanın başından itibaren kaçıncı baytta başladığını (konum, offset) hex olarak gösterir; ilk satır 0'dan başlar. <strong>Ortadaki</strong> sütun baytların kendisidir; <code>xxd</code> varsayılan olarak baytları ikişer ikişer gruplar, yani <code>5365</code> aslında iki bayttır: <code>53</code> ve <code>65</code>. Hepsi: <code>53 65 6c 61 6d 0a</code>. <strong>Sağdaki</strong> sütun aynı baytların yazdırılabilir karakter karşılığıdır; yazdırılamayan baytlar nokta olarak gösterilir, bu yüzden satır sonu <code>.</code> görünüyor. <code>0x53</code> = 83 "S" harfinin, <code>0x65</code> = 101 "e" harfinin ASCII kodudur; <code>0x0a</code> = 10 satır sonudur. Harflerin sayılarla nasıl eşlendiği (ASCII, UTF-8) Parça 6'nın konusu.</p>
+
+<h3>Adım 3: aynı baytları bit olarak gör</h3>
+<pre class="kod" data-ad="bash">xxd -b selam.txt</pre>
+<pre class="cikti">00000000: 01010011 01100101 01101100 01100001 01101101 00001010  Selam.</pre>
+<p><code>-b</code> seçeneği her baytı 8 bitlik ikili olarak yazar. İlk bayta bak: <code>01010011</code>. Sağdan 4'lü böl: <code>0101</code> = 5, <code>0011</code> = 3 → <code>53</code>. Adım 2'deki hex ile aynı. Son bayt <code>00001010</code> = 8 + 2 = 10 = <code>0x0a</code>. Hex'in neden tercih edildiğini burada görüyorsun: aynı bilgi ikilide dört kat daha uzun.</p>
+
+<h3>Adım 4: <code>od</code> ile karşılaştır ve bir tuzağı gör</h3>
+<pre class="kod" data-ad="bash">od -A x -t x1z selam.txt</pre>
+<pre class="cikti">000000 53 65 6c 61 6d 0a                                &gt;Selam.&lt;
+000006</pre>
+<p><code>od</code> ("octal dump", sekizli döküm) daha eski bir araçtır. <code>-A x</code> konumları hex yazdırır, <code>-t x1</code> her baytı tek tek hex yazdırır, sondaki <code>z</code> sağa karakter karşılığını ekler. Baytlar <code>xxd</code> ile birebir aynı; son satırdaki <code>000006</code> dosyanın bittiği konumdur (6 bayt). Şimdi seçeneksiz çalıştır:</p>
+<pre class="kod" data-ad="bash">od selam.txt</pre>
+<pre class="cikti">0000000 062523 060554 005155
+0000006</pre>
+<p>Bu tanıdık gelmiyor, çünkü <code>od</code> varsayılan olarak baytları <strong>ikişer ikişer birleştirip sekizli</strong> sayı olarak yazar. İlk değer <code>062523</code> sekizlide 25.939, hex'te <code>0x6553</code>'tür: yani <code>65</code> ve <code>53</code> baytları, dosyadaki sıranın <strong>tersine</strong> dizilmiş. Bunun nedeni, bu makinenin iki baytlık bir sayıyı bellekte küçük baytı önce gelecek biçimde okumasıdır (little endian); ayrıntısı Parça 3'te. Ders: bir döküm aracının çıktısını okumadan önce birimini (tek bayt mı, iki bayt mı) ve tabanını (hex mi, sekizli mi) bil. Bayt bayt incelemede <code>od -t x1</code> ya da <code>xxd</code> kullan.</p>
+
+<h3>Adım 5: Türkçe harf ve bir programın ilk baytları</h3>
+<pre class="kod" data-ad="bash">printf 'ş\n' | xxd
+head -c 16 /bin/ls | xxd</pre>
+<pre class="cikti">00000000: c59f 0a                                  ...
+00000000: 7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............</pre>
+<p>İlk satırda tek bir "ş" harfi <strong>iki bayt</strong> tuttu: <code>c5 9f</code> (ardından satır sonu <code>0a</code>). Sağ sütunda harf görünmüyor, çünkü <code>xxd</code> yalnız tek baytlık ASCII karakterlerini gösterir. Bunun nedeni UTF-8 kodlamasıdır ve Parça 6'da (ve kod rafı Parça 3'teki <code>encode</code> örneklerinde) açılıyor; şimdilik "karakter sayısı bayt sayısına eşit değildir" diye not et. İkinci satırda <code>/bin/ls</code> programının ilk 16 baytını okuduk: <code>7f 45 4c 46</code>, yani bir <code>0x7f</code> baytı ve ardından "ELF" harfleri. Linux'taki çalıştırılabilir dosyalar bu dört baytla başlar; dosyanın türünü adından değil içeriğinden tanımaya yarayan bu "sihirli baytlar" da Parça 6'nın konusu. Sendeki çıktının ilk dört baytı aynı olmalı; sonraki baytlar işlemci mimarisine göre değişebilir.</p>
+
+<h3>Adım 6: hex'ten geri baytlara</h3>
+<pre class="kod" data-ad="bash">xxd -p selam.txt
+echo 53656c616d0a | xxd -r -p</pre>
+<pre class="cikti">53656c616d0a
+Selam</pre>
+<p><code>-p</code> ("plain") konum ve karakter sütunlarını atıp yalnız hex'i yan yana yazar; bir baytı bir yerden ötekine kopyalamak için kullanışlıdır. <code>-r</code> ("revert") ters yönde çalışır: hex metni alıp gerçek baytlara çevirir. Çıktıda "Selam" yazısı ve görünmeyen satır sonu geldi; on iki hex karakteri altı bayta döndü. Hex'in bir şifre ya da gizleme olmadığını burada açıkça görüyorsun: herkes tek komutla geri çevirir.</p>
+
+<h3>Adım 7: KiB ile kB'yi komutla gör</h3>
+<pre class="kod" data-ad="bash">numfmt --to=si 1000000000000
+numfmt --to=iec 1000000000000
+numfmt --to=iec-i 1000000000000
+python3 -c 'print(10**12 / 2**30)'</pre>
+<pre class="cikti">1.0T
+932G
+932Gi
+931.3225746154785</pre>
+<p>Aynı sayı, yani 10<sup>12</sup> bayt: <code>--to=si</code> 1000'in kuvvetleriyle "1.0T", <code>--to=iec</code> 1024'ün kuvvetleriyle "932G" yazdı. <code>--to=iec-i</code> ikili olduğunu "Gi" ekiyle açıkça belirtiyor. Python'un hesabı 931,32 diyor; <code>numfmt</code> 932 yazdı, çünkü belgesine göre varsayılan yuvarlama yöntemi sıfırdan uzağa (yukarı) yuvarlamaktır. Bir aracın gösterdiği yuvarlanmış değeri kesin değer sanma.</p>
+
+<p>Çıktılar Kali Linux (WSL2), xxd 2026-04-26 ve GNU coreutils 9.10 ile alındı; başka sürümde hizalama farklı olabilir, baytlar aynıdır.</p>
+
+<h2 class="s">Güvenlik gözüyle: bu temel nerede karşına çıkacak?</h2>
+
+<p>Şüpheli bir dosyayı incelerken ilk baktığın şey hex dökümüdür. Bir ağ paketinin başlığını okumak, belirli konumdaki baytları belirli genişlikte bir sayı olarak yorumlamaktır (Parça 20–33). Bir güvenlik danışmasında "integer overflow" (CWE-190 sınıfı) gördüğünde artık bunun bir sayının kutusuna sığmaması olduğunu ve savunmanın işlemden önce sınır denetimi olduğunu biliyorsun (Parça 49 ve 60). Ortak ders: bilgisayar bitlere anlam vermez, anlamı onları okuyan program verir. Hataların önemli bir kısmı, aynı bitlerin iki yerde farklı yorumlanmasından ya da bir değerin kutusuna sığmamasından doğar; her alanın genişliğini, işaretini, birimini ve sınırını açıkça sor.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2'ye:</strong> İşlemcinin yazmaçları kelime genişliğindedir; taşmayı ve işareti işlemci bayraklarla bildirir. Makine kodunu <code>objdump</code> ile okurken gördüğün her komut ve adres hex'tir.</p>
+<p><strong>Parça 3'e:</strong> <code>od</code>'un seçeneksiz çıktısında baytların ters dizilmesinin nedeni bayt sırası (endianness); bellek adresleri de hex yazılan büyük sayılardır.</p>
+<p><strong>Parça 6'ya:</strong> <code>53</code> neden "S", "ş" neden iki bayt, <code>7f 45 4c 46</code> neden bir program imzası; ve hex'in, Base64'ün neden şifre olmadığı.</p>
+<p><strong>Parça 12, 25, 42–44 ve 60'a:</strong> İzinler ve alt ağ maskeleri VE ile sorgulanan bit maskeleridir; XOR şifrelemede, hex özet değerlerinde kullanılır; taşmanın bellek hatasına dönüşmesi Parça 60'ta.</p>
+<p><strong>Parça 72–73'e:</strong> Her deneme yalnız kendi makinende; izinsiz denemenin yasal ve etik sınırı orada.</p>
+<p><strong>Kod rafına:</strong> Parça 3 (<code>encode</code>), Parça 26 (C tipleri), Parça 30 (bellek güvenliği), Parça 15–16 (kabuk).</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bilgisayar neden onlu değil de ikili çalışır? İki nedeni söyle.</summary><p>Birincisi güvenilirlik: devrelerde gerilim ısı ve parazit yüzünden oynar; yalnız iki düzey olursa aralarına geniş bir pay konur ve küçük oynamalar sonucu değiştirmez, on düzey olsaydı birbirine karışırdı. İkincisi mantık: iki durum doğrudan doğru/yanlış mantığına karşılık gelir; VE, VEYA, DEĞİL kapıları birkaç transistörle kurulur ve bunlardan toplama devresi, bellek hücresi gibi büyük yapılar elde edilir.</p></details>
+<details><summary>Bir bayt neden tam olarak iki hex haneyle yazılır?</summary><p>16 = 2<sup>4</sup> olduğu için bir hex hane tam olarak 4 bite (bir nibble'a) karşılık gelir. Bir bayt 8 bit, yani iki nibble olduğundan iki hex haneyle yazılır: 00'dan FF'ye. Dönüşüm hesap gerektirmez; 4'lü grupları tablodan okumak yeter.</p></details>
+<details><summary>8 bitlik ikiye tümleyende −1 hangi desendir ve neden toplama devresi değişmeden çalışır?</summary><p>−1 = 11111111'dir: +1'in deseni 00000001, tersi 11111110, bir eklenince 11111111. Buna 1 eklersen 1 00000000 çıkar; dokuzuncu bit kutuya sığmayıp atılır ve 0 kalır. Yani işaretsiz toplama yapan aynı devre, en soldaki bitin ağırlığını −128 sayınca negatif sayılar için de doğru sonuç verir.</p></details>
+<details><summary>C'de işaretsiz ve işaretli tamsayı taşmasının farkı nedir?</summary><p>İşaretsiz tamsayılarda sarma standartça tanımlıdır: sonuç 2<sup>n</sup>'ye göre kalandır (255 + 1 = 0). İşaretli tamsayılarda taşma tanımsız davranıştır: makinede sarma görülebilir, ama derleyici taşmanın olmayacağını varsayıp kodu buna göre değiştirebilir. İkisinde de sonuç matematiksel olarak yanlıştır; savunma, işlemden önce sınırı denetlemektir.</p></details>
+<details><summary>Dışarıdan gelen adet ve boyut çarpılıp bellek ayrılıyorsa taşma neden tehlikelidir ve nasıl önlenir?</summary><p>Çarpım taşarsa küçük bir sayıya sarar ve program gereğinden çok küçük bir alan ayırır; ardından gerçek veriyi yazarken alanın sonunu geçip komşu belleği bozabilir. Önlemek için çarpmadan önce adet &gt; MAX / boyut olup olmadığını denetleyip öyleyse reddetmek ya da derleyicinin taşma denetimli işlevini kullanmak gerekir; sonucu sonradan "pozitif mi" diye denetlemek yetmez.</p></details>
+<details><summary>XOR'un hangi özelliği onu şifrelemede kullanışlı kılar ve neden aynı anahtarı iki kez kullanmak tehlikelidir?</summary><p>(m ⊕ k) ⊕ k = m: aynı anahtarla iki kez XOR'lamak veriyi geri getirir, yani aynı işlem hem karıştırır hem çözer. Aynı anahtar iki mesajda kullanılırsa iki karışık dizi XOR'landığında anahtar silinir (k ⊕ k = 0) ve geriye iki mesajın XOR'u kalır; bu, mesajlar hakkında bilgi sızdırır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İkili neden:</strong> iki durum gürültüye dayanıklı ve doğrudan mantık işlemlerine karşılık gelir.</li>
+<li><strong>Bit</strong> 0/1; <strong>bayt</strong> 8 bit, adreslenebilen en küçük birim; <strong>nibble</strong> 4 bit; <strong>kelime</strong> işlemcinin doğal genişliği (bugün 64 bit; x86 belgelerinde WORD = 16 bit).</li>
+<li><strong>n bit → 2<sup>n</sup> durum;</strong> işaretsiz 0 … 2<sup>n</sup> − 1, işaretli −2<sup>n−1</sup> … 2<sup>n−1</sup> − 1. Akılda: 255, 65.535, 2.147.483.647.</li>
+<li><strong>Dönüşüm:</strong> → onluk: ağırlıklarla çarp, topla. Onluk →: 2'ye (ya da 16'ya) böl, kalanları sondan başa oku. İkili ↔ hex: sağdan 4'lü grupla.</li>
+<li><strong>Önekler:</strong> <code>0b</code> ikili, <code>0x</code> hex, <code>0o</code> sekizli. Tabanı her zaman yaz.</li>
+<li><strong>Bir bayt = iki hex hane</strong> (00–FF); bu yüzden dökümler, adresler, özetler hex yazılır.</li>
+<li><strong>İkiye tümleyen:</strong> en soldaki bitin ağırlığı −2<sup>n−1</sup>; negatif = tersle, 1 ekle. −1 = <code>FF</code>, −128 = <code>80</code>. Bitler aynı, yorum farklı.</li>
+<li><strong>Taşma/sarma:</strong> sabit genişlik = mod 2<sup>n</sup>. C'de işaretsiz sarma tanımlı, işaretli taşma tanımsız. Python <code>int</code> taşmaz.</li>
+<li><strong>Güvenlik:</strong> taşan boyut hesabı → küçük alan → bellek bozulması (kavram, Parça 60). Savunma: işlemden önce <code>a &gt; MAX / b</code> denetimi, <code>__builtin_mul_overflow</code>, testte UBSan.</li>
+<li><strong>Bit işlemleri:</strong> VE seçer/maskeler, VEYA açar, XOR çevirir, DEĞİL tersler; <code>&lt;&lt; k</code> × 2<sup>k</sup>, <code>&gt;&gt; k</code> ÷ 2<sup>k</sup>.</li>
+<li><strong>XOR:</strong> (m ⊕ k) ⊕ k = m; anahtar tekrar kullanılırsa sızdırır. XOR tek başına şifre değildir.</li>
+<li><strong>kB = 1000, KiB = 1024</strong> (IEC, 1998); 1 TB ≈ 931 GiB. B bayt, b bit.</li>
+<li><strong>Araçlar:</strong> <code>xxd</code> (<code>-b</code>, <code>-p</code>, <code>-r</code>), <code>od -A x -t x1z</code>.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-1">
+<h3>Quiz 1</h3>
+<p class="qa">Sekiz soru. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>0x3C</code> sayısının onluk değeri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>42</li><li>60</li><li>312</li><li>15</li><li>48</li></ul>
+<div class="coz"><p>Onaltılıkta basamak ağırlıkları sağdan sola 1 ve 16'dır; C = 12'dir. 3 × 16 + 12 × 1 = 48 + 12 = 60. 42, tabanı 16 yerine 10 alıp 3 × 10 + 12 yapmanın sonucudur. 312, iki haneyi ("3" ve "12") yan yana yazmaktır. 15, rakamları ağırlıksız toplamaktır (3 + 12). 48 ise yalnız üst haneyi hesaplayıp C'yi unutmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">16 bitlik <strong>işaretsiz</strong> bir tamsayının alabileceği en büyük değer aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>16</li><li>256</li><li>32.767</li><li>65.535</li><li>65.536</li></ul>
+<div class="coz"><p>n bit 2<sup>n</sup> durum tutar; 16 bitte 2<sup>16</sup> = 65.536 durum vardır. Sayma 0'dan başladığı için en büyük değer 65.536 − 1 = 65.535'tir. 65.536 durum sayısıyla en büyük değeri karıştırmaktır. 32.767, 16 bitlik <em>işaretli</em> sayının en büyük değeridir. 256 sekiz bitin durum sayısıdır; 16 ise yalnız bit sayısıdır.</p></div></li>
+
+<li data-c="A"><p class="q">İkili <code>10110110</code> sayısının onaltılık karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>B6</li><li>6B</li><li>B5</li><li>266</li><li>AE</li></ul>
+<div class="coz"><p>Sağdan 4'lü gruplara ayır: <code>1011</code> ve <code>0110</code>. 1011 = 8 + 2 + 1 = 11 = B; 0110 = 4 + 2 = 6. Sonuç <code>0xB6</code> (onlukta 182). 6B, grupları ters sırayla yazmaktır. B5, 0110'yı yanlış okumaktır. 266 aynı sayının sekizli (taban 8) gösterimidir, hex değil. AE ise rastgele bir gruplama hatasıdır.</p></div></li>
+
+<li data-c="E"><p class="q">8 bitlik ikiye tümleyen gösteriminde −1 aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>10000001</li><li>11111110</li><li>00000001</li><li>01111111</li><li>11111111</li></ul>
+<div class="coz"><p>+1 = 00000001; bütün bitleri ters çevir: 11111110; 1 ekle: 11111111. Ayrıca 11111111 + 1 = 1 00000000 olur ve taşan bit atılınca 0 kalır; −1 + 1 = 0 tutar. 10000001 işaret-büyüklük gösterimindeki −1'dir. 11111110 birler tümleyenidir (1 eklenmemiş hâl), ikiye tümleyende −2'dir. 00000001 +1, 01111111 ise +127'dir.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki Python satırının çıktısı nedir?</p>
+<pre class="kod">print(0b1100 &amp; 0b1010, 0b1100 | 0b1010, 0b1100 ^ 0b1010)</pre>
+<ul class="sec"><li>14 8 6</li><li>1000 1110 0110</li><li>8 14 6</li><li>8 6 14</li><li>8 14 2</li></ul>
+<div class="coz"><p>1100 VE 1010 = 1000 = 8 (yalnız ikisinde de 1 olan bit). VEYA = 1110 = 14. XOR = 0110 = 6 (yalnız farklı olan bitler). <code>print</code> tamsayıları onluk yazar, bu yüzden "1000 1110 0110" çıkmaz; ikili görmek için <code>format(x, "04b")</code> gerekir. "14 8 6" VE ile VEYA'yı karıştırmaktır, "8 6 14" VEYA ile XOR'u. "8 14 2" XOR'u çıkarma (12 − 10) sanmaktır. Satır çalıştırılarak doğrulandı: <code>8 14 6</code>.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdaki C programı <code>gcc -Wall -Wextra</code> ile derlenip çalıştırılırsa ne yazar?</p>
+<pre class="kod">#include &lt;stdint.h&gt;
+#include &lt;stdio.h&gt;
+int main(void) {
+    uint8_t x = 250;
+    x += 10;
+    printf("%u\n", x);
+    return 0;
+}</pre>
+<ul class="sec"><li>4</li><li>260</li><li>255</li><li>5</li><li>Program çalışırken taşma hatası verip durur.</li></ul>
+<div class="coz"><p><code>uint8_t</code> 8 bit işaretsizdir; 250 + 10 = 260 sığmaz ve 256'ya göre kalanına sarar: 260 − 256 = 4. 260, sabit genişliği yok saymaktır. 255, değerin en büyükte "durduğunu" (doyma) sanmaktır; C böyle yapmaz. 5, sarmayı 256 yerine 255 çıkararak hesaplamaktır. C'de işaretsiz sarma tanımlı davranıştır; program hata vermeden çalışır, derleyici de uyarı vermedi. Çalıştırılarak doğrulandı: <code>4</code>.</p></div></li>
+
+<li data-c="D"><p class="q">Üreticisi "500 GB" diye satan bir disk, kapasiteyi 1024'ün kuvvetleriyle hesaplayıp "GB" diye gösteren bir işletim sisteminde yaklaşık kaç GB görünür?</p>
+<ul class="sec"><li>500</li><li>512</li><li>488,3</li><li>465,7</li><li>476,8</li></ul>
+<div class="coz"><p>500 GB = 500 × 10<sup>9</sup> bayt. İşletim sisteminin "GB"si aslında GiB'dir: 2<sup>30</sup> = 1.073.741.824 bayt. 500 × 10<sup>9</sup> ÷ 2<sup>30</sup> ≈ 465,7. 500 iki birimin aynı olduğunu sanmaktır; 512 ise yanlış yönde düzeltmektir. 488,3, bir kez 1024'e iki kez 1000'e bölmektir; 476,8, iki kez 1024'e bir kez 1000'e bölmektir. Üç basamağın üçünde de 1024 kullanmak gerekir. Hesap Python ile doğrulandı.</p></div></li>
+
+<li data-c="C"><p class="q">Bir C programı, dosyadan okuduğu <code>adet</code> ve <code>boyut</code> değerlerini (ikisi de <code>uint32_t</code>) çarpıp o kadar bayt bellek ayırıyor. Bu hesabı taşmaya karşı korumak için aşağıdakilerden hangisi <strong>doğru</strong> savunmadır?</p>
+<ul class="sec"><li>Değişkenleri işaretli <code>int</code> yapmak; böylece taşma negatif sonuç verir ve fark edilir.</li><li>Çarpımı hesapladıktan sonra sonucun 0'dan büyük olup olmadığını denetlemek.</li><li>Çarpmadan önce <code>boyut != 0 &amp;&amp; adet &gt; UINT32_MAX / boyut</code> koşulunu denetleyip doğruysa isteği reddetmek.</li><li>Hesabı <code>uint8_t</code> ile yapmak; küçük tipler daha az taşar.</li><li>Derleyici uyarılarını açmak; <code>-Wall -Wextra</code> bu taşmayı derleme sırasında yakalar.</li></ul>
+<div class="coz"><p>Taşmayı ancak işlemden önce, taşmayan bir işlemle (bölmeyle) denetleyebilirsin: adet × boyut ≤ MAX ⇔ adet ≤ MAX / boyut. A yanlış: işaretli taşma C'de tanımsız davranıştır, "negatif çıkar" garantisi yoktur ve derleyici denetimi silebilir. B yanlış: taşmış sonuç pozitif ve makul görünebilir (70.000 × 70.000 → 605.032.704). D sınırı daha da daraltır, taşmayı kolaylaştırır. E yanlış: bu parçadaki <code>tasma.c</code> aynı uyarılarla hiç uyarı vermeden derlendi; taşma çalışma anında olur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ev">← Kütüphane</a>
+  <button class="btn ok" data-done="siber-1">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-2">Sonraki parça: İşlemci ve makine kodu →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"ikili onaltılık sayı sistemi dönüşüm bit bayt"</li>
+  <li>"two's complement explained ikiye tümleyen"</li>
+  <li>"integer overflow explained unsigned wraparound"</li>
+  <li>"xxd hexdump linux tutorial"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>İkili önekler: NIST'in "Prefixes for binary multiples" sayfasından doğrulandı (IEC'nin Aralık 1998'de onayı, IEC 60027-2'ye Ek 2 olarak Ocak 1999'da yayımı, kibi/mebi/gibi adlarının SI öneklerinden türetilmesi, SI'nın parçası olmamaları). Disk üreticilerinin ondalık, Windows'un 1024 tabanlı hesap yaptığı ve 1 TB'ın yaklaşık 931 "GB" görünmesi Seagate destek belgesi ve ikincil kaynaklardan doğrulandı; Microsoft'un kendi belgesine bu oturumda ulaşmadım.</li>
+  <li>C tamsayı kuralları: işaretsiz sarmanın tanımlı, işaretli taşmanın tanımsız olduğu GNU Autoconf kılavuzu, WG14 (C standardı komitesi) belgesi N2817 ve cppreference'ın aritmetik işleçler sayfasının yansılarından doğrulandı; <code>-INT_MIN</code>'in tanımsız oluşu da aynı sayfadan. Dar işaretli tipe dönüşümde GCC'nin değeri mod 2<sup>N</sup>'ye indirgediği ve yalnız ikiye tümleyen desteklediği GCC kılavuzunun "Integers implementation" sayfasından doğrulandı.</li>
+  <li>Python: "Integers have unlimited precision" ve bit işlemlerinin "sonsuz sayıda işaret biti varmış gibi" ikiye tümleyende hesaplandığı docs.python.org (Built-in Types) sayfasından doğrulandı.</li>
+  <li>Ariane 5: 4 Haziran 1996 tarihi, 64 bitlik kayan noktalıdan 16 bitlik işaretli tamsayıya korumasız dönüşüm ve ana motor ateşlemesinden 37 saniye sonra (kalkıştan 30 saniye sonra) sistemin durması, soruşturma kurulu raporunun üniversite sitelerindeki kopyasından doğrulandı.</li>
+  <li>2038 sorunu: 2.147.483.647 saniyenin 19 Ocak 2038 03:14:07 UTC'ye, −2<sup>31</sup>'in 13 Aralık 1901 20:45:52 UTC'ye denk geldiği Python ile hesaplanarak doğrulandı; sorunun tanımı ikincil kaynaklardan (Wikipedia ve benzeri).</li>
+  <li><code>xxd</code> seçenekleri (<code>-b</code>, <code>-p</code>, <code>-r</code>, <code>-u</code>) aracın kendi yardım çıktısından, <code>numfmt</code>'nin varsayılan yuvarlamasının "from-zero" olduğu <code>numfmt --help</code> çıktısından doğrulandı.</li>
+  <li>Çalıştırılan örnekler (hepsi gerçekten koştu, çıktılar birebir): üç Python betiği (3.13.12, <code>-I</code>); üç C programı (gcc 15.2, <code>-Wall -Wextra</code>, biri ayrıca <code>-fsanitize=undefined</code>); <code>tasma.c</code> clang 21.1 ile; "Kendi makinende dene" komutlarının hepsi. Ortam: WSL2, Kali Rolling, çekirdek 6.18. Denetleyici çıktıları terminal sırasıyla verildi, clang renk kodları çıkarıldı. <code>tasma.c</code> <code>-Wconversion</code> ile de uyarısız derlendi. Quiz'deki kod soruları ve sayısal çeldiriciler çalıştırılarak doğrulandı.</li>
+  <li>Gizlilik: çalışma klasörü genel adla (<code>~/lab/siber-1</code>) gösterildi; çıktıda makine/kullanıcı adı sadeleştirildi. Root gerektiren, "burada çalıştırılmadı" diye etiketlenecek bir adım yok.</li>
+  <li>Hafızadan (kaynakla karşılaştırılmadı): ikili sistemin gürültü payı gerekçesi; baytın tarihsel olarak 6–9 bit olabilmesi ve "octet" sözcüğü; x86/Windows'ta WORD/DWORD/QWORD = 16/32/64 bit; Unix zamanının 1 Ocak 1970'te başlaması; <code>xxd</code>'nin çoğu dağıtımda <code>vim</code> ile gelmesi; CWE-190 numarası.</li>
+  <li>Tartışmalı/ince: "kelime"nin anlamı belgeye göre değişir (iki kullanım da verildi). İşaretli taşmanın burada −2.147.483.648'e sarması yalnız bu derleyici ve ayar için gözlemdir. C23 ikiye tümleyeni zorunlu kılsa da işaretli taşma hâlâ tanımsızdır (Autoconf kılavuzu).</li>
+</ul>
+</div>
+</div>
+</article>

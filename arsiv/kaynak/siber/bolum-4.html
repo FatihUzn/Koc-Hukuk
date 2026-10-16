@@ -1,0 +1,708 @@
+<article class="chapter ders" id="c-siber-4">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 4 · İşletim sistemi 1</div>
+<h1>İşletim sistemi 1: çekirdek, ayrıcalık ve sistem çağrısı</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bilgisayarında aynı anda bir tarayıcı, bir müzik çalar ve az önce indirdiğin, kimin yazdığını tam bilmediğin küçük bir program çalışıyor. Üçü de aynı işlemciyi, aynı belleği ve aynı diski kullanıyor. Peki o küçük program neden tarayıcının belleğini okuyup kayıtlı parolalarını alamıyor, neden diskteki başka bir kullanıcının dosyasını açamıyor, neden işlemciye "dur" deyip bütün makineyi kilitleyemiyor? Onu kim, nerede ve hangi mekanizmayla durduruyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (işlemci, yazmaç, makine kodu, <code>objdump</code> ile komut okumak), Parça 3 (bir sürecin bellek düzeni ve yığın). Kod rafından Parça 26 (C'de derleme ve <code>printf</code>) ve Parça 28 (işaretçi) işini kolaylaştırır. Örneklerin hepsi Linux üzerinde, kendi yazdığın küçük C programlarıyla.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 2 ve 3'te işlemcinin önünde tek bir program varmış gibi düşündük. Gerçekte yüzlerce program aynı anda çalışır; bir kısmı sana, bir kısmı başka kullanıcılara, bir kısmı kim olduğunu bilmediğin yazarlara aittir. Bu programların birbirine ve donanıma zarar vermemesini sağlayan yazılım <strong>işletim sistemidir</strong>; onun en ayrıcalıklı ve en korunan parçası da <strong>çekirdektir</strong>.</p>
+
+<p>Bu parça dört soruyu cevaplıyor. Çekirdek nedir ve "kullanıcı alanı"ndan neden ayrılır? Bu ayrımı kim zorlar? Cevap işlemcinin kendisi: x86'da <strong>halkalar</strong> (ring 0 ve ring 3). Sıradan bir program ayrıcalık isteyen bir işi nasıl yaptırır? Cevap <strong>sistem çağrısıdır</strong>; onu kendi programında <code>strace</code> ile izleyeceksin. Bu ayrıcalıklı dünyanın en zayıf noktaları nerede? Çekirdeğin içinde çalışan <strong>aygıt sürücüleri</strong> ve makine açılırken çekirdekten önce çalışan <strong>önyükleme zinciri</strong>; bu zinciri koruyan <strong>Güvenli Önyükleme</strong> (Secure Boot) de burada.</p>
+
+<p>Süreçlerin birbirinden nasıl yalıtıldığı, sanal bellek ve sayfa tabloları, NX ve ASLR gibi bellek korumaları ise Parça 5'in konusu; burada yalnız bağlantı kuruyoruz. Bu parçada kuracağın tek fikir şu: <strong>güvenlikte "kim neyi yapabilir" sorusunun en alttaki cevabı, işlemcinin iki ayrı çalışma kipi ve bu kipler arasındaki tek kapıdır.</strong></p>
+
+<h2 class="s">İşletim sistemi ne iş yapar?</h2>
+
+<p>İşletim sistemi olmadan da bir bilgisayar çalışabilir: ilk bilgisayarlar ve bugün bir çamaşır makinesinin içindeki küçük denetleyici tek bir programı doğrudan donanım üstünde çalıştırır. Sorun birden fazla program, birden fazla kullanıcı ve güvenilmeyen kod devreye girince başlar. O zaman üç iş gerekir ve işletim sistemi bu üçünü üstlenir.</p>
+
+<p><strong>Kaynak yöneticiliği.</strong> İşlemci zamanı, bellek, disk ve ağ kartı sınırlıdır. İşletim sistemi işlemciyi programlar arasında saniyede yüzlerce kez paylaştırır, her programa bellekten pay ayırır, diske yazmayı sıraya koyar; yoksa hatalı bir program bütün kaynağı tüketir.</p>
+
+<p><strong>Soyutlama.</strong> Bir program "dosyaya yaz" der; o dosyanın bir SSD'de mi, USB bellekte mi, ağdaki bir sunucuda mı olduğunu bilmek zorunda kalmaz. İşletim sistemi binlerce farklı donanımı birkaç ortak kavramın (dosya, süreç, soket) arkasına saklar. Kod rafı Parça 7'de Python'la dosya açarken ve Parça 13'te soket kurarken bu soyutlamaları kullandın.</p>
+
+<p><strong>Hakemlik ve koruma.</strong> Güvenlik açısından en önemlisi bu. İşletim sistemi her isteğe "bunu isteyen kim ve buna yetkisi var mı?" diye sorar. Başka bir programın belleğini okumayı, başka kullanıcının dosyasını açmayı, donanımı doğrudan yönetmeyi engeller. Hakem de oyunculardan güçlü ve onların erişemeyeceği bir yerde durmalıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İşletim sistemi:</strong> Donanımı yöneten, programlara ortak hizmetler (dosya, süreç, ağ, bellek) sunan ve programların birbirine ve donanıma zarar vermesini engelleyen yazılım katmanı.</p>
+<p><strong>Çekirdek (kernel):</strong> İşletim sisteminin, işlemcinin en ayrıcalıklı kipinde çalışan ve donanıma doğrudan erişen merkez parçası. Zamanlayıcı, bellek yönetimi, dosya sistemleri, ağ yığını ve aygıt sürücüleri çekirdektedir.</p>
+<p><strong>Kullanıcı alanı (user space):</strong> Çekirdeğin dışındaki her şey: senin programların, kabuk, tarayıcı, hatta yönetici (root) olarak çalışan programlar. Bunlar ayrıcalıksız kipte çalışır ve donanıma ancak çekirdekten isteyerek ulaşır.</p></div>
+
+<p>"İşletim sistemi" ile "çekirdek" günlük dilde karıştırılır. Bir Linux dağıtımında çekirdek tek bir dosyadır (ör. <code>/boot/vmlinuz-…</code>); kabuk, <code>ls</code>, masaüstü ve paket yöneticisi ise kullanıcı alanı programlarıdır. Parça 8'de göreceğin "Linux çekirdeği ile dağıtım farkı" tam olarak bu ayrımdır.</p>
+
+<p>Linux <strong>tek parça</strong> (monolitik) bir çekirdektir: dosya sistemleri, ağ yığını ve sürücüler aynı ayrıcalıklı bellek alanında çalışır ve sonradan <strong>modül</strong> olarak eklenebilir. <strong>Mikroçekirdek</strong> tasarımında ise sürücüler ayrı, ayrıcalıksız süreçlerde çalışır. Windows ikisinin arasında durur ama sürücülerinin büyük kısmı çekirdek kipindedir. Tek parça tasarımda çekirdeğe giren her satır kod, çekirdeğin bütün gücüne sahiptir; sürücü riskinin kökü budur.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Katmanlar: en üstte kullanıcı alanında uygulamalar ve C kütüphanesi, ortada sistem çağrısı arayüzü sınırı, altında çekirdek bileşenleri ve sürücüler, en altta donanım">
+  <rect class="sv-m" x="20" y="14" width="360" height="92" rx="10"/>
+  <text class="sv-b" x="200" y="34" text-anchor="middle">Kullanıcı alanı (halka 3)</text>
+  <rect class="sv-k" x="34" y="44" width="100" height="26" rx="6"/>
+  <text class="sv-t" x="84" y="62" text-anchor="middle">tarayıcı</text>
+  <rect class="sv-k" x="150" y="44" width="100" height="26" rx="6"/>
+  <text class="sv-t" x="200" y="62" text-anchor="middle">kabuk</text>
+  <rect class="sv-k" x="266" y="44" width="100" height="26" rx="6"/>
+  <text class="sv-t" x="316" y="62" text-anchor="middle">senin programın</text>
+  <rect class="sv-k" x="34" y="76" width="332" height="24" rx="6"/>
+  <text class="sv-t" x="200" y="93" text-anchor="middle">C kütüphanesi (glibc): printf, fopen, write…</text>
+  <line class="sv-cl" x1="10" y1="124" x2="390" y2="124"/>
+  <text class="sv-b" x="200" y="118" text-anchor="middle">sistem çağrısı arayüzü: tek kapı</text>
+  <rect class="sv-l" x="20" y="134" width="360" height="118" rx="10"/>
+  <text class="sv-b" x="200" y="154" text-anchor="middle">Çekirdek (halka 0)</text>
+  <rect class="sv-k" x="34" y="164" width="104" height="34" rx="6"/>
+  <text class="sv-t" x="86" y="185" text-anchor="middle">zamanlayıcı</text>
+  <rect class="sv-k" x="148" y="164" width="104" height="34" rx="6"/>
+  <text class="sv-t" x="200" y="185" text-anchor="middle">bellek yönetimi</text>
+  <rect class="sv-k" x="262" y="164" width="104" height="34" rx="6"/>
+  <text class="sv-t" x="314" y="185" text-anchor="middle">dosya sistemi</text>
+  <rect class="sv-a" x="34" y="208" width="332" height="34" rx="6"/>
+  <text class="sv-t" x="200" y="229" text-anchor="middle">aygıt sürücüleri (disk, ağ, ekran, USB…)</text>
+  <rect class="sv-k" x="20" y="266" width="360" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="288" text-anchor="middle">Donanım</text>
+  <text class="sv-s" x="200" y="306" text-anchor="middle">işlemci, bellek, disk, ağ kartı, ekran kartı</text>
+</svg>
+<figcaption>Katmanlar yukarıdan aşağı: kullanıcı alanındaki programlar donanıma doğrudan değil, C kütüphanesi ve onun kullandığı sistem çağrısı arayüzü üzerinden çekirdeğe ulaşır. Turuncu şerit sürücüler: çekirdeğin içinde, onunla aynı ayrıcalıkta çalışırlar.</figcaption>
+</figure>
+
+<h2 class="s">Duvarı donanım örer: kullanıcı modu, çekirdek modu ve halkalar</h2>
+
+<p>Hem çekirdek hem senin programın aynı işlemcide, aynı makine kodu komutlarıyla çalışıyor. Çekirdek senin programına "şu belleğe dokunma" diye yazılımla nasıl söz geçirebilir? Yalnız yazılımla konan bir kuralı, aynı güçteki başka bir yazılım yok sayabilir.</p>
+
+<p>Çözüm işlemcinin içine konmuştur: işlemci her an hangi <strong>ayrıcalık düzeyinde</strong> çalıştığını bilir ve bazı komutları, bazı yazmaçları ve bazı bellek bölgelerini yalnız en yüksek düzeyde çalışan koda açar. Ayrıcalıksız kod yasak bir şey denerse işlemci komutu yürütmez, bir <strong>istisna</strong> üretip denetimi çekirdeğe verir; çekirdek de genellikle programı sonlandırır. Kural yazılımın iyi niyetine değil, devrenin kendisine dayanır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Ayrıcalık ayrımını işlemci uygular.</strong> x86 işlemcilerde dört ayrıcalık düzeyi vardır: <strong>halka 0</strong> (ring 0) en ayrıcalıklı, <strong>halka 3</strong> en ayrıcalıksızdır. O an çalışan kodun düzeyine <strong>geçerli ayrıcalık düzeyi</strong> (current privilege level, CPL) denir ve kod kesim yazmacı <code>CS</code>'nin en düşük iki bitinde durur. Linux ve Windows çekirdeği halka 0'da (<strong>çekirdek modu</strong>), bütün programlar halka 3'te (<strong>kullanıcı modu</strong>) çalışır. Halka 3'teki kod ayrıcalıklı bir komutu çalıştırmaya kalkarsa işlemci genel koruma hatası (#GP) üretir.</p></div>
+
+<p>Ara halkalar (1 ve 2) neden boş? Taşınabilir olmak isteyen işletim sistemleri, yalnız iki düzeyi olan işlemcilerde de çalışabilmek için iki düzeyle yetindi. ARM'da aynı fikir "istisna düzeyi" adıyla vardır: EL0 uygulamalar, EL1 çekirdek. Hipervizör ise çekirdeğin de altında çalışır; buna gayriresmî olarak "halka −1" denir (Parça 7).</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="İç içe dört halka: en içte halka 0 çekirdek ve sürücüler, halka 1 ve 2 boş, en dışta halka 3 uygulamalar; sağda ayrıcalığın içe doğru arttığını gösteren ok">
+  <circle class="sv-m" cx="160" cy="150" r="135"/>
+  <circle class="sv-k" cx="160" cy="150" r="100"/>
+  <circle class="sv-k" cx="160" cy="150" r="70"/>
+  <circle class="sv-l" cx="160" cy="150" r="42"/>
+  <text class="sv-b" x="160" y="146" text-anchor="middle">Halka 0</text>
+  <text class="sv-s" x="160" y="163" text-anchor="middle">çekirdek</text>
+  <text class="sv-s" x="160" y="98" text-anchor="middle">halka 1 (boş)</text>
+  <text class="sv-s" x="160" y="66" text-anchor="middle">halka 2 (boş)</text>
+  <text class="sv-b" x="160" y="34" text-anchor="middle">Halka 3</text>
+  <text class="sv-s" x="160" y="270" text-anchor="middle">uygulamalar, kabuk, root</text>
+  <line class="sv-cl" x1="325" y1="150" x2="214" y2="150"/>
+  <polygon class="sv-a" points="216,143 216,157 204,150"/>
+  <text class="sv-s" x="360" y="145" text-anchor="middle">ayrıcalık</text>
+  <text class="sv-s" x="360" y="162" text-anchor="middle">artar</text>
+</svg>
+<figcaption>x86 halkaları. Ok yönünde, yani içe doğru ayrıcalık artar. Linux ve Windows yalnız en içteki halka 0'ı ve en dıştaki halka 3'ü kullanır; aradaki iki halka tarihsel bir kalıntıdır. Dikkat: root olarak çalışan bir program da dış halkadadır.</figcaption>
+</figure>
+
+<p>Halka 0'a ayrılmış işler: kesmeleri açıp kapatmak (<code>cli</code>, <code>sti</code>), işlemciyi durdurmak (<code>hlt</code>), sayfa tablosunun adresini tutan <code>CR3</code> gibi denetim yazmaçlarını değiştirmek (Parça 5), donanım portlarına doğrudan erişmek, çekirdek belleğini okumak. Bunlar bir programın eline geçse makinenin tamamı etkilenir: kesmeleri kapatan program işlemciyi tekeline alır, sayfa tablosunu değiştiren her sürecin belleğini görür.</p>
+
+<div class="tablo"><table>
+<tr><th>Halka</th><th>Kim çalışır (Linux/Windows)</th><th>Ne yapabilir</th><th>Yasak bir şey denerse</th></tr>
+<tr><td>0</td><td>Çekirdek, çekirdek modülleri ve sürücüler</td><td>Her komut, her yazmaç, bütün bellek ve donanım</td><td>Kendi hatası bütün sistemi çökertir (Linux'ta "kernel panic", Windows'ta mavi ekran)</td></tr>
+<tr><td>1 ve 2</td><td>Fiilen kimse</td><td>Ara ayrıcalık (tarihsel)</td><td>—</td></tr>
+<tr><td>3</td><td>Bütün programlar; root ya da yönetici olarak çalışanlar dahil</td><td>Kendi belleği, sıradan komutlar; gerisi için sistem çağrısı</td><td>İşlemci istisna üretir, çekirdek çoğunlukla programı sonlandırır (Linux'ta SIGSEGV sinyali)</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: kendi programın hangi halkada?</span>
+<p><strong>Soru:</strong> Kendi yazdığın bir C programı hangi ayrıcalık düzeyinde çalışıyor? Ayrıcalıklı bir komutu denerse ne olur? (İki satırlık satır içi assembly kullanıyoruz; yalnız kendi programın içinde, zararsız.)</p>
+<pre class="kod" data-ad="halka.c">#include &lt;stdio.h&gt;
+
+int main(void) {
+    unsigned short cs;
+    __asm__ volatile ("mov %%cs, %0" : "=r"(cs));
+    printf("CS = 0x%x, CPL (halka) = %u\n", cs, cs &amp; 3);
+    fflush(stdout);
+
+    __asm__ volatile ("hlt");   /* yalniz halka 0'da izinli komut */
+    printf("buraya hic gelinmez\n");
+    return 0;
+}</pre>
+<p><strong>Adım 1.</strong> İlk <code>__asm__</code> satırı <code>CS</code> yazmacını okur. Bu okuma ayrıcalık istemez; her program kendi kesim yazmacına bakabilir. <code>cs &amp; 3</code>, Parça 1'deki bit VE işlemiyle en düşük iki biti, yani CPL'yi ayıklar.</p>
+<p><strong>Adım 2.</strong> İkinci satır <code>hlt</code> komutunu, yani "işlemciyi bir sonraki kesmeye kadar durdur" komutunu dener. Intel'in komut başvurusuna göre bu komut yalnız CPL 0'da çalışır; değilse #GP(0) üretilir.</p>
+<p><strong>Adım 3.</strong> Derle ve çalıştır, ardından çıkış kodunu yazdır:</p>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o halka halka.c
+./halka; echo "cikis kodu: $?"</pre>
+<pre class="cikti">CS = 0x33, CPL (halka) = 3
+bash: line 1:   588 Segmentation fault         ./halka
+cikis kodu: 139</pre>
+<p><strong>Adım 4.</strong> Çıktıyı oku. <code>0x33</code> ikili tabanda <code>0011 0011</code>; son iki bit <code>11</code>, yani 3: programın halka 3'te çalışıyor. <code>hlt</code> denenince işlemci istisna üretti, çekirdek bunu programa SIGSEGV sinyali olarak iletti ve program öldü; "buraya hic gelinmez" satırı yazılmadı. Çıkış kodu 139 = 128 + 11, 11 de SIGSEGV'nin numarası (sinyaller Parça 13'te).</p>
+<p><strong>Adım 5.</strong> Aynı programı <code>strace</code> altında çalıştırınca (aracı biraz aşağıda tanıyacaksın) son satırlar şöyle:</p>
+<pre class="cikti">write(1, "CS = 0x33, CPL (halka) = 3\n", 27) = 27
+--- SIGSEGV {si_signo=SIGSEGV, si_code=SI_KERNEL, si_addr=NULL} ---
++++ killed by SIGSEGV +++</pre>
+<p><code>si_code=SI_KERNEL</code>, sinyalin bir bellek adresinden değil doğrudan çekirdekten geldiğini söyler: geçersiz bir adrese dokunmadın, yasak bir komut denedin.</p>
+<p><strong>Sonuç:</strong> Sıradan program halka 3'te çalışır ve ayrıcalıklı komutu çalıştıramaz; bunu bir kitapta okuyarak değil, kendi makinende işlemcinin tepkisini görerek doğruladın. Kabuğun yazdığı "Segmentation fault" satırı kabuğa ve sürüme göre değişebilir (ör. "core dumped" eki); süreç numarası her çalıştırmada başkadır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"root olarak çalışan program çekirdek modunda, halka 0'dadır" sanmak.</strong> root bir <em>kullanıcı kimliğidir</em>, halka ise <em>işlemcinin çalışma kipidir</em>. <code>sudo</code> ile çalıştırdığın program yine halka 3'tedir; <code>hlt</code> dersen o da ölür. root'un farkı, çekirdekten istediklerinin çoğuna "evet" denmesidir. Doğrusu: halka "kod nerede çalışıyor?", kimlik "çekirdek bu isteğe izin verir mi?" sorusunun cevabıdır. Yine de root bir çekirdek modülü yükleyebilir ve o modül halka 0'da çalışır; root ile çekirdek arasındaki mesafe bu yüzden kısadır (en az yetki Parça 11'de).</p></div>
+
+<h2 class="s">Sistem çağrısı: duvardaki tek kapı</h2>
+
+<p>Program halka 3'te hapisse ekrana nasıl yazıyor, dosyayı nasıl açıyor? Ekran ve disk donanımdır; donanıma yalnız halka 0 dokunabilir. Program işi kendisi yapmaz, çekirdekten <strong>ister</strong>. İşlemci halka 3'ten halka 0'a geçişe yalnız çekirdeğin önceden belirlediği giriş noktasına izin verir: program "şuraya atla" diyemez, ancak "çekirdek, beni dinle" diyebilir ve dinleyen hep çekirdeğin kendi kodudur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sistem çağrısı (system call, syscall):</strong> Kullanıcı modundaki bir programın, çekirdekten bir hizmet (dosya açmak, okumak, yazmak, süreç başlatmak, bellek istemek…) istemek için kullandığı denetimli geçiş. Her sistem çağrısının bir <strong>numarası</strong> vardır. Program numarayı ve argümanları belirli yazmaçlara koyar ve özel bir komut çalıştırır (x86-64'te <code>syscall</code>). İşlemci halka 0'a geçer ve çekirdeğin giriş noktasından devam eder; çekirdek isteği ve yetkiyi denetler, işi yapar, sonucu yazmaca koyup programı halka 3'e döndürür.</p></div>
+
+<p>Güvenlik açısından önemli olan şu: çekirdeğin dış dünyaya açık yüzü, birkaç yüz sistem çağrısından oluşan bu listedir. Bir programın çekirdekten ne isteyebileceği bu listeyle sınırlıdır; her isteğin argümanları da güvenilmeyen girdidir. Çekirdek her işaretçiyi, uzunluğu ve dosya numarasını "bu sürecin mi, boyut makul mü, izin var mı?" diye denetlemek zorundadır; çekirdek için "güvenilmeyen istemci" (Parça 34) sistem çağrısı yapan her programdır. Çekirdekteki pek çok ciddi açık bir argümanı yeterince denetlememekten doğar. Parça 5'teki seccomp tam bu yüzeyi daraltır: bir sürecin kullanabileceği sistem çağrısı listesini kısaltır.</p>
+
+<p>x86-64 Linux'ta çağrı kuralı (man7.org <code>syscall(2)</code> sayfasındaki tablo) şöyledir:</p>
+
+<div class="tablo"><table>
+<tr><th>Ne</th><th>Nereye konur</th><th>Örnek: <code>write(1, metin, 19)</code></th></tr>
+<tr><td>Sistem çağrısı numarası</td><td><code>rax</code></td><td>1 (<code>write</code>)</td></tr>
+<tr><td>1. argüman</td><td><code>rdi</code></td><td>1 (dosya numarası: standart çıktı)</td></tr>
+<tr><td>2. argüman</td><td><code>rsi</code></td><td>metnin bellekteki adresi</td></tr>
+<tr><td>3. argüman</td><td><code>rdx</code></td><td>19 (bayt sayısı)</td></tr>
+<tr><td>4., 5., 6. argüman</td><td><code>r10</code>, <code>r8</code>, <code>r9</code></td><td>(kullanılmıyor)</td></tr>
+<tr><td>Geçiş komutu</td><td><code>syscall</code></td><td>halka 3 → halka 0</td></tr>
+<tr><td>Dönüş değeri</td><td><code>rax</code></td><td>19 (yazılan bayt) ya da eksi bir hata numarası</td></tr>
+</table></div>
+
+<p>Numaralar mimariye özgüdür: x86-64'te <code>write</code> 1, <code>getpid</code> 39, <code>openat</code> 257'dir; 64 bit ARM'da aynı çağrıların numaraları başkadır. Bu yüzden programlar numaralarla değil, C kütüphanesinin işlevleriyle konuşur.</p>
+
+<figure>
+<svg viewBox="0 0 400 430" role="img" aria-label="Bir printf çağrısının yolu: senin kodun, glibc tamponu, write sarmalayıcısı, syscall komutu; kesikli sınırın altında çekirdek giriş noktası, denetim, sürücü ve dönüş">
+  <rect class="sv-m" x="40" y="28" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="52" text-anchor="middle">senin kodun: printf("Merhaba…\n")</text>
+  <line class="sv-c" x1="190" y1="66" x2="190" y2="80"/>
+  <rect class="sv-m" x="40" y="80" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="104" text-anchor="middle">glibc: metni biçimle, tampona koy</text>
+  <line class="sv-c" x1="190" y1="118" x2="190" y2="132"/>
+  <rect class="sv-m" x="40" y="132" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="156" text-anchor="middle">write(): yazmaçları doldur</text>
+  <line class="sv-c" x1="190" y1="170" x2="190" y2="184"/>
+  <rect class="sv-a" x="40" y="184" width="300" height="38" rx="8"/>
+  <text class="sv-b" x="190" y="208" text-anchor="middle">syscall komutu (rax = 1)</text>
+  <line class="sv-cl" x1="10" y1="240" x2="390" y2="240"/>
+  <text class="sv-s" x="12" y="234" text-anchor="start">kullanıcı modu</text>
+  <text class="sv-s" x="12" y="256" text-anchor="start">çekirdek modu</text>
+  <line class="sv-c" x1="190" y1="222" x2="190" y2="266"/>
+  <rect class="sv-l" x="40" y="266" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="290" text-anchor="middle">giriş noktası: tablodan 1 → write</text>
+  <line class="sv-c" x1="190" y1="304" x2="190" y2="318"/>
+  <rect class="sv-l" x="40" y="318" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="342" text-anchor="middle">denetim: fd ve adres geçerli mi?</text>
+  <line class="sv-c" x1="190" y1="356" x2="190" y2="370"/>
+  <rect class="sv-l" x="40" y="370" width="300" height="38" rx="8"/>
+  <text class="sv-t" x="190" y="394" text-anchor="middle">sürücü baytları terminale iletir</text>
+  <path class="sv-cl" d="M340 389 C 385 389, 385 151, 340 151"/>
+  <polygon class="sv-a" points="342,145 342,157 332,151"/>
+  <text class="sv-s" x="200" y="424" text-anchor="middle">dönüş: rax = 19 (ya da −hata), halka 3'e geri</text>
+</svg>
+<figcaption>Bir <code>printf</code>'in yolu. Yeşil kutular halka 3'te, mor kutular halka 0'da çalışır. Kalın yatay çizgiyi yalnız turuncu <code>syscall</code> komutu geçebilir ve geçtiği yer hep çekirdeğin seçtiği giriş noktasıdır. Sağdaki ok sonucun sarmalayıcıya dönüşünü gösterir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Hata dönüşü iki katmanlıdır.</strong> Çekirdek bir hatayı <strong>eksi bir hata numarasıyla</strong> bildirir (ör. izin yoksa −13, yani <code>-EACCES</code>). C kütüphanesinin sarmalayıcısı bu sayıyı görünce mutlak değerini <code>errno</code> değişkenine yazar ve programa <strong>−1</strong> döndürür (man7.org <code>intro(2)</code>). Bu yüzden C'de sistem çağrısı sarmalayıcısının sonucu −1 ise, nedeni <code>errno</code>'dadır; <code>perror</code> ve <code>strerror</code> bu numarayı "Permission denied" gibi metne çevirir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: bir sarmalayıcının içine bakmak</span>
+<p><strong>Soru:</strong> C kütüphanesinin <code>getpid()</code> işlevi ile genel amaçlı <code>syscall()</code> işlevi makine kodu düzeyinde ne yapıyor? (Parça 2'deki <code>objdump</code>'ı kendi sistemindeki kütüphaneye uyguluyoruz.)</p>
+<pre class="kod" data-ad="bash">objdump -d --no-show-raw-insn /usr/lib/x86_64-linux-gnu/libc.so.6 --disassemble=__getpid
+objdump -d --no-show-raw-insn /usr/lib/x86_64-linux-gnu/libc.so.6 --disassemble=syscall</pre>
+<pre class="cikti">00000000000e7dd0 &lt;__getpid@@GLIBC_2.2.5&gt;:
+   e7dd0:	mov    $0x27,%eax
+   e7dd5:	syscall
+   e7dd7:	ret
+0000000000112c50 &lt;syscall@@GLIBC_2.2.5&gt;:
+  112c50:	mov    %rdi,%rax
+  112c53:	mov    %rsi,%rdi
+  112c56:	mov    %rdx,%rsi
+  112c59:	mov    %rcx,%rdx
+  112c5c:	mov    %r8,%r10
+  112c5f:	mov    %r9,%r8
+  112c62:	mov    0x8(%rsp),%r9
+  112c67:	syscall
+  112c69:	cmp    $0xfffffffffffff001,%rax
+  112c6f:	jae    112c72 &lt;syscall@@GLIBC_2.2.5+0x22&gt;
+  112c71:	ret
+  112c72:	mov    0xd6177(%rip),%rcx        # 1e8df0 &lt;_IO_wfile_jumps@@GLIBC_2.2.5+0xbc8&gt;
+  112c79:	neg    %eax</pre>
+<p>(Çıktıdaki dosya başlığı satırları atıldı; ikinci işlevin son birkaç satırı <code>head</code> ile kesildi.)</p>
+<p><strong>Adım 1.</strong> <code>getpid</code> üç komuttur: <code>rax</code>'a 0x27 koy (onluk 39, <code>getpid</code>'in numarası), <code>syscall</code> ile çekirdeğe geç, dön. Sonuç zaten <code>rax</code>'ta. Bu çağrı başarısız olamadığı için hata denetimi bile yok.</p>
+<p><strong>Adım 2.</strong> <code>syscall()</code> işlevi senin verdiğin argümanları C'nin işlev çağırma kuralından (ilk argüman <code>rdi</code>'de) sistem çağrısı kuralına (numara <code>rax</code>'ta, dördüncü argüman <code>r10</code>'da) kaydırıyor. Tablodaki yazmaç düzenini burada birebir görüyorsun.</p>
+<p><strong>Adım 3.</strong> <code>syscall</code>'dan sonraki <code>cmp</code>, dönen değeri <code>0xfffffffffffff001</code> ile karşılaştırır. Bu sayı işaretli okununca −4095'tir. Dönen değer −4095 ile −1 arasındaysa bir hata numarasıdır; işlev sona atlar, <code>neg</code> ile işaretini çevirip <code>errno</code>'ya yazar ve −1 döndürür (bu son satırlar kesilen kısımda).</p>
+<p><strong>Sonuç:</strong> "Sarmalayıcı" sözü abartı değil: <code>getpid()</code>, tek bir <code>syscall</code> komutunun etrafına sarılmış iki komuttur. Hata kuralı da kütüphanenin içinde yazılı olarak duruyor. Adresler kütüphane sürümüne göre sende farklı olur.</p></div>
+
+<h2 class="s">glibc sarmalayıcıları: printf bir sistem çağrısı değildir</h2>
+
+<p>C'de yazdığın <code>printf</code>, <code>fopen</code>, <code>fgets</code>, <code>malloc</code> çekirdeğin değil <strong>C kütüphanesinin</strong> işlevleridir; Linux'ta bu kütüphane çoğunlukla GNU C Library, kısaca <strong>glibc</strong>'dir. Bazıları ince bir sarmalayıcıdır ve bire bir bir sistem çağrısına karşılık gelir (<code>getpid</code>, <code>write</code>, <code>close</code>). Bazıları ise kalın bir katmandır: <code>printf</code> önce metni biçimlendirir, sonra bir <strong>tampona</strong> koyar ve ancak tampon dolunca ya da satır bitince <code>write</code> sistem çağrısını yapar. <code>malloc</code> çoğu zaman sistem çağrısı yapmadan, önceden çekirdekten aldığı büyük bir bloğun içinden pay verir; blok yetmeyince <code>brk</code> ya da <code>mmap</code> ile çekirdekten ek bellek ister.</p>
+
+<p>Bazen sarmalayıcının adı çağırdığı sistem çağrısının adıyla aynı bile değildir. man7.org'daki <code>open(2)</code> sayfası, glibc'nin <code>open()</code> sarmalayıcısının arka planda <code>openat()</code> sistem çağrısını kullandığını yazar. Bu yüzden <code>strace</code> çıktısında hiç <code>open</code> göremezsin, hep <code>openat</code> görürsün. <code>exit()</code> da çekirdekte <code>exit_group</code> olarak görünür: bütün iş parçacıklarıyla birlikte süreci bitirir.</p>
+
+<div class="tablo"><table>
+<tr><th>C'de yazdığın</th><th>Katman</th><th><code>strace</code>'te göreceğin</th></tr>
+<tr><td><code>printf</code>, <code>puts</code>, <code>fputs</code></td><td>glibc (tamponlu)</td><td><code>write</code>: tampon dolunca, satır sonunda (terminalde) ya da <code>fflush</code>/çıkışta</td></tr>
+<tr><td><code>fopen</code>, <code>open</code></td><td>glibc</td><td><code>openat</code></td></tr>
+<tr><td><code>fgets</code>, <code>fread</code></td><td>glibc (tamponlu)</td><td><code>read</code>: bir seferde büyük blok (ör. 4096 bayt)</td></tr>
+<tr><td><code>fclose</code>, <code>close</code></td><td>glibc</td><td>gerekirse <code>write</code> (tamponu boşalt), sonra <code>close</code></td></tr>
+<tr><td><code>getpid</code></td><td>ince sarmalayıcı</td><td><code>getpid</code></td></tr>
+<tr><td><code>malloc</code></td><td>glibc bellek yöneticisi</td><td>çoğu zaman hiçbir şey; bazen <code>brk</code> ya da <code>mmap</code></td></tr>
+<tr><td><code>return 0</code> / <code>exit</code></td><td>glibc</td><td><code>exit_group</code></td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"printf bir sistem çağrısıdır" ya da "her printf bir write yapar" sanmak.</strong> <code>printf</code> kullanıcı alanında çalışan bir kütüphane işlevidir; çekirdeğe ancak tamponu boşaltırken, <code>write</code> ile gider. Çıktı terminale gidiyorsa glibc satır tamponu kullanır (her satır sonu bir <code>write</code>), dosyaya ya da boruya gidiyorsa tam tampon kullanır (tampon dolunca bir <code>write</code>). Pratik sonucu: program çökerse tamponda bekleyen satırlar hiç yazılmaz. Örnek 1'de <code>hlt</code>'den önce <code>fflush(stdout)</code> yazmamızın nedeni buydu. Doğrusu: kütüphane işlevi ile sistem çağrısını ayır; gerçekte ne olduğunu <code>strace</code>'le gör.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: bin printf, kaç write?</span>
+<p><strong>Soru:</strong> Aşağıdaki program bin satır yazar. Çıktı bir dosyaya (burada <code>/dev/null</code>) yönlendirilince kaç <code>write</code> sistem çağrısı yapılır? Satır tamponu zorlanınca kaç?</p>
+<pre class="kod" data-ad="tampon.c">#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main(int argc, char *argv[]) {
+    if (argc &gt; 1 &amp;&amp; strcmp(argv[1], "satir") == 0)
+        setvbuf(stdout, NULL, _IOLBF, 0);   /* her satirda bosalt */
+    for (int i = 0; i &lt; 1000; i++)
+        printf("satir %d\n", i);
+    return 0;
+}</pre>
+<p><strong>Adım 1.</strong> Toplam bayt sayısını hesapla. "satir " 6 bayt, sonra sayı, sonra satır sonu. 0–9 arası 10 satır × 8 bayt = 80; 10–99 arası 90 × 9 = 810; 100–999 arası 900 × 10 = 9000. Toplam 9890 bayt.</p>
+<p><strong>Adım 2.</strong> Çıktı terminal değilse glibc tam tampon kullanır; tamponun boyu burada 4096 bayt. 9890 bayt, 4096 + 4096 + 1698 olarak üç parçada gider: tahminimiz üç <code>write</code>.</p>
+<p><strong>Adım 3.</strong> <code>strace -c</code> ile say (<code>-e trace=write</code> yalnız <code>write</code>'ları izler):</p>
+<pre class="kod" data-ad="bash">strace -c -e trace=write ./tampon &gt; /dev/null
+strace -c -e trace=write ./tampon satir &gt; /dev/null</pre>
+<pre class="cikti">% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000096          32         3           write
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000096          32         3           total
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.030371          30      1000           write
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.030371          30      1000           total</pre>
+<p><strong>Adım 4.</strong> Tahmin tuttu: tam tamponla 3 çağrı, satır tamponuyla 1000 çağrı. <code>-c</code> olmadan çalıştırınca üç çağrının boyları gerçekten 4096, 4096 ve 1698 çıktı. Süre sütununa bak: bin çağrı yaklaşık 30 milisaniye, üç çağrı 0,1 milisaniye tuttu. Her sistem çağrısı halka değiştirmenin ve çekirdeğin denetimlerinin bedelini öder; tamponun var olma nedeni budur.</p>
+<p><strong>Sonuç:</strong> Bin <code>printf</code> = 3 <code>write</code> (dosyaya) ya da 1000 <code>write</code> (satır tamponu). Süreler makineden makineye ve her çalıştırmada değişir; çağrı sayıları değişmez.</p></div>
+
+<h2 class="s">Kendi makinende dene: strace ile kendi programını izlemek</h2>
+
+<p><code>strace</code>, bir programın sistem çağrılarını ve aldığı sinyalleri adı, argümanları ve dönüş değeriyle yazan araçtır. Çekirdeğin <code>ptrace</code> mekanizmasıyla izlenen programı her çağrıda durdurup yazmaçlarını okur; bu yüzden program yavaşlar.</p>
+
+<p><strong>Sınır:</strong> <code>strace</code>'i yalnız kendi yazdığın ve kendi başlattığın programlarda kullan. Başka bir kullanıcının ya da sistemin süreçlerine bağlanmak hem çekirdek tarafından engellenir hem de izinsiz yapıldığında hukuki sorun doğurur (Parça 72–73). Çekirdek bu sınırı kendisi de uygular: Yama güvenlik modülünün <code>ptrace_scope</code> ayarı benim ortamımda 1 çıktı; kernel.org belgesine göre bu, bir sürecin yalnız kendi soyundan gelen süreçleri izleyebileceği anlamına gelir. <code>strace ./program</code> programı kendisi başlattığı için çalışır.</p>
+
+<h3>Adım 1: kurulum ve ilk program</h3>
+
+<p>Debian, Ubuntu ya da Kali'de <code>sudo apt install strace gcc</code> ile kurarsın (Fedora'da <code>sudo dnf install strace gcc</code>). Bir çalışma klasörü aç ve en kısa C programını yaz:</p>
+
+<pre class="kod" data-ad="selam.c">#include &lt;stdio.h&gt;
+
+int main(void) {
+    printf("Merhaba, cekirdek!\n");
+    return 0;
+}</pre>
+
+<p>İlk denemeyi <strong>statik</strong> derlenmiş hâliyle yapıyoruz; çünkü statik programın içinde C kütüphanesi de gömülüdür ve açılırken paylaşılan kütüphane yüklemesi yapılmaz, çıktı kısa olur. <code>-o</code> seçeneği izi ekrana değil dosyaya yazar, böylece programın kendi çıktısı izle karışmaz:</p>
+
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -static -o selam_statik selam.c
+strace -o iz.txt ./selam_statik
+cat iz.txt</pre>
+<pre class="cikti">Merhaba, cekirdek!
+execve("./selam_statik", ["./selam_statik"], 0x7fff87dd48d0 /* 24 vars */) = 0
+brk(NULL)                               = 0x1f6f9000
+brk(0x1f6f9d40)                         = 0x1f6f9d40
+arch_prctl(ARCH_SET_FS, 0x1f6f93c0)     = 0
+set_tid_address(0x1f6f9690)             = 621
+set_robust_list(0x1f6f96a0, 24)         = 0
+rseq({cpu_id_start=0, cpu_id=RSEQ_CPU_ID_UNINITIALIZED, rseq_cs=NULL, flags=0, node_id=0, mm_cid=0, slice_ctrl={request=0, granted=0, __reserved=0}, __reserved=0}, 32, 0, 0x53053053) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+getrandom("\x16\xd8\x26\x81\xf1\x7e\xdf\x8a", 8, GRND_NONBLOCK) = 8
+readlinkat(AT_FDCWD, "/proc/self/exe", "/tmp/yazar/siber-4/selam_statik", 4096) = 31
+brk(NULL)                               = 0x1f6f9d40
+brk(0x1f71ad40)                         = 0x1f71ad40
+brk(0x1f71b000)                         = 0x1f71b000
+mprotect(0x4a0000, 20480, PROT_READ)    = 0
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x2), ...}) = 0
+write(1, "Merhaba, cekirdek!\n", 19)    = 19
+exit_group(0)                           = ?
++++ exited with 0 +++</pre>
+
+<p>Satır satır oku. Her satır "çağrının adı(argümanlar) = dönüş değeri" biçimindedir.</p>
+<ul>
+<li><code>execve(...) = 0</code>: çekirdekten bu dosyayı yeni program olarak yüklemesi istendi; çekirdek çalıştırma iznini denetleyip programı başlattı.</li>
+<li><code>brk</code>: öbeğin (Parça 3) sonunu çekirdeğe sorar ve büyütür. Dönen sayılar adreslerdir; adres rastgeleleştirmesi (Parça 5) yüzünden her çalıştırmada değişir.</li>
+<li><code>arch_prctl</code>, <code>set_tid_address</code>, <code>set_robust_list</code>, <code>rseq</code>: glibc'nin iş parçacığı altyapısı; senin kodun henüz başlamadı (621 sürecin numarası).</li>
+<li><code>getrandom(...) = 8</code>: glibc çekirdekten 8 bayt rastgele veri aldı (yığın koruması gibi iç işler için; kanaryalar Parça 60'ta). Kriptoda güvenli rastgeleliğin işletim sisteminden alınması (Parça 42) burada da görünüyor.</li>
+<li><code>fstat(1, {st_mode=S_IFCHR…})</code>: glibc, 1 numaralı dosyanın (standart çıktı) ne olduğuna baktı: bir karakter aygıtı, yani terminal. Tampon türüne bu bilgiyle karar verir.</li>
+<li><code>write(1, "Merhaba, cekirdek!\n", 19) = 19</code>: senin <code>printf</code>'in buydu. Dosya numarası 1, metin, 19 bayt; çekirdek 19 baytın hepsini yazdığını söyledi. Örnekteki yazmaç tablosunun canlı hâli.</li>
+<li><code>exit_group(0) = ?</code>: <code>return 0</code>. Süreç bittiği için dönüş değeri yoktur, <code>?</code> yazılır.</li>
+</ul>
+
+<h3>Adım 2: dinamik program ve <code>strace -c</code> özeti</h3>
+
+<p>Şimdi aynı programı normal, yani paylaşılan kütüphaneyle derle ve bu kez her çağrıyı yazmak yerine özet al:</p>
+
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o selam selam.c
+strace -o ozet.txt -c ./selam
+cat ozet.txt</pre>
+<pre class="cikti">% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 21.21    0.000137          45         3           mprotect
+ 15.02    0.000097          32         3           brk
+ 10.99    0.000071          71         1           write
+  9.13    0.000059          59         1           munmap
+  8.36    0.000054           6         8           mmap
+  5.42    0.000035          35         1           arch_prctl
+  5.26    0.000034          11         3           fstat
+  4.95    0.000032          32         1           set_tid_address
+  4.95    0.000032          32         1           prlimit64
+  4.95    0.000032          32         1           getrandom
+  4.95    0.000032          32         1           rseq
+  4.80    0.000031          31         1           set_robust_list
+  0.00    0.000000           0         1           read
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           pread64
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         2           openat
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000646          19        34         1 total</pre>
+
+<p>Aynı tek satırlık program dinamik derlenince 34, statik derlenince 16 sistem çağrısı yaptı (statik sürümün özetinin son satırı <code>100.00 … 16 total</code> çıktı). Aradaki fark, yükleyicinin <code>libc.so.6</code>'yı bulup açması (<code>openat</code>, <code>read</code>, <code>pread64</code>), belleğe eşlemesi (<code>mmap</code>) ve eşlenen bölgeleri salt okunur yapmasıdır (<code>mprotect</code>). <code>errors</code> sütunundaki tek hata, <code>access("/etc/ld.so.preload")</code> çağrısıdır: yükleyici bu dosyanın var olup olmadığını sordu, çekirdek "yok" (ENOENT) dedi. Bu beklenen bir cevaptır; her hata bir sorun değildir. Süreler her çalıştırmada değişir.</p>
+
+<h3>Adım 3: dosya açmak ve okumak</h3>
+
+<p>Şimdi glibc'nin dosya işlevlerinin hangi sistem çağrılarına dönüştüğünü görelim. Program kendi klasöründe bir not dosyası yazıp geri okuyor:</p>
+
+<pre class="kod" data-ad="dosya.c">#include &lt;stdio.h&gt;
+
+int main(void) {
+    FILE *f = fopen("not.txt", "w");
+    if (f == NULL) {
+        perror("fopen");
+        return 1;
+    }
+    fputs("ilk satir\n", f);
+    fclose(f);
+
+    char satir[64];
+    f = fopen("not.txt", "r");
+    if (f != NULL &amp;&amp; fgets(satir, sizeof satir, f) != NULL)
+        printf("okundu: %s", satir);
+    if (f != NULL)
+        fclose(f);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o dosya dosya.c
+strace -o iz.txt -e trace=openat,read,write,close,fstat ./dosya
+cat iz.txt</pre>
+<pre class="cikti">okundu: ilk satir
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=107147, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0&gt;\0\1\0\0\0000\241\2\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=2022664, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "not.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+write(3, "ilk satir\n", 10)             = 10
+close(3)                                = 0
+openat(AT_FDCWD, "not.txt", O_RDONLY)   = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=10, ...}) = 0
+read(3, "ilk satir\n", 4096)            = 10
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x2), ...}) = 0
+write(1, "okundu: ilk satir\n", 18)     = 18
+close(3)                                = 0
++++ exited with 0 +++</pre>
+
+<p>İlk yedi satır yükleyicinin işi; senin kodun <code>openat(…"not.txt"…)</code> satırında başlıyor.</p>
+<ul>
+<li><code>fopen("not.txt", "w")</code> → <code>openat(AT_FDCWD, "not.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 3</code>. "w" kipi üç bayrağa çevrildi: yalnız yaz, yoksa oluştur, varsa sıfırla. <code>AT_FDCWD</code> "yolu geçerli klasöre göre çöz" demek. 0666 istenen izin; dosyanın gerçek izni 0644 çıktı, çünkü <code>umask</code> bazı bitleri siler (Parça 12). Çekirdek <strong>3</strong> numaralı bir dosya tanımlayıcısı (file descriptor) verdi: 0, 1, 2 standart girdi, çıktı ve hata için zaten açık, ilk boş numara 3.</li>
+<li><code>fputs</code> hiçbir şey yapmadı gibi görünüyor; metin tampona girdi. <code>fclose</code> önce tamponu boşalttı (<code>write(3, "ilk satir\n", 10)</code>), sonra <code>close(3)</code> ile dosyayı kapattı. Tablodaki "fclose → gerekirse write, sonra close" satırı tam olarak bu.</li>
+<li><code>fgets</code> senden 64 baytlık bir dizi aldı ama çekirdekten <code>read(3, …, 4096)</code> ile 4096 bayt istedi; dosyada 10 bayt olduğu için 10 döndü. glibc fazlasını kendi tamponunda tutar; sonraki <code>fgets</code> çağrıları çekirdeğe gitmeden oradan okunur.</li>
+<li>Son <code>write(1, …)</code> ekrana giden <code>printf</code>, son <code>close(3)</code> ikinci <code>fclose</code>.</li>
+</ul>
+
+<h3>Adım 4: izin yokken çekirdeğin "hayır" demesi</h3>
+
+<p>Sistem çağrısının hakemlik yüzünü görmek için kendi dosyanın bütün izinlerini kaldır ve onu açmayı dene. Bu, sistemin bir dosyasını değil, az önce kendi oluşturduğun dosyayı kullanır:</p>
+
+<pre class="kod" data-ad="izin.c">#include &lt;stdio.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;string.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+
+int main(void) {
+    int fd = open("kilitli.txt", O_RDONLY);
+    if (fd == -1) {
+        printf("open -1 dondu, errno=%d (%s)\n", errno, strerror(errno));
+        return 1;
+    }
+    printf("acildi, fd=%d\n", fd);
+    close(fd);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o izin izin.c
+echo "gizli not" &gt; kilitli.txt
+chmod 000 kilitli.txt
+ls -l kilitli.txt
+./izin; echo "cikis kodu: $?"
+strace -o iz.txt -e trace=openat ./izin
+cat iz.txt</pre>
+<pre class="cikti">---------- 1 kullanici kullanici 10 Oct 16 15:51 kilitli.txt
+open -1 dondu, errno=13 (Permission denied)
+cikis kodu: 1
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "kilitli.txt", O_RDONLY) = -1 EACCES (Permission denied)
++++ exited with 1 +++</pre>
+
+<p>Oku. <code>ls -l</code>'deki on tire, dosyanın sahibine bile okuma izni olmadığını söylüyor. Program <code>open</code> çağırdı; <code>strace</code> bunun çekirdeğe <code>openat</code> olarak gittiğini ve çekirdeğin <code>-1 EACCES</code> ile reddettiğini gösteriyor (strace, çekirdeğin döndürdüğü −13'ü bu okunur biçimde yazar). Programın kendi gördüğü ise sarmalayıcının çevirdiği hâl: dönüş −1, <code>errno</code> 13, metni "Permission denied". Hata kuralındaki iki katman yan yana. Asıl önemlisi şu: dosya senin; ama izin denetimi senin programında değil çekirdekte yapıldı ve programın bu denetimi atlamasının bir yolu yok, çünkü diske giden tek yol bu kapıdan geçiyor. İşin sonunda <code>chmod 600 kilitli.txt</code> ile izni geri verip dosyayı silebilirsin.</p>
+
+<h2 class="s">Aygıt sürücüleri: çekirdeğin içindeki yabancılar</h2>
+
+<p>Terminale yazan <code>write</code>'ın sonunda baytları gerçekten ekrana, diske ya da ağ kartına götüren kod <strong>aygıt sürücüsüdür</strong> (device driver). Her donanımın kendine özgü bir dili vardır; sürücü, çekirdeğin ortak kavramlarını (oku, yaz, gönder) o donanımın komutlarına çevirir. Linux'ta sürücülerin çoğu çekirdeğe sonradan yüklenebilen <strong>modül</strong> olarak gelir. Kendi makinende yüklü modülleri görmek için ayrıcalık gerekmez:</p>
+
+<pre class="kod" data-ad="bash">lsmod | head -6
+head -3 /proc/modules
+cat /proc/sys/kernel/tainted</pre>
+<pre class="cikti">Module                  Size  Used by
+intel_rapl_msr         16384  0
+intel_rapl_common      40960  1 intel_rapl_msr
+kvm_intel             368640  0
+kvm                  1003520  1 kvm_intel
+irqbypass              16384  1 kvm
+intel_rapl_msr 16384 0 - Live 0x0000000000000000
+intel_rapl_common 40960 1 intel_rapl_msr, Live 0x0000000000000000
+kvm_intel 368640 0 - Live 0x0000000000000000
+512</pre>
+
+<p><code>lsmod</code>, <code>/proc/modules</code>'u okunur hâle getirir: modülün adı, bellekte kapladığı yer ve onu kullanan başka modüller. <code>kvm_intel</code> işlemcinin sanallaştırma özelliğini yöneten modüldür (Parça 7). <code>/proc/modules</code>'daki son sütun modülün çekirdek bellekteki adresidir, ama sıradan kullanıcıya hep sıfır gösterildi: çekirdek kendi adreslerini ayrıcalıksız kullanıcıdan gizliyor, çünkü bu adresler Parça 5'teki adres rastgeleleştirmesini boşa çıkarabilecek bir bilgidir. Son satırdaki <strong>512</strong>, çekirdeğin "kirlenme" (taint) bayraklarıdır; kernel.org belgesine göre 512 yalnız 9. biti, yani "çekirdek bir uyarı verdi" bilgisini taşır. Aynı alan imzasız bir modül yüklenince 8192'yi (E), çekirdek ağacı dışında derlenmiş bir modül yüklenince 4096'yı (O) ekler; böylece bir çökme raporunu okuyan biri çekirdeğe kimin ne soktuğunu görebilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bir sürücü, çekirdeğin bütün gücüyle çalışır.</strong> Tek parça çekirdeklerde (Linux, büyük ölçüde Windows) sürücüler halka 0'dadır ve çekirdeğin geri kalanından ayrılmaz: bütün belleği okuyup yazabilir, her denetimi atlayabilir. Bu yüzden sürücü <strong>çekirdek kadar güvenilir</strong> olmak zorundadır ve bir sürücüdeki hata, bir programdaki hatadan çok daha ağır sonuç doğurur.</p></div>
+
+<p>Sürücüler neden çekirdeğin en riskli bölgesidir? Dört neden üst üste biner. <strong>Sayı:</strong> Linux çekirdeğinin kaynak kodunun en büyük bölümü sürücülerdir. <strong>Yazar çeşitliliği:</strong> sürücüleri yüzlerce donanım üreticisi yazar, bazıları kapalı kaynaklıdır ve çekirdeğin merkezi kadar titiz incelenmez. <strong>Güvenilmeyen girdi:</strong> bir USB aygıtı, bir ağ paketi ya da bir dosya sistemi kalıbı doğrudan sürücüye veri gönderir; sürücüdeki bir sınır denetimi eksikliği (Parça 60) halka 0'da gerçekleşir. <strong>Gizlenme:</strong> çekirdeğe giren kötü niyetli kod süreçleri ve dosyaları kullanıcı alanından gizleyebilir; buna <strong>rootkit</strong> denir. Çekirdek ele geçtiyse üstündeki hiçbir araca (<code>ps</code>, <code>ls</code>, antivirüs) tam güvenemezsin, çünkü hepsi bilgiyi çekirdekten alır.</p>
+
+<p>Bir de "imzalı ama açıklı sürücü" sorunu vardır. Geçerli imzalı ama bilinen bir açığı olan eski bir sürücü de kötüye kullanılmak üzere yüklenebilir. Bu yüzden imza tek başına yetmez; "bu imzalı sürücüye artık güvenme" diyebilen bir engel listesi de gerekir.</p>
+
+<p>Savunmalar katman katmandır. <strong>Sürücü imzası:</strong> Microsoft belgesine göre Windows 10 sürüm 1607'den bu yana Secure Boot açık sistemlerde Microsoft'un geliştirici portalında imzalanmamış yeni çekirdek modu sürücüleri yüklenmez. Linux'ta çekirdek, <code>CONFIG_MODULE_SIG_FORCE</code> ile derlendiyse geçerli imzası olmayan modülü reddeder; Debian belgesine göre Secure Boot açıkken çekirdeğin "lockdown" kipi devreye girer ve imzasız modül yüklenemez. <strong>Engel listesi:</strong> Windows 11 2022 güncellemesinden beri Microsoft'un açıklı sürücü engel listesi varsayılan olarak açıktır ve bellek bütünlüğü (HVCI) açıkken de uygulanır; Microsoft bu listenin her açıklı sürücüyü yakalamayı garanti etmediğini de yazar. <strong>Güncelleme:</strong> çekirdek ve sürücü yamalarını ertelememek en ucuz savunmadır. <strong>Az sürücü:</strong> gereksiz modül saldırı yüzeyidir (Parça 19). <strong>Kaynağı belli sürücü:</strong> bilmediğin bir yazılımın "sürücü kur" isteğinde çekirdeği teslim ettiğini bilerek karar ver.</p>
+
+<p>Kendi ortamım için dürüst bir not: Windows üstündeki WSL2'nin çekirdek yapılandırmasında (<code>zcat /proc/config.gz</code> ile okunabiliyor) <code>CONFIG_MODULE_SIG</code> hiç açılmamış (<code>is not set</code>) çıktı; yani bu çekirdek modül imzası denetlemiyor. WSL2 çekirdeği Windows'un başlattığı bir sanal makine çekirdeği olduğu için bu bir tasarım tercihidir; kurulu bir dağıtımda durumu kendin denetle.</p>
+
+<h2 class="s">Önyükleme: çekirdekten önce kim çalışıyor?</h2>
+
+<p>Buraya kadar her şey çekirdeğin dürüst olduğunu varsaydı: hakem odur, kapıyı o tutar. Peki çekirdeği belleğe kim yükledi? Makine açılınca çalışan ilk kod çekirdek değildir; ondan önce iki aşama vardır ve biri değiştirilmişse çekirdek daha başlamadan bozulmuş olabilir. Güvenlikte "güven zinciri" sözü buradan gelir: her aşama bir sonrakini yükler ve ideal olarak denetler.</p>
+
+<ol>
+<li><strong>Firmware (UEFI).</strong> Güç düğmesine basınca işlemci anakarttaki kalıcı bellekte duran yazılımı çalıştırır. Bugünkü bilgisayarlarda bu, eski BIOS'un yerini alan <strong>UEFI</strong>'dir. Donanımı sınayıp hazırlar ve açılış diskinin EFI sistem bölümündeki önyükleyici dosyasını çalıştırır.</li>
+<li><strong>Önyükleyici (boot loader).</strong> Linux'ta çoğunlukla GRUB ya da systemd-boot, Windows'ta Windows Önyükleme Yöneticisi. Hangi çekirdeğin, hangi seçeneklerle açılacağını belirler, çekirdek dosyasını ve <strong>initramfs</strong>'i (çekirdeğin asıl diski bağlayabilmek için ilk anda ihtiyaç duyduğu sürücüleri taşıyan küçük geçici dosya sistemi) belleğe yükler ve denetimi çekirdeğe verir.</li>
+<li><strong>Çekirdek.</strong> Donanımı sürücüleriyle tanır, kök dosya sistemini bağlar ve ilk kullanıcı alanı programını başlatır.</li>
+<li><strong>init.</strong> Süreç numarası 1 olan ilk kullanıcı alanı süreci. Bugün çoğu dağıtımda <strong>systemd</strong>'dir ve bütün hizmetleri o başlatır (Parça 14).</li>
+</ol>
+
+<p>Çekirdek komut satırı ve 1 numaralı süreç bu ortamda okunabiliyor:</p>
+
+<pre class="kod" data-ad="bash">ps -o pid,user,comm -p 1
+ls /sys/firmware/efi
+dmesg | grep -m1 'Hypervisor detected'</pre>
+<pre class="cikti">    PID USER     COMMAND
+      1 root     systemd
+ls: cannot access '/sys/firmware/efi': No such file or directory
+[    0.000000] Hypervisor detected: Microsoft Hyper-V</pre>
+
+<p>Bu üç satır, WSL2'de önyükleme zincirini neden gözleyemediğimizi gösteriyor. 1 numaralı süreç <code>systemd</code>; zincirin son halkası burada da var. Ama UEFI ile açılan Linux'ta bulunan <code>/sys/firmware/efi</code> yok ve çekirdek bir Hyper-V sanal makinesinde olduğunu söylüyor. WSL2'de Windows, Microsoft'un sağladığı Linux çekirdeğini kendi hipervizörü üzerinde doğrudan başlatır; önyükleyici aşaması yoktur ve gerçek makinenin UEFI'si ile Secure Boot'u bu çekirdeğin göremeyeceği bir katmanda kalır. Microsoft'un 2022 tarihli duyurusuna göre systemd etkin olduğunda WSL'in kendi init süreci systemd'nin çocuğu olarak çalışır. Bu yüzden ilk iki aşamayı kavram olarak anlatıyoruz; kurulu bir dağıtımda (Parça 7) <code>ls /sys/firmware/efi</code> ve <code>mokutil --sb-state</code> ile kendin bakabilirsin (burada çalıştırılmadı: WSL2'de EFI değişkenleri yok).</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Önyükleme zinciri: firmware UEFI, önyükleyici, çekirdek ve initramfs, init systemd, hizmetler; ilk üç geçişte Secure Boot imza denetimi, sonra çekirdeğin modül imza denetimi">
+  <rect class="sv-k" x="20" y="14" width="230" height="46" rx="8"/>
+  <text class="sv-b" x="135" y="34" text-anchor="middle">1. Firmware (UEFI)</text>
+  <text class="sv-s" x="135" y="51" text-anchor="middle">anakartta; db, dbx, KEK, PK burada</text>
+  <line class="sv-cl" x1="135" y1="60" x2="135" y2="96"/>
+  <rect class="sv-a" x="264" y="66" width="122" height="28" rx="6"/>
+  <text class="sv-s" x="325" y="84" text-anchor="middle">imza denetimi</text>
+  <rect class="sv-k" x="20" y="96" width="230" height="46" rx="8"/>
+  <text class="sv-b" x="135" y="116" text-anchor="middle">2. Önyükleyici</text>
+  <text class="sv-s" x="135" y="133" text-anchor="middle">shim + GRUB / Windows Boot Manager</text>
+  <line class="sv-cl" x1="135" y1="142" x2="135" y2="178"/>
+  <rect class="sv-a" x="264" y="148" width="122" height="28" rx="6"/>
+  <text class="sv-s" x="325" y="166" text-anchor="middle">imza denetimi</text>
+  <rect class="sv-l" x="20" y="178" width="230" height="46" rx="8"/>
+  <text class="sv-b" x="135" y="198" text-anchor="middle">3. Çekirdek + initramfs</text>
+  <text class="sv-s" x="135" y="215" text-anchor="middle">halka 0; sürücüleri yükler</text>
+  <line class="sv-cl" x1="135" y1="224" x2="135" y2="260"/>
+  <rect class="sv-a" x="264" y="230" width="122" height="28" rx="6"/>
+  <text class="sv-s" x="325" y="248" text-anchor="middle">modül imzası</text>
+  <rect class="sv-m" x="20" y="260" width="230" height="46" rx="8"/>
+  <text class="sv-b" x="135" y="280" text-anchor="middle">4. init (systemd), PID 1</text>
+  <text class="sv-s" x="135" y="297" text-anchor="middle">ilk kullanıcı alanı süreci</text>
+  <line class="sv-c" x1="135" y1="306" x2="135" y2="334"/>
+  <rect class="sv-m" x="20" y="334" width="230" height="46" rx="8"/>
+  <text class="sv-b" x="135" y="362" text-anchor="middle">5. Hizmetler, oturum</text>
+  <text class="sv-s" x="325" y="320" text-anchor="middle">Secure Boot'un</text>
+  <text class="sv-s" x="325" y="336" text-anchor="middle">kapsamı burada</text>
+  <text class="sv-s" x="325" y="352" text-anchor="middle">büyük ölçüde biter</text>
+</svg>
+<figcaption>Önyükleme zinciri yukarıdan aşağı. Turuncu kutular Secure Boot açıkken yapılan denetimler: firmware önyükleyicinin, önyükleyici çekirdeğin, çekirdek de (lockdown ya da zorunlu imza açıksa) modüllerin imzasını denetler. Kullanıcı alanına geçildikten sonra Secure Boot'un söyleyeceği bir şey kalmaz.</figcaption>
+</figure>
+
+<h2 class="s">Güvenli Önyükleme (Secure Boot)</h2>
+
+<p>Zincirin zayıflığı açık: önyükleyici diskteki sıradan bir dosyadır. Onu değiştiren bir zararlı çekirdekten önce çalışır ve çekirdeğin korumaları sonradan kurulacağı için hiçbiri onu göremez. Önyükleme aşamasına yerleşen bu tür zararlıya <strong>bootkit</strong> denir; firmware'in kendisine yerleşen türü daha da kalıcıdır, çünkü diski silmek bile onu temizlemez. Savunma tarafının cevabı, her aşamanın bir sonrakini <strong>çalıştırmadan önce</strong> kriptografik imzasını denetlemesidir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Güvenli Önyükleme (Secure Boot):</strong> UEFI firmware'inin, önyükleme sırasında çalıştıracağı her yazılımın (UEFI sürücüleri, önyükleyici, işletim sistemi yükleyicisi) dijital imzasını, firmware'de saklanan güvenilir anahtar ve imza listeleriyle karşılaştırması; imza geçerli değilse o yazılımı çalıştırmaması. Listeler şunlardır: <strong>db</strong> (izin verilen imzalayanlar ve özetler), <strong>dbx</strong> (iptal edilmiş, artık güvenilmeyen imzalar ve özetler; ikisinde birden bulunan reddedilir), <strong>KEK</strong> (db ve dbx'i güncellemeye yetkili anahtarlar) ve <strong>PK</strong> (platform anahtarı; KEK'i güncellemeye ya da Secure Boot'u kapatmaya yetkili, üreticinin anahtarı).</p></div>
+
+<p>İmzanın matematiği kripto bloğunda (Parça 46–47); burada fikri bilmen yeter: imza, yazılımın belirli bir anahtar sahibinden geldiğini ve o günden bu yana tek bir baytının bile değişmediğini kanıtlar. Değiştirilmiş önyükleyicinin imzası tutmaz ve firmware onu çalıştırmaz.</p>
+
+<p>Linux dağıtımları bu düzene bir ara halkayla girer: firmware'lerin çoğu Microsoft'un anahtarına güvendiği için Microsoft, <strong>shim</strong> adlı küçük bir önyükleyiciyi imzalar. Debian belgesine göre shim dağıtımın kendi anahtarını taşır ve dağıtımın imzaladığı GRUB ile çekirdek için güven kökü olur. Kendi anahtarını (<strong>MOK</strong>, makine sahibinin anahtarı) da ekleyebilirsin; ama bu ekleme yalnız açılışta ekrandan onaylanır, böylece kullanıcı alanındaki bir zararlı anahtar ekleyemez.</p>
+
+<p>Windows tarafında Secure Boot'un açık olup olmadığını yönetici olmadan, salt okunur biçimde kayıt defterinden görebildim (PowerShell, Windows 11):</p>
+
+<pre class="kod" data-ad="PowerShell">Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecureBoot\State' | Select-Object UEFISecureBootEnabled
+$env:firmware_type</pre>
+<pre class="cikti">UEFISecureBootEnabled
+---------------------
+                    1
+UEFI</pre>
+
+<p>1, Secure Boot'un açık olduğunu; <code>firmware_type</code> da makinenin UEFI ile açıldığını söylüyor. Resmî denetim komutu <code>Confirm-SecureBootUEFI</code> ise yönetici yetkisi istedi ve "Access was denied" diyerek çalışmadı; onu yönetici olarak burada çalıştırmadım.</p>
+
+<div class="tablo"><table>
+<tr><th>Aşama</th><th>Ne yapar</th><th>Kimi doğrular</th><th>Bu ortamda (WSL2) gözlendi mi?</th></tr>
+<tr><td>Firmware (UEFI)</td><td>Donanımı hazırlar, önyükleyiciyi bulur</td><td>Önyükleyicinin imzası (db/dbx)</td><td>Hayır; yalnız Windows tarafında "Secure Boot açık" bilgisi okundu</td></tr>
+<tr><td>Önyükleyici</td><td>Çekirdeği ve initramfs'i yükler</td><td>Çekirdeğin imzası</td><td>Hayır; WSL2'de bu aşama yok</td></tr>
+<tr><td>Çekirdek</td><td>Donanımı tanır, kök dosya sistemini bağlar</td><td>Modül imzası (açıksa)</td><td>Evet: <code>dmesg</code>, <code>lsmod</code>; modül imzası kapalı</td></tr>
+<tr><td>init (systemd)</td><td>Hizmetleri başlatır</td><td>Secure Boot'un kapsamı dışında</td><td>Evet: PID 1 = systemd</td></tr>
+</table></div>
+
+<p>dbx'in neden hayati olduğunu BlackLotus gösterdi. ESET'in Mart 2023 raporuna göre bu bootkit, Microsoft'un Ocak 2022'de kapattığı bir açığı (CVE-2022-21894) kullanıyordu; çünkü açıklı ama geçerli imzalı eski önyükleyiciler henüz dbx'e eklenmemişti. Secure Boot "imzalı olanı çalıştırır"; imzalı ama açıklı bir bileşen iptal listesine girene kadar zincir açık kalır. İptal de zordur: iptal edilen bileşene dayanan eski bir kurtarma diski açılmaz olur. Microsoft'un belgesi ayrıca 2011'de verilen Secure Boot sertifikalarının Haziran 2026'dan itibaren dolmaya başladığını yazıyor. Yani Secure Boot bakımı yapılan bir güven listesidir; firmware ve işletim sistemi güncellemeleri onu da günceller.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Secure Boot açıksa bilgisayarım zararlı yazılımdan korunur" sanmak.</strong> Secure Boot yalnız önyükleme zincirini korur: firmware'den çekirdeğe kadar çalışan yazılımın imzalı ve iptal edilmemiş olduğunu. Kullanıcı alanındaki bir zararlıyı, oltalamayı ya da açıklı bir tarayıcıyı umursamaz; dbx güncel değilse önyüklemeyi bile tam korumaz. Doğrusu: Secure Boot'u açık tut ve firmware ile işletim sistemi güncellemelerini uygula; ama onu derinlemesine savunmanın (Parça 49) yalnız en alttaki katmanı olarak gör. Tersi de hata: Secure Boot'u "Linux kuramıyorum" diye kapatmak zinciri korumasız bırakır; büyük dağıtımlar shim sayesinde Secure Boot açıkken kurulur.</p></div>
+
+<p>Bu parçanın bütün pratiği kendi programların ve kendi makinen üzerindeydi. Sürücü ve önyükleme tehditlerini yalnız kavram ve savunma düzeyinde anlattık; bir zararlının nasıl yazılacağı ya da korumaların nasıl aşılacağı bu rafın konusu değildir ve başkasına ait bir sistemde denemek suçtur (Parça 72–73).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2 ve 3'e:</strong> Parça 2'deki yazmaçlar burada sistem çağrısının argüman kutuları oldu; <code>objdump</code> ile glibc'nin içine baktın. Parça 3'teki öbek <code>brk</code> çağrısıyla, yığın koruması <code>getrandom</code>'la iz verdi.</p>
+<p><strong>Parça 5'e:</strong> Halka 3'teki programın çekirdek belleğini neden okuyamadığının ikinci yarısı sayfa tablolarında; süreçlerin yalıtımı, NX ve ASLR, seccomp ile sistem çağrısı yüzeyini daraltmak ve yetenekler (capabilities) orada.</p>
+<p><strong>Parça 7, 11, 12, 13, 14 ve 19'a:</strong> Hipervizörün "halka −1"i Parça 7'de; root ile en az yetki Parça 11'de; <code>EACCES</code>'in arkasındaki izin bitleri ve <code>umask</code> Parça 12'de; SIGSEGV ve çıkış kodu 139 Parça 13'te; PID 1 systemd ve hizmetler Parça 14'te; gereksiz modül ve sürücüyü kaldırmak Parça 19'da.</p>
+<p><strong>Parça 46–48, 60 ve 72–73'e:</strong> Secure Boot'taki imza ve sertifika fikri kripto bloğunda, TPM Parça 48'de; sürücülerdeki bellek hataları Parça 60'ta; izinsiz izleme ve erişimin hukuku 72–73'te.</p>
+<p><strong>Kod rafına:</strong> Parça 26'daki <code>printf</code>, Parça 28'deki işaretçi (sistem çağrısına verilen adres) ve Python Parça 7'deki <code>open()</code> sonunda burada gördüğün <code>openat</code>, <code>read</code>, <code>write</code> çağrılarına dönüşür; bir Python betiğini de <code>strace -c</code> ile izleyebilirsin.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Çekirdek ile kullanıcı alanı arasındaki fark nedir? root olarak çalışan bir program hangisindedir?</summary><p>Çekirdek, işletim sisteminin işlemcinin en ayrıcalıklı kipinde (halka 0) çalışan, donanıma doğrudan erişen parçasıdır; kullanıcı alanı ise çekirdeğin dışında, ayrıcalıksız kipte (halka 3) çalışan bütün programlardır. root olarak çalışan program da kullanıcı alanındadır; root bir kullanıcı kimliğidir, işlemci kipi değildir.</p></details>
+<details><summary>Kullanıcı modu ile çekirdek modu ayrımını kim uygular ve bir program halka 3'teyken ayrıcalıklı bir komut denerse ne olur?</summary><p>Ayrımı işlemcinin kendisi uygular; o anki ayrıcalık düzeyi (CPL) kod kesim yazmacının en düşük iki bitinde tutulur. Halka 3'teki kod <code>hlt</code> gibi ayrıcalıklı bir komut denerse işlemci genel koruma hatası üretir, çekirdek bunu programa SIGSEGV olarak iletir ve program sonlanır.</p></details>
+<details><summary>x86-64 Linux'ta bir sistem çağrısı yapılırken numara ve argümanlar nereye konur, sonuç nereden okunur?</summary><p>Numara <code>rax</code>'a, argümanlar sırasıyla <code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>r10</code>, <code>r8</code>, <code>r9</code>'a konur ve <code>syscall</code> komutu çalıştırılır. Sonuç <code>rax</code>'tan okunur; −4095 ile −1 arasındaki değer bir hata numarasıdır, sarmalayıcı onu <code>errno</code>'ya yazıp −1 döndürür.</p></details>
+<details><summary>Bir C programında 1000 kez printf çağrısı yapılıyor ama strace yalnız 3 write gösteriyor. Neden?</summary><p>printf bir sistem çağrısı değil, glibc'nin tamponlu bir işlevidir. Çıktı terminal değil de dosya ya da boruysa glibc tam tampon kullanır ve tampon dolunca (burada 4096 baytta) tek bir write yapar; 9890 baytlık çıktı 4096 + 4096 + 1698 olarak üç write'a sığar.</p></details>
+<details><summary>Aygıt sürücüleri neden çekirdeğin en riskli bölgesi sayılır? Üç savunma say.</summary><p>Sürücüler halka 0'da, çekirdeğin bütün gücüyle çalışır; sayıları çok, yazarları çeşitlidir, doğrudan güvenilmeyen donanım girdisi işlerler ve içlerindeki bir hata ya da kötü niyetli kod bütün sistemi ele geçirir. Savunmalar: imzalı sürücü zorunluluğu, açıklı sürücü engel listesi, düzenli güncelleme, gereksiz sürücü ve modülleri kaldırmak.</p></details>
+<details><summary>Önyükleme zincirinin aşamalarını sırayla say. Secure Boot hangi aşamalarda ne denetler?</summary><p>Firmware (UEFI), önyükleyici, çekirdek (initramfs ile), init (PID 1, çoğunlukla systemd). Secure Boot açıkken firmware önyükleyicinin imzasını db ve dbx listelerine göre denetler, önyükleyici de çekirdeğin imzasını denetler; çekirdek ayrıca modül imzasını zorlayabilir. Kullanıcı alanına geçildikten sonra Secure Boot'un bir etkisi yoktur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İşletim sistemi</strong> üç iş yapar: kaynak yöneticiliği, soyutlama, hakemlik. <strong>Çekirdek</strong> onun halka 0'daki merkezi; <strong>kullanıcı alanı</strong> çekirdek dışındaki her şey (root dahil).</li>
+<li><strong>Ayrımı işlemci uygular:</strong> x86'da halka 0 (çekirdek) ve halka 3 (programlar); CPL = <code>CS</code>'nin son iki biti (Linux'ta <code>0x33</code> → 3). Halka 3'te <code>hlt</code> → #GP → SIGSEGV, çıkış kodu 139.</li>
+<li><strong>root ≠ halka 0:</strong> root bir kimlik, halka bir işlemci kipi.</li>
+<li><strong>Sistem çağrısı:</strong> halka 3 → halka 0 tek kapı. x86-64: numara <code>rax</code>, argümanlar <code>rdi rsi rdx r10 r8 r9</code>, komut <code>syscall</code>, sonuç <code>rax</code>. write = 1, getpid = 39, openat = 257.</li>
+<li><strong>Hata:</strong> çekirdek −hata (ör. −13) döndürür; sarmalayıcı <code>errno</code>'ya yazar ve −1 döndürür.</li>
+<li><strong>glibc:</strong> <code>printf</code> → tampon → <code>write</code>; <code>fopen</code>/<code>open</code> → <code>openat</code>; <code>fgets</code> → 4096 baytlık <code>read</code>; <code>exit</code> → <code>exit_group</code>. Terminalde satır, dosyada tam tampon.</li>
+<li><strong>strace:</strong> <code>strace -o iz.txt ./prog</code>, <code>-c</code> özet, <code>-e trace=openat,read</code> süzgeç. Yalnız kendi programın.</li>
+<li><strong>Sürücü</strong> = halka 0'da çekirdeğin bütün gücü. Savunma: imzalı sürücü, engel listesi, güncelleme, az modül. <strong>Rootkit:</strong> çekirdekte gizlenen zararlı.</li>
+<li><strong>Önyükleme:</strong> UEFI → önyükleyici (shim/GRUB) → çekirdek + initramfs → init (systemd, PID 1).</li>
+<li><strong>Secure Boot:</strong> her aşama bir sonrakinin imzasını denetler; db (izinli), dbx (iptal), KEK, PK. Yalnız önyüklemeyi korur; dbx güncel değilse imzalı açıklı bileşen geçer (BlackLotus). <strong>Bootkit:</strong> önyüklemeye yerleşen zararlı.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-4">
+<h3>Quiz 4</h3>
+<p class="qa">Sekiz yeni soru ve önceki üç parçadan altı tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Halka 3'te çalışan bir programın çekirdeğe ait belleği doğrudan okuyamamasını sağlayan temel mekanizma aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Programın derleyicisinin, çekirdek adreslerine erişen satırları derlememesi</li><li>İşlemcinin, o anki ayrıcalık düzeyine göre bazı komutları ve bellek bölgelerini donanım olarak engellemesi</li><li>Antivirüs yazılımının bütün bellek erişimlerini tek tek denetlemesi</li><li>Programın root olarak çalıştırılmamış olması</li><li>C kütüphanesinin, programın her işaretçisini kullanmadan önce denetlemesi</li></ul>
+<div class="coz"><p>Ayrıcalık ayrımı işlemcinin içinde uygulanır: CPL 3'teki kodun yasak bir komutu ya da korunan bir belleği denemesi bir istisna üretir. A yanlış: derleyici programın makine koduna istediği komutu yazabilir; kural derleme değil çalışma anında donanımca uygulanır. C yanlış: antivirüs bir kullanıcı alanı ya da sürücü yazılımıdır, her bellek erişimini denetlemez. D yanlış: root olarak çalışan program da halka 3'tedir ve çekirdek belleğini doğrudan okuyamaz. E yanlış: glibc işaretçileri denetlemez; program glibc'yi hiç kullanmadan da makine kodu çalıştırabilir.</p></div></li>
+
+<li data-c="D"><p class="q">x86-64 Linux'ta bir program kod kesim yazmacı <code>CS</code>'yi okuyup <code>0x33</code> değerini buluyor. <code>CS &amp; 3</code> işlemi hangi sonucu verir ve bu ne anlama gelir?</p>
+<ul class="sec"><li>0; program çekirdek modundadır.</li><li>1; program sürücülere ayrılmış halkadadır.</li><li>2; program ara halkadadır.</li><li>3; program kullanıcı modunda, halka 3'tedir.</li><li>51; program 51 numaralı halkadadır.</li></ul>
+<div class="coz"><p><code>0x33</code> ikili tabanda <code>0011 0011</code>'dir; <code>&amp; 3</code> (ikili <code>11</code>) yalnız son iki biti bırakır: <code>11</code>, yani 3. Bu, geçerli ayrıcalık düzeyidir; program kullanıcı modunda, halka 3'te. A yanlış: 0 olsaydı çekirdek kodu olurdu. B ve C yanlış: son iki bit 01 ya da 10 değil; ayrıca Linux 1. ve 2. halkaları kullanmaz. E, maskeyi uygulamadan <code>0x33</code>'ün onluk değerini (51) yazmanın hatasıdır; halkalar yalnız 0–3 arasıdır. Bu sonucu Örnek 1'de kendi programında gördün.</p></div></li>
+
+<li data-c="A"><p class="q">Bir C programında <code>open("veri.txt", O_RDONLY)</code> çağrısı yapılıyor. Program <code>strace</code> ile izlenince bu çağrı güncel glibc'de hangi sistem çağrısı olarak görünür?</p>
+<ul class="sec"><li><code>openat</code></li><li><code>open</code></li><li><code>fopen</code></li><li><code>read</code></li><li><code>execve</code></li></ul>
+<div class="coz"><p>glibc'nin <code>open()</code> sarmalayıcısı arka planda <code>openat()</code> sistem çağrısını kullanır; strace'te <code>openat(AT_FDCWD, "veri.txt", O_RDONLY)</code> görürsün. B, sarmalayıcının adının hep sistem çağrısının adıyla aynı olduğunu sanmaktan doğar. C yanlış: <code>fopen</code> bir C kütüphanesi işlevidir, sistem çağrısı değildir; o da sonunda <code>openat</code> yapar. D, dosyayı açmakla okumayı karıştırır. E, bir programı yüklemek için kullanılan çağrıdır, dosya açmakla ilgisi yoktur.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki program <code>./tampon &gt; /dev/null</code> biçiminde çalıştırılıyor (çıktı terminal değil). <code>strace -c -e trace=write</code> kaç <code>write</code> çağrısı sayar? (Tampon boyu 4096 bayt; toplam çıktı 9890 bayt.)</p>
+<pre class="kod">for (int i = 0; i &lt; 1000; i++)
+    printf("satir %d\n", i);</pre>
+<ul class="sec"><li>1</li><li>1000</li><li>3</li><li>0</li><li>9890</li></ul>
+<div class="coz"><p>Çıktı terminal olmadığı için glibc tam tampon kullanır ve tampon her dolduğunda bir <code>write</code> yapar: 4096 + 4096 + 1698 = 9890, yani 3 çağrı; bunu çalıştırarak doğruladık. B, her <code>printf</code>'in bir sistem çağrısı olduğunu sanmanın sonucudur; 1000 çağrı ancak satır tamponunda (terminalde ya da <code>setvbuf</code> ile) görülür. A, tamponun sınırsız olduğunu sanmaktır. D, <code>/dev/null</code>'a yazılınca hiç sistem çağrısı yapılmadığını sanmaktır; oysa çekirdek yazma isteğini alır, yalnız veriyi atar. E bayt sayısını çağrı sayısıyla karıştırır.</p></div></li>
+
+<li data-c="E"><p class="q">İzin olmayan bir dosyayı açmaya çalışan bir C programında çekirdek <code>openat</code> çağrısına −13 (<code>-EACCES</code>) döndürüyor. Programın <code>open()</code> sarmalayıcısından gördüğü sonuç hangisidir?</p>
+<ul class="sec"><li>Dönüş değeri −13, <code>errno</code> değişmez.</li><li>Dönüş değeri 13, <code>errno</code> 0 olur.</li><li>Dönüş değeri 0, <code>errno</code> 13 olur.</li><li>Program hemen SIGSEGV ile sonlanır.</li><li>Dönüş değeri −1, <code>errno</code> 13 olur.</li></ul>
+<div class="coz"><p>Kural iki katmanlıdır: çekirdek eksi bir hata numarası döndürür, glibc sarmalayıcısı bu sayının mutlak değerini <code>errno</code>'ya yazar ve programa −1 döndürür; <code>strerror(13)</code> "Permission denied" verir. A, çekirdeğin ham değerini programın gördüğünü sanmaktır; bunu yalnız ham <code>syscall</code> komutunu kendin kullansan görürdün. B ve C dönüş değerini yanlış okur: 0 ya da 13 geçerli birer dosya tanımlayıcısı olabilirdi, bu yüzden hata −1 ile bildirilir. D yanlış: izin hatası bir sinyal değil, normal bir dönüş değeridir; program hatayı işleyip devam edebilir.</p></div></li>
+
+<li data-c="B"><p class="q">Aygıt sürücülerinin güvenlik açısından yüksek riskli sayılmasının <strong>temel</strong> nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Sürücülerin hep kullanıcı alanında, ayrı süreçler olarak çalışması</li><li>Sürücülerin çekirdek modunda çalışması; içlerindeki bir hatanın ya da kötü niyetli kodun bütün sistemi etkileyebilmesi</li><li>Sürücülerin yalnız internete bağlı bilgisayarlarda yüklenebilmesi</li><li>Sürücülerin sistem çağrısı yapamadığı için yavaş çalışması</li><li>Sürücülerin her açılışta yeniden derlenmesi</li></ul>
+<div class="coz"><p>Linux'ta ve büyük ölçüde Windows'ta sürücüler halka 0'da, çekirdekle aynı bellek alanında çalışır; bütün belleğe ve donanıma erişirler, bu yüzden bir sürücü hatası ya da zararlı sürücü bütün sistemi ele geçirebilir veya çökertebilir. A tam tersini söyler: sürücülerin kullanıcı alanında çalıştığı mikroçekirdek tasarımları riski tam bu yüzden azaltır. C yanlış: sürücü yüklemenin ağ bağlantısıyla ilgisi yoktur. D yanlış: sürücüler zaten çekirdeğin içindedir, sistem çağrısına ihtiyaçları yoktur. E yanlış: modüller önceden derlenmiş dosyalardır.</p></div></li>
+
+<li data-c="D"><p class="q">UEFI kullanan bir Linux bilgisayarın açılışındaki doğru sıra aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>init (systemd) → çekirdek → önyükleyici → firmware</li><li>Önyükleyici → firmware → çekirdek → init</li><li>Çekirdek → firmware → init → önyükleyici</li><li>Firmware (UEFI) → önyükleyici → çekirdek (initramfs ile) → init (systemd)</li><li>Firmware → init → önyükleyici → çekirdek</li></ul>
+<div class="coz"><p>Güç verilince işlemci anakarttaki firmware'i (UEFI) çalıştırır; firmware EFI bölümündeki önyükleyiciyi (shim, GRUB) çalıştırır; önyükleyici çekirdeği ve initramfs'i yükler; çekirdek de ilk kullanıcı alanı süreci olan init'i (PID 1) başlatır. A sırayı tersine çevirir. B, önyükleyicinin firmware'den önce çalışabileceğini sanır; oysa önyükleyiciyi bulan firmware'dir. C ve E sırayı karıştırır: init, çekirdeğin başlattığı bir kullanıcı alanı programıdır ve çekirdekten önce çalışamaz.</p></div></li>
+
+<li data-c="A"><p class="q">Secure Boot açık ve güncel bir bilgisayar için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Firmware, önyükleme zincirindeki yazılımın imzasını db ve dbx listelerine göre denetler; işletim sistemi açıldıktan sonra kullanıcı alanında çalışan bir zararlıyı tek başına engellemez.</li><li>Secure Boot açıkken bilgisayara hiçbir zararlı yazılım bulaşamaz.</li><li>Secure Boot, diskteki bütün dosyaları açılışta şifreler.</li><li>Geçerli imzalı bir önyükleyici, açığı bilinse bile hiçbir zaman engellenemez.</li><li>Secure Boot yalnız Windows'ta çalışır; Linux dağıtımları Secure Boot açıkken açılamaz.</li></ul>
+<div class="coz"><p>Secure Boot, firmware'den çekirdeğe kadar her aşamanın imzasını izinli (db) ve iptal (dbx) listelerine göre denetler; kapsamı önyüklemedir, kullanıcı alanındaki zararlıya, oltalamaya ya da açıklı bir tarayıcıya karışmaz. B, bu kapsamı abartan yaygın hatadır. C, Secure Boot'u tam disk şifrelemeyle (Parça 48) karıştırır. D yanlış: açıklı imzalı bileşenler dbx'e eklenerek engellenebilir; BlackLotus olayı tam da bu eklemenin gecikmesinden yararlandı. E yanlış: Microsoft'un imzaladığı shim sayesinde büyük dağıtımlar Secure Boot açıkken açılır.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Onaltılık <code>0xA7</code> sayısının ikili ve onluk karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>ikili <code>1010 0110</code>, onluk 166</li><li>ikili <code>0111 1010</code>, onluk 122</li><li>ikili <code>1010 0111</code>, onluk 167</li><li>ikili <code>1100 0111</code>, onluk 199</li><li>ikili <code>1010 0111</code>, onluk 107</li></ul>
+<div class="coz"><p>Her hex hane dört bite karşılık gelir: A = 10 = <code>1010</code>, 7 = <code>0111</code>; birleşince <code>1010 0111</code>. Onluk değer 10 × 16 + 7 = 167. A, son haneyi 6 ile karıştırır. B, haneleri ters sırada yazar (0x7A = 122). D, A hanesini yanlış çevirir (<code>1100</code> = C). E bitleri doğru yazıyor ama 0xA7'yi onluk 107 sanıyor; hex sayıyı "A yerine 10 koyup yan yana yazmak" hatası.</p></div></li>
+
+<li data-c="E" data-k="siber-1"><p class="q">8 bitlik işaretli (ikiye tümleyen) gösterimde <code>1111 1111</code> bayt dizisi hangi sayıyı gösterir?</p>
+<ul class="sec"><li>255</li><li>−127</li><li>−255</li><li>0</li><li>−1</li></ul>
+<div class="coz"><p>İkiye tümleyende en soldaki bit 1 ise sayı eksidir; büyüklüğü bulmak için bitleri çevirip 1 eklersin: <code>0000 0000</code> + 1 = 1, yani sayı −1. A, aynı baytın işaretsiz okunuşudur; işaretli mi işaretsiz mi okunduğu sonucu değiştirir. B, "işaret biti + büyüklük" gösterimiyle (en soldaki bit işaret, kalan yedi bit 127) karıştırmaktır. C, 8 bitle gösterilemeyen bir değerdir; işaretli 8 bitin aralığı −128…127'dir. D yanlış: sıfır bütün bitleri 0 olan bayttır.</p></div></li>
+
+<li data-c="B" data-k="siber-2"><p class="q">Getir-çöz-yürüt döngüsünde program sayacının (PC/RIP) görevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İşlemcinin o ana kadar kaç komut yürüttüğünü saymak</li><li>Bellekten getirilecek bir sonraki komutun adresini tutmak</li><li>Son yapılan aritmetik işlemin sonucunu saklamak</li><li>Önbellekteki verinin RAM'deki kopyasıyla aynı olup olmadığını denetlemek</li><li>Programın kaynak kodundaki satır numarasını tutmak</li></ul>
+<div class="coz"><p>Program sayacı, işlemcinin bir sonraki adımda bellekten getireceği komutun adresini tutan yazmaçtır; komut getirilince bir sonrakine ilerler, atlama komutları onu değiştirir. A, adındaki "sayaç" sözünü yanlış anlamaktır; komut sayısını tutmaz. C, genel amaçlı yazmaçların işidir. D, önbellek tutarlılığını yöneten donanımın işidir. E yanlış: işlemci kaynak kodu görmez, yalnız makine kodunu ve adresleri bilir.</p></div></li>
+
+<li data-c="D" data-k="siber-2"><p class="q">Aşağıdakilerden hangisi derleyici ile yorumlayıcı arasındaki farkı doğru anlatır?</p>
+<ul class="sec"><li>Derleyici yalnız Python için, yorumlayıcı yalnız C için kullanılır.</li><li>Yorumlayıcı kaynak kodu önceden makine koduna çevirip ayrı bir çalıştırılabilir dosya üretir; derleyici kodu satır satır çalıştırır.</li><li>Derlenmiş programlar işlemciye bağlı değildir; her komut kümesinde aynı dosya çalışır.</li><li>Derleyici kaynak kodu çalıştırmadan önce bütünüyle hedef işlemcinin makine koduna çevirir; yorumlayıcı kodu çalışma sırasında okuyup yürütür.</li><li>Derleyici ile yorumlayıcı arasında fark yoktur; ikisi aynı programın farklı adlarıdır.</li></ul>
+<div class="coz"><p>Derleyici (ör. <code>gcc</code>) kaynak kodu önceden belirli bir komut kümesinin makine koduna çevirir ve çalıştırılabilir bir dosya üretir; yorumlayıcı (ör. <code>python3</code>) kodu çalışma sırasında okuyup yürütür. B iki kavramı ters çevirir. A yanlış: C tipik olarak derlenir, Python tipik olarak yorumlanır. C seçeneği yanlış: derlenmiş makine kodu komut kümesine bağlıdır; x86-64 için derlenen dosya ARM'da çalışmaz. E açıkça yanlıştır.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">32 bitlik <code>0x12345678</code> değeri little-endian bir makinede adresi artan dört bayta nasıl yazılır?</p>
+<ul class="sec"><li><code>78 56 34 12</code></li><li><code>12 34 56 78</code></li><li><code>87 65 43 21</code></li><li><code>21 43 65 87</code></li><li><code>56 78 12 34</code></li></ul>
+<div class="coz"><p>Little-endian'da en az anlamlı bayt en düşük adrese yazılır; <code>0x12345678</code>'in en az anlamlı baytı <code>78</code>'dir, sonra <code>56</code>, <code>34</code>, <code>12</code> gelir. B, big-endian sırasıdır (ağ bayt sırası). C ve D, baytları değil tek tek hex haneleri ters çevirme hatasıdır; bayt sırası değişir, bir baytın içindeki iki hane değişmez. E, 16 bitlik yarıları yer değiştirmektir; hiçbir yaygın düzene karşılık gelmez. Bunu Python'da <code>struct.pack('&lt;I', 0x12345678)</code> ile doğruladık.</p></div></li>
+
+<li data-c="C" data-k="siber-3"><p class="q">Bir fonksiyon çağrıldığında yığında (stack) oluşturulan çerçeve için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Çerçeve öbekte (heap) oluşturulur ve <code>free</code> ile elle serbest bırakılır.</li><li>Çerçevede yalnız programın kaynak kodu bulunur.</li><li>Çerçevede fonksiyonun yerel değişkenleri ve fonksiyon bitince dönülecek yeri gösteren dönüş adresi bulunur; fonksiyon dönünce çerçeve kaldırılır.</li><li>Çerçeve programın bütün çalışması boyunca kalıcıdır, hiç kaldırılmaz.</li><li>Dönüş adresi diskte saklanır, yığında yer almaz.</li></ul>
+<div class="coz"><p>Her çağrı yığında bir çerçeve açar; içinde yerel değişkenler ve çağıran koda geri dönülecek komutun adresi (dönüş adresi) bulunur; fonksiyon dönünce çerçeve kendiliğinden kaldırılır. A, yığın ile öbeği karıştırır: <code>malloc</code>/<code>free</code> öbeğe aittir. B yanlış: kod, bellek düzeninde ayrı bir kod bölümündedir. D yanlış: yığın çağrılarla büyüyüp küçülür. E yanlış: dönüş adresi bellekteki yığındadır ve bellek güvenliği açıklarının (Parça 60) zemini tam da bu yüzden oluşur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-3">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-4">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-5">Sonraki parça: İşletim sistemi 2: süreç, sanal bellek ve yalıtım →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"kernel mode user mode ring 0 ring 3 explained"</li>
+  <li>"system call nasıl çalışır strace linux"</li>
+  <li>"UEFI boot process secure boot shim grub explained"</li>
+  <li>"aygıt sürücüsü çekirdek modülü rootkit kavramı"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Ortam: Windows 11 üstünde WSL2, Kali GNU/Linux Rolling 2026.2, çekirdek 6.18.33.2-microsoft-standard-WSL2, gcc 15.2.0, strace 7.0. Bütün C programları (<code>halka.c</code>, <code>tampon.c</code>, <code>selam.c</code> statik ve dinamik, <code>dosya.c</code>, <code>izin.c</code>) <code>gcc -Wall -Wextra</code> ile uyarısız derlendi ve <code>/tmp/yazar/siber-4/</code> içinde gerçekten çalıştırıldı; <code>objdump</code>, <code>lsmod</code>, <code>/proc/modules</code>, <code>tainted</code>, <code>ps</code>, <code>dmesg</code>, <code>/proc/config.gz</code> da. Çıktılar birebir konuldu.</li>
+  <li><code>strace</code> kurulu değildi ve şifresiz <code>sudo</code> yoktu; resmî Kali paketinin <code>apt-get download</code> ile indirilip kurulmadan açılmış kopyası kullanıldı. Okura normal kurulum (<code>sudo apt install strace</code>) önerildi.</li>
+  <li>Terminale bağlı izler (<code>S_IFCHR</code>) betik içinden <code>script -q -c "…" /dev/null</code> ile alındı. Adresler, süreç numaraları, <code>getrandom</code> baytları ve süreler her çalıştırmada değişir; <code>readlinkat</code>'taki yol ve uzunluk benim klasörüm.</li>
+  <li>Gizlilik ve sadeleştirme: <code>ls -l</code>'deki gerçek kullanıcı ve grup adı <code>kullanici</code> yapıldı; makine adı hiçbir çıktıda yok. <code>objdump</code>'ta dosya başlığı atıldı, <code>syscall</code> işlevinin son satırları kesildi; Örnek 1'deki iz yalnız son üç satır; statik sürümün <code>-c</code> özetinden yalnız toplam verildi. Sayısal cevaplar (9890 bayt, 0x33 &amp; 3, 0xA7, 0xFF, bayt sırası, −4095) Python ile hesaplandı.</li>
+  <li>man7.org'dan doğrulananlar: <code>syscall(2)</code> (x86-64 yazmaç düzeni), <code>syscalls(2)</code> (glibc sarmalayıcıları), <code>intro(2)</code> (eksi hata numarası → −1 ve <code>errno</code>), <code>open(2)</code> (<code>open()</code> → <code>openat()</code>, EACCES), <code>strace(1)</code> (<code>-c</code>, <code>-e trace=</code>, <code>-o</code>). −4095 sınırı man sayfasından değil, glibc'nin <code>objdump</code> çıktısından.</li>
+  <li>HLT'nin yalnız CPL 0'da çalışıp aksi hâlde #GP(0) ürettiği, Intel SDM'yi aktaran felixcloutier.com'dan (Intel PDF'ine bakmadım). CPL'nin <code>CS</code>'nin son iki bitinde olduğu SDM'yi aktaran Xen/KVM listelerinden ve kendi çıktımdan; <code>0x33</code>'ün Linux kullanıcı kod kesimi olduğu yalnız gözlemle.</li>
+  <li>kernel.org: Yama <code>ptrace_scope</code>; "tainted kernels" bitleri (512 = W, 4096 = O, 8192 = E); "module signing" (<code>CONFIG_MODULE_SIG</code>, <code>_FORCE</code>).</li>
+  <li>Secure Boot: imza denetimi, db/dbx/KEK/PK ve dbx önceliği ile 2011 sertifikalarının Haziran 2026'da dolmaya başlaması Microsoft Learn "Secure boot" (OEM) sayfasından; shim, MOK ve lockdown Debian wiki "SecureBoot"tan.</li>
+  <li>Windows sürücüleri: 1607 imza kuralı (istisnalarıyla) Microsoft Learn "Driver Signing Policy"den. Engel listesinin 2022'den beri varsayılan açık olduğu ve her açıklı sürücüyü yakalamadığı, Microsoft belgesini aktaran arama sonuçlarından; sayfayı ayrıca okumadım (kısmen doğrulandı).</li>
+  <li>BlackLotus (ESET, Mart 2023; CVE-2022-21894; Ocak 2022 yaması; açıklı ikililerin dbx'te olmaması) ikincil kaynaklardan (Help Net Security, CSO Online, The Register); özgün raporu okumadım. Teknik bilerek anlatılmadı.</li>
+  <li>WSL2: systemd etkinken WSL init'in systemd'nin çocuğu olduğu Microsoft'un 21 Eylül 2022 duyurusunu aktaran kaynaklardan; çekirdeğin Hyper-V üstünde önyükleyicisiz başlatıldığı kendi gözlemime (<code>/sys/firmware/efi</code> yok, <code>dmesg</code>) ve genel bilgiye dayanıyor.</li>
+  <li>Burada çalıştırılmadı: gerçek UEFI önyükleme zinciri (WSL2'de yok), <code>mokutil --sb-state</code> (EFI değişkeni yok), <code>Confirm-SecureBootUEFI</code> (yönetici ister, "Access was denied"). Windows'ta Secure Boot yalnız kayıt defterinden salt okunur okundu.</li>
+  <li>Hafızadan (bu oturumda doğrulanmadı): ARM sistem çağrı numaralarının farklılığı ve EL0/EL1, halka 1–2'nin tarihsel amacı, "halka −1" deyimi, Linux'un monolitik ve Windows'un melez tasarımı, sürücülerin kaynak kodun en büyük bölümü olması, initramfs tanımı, adres gizlemenin gerekçesi, firmware zararlısının diski silmekle gitmemesi.</li>
+  <li>Bütün sorular ve örnekler bu parça için yazıldı; tekrar soruları yalnız <code>siber.md</code> 1–3. satırlarındaki konulardan.</li>
+</ul>
+</div>
+</div>
+</article>

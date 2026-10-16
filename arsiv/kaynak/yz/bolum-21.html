@@ -1,0 +1,546 @@
+<article class="chapter ders" id="c-yz-21">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 21 · YZ'yi öğrenmek ve meslek</div>
+<h1>YZ'yi öğrenmek ve meslek: roller, gereken temel, kesişen alanlar ve bir öğrenme yolu</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Yirmi parça boyunca yapay zekânın nasıl çalıştığını, nasıl eğitildiğini, nerede yanıldığını ve kimin nasıl düzenlediğini gördün. Şimdi pratik soru kalıyor: Bu alanda insanlar gerçekte hangi işleri yapıyor? "Veri bilimci" ile "makine öğrenmesi mühendisi" arasında ne fark var? Matematiğin, istatistiğin, kodun hangisi neye yarıyor? Bir fabrikanın stok kararında ya da bir bankanın kredi kararında yapay zekâ nereye oturuyor? Ve sıfırdan başlayan biri hangi sırayla, hangi kaynaklarla, neyi üreterek ilerlemeli?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (eğitim, doğrulama, test; denetimli öğrenme), Parça 4 (doğrusal regresyon, karar ağacı, basit modelin derin ağa üstün olduğu durumlar), Parça 5 (ölçmek, veri sızıntısı, yanlılık). Bu, rafın son parçası; başında bütün rafın kısa bir haritası var.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bu parça yeni bir teknik kavram öğretmekten çok, öğrendiklerini <strong>bir işe ve bir yola</strong> çeviriyor. Dört soruya cevap arıyoruz. Birincisi: yapay zekâ çevresinde hangi meslekler var ve her biri günde gerçekten ne yapıyor? İkincisi: temel bilgilerin (olasılık ve istatistik, doğrusal cebir, Python, veri işleme) her biri hangi işte karşına çıkıyor? Üçüncüsü: yapay zekâ, endüstri mühendisliğinin ve iktisadın klasik sorularıyla (talep tahmini, optimizasyon, karar destek, fiyatlama, risk) nerede buluşuyor ve nerede tek başına yetmiyor? Dördüncüsü: kişisel bir öğrenme yolu nasıl kurulur, hangi ücretsiz kaynaklar var ve öğrendiğini başkasına nasıl gösterirsin?</p>
+
+<p>Bu parçadaki en hızlı eskiyecek bilgiler kaynakların erişim koşulları, ücret istatistikleri ve iş unvanlarıdır. Bunları "14 Ekim 2026 itibarıyla" ve kaynağıyla veriyoruz; kalıcı olan, rollerin arkasındaki <strong>iş bölümü</strong> ve hangi bilginin neye yaradığıdır.</p>
+
+<h2 class="s">Rafın haritası: yirmi parçada ne kurduk?</h2>
+
+<p>Kariyer sorusuna geçmeden önce elindeki haritaya bak. Her parçayı tek cümleyle özetleyen aşağıdaki tablo, bir iş ilanında ya da bir makalede geçen bir kavramı hangi parçaya dönüp bakman gerektiğini bulmana da yarar.</p>
+
+<div class="tablo"><table>
+<tr><th>Parça</th><th>Ne kurdu?</th></tr>
+<tr><td>1</td><td>Yapay zekânın çalışma tanımı, dar ve genel YZ ayrımı, 1950'den bugüne kısa tarih ve iç içe halkalar (YZ ⊃ makine öğrenmesi ⊃ derin öğrenme ⊃ büyük dil modelleri).</td></tr>
+<tr><td>2</td><td>Kural yazmak yerine örnekten öğrenmek; özellik, etiket, model; denetimli, denetimsiz, pekiştirmeli öğrenme; eğitim–doğrulama–test ayrımı ve aşırı öğrenme.</td></tr>
+<tr><td>3</td><td>Vektör, matris, olasılık dağılımı ve eğim sezgisi; YZ'nin neden ekran kartlarında yapıldığı ve niceleme.</td></tr>
+<tr><td>4</td><td>Doğrusal ve lojistik regresyon, kayıp fonksiyonu, gradyan inişi, karar ağacı, rastgele orman ve basit modelin üstün geldiği durumlar.</td></tr>
+<tr><td>5</td><td>Doğruluğun dengesiz veride yanıltması, kesinlik–duyarlılık takası, veri sızıntısı, yanlılık ve Goodhart yasası.</td></tr>
+<tr><td>6</td><td>Yapay nöron, aktivasyon, katmanlı ağ ve parametre sayısının anlamı.</td></tr>
+<tr><td>7</td><td>Geri yayılım, mini-yığın, dönem, düzenlileştirme ve eğitim eğrisini okumak.</td></tr>
+<tr><td>8</td><td>Evrişim ve filtre, havuzlama, AlexNet, transfer öğrenme ve görüntü üretimine köprü.</td></tr>
+<tr><td>9</td><td>Kelime gömmeleri, tekrarlayan ağlar ve transformer'ın çözdüğü iki sorun.</td></tr>
+<tr><td>10</td><td>Dikkat mekanizması, sorgu–anahtar–değer, çok başlı dikkat, konum bilgisi ve paralel işleme.</td></tr>
+<tr><td>11</td><td>Token, sonraki token olasılıkları, sıcaklık ve bağlam penceresi.</td></tr>
+<tr><td>12</td><td>Ön eğitim, veri temizliği, ölçekleme yasaları ve temel model.</td></tr>
+<tr><td>13</td><td>Denetimli ince ayar, insan geri bildirimiyle pekiştirmeli öğrenme, sistem istemi ve akıl yürüten modeller.</td></tr>
+<tr><td>14</td><td>Halüsinasyon, bilgi kesim tarihi, yaltaklanma ve bunlara karşı kullanıcı alışkanlıkları.</td></tr>
+<tr><td>15</td><td>İyi istemin parçaları, örnekli istem ve deneme–düzeltme döngüsü.</td></tr>
+<tr><td>16</td><td>API, RAG, araç kullanımı, ajanlar ve insan onayı.</td></tr>
+<tr><td>17</td><td>Kod asistanlarıyla çalışırken test, fark okuma ve sürüm kontrolü; uygulamanın yaşam döngüsü.</td></tr>
+<tr><td>18</td><td>İstem enjeksiyonu, veri zehirleme ve deepfake; kavram ve savunma düzeyinde.</td></tr>
+<tr><td>19</td><td>Hizalama, ödül hackleme, yorumlanabilirlik, değerlendirmeler ve risk görüşlerinin yelpazesi.</td></tr>
+<tr><td>20</td><td>Çipten uygulamaya değer zinciri, açık ve kapalı modeller, iş gücüne etki ve düzenleme.</td></tr>
+<tr><td>21</td><td>Meslekler, temel bilgi, endüstri mühendisliği ve iktisatla kesişim, öğrenme yolu ve portfolyo.</td></tr>
+</table></div>
+
+<p>Bu haritada iki farklı derinlik var. Parça 1–14 "nasıl çalışır" sorusunu cevaplar; bu, YZ'yi <em>geliştiren</em> kişinin bilmesi gereken iç düzendir. Parça 15–20 "nasıl kullanılır, ne risk taşır, kim düzenler" sorusunu cevaplar; bu da YZ'yi <em>kullanan</em> kişinin bilmesi gereken dış düzendir. Kariyer seçenekleri de tam bu iki derinlik boyunca dizilir.</p>
+
+<h2 class="s">İki kariyer ailesi: YZ'yi kullanan, YZ'yi geliştiren</h2>
+
+<p>"Yapay zekâda çalışmak" sözü iki çok farklı şeyi anlatabilir. Bir lojistik şirketinde rota planlayan bir mühendis, bir sohbet modelini kendi işine bağlayıp günde iki saat kazanıyorsa yapay zekâyla çalışıyordur. Bir laboratuvarda dil modelinin eğitim kaybını düşürmeye uğraşan araştırmacı da. İkisinin bilmesi gereken şeyler, gün içindeki işleri ve yetiştirilme yolları çok farklıdır. Bu farkı baştan görmek, gereksiz yere yanlış yola girmeni önler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>YZ'yi kullanan kariyer:</strong> Asıl işi başka bir alanda olan (mühendislik, iktisat, hukuk, pazarlama, tıp) ve yapay zekâyı o işi daha iyi ya da daha hızlı yapmak için bir araç olarak kullanan kariyer. Değeri <strong>alan bilgisinden</strong> gelir; YZ bilgisi bu değeri çoğaltır.</p>
+<p><strong>YZ'yi geliştiren kariyer:</strong> Asıl işi modelleri, verileri ve onları çalıştıran sistemleri kurmak, eğitmek, ölçmek ve işletmek olan kariyer. Değeri <strong>yöntem ve mühendislik bilgisinden</strong> gelir; alan bilgisi doğru problemi seçmesine yardım eder.</p></div>
+
+<p>Bu iki aile arasında keskin bir duvar yok; aradaki geniş bölgede, hazır modelleri bir ürüne bağlayan ya da bir şirketin verisiyle küçük modeller kuran işler var. Ayrımın sana pratik bir sorusu var: <strong>Bir sorunla karşılaştığında elini ilk neye atıyorsun?</strong> Problemi tanımlayan, maliyetini hesaplayan, sonucun işe yarayıp yaramadığına karar veren tarafsan kullanan aileye; modelin neden yanıldığını bulmak için veriyi, kaybı, kodu açan tarafsan geliştiren aileye daha yakınsın. Bir yönde ilerlemek öbürünü kapatmaz: alan bilgisi güçlü biri zamanla geliştiren tarafa geçebilir, geliştiren biri de zamanla bir alanın uzmanı olur.</p>
+
+<h2 class="s">Meslekler: kim ne yapar?</h2>
+
+<p>Aşağıdaki tablo yaygın unvanları ve her birinin gün içindeki asıl işini veriyor. Bir uyarıyla oku: unvanlar şirketten şirkete değişir. Küçük bir şirkette tek bir "veri bilimci" tablodaki dört rolün işini birden yapabilir; büyük bir şirkette aynı unvan çok dar bir işi anlatabilir.</p>
+
+<div class="tablo"><table>
+<tr><th>Rol</th><th>Asıl işi</th><th>En çok dayandığı bilgi</th><th>Rafta karşılığı</th></tr>
+<tr><td>Veri bilimci</td><td>Veriden soru cevaplamak: veriyi toplayıp temizlemek, model kurup sınamak, bulguyu teknik olmayan kişilere anlatmak.</td><td>İstatistik, veri işleme, iletişim</td><td>Parça 2, 4, 5</td></tr>
+<tr><td>Makine öğrenmesi mühendisi</td><td>Modeli eğitip ürünün içinde güvenilir, hızlı ve ölçeklenebilir biçimde çalıştırmak.</td><td>Yazılım mühendisliği, derin öğrenme</td><td>Parça 6–8, 10</td></tr>
+<tr><td>YZ uygulama mühendisi</td><td>Hazır büyük modelleri (API ya da açık ağırlıklı) istem, RAG, araç ve ajanlarla bir ürüne bağlamak; çıktıyı değerlendirmek.</td><td>Yazılım, sistem tasarımı, değerlendirme</td><td>Parça 11, 15–17</td></tr>
+<tr><td>MLOps mühendisi</td><td>Modelin eğitimden canlıya geçişini, sürümlenmesini, izlenmesini ve verisi değiştikçe yeniden eğitilmesini otomatikleştirmek.</td><td>Altyapı, bulut, otomasyon</td><td>Parça 5, 17, 20</td></tr>
+<tr><td>Araştırmacı</td><td>Yeni yöntem önermek, deney tasarlamak, sonucu yayımlamak; çoğu zaman lisansüstü derece ister.</td><td>Matematik, deney tasarımı, yazma</td><td>Parça 3, 7, 10, 12</td></tr>
+<tr><td>YZ ürün yöneticisi</td><td>Hangi sorunun YZ ile çözüleceğine, başarının nasıl ölçüleceğine ve riskin nasıl yönetileceğine karar vermek.</td><td>Kullanıcı ve iş bilgisi, ölçme</td><td>Parça 1, 5, 14, 20</td></tr>
+<tr><td>YZ güvenliği</td><td>İki anlamı var: sistemleri saldırıya karşı korumak (güvenlik) ya da modelin istenen hedefe hizalı ve denetlenebilir olmasını sağlamak (emniyet, hizalama).</td><td>Siber güvenlik ya da araştırma yöntemleri</td><td>Parça 18, 19</td></tr>
+</table></div>
+
+<p><strong>Veri bilimci</strong> rolünün resmî bir tanımı için ABD Çalışma İstatistikleri Bürosu'nun (BLS) meslek el kitabına bakabilirsin: veri bilimciler veriden yararlı içgörü çıkarmak için analitik araç ve yöntemler kullanır; veriyi toplar ve temizler, algoritma ve model kurup sınar, bulguları teknik olan ve olmayan kişilere sunar. Aynı kaynak, 27 Ağustos 2026'da güncellenen sayfasında, ABD'de veri bilimcilerin Mayıs 2025 medyan yıllık ücretini 120.230 dolar, tipik giriş eğitimini lisans derecesi ve 2025–2035 için istihdam artışı öngörüsünü yüzde 35 olarak veriyor. Yeni yöntem geliştiren araştırmacılara en yakın BLS başlığı olan "bilgisayar ve bilgi araştırma bilimcileri" için medyan yıllık ücret 140.300 dolar, tipik giriş eğitimi yüksek lisans, artış öngörüsü yüzde 22. Bu rakamları iki temkinle oku: yalnız ABD'yi anlatırlar ve bir <em>öngörüdürler</em>. Türkiye için aynı tarihte, aynı güvenilirlikte bir kaynak bulamadığım için Türkiye'ye ait ücret rakamı vermiyorum.</p>
+
+<p>Dünya Ekonomik Forumu'nun 9 Ocak 2025'te yayımladığı "Geleceğin İşleri" raporu da 2030'a kadar yüzde olarak en hızlı büyümesi beklenen işlerin başına büyük veri uzmanlarını, finansal teknoloji mühendislerini ve YZ ve makine öğrenmesi uzmanlarını koyuyor. Parça 1'deki üç soruyu buraya uygula: <em>ne ölçüldü?</em> Gerçekleşen istihdam değil, 1.000'i aşkın işverenin beklentisi. <em>Neyle kıyaslandı?</em> Yüzde büyüme; küçük bir tabandan büyük yüzde çıkabilir. Bu bulgu bir eğilimi gösterir, senin için kesin bir iş garantisi değildir.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 330" role="img" aria-label="Yedi YZ rolünün kullanan ile geliştiren arasındaki yelpazede kabaca nerede durduğunu gösteren yatay çubuklar">
+  <text class="sv-s" x="250" y="22" text-anchor="middle">hazır aracı</text>
+  <text class="sv-s" x="250" y="38" text-anchor="middle">kullanır</text>
+  <text class="sv-s" x="350" y="22" text-anchor="middle">modeli ürüne</text>
+  <text class="sv-s" x="350" y="38" text-anchor="middle">bağlar</text>
+  <text class="sv-s" x="460" y="22" text-anchor="middle">modeli eğitir,</text>
+  <text class="sv-s" x="460" y="38" text-anchor="middle">işletir</text>
+  <text class="sv-s" x="570" y="22" text-anchor="middle">yeni yöntem</text>
+  <text class="sv-s" x="570" y="38" text-anchor="middle">geliştirir</text>
+  <line class="sv-c" x1="250" y1="46" x2="250" y2="290"/>
+  <line class="sv-c" x1="350" y1="46" x2="350" y2="290"/>
+  <line class="sv-c" x1="460" y1="46" x2="460" y2="290"/>
+  <line class="sv-c" x1="570" y1="46" x2="570" y2="290"/>
+  <text class="sv-t" x="190" y="72" text-anchor="end">YZ kullanan uzman</text>
+  <rect class="sv-a" x="200" y="58" width="110" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="102" text-anchor="end">YZ ürün yöneticisi</text>
+  <rect class="sv-a" x="220" y="88" width="190" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="132" text-anchor="end">YZ uygulama müh.</text>
+  <rect class="sv-m" x="300" y="118" width="170" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="162" text-anchor="end">Veri bilimci</text>
+  <rect class="sv-m" x="280" y="148" width="230" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="192" text-anchor="end">MLOps</text>
+  <rect class="sv-m" x="380" y="178" width="140" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="222" text-anchor="end">ML mühendisi</text>
+  <rect class="sv-l" x="390" y="208" width="180" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="252" text-anchor="end">Araştırmacı</text>
+  <rect class="sv-l" x="480" y="238" width="140" height="20" rx="6"/>
+  <text class="sv-t" x="190" y="282" text-anchor="end">YZ güvenliği</text>
+  <rect class="sv-k" x="300" y="268" width="320" height="20" rx="6"/>
+  <text class="sv-s" x="250" y="316" text-anchor="middle">← YZ'yi kullanan</text>
+  <text class="sv-s" x="570" y="316" text-anchor="middle">YZ'yi geliştiren →</text>
+</svg>
+<figcaption>Her çubuk, o rolün işinin kabaca hangi derinlikte durduğunu gösteriyor; konumlar şirkete göre kayar, kesin sınır değildir. Turuncu roller değerini alan ve iş bilgisinden, yeşiller uygulama ve veri mühendisliğinden, morlar model ve yöntem bilgisinden alır. YZ güvenliği en geniş çubuktur, çünkü hem kullanıma alınmış sistemleri korumayı hem modelin içini araştırmayı kapsar.</figcaption>
+</figure>
+
+<p>Şekildeki ilk satır, "YZ kullanan uzman", ilanlarda bir unvan olarak geçmez; "endüstri mühendisi", "finans analisti", "planlamacı" diye geçer. Ama YZ ile ilgili işlerin en kalabalık bölümü bu satırdır: modeli geliştirmeyen, onu doğru soruya, doğru veriyle uygulayan insanlar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir ilanda unvan "Yapay Zekâ Uzmanı". Görevler şöyle: "Mağaza bazında haftalık satış tahmin modellerini geliştirmek; tahminleri stok planlama ekibine sunmak; modellerin doğruluğunu her ay izleyip raporlamak; SQL ve Python ile çalışmak; iş birimleriyle sonuçları yorumlamak." Bu ilan tablodaki hangi role en yakındır ve hangi bilgileri ister?</p>
+<p><strong>Adım 1.</strong> Unvanı bir kenara koy, fiilleri sırala: geliştirmek, sunmak, izleyip raporlamak, yorumlamak. Hiçbiri "yeni yöntem önermek" ya da "büyük modeli ürüne bağlamak" değil.</p>
+<p><strong>Adım 2.</strong> Verinin türüne bak: mağaza bazında haftalık satış, yani tablo hâlinde zaman serisi. Parça 4'te gördük: bu tür veride derin ağdan çok regresyon ve ağaç temelli modeller iş görür.</p>
+<p><strong>Adım 3.</strong> Çıktının kime gittiğine bak: stok planlama ekibine ve iş birimlerine. Bu, bulguyu teknik olmayan kişilere anlatmayı gerektirir.</p>
+<p><strong>Adım 4.</strong> İzleme görevine bak: "her ay doğruluğu izleyip raporlamak" MLOps'un hafif bir hâlidir; model kurulup bırakılmıyor.</p>
+<p><strong>Sonuç:</strong> Unvan ne derse desin, bu bir <strong>veri bilimci</strong> ilanıdır; istediği bilgiler istatistik, zaman serisi tahmini, SQL ve Python ile veri işleme, ölçme (Parça 5) ve anlatma becerisidir. Derin öğrenme ve büyük dil modelleri bu ilanda ikinci plandadır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Unvana bakıp rolü anlamak.</strong> "YZ uzmanı", "veri bilimci", "ML mühendisi" unvanları şirketler arasında tutarsız kullanılır; aynı unvanın altında birbirine hiç benzemeyen işler olabilir. Doğrusu: ilanın <strong>görev fiillerini</strong>, <strong>verinin türünü</strong> ve <strong>çıktının kime gittiğini</strong> oku. Rolü bunlar belirler, unvan değil.</p></div>
+
+<h2 class="s">Hangi temel bilgi neye yarar?</h2>
+
+<p>Bu rafta matematiği formülle değil sezgiyle kurduk. Geliştiren tarafa yaklaştıkça sezgi yetmez, aynı fikirleri hesaplayabilmen gerekir. Kullanan tarafta bile bazı temel bilgiler, bir sonucu doğru okuyup okumamanı belirler. Aşağıdaki tablo her temel bilginin hangi işte karşına çıktığını gösteriyor.</p>
+
+<div class="tablo"><table>
+<tr><th>Temel bilgi</th><th>Nerede karşına çıkar?</th><th>Bilmezsen ne olur?</th></tr>
+<tr><td>Olasılık ve istatistik</td><td>Modeli ölçmek, belirsizliği okumak, örneklem, güven aralığı, A/B testi, dağılımdan karar çıkarmak.</td><td>Şansla gelen bir farkı başarı sanırsın; "yüzde 87 olasılık" çıktısını yanlış okursun.</td></tr>
+<tr><td>Doğrusal cebir</td><td>Vektör ve matrislerle düşünmek: gömmeler, benzerlik, dikkat, bir katmanın hesabı.</td><td>Derin öğrenme kodunu okursun ama neden çalıştığını ya da boyut hatasının nereden geldiğini anlamazsın.</td></tr>
+<tr><td>Türev ve eğim</td><td>Kayıp fonksiyonu, gradyan inişi, geri yayılım, öğrenme oranı.</td><td>Eğitim eğrisinin neden patladığını ya da durduğunu yorumlayamazsın.</td></tr>
+<tr><td>Python</td><td>Alanın ortak dili: numpy, pandas, scikit-learn, PyTorch; bir API'yi çağırmak.</td><td>Her denemeyi başkasına yaptırmak zorunda kalırsın.</td></tr>
+<tr><td>Veri işleme (SQL, tablolar)</td><td>Veriyi bulmak, birleştirmek, temizlemek, eksik ve hatalı kaydı ayıklamak.</td><td>İşin en büyük bölümünü yapamazsın; model, kötü veriyle kötü sonuç üretir.</td></tr>
+<tr><td>Yazılım alışkanlıkları</td><td>Sürüm kontrolü, test, tekrar üretilebilir deney, sırların korunması.</td><td>Geçen hafta çalışan sonucu bugün yeniden üretemezsin.</td></tr>
+<tr><td>Alan bilgisi</td><td>Doğru soruyu seçmek, maliyeti bilmek, sonucun işe yarayıp yaramadığına karar vermek.</td><td>Teknik olarak doğru ama kimsenin işine yaramayan bir model kurarsın.</td></tr>
+</table></div>
+
+<p>Tablonun son iki satırı çoğu zaman unutulur ama gerçek projelerde zamanın çoğu modeli seçmeye değil, veriyi anlamaya ve sonucun neye yarayacağını tartışmaya gider. İstatistik ise modeli geliştirmeyen ama çıktısını okuyan herkesin işine yarar.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Önce bütün matematiği bitireyim, sonra başlarım" demek.</strong> Doğrusal cebiri, olasılığı ve kalkülüsü baştan sona bitirip ancak ondan sonra ilk modelini kurmayı planlayan kişi çoğu zaman aylarca hiçbir şey üretmeden motivasyonunu kaybeder; çünkü öğrendiği şeyin neye yaradığını göremez. Tersi de hatadır: matematiği hiç öğrenmeden yalnız hazır kod çalıştırmak, ilk beklenmedik sonuçta seni çaresiz bırakır. Doğrusu: küçük bir projeyle başla, takıldığın yerde gereken matematiği o anda öğren ve öğrendiğini hemen o projede kullan. Bu rafın her parçasında yaptığımız da buydu: her matematik fikrini ilk gerektiği yerde kurduk.</p></div>
+
+<h2 class="s">Endüstri mühendisliği ve iktisatla kesişim</h2>
+
+<p>Endüstri mühendisliği ve iktisat, yapay zekâdan çok önce aynı soruyla uğraşıyordu: belirsizlik altında, kısıtlı kaynakla en iyi kararı nasıl verirsin? Yöneylem araştırması, istatistik ve ekonometri bu soruya onlarca yıldır cevap veriyor. Makine öğrenmesi bu araç kutusuna güçlü bir parça ekledi, ama kutunun yerini almadı. Aşağıdaki beş alanda bu ilişkinin nasıl kurulduğuna bakalım.</p>
+
+<h3>Talep tahmini</h3>
+
+<p>Bir perakende zinciri her mağazada her ürün için gelecek haftanın satışını tahmin etmek zorundadır; stok, sipariş, raf düzeni ve personel planı buna bağlıdır. Bu klasik bir zaman serisi sorusudur: geçmiş satışlar, eğilim (yavaş artış ya da düşüş), mevsimsellik (yılın belli haftalarında yükselme), kampanyalar, fiyat, tatiller.</p>
+
+<p>Bu alanda makine öğrenmesinin yeri, tahmin yarışmalarının sonuçlarında açıkça görülür. Spyros Makridakis'in düzenlediği tahmin yarışmalarından 2018'deki M4'te, çok farklı türden on binlerce seri üzerinde saf makine öğrenmesi yöntemleri kötü sonuç verdi ve istatistiksel yöntemlerin birleşimi öne çıktı. 2020'deki M5'te ise Walmart'ın satış verisi kullanıldı: 42.840 hiyerarşik günlük seri, yanında fiyat, kampanya ve takvim bilgisi. Bu kez en iyi sonuçlar saf makine öğrenmesi yaklaşımlarından geldi ve ağaç temelli bir yöntem olan LightGBM kazanan çözümlerde öne çıktı. İki sonuç çelişmez; birlikte bir şey öğretir: <strong>çok sayıda ilişkili seri ve zengin ek bilgi</strong> olduğunda makine öğrenmesi güçlenir, az veride ve tek başına bir seride istatistiksel yöntemler çoğu zaman yeterli ve daha sağlamdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önce baz çizgisi.</strong> Her tahmin modelini, en basit yöntemle kıyasla: "geçen haftanın satışı", "son dört haftanın ortalaması", "geçen yılın aynı haftası". Neden: karmaşık modelin bir değeri varsa bu kıyasta görünür; görünmüyorsa karmaşıklığın bedelini (bakım, açıklama güçlüğü, hata riski) boşuna ödüyorsundur. Baz çizgisi olmayan bir başarı rakamı, Parça 1'deki "neyle kıyaslandı?" sorusunu cevapsız bırakır.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Zaman serisinde geçmişle eğit, gelecekle sına.</strong> Veriyi rastgele karıştırıp bölme; eğitimi daha eski dönemle, testi daha yeni dönemle yap. Neden: rastgele bölmede model, sınandığı haftanın hem öncesini hem sonrasını görmüş olur; bu, Parça 5'teki veri sızıntısının zaman serisindeki hâlidir ve gerçek kullanımda asla elde edemeyeceğin bir başarı gösterir. Gerçekte gelecek hep bilinmezdir; testin de öyle olmalı.</p></div>
+
+<h3>Optimizasyon ve karar destek: tahmin, karar değildir</h3>
+
+<p>En önemli kesişim burada. Bir talep tahmini tek başına hiçbir şeye karar vermez; "gelecek hafta yaklaşık 200 adet satılır" bilgisi, kaç adet sipariş vereceğini söylemez. Sipariş miktarı, tahminin yanında <strong>maliyet yapısına</strong> da bağlıdır: ürün eksik kalırsa ne kaybedersin, fazla kalırsa ne kaybedersin? Bu soruyu sorup cevabı hesaplayan alan <strong>optimizasyondur</strong>: kısıtlar (depo kapasitesi, bütçe, vardiya kuralları) altında bir amacı (kâr, maliyet, hizmet düzeyi) en iyi yapan kararı seçmek. Doğrusal programlama, tam sayılı programlama, rota ve çizelgeleme modelleri bu ailedendir ve makine öğrenmesinden farklı bir işi yapar.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Tahmin-sonra-optimize akışı: veri, tahmin modeli, belirsizlikli tahmin, optimizasyon, karar, gerçekleşen sonuç ve geri besleme">
+  <text class="sv-s" x="215" y="22" text-anchor="middle">makine öğrenmesinin işi</text>
+  <text class="sv-s" x="520" y="22" text-anchor="middle">yöneylem / iktisadın işi</text>
+  <rect class="sv-k" x="10" y="40" width="120" height="66" rx="10"/>
+  <text class="sv-b" x="70" y="66" text-anchor="middle">Veri</text>
+  <text class="sv-s" x="70" y="84" text-anchor="middle">satış, fiyat,</text>
+  <text class="sv-s" x="70" y="98" text-anchor="middle">takvim</text>
+  <path class="sv-cl" d="M130 73H158"/>
+  <polygon class="sv-cl" points="158,68 166,73 158,78"/>
+  <rect class="sv-m" x="166" y="40" width="120" height="66" rx="10"/>
+  <text class="sv-b" x="226" y="66" text-anchor="middle">Tahmin</text>
+  <text class="sv-s" x="226" y="84" text-anchor="middle">regresyon,</text>
+  <text class="sv-s" x="226" y="98" text-anchor="middle">ağaçlar</text>
+  <path class="sv-cl" d="M286 73H314"/>
+  <polygon class="sv-cl" points="314,68 322,73 314,78"/>
+  <rect class="sv-m" x="322" y="40" width="130" height="66" rx="10"/>
+  <text class="sv-b" x="387" y="66" text-anchor="middle">Dağılım</text>
+  <text class="sv-s" x="387" y="84" text-anchor="middle">"200 ± 30"</text>
+  <text class="sv-s" x="387" y="98" text-anchor="middle">belirsizlikle</text>
+  <path class="sv-cl" d="M452 73H480"/>
+  <polygon class="sv-cl" points="480,68 488,73 480,78"/>
+  <rect class="sv-a" x="488" y="40" width="142" height="66" rx="10"/>
+  <text class="sv-b" x="559" y="66" text-anchor="middle">Optimizasyon</text>
+  <text class="sv-s" x="559" y="84" text-anchor="middle">maliyet yapısı,</text>
+  <text class="sv-s" x="559" y="98" text-anchor="middle">kısıtlar</text>
+  <path class="sv-cl" d="M559 106V150"/>
+  <polygon class="sv-cl" points="554,150 559,158 564,150"/>
+  <rect class="sv-a" x="470" y="158" width="160" height="66" rx="10"/>
+  <text class="sv-b" x="550" y="184" text-anchor="middle">Karar</text>
+  <text class="sv-s" x="550" y="202" text-anchor="middle">sipariş, fiyat,</text>
+  <text class="sv-s" x="550" y="216" text-anchor="middle">kredi limiti</text>
+  <path class="sv-cl" d="M470 191H344"/>
+  <polygon class="sv-cl" points="344,186 336,191 344,196"/>
+  <rect class="sv-k" x="196" y="158" width="140" height="66" rx="10"/>
+  <text class="sv-b" x="266" y="184" text-anchor="middle">Gerçekleşen</text>
+  <text class="sv-s" x="266" y="202" text-anchor="middle">satılan, kalan,</text>
+  <text class="sv-s" x="266" y="216" text-anchor="middle">kâr</text>
+  <path class="sv-c" d="M196 191H70V114"/>
+  <polygon class="sv-c" points="65,114 70,106 75,114"/>
+  <text class="sv-s" x="130" y="182" text-anchor="middle">yeni veri</text>
+  <text class="sv-s" x="320" y="262" text-anchor="middle">İnsan karar verici, optimizasyonun önerisini</text>
+  <text class="sv-s" x="320" y="280" text-anchor="middle">gerekçesi ve belirsizliğiyle görür: karar destek.</text>
+</svg>
+<figcaption>Makine öğrenmesi zincirin sol yarısını yapar: veriden bir tahmin ve onun belirsizliği. Kararı sağ yarı verir: maliyetleri ve kısıtları hesaba katan optimizasyon. Gerçekleşen sonuç yeni veri olarak başa döner. "Tahmin et, sonra optimize et" diye anılan bu düzen, endüstri mühendisliğinin YZ ile en sık buluştuğu yerdir.</figcaption>
+</figure>
+
+<p>Bu düzenin en küçük ve en öğretici örneği, yöneylem kitaplarında <strong>gazete bayisi problemi</strong> (newsvendor) diye geçen sorudur. Bir bayi sabah kaç gazete almalı? Az alırsa satabileceği gazeteyi satamaz, çok alırsa akşam elinde kalan gazete çöpe gider. Aynı soru fırındaki ekmeğe, mevsimlik giysiye, bir uçuşta satılacak koltuğa uygulanır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Bir adım <strong>eksik</strong> kalmanın birim maliyeti c<sub>u</sub> (satamadığın için kaçırdığın kâr), bir adım <strong>fazla</strong> kalmanın birim maliyeti c<sub>o</sub> (alıp satamadığın ürünün zararı) olsun. En iyi sipariş miktarı, talebin bu miktarın altında kalma olasılığını şu orana eşitleyen miktardır:</p>
+<p>kritik oran = c<sub>u</sub> ÷ (c<sub>u</sub> + c<sub>o</sub>)</p>
+<p>Neden: son eklediğin bir adet, talep o adedi aşarsa c<sub>u</sub> kadar kazandırır, aşmazsa c<sub>o</sub> kadar kaybettirir. Eklemeye, bu iki beklenen değer eşitlenene kadar devam edersin; eşitlik tam bu oranda kurulur.</p></div>
+
+<p>Formülün iktisadi anlamı şu: eksik kalmak pahalıysa (yüksek kâr marjı) kritik oran büyür ve tahminin ortalamasından <em>fazla</em> sipariş verirsin; fazla kalmak pahalıysa (bozulan ürün, düşük marj) oran küçülür ve ortalamadan <em>az</em> verirsin. Yani "en doğru tahmin" ile "en kârlı karar" aynı sayı değildir. Bunu görmek için tahminin yalnız ortalamasına değil, <strong>dağılımına</strong> ihtiyacın var; Parça 3'teki olasılık dağılımı fikri burada para kazandırır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir fırın ekmeği 10 TL'ye satıyor, tanesi 4 TL'ye mal oluyor. Akşam kalan ekmek hayvan yemi olarak 1 TL'ye satılıyor. Model yarınki talebi ortalaması 200, standart sapması 30 olan normal dağılımla tahmin ediyor. Kaç ekmek pişirilmeli?</p>
+<p><strong>Adım 1.</strong> Eksik kalma maliyeti: satılamayan bir ekmek 10 − 4 = 6 TL kâr kaybıdır; c<sub>u</sub> = 6.</p>
+<p><strong>Adım 2.</strong> Fazla kalma maliyeti: pişip satılamayan bir ekmek 4 TL'ye mal olmuş, 1 TL'ye gitmiştir; c<sub>o</sub> = 4 − 1 = 3.</p>
+<p><strong>Adım 3.</strong> Kritik oran = 6 ÷ (6 + 3) = 0,667 (formülden).</p>
+<p><strong>Adım 4.</strong> Normal dağılımda altında olasılığın 0,667 kaldığı nokta, ortalamanın yaklaşık 0,43 standart sapma üstüdür (standart normal tablodan ya da bir hesap aracından).</p>
+<p><strong>Adım 5.</strong> Sipariş = 200 + 0,43 × 30 ≈ 212,9; yuvarlayınca 213 ekmek.</p>
+<p><strong>Adım 6.</strong> Sağlama: aynı dağılımdan 200.000 gün benzetimiyle beklenen günlük kâr hesaplandı; 200 ekmekte yaklaşık 1.093 TL, 213'te yaklaşık 1.102 TL, 230'da yaklaşık 1.088 TL çıktı. En yüksek değer 213 civarında.</p>
+<p><strong>Sonuç:</strong> Tahminin ortalaması 200 olsa da en kârlı karar 213 pişirmektir, çünkü eksik kalmak fazla kalmanın iki katı pahalı. Model "ne olacak?" sorusunu, optimizasyon "ne yapmalı?" sorusunu cevapladı.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 260" role="img" aria-label="Ortalaması 200, standart sapması 30 olan talep dağılımı; 213'ün solundaki alan yaklaşık yüzde 67">
+  <polygon class="sv-m" points="40,200 40,198 56,197 71,196 87,193 102,190 118,186 133,180 149,172 164,163 180,151 196,138 211,124 227,109 242,94 258,80 273,68 289,58 304,52 320,50 336,52 351,58 360,63 360,200"/>
+  <polyline class="sv-cl" points="40,198 56,197 71,196 87,193 102,190 118,186 133,180 149,172 164,163 180,151 196,138 211,124 227,109 242,94 258,80 273,68 289,58 304,52 320,50 336,52 351,58 367,68 382,80 398,94 413,109 429,124 444,138 460,151 476,163 491,172 507,180 522,186 538,190 553,193 569,196 584,197 600,198"/>
+  <line class="sv-c" x1="30" y1="200" x2="610" y2="200"/>
+  <line class="sv-c" x1="320" y1="200" x2="320" y2="40"/>
+  <line class="sv-cl" x1="360" y1="200" x2="360" y2="34"/>
+  <text class="sv-s" x="312" y="34" text-anchor="end">ortalama 200</text>
+  <text class="sv-b" x="368" y="30" text-anchor="start">sipariş 213</text>
+  <text class="sv-t" x="200" y="190" text-anchor="middle">talep 213'ün altında:</text>
+  <text class="sv-b" x="250" y="160" text-anchor="middle">≈ 0,67</text>
+  <text class="sv-t" x="410" y="185" text-anchor="middle">≈ 0,33</text>
+  <text class="sv-s" x="40" y="220" text-anchor="middle">110</text>
+  <text class="sv-s" x="320" y="220" text-anchor="middle">200</text>
+  <text class="sv-s" x="600" y="220" text-anchor="middle">290</text>
+  <text class="sv-s" x="320" y="246" text-anchor="middle">günlük talep (ekmek)</text>
+</svg>
+<figcaption>Modelin tahmini bir sayı değil, bir dağılım. Yeşil alan, talebin 213'ün altında kalma olasılığı: kritik orana eşit, yaklaşık 0,67. Siparişi ortalamada (200) değil, sağdaki çizgide vermek, eksik kalmanın fazla kalmaktan pahalı olduğu bilgisini karara taşır.</figcaption>
+</figure>
+
+<p>Gerçek işletmelerde soru çok daha büyüktür: binlerce ürün, ortak depo kapasitesi, tedarikçinin en az sipariş miktarı, teslim süreleri. Ama düzen aynıdır: makine öğrenmesi her ürün için bir talep dağılımı üretir, optimizasyon modeli bu dağılımları ve kısıtları birlikte çözer. Üretim planlama, vardiya çizelgeleme, araç rotalama ve hastane yatak planlaması da aynı kalıba girer; makine öğrenmesi çoğu zaman "ne kadar talep olacak", "bu iş ne kadar sürecek", "bu makine ne zaman arıza yapar" gibi <strong>girdileri</strong> tahmin eder, kararı optimizasyon verir.</p>
+
+<p><strong>Karar destek</strong> bu zincirin insanla buluştuğu yerdir: sistem kararı kendisi uygulamaz, bir yöneticiye seçenekleri, her birinin beklenen sonucunu, belirsizliğini ve gerekçesini gösterir. Neden insan? Çünkü modelin bilmediği şeyler vardır (yarın yolda grev olacağı, rakibin indirime gireceği) ve hatanın sorumluluğunu biri taşımalıdır. Parça 16'daki "geri alınamaz işte insan onayı" ilkesinin işletmedeki karşılığı budur.</p>
+
+<h3>Fiyatlama: tahmin ile nedensellik</h3>
+
+<p>Fiyatlama, makine öğrenmesinin iktisatla en çok çatıştığı ve iktisatçının en çok işe yaradığı yerdir. Bir makine öğrenmesi modeli geçmiş verideki <strong>birlikte görülme</strong> ilişkilerini öğrenir. Ama fiyat kararı bir <strong>müdahale</strong> sorusudur: "Fiyatı ben değiştirirsem satış ne olur?" Bu ikisi aynı soru değildir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Korelasyon, müdahalenin etkisini söylemez.</strong> Geçmiş veride fiyatı ve satışı birlikte etkileyen bir üçüncü etken (mevsim, talep artışı, rakibin hamlesi) varsa model, fiyat ile satış arasında gerçekte olmayan, hatta ters yönde bir ilişki öğrenir. Neden: işletmeler fiyatı rastgele değil, talebe bakarak belirler; yoğun dönemde fiyat da satış da yüksektir. İktisatta bu duruma içsellik (endojenlik) denir. Müdahalenin etkisini ölçmek için kontrollü deney (rastgele seçilmiş mağazalarda fiyat değişikliği) ya da nedensel çıkarım yöntemleri gerekir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir dondurma zinciri geçmiş iki yılın verisiyle bir model eğitiyor ve model "fiyat yükseldikçe satış artıyor" sonucunu buluyor. Bir yönetici bu yüzden fiyatları yüzde 20 artırmayı öneriyor. Bu öneri doğru mu? Ne yapılmalı?</p>
+<p><strong>Adım 1.</strong> Sorunun türünü belirle: "gelecek hafta ne kadar satılır?" bir tahmin sorusudur; "fiyatı artırırsam ne olur?" bir müdahale sorusudur. Öneri ikincisine dayanıyor.</p>
+<p><strong>Adım 2.</strong> Ortak etkeni ara: zincir fiyatı yaz aylarında, talep zaten yüksekken artırmış; kışın indirim yapmış. Sıcak hava hem fiyatı hem satışı yukarı itiyor.</p>
+<p><strong>Adım 3.</strong> Modelin ne öğrendiğini yeniden yaz: "Yüksek fiyatlı haftalar, sıcak ve kalabalık haftalardı." Bu, fiyatın talebi artırdığını değil, talebin yüksek olduğu dönemde fiyatın yükseltildiğini gösterir.</p>
+<p><strong>Adım 4.</strong> Nedensel etkiyi ölçecek yolu seç: aynı haftada, benzer hava koşullarındaki mağazalardan rastgele bir grupta fiyatı değiştir, öbür grupta değiştirme; iki grubun satış farkı fiyatın etkisini gösterir. Bu, iktisattaki talep esnekliğinin (fiyattaki yüzde değişime karşı talepteki yüzde değişim) deneysel ölçümüdür.</p>
+<p><strong>Sonuç:</strong> Öneri yanlış temele dayanıyor. Model tahmin için işe yarayabilir (yaz geldiğinde daha çok satılacağını bilir) ama fiyat kararı için deney ya da nedensel çıkarım gerekir. Burada iktisatçının asıl katkısı model kurmak değil, <strong>doğru soruyu ayırt etmektir</strong>.</p></div>
+
+<h3>Risk modelleri</h3>
+
+<p>Bankalar kredi başvurusunda müşterinin borcunu ödememe olasılığını, sigortacılar hasar olasılığını, tedarik zinciri yöneticileri bir tedarikçinin aksama olasılığını tahmin eder. Bunlar olasılık üreten sınıflandırma modelleridir (Parça 4'teki lojistik regresyon tam bu iş için doğmuştur). Risk modellerinde üç şey doğruluk kadar önemlidir.</p>
+
+<p><strong>Kalibrasyon:</strong> Model bir grup müşteriye "yüzde 10 ödememe olasılığı" diyorsa, o grubun gerçekten yaklaşık yüzde 10'u ödememeli. Fiyat (faiz oranı, prim) bu olasılığa göre konduğu için, sıralamayı doğru yapan ama olasılıkları yanlış veren bir model doğrudan para kaybettirir. <strong>Açıklanabilirlik:</strong> Reddedilen müşteriye ve denetçiye kararın gerekçesi söylenebilmelidir; bu yüzden bu alanda karar ağaçları ve regresyon gibi okunabilir modeller hâlâ yaygındır. <strong>Adalet ve düzenleme:</strong> Model, geçmiş verideki ayrımcılığı öğrenebilir (Parça 5); Parça 20'de gördüğümüz risk temelli düzenleme yaklaşımı kredi değerlendirmesi gibi kişilerin hayatını etkileyen kullanımları daha sıkı kurallara bağlar. Bu yüzden risk modelleri, istatistik ve iktisadın yanında hukuku da bilen ekiplerle kurulur.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Bu kutu kod bilenler için; atlarsan bir şey kaybetmezsin, sonucu aşağıda yorumluyoruz. Betik, bir ürünün iki yıllık haftalık satışını eğilim, mevsim ve kampanya etkisiyle <strong>yapay olarak</strong> üretiyor; ilk 78 haftayla eğitip son 26 haftada üç yöntemi kıyaslıyor; sonra kritik oranla sipariş kararı veriyor. numpy ve scikit-learn gerekir; internetten veri indirmez.</p>
+<pre class="kod" data-ad="python3 talep.py">import numpy as np
+from sklearn.linear_model import LinearRegression
+
+rng = np.random.default_rng(7)
+hafta = np.arange(104)                        # iki yil, haftalik
+kampanya = (rng.random(104) &lt; 0.2).astype(int)  # haftalarin ~%20'si kampanyali
+mevsim = np.sin(2 * np.pi * hafta / 52)
+talep = 120 + 0.5 * hafta + 25 * mevsim + 35 * kampanya + rng.normal(0, 10, 104)
+talep = np.round(talep)
+
+# Zaman sirasina gore bol: ilk 78 hafta egitim, son 26 hafta test
+egt, tst = slice(0, 78), slice(78, 104)
+
+def mae(gercek, tahmin):
+    return np.mean(np.abs(gercek - tahmin))
+
+# 1) Naif: gecen haftanin talebi
+naif = talep[77:103]
+# 2) Son 4 haftanin ortalamasi
+ort4 = np.array([talep[i - 4:i].mean() for i in range(78, 104)])
+# 3) Dogrusal regresyon: egilim + mevsim + kampanya
+X = np.column_stack([hafta, mevsim, np.cos(2 * np.pi * hafta / 52), kampanya])
+model = LinearRegression().fit(X[egt], talep[egt])
+reg = model.predict(X[tst])
+
+print("Test MAE (adet/hafta)")
+print(f"  naif (gecen hafta) : {mae(talep[tst], naif):5.1f}")
+print(f"  4 hafta ortalamasi : {mae(talep[tst], ort4):5.1f}")
+print(f"  regresyon          : {mae(talep[tst], reg):5.1f}")
+print("Kampanya etkisi (katsayi):", round(model.coef_[3], 1))
+
+# Karar: kac adet stoklayalim? Satis fiyati 10, maliyet 3, artan urun 0'a gider.
+fiyat, maliyet = 10, 3
+cu, co = fiyat - maliyet, maliyet          # eksik kalma ve fazla kalma maliyeti
+kritik = cu / (cu + co)
+artik = talep[egt] - model.predict(X[egt]) # egitimdeki hatalar
+duzelt = np.quantile(artik, kritik)
+print(f"Kritik oran: {kritik:.2f}, duzeltme: {duzelt:+.1f} adet")
+
+def kar(siparis):
+    satis = np.minimum(siparis, talep[tst])
+    return np.sum(fiyat * satis - maliyet * siparis)
+
+print("Test donemi toplam kar (TL)")
+print(f"  tahmin kadar siparis   : {kar(np.round(reg)):,.0f}")
+print(f"  kritik orana gore      : {kar(np.round(reg + duzelt)):,.0f}")</pre>
+<pre class="cikti">Test MAE (adet/hafta)
+  naif (gecen hafta) :  20.8
+  4 hafta ortalamasi :  18.9
+  regresyon          :   8.8
+Kampanya etkisi (katsayi): 35.6
+Kritik oran: 0.70, duzeltme: +3.9 adet
+Test donemi toplam kar (TL)
+  tahmin kadar siparis   : 28,099
+  kritik orana gore      : 28,469</pre>
+<p><strong>Okuma.</strong> MAE, ortalama mutlak hatadır: tahmin her hafta ortalama kaç adet şaşıyor. Regresyon iki baz çizgisinin hatasını yarıdan fazla düşürüyor, çünkü kampanya haftalarını ve mevsimi biliyor; baz çizgileri bilmiyor. Model kampanya etkisini 35,6 adet buldu; veriyi üretirken koyduğumuz gerçek değer 35'ti. Bu kez etkiyi doğru bulabildi, çünkü bu yapay veride kampanyalar <em>rastgele</em> seçildi; gerçek hayatta kampanya da talebe bakılarak seçildiyse örnek 3'teki tuzak burada da kurulur. Son iki satır: kritik oran 0,70 olduğu için sipariş, tahminin biraz üstüne (+3,9 adet) çekildi ve test döneminde kâr 370 TL arttı. Fark küçük, çünkü tahmin hatası zaten küçük; aynı deneyi 200 farklı rastgele tohumla tekrarladığımızda düzeltme 200 denemenin yüzde 78'inde kârı artırdı, hepsinde değil. Örnek Python 3.13 ve scikit-learn 1.9 ile çalıştırıldı; içinde sabit tohum olduğu için aynı sürümlerde sayılar aynı çıkmalıdır.</p></div>
+
+<h2 class="s">Kişisel öğrenme yolu</h2>
+
+<p>Kaynak bolluğu, bu alana girmenin en büyük engellerinden biridir: yüzlerce kurs, video ve kitap var ve hepsi "en iyi başlangıç" olduğunu söylüyor. Kaynak seçmeden önce bir yol seçmek, kaynakları o yola göre dizmeni sağlar.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Dört basamaklı yol: kullan, anla, kur, paylaş.</strong></p>
+<p><strong>1. Kullan:</strong> Hazır araçları kendi işinde kullan; bir sohbet modeliyle gerçek bir işini yap, sonucunu Parça 14'teki alışkanlıklarla denetle. Amaç, neyin işe yarayıp neyin yaramadığını kendi gözünle görmek.</p>
+<p><strong>2. Anla:</strong> Bu rafın düzeyinde sezgiyi kur; sonra bir video serisiyle aynı fikirleri görsel olarak pekiştir.</p>
+<p><strong>3. Kur:</strong> Python öğren ve tablo verisinde küçük modeller kur; her birini bir baz çizgisiyle kıyasla. Takıldığın yerde gereken matematiği o anda öğren.</p>
+<p><strong>4. Paylaş:</strong> Her bitirdiğin işi başkasının okuyabileceği biçimde yaz ve yayımla. Paylaşılmamış öğrenme, başkası için görünmezdir.</p>
+<p>Neden bu sıra: her basamak bir sonrakine soru üretir. Kullanırken "neden yanıldı?" diye merak edersin, anlarken "kendim yapabilir miyim?" diye, kurarken "bunu kime gösterebilirim?" diye.</p></div>
+
+<p>YZ'yi kullanan bir kariyer hedefliyorsan ilk iki basamak ve üçüncünün tablo verisi kısmı çoğu zaman yeter; asıl yatırımın kendi alanındadır. Geliştiren tarafa gitmek istiyorsan üçüncü basamak uzar: derin öğrenmeyi kodla kurmak, doğrusal cebir ve olasılığı hesap düzeyinde öğrenmek, yazılım alışkanlıkları edinmek gerekir.</p>
+
+<h3>Bilinen ücretsiz kaynaklar (14 Ekim 2026 itibarıyla)</h3>
+
+<p>Aşağıdaki kaynakların erişimi bu parçanın yazıldığı gün kendi sayfalarından ya da güvenilir ikincil kaynaklardan kontrol edildi. Erişim koşulları, özellikle kurs platformlarında, sık değişir; başlamadan önce sayfasına yeniden bak.</p>
+
+<div class="tablo"><table>
+<tr><th>Kaynak</th><th>Ne öğretir?</th><th>Ön koşul</th><th>Erişim ve güncellik</th></tr>
+<tr><td>3Blue1Brown, sinir ağı ("Deep Learning") serisi</td><td>Sinir ağı, gradyan inişi, geri yayılım; sonraki bölümlerde GPT, dikkat ve dil modellerinin bilgiyi nasıl tuttuğu. Görsel, sezgisel.</td><td>Yok; lise matematiği yeter.</td><td>YouTube'da ve yazarın sitesinde açık. İlk bölümler 2017'den; transformer bölümleri 2024'te eklendi (5. bölüm 1 Nisan, 7. bölüm 31 Ağustos 2024).</td></tr>
+<tr><td>Andrej Karpathy, "Neural Networks: Zero to Hero"</td><td>Geri yayılımı sıfırdan yazmaktan (micrograd) karakter düzeyinde dil modeline, oradan küçük bir GPT'ye ve tokenleştiriciye uzanan 8 ders; her şey kodla.</td><td>Sağlam Python ve temel türev bilgisi.</td><td>Dersler YouTube'da, defterler GitHub'da MIT lisansıyla. Sayfa diziyi "devam ediyor" olarak gösteriyor; ders tarihleri sayfada yazmıyor.</td></tr>
+<tr><td>fast.ai, "Practical Deep Learning for Coders"</td><td>Yukarıdan aşağıya yaklaşım: önce çalışan model, sonra içi. Görüntü, metin, tablo verisi, öneri sistemleri, rastgele orman, modeli yayına alma.</td><td>Yaklaşık bir yıllık kod deneyimi (tercihen Python) ve lise matematiği.</td><td>Sayfa kursu "ücretsiz" diye tanımlıyor. Güncel sürüm 2022 tarihli 1. bölüm: yaklaşık 90'ar dakikalık 9 ders. Daha ileri 2. bölüm 30 saati aşıyor.</td></tr>
+<tr><td>Andrew Ng'nin dersleri</td><td>Machine Learning Specialization: denetimli ve denetimsiz öğrenmenin temelleri, Python ile; Stanford CS229 (2018): aynı konunun matematik ağırlıklı üniversite dersi.</td><td>Specialization için temel Python ve lise matematiği; CS229 için doğrusal cebir ve olasılık.</td><td>Specialization, DeepLearning.AI ile Stanford'un Coursera'daki 3 kursluk programı (Temmuz 2022'de yenilendi). Coursera 2025'te ücretsiz "denetleme" seçeneğini kaldırıp yerine çoğu kursta yalnız ilk modülü açan bir önizleme koydu; mali yardım başvurusu sürüyor. CS229'un 20 dersi Stanford Online'ın YouTube kanalında.</td></tr>
+<tr><td>BTK Akademi (Türkçe)</td><td>Bilgi Teknolojileri ve İletişim Kurumu'nun çevrim içi eğitim portalı; makine öğrenmesinin matematiksel temelleri, bilgisayarlı görü, dil modelleri gibi başlıklar.</td><td>Kursa göre değişir.</td><td>Ücretsiz ve sertifikalı; Ocak 2026'da 18'i yapay zekâ üzerine 23 yeni eğitim eklendiği duyuruldu.</td></tr>
+</table></div>
+
+<p>Bu kaynaklar birbirinin rakibi değil, farklı basamaklara oturur. Sıfırdan başlıyorsan 3Blue1Brown'un ilk bölümleri ikinci basamağa (anla) oturur; bu rafın Parça 6, 7 ve 10'uyla aynı fikirleri görsel olarak verir. Andrew Ng'nin programı ya da fast.ai üçüncü basamağın (kur) başlangıcıdır: Ng temelden yukarı, fast.ai yukarıdan aşağı ilerler; hangisinin sana uyduğunu ilk iki dersinde anlarsın. Karpathy'nin dizisi geliştiren tarafa geçmek isteyenler içindir; Python'a rahat değilsen bekletmen daha iyi olur. Türkçe ve sertifikalı bir başlangıç istiyorsan BTK Akademi bir seçenektir; kurs kalitesi derse göre değişeceği için ilk dersin içeriğine bakıp karar ver.</p>
+
+<h2 class="s">Küçük projelerle portfolyo</h2>
+
+<p>İşe alımda "ne biliyorsun?" sorusunun en inandırıcı cevabı, yaptığın işin kendisidir. Sertifika bir kursu bitirdiğini gösterir; proje, bir problemi baştan sona çözebildiğini gösterir. Portfolyo, bu projelerin herkesin görebileceği bir yerde (örneğin bir kod deposunda) açıklamalarıyla durduğu derlemedir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İyi portfolyo projesinin beş parçası:</strong> (1) gerçek ya da gerçekçi bir <strong>soru</strong> ve bu sorunun kime neden önemli olduğu; (2) <strong>verinin</strong> nereden geldiği ve nasıl temizlendiği; (3) bir <strong>baz çizgisi</strong> ve onunla dürüst kıyas; (4) doğru <strong>ölçüt</strong> ve doğru bölme (zaman serisinde zamana göre); (5) sonucun <strong>sınırları</strong>: model nerede yanılıyor, neyi bilmiyor. Neden: bu beş parça, bir işverenin senden gerçekte bekleyeceği beş işi gösterir. Yalnız yüksek bir doğruluk rakamı gösteren proje, Parça 5'teki bütün tuzaklara düşmüş olabilir.</p></div>
+
+<p>Bu parçadaki kesişim alanları, tam da bu tür projeler için iyi konulardır. Kamuya açık bir satış ya da enerji tüketimi verisiyle bir talep tahmini yapıp üç baz çizgisiyle kıyaslamak; tahminin üstüne bir gazete bayisi kararı eklemek; açık bir kredi verisinde lojistik regresyon ile karar ağacını kalibrasyon ve açıklanabilirlik bakımından karşılaştırmak; bir fabrika üretim planını küçük bir doğrusal programla çözmek; kendi belgelerinle küçük bir RAG uygulaması kurup cevaplarını elle değerlendirmek (Parça 16). Her biri birkaç haftada bitebilecek büyüklüktedir ve her biri bir alan bilgisini bir YZ yöntemiyle birleştirir; YZ'yi kullanan bir kariyer için en ikna edici proje türü de budur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kurs projesini kopyalayıp portfolyo saymak.</strong> Herkesin yaptığı hazır veri kümeleri (çiçek türleri, Titanic yolcuları, el yazısı rakamlar) üzerinde, kursun adımlarını aynen izleyen bir proje öğrenmek için iyidir ama göstermek için zayıftır: binlerce aynısı vardır ve senin karar verdiğin hiçbir yer yoktur. Doğrusu: soruyu kendin seç, veriyi kendin bul ve temizle, kararlarını ve başarısızlıklarını da yaz. "Önce şunu denedim, işe yaramadı, çünkü…" cümlesi, yüksek bir doğruluk rakamından daha çok şey anlatır.</p>
+<p><strong>Karmaşık modeli otomatik olarak daha iyi saymak.</strong> Bir derin ağın basit bir regresyonu geçemediği proje başarısız değildir; dürüstçe raporlandıysa, M4 yarışmasının dersini kendi verinde bulmuş olursun. Başarısız sayılması gereken, kıyas yapılmamış projedir.</p></div>
+
+<p>Son bir not: YZ ile kod yazmak (Parça 17) bu projeleri hızlandırır, ama portfolyonun değeri, ortaya çıkan her satırı anlayıp savunabilmendedir. Bir görüşmede "bu bölümü neden böyle yaptın?" sorusuna cevap veremediğin bir proje, yokmuş gibi sayılır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2, 4 ve 5'e:</strong> Talep tahmininde zaman sırasına göre bölme Parça 2'deki eğitim–test ayrımının ve Parça 5'teki veri sızıntısının uygulamasıdır; baz çizgisi kuralı ve "basit model ne zaman kazanır" sorusu Parça 4'ten, kalibrasyon ve adalet Parça 5'ten gelir.</p>
+<p><strong>Parça 3'e:</strong> Gazete bayisi kararı, tahminin bir sayı değil bir olasılık dağılımı olduğu fikrinin parasal karşılığıdır.</p>
+<p><strong>Parça 15–17'ye:</strong> YZ uygulama mühendisinin günlük araçları istem, RAG, araçlar ve kod asistanlarıdır; portfolyodaki RAG projesi Parça 16'nın uygulamasıdır.</p>
+<p><strong>Parça 18–20'ye:</strong> YZ güvenliği rolünün iki anlamı Parça 18 ve 19'a, risk modellerindeki düzenleme ve rollerin ekonomisi Parça 20'ye dayanır.</p>
+<p><strong>Öbür raflara:</strong> Kod rafını okuduysan Python, Git ve test alışkanlıkları doğrudan üçüncü basamağa taşınır; siber rafı, YZ güvenliği rolünün güvenlik yarısının temelidir. Talep esnekliği, içsellik ve risk fiyatlaması iktisat ve finans konularıyla aynı kavramlardır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>"YZ'yi kullanan" ve "YZ'yi geliştiren" kariyer ailelerini ayıran şey nedir? Her birine bir örnek ver.</summary><p>Kullanan kariyerde asıl iş başka bir alandadır ve değer alan bilgisinden gelir; YZ bu değeri çoğaltan bir araçtır, örneğin tahmin modellerini stok kararına bağlayan bir tedarik zinciri planlamacısı. Geliştiren kariyerde asıl iş modelleri, verileri ve sistemleri kurmak ve işletmektir; değer yöntem ve mühendislik bilgisinden gelir, örneğin modeli ürün içinde çalıştıran bir makine öğrenmesi mühendisi.</p></details>
+<details><summary>Bir iş ilanında rolü anlamak için unvan yerine nelere bakarsın?</summary><p>Görev fiillerine (geliştirmek, işletmek, araştırmak, sunmak), verinin türüne (tablo, görüntü, metin) ve çıktının kime gittiğine (iş birimi, ürün, makale) bakarım. Unvanlar şirketler arasında tutarsızdır; rolü bu üçü belirler.</p></details>
+<details><summary>Zaman serisi tahmininde veriyi neden rastgele bölmemelisin?</summary><p>Rastgele bölmede model, sınandığı dönemin hem öncesini hem sonrasını görmüş olur; bu bir veri sızıntısıdır ve gerçekte asla elde edilemeyecek bir başarı gösterir. Doğrusu, eski dönemle eğitip yeni dönemle sınamaktır, çünkü gerçek kullanımda gelecek hep bilinmez.</p></details>
+<details><summary>Gazete bayisi probleminde kritik oran nedir ve neden "en doğru tahmin" ile "en kârlı sipariş" farklı olabilir?</summary><p>Kritik oran, eksik kalma birim maliyetinin eksik ve fazla kalma birim maliyetlerinin toplamına oranıdır; en iyi sipariş, talebin altında kalma olasılığını bu orana eşitleyen miktardır. Eksik kalmak daha pahalıysa sipariş tahminin ortalamasının üstüne, fazla kalmak daha pahalıysa altına kayar; yani karar, tahminin yanında maliyet yapısına da bağlıdır.</p></details>
+<details><summary>Geçmiş veride "fiyat yüksekken satış da yüksek" görünüyorsa neden fiyatı artırmak satışı artırmayabilir?</summary><p>Çünkü fiyatı ve satışı birlikte etkileyen bir üçüncü etken (mevsim, talep artışı) olabilir; işletme fiyatı talebe bakarak belirlediği için yüksek fiyat yoğun dönemlere denk gelir. Model birlikte görülmeyi öğrenir, müdahalenin etkisini değil. Fiyat değişikliğinin etkisi kontrollü deney ya da nedensel çıkarımla ölçülür.</p></details>
+<details><summary>Risk modellerinde doğruluk dışında hangi üç özellik önemlidir?</summary><p>Kalibrasyon (modelin verdiği olasılıkların gerçekleşen oranlara uyması, çünkü fiyat bu olasılığa göre konur), açıklanabilirlik (karar gerekçesinin müşteriye ve denetçiye söylenebilmesi) ve adalet ile düzenlemeye uygunluk (geçmiş verideki ayrımcılığın öğrenilmemesi, yüksek riskli kullanımlara konan kurallar).</p></details>
+<details><summary>İyi bir portfolyo projesinin beş parçası nelerdir?</summary><p>Kime neden önemli olduğu belli bir soru; verinin kaynağı ve temizliği; bir baz çizgisi ve dürüst kıyas; doğru ölçüt ve doğru bölme; sonucun sınırlarının, modelin nerede yanıldığının açıkça yazılması.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Raf:</strong> Parça 1–14 "nasıl çalışır" (geliştirenin iç düzeni), 15–20 "nasıl kullanılır, ne risk taşır, kim düzenler" (kullananın dış düzeni).</li>
+<li><strong>İki aile:</strong> YZ'yi kullanan (değer alan bilgisinden) ve YZ'yi geliştiren (değer yöntem ve mühendislikten); arası geniş bir yelpaze.</li>
+<li><strong>Roller:</strong> veri bilimci, ML mühendisi, YZ uygulama mühendisi, MLOps, araştırmacı, YZ ürün yöneticisi, YZ güvenliği (güvenlik ve hizalama). Unvana değil görev fiillerine, veri türüne, çıktının kime gittiğine bak.</li>
+<li><strong>ABD verisi (BLS, Ağustos 2026):</strong> veri bilimci medyan 120.230 $ (Mayıs 2025), 2025–35 için +%35 öngörü. Türkiye için güvenilir rakam bulunmadı.</li>
+<li><strong>Temel bilgi:</strong> istatistik → ölçmek ve belirsizlik; doğrusal cebir → vektör ve matris; türev → eğitim; Python ve veri işleme → işin çoğu; alan bilgisi → doğru soru. Matematiği ihtiyaç anında öğren, ama atlama.</li>
+<li><strong>Talep tahmini:</strong> önce baz çizgisi; zamana göre böl. M4'te istatistik birleşimleri, M5'te (Walmart, zengin veri) ML öne çıktı.</li>
+<li><strong>Tahmin ≠ karar:</strong> ML dağılımı verir, optimizasyon kararı. Kritik oran = c<sub>u</sub> ÷ (c<sub>u</sub> + c<sub>o</sub>).</li>
+<li><strong>Fiyatlama:</strong> korelasyon müdahalenin etkisini söylemez; deney ya da nedensel çıkarım gerekir (içsellik).</li>
+<li><strong>Risk:</strong> kalibrasyon, açıklanabilirlik, adalet ve düzenleme.</li>
+<li><strong>Yol:</strong> kullan → anla → kur → paylaş. Kaynaklar: 3Blue1Brown, Karpathy, fast.ai, Andrew Ng, BTK Akademi; erişim koşulları değişir.</li>
+<li><strong>Portfolyo:</strong> soru, veri, baz çizgisi, doğru ölçüt, sınırlar. Kopya kurs projesi ve kıyassız karmaşık model zayıftır.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-21">
+<h3>Quiz 21</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Aşağıdakilerden hangisi "YZ'yi geliştiren" kariyer ailesine en açık örnektir?</p>
+<ul class="sec"><li>Sözleşme taslaklarını bir sohbet modeline özetleten avukat</li><li>Stok kararlarında hazır bir tahmin aracının çıktısını kullanan planlamacı</li><li>Bir şirketin ürünündeki modeli eğitip yeniden eğitim düzenini kuran makine öğrenmesi mühendisi</li><li>Kampanya metinlerini bir yazı aracıyla hazırlayan pazarlamacı</li><li>Hasta raporlarını bir modelle sınıflandıran sistemin sonuçlarını okuyan hekim</li></ul>
+<div class="coz"><p>Geliştiren kariyerde asıl iş modelleri, verileri ve onları çalıştıran sistemleri kurmak, eğitmek ve işletmektir; C tam olarak bunu anlatıyor. A, B, D ve E'deki kişilerin asıl işi hukuk, planlama, pazarlama ve hekimliktir; YZ'yi işlerini daha iyi yapmak için bir araç olarak kullanırlar ve değerleri alan bilgilerinden gelir. Bu soru, "YZ ile çalışmak" ile "YZ geliştirmek" arasındaki farkı yokluyor.</p></div></li>
+
+<li data-c="A"><p class="q">Bir modelin eğitimden canlı kullanıma geçişini, sürümlenmesini, performansının izlenmesini ve veri değiştikçe yeniden eğitilmesini otomatikleştiren rol aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>MLOps mühendisi</li><li>YZ ürün yöneticisi</li><li>Araştırmacı</li><li>Veri bilimci</li><li>YZ kullanan alan uzmanı</li></ul>
+<div class="coz"><p>Tarif edilen iş, modelin yaşam döngüsünü işletmektir; bu MLOps'un tanımıdır. Ürün yöneticisi (B) hangi sorunun çözüleceğine ve başarının nasıl ölçüleceğine karar verir, altyapıyı kurmaz. Araştırmacı (C) yeni yöntem önerir. Veri bilimci (D) veriden soru cevaplar ve model kurar; küçük şirketlerde izlemeyi de üstlenebilir ama otomasyonu ve altyapıyı işin merkezine koyan rol MLOps'tur. E modeli kullanır, işletmez.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki eşleştirmelerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Olasılık ve istatistik → bir model farkının şanstan mı geldiğini yorumlamak</li><li>Doğrusal cebir → gömme vektörleri ve bir katmanın matris hesabı</li><li>Türev ve eğim → gradyan inişi ve geri yayılım</li><li>Veri işleme (SQL, tablolar) → veriyi bulmak, birleştirmek ve temizlemek</li><li>Alan bilgisi → modelin parametre sayısını hesaplamak</li></ul>
+<div class="coz"><p>Alan bilgisi doğru soruyu seçmeye, maliyeti bilmeye ve sonucun işe yarayıp yaramadığına karar vermeye yarar; parametre sayısını hesaplamak ise ağın yapısına dayanan teknik bir hesaptır (Parça 6). A, B, C ve D doğru eşleştirmelerdir: istatistik belirsizliği okumayı, doğrusal cebir vektör ve matris düşüncesini, türev eğitimin mekanizmasını, veri işleme de işin en büyük bölümünü sağlar.</p></div></li>
+
+<li data-c="B"><p class="q">Bir zincirin iki yıllık haftalık satış verisiyle gelecek haftaları tahmin eden bir modeli sınamanın en doğru yolu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bütün haftaları karıştırıp rastgele yüzde 75'iyle eğitmek, kalanıyla sınamak</li><li>İlk 78 haftayla eğitip son 26 haftada sınamak ve sonucu "geçen haftanın satışı" gibi basit bir baz çizgisiyle kıyaslamak</li><li>Bütün veriyle eğitip yine bütün veride hatayı ölçmek</li><li>Yalnız kampanya haftalarıyla eğitip kampanyasız haftalarda sınamak</li><li>Son 26 haftayla eğitip ilk 78 haftada sınamak</li></ul>
+<div class="coz"><p>Zaman serisinde eski dönemle eğitilir, yeni dönemle sınanır; çünkü gerçek kullanımda gelecek bilinmez. Baz çizgisi de modelin karmaşıklığına değip değmediğini gösterir. A'da model sınandığı haftaların öncesini ve sonrasını görür; bu bir veri sızıntısıdır. C, modeli gördüğü veriyle ölçer ve ezberi başarı sanar. D'de eğitim ve test farklı türde haftalardan oluşur. E zamanı ters çevirir: model gelecekle eğitilip geçmişi tahmin eder.</p></div></li>
+
+<li data-c="D"><p class="q">Bir ürünün eksik kalma birim maliyeti 4 TL, fazla kalma birim maliyeti 6 TL'dir. Talep tahmini ortalaması 500 adet olan simetrik bir dağılımdır. Gazete bayisi mantığıyla en iyi sipariş için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Kritik oran 0,6'dır; sipariş 500'ün üstünde olmalıdır.</li><li>Kritik oran 0,4'tür; sipariş 500'ün üstünde olmalıdır.</li><li>Kritik oran 0,5'tir; sipariş tam 500 olmalıdır.</li><li>Kritik oran 0,4'tür; sipariş 500'ün altında olmalıdır.</li><li>Kritik oran 0,6'dır; sipariş 500'ün altında olmalıdır.</li></ul>
+<div class="coz"><p>Kritik oran = c<sub>u</sub> ÷ (c<sub>u</sub> + c<sub>o</sub>) = 4 ÷ (4 + 6) = 0,4. En iyi sipariş, talebin altında kalma olasılığının 0,4 olduğu noktadır; simetrik dağılımda ortalamanın altında olasılık 0,5 olduğu için bu nokta ortalamanın altındadır. Sezgisi: fazla kalmak eksik kalmaktan pahalı, o yüzden temkinli sipariş verilir. A ve E oranı ters kurar (6 ÷ 10); B oranı doğru bulup yönü karıştırır; C maliyetlerin eşit olduğu durumun cevabıdır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir talep tahmin modeli "gelecek hafta yaklaşık 200 adet satılır" diyor. Bu bilginin sipariş kararına dönüşmesi için ek olarak <strong>en çok</strong> neye ihtiyaç vardır?</p>
+<ul class="sec"><li>Tahminin belirsizliğine (dağılımına) ve eksik ile fazla kalmanın maliyetlerine</li><li>Modelin daha fazla katmanlı bir sinir ağıyla yeniden eğitilmesine</li><li>Tahminin bir sohbet modeline özetletilmesine</li><li>Geçen yılın satış ortalamasının tahminle değiştirilmesine</li><li>Modelin kaç parametresi olduğunun bilinmesine</li></ul>
+<div class="coz"><p>Tahmin "ne olacak?" sorusunu, optimizasyon "ne yapmalı?" sorusunu cevaplar. Kararı vermek için tahminin yalnız ortalaması değil dağılımı ve eksik kalma ile fazla kalmanın maliyet yapısı gerekir; kritik oran bu ikisini birleştirir. B tahmini belki iyileştirir ama karar sorununu çözmez. C, D ve E kararla ilgili hiçbir bilgi eklemez. Bu soru "tahmin, karar değildir" fikrini yokluyor.</p></div></li>
+
+<li data-c="C"><p class="q">Bir zincirin verisinde fiyatın yüksek olduğu haftalarda satışlar da yüksek. Fiyat, yoğun sezonda yükseltilmiş. Fiyatı artırmanın satışa etkisini öğrenmek için en uygun yol aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Fiyat ile satış arasındaki korelasyonu hesaplayıp etkiyi o saymak</li><li>Daha büyük bir makine öğrenmesi modeliyle aynı veriden fiyat–satış ilişkisini öğrenmek</li><li>Benzer koşullardaki mağazalardan rastgele seçilen bir grupta fiyatı değiştirip öbür grupla kıyaslamak</li><li>Yalnız yoğun sezon haftalarının verisine bakmak</li><li>Fiyatı bütün mağazalarda aynı anda artırıp geçen yılın aynı haftasıyla kıyaslamak</li></ul>
+<div class="coz"><p>Fiyatı ve satışı birlikte etkileyen bir etken (sezon) var; bu yüzden geçmiş veri müdahalenin etkisini söylemez. Rastgele grup deneyi bu etkeni iki grupta eşitler ve farkı fiyata bağlar. A ve B aynı karışık ilişkiyi öğrenir; model büyüdükçe yanılgı düzelmez. D ortak etkeni kısmen sabitler ama fiyat yine talebe bakarak konmuş olabilir. E'de geçen yıldan bu yıla değişen her şey (ekonomi, hava, rakip) fiyat etkisine karışır.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki portfolyo projelerinden hangisi bir işverene <strong>en çok</strong> şey gösterir?</p>
+<ul class="sec"><li>Bir kursun Titanic yolcu verisi projesini adımlarıyla aynen tekrar eden bir defter</li><li>Yalnız "doğruluk yüzde 99" sonucunu gösteren, verisi ve bölme yöntemi belirtilmemiş bir proje</li><li>Beş farklı kursun bitirme sertifikalarından oluşan bir liste</li><li>En büyük sinir ağıyla kurulmuş ama hiçbir basit yöntemle kıyaslanmamış bir proje</li><li>Kamuya açık bir enerji tüketimi verisiyle zamana göre bölünmüş, üç baz çizgisiyle kıyaslanmış ve modelin hangi günlerde yanıldığını tartışan bir tahmin projesi</li></ul>
+<div class="coz"><p>E, iyi portfolyo projesinin beş parçasını taşıyor: gerçekçi soru, belirtilmiş veri, baz çizgisiyle kıyas, doğru bölme ve sonucun sınırları. A, kişinin karar verdiği hiçbir yer içermeyen bir kopyadır. B'deki tek rakam dengesiz veri ya da sızıntı tuzağına düşmüş olabilir (Parça 5). C kurs bitirildiğini gösterir, problem çözüldüğünü göstermez. D'de karmaşıklığın bir değeri olup olmadığı bilinmiyor.</p></div></li>
+
+<li data-c="B" data-k="yz-8"><p class="q">Evrişimli bir ağda havuzlama (pooling) katmanının temel işlevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Görüntüye yeni renkler eklemek</li><li>Komşu değerleri tek bir değerde özetleyerek görüntü haritasını küçültmek ve küçük kaymalara karşı dayanıklılık sağlamak</li><li>Her pikseli ayrı bir sınıfa atamak</li><li>Ağın ağırlıklarını rastgele sıfırlamak</li><li>Metni token'lara bölmek</li></ul>
+<div class="coz"><p>Havuzlama, küçük bir penceredeki değerleri (örneğin en büyüğünü alarak) tek değerde özetler; böylece harita küçülür, hesap azalır ve bir özelliğin bir iki piksel kayması sonucu pek değiştirmez. A anlamsızdır. C bir görüntü bölütleme işinin tarifidir, havuzlamanın değil. D, ağırlıkları değil nöronları eğitimde rastgele kapatan dropout'u çağrıştıran bir çeldiricidir. E dil modellerinin tokenleştirmesidir.</p></div></li>
+
+<li data-c="D" data-k="yz-9"><p class="q">Kelime gömmeleri (word2vec gibi) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelimeyi yalnız bir konumu 1, gerisi 0 olan bir vektörle gösterir.</li><li>Kelimelerin anlamını bir sözlükten kopyalayarak öğrenir.</li><li>Eğitildikleri metinlerdeki toplumsal yanlılıkları öğrenmezler.</li><li>Anlamca yakın kelimeleri uzayda birbirine yakın vektörlerle temsil eder; "kral − erkek + kadın ≈ kraliçe" gibi örnekler bu yapının abartılmaması gereken bir göstergesidir.</li><li>Metni kelime kelime okuyup bir hafıza taşıyan bir ağdır.</li></ul>
+<div class="coz"><p>Gömmeler, benzer bağlamlarda geçen kelimeleri yakın vektörlere yerleştirir; ünlü vektör aritmetiği örneği bu yapıyı gösterir ama her ilişkide böyle temiz çalışmaz. A tek sıcak gösterimin tarifidir. B yanlış: gömmeler metindeki birlikte geçmelerden öğrenilir. C yanlış: gömmeler metindeki yanlılığı da öğrenir. E tekrarlayan ağların (RNN, LSTM) tarifidir.</p></div></li>
+
+<li data-c="A" data-k="yz-10"><p class="q">Transformer'a konum bilgisi neden eklenir?</p>
+<ul class="sec"><li>Dikkat hesabı tek başına kelimelerin sırasını görmediği için, "iki yüz" ile "yüz iki"yi ayırabilmek</li><li>Modelin parametre sayısını azaltmak</li><li>Eğitimi sıralı hâle getirip yavaşlatmak</li><li>Metni token'lara bölmek</li><li>Modelin internetteki güncel bilgiye erişmesini sağlamak</li></ul>
+<div class="coz"><p>Dikkat puanları yalnız sorgu ve anahtar vektörlerine bağlıdır; kelimelerin yerini değiştirmek her kelimenin hesabını değiştirmez. Sıra bilgisini korumak için her kelimenin vektörüne konumunu kodlayan bir vektör eklenir. B, C, D ve E konum bilgisinin işlevi değildir; özellikle C tersini söyler, transformer'ın gücü paralel işlemesidir.</p></div></li>
+
+<li data-c="C" data-k="yz-11"><p class="q">Bir dil modelinde sıcaklık (temperature) değerini düşürmenin etkisi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bağlam penceresi büyür.</li><li>Modelin eğitim verisi güncellenir.</li><li>Olasılığı yüksek token'lar daha baskın seçilir, cevaplar daha tutarlı ve daha az çeşitli olur.</li><li>Model her seferinde daha uzun cevap üretir.</li><li>Türkçe metinler daha az token'a bölünür.</li></ul>
+<div class="coz"><p>Sıcaklık, sonraki token olasılık dağılımının ne kadar "keskin" kullanılacağını ayarlar; düşük sıcaklıkta en olası adaylar daha da baskın olur ve aynı soruya verilen cevaplar birbirine yaklaşır. A, B ve E başka kavramlardır (bağlam penceresi, eğitim, tokenleştirme). D'de uzunluk sıcaklıkla doğrudan ayarlanmaz.</p></div></li>
+
+<li data-c="B" data-k="yz-12"><p class="q">"Chinchilla" çalışmasının (2022) ölçekleme yasalarına katkısı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Veri miktarının sonucu hiç etkilemediğini gösterdi.</li><li>Belli bir hesap bütçesinde parametre sayısı ile eğitim verisi miktarının dengeli büyütülmesi gerektiğini öne sürdü.</li><li>Yalnız parametre sayısını artırmanın her zaman en verimli yol olduğunu kanıtladı.</li><li>Ölçeklemenin kaybı artırdığını gösterdi.</li><li>Dil modellerinin RNN ile eğitilmesi gerektiğini savundu.</li></ul>
+<div class="coz"><p>Chinchilla çalışması, aynı hesap bütçesiyle daha küçük ama çok daha fazla veriyle eğitilmiş bir modelin daha iyi sonuç verebileceğini gösterdi; yani parametre ile veri birlikte, dengeli büyütülmeli. A ve C bu dengeyi ters yönlerden yok sayar. D ölçekleme yasalarının özüne aykırıdır: kaynak arttıkça kayıp öngörülebilir biçimde düşer. E konuyla ilgisizdir.</p></div></li>
+
+<li data-c="E" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli"nin işi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İnternetten yeni eğitim metni toplamak</li><li>Kullanıcının parolasını doğrulamak</li><li>Metni token'lara bölmek</li><li>Modelin bağlam penceresini genişletmek</li><li>İnsanların iki cevaptan hangisini tercih ettiğinden öğrenerek bir cevaba puan vermek ve dil modelinin bu puana göre ayarlanmasını sağlamak</li></ul>
+<div class="coz"><p>RLHF'de insanlar cevap çiftlerini karşılaştırır; bu tercihlerden bir ödül modeli eğitilir ve dil modeli bu modelin verdiği puanı artıracak yönde ayarlanır. A ön eğitimin veri toplama işine, C tokenleştirmeye, D bağlam penceresine ait; B tamamen ilgisizdir.</p></div></li>
+
+<li data-c="D" data-k="yz-14"><p class="q">Dil modellerinin halüsinasyon üretmesinin temel nedeni aşağıdakilerden hangisiyle en iyi açıklanır?</p>
+<ul class="sec"><li>Modellerin bilerek yalan söyleyecek biçimde programlanması</li><li>Ekran kartlarının hesap hatası yapması</li><li>Modellerin hiçbir eğitim verisi görmemiş olması</li><li>Modelin olası görünen metni üretmesi ve olası metnin her zaman doğru metin olmaması</li><li>Kullanıcıların soruyu hep yanlış yazması</li></ul>
+<div class="coz"><p>Model, eğitimde gördüğü kalıplara göre en olası devamı üretir; bilmediği yerde de akıcı ve kendinden emin bir devam üretebilir, çünkü "olası" ile "doğru" aynı şey değildir. A modele niyet yükler. B gerçek bir neden değildir. C yanlış: modeller çok büyük metinlerle eğitilir. E, kullanıcı hatasını genel nedene çevirir.</p></div></li>
+
+<li data-c="A" data-k="yz-15"><p class="q">İstemde "few-shot" (örnekli) yaklaşım ne demektir?</p>
+<ul class="sec"><li>İstenen işin birkaç çözülmüş örneğini isteme ekleyerek modele beklenen biçimi göstermek</li><li>Modeli birkaç dakikada yeniden eğitmek</li><li>Aynı soruyu birkaç farklı modele sormak</li><li>İstemi birkaç kelimeyle sınırlamak</li><li>Modelin cevabını birkaç kez reddetmek</li></ul>
+<div class="coz"><p>Örnekli istem, girdi ve beklenen çıktı çiftlerinden birkaçını istemin içine koymaktır; model bu örneklerden biçimi ve görevi çıkarır, ağırlıkları değişmez. B ince ayarla karıştırır. C bir karşılaştırma yöntemidir. D ve E istemle ilgili ama "few-shot" kavramıyla ilgisiz çeldiricilerdir.</p></div></li>
+
+<li data-c="C" data-k="yz-16"><p class="q">RAG (bilgiyle zenginleştirilmiş üretim) yaklaşımı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Modeli şirket belgeleriyle sıfırdan yeniden eğitmektir.</li><li>API anahtarını kodun içine yazmanın güvenli bir yoludur.</li><li>Belgeleri gömme vektörlerine çevirip anlamca arama yapar ve bulunan parçaları isteme ekleyerek modelin bu bilgilerle cevap vermesini sağlar.</li><li>Modelin bağlam penceresini kalıcı olarak büyütür.</li><li>Yalnız görüntü üreten modellerde kullanılır.</li></ul>
+<div class="coz"><p>RAG'de belgeler gömme vektörlerine çevrilir, bir vektör veritabanında soruya anlamca yakın parçalar bulunur ve isteme eklenir; model eğitilmeden şirket belgelerine dayanarak cevap verir. A ince ayar ya da yeniden eğitimdir. B tehlikeli bir yanılgıdır: anahtar ortam değişkenine konur. D yanlış: pencere değişmez, yalnız içine konan seçilir. E yanlış: RAG metin üreten modellerle yaygındır.</p></div></li>
+
+<li data-c="B" data-k="yz-17"><p class="q">Bir kod asistanının yazdığı değişikliği kabul etmeden önce yapılması gereken en doğru adım aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Kod derlendiği için doğrudan ana dala eklemek</li><li>Farkı (diff) okuyup testleri çalıştırmak ve değişikliği ayrı bir dalda denemek</li><li>Kodun uzunluğuna bakıp kısa olduğu için güvenmek</li><li>Asistana "emin misin?" diye sorup "evet" cevabıyla yetinmek</li><li>Kodu çalıştırmadan, açıklamasını okuyup onaylamak</li></ul>
+<div class="coz"><p>"Çalışıyor gibi görünen" kod uydurma fonksiyon, eski söz dizimi ya da güvenlik açığı içerebilir; bu yüzden değişiklik okunur, test edilir, gerçekten çalıştırılır ve geri alınabilir bir dalda denenir. A derlenmeyi doğrulukla karıştırır. C uzunluğu güvenle karıştırır. D, modelin kendi güven beyanına dayanır; bu beyan güvenilir değildir. E çalıştırmadan onaylar.</p></div></li>
+
+<li data-c="D" data-k="yz-18"><p class="q">Bir e-posta asistanı ajanının, okuduğu bir e-postadaki gizli talimatla kullanıcının istemediği bir işi yapması hangi riske örnektir?</p>
+<ul class="sec"><li>Veri zehirleme</li><li>Aşırı öğrenme</li><li>Bilgi kesim tarihi</li><li>İstem enjeksiyonu</li><li>Yaltaklanma</li></ul>
+<div class="coz"><p>İstem enjeksiyonunda bir belge, web sayfası ya da e-postadaki talimat modele kullanıcının talimatıymış gibi görünür; araç kullanan ajanlarda bu talimat gerçek bir işe dönüşebildiği için özellikle tehlikelidir. A, eğitim verisine zararlı örnek sokmaktır; burada eğitim değil kullanım anı söz konusu. B, C ve E başka sorunlardır.</p></div></li>
+
+<li data-c="E" data-k="yz-18"><p class="q">Telefonda bir yakınının sesiyle acil para isteyen birini duyduğunda, ses klonlamalı dolandırıcılığa karşı en etkili önlem aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Sesin doğal olup olmadığını kulakla ayırt etmeye çalışmak</li><li>Arayanın numarasının tanıdık görünmesine güvenmek</li><li>Konuşmayı uzatıp aceleyle parayı göndermek</li><li>Arayana kişisel bilgilerini doğrulatmak için kimlik numaranı söylemek</li><li>Aramayı kapatıp kişiye bildiğin ikinci bir kanaldan ulaşmak ya da önceden belirlenmiş aile içi bir doğrulama sorusunu sormak</li></ul>
+<div class="coz"><p>Ses klonları kulakla ayırt edilemeyecek kadar iyi olabilir ve arayan numara taklit edilebilir; bu yüzden güveni sesten değil, bağımsız bir doğrulamadan almak gerekir: ikinci kanaldan aramak ya da önceden belirlenmiş bir parola sorusu. A ve B güvenilmez işaretlere dayanır. C dolandırıcının istediği acele davranıştır. D yeni bir bilgi sızıntısı yaratır.</p></div></li>
+
+<li data-c="A" data-k="yz-19"><p class="q">Bir tekne yarışı oyununda puanla ödüllendirilen bir ajanın yarışı bitirmek yerine aynı puan noktalarının etrafında dönüp durması hangi kavrama örnektir?</p>
+<ul class="sec"><li>Ödül hackleme: ölçülen hedefin istenen hedefin yerine geçmesi</li><li>Halüsinasyon</li><li>Transfer öğrenme</li><li>Konum kodlaması</li><li>Niceleme</li></ul>
+<div class="coz"><p>Ajan, tasarımcının istediği şeyi (yarışı kazanmak) değil, ölçülen şeyi (puan) en büyük yaptı; bu, ödül hacklemenin ve Parça 5'teki Goodhart yasasının hizalamadaki karşılığıdır. B dil modellerinin uydurmasıdır. C, D ve E bu davranışla ilgisiz teknik kavramlardır.</p></div></li>
+
+<li data-c="C" data-k="yz-19"><p class="q">Yorumlanabilirlik (interpretability) alanının amacı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin cevaplarını daha kısa yazdırmak</li><li>Modeli farklı dillere çevirmek</li><li>Modelin içinde hangi kavramların nasıl temsil edildiğini ve bir çıktıya hangi iç hesapla ulaşıldığını anlamaya çalışmak</li><li>Modelin eğitim maliyetini düşürmek</li><li>Modelin bağlam penceresini büyütmek</li></ul>
+<div class="coz"><p>Yorumlanabilirlik, kara kutu sayılan ağın içine bakıp temsilleri ve hesap yollarını anlamaya çalışan alandır; hizalamada, modelin gerçekten ne öğrendiğini dışarıdan davranıştan daha derin görmek için önemlidir. A, B, D ve E başka mühendislik hedefleridir.</p></div></li>
+
+<li data-c="B" data-k="yz-20"><p class="q">YZ değer zincirinde çip tasarımı ile çip üretimi için aşağıdaki eşleştirmelerden hangisi doğrudur?</p>
+<ul class="sec"><li>Tasarım TSMC, üretim NVIDIA</li><li>Tasarım NVIDIA, üretim büyük ölçüde TSMC</li><li>Tasarım ve üretim yalnız bulut sağlayıcıları</li><li>Tasarım model laboratuvarları, üretim uygulama şirketleri</li><li>Tasarım ve üretim yalnız Avrupa'da</li></ul>
+<div class="coz"><p>Değer zincirinde NVIDIA YZ çiplerini tasarlar, ileri çiplerin üretimi büyük ölçüde TSMC'de yapılır; bu ayrışma tedarik darboğazının ve ihracat kontrollerinin konusudur. A rolleri ters çevirir. C, D ve E zincirin başka halkalarını (bulut, model laboratuvarı, uygulama) ya da yanlış bir coğrafyayı çip halkasına koyar.</p></div></li>
+
+<li data-c="D" data-k="yz-20"><p class="q">AB Yapay Zekâ Yasası'nın temel yaklaşımı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bütün YZ sistemlerini tek tip kurala bağlamak</li><li>Yalnız açık ağırlıklı modelleri yasaklamak</li><li>YZ'yi düzenlemeyi tamamen şirketlerin gönüllü kurallarına bırakmak</li><li>Sistemleri kullanımın yarattığı riske göre sınıflandırıp riskle orantılı yükümlülük koymak</li><li>Yalnız çip ihracatını sınırlamak</li></ul>
+<div class="coz"><p>AB yasası risk temellidir: kabul edilemez riskli uygulamalar yasaklanır, yüksek riskli olanlara sıkı yükümlülükler, daha düşük risklilere daha hafif kurallar (örneğin şeffaflık) konur. A bu kademeyi yok sayar. B yasanın içeriği değildir. C yasanın varlık nedenine aykırıdır. E ABD'nin ihracat kontrolleriyle karıştırır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-20">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-21">Bu bölümü okudum</button>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"data scientist vs machine learning engineer vs MLOps farkı"</li>
+  <li>"newsvendor problem critical ratio açıklama"</li>
+  <li>"demand forecasting machine learning vs statistical methods M5"</li>
+  <li>"correlation vs causation pricing experiment A/B test"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Meslek tanımı ve rakamlar (14 Ekim 2026'da kontrol edildi): ABD Çalışma İstatistikleri Bürosu (BLS) Occupational Outlook Handbook, "Data Scientists" sayfası (son güncelleme 27 Ağustos 2026): tanım, Mayıs 2025 medyan yıllık ücret 120.230 dolar, tipik giriş eğitimi lisans, 2025–35 artış öngörüsü %35. "Computer and Information Research Scientists" sayfası (aynı tarih): medyan 140.300 dolar, tipik giriş yüksek lisans, %22. Bu rakamlar ABD'ye aittir. Türkiye için saygın, tarihli bir ücret kaynağı bulamadığım için Türkiye ücreti vermedim.</li>
+  <li>Dünya Ekonomik Forumu, "Future of Jobs Report 2025" haber sayfası (9 Ocak 2025): en hızlı büyüyen ilk üç iş ve 1.000'i aşkın işverenin anketi. Raporun tam metnini açmadım.</li>
+  <li>Rol tablosundaki öbür tanımlar (ML mühendisi, YZ uygulama mühendisi, MLOps, ürün yöneticisi, YZ güvenliği) tek bir resmî tanıma dayanmıyor; alanın yaygın kullanımına göre benim özetimdir ve şirketten şirkete değişir. Şekil 1'deki çubukların konumları da kaba bir değerlendirmedir.</li>
+  <li>Kaynaklar (hepsi 14 Ekim 2026'da kontrol edildi): Karpathy'nin "Zero to Hero" sayfası (karpathy.ai) ve GitHub deposu (8 ders, ön koşullar, MIT lisansı, "devam ediyor"); derslerin yayın tarihleri sayfada yazmıyor. fast.ai kurs sayfası (course.fast.ai): "ücretsiz", 2022 sürümü, 9 ders, bir yıllık kod deneyimi, Kaggle; 2. bölüm 30 saati aşıyor. 3Blue1Brown: 5. bölüm (GPT) için yazarın 1 Nisan 2024 tarihli yazısı, 7. bölüm için 3blue1brown.com ders sayfası ve 31 Ağustos 2024 tarihli yazı; ilk bölümlerin 2017 tarihi ikincil bir kaynakçadan, 3blue1brown.com'daki konu listesine erişim kısıtı yüzünden bakamadım. Ücretsiz izlenebilirlik sayfalardaki ödeme duvarı yokluğuna dayanıyor.</li>
+  <li>Andrew Ng: Machine Learning Specialization'ın DeepLearning.AI ve Stanford ortaklığı, 3 kurs, Python ve Temmuz 2022 yenilenmesi TechRepublic (5 Temmuz 2022) ve Class Central'dan. Coursera'nın "audit" seçeneğini kaldırıp ilk modülü açan "preview" getirdiği ve mali yardımın sürdüğü Coursera'nın kendi blog yazısından (yazı tarihsiz; DeepLearning.AI topluluk forumundaki 13 Ağustos 2025 tarihli başlık bu değişikliğin 2025 ortasında olduğunu gösteriyor). DeepLearning.AI'ın kendi platformunda ücretli bir "Pro" üyelik olduğu destek sayfasından doğrulandı; hangi içeriklerin ücretsiz kaldığını resmî bir sayfada bulamadım, bu yüzden metinde yazmadım. CS229 (Güz 2018, 20 ders) Class Central kaydından.</li>
+  <li>BTK Akademi: 11 Ocak 2026 tarihli bir haber sitesinin, Ulaştırma ve Altyapı Bakanı'nın açıklamasını aktaran haberine dayanıyor (23 yeni eğitim, 18'i YZ, ücretsiz, sertifikalı). Portalın kendisini açmadım.</li>
+  <li>M4 ve M5: M5'in 42.840 seri ve Walmart verisi Makridakis, Spiliotis ve Assimakopoulos'un International Journal of Forecasting'deki makalesinin (Cilt 38, Sayı 4, 2022) özetinden; M4'te saf ML yöntemlerinin birleşim baz çizgisini geçemediği, M5'te en iyi sonuçların saf ML'den geldiği ve LightGBM'in öne çıktığı Wikipedia'nın "Makridakis Competitions" maddesinden. Makalelerin tam metnini okumadım.</li>
+  <li>Gazete bayisi modeli ve kritik oran formülü yöneylem araştırmasının standart sonucudur; hafızadan yazıldı. Çözümlü örnek 2'nin sayıları (0,667; z ≈ 0,431; 212,9) Python'un <code>statistics.NormalDist</code> sınıfıyla hesaplandı; beklenen kâr (≈1.093, ≈1.102, ≈1.088 TL) aynı dağılımdan 200.000 örnekli benzetimle hesaplandı. Quiz 5'teki 0,4 oranı da hesaplandı.</li>
+  <li>İçsellik (endojenlik), talep esnekliği, kalibrasyon ve kredi değerlendirmesinin AB düzenlemesinde yüksek riskli sayılması hafızadan yazıldı; sonuncusunu bu oturumda yasa metniyle karşılaştırmadım, metinde de yalnız "daha sıkı kurallar" dedim. Dondurma ve fırın örnekleri kurgusaldır.</li>
+  <li>İsteğe bağlı denemedeki <code>talep.py</code> bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı (Python 3.13.16, numpy 2.5.3, scikit-learn 1.9.1); çıktı birebir konuldu. Veri yapaydır ve sabit tohumla üretilir. "200 tohumun yüzde 78'inde kâr arttı" bilgisi ayrı bir betikle (aynı veri üretimi, tohum 0–199) hesaplandı. İlk denemede fiyat 10, maliyet 6 ile düzeltme bu tohumda kârı azaltmıştı (200 tohumun yüzde 58,5'inde artırıyordu); daha belirgin bir asimetri göstermek için maliyeti 3 seçtim.</li>
+  <li>Tekrar soruları kapsam listesindeki Parça 8–20 satırlarından yazıldı (Parça 18, 19, 20'den ikişer, 8–17'den birer); Parça 1–7 toplam 16 sınırı yüzünden dışarıda kaldı. Parça 11–20'nin metinleri yazım sırasında elimde değildi; terimler kapsam satırlarına göre seçildi. Tekne yarışı ödül hackleme örneği alanda yaygın anılan bir örnektir, hafızadan yazıldı.</li>
+  <li>Quiz soruları ve bütün örnekler bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

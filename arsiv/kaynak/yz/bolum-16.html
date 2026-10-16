@@ -1,0 +1,698 @@
+<article class="chapter ders" id="c-yz-16">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 16 · API, RAG, araçlar ve ajanlar</div>
+<h1>Modeli bir uygulamaya bağlamak: API, RAG, araçlar ve ajanlar</h1>
+<p class="time">Okuma ve çözme yaklaşık 70 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir kırtasiye dükkânı, müşterilerin "Aldığım ürünü kaç gün içinde iade edebilirim?" sorusunu bir sohbet modeline cevaplatmak istiyor. Ama model bu dükkânın iade kuralını hiç görmedi, stokta kaç defter kaldığını bilemez, sipariş de veremez. Üstelik sohbet penceresine her seferinde elle bir şey yapıştırmak istemiyorsun; işin dükkânın kendi programının içinde kendiliğinden olmasını istiyorsun. Bir dil modeli bir programa nasıl bağlanır, bilmediği belgeyle nasıl cevap verir, bir hesap ya da sorgu nasıl yaptırılır ve bu işler nerede tehlikeli olur?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (vektör ve iki vektörün açıyla benzerliği), Parça 9 (kelime gömmeleri), Parça 10 (yalnız kodlayıcı modeller), Parça 11 (token, bağlam penceresi, modelin hafızası olmaması), Parça 14 (halüsinasyon), Parça 15 (istem yazmak). Kod rafını bilmen gerekmiyor; Python kutuları isteğe bağlı ve onları atlayan okur konudan bir şey kaybetmez.</p>
+
+<h2 class="s">Önce büyük resim: sohbet penceresinden uygulamaya</h2>
+
+<p>Şimdiye kadar bir dil modelini hep bir sohbet penceresinden düşündük: sen yazıyorsun, o cevaplıyor. Oysa bugün modellerin önemli bir kısmı hiç sohbet penceresi görmeden çalışır. Bir müşteri hizmetleri sitesi soruları modele cevaplatır, bir kod editörü modelden düzeltme ister. Bu programlar modelle aynı yoldan konuşur: <strong>API</strong> denen bir kapıdan istek gönderir, cevap alır.</p>
+
+<p>Bu kapıyı açınca dört soru ortaya çıkar ve bu parçanın planı da bunlardır. Birincisi <strong>bağlantı</strong>: program modele nasıl istek atar, kendini nasıl tanıtır ve bunun bedeli nasıl hesaplanır? İkincisi <strong>bilgi</strong>: model eğitiminde görmediği şirket belgeleriyle nasıl cevap verir? Bunun en yaygın cevabı RAG denen yöntemdir. Üçüncüsü <strong>eylem</strong>: model hesap yapmayı, veritabanına bakmayı nasıl ister? Buna araç kullanımı denir. Dördüncüsü <strong>özerklik</strong>: bir hedef verip modelin araçları sırayla kullanmasına izin verirsek ne olur? Buna ajan denir. Sonunda bu araçları bağlamak için çıkan bir standarda, Model Context Protocol'e, kavram düzeyinde bakacağız.</p>
+
+<p>Bir uyarı: bu parçadaki model adları ve fiyatlar <strong>yazıldığı tarih itibarıyla</strong> (14 Ekim 2026) resmî belgelerden alınmıştır ve hızla değişir. Kalıcı olan kavramlardır. Örnek sağlayıcı olarak Anthropic'in Claude API'sini seçtik; fikirler başka sağlayıcılarda da neredeyse aynıdır.</p>
+
+<h2 class="s">1. API: modeli bir programdan çağırmak</h2>
+
+<p>Büyük bir dil modeli, sağlayıcının veri merkezindeki çok sayıda GPU üzerinde çalışır (Parça 3, 12); dükkânın sunucusu onu taşıyamaz. Programın modele <strong>uzaktan</strong> soru göndermesi gerekir. Bunun için iki taraf önceden anlaşır: istek hangi adrese, hangi biçimde gidecek, cevap nasıl dönecek? Bu anlaşmanın adı API'dir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>API</strong> (application programming interface, uygulama programlama arayüzü), bir programın başka bir yazılımın hizmetini kullanmak için uyması gereken kurallar takımıdır: hangi adrese istek gönderileceği, isteğin hangi alanları taşıyacağı ve cevabın hangi biçimde döneceği. Bir dil modeli API'sinde program internet üzerinden bir istek gönderir, içinde mesajlar vardır; sağlayıcının sunucusu modeli çalıştırır ve üretilen metni yapılandırılmış bir cevapla geri yollar.</p></div>
+
+<p>Benzetme: API, lokantada salonla mutfak arasındaki sipariş fişidir. Garson yemeği kendisi pişirmez; biçimi belli bir fiş uzatır, mutfak tabağı belli bir pencereden geri verir. Benzetmenin sınırı: lokantada fişi kimin yazdığına bakılmaz, API'de ise her isteğin kimden geldiği bir anahtarla kanıtlanır ve faturası o anahtarın sahibine kesilir.</p>
+
+<p>Örnek sağlayıcımızda istek, <code>https://api.anthropic.com/v1/messages</code> adresine HTTPS üzerinden bir <code>POST</code> isteği olarak gider. Kod rafını okuduysan bunu kod rafı Parça 13'teki <code>urllib.request</code> ile attığın HTTP isteğinin aynısı olarak tanıyacaksın; okumadıysan şu kadarını bil: tarayıcının bir web sayfası istemesiyle aynı yoldan, ama sayfa yerine veri isteyen bir mesajdır. İsteğin <strong>başlıkları</strong> (zarfın üstü) kimin istediğini ve hangi API sürümünün konuşulduğunu, <strong>gövdesi</strong> (zarfın içi) asıl soruyu taşır. Gövde de cevap da JSON denen, metin olarak yazılmış bir anahtar–değer biçimindedir.</p>
+
+<div class="tablo"><table>
+<tr><th>Yer</th><th>Alan</th><th>Ne işe yarar?</th></tr>
+<tr><td>İstek başlığı</td><td><code>x-api-key</code></td><td>API anahtarı: isteğin kimden geldiğini kanıtlar, ücret buna yazılır</td></tr>
+<tr><td>İstek başlığı</td><td><code>anthropic-version</code></td><td>Hangi API sürümünün kurallarıyla konuşulduğu (belgedeki örnekte <code>2023-06-01</code>)</td></tr>
+<tr><td>İstek gövdesi</td><td><code>model</code></td><td>Hangi modelin çalışacağı (ör. <code>claude-sonnet-5-5</code>)</td></tr>
+<tr><td>İstek gövdesi</td><td><code>messages</code></td><td>Konuşmanın tamamı: sırayla kullanıcı ve asistan mesajları</td></tr>
+<tr><td>İstek gövdesi</td><td><code>max_tokens</code></td><td>Cevabın en fazla kaç token olabileceği; uzunluğa ve ücrete üst sınır</td></tr>
+<tr><td>İstek gövdesi</td><td><code>system</code> (isteğe bağlı)</td><td>Sistem istemi (Parça 13): rol ve genel kurallar</td></tr>
+<tr><td>Cevap</td><td><code>content</code></td><td>Modelin ürettiği içerik blokları (çoğunlukla metin)</td></tr>
+<tr><td>Cevap</td><td><code>stop_reason</code></td><td>Neden durduğu: işini bitirdi mi, sınıra mı takıldı, araç mı istiyor?</td></tr>
+<tr><td>Cevap</td><td><code>usage</code></td><td>Kaç girdi ve kaç çıktı tokeni harcandığı; faturanın temeli</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 370" role="img" aria-label="API isteğinin yolu: program anahtarı ortam değişkeninden okur, sağlayıcıya istek gönderir, JSON cevap alır">
+  <rect class="sv-a" x="100" y="10" width="200" height="44" rx="10"/>
+  <text class="sv-b" x="200" y="29" text-anchor="middle">ortam değişkeni</text>
+  <text class="sv-s" x="200" y="46" text-anchor="middle">ANTHROPIC_API_KEY</text>
+  <path class="sv-c" d="M200 54V80"/>
+  <rect class="sv-l" x="60" y="80" width="280" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="101" text-anchor="middle">senin programın</text>
+  <text class="sv-s" x="200" y="119" text-anchor="middle">anahtarı okur, isteği kurar</text>
+  <path class="sv-cl" d="M60 130V240"/>
+  <polygon class="sv-l" points="60,250 54,238 66,238"/>
+  <path class="sv-cl" d="M340 250V142"/>
+  <polygon class="sv-l" points="340,132 334,144 346,144"/>
+  <text class="sv-t" x="72" y="160">1. istek (POST)</text>
+  <text class="sv-s" x="72" y="180">başlıkta anahtar</text>
+  <text class="sv-s" x="72" y="198">gövdede model,</text>
+  <text class="sv-s" x="72" y="216">mesajlar, sınır</text>
+  <text class="sv-t" x="328" y="160" text-anchor="end">2. cevap (JSON)</text>
+  <text class="sv-s" x="328" y="180" text-anchor="end">content: metin</text>
+  <text class="sv-s" x="328" y="198" text-anchor="end">stop_reason</text>
+  <text class="sv-s" x="328" y="216" text-anchor="end">usage: tokenler</text>
+  <rect class="sv-m" x="60" y="250" width="280" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="271" text-anchor="middle">sağlayıcının sunucusu</text>
+  <text class="sv-s" x="200" y="289" text-anchor="middle">model metni üretir, tokenleri sayar</text>
+  <text class="sv-s" x="200" y="330" text-anchor="middle">Her istek bağımsızdır: önceki konuşma</text>
+  <text class="sv-s" x="200" y="348" text-anchor="middle">gövdede yeniden yoksa model onu görmez.</text>
+</svg>
+<figcaption>Bir API çağrısının bütün yolu. Anahtar kodun içinde değil, programın çalıştığı ortamda durur; program onu yalnız isteğin başlığına koyar. Cevaptaki <code>usage</code> alanı, faturanın hesaplandığı token sayılarını taşır.</figcaption>
+</figure>
+
+<p>Şekildeki alt not, Parça 11'deki bir gerçeğin API'deki karşılığıdır: <strong>modelin hafızası yoktur</strong>. Sohbet penceresinde model seni "hatırlıyor" gibi görünür, çünkü arayüz her yeni mesajda önceki konuşmanın tamamını modele yeniden gönderir. API'yi kendin kullandığında bu iş sana düşer. İkinci soruyu sorarken ilk soruyu ve modelin ilk cevabını <code>messages</code> listesine sen eklemezsen, model ilk soruyu hiç duymamış gibi davranır. Bu ayrıntının maliyete etkisini birazdan hesaplayacağız.</p>
+
+<h2 class="s">2. API anahtarı: neden koda değil ortam değişkenine?</h2>
+
+<p>API anahtarı, uzun ve rastgele bir karakter dizisidir. Sağlayıcı onu senin hesabına bağlar: bu diziyi taşıyan her istek "senden" gelmiş sayılır ve ücreti senin hesabından düşülür. Yani anahtar bir parola gibidir, hatta bir bakıma daha tehlikelidir: parolayla giren biri genellikle bir ekranla oyalanır, anahtarı ele geçiren biri ise saniyede çok sayıda isteği bir program ile atabilir ve faturayı sen ödersin.</p>
+
+<p>Anahtarın en sık sızdığı yer kaynak koddur: kodu bir foruma yapıştırırsın, bir asistana "bu neden çalışmıyor" diye verirsin ya da GitHub'a yüklersin. Kod rafı Parça 34–35'te göreceğin gibi Git, bir dosyanın bütün geçmişini saklar: anahtarı sonradan silsen bile eski sürümde durur. Herkese açık depolarda bu tür dizileri tarayan otomatik programlar bulunduğu yaygın olarak bilinir; bu yüzden anahtar bir kez herkese açık bir yere düştüyse onu artık "yanmış" saymalısın.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>API anahtarı <strong>asla kaynak koda, istem metnine ya da tarayıcıda çalışan koda yazılmaz.</strong> Program onu çalıştığı ortamdan, bir <strong>ortam değişkeninden</strong> okur (Python'da <code>os.environ</code>). Böylece kod paylaşılabilir, anahtar paylaşılmaz. Anahtar bir yere sızdıysa sağlayıcının panelinden hemen iptal edilir ve yenisi üretilir; silmek yetmez.</p></div>
+
+<p>Ortam değişkeni, işletim sisteminin her çalışan programa verdiği küçük bir ad–değer listesidir. Terminalde bir kez tanımlarsın, programın içinden adıyla okursun; değeri kodun hiçbir satırında geçmez. Kod rafı Parça 18 bu değişkenlerin nerede tutulduğunu, Parça 34 <code>.gitignore</code>'u anlatır. Siber rafı Parça 10 ise ortam değişkeninin de sınırları olduğunu gösterir (yanlışlıkla ekrana basılan bir hata mesajı onu açığa çıkarabilir); büyük sistemlerde sırlar bu yüzden ayrı bir "kasa" hizmetinde tutulur.</p>
+
+<p>Bir yer daha özel olarak tehlikelidir: <strong>tarayıcı</strong>. Bir web sayfasının JavaScript kodu, sayfayı açan herkesin bilgisayarına iner ve geliştirici araçlarıyla okunabilir. Anahtarı oraya koymak, onu bütün ziyaretçilere dağıtmaktır (kod rafı Parça 25'in "gizli anahtar asla tarayıcı koduna konmaz" kuralı). Doğru düzen şudur: tarayıcı senin sunucuna sorar, senin sunucun anahtarı kendi ortamından okuyup modele sorar, cevabı tarayıcıya iletir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Depom gizli, anahtarı koda yazsam bir şey olmaz."</strong> Gizli depo bugün gizlidir; yarın bir ekip arkadaşı eklersin, depoyu açık yaparsın ya da kodu bir yardım sitesine yapıştırırsın. Ayrıca anahtar Git geçmişinde kalır. Doğrusu: anahtar en baştan ortam değişkeninde durur, <code>.env</code> gibi yerel bir dosya kullanıyorsan o dosya <code>.gitignore</code>'a eklenir ve sızma şüphesinde anahtar iptal edilir.</p>
+<p><strong>"Anahtarı istemin içine yazayım, model gerekirse kullanır."</strong> İstem metni (Parça 15) model sağlayıcısına gider, kayıtlara girebilir ve modelin cevabında geri dönebilir. Parça 15'teki "gizli bilgiyi istemle paylaşma" kuralı anahtar için de geçerlidir. Model anahtarı hiçbir zaman görmez ve görmesine gerek yoktur; anahtar yalnızca isteğin başlığında, programla sağlayıcı arasında taşınır.</p></div>
+
+<h2 class="s">3. Token başına ücret ve maliyet kestirme</h2>
+
+<p>API'de genellikle <strong>kullandığın kadar</strong> ödersin ve ölçü birimi tokendir (Parça 11), çünkü iş token sayısıyla büyür: model girdideki her tokeni işler, çıktıdaki her tokeni ayrı bir tahmin adımıyla üretir. Çıktı tokeni genellikle girdi tokeninden pahalıdır, çünkü girdi tokenleri paralel işlenebilirken çıktı tokenleri Parça 11'deki "bir sonraki tokeni tahmin et, ekle, tekrarla" döngüsüyle teker teker üretilir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Bir isteğin ücreti = (girdi tokeni × girdi fiyatı + çıktı tokeni × çıktı fiyatı) ÷ 1.000.000</strong>, fiyatlar "1 milyon token başına dolar" olarak verildiğinde. Belgelerde bu birim "MTok" diye kısaltılır. Girdi tokenine sistem istemi, bütün sohbet geçmişi, RAG ile eklenen belgeler ve araç tanımları da dahildir; yani yalnız kullanıcının son yazdığı cümle değil.</p></div>
+
+<p>Somut rakam verelim. 14 Ekim 2026 itibarıyla Anthropic'in resmî fiyat sayfasında Claude Sonnet 5.5 için girdi 1 milyon token başına 2 dolar, çıktı 1 milyon token başına 10 dolardır. Aynı sayfada daha büyük ve pahalı, daha küçük ve ucuz modeller de var. Bu sayıları bir ezber gibi değil, hesap yapmak için bir örnek gibi kullan; okuduğun gün fiyat sayfasına yeniden bakmalısın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Dükkânın müşteri asistanı her soruda yaklaşık 1.500 girdi tokeni (sistem istemi + soru) gönderiyor ve 400 tokenlik cevap alıyor. Günde 2.000 soru geliyor. Fiyatlar girdi 2 dolar/MTok, çıktı 10 dolar/MTok. Aylık (30 gün) maliyet ne olur? Her soruya RAG ile 500'er tokenlik 3 belge parçası eklenirse ne değişir?</p>
+<p><strong>Adım 1 (girdi payı).</strong> 1.500 × 2 = 3.000; 3.000 ÷ 1.000.000 = 0,003 dolar.</p>
+<p><strong>Adım 2 (çıktı payı).</strong> 400 × 10 = 4.000; 4.000 ÷ 1.000.000 = 0,004 dolar. Çıktı daha az token olduğu hâlde daha pahalı tuttu, çünkü birim fiyatı beş kat.</p>
+<p><strong>Adım 3 (tek istek).</strong> 0,003 + 0,004 = 0,007 dolar.</p>
+<p><strong>Adım 4 (gün ve ay).</strong> 0,007 × 2.000 = 14 dolar/gün; 14 × 30 = 420 dolar/ay.</p>
+<p><strong>Adım 5 (RAG eklenince).</strong> Girdi 1.500 + 3 × 500 = 3.000 token olur: 3.000 × 2 ÷ 1.000.000 = 0,006 dolar. Çıktı değişmez: 0,004. Tek istek 0,010 dolar; ay 0,010 × 2.000 × 30 = 600 dolar.</p>
+<p><strong>Sonuç:</strong> Aylık maliyet yaklaşık 420 dolar; RAG ile 600 dolar. Belge eklemek cevabı doğrulaştırabilir ama her isteğin girdisini büyütür. Maliyet kestirirken en büyük kalemi bulmak için iki çarpımı ayrı ayrı yazmak bu yüzden önemlidir.</p></div>
+
+<p>Gözden kaçan ikinci kalem <strong>sohbet geçmişidir</strong>. Model hafızasız olduğu için on turlu bir sohbetin onuncu isteğinde ilk dokuz turun tamamı yeniden gönderilir. 200 tokenlik bir sistem istemi, her turda 50 tokenlik kullanıcı mesajı ve 150 tokenlik cevap düşün. Birinci istekte girdi 250 token, ikincide 450, üçüncüde 650 olur; her tur 200 token büyür. On turun girdileri toplandığında 11.500 token eder. Sohbet uzadıkça girdi maliyeti doğrusal değil, kabaca karesel büyür ve sonunda Parça 11'deki bağlam penceresine de dayanır. Bu yüzden uygulamalar eski turları özetler ya da keser.</p>
+
+<p>Maliyeti düşürmenin başlıca yolları: <code>max_tokens</code> ile cevaba üst sınır koymak, işi yapabilen en küçük modeli seçmek, sistem istemini ve geçmişi gereksiz uzatmamak, RAG'de yalnız gerçekten ilgili parçaları eklemek. Bazı sağlayıcılar her istekte aynı kalan uzun girdiye önbellek indirimi de uygular; örnek sağlayıcımızın cevap biçiminde bunun için ayrı sayaçlar vardır.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme 1 · Python ile tek bir API isteği</span>
+<p><strong>Önce uyarı:</strong> Aşağıdaki betik, <code>ANTHROPIC_API_KEY</code> ortam değişkeni tanımlıysa <strong>gerçek ve ücretli</strong> bir istek gönderir. Tek bir kısa istek bir dolar sentinin küçük bir kesridir, ama döngüye sokulmuş bir betik hızla para harcayabilir. Anahtar almak bir sağlayıcı hesabı ve çoğu zaman ödeme bilgisi ister; denemeden önce hesabındaki harcama ayarlarına bak. Kodu bilmiyorsan bu kutuyu atla. Betik yalnız Python'ın standart kütüphanesini kullanır, ayrıca bir şey kurman gerekmez.</p>
+<pre class="kod" data-ad="python3 -I api_istek.py">import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+# UYARI: Anahtar tanimliysa bu betik GERCEK ve UCRETLI bir istek atar.
+API_URL = "https://api.anthropic.com/v1/messages"
+MODEL = "claude-sonnet-5-5"   # Ekim 2026 itibariyla; degisebilir
+
+anahtar = os.environ.get("ANTHROPIC_API_KEY")
+if not anahtar:
+    print("ANTHROPIC_API_KEY ortam degiskeni tanimli degil.")
+    print("Istek gonderilmedi; ucret olusmadi.")
+    sys.exit(1)
+
+govde = {
+    "model": MODEL,
+    "max_tokens": 200,   # cevabin uzunluguna (ve ucrete) ust sinir
+    "messages": [
+        {"role": "user", "content": "Tek cumleyle: RAG nedir?"}
+    ],
+}
+istek = urllib.request.Request(
+    API_URL,
+    data=json.dumps(govde).encode("utf-8"),
+    headers={
+        "content-type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": anahtar,   # anahtar yalniz baslikta, ekrana basilmaz
+    },
+    method="POST",
+)
+try:
+    with urllib.request.urlopen(istek, timeout=60) as yanit:
+        cevap = json.load(yanit)
+except urllib.error.HTTPError as h:
+    print("Sunucu hata dondu:", h.code, h.read().decode("utf-8")[:300])
+    sys.exit(2)
+
+print("Cevap :", cevap["content"][0]["text"])
+print("Girdi tokeni :", cevap["usage"]["input_tokens"])
+print("Cikti tokeni :", cevap["usage"]["output_tokens"])</pre>
+<p>Bu parça yazılırken ortamda hiçbir API anahtarı yoktu ve ücretli istek yapılmadı. Betiği anahtarsız çalıştırınca kendi verdiği çıktı şudur (çıkış kodu 1):</p>
+<pre class="cikti">ANTHROPIC_API_KEY ortam degiskeni tanimli degil.
+Istek gonderilmedi; ucret olusmadi.</pre>
+<p>Anahtar tanımlı olsaydı sunucu bir JSON cevabı dönecekti. Biçimini göstermek için aşağıya Anthropic'in "Using the Messages API" belgesindeki örnek cevabı aynen alıyorum. Bu <strong>belgeden alınmış bir örnektir, burada çalıştırılmadı</strong>; belgedeki örnek isteğin modeli de bizimkinden farklıdır.</p>
+<pre class="kod" data-ad="Belgeden örnek cevap · burada çalıştırılmadı">{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello!"
+    }
+  ],
+  "model": "claude-opus-5-5",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 12,
+    "output_tokens": 6
+  }
+}</pre>
+<p><strong>Okuma.</strong> Betik önce anahtarı ortamdan okur; yoksa istek göndermeden, ücret oluşmadan durur. Anahtar varsa gövdeyi JSON'a çevirir, anahtarı yalnızca başlığa koyar, isteği gönderir ve cevaptan üç şeyi yazdırır: <code>content</code> içindeki metin ile <code>usage</code> içindeki <code>input_tokens</code> ve <code>output_tokens</code>. Belgedeki örnekte "Hello, Claude" isteği 12 girdi ve 6 çıktı tokeni tutmuş; <code>stop_reason</code> değeri <code>end_turn</code>, yani model sözünü kendisi bitirmiş. Cevabı ayrıştıran kısmı, ücretli istek atmamak için bilgisayarın kendi içinde (<code>127.0.0.1</code>) bu örnek cevabı döndüren sahte bir sunucuyla sınadım.</p>
+<p>Maliyet hesabını da bir betiğe yaptırabilirsin. Çözümlü örnek 1'in sayılarıyla:</p>
+<pre class="kod" data-ad="python3 -I maliyet.py"># Fiyatlar: Claude Sonnet 5.5, dolar / 1 milyon token
+# (resmi fiyat sayfasi, 14 Ekim 2026 itibariyla; degisebilir)
+GIRDI_FIYAT = 2.00
+CIKTI_FIYAT = 10.00
+
+def maliyet(girdi_token, cikti_token):
+    return (girdi_token * GIRDI_FIYAT + cikti_token * CIKTI_FIYAT) / 1_000_000
+
+tek = maliyet(1_500, 400)
+print(f"Tek istek          : {tek:.4f} dolar")
+print(f"Gunde 2.000 istek  : {tek * 2_000:.2f} dolar")
+print(f"30 gunde           : {tek * 2_000 * 30:.2f} dolar")
+# RAG ile her istege 3 belge parcasi (her biri ~500 token) eklenirse:
+rag = maliyet(1_500 + 3 * 500, 400)
+print(f"RAG'li tek istek   : {rag:.4f} dolar")
+print(f"RAG'li 30 gun      : {rag * 2_000 * 30:.2f} dolar")</pre>
+<pre class="cikti">Tek istek          : 0.0070 dolar
+Gunde 2.000 istek  : 14.00 dolar
+30 gunde           : 420.00 dolar
+RAG'li tek istek   : 0.0100 dolar
+RAG'li 30 gun      : 600.00 dolar</pre>
+</div>
+
+<h2 class="s">4. RAG: modele bilmediği belgeyle cevap verdirmek</h2>
+
+<p>Modelin bilgisi iki yerden gelebilir. Birincisi <strong>parametreleridir</strong>: ön eğitimde (Parça 12) gördüğü metinlerden ağırlıklarına sinmiş bilgi. Bu bilgi bilgi kesim tarihinde donar (Parça 14) ve dükkânın iade kuralı gibi hiç yayımlanmamış bir şeyi içermez. İkincisi <strong>bağlamıdır</strong>: o istekte ona verdiğin metin. Model bağlamdaki metni okuyup kullanabilir. O hâlde en basit çözüm, soruyla birlikte ilgili belgeyi de göndermektir.</p>
+
+<p>Ama hangi belgeyi? Dükkânın yüzlerce sayfası olabilir. Hepsini her isteğe koymak bağlam penceresine sığmaz, her isteğin ücretini büyütür (çözümlü örnek 1) ve asıl bilgi uzun metinde gözden kaçabilir. Gereken, soruya göre <strong>ilgili birkaç parçayı bulup</strong> yalnız onları eklemektir. RAG budur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>RAG</strong> (retrieval-augmented generation, bilgiyle zenginleştirilmiş üretim) iki aşamadan oluşur. <strong>Hazırlık (bir kez):</strong> belgeleri parçalara böl, her parçayı bir gömme modeliyle vektöre çevir, vektörleri parçanın metniyle birlikte bir vektör veritabanına koy. <strong>Soru anında (her istekte):</strong> soruyu aynı gömme modeliyle vektöre çevir, veritabanında soruya anlamca en yakın birkaç parçayı bul, bu parçaları talimat ve soruyla birlikte isteme ekleyip modele gönder.</p></div>
+
+<p>Ad, Patrick Lewis ve arkadaşlarının 2020 tarihli "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" makalesinden gelir: modelin parametrelerindeki bilgiyi ("parametrik bellek") dışarıdan aranan bir belge deposuyla ("parametrik olmayan bellek") birleştirmek. Bugün ad bu genel fikrin her uygulaması için kullanılıyor.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 260" role="img" aria-label="RAG'in iki aşaması: hazırlıkta belgeler parçalanıp gömme vektörlerine çevrilir ve veritabanına konur; soru anında soru vektöre çevrilir, en yakın parçalar bulunur, isteme eklenir ve model cevaplar">
+  <text class="sv-b" x="10" y="24">1. Hazırlık: bir kez (belge değişince yeniden)</text>
+  <rect class="sv-k" x="10" y="40" width="140" height="50" rx="10"/>
+  <text class="sv-t" x="80" y="61" text-anchor="middle">belgeler</text><text class="sv-s" x="80" y="78" text-anchor="middle">kural, katalog, wiki</text>
+  <rect class="sv-k" x="170" y="40" width="140" height="50" rx="10"/>
+  <text class="sv-t" x="240" y="61" text-anchor="middle">parçalara böl</text><text class="sv-s" x="240" y="78" text-anchor="middle">birkaç yüz token</text>
+  <rect class="sv-l" x="330" y="40" width="140" height="50" rx="10"/>
+  <text class="sv-t" x="400" y="61" text-anchor="middle">gömme modeli</text><text class="sv-s" x="400" y="78" text-anchor="middle">parça → vektör</text>
+  <rect class="sv-a" x="490" y="40" width="140" height="50" rx="10"/>
+  <text class="sv-t" x="560" y="61" text-anchor="middle">vektör veritabanı</text><text class="sv-s" x="560" y="78" text-anchor="middle">vektör + metin</text>
+  <path class="sv-c" d="M150 65H170"/><path class="sv-c" d="M310 65H330"/><path class="sv-c" d="M470 65H490"/>
+  <text class="sv-b" x="10" y="148">2. Soru anında: her istekte</text>
+  <rect class="sv-k" x="10" y="164" width="112" height="60" rx="10"/>
+  <text class="sv-t" x="66" y="186" text-anchor="middle">soru</text><text class="sv-s" x="66" y="204" text-anchor="middle">kullanıcıdan</text>
+  <rect class="sv-l" x="138" y="164" width="112" height="60" rx="10"/>
+  <text class="sv-t" x="194" y="186" text-anchor="middle">gömme modeli</text><text class="sv-s" x="194" y="204" text-anchor="middle">soru → vektör</text>
+  <rect class="sv-a" x="266" y="164" width="112" height="60" rx="10"/>
+  <text class="sv-t" x="322" y="186" text-anchor="middle">en yakın k</text><text class="sv-s" x="322" y="204" text-anchor="middle">kosinüsle ara</text>
+  <rect class="sv-k" x="394" y="164" width="112" height="60" rx="10"/>
+  <text class="sv-t" x="450" y="186" text-anchor="middle">istemi kur</text><text class="sv-s" x="450" y="203" text-anchor="middle">talimat, parça,</text><text class="sv-s" x="450" y="217" text-anchor="middle">soru</text>
+  <rect class="sv-m" x="522" y="164" width="108" height="60" rx="10"/>
+  <text class="sv-t" x="576" y="186" text-anchor="middle">dil modeli</text><text class="sv-s" x="576" y="204" text-anchor="middle">kaynaklı cevap</text>
+  <path class="sv-c" d="M122 194H138"/><path class="sv-c" d="M250 194H266"/><path class="sv-c" d="M378 194H394"/><path class="sv-c" d="M506 194H522"/>
+  <path class="sv-cl" d="M560 90V122H322V164"/>
+  <text class="sv-s" x="440" y="116" text-anchor="middle">veritabanında aranır</text>
+  <text class="sv-s" x="320" y="250" text-anchor="middle">İki aşamada da aynı gömme modeli kullanılır; yoksa vektörler aynı uzayda olmaz.</text>
+</svg>
+<figcaption>RAG'in iki aşaması. Üst sıra belgeler değişmedikçe bir kez yapılır; alt sıra her soruda tekrarlanır. Dil modeli yalnız en sağdaki kutuda devreye girer; arama işini gömme modeli ve veritabanı yapar.</figcaption>
+</figure>
+
+<h3>Parçalama, gömme ve vektör veritabanı</h3>
+
+<p><strong>Parçalama.</strong> Belge neden bütün olarak değil parça parça saklanır? Çünkü bir vektör, temsil ettiği metnin bir tür ortalamasıdır. Yirmi sayfalık bir belgenin tek vektörü, içindeki her konudan biraz taşır ve hiçbirine tam benzemez; Parça 9'da durağan gömmenin "yüz" kelimesinin üç anlamını tek vektörde ortalamasına benzer bir sorun. Birkaç paragraflık parçalar daha az konu taşır ve daha isabetli bulunur; çok küçük parça ise bağlamından kopar ("bu süre 14 gündür" hangi süre?). Parça boyu denenerek ayarlanır.</p>
+
+<p><strong>Gömme modeli.</strong> Parça 9'da kelimeleri vektöre çeviren gömmeleri gördün. RAG'de aynı fikir bütün bir cümleye ya da paragrafa uygulanır: anlamca benzer metinler uzayda birbirine yakın vektörler alır. Bu vektörleri üreten modeller çoğu zaman Parça 10'daki <strong>yalnız kodlayıcı</strong> aileden gelir, çünkü işleri metin üretmek değil, metni bütün olarak "anlayıp" tek bir vektöre sıkıştırmaktır. Gömme modeli ile cevabı yazan dil modeli çoğunlukla <strong>ayrı</strong> modellerdir ve farklı sağlayıcılardan bile olabilir. Örneğin Anthropic'in belgeleri, 14 Ekim 2026 itibarıyla kendi gömme modeli sunmadığını yazar ve örnek olarak başka bir sağlayıcıyı (Voyage AI) gösterir.</p>
+
+<p><strong>Vektör veritabanı.</strong> Arama, Parça 3 ve 9'daki kosinüs benzerliğiyle yapılır: soru vektörü ile her parçanın vektörü arasındaki açıya bakılır, en yakın k parça (çoğu zaman 3 ile 10 arası) alınır. Milyonlarca parçada her soruda hepsine tek tek bakmak yavaşlar; vektör veritabanları bu yüzden "yaklaşık en yakın komşu" yöntemleriyle, küçük bir isabet kaybı karşılığında aramayı hızlandırır (Parça 4'teki k-en yakın komşunun büyük ölçekli akrabası).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Elle kurulmuş üç boyutlu oyuncak gömmeler kullanalım. Boyutları [iade/para, teslimat, açılış saati] diye düşün. Soru "Ürünü geri verebilir miyim?" için gömme modeli q = [0,9; 0,1; 0] üretmiş olsun. Belgeler: iade = [0,8; 0,3; 0], kargo = [0,1; 0,9; 0,2], saatler = [0; 0,1; 0,9]. Hangi belge getirilir?</p>
+<p><strong>Adım 1 (nokta çarpımları).</strong> q·iade = 0,9 × 0,8 + 0,1 × 0,3 + 0 × 0 = 0,72 + 0,03 = 0,75. q·kargo = 0,09 + 0,09 + 0 = 0,18. q·saatler = 0 + 0,01 + 0 = 0,01.</p>
+<p><strong>Adım 2 (uzunluklar).</strong> |q| = √(0,81 + 0,01) = √0,82 ≈ 0,906. |iade| = √(0,64 + 0,09) = √0,73 ≈ 0,854. |kargo| = √(0,01 + 0,81 + 0,04) = √0,86 ≈ 0,927. |saatler| = √(0,01 + 0,81) = √0,82 ≈ 0,906.</p>
+<p><strong>Adım 3 (kosinüs).</strong> iade: 0,75 ÷ (0,906 × 0,854) = 0,75 ÷ 0,774 ≈ 0,969. kargo: 0,18 ÷ (0,906 × 0,927) = 0,18 ÷ 0,840 ≈ 0,214. saatler: 0,01 ÷ (0,906 × 0,906) = 0,01 ÷ 0,821 ≈ 0,012.</p>
+<p><strong>Adım 4 (sırala ve seç).</strong> En yakın parça iade belgesi (0,969). k = 1 ise yalnız o isteme eklenir.</p>
+<p><strong>Sonuç:</strong> Soruda "iade" kelimesi hiç geçmediği hâlde iade belgesi bulundu, çünkü (oyuncak) gömme modeli "geri vermek" ile "iade"yi aynı yöne koydu. Kelime eşleştirmesiyle anlam araması arasındaki fark budur. Bu vektörler öğretim amaçlı elle kurulmuştur; gerçek gömmeler yüzlerce boyutludur ve boyutların adı yoktur (Parça 9).</p></div>
+
+<h3>İstemi kurmak ve cevabı belgeye bağlamak</h3>
+
+<p>Getirilen parçalar isteme nasıl eklenir? Parça 15'teki iyi istem kuralları burada da geçerli: görev, bağlam, kısıt ve biçim. Tipik bir RAG istemi şunları söyler: "Yalnız aşağıdaki belgelere dayanarak cevap ver; belgelerde yoksa bilmediğini söyle; hangi belgeyi kullandığını yaz." Belgeleri etiketlerle (ör. <code>&lt;belgeler&gt;</code>) talimattan ayırmak, modelin hangi metnin veri, hangisinin talimat olduğunu karıştırmamasına yardım eder; bu ayrımın güvenlik tarafını Parça 18'de göreceksin. Kaynak göstermek de önemlidir: kullanıcı cevabı belgeyle karşılaştırabilir, Parça 14'teki "kaynak iste ve kontrol et" alışkanlığı uygulamanın içine yerleşmiş olur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"RAG kullanınca model artık uyduramaz."</strong> RAG, modelin elinde doğru bilginin bulunma olasılığını artırır; halüsinasyonu ortadan kaldırmaz. Üç yerden yanlış çıkabilir: (1) arama yanlış parçayı getirir ve model ona dayanarak kendinden emin bir yanlış söyler; (2) doğru parça gelir ama model onu yanlış okur ya da kendi parametrik bilgisiyle karıştırır; (3) hiçbir parça ilgili değildir ama model yine de bir şey uydurur. Doğrusu: cevaplarla birlikte kaynak göster, benzerlik eşiğinin altında kalınca "belge bulunamadı" de, arama kalitesini ayrıca ölç (doğru parça ilk k içinde mi?) ve kritik cevapları belgeyle karşılaştır.</p>
+<p><strong>"Şirket bilgisini öğretmek için modeli ince ayarla yeniden eğitmek gerekir."</strong> İnce ayar (Parça 13) çoğunlukla modelin <em>davranışını ve biçimini</em> değiştirir; sık değişen olgu bilgisi (fiyat, stok, kural) için pahalı ve yavaştır, model öğrendiğini yine yanlış hatırlayabilir. Güncel ve kaynak gösterilmesi gereken bilgi için önce RAG denenir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Yol</th><th>Bilgi nerede durur?</th><th>Güncelleme</th><th>Kaynak gösterebilir mi?</th><th>Ne zaman uygun?</th></tr>
+<tr><td>Her şeyi bağlama koymak</td><td>Her istekte gönderilen metin</td><td>Anında</td><td>Evet</td><td>Belge az ve kısa; bağlam penceresine rahat sığıyor</td></tr>
+<tr><td>RAG</td><td>Dış belge deposu; isteğe yalnız ilgili parçalar</td><td>Belgeyi yeniden gömmek yeter</td><td>Evet, parça adıyla</td><td>Çok belge, sık değişen bilgi, kaynak isteniyor</td></tr>
+<tr><td>İnce ayar</td><td>Modelin parametreleri</td><td>Yeniden eğitim gerekir</td><td>Hayır, doğrudan değil</td><td>Belirli bir üslup, biçim ya da görev davranışı öğretmek</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme 2 · Ağsız oyuncak RAG</span>
+<p>Bu betik internete çıkmaz ve hiçbir model çağırmaz. Dört kısa "şirket belgesi" (uydurma bir kırtasiye dükkânı) üzerinde RAG'in arama ve istem kurma yarısını gösterir. Gömme modeli yerine en basit şeyi kullanıyoruz: kelime sayımı, Parça 9'daki birlikte geçme sayımının akrabası. Türkçe eklerden biraz kurtulmak için her kelimenin yalnız ilk dört harfini alıyoruz; bu kaba bir hiledir. Kısacası bu bir <strong>oyuncaktır</strong>, gerçek bir RAG sisteminin yerini tutmaz.</p>
+<pre class="kod" data-ad="python3 -I rag_oyuncak.py">import math
+import re
+from collections import Counter
+
+# OYUNCAK bir "sirket belgeleri" kumesi (uydurma bir kirtasiye dukkani).
+belgeler = {
+    "iade.txt":    "Urunler teslimden sonra 14 gun icinde iade edilebilir. Iade icin fatura gerekir.",
+    "kargo.txt":   "Kargo 500 lira ustu sipariste ucretsizdir. Teslimat 2 ile 4 is gunu surer.",
+    "saatler.txt": "Magaza hafta ici 09.00 ile 19.00 arasinda aciktir. Pazar gunu kapalidir.",
+    "garanti.txt": "Elektronik urunlerde garanti 2 yildir. Garanti icin fatura saklanmalidir.",
+}
+
+def kelimeler(metin):
+    # Kucuk harf, yalniz harfler; ekleri kabaca atmak icin ilk 4 harf.
+    return [k[:4] for k in re.findall(r"[a-z]+", metin.lower())]
+
+def vektor(metin):
+    return Counter(kelimeler(metin))   # kelime sayimi = cok basit "gomme"
+
+def kosinus(a, b):
+    ortak = sum(a[k] * b[k] for k in a if k in b)
+    boy = math.sqrt(sum(x * x for x in a.values())) * math.sqrt(sum(x * x for x in b.values()))
+    return ortak / boy if boy else 0.0
+
+# 1) Hazirlik: her belgenin vektoru bir kez hesaplanip saklanir.
+dizin = {ad: vektor(m) for ad, m in belgeler.items()}
+
+def ara(soru, k=2, esik=0.15):
+    sv = vektor(soru)
+    puanlar = sorted(((kosinus(sv, v), ad) for ad, v in dizin.items()), reverse=True)
+    for p, ad in puanlar:
+        print(f"  {p:.3f}  {ad}")
+    return [ad for p, ad in puanlar[:k] if p &gt;= esik]
+
+def istem_kur(soru, bulunan):
+    if not bulunan:
+        return None
+    parcalar = "\n".join(f"[{ad}] {belgeler[ad]}" for ad in bulunan)
+    return ("Yalniz asagidaki belgelere dayanarak cevap ver. "
+            "Belgelerde yoksa 'bilmiyorum' de ve hangi belgeyi kullandigini yaz.\n"
+            f"&lt;belgeler&gt;\n{parcalar}\n&lt;/belgeler&gt;\nSoru: {soru}")
+
+for soru in ["Aldigim urunu kac gun icinde iade edebilirim?",
+             "Urunu geri vermek istiyorum, ne yapmaliyim?"]:
+    print("SORU:", soru)
+    bulunan = ara(soru)
+    istem = istem_kur(soru, bulunan)
+    print("MODELE GIDECEK ISTEM:" if istem else "Esigi gecen belge yok; model cagrilmaz.")
+    if istem:
+        print(istem)
+    print()</pre>
+<pre class="cikti">SORU: Aldigim urunu kac gun icinde iade edebilirim?
+  0.586  iade.txt
+  0.239  garanti.txt
+  0.000  saatler.txt
+  0.000  kargo.txt
+MODELE GIDECEK ISTEM:
+Yalniz asagidaki belgelere dayanarak cevap ver. Belgelerde yoksa 'bilmiyorum' de ve hangi belgeyi kullandigini yaz.
+&lt;belgeler&gt;
+[iade.txt] Urunler teslimden sonra 14 gun icinde iade edilebilir. Iade icin fatura gerekir.
+[garanti.txt] Elektronik urunlerde garanti 2 yildir. Garanti icin fatura saklanmalidir.
+&lt;/belgeler&gt;
+Soru: Aldigim urunu kac gun icinde iade edebilirim?
+
+SORU: Urunu geri vermek istiyorum, ne yapmaliyim?
+  0.129  garanti.txt
+  0.105  iade.txt
+  0.000  saatler.txt
+  0.000  kargo.txt
+Esigi gecen belge yok; model cagrilmaz.</pre>
+<p><strong>Okuma.</strong> Birinci soruda "iade", "gun", "icin" gibi kelimeler iade belgesiyle örtüştüğü için iade.txt 0,586 ile en üste çıktı; garanti.txt de "urun" ve "icin" ortaklığı yüzünden ikinci oldu. İkisi de 0,15 eşiğini geçtiği için isteme eklendi ve modele gidecek istem yazdırıldı (model çağrılmadı). İkinci soru aynı şeyi soruyor, ama "iade" kelimesini kullanmıyor: kelime sayımı "geri vermek" ile "iade"nin aynı anlama geldiğini bilemez. Sonuç hem düşük hem yanlış sıralı (garanti, iade'nin önünde) ve eşiğin altında kaldığı için program modeli hiç çağırmadı. Çözümlü örnek 2'deki gömme bu soruyu çözüyordu; gerçek sistemlerde kelime sayımı yerine eğitilmiş bir gömme modeli kullanılmasının nedeni budur. Eşik de önemli bir savunmadır: alakasız parçayla modeli kandırmaktansa "bulamadım" demek daha iyidir.</p>
+</div>
+
+<h2 class="s">5. Araç kullanımı: modelin bir işlevi çağırmayı istemesi</h2>
+
+<p>Parça 14'te dil modelinin hesapta ve saymada hata yapabildiğini, güncel bilgiyi bilmediğini gördün; çözüm olarak "hesabı koda yaptır" demiştik. Araç kullanımı bu öğüdün otomatik hâlidir. Programın modele "elimde şu araçlar var" diye bir liste verir; model bir aracın gerektiğine karar verirse cevap metni yerine <strong>yapılandırılmış bir istek</strong> üretir: "stok_sorgula aracını urun = defter ile çalıştır." Programın bu isteği okur, aracı kendisi çalıştırır, sonucu modele geri gönderir; model sonucu kullanarak cevabını yazar.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Araç kullanımı</strong> (tool use, function calling), modelin kendisine tanıtılmış bir işlevin çalıştırılmasını <strong>istemesi</strong> ve bu isteği uygulama programının yerine getirmesidir. Her araç bir ad, ne işe yaradığını anlatan bir açıklama ve hangi girdileri aldığını tarif eden bir şemayla tanıtılır. Model aracı çalıştıramaz; yalnız adını ve girdilerini yazar. Çalıştırmak, sonucu denetlemek ve geri vermek programın işidir.</p></div>
+
+<p>Bu ayrım bir ayrıntı değil, işin özüdür. Anthropic'in belgesi bunu açıkça yazar: model kendi başına hiçbir şey çalıştırmaz; yapılandırılmış bir istek üretir, işlemi senin kodun (ya da bazı yerleşik araçlarda sağlayıcının sunucusu) yürütür ve sonuç konuşmaya geri döner. Model aracın kodunu da görmez, yalnız şemasını ve sonucunu görür. Model hâlâ yalnızca token üretir (Parça 11); araç isteğinde bu tokenler programın okuyabileceği kesin bir biçimdedir.</p>
+
+<p>Örnek sağlayıcımızın belgesine göre akış şöyledir. İstekte <code>tools</code> alanında araçlar tanımlanır. Model bir araç kullanmak isterse cevabın <code>stop_reason</code> değeri <code>"tool_use"</code> olur ve içerikte aracın adını ve girdilerini taşıyan bir <code>tool_use</code> bloğu bulunur. Program aracı çalıştırır ve sonucu, bir sonraki istekte kullanıcı mesajının içinde <code>tool_result</code> bloğu olarak gönderir. <code>stop_reason</code> yine <code>"tool_use"</code> geldiği sürece döngü sürer; <code>"end_turn"</code> gelince model sözünü bitirmiştir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Müşteri "12 defter kaç lira tutar, stokta var mı?" diye soruyor. Programın modele iki araç tanıttı: <code>stok_sorgula(urun)</code> ve <code>hesap(ifade)</code>. Akışı adım adım yaz.</p>
+<p><strong>Adım 1 (istek).</strong> Program; sistem istemini, müşterinin sorusunu ve iki aracın ad, açıklama ve girdi şemasını modele gönderir.</p>
+<p><strong>Adım 2 (model ister).</strong> Model fiyatı ve stoğu bilmediğini "anlar" (daha doğrusu, böyle bir durumda araç istemeyi eğitimde öğrenmiştir) ve cevap yerine bir araç isteği üretir: <code>stok_sorgula</code>, girdi <code>urun = "defter"</code>; <code>stop_reason = "tool_use"</code>.</p>
+<p><strong>Adım 3 (program çalıştırır).</strong> Program, istenen adın kendi izinli araç listesinde olduğunu denetler, girdiyi doğrular, aracı çalıştırır: adet 40, fiyat 35,0. Sonucu <code>tool_result</code> olarak, konuşmanın önceki bütün mesajlarıyla birlikte yeniden gönderir (model hafızasızdır).</p>
+<p><strong>Adım 4 (ikinci araç).</strong> Model çarpımı kendisi yapmak yerine <code>hesap</code> aracını ister: <code>ifade = "35.0 * 12"</code>. Program güvenli bir hesaplayıcıyla 420,0 bulur ve geri gönderir.</p>
+<p><strong>Adım 5 (cevap).</strong> Model artık gereken her şeyi bağlamında görüyor ve metin cevabı üretir: "Stokta 40 defter var; 12 tanesi 420 lira." <code>stop_reason = "end_turn"</code>.</p>
+<p><strong>Sonuç:</strong> Bir müşteri sorusu üç API isteği tuttu. Sayılar modelin tahmininden değil, programın veritabanından ve hesaplayıcısından geldi; modelin işi neyin gerektiğine karar vermek ve sonucu Türkçe bir cümleye çevirmekti. Her ek istek, o ana kadarki bütün geçmişi yeniden taşıdığı için girdi tokenini de artırır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Model aracı kendisi çalıştırıyor, ben yalnız sonucu görüyorum."</strong> Hayır; çalıştıran her zaman programdır ve bu yüzden sorumluluk da programdadır. Modelin isteğine körü körüne uyan bir program, modelin yanlış ya da kötü niyetli bir metinden etkilenmiş isteğini de yerine getirir. Doğrusu: programda izinli araçların sabit bir listesi tutulur, listede olmayan ad reddedilir, her girdi doğrulanır (tür, aralık, izinli değerler).</p>
+<p><strong>"Hesap aracını yazmanın en kolay yolu, gelen ifadeyi Python'ın <code>eval</code>'ine vermek."</strong> <code>eval</code> kendisine verilen metni Python kodu olarak çalıştırır; ifade "35*12" yerine bir dosyayı silen bir kod olursa onu da çalıştırır. Model girdisi, kullanıcı girdisi gibi <strong>güvenilmeyen girdidir</strong>. Doğrusu: yalnız izin verilen işlemleri tanıyan dar bir ayrıştırıcı yazmak; aşağıdaki denemede <code>hesap</code> işlevi böyle yazıldı ve yalnız sayıları ve dört işlemi kabul ediyor.</p></div>
+
+<h2 class="s">6. Ajan: hedef, araçlar ve döngü</h2>
+
+<p>Çözümlü örnek 3'te model iki aracı arka arkaya kullandı; hangisini, hangi sırayla kullanacağına kendisi karar verdi. Bu fikri büyütürsen ajana varırsın: modele küçük bir soru yerine bir <strong>hedef</strong> verirsin ("bu ayın stok eksiklerini bul ve sipariş taslağı hazırla"), ona araçlar sunarsın ve onu bir döngüye koyarsın. Her turda model durumu görür, bir sonraki adıma karar verir, aracın sonucunu görür, gerekirse yolunu değiştirir; hedefe varınca ya da bir sınıra takılınca durur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Ajan</strong>, bir dil modelinin bir hedefe ulaşmak için araçları <strong>kendi seçtiği sırayla</strong> kullandığı, her adımın sonucunu görüp sonraki adımı ona göre belirlediği döngüdür. Döngü üç parçadan oluşur: karar (model), eylem (program aracı çalıştırır), gözlem (sonuç geçmişe eklenir). Döngünün bir durdurma koşulu (hedefe varıldı, adım sınırı doldu, insan durdurdu) bulunmalıdır.</p></div>
+
+<p>Anthropic'in Aralık 2024 tarihli "Building effective agents" yazısı burada yararlı bir ayrım yapar. <strong>İş akışı</strong> (workflow), modelin ve araçların önceden yazılmış kod yollarıyla yönetildiği sistemdir: önce şu aracı çağır, sonra modele özetlet, sonra şunu yap. <strong>Ajan</strong> ise sürecini ve araç kullanımını modelin kendisinin yönlendirdiği sistemdir. İş akışı daha öngörülebilir, ajan daha esnektir. Aynı yazı, ajanın her adımda ortamdan gerçek bir geri bildirim (aracın sonucu) alması, en fazla adım sayısı gibi durdurma koşulları konması ve takıldığında insana danışabilmesi gerektiğini vurgular. Pratik öğüt: iş basit bir iş akışıyla çözülüyorsa ajana gerek yoktur.</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Ajan döngüsü: model karar verir, araç isteğiyse geri alınamaz işler için insan onayı alınır, program aracı çalıştırır, sonuç geçmişe eklenir ve döngü yeniden başlar">
+  <rect class="sv-k" x="100" y="10" width="200" height="40" rx="10"/>
+  <text class="sv-t" x="200" y="35" text-anchor="middle">hedef + araç tanımları</text>
+  <path class="sv-c" d="M200 50V70"/>
+  <rect class="sv-l" x="100" y="70" width="200" height="44" rx="10"/>
+  <text class="sv-b" x="200" y="89" text-anchor="middle">model karar verir</text>
+  <text class="sv-s" x="200" y="106" text-anchor="middle">geçmişin tamamına bakar</text>
+  <path class="sv-c" d="M200 114V134"/>
+  <rect class="sv-k" x="110" y="134" width="180" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="153" text-anchor="middle">araç isteği mi,</text>
+  <text class="sv-t" x="200" y="170" text-anchor="middle">"bitti" mi?</text>
+  <path class="sv-c" d="M290 156H310"/>
+  <text class="sv-s" x="300" y="128" text-anchor="middle">bitti</text>
+  <rect class="sv-m" x="310" y="134" width="82" height="44" rx="10"/>
+  <text class="sv-t" x="351" y="153" text-anchor="middle">cevap</text>
+  <text class="sv-s" x="351" y="170" text-anchor="middle">kullanıcıya</text>
+  <path class="sv-c" d="M200 178V198"/>
+  <text class="sv-s" x="210" y="193">araç</text>
+  <rect class="sv-a" x="100" y="198" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="217" text-anchor="middle">geri alınamaz iş mi?</text>
+  <text class="sv-s" x="200" y="234" text-anchor="middle">para, e-posta, silme</text>
+  <path class="sv-c" d="M150 242V262"/>
+  <text class="sv-s" x="142" y="256" text-anchor="end">evet</text>
+  <path class="sv-c" d="M250 242V262"/>
+  <text class="sv-s" x="258" y="256">hayır</text>
+  <rect class="sv-a" x="30" y="262" width="150" height="44" rx="10"/>
+  <text class="sv-b" x="105" y="281" text-anchor="middle">insan onayı</text>
+  <text class="sv-s" x="105" y="298" text-anchor="middle">hayırsa: reddedildi</text>
+  <rect class="sv-k" x="220" y="262" width="170" height="44" rx="10"/>
+  <text class="sv-t" x="305" y="281" text-anchor="middle">program çalıştırır</text>
+  <text class="sv-s" x="305" y="298" text-anchor="middle">izinli liste, doğrulama</text>
+  <path class="sv-c" d="M180 284H220"/>
+  <path class="sv-c" d="M305 306V348H290"/>
+  <path class="sv-c" d="M105 306V348H110"/>
+  <rect class="sv-k" x="110" y="326" width="180" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="352" text-anchor="middle">sonuç geçmişe eklenir</text>
+  <path class="sv-cl" d="M110 360H16V92H100"/>
+  <text class="sv-s" x="22" y="230">tekrar</text>
+  <text class="sv-s" x="200" y="392" text-anchor="middle">adım sınırı dolarsa döngü durur</text>
+</svg>
+<figcaption>Bir ajanın döngüsü. Model yalnız mor kutuda çalışır; turuncu kutular programın ve insanın koyduğu frenlerdir. Onaylanmayan bir işin sonucu da ("reddedildi") geçmişe eklenir, böylece model bir sonraki turda bunu görür ve başka yol arar.</figcaption>
+</figure>
+
+<h3>Neden insan onayı?</h3>
+
+<p>Bir ajanın her adımı bir modelin kararıdır ve Parça 14'te modellerin yanılabildiğini, kendi güven düzeyini her zaman doğru bilmediğini gördün. Sohbet cevabındaki hatayı okuyan insan yakalayabilir. Ajanda hata bir <strong>eyleme</strong> dönüşür ve sonraki adımlar onun üstüne kurulur: yanlış sipariş, yanlış kişiye giden e-posta, silinmiş dosya. Bir kısmı geri alınamaz ve ajan kendi başına çalıştığı için geç fark edilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Geri alınamaz ya da dışarıya etkisi olan işler</strong> (para ödemek, sipariş vermek, e-posta ya da mesaj göndermek, veri silmek, bir şeyi yayımlamak) ajan tarafından değil, <strong>insan onayından sonra</strong> program tarafından yapılır. Ajana yalnız işine yetecek araçlar ve yetkiler verilir (en az yetki ilkesi; siber rafı Parça 6 ve 21), her döngüye bir adım sınırı konur ve her adım kayda geçirilir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Araç</th><th>Etkisi</th><th>Geri alınabilir mi?</th><th>Önerilen düzen</th></tr>
+<tr><td>Stok sorgula, belge ara</td><td>Yalnız okur</td><td>Değiştirmez</td><td>Onaysız çalışabilir; erişebileceği veri sınırlanır</td></tr>
+<tr><td>Hesap yap</td><td>Yalnız hesaplar</td><td>Değiştirmez</td><td>Onaysız; girdi dar bir ayrıştırıcıyla denetlenir</td></tr>
+<tr><td>Taslak oluştur (sipariş, e-posta)</td><td>Kayıt yazar ama göndermez</td><td>Evet</td><td>Onaysız olabilir; taslak insanın önüne gelir</td></tr>
+<tr><td>Sipariş ver, ödeme yap</td><td>Para harcar</td><td>Çoğunlukla hayır</td><td>Her seferinde insan onayı; tutar sınırı</td></tr>
+<tr><td>E-posta gönder, yayımla</td><td>Dışarıya çıkar</td><td>Hayır</td><td>İnsan onayı; alıcı listesi sınırlı</td></tr>
+<tr><td>Dosya ya da kayıt sil</td><td>Veri yok eder</td><td>Yedek yoksa hayır</td><td>İnsan onayı; mümkünse "çöp kutusu"na taşıma</td></tr>
+</table></div>
+
+<p>Ajanların bir zayıf noktası daha var ve onu burada yalnız adıyla ve savunma yönüyle anıyoruz: <strong>istem enjeksiyonu</strong>. Ajan bir web sayfasını, bir e-postayı ya da bir belgeyi okuduğunda, o metnin içine yerleştirilmiş talimatlar modele kullanıcının talimatıymış gibi görünebilir. Araç kullanan bir ajanda bu, okunan bir metnin ajanı istenmeyen bir eyleme yönlendirmesi demektir. Bu parçadaki önlemlerin hepsi aynı zamanda bu tehlikeye karşı savunmadır: veriyi talimattan ayırmak, en az yetki, kritik işte insan onayı, modelin istediği eylemi programda doğrulamak. Kavramın kendisi ve savunmaları Parça 18'in konusudur.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme 3 · Ağsız oyuncak ajan döngüsü</span>
+<p>Bu betikte gerçek bir model yok. Modelin yerine, önceden yazılmış bir "kararlar" listesi (<code>SAHTE_KARARLAR</code>) duruyor; program onları sırayla "modelden gelmiş" gibi işliyor. Amaç modeli değil, <strong>programın tarafını</strong> görmek: izinli araç listesi, onay gerektiren araç, bilinmeyen aracın reddi, adım sınırı. Bu bir oyuncaktır; gerçek bir ajanda karar her turda modele geçmiş gönderilerek alınır. Betik ağa çıkmaz, sipariş ya da e-posta göndermez.</p>
+<pre class="kod" data-ad="python3 -I ajan_oyuncak.py">import ast
+import operator
+
+# --- Araclar: gercek isi PROGRAM yapar, model yalniz ister ---
+ISLEM = {ast.Add: operator.add, ast.Sub: operator.sub,
+         ast.Mult: operator.mul, ast.Div: operator.truediv}
+
+def hesap(ifade):
+    # eval() KULLANMIYORUZ: yalniz sayi ve + - * / kabul edilir.
+    def coz(d):
+        if isinstance(d, ast.Constant) and isinstance(d.value, (int, float)):
+            return d.value
+        if isinstance(d, ast.BinOp) and type(d.op) in ISLEM:
+            return ISLEM[type(d.op)](coz(d.left), coz(d.right))
+        raise ValueError("izin verilmeyen ifade")
+    return coz(ast.parse(ifade, mode="eval").body)
+
+STOK = {"defter": 40, "kalem": 0}
+FIYAT = {"defter": 35.0, "kalem": 12.5}
+
+def stok_sorgula(urun):
+    return {"urun": urun, "adet": STOK.get(urun, 0), "fiyat": FIYAT.get(urun)}
+
+def siparis_ver(urun, adet):
+    return f"{adet} adet {urun} siparis edildi"   # geri alinamaz is!
+
+ARACLAR = {"hesap": hesap, "stok_sorgula": stok_sorgula, "siparis_ver": siparis_ver}
+ONAY_GEREKEN = {"siparis_ver"}
+
+# --- SAHTE model: gercek model yerine onceden yazilmis kararlar ---
+SAHTE_KARARLAR = [
+    {"tur": "arac", "ad": "stok_sorgula", "girdi": {"urun": "defter"}},
+    {"tur": "arac", "ad": "hesap", "girdi": {"ifade": "35.0 * 12"}},
+    {"tur": "arac", "ad": "siparis_ver", "girdi": {"urun": "defter", "adet": 12}},
+    {"tur": "arac", "ad": "eposta_gonder", "girdi": {"kime": "tum_musteriler"}},
+    {"tur": "bitti", "metin": "12 defter 420 lira tutuyor; siparis onay bekliyor."},
+]
+
+def insan_onayi(ad, girdi):
+    print(f"   ONAY ISTENDI: {ad} {girdi} -&gt; kullanici 'hayir' dedi")
+    return False   # deterministik olsun diye hep hayir
+
+def ajan(azami_adim=6):
+    gecmis = []
+    for adim in range(1, azami_adim + 1):
+        karar = SAHTE_KARARLAR[adim - 1]       # gercekte: modele gecmis gonderilir
+        if karar["tur"] == "bitti":
+            print(f"{adim}. Model bitirdi: {karar['metin']}")
+            return
+        ad, girdi = karar["ad"], karar["girdi"]
+        print(f"{adim}. Model istedi: {ad}({girdi})")
+        if ad not in ARACLAR:
+            sonuc = "HATA: boyle bir arac yok"
+        elif ad in ONAY_GEREKEN and not insan_onayi(ad, girdi):
+            sonuc = "REDDEDILDI: kullanici onaylamadi"
+        else:
+            sonuc = ARACLAR[ad](**girdi)
+        print(f"   Programin cevabi: {sonuc}")
+        gecmis.append((karar, sonuc))           # sonuc bir sonraki tura girer
+    print("Adim siniri doldu, durduruldu.")
+
+ajan()</pre>
+<pre class="cikti">1. Model istedi: stok_sorgula({'urun': 'defter'})
+   Programin cevabi: {'urun': 'defter', 'adet': 40, 'fiyat': 35.0}
+2. Model istedi: hesap({'ifade': '35.0 * 12'})
+   Programin cevabi: 420.0
+3. Model istedi: siparis_ver({'urun': 'defter', 'adet': 12})
+   ONAY ISTENDI: siparis_ver {'urun': 'defter', 'adet': 12} -&gt; kullanici 'hayir' dedi
+   Programin cevabi: REDDEDILDI: kullanici onaylamadi
+4. Model istedi: eposta_gonder({'kime': 'tum_musteriler'})
+   Programin cevabi: HATA: boyle bir arac yok
+5. Model bitirdi: 12 defter 420 lira tutuyor; siparis onay bekliyor.</pre>
+<p><strong>Okuma.</strong> Birinci ve ikinci adımda okuma ve hesap araçları onaysız çalıştı. Üçüncü adımda sipariş aracı onay listesinde olduğu için program durdu ve insana sordu; deterministik olsun diye kullanıcı hep "hayır" diyor, sonuç "reddedildi" olarak geçmişe girdi. Dördüncü adımda "model" listede olmayan bir araç istedi; program onu çalıştırmayı denemedi bile, yalnız hata döndürdü. Beşinci adımda "model" bitirdi ve siparişin onay beklediğini söyledi. Gerçek bir model böyle bir özeti her zaman doğru yazmayabilir; asıl güvence programın denetimleridir. <code>hesap</code> işlevi ifadeyi <code>ast</code> modülüyle ağaç olarak çözer ve yalnız sayılara ve dört işleme izin verir.</p>
+</div>
+
+<h2 class="s">7. Araç bağlama standartları: Model Context Protocol</h2>
+
+<p>Araç kullanımı yaygınlaşınca pratik bir sorun çıktı. Her uygulama (bir sohbet asistanı, bir kod editörü, bir şirket içi bot) her veri kaynağı (dosyalar, takvim, veritabanı, proje yönetim aracı) için ayrı bir bağlantı kodu yazıyordu. N uygulama ve M kaynak varsa kabaca N × M ayrı bağlantı gerekir ve hepsi ayrı ayrı bakım ister. Elektrikteki prizler gibi ortak bir standart olsa, her kaynak bir kez "standart prizle" yazılır, her uygulama bir kez "standart fişle"; bağlantı sayısı N + M'ye iner.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Model Context Protocol (MCP)</strong>, dil modeli uygulamalarını dış araçlara ve veri kaynaklarına bağlamak için açık bir standarttır. Anthropic tarafından 25 Kasım 2024'te açık kaynak olarak duyuruldu. Bir kaynak, standarda uyan bir <strong>MCP sunucusu</strong> olarak sunulur; uygulama içindeki <strong>MCP istemcisi</strong> sunucuya bağlanır, sunduğu araçların ve kaynakların listesini alır ve bu tanımları modele iletir. Model bir aracı isterse istemci sunucudan çalıştırmasını ister ve sonucu konuşmaya geri koyar.</p></div>
+
+<p>Yani MCP, bu parçadaki araç kullanımının yerini almaz; onun <strong>bağlantı kablosunu standartlaştırır</strong>. Model yine yalnız araç ister, çalıştıran yine modelin dışındaki yazılımdır; fark, aracın her uygulama için ayrı ayrı yazılmak yerine bir kez MCP sunucusu olarak yazılıp birçok uygulamada kullanılabilmesidir. İstemci ile sunucu, JSON-RPC 2.0 denen standart bir mesajlaşma biçimiyle konuşur. 9 Aralık 2025'te Anthropic, MCP'yi Linux Foundation bünyesinde kurulan Agentic AI Foundation'a devrettiğini duyurdu; amaç, standardın tek bir şirkete bağlı kalmaması olarak açıklandı.</p>
+
+<p>Bu kolaylığın bir güvenlik yüzü vardır. Bir MCP sunucusu kurmak, bir programa hesaplarında iş yapma yetkisi vermektir; sunucunun araç açıklamaları ve döndürdüğü metinler de modele gider. Bilinmeyen kaynaktan sunucu kurmamak, her sunucuya yalnız gereken izni vermek ve geri alınamaz işlerde onayı açık tutmak, ajan kurallarının MCP'deki karşılığıdır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> RAG'deki arama, Parça 3 ve 9'daki kosinüs benzerliğinin ve gömmelerin doğrudan uygulamasıdır; gömme modelleri çoğu zaman Parça 10'daki yalnız kodlayıcı ailedendir. API'nin her istekte geçmişi yeniden istemesi ve token başına ücret, Parça 11'deki hafızasızlığın ve tokenleştirmenin sonucudur. RAG ve araç kullanımı, Parça 14'teki bilgi kesim tarihine, halüsinasyona ve hesap hatalarına karşı uygulamaya yerleştirilmiş önlemlerdir. RAG istemi ve ajan talimatları, Parça 15'teki istem yazma kurallarıyla kurulur.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 17'de depoyu okuyan, dosya düzenleyen ve komut çalıştıran kodlama ajanlarını ve onların çıktısını doğrulamayı göreceksin; bu parçadaki döngünün yazılım geliştirmeye uygulanmış hâlidir. Parça 18'de istem enjeksiyonunu ve araç kullanan ajanlarda neden özellikle tehlikeli olduğunu savunma yönüyle ele alacağız. Parça 20'de token fiyatlarının neden düştüğünü ve fiyat savaşını ekonomik açıdan göreceksin.</p>
+<p><strong>Öbür raflara:</strong> Kod rafı Parça 13 (<code>urllib.request</code> ile HTTP isteği), Parça 34–35 (<code>.gitignore</code>, depoya sır koymamak, sızan anahtarın yanmış sayılması) ve Parça 25 (gizli anahtarın tarayıcı koduna konmaması); siber rafı Parça 10 (sır saklama ve ortam değişkeninin sınırları) ile Parça 6 ve 21 (en az yetki).</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>API anahtarı neden koda değil ortam değişkenine konur ve sızarsa ne yapılır?</summary><p>Anahtar isteğin senden geldiğini kanıtlar ve ücret senin hesabına yazılır; kod ise paylaşılır, yapıştırılır, Git geçmişinde kalır. Ortam değişkeninde duran anahtar, kod paylaşılsa bile paylaşılmaz. Sızan anahtar silinmekle kurtulmaz; iptal edilip yenisi üretilir.</p></details>
+<details><summary>RAG'in iki aşamasını sırayla anlat.</summary><p>Hazırlıkta belgeler parçalara bölünür, her parça bir gömme modeliyle vektöre çevrilir ve metniyle birlikte bir vektör veritabanına konur. Soru anında soru aynı gömme modeliyle vektöre çevrilir, veritabanında kosinüs benzerliğiyle en yakın birkaç parça bulunur ve bu parçalar talimat ve soruyla birlikte isteme eklenip dil modeline gönderilir.</p></details>
+<details><summary>RAG neden halüsinasyonu tamamen ortadan kaldırmaz?</summary><p>Arama yanlış ya da ilgisiz parçayı getirebilir, model doğru parçayı yanlış okuyabilir ya da kendi parametrik bilgisiyle karıştırabilir, hiçbir parça uygun değilken yine de bir şey uydurabilir. Bu yüzden kaynak göstermek, benzerlik eşiği koymak, arama kalitesini ayrıca ölçmek ve kritik cevabı belgeyle karşılaştırmak gerekir.</p></details>
+<details><summary>Araç kullanımında aracı kim çalıştırır ve bu neden önemli?</summary><p>Model yalnız aracın adını ve girdilerini yazarak çalıştırılmasını ister; aracı uygulama programı çalıştırır ve sonucu modele geri gönderir. Bu yüzden denetim de programdadır: izinli araç listesi, girdi doğrulaması, geri alınamaz işte insan onayı.</p></details>
+<details><summary>Ajan ile iş akışı arasındaki fark nedir ve bir ajana neden adım sınırı konur?</summary><p>İş akışında model ve araçlar önceden yazılmış kod yollarıyla yönetilir; ajanda ise hangi aracın hangi sırayla kullanılacağına model kendisi karar verir ve her sonucu görüp yolunu değiştirebilir. Model yanılabildiği ve kendiliğinden durmayabileceği için adım sınırı hem maliyeti hem hatalı yolda ilerlemeyi sınırlar.</p></details>
+<details><summary>MCP neyi standartlaştırır, neyi değiştirmez?</summary><p>MCP, dil modeli uygulamalarının dış araçlara ve veri kaynaklarına bağlanma biçimini standartlaştırır: kaynak bir kez MCP sunucusu olarak yazılır, her uygulama bir MCP istemcisiyle ona bağlanır. Araç kullanımının mantığını değiştirmez: model yine yalnız ister, çalıştıran yine modelin dışındaki yazılımdır ve güvenlik kuralları (en az yetki, onay) yine geçerlidir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>API:</strong> programın modele internet üzerinden istek atıp yapılandırılmış (JSON) cevap aldığı kapı. İstekte model, mesajlar, <code>max_tokens</code>; cevapta <code>content</code>, <code>stop_reason</code>, <code>usage</code>.</li>
+<li><strong>Hafızasızlık:</strong> her istek bağımsız; sohbet geçmişini her seferinde program yeniden gönderir.</li>
+<li><strong>Anahtar:</strong> ortam değişkeninde durur; koda, isteme, tarayıcıya yazılmaz; sızarsa iptal edilir.</li>
+<li><strong>Ücret:</strong> (girdi × girdi fiyatı + çıktı × çıktı fiyatı) ÷ 1.000.000. Girdiye geçmiş, sistem istemi, belgeler, araç tanımları dahil. Fiyatlar tarihli ve değişken.</li>
+<li><strong>RAG:</strong> hazırlıkta parçala → göm → vektör veritabanı; soru anında soruyu göm → en yakın k → isteme ekle → model. Kaynak göster, eşik koy; halüsinasyonu azaltır, bitirmez.</li>
+<li><strong>RAG mı ince ayar mı:</strong> güncel olgu bilgisi ve kaynak için RAG; üslup ve davranış için ince ayar.</li>
+<li><strong>Araç kullanımı:</strong> model ad + girdi yazarak ister (<code>tool_use</code>); program izinli listeyle denetleyip çalıştırır, sonucu döndürür (<code>tool_result</code>). <code>eval</code> yok; model girdisi güvenilmez girdidir.</li>
+<li><strong>Ajan:</strong> hedef + araçlar + döngü (karar → eylem → gözlem); durdurma koşulu ve adım sınırı şart. Basit iş akışı yetiyorsa ajan kurma.</li>
+<li><strong>İnsan onayı:</strong> para, gönderme, silme, yayımlama gibi geri alınamaz işlerde; en az yetki; her adımı kaydet. İstem enjeksiyonu → Parça 18.</li>
+<li><strong>MCP:</strong> Anthropic, 25 Kasım 2024; açık standart, istemci–sunucu, JSON-RPC 2.0; Aralık 2025'te Linux Foundation altındaki Agentic AI Foundation'a devredildi. Bağlantıyı standartlaştırır, güvenlik kurallarını kaldırmaz.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-16">
+<h3>Quiz 16</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir Python programı bir dil modeli API'sine istek atacak. API anahtarı için aşağıdakilerden hangisi doğru uygulamadır?</p>
+<ul class="sec"><li>Anahtarı kodun ilk satırına bir değişken olarak yazmak, depoyu da gizli yapmak</li><li>Anahtarı sistem istemine ekleyip modelin gerektiğinde kullanmasını sağlamak</li><li>Anahtarı bir ortam değişkeninde tutup program içinde oradan okumak, kodda hiç geçirmemek</li><li>Anahtarı web sayfasının JavaScript koduna koyup isteği doğrudan tarayıcıdan atmak</li><li>Anahtarı Git'e gönderip sonraki commit'te silmek</li></ul>
+<div class="coz"><p>Doğru cevap C: anahtar programın çalıştığı ortamda durur, kod paylaşılsa bile anahtar paylaşılmaz. A'da anahtar kodda kalır; depo bugün gizli olsa da yarın paylaşılabilir ve Git geçmişi onu saklar. B'de anahtar sağlayıcıya giden istem metnine girer ve cevapta geri dönebilir; model anahtarı görmeye zaten ihtiyaç duymaz. D, anahtarı sayfayı açan herkese dağıtmaktır. E yanlıştır, çünkü silinen satır Git geçmişinde durur; sızan anahtar iptal edilmelidir.</p></div></li>
+
+<li data-c="E"><p class="q">Bir uygulama API ile modelden önce "En sevdiğim renk mavi." mesajına cevap alıyor. İkinci istekte yalnız "En sevdiğim renk neydi?" mesajını gönderiyor. En olası sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Model "mavi" der, çünkü API anahtarı aynı olduğu için konuşmayı hatırlar.</li><li>Model "mavi" der, çünkü sağlayıcı her konuşmayı modele kalıcı olarak öğretir.</li><li>İstek hata verir, çünkü ikinci soru tek başına gönderilemez.</li><li>Model ilk mesajı görür ama cevaplamayı reddeder.</li><li>Model ilk mesajı görmez; renk bilgisi ikinci isteğin <code>messages</code> listesinde yoksa bunu bilemez.</li></ul>
+<div class="coz"><p>Model hafızasızdır: her istek bağımsız işlenir ve model yalnız o istekte gönderilen mesajları görür (E). Sohbet arayüzleri geçmişi her seferinde kendileri yeniden gönderdiği için "hatırlama" görüntüsü oluşur; API'yi kendin kullanınca bu iş programına düşer. A yanlış: anahtar kimliği ve faturayı belirler, konuşma tutmaz. B yanlış: tek tek istekler modelin parametrelerini değiştirmez. C ve D'nin dayanağı yoktur; istek geçerlidir, model yalnızca bilgiye sahip değildir.</p></div></li>
+
+<li data-c="A"><p class="q">Fiyatlar girdi için 1 milyon token başına 2 dolar, çıktı için 1 milyon token başına 10 dolardır. 2.000 girdi ve 500 çıktı tokeni harcayan tek bir isteğin ücreti kaç dolardır?</p>
+<ul class="sec"><li>0,009</li><li>0,021</li><li>9.000</li><li>0,005</li><li>0,004</li></ul>
+<div class="coz"><p>Girdi: 2.000 × 2 ÷ 1.000.000 = 0,004 dolar. Çıktı: 500 × 10 ÷ 1.000.000 = 0,005 dolar. Toplam 0,009 dolar (A). B, iki fiyatı yer değiştirmektir (2.000 × 10 + 500 × 2 = 21.000). C, bir milyona bölmeyi unutmaktır. D yalnız çıktı payını, E yalnız girdi payını hesaplar. Çıktı tokeni daha az olduğu hâlde payının daha büyük çıktığına dikkat et.</p></div></li>
+
+<li data-c="D"><p class="q">RAG (bilgiyle zenginleştirilmiş üretim) ile ilgili aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Belgeler parçalara bölünür ve her parça bir gömme modeliyle vektöre çevrilir.</li><li>Soru da aynı gömme modeliyle vektöre çevrilip en yakın parçalar aranır.</li><li>Bulunan parçalar soruyla birlikte isteme eklenir ve model onlara dayanarak cevap verir.</li><li>RAG kullanıldığında model hiçbir koşulda yanlış ya da uydurma cevap veremez.</li><li>Belgeler değişince modeli yeniden eğitmek gerekmez; değişen belgeleri yeniden gömmek yeter.</li></ul>
+<div class="coz"><p>Soru yanlış olanı soruyor. D yanlıştır: arama yanlış parçayı getirebilir, model doğru parçayı yanlış okuyabilir ya da hiçbir parça ilgili değilken yine bir şey uydurabilir; RAG halüsinasyonu azaltır ama bitirmez. A ve B hazırlık ve arama aşamalarının doğru tarifidir; iki aşamada aynı gömme modeli kullanılmalıdır. C, RAG'in üretim yarısıdır. E de doğrudur ve RAG'in ince ayara göre başlıca üstünlüğüdür.</p></div></li>
+
+<li data-c="B"><p class="q">Bir RAG sisteminde soru vektörü q = [1; 1; 0]'dır. Aşağıdaki parçalardan hangisi <strong>kosinüs benzerliğine</strong> göre soruya en yakındır?</p>
+<ul class="sec"><li>kargo: [5; 1; 4]</li><li>fatura: [1; 1; 0,2]</li><li>garanti: [0; 1; 1]</li><li>saatler: [0; 0; 3]</li><li>iade: [2; 0; 0]</li></ul>
+<div class="coz"><p>Kosinüs, nokta çarpımı iki uzunluğun çarpımına böler ve yalnız yöne bakar. fatura: 2 ÷ (1,414 × 1,428) ≈ 0,990; iade: 2 ÷ (1,414 × 2) ≈ 0,707; kargo: 6 ÷ (1,414 × 6,481) ≈ 0,655; garanti: 1 ÷ (1,414 × 1,414) = 0,5; saatler: 0. Cevap B. A tuzaktır: kargonun nokta çarpımı (6) en büyüktür, ama bu vektörün uzun olmasından gelir; yönü soruya fatura kadar benzemez. Uzunluğa bölmenin amacı tam bu etkiyi silmektir (Parça 3 ve 9).</p></div></li>
+
+<li data-c="C"><p class="q">Araç kullanımı (tool use) olan bir uygulamada model, cevabında <code>stok_sorgula</code> aracını <code>urun = "defter"</code> girdisiyle istiyor. Bundan sonra ne olur?</p>
+<ul class="sec"><li>Model, sağlayıcının sunucusunda dükkânın veritabanına kendisi bağlanıp stoğu okur.</li><li>Model aracın kaynak kodunu okuyup sonucu tahmin eder.</li><li>Uygulama programı istenen aracın izinli listede olduğunu ve girdiyi denetler, aracı çalıştırır, sonucu bir sonraki istekte modele geri gönderir.</li><li>İstek reddedilir, çünkü modeller araç isteyemez.</li><li>Kullanıcı, aracın sonucunu elle hesaplayıp sohbete yazmak zorundadır.</li></ul>
+<div class="coz"><p>Model yalnız aracın adını ve girdisini yazarak çalıştırılmasını ister; aracı uygulama programı çalıştırır ve sonucu (Anthropic API'sinde <code>tool_result</code> bloğu olarak) geri gönderir (C). A yanlış: model kendi başına hiçbir şey çalıştırmaz ve dükkânın veritabanına erişimi yoktur. B yanlış: model aracın kodunu görmez, yalnız şemasını ve döndürülen sonucu görür. D modern API'lerin bu özelliğini yok sayar. E, bütün işi programın otomatik yaptığı akışı yanlış anlatır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir ajana aşağıdaki araçlar verilmiştir. Hangisi en az yetki ve geri alınamazlık ilkelerine göre <strong>insan onayı olmadan</strong> çalıştırılmamalıdır?</p>
+<ul class="sec"><li>Ürün kataloğunda arama yapmak</li><li>İki sayıyı çarpan bir hesap aracı</li><li>Bir belge parçasını özetletmek için modelin kendi metnini kullanmak</li><li>Siparişin bir taslağını oluşturup insanın önüne koymak</li><li>Tedarikçiye ödeme yapıp siparişi kesinleştirmek</li></ul>
+<div class="coz"><p>Para harcayan ve çoğu zaman geri alınamayan bir iş, ajanın kararıyla değil insan onayından sonra yapılmalıdır (E). A ve B yalnız okur ya da hesaplar, hiçbir şeyi değiştirmez. C dış dünyaya etkisi olmayan bir metin işidir. D bir kayıt yazar ama göndermez; zaten insanın önüne gelecek bir taslaktır. Model yanılabildiği ve okuduğu metinlerden yanlış yönlendirilebildiği için dışarıya etkisi olan işler için fren programda olmalıdır.</p></div></li>
+
+<li data-c="A"><p class="q">Model Context Protocol (MCP) ile ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Dil modeli uygulamalarını dış araçlara ve veri kaynaklarına bağlamak için açık bir standarttır; kaynak MCP sunucusu olarak sunulur, uygulamadaki MCP istemcisi ona bağlanır.</li><li>Anthropic'in eğittiği yeni bir dil modelinin adıdır.</li><li>Gömme vektörlerini saklayan bir vektör veritabanıdır.</li><li>Kurulduğunda modelin araçları kendi başına ve onaysız çalıştırmasını zorunlu kılar.</li><li>API anahtarlarını şifrelemek için geliştirilmiş bir algoritmadır.</li></ul>
+<div class="coz"><p>MCP, Anthropic'in 25 Kasım 2024'te açık kaynak olarak duyurduğu, araç ve veri kaynaklarını dil modeli uygulamalarına bağlamak için bir standarttır; istemci–sunucu yapısındadır (A). Bir model (B), veritabanı (C) ya da şifreleme algoritması (E) değildir. D yanlıştır: MCP bağlantıyı standartlaştırır, onay ve yetki kararlarını kaldırmaz; araçları yine modelin dışındaki yazılım çalıştırır ve en az yetki ile insan onayı kuralları geçerliliğini korur.</p></div></li>
+
+<li data-c="B" data-k="yz-1"><p class="q">Satranç oynayan Deep Blue (1997) aşağıdakilerden hangisine örnektir?</p>
+<ul class="sec"><li>Genel yapay zekâ (AGI)</li><li>Dar yapay zekâ: tek bir işte çok iyi olan sistem</li><li>Büyük dil modeli</li><li>Denetimsiz öğrenmeyle müşteri gruplayan sistem</li><li>Transformer tabanlı sohbet asistanı</li></ul>
+<div class="coz"><p>Deep Blue yalnız satranç oynayabilen bir sistemdi; tek bir işte insan şampiyonunu yendi ama başka hiçbir iş yapamıyordu. Bu, dar yapay zekânın tanımıdır (B). Genel yapay zekâ (A) birçok farklı işte insan düzeyinde esneklik ister ve hâlâ tanımı tartışmalı bir hedeftir. C ve E çok daha sonraki teknolojilerdir (transformer 2017). D farklı bir öğrenme türünü anlatır.</p></div></li>
+
+<li data-c="D" data-k="yz-2"><p class="q">Bir model eğitim verisinde neredeyse hiç hata yapmıyor, ama daha önce görmediği test verisinde çok kötü sonuç veriyor. Bu durumun adı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Yetersiz öğrenme (underfitting)</li><li>Denetimsiz öğrenme</li><li>Regresyon</li><li>Aşırı öğrenme (overfitting), yani ezberleme</li><li>Çıkarım (inference)</li></ul>
+<div class="coz"><p>Model eğitim örneklerini ezberlemiş, genel kuralı öğrenememiştir; bu aşırı öğrenmedir (D). Yetersiz öğrenmede (A) model eğitim verisinde de kötüdür. B ve C öğrenme ve problem türlerinin adıdır, bir başarısızlık durumu değildir. E, eğitilmiş modelin yeni veri üzerinde kullanılmasının adıdır. Test verisinin eğitimde görülmemesi zaten bu farkı yakalamak içindir.</p></div></li>
+
+<li data-c="C" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin her parametresi 16 bit (2 bayt) ile saklanıyor. Model 8 bite (1 bayt) nicelenirse (quantization) ağırlıkların kapladığı bellek yaklaşık nasıl değişir?</p>
+<ul class="sec"><li>7 GB'tan 14 GB'a çıkar.</li><li>Değişmez; niceleme yalnız hızı etkiler.</li><li>14 GB'tan 7 GB'a iner.</li><li>14 GB'tan 1,75 GB'a iner.</li><li>7 milyar GB'tan 7 GB'a iner.</li></ul>
+<div class="coz"><p>16 bitte 7 milyar × 2 bayt = 14 milyar bayt ≈ 14 GB; 8 bitte 7 milyar × 1 bayt ≈ 7 GB (C). Niceleme her sayıyı daha az bitle, biraz hassasiyet kaybederek saklamaktır; belleği yarıya indirir. A yönü ters çevirir. B yanlış: asıl kazanç bellektir. D, 2 bitlik bir niceleme hesabıdır (dört kat daha az). E birimleri karıştırır.</p></div></li>
+
+<li data-c="A" data-k="yz-5"><p class="q">Bir müşteri hizmetleri ekibinin başarısı yalnız "kapatılan şikâyet sayısı" ile ölçülmeye başlanınca çalışanlar şikâyetleri çözmeden kapatmaya başlıyor. Bu durumu en iyi anlatan kavram hangisidir?</p>
+<ul class="sec"><li>Goodhart yasası: ölçüt hedef hâline gelince iyi bir ölçüt olmaktan çıkar.</li><li>Evrensel yaklaşım teoremi</li><li>Transfer öğrenme</li><li>Kaybolan gradyan</li><li>Tek sıcak gösterim</li></ul>
+<div class="coz"><p>Ölçülen sayı (kapatılan şikâyet) asıl amacın (müşterinin sorununun çözülmesi) yerine hedef yapılınca, insanlar sayıyı artırmanın kestirme yollarını bulur ve sayı artık asıl amacı göstermez; bu Goodhart yasasıdır (A). Parça 5'te kıyaslama tablolarının ezberlenmesi de aynı mekanizmayla açıklanır. Öbür seçenekler sinir ağlarının yapısı ve eğitimiyle ilgili, bu durumla ilgisiz kavramlardır.</p></div></li>
+
+<li data-c="E" data-k="yz-6"><p class="q">3 girdisi olan bir ağın ilk gizli katmanında 4 nöron vardır ve her nöronun bir sapması (bias) bulunur. Bu katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>7</li><li>12</li><li>48</li><li>19</li><li>16</li></ul>
+<div class="coz"><p>Her nöron 3 girdinin her birine bir ağırlık verir: 4 × 3 = 12 ağırlık. Her nöronun bir de sapması vardır: 4 sapma. Toplam 12 + 4 = 16 (E). B sapmaları unutur. A girdi ve nöron sayısını toplar. C 3 × 4 × 4 gibi anlamsız bir çarpımdır. D, 12 ağırlığa yanlışlıkla 7 eklemektir. "70 milyar parametre" gibi ifadeler bu hesabın bütün katmanlar için toplanmış hâlidir.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">Sinir ağı eğitiminde dropout yönteminin yaptığı iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Öğrenme oranını her dönemde ikiye katlamak</li><li>Eğitim sırasında her adımda nöronların bir kısmını rastgele devre dışı bırakarak ağın tek tek nöronlara aşırı dayanmasını ve ezberlemesini azaltmak</li><li>Eğitim verisinin yarısını kalıcı olarak silmek</li><li>Hatayı sondan başa doğru dağıtmak</li><li>Test verisini eğitime katmak</li></ul>
+<div class="coz"><p>Dropout bir düzenlileştirme yöntemidir: eğitimde rastgele seçilen nöronlar o adımda kapatılır, böylece ağ bilgiyi tek nöronlara yığamaz ve daha sağlam, genellenebilir özellikler öğrenir (B). A öğrenme oranı zamanlamasıyla ilgilidir ve böyle bir kural yoktur. C veri silmektir, dropout değil. D geri yayılımın tarifidir. E bir veri sızıntısıdır ve sahte başarı üretir.</p></div></li>
+
+<li data-c="D" data-k="yz-9"><p class="q">Büyük bir haber metni yığınından öğrenilmiş kelime gömmelerinde bazı meslek adlarının belirli bir cinsiyete yakın durması en çok neyle açıklanır?</p>
+<ul class="sec"><li>Gömme algoritmasının kodunda cinsiyet kuralları yazılı olmasıyla</li><li>Vektörlerin tek sıcak gösterimle kurulmasıyla</li><li>Gömmelerin rastgele başlatılıp hiç eğitilmemesiyle</li><li>Gömmelerin, kelimelerin metinlerde hangi kelimelerle birlikte geçtiğini öğrenmesi ve metindeki kalıp yargıların bu istatistiğe yansımasıyla</li><li>Türkçe "o" zamirinin cinsiyet belirtmesiyle</li></ul>
+<div class="coz"><p>Kelime gömmeleri birlikte geçme istatistiğinden öğrenilir; metinlerde bir meslek sistemli olarak bir cinsiyetin zamirleriyle birlikte geçiyorsa bu ilişki vektörlere girer (D). Model toplumu düzeltmez, yalnız metni sıkıştırır. A yanlış: kimse böyle bir kural yazmaz. B ve C gömmenin tanımına aykırıdır. E yanlış: Türkçedeki "o" cinsiyet belirtmez; bu da çeviride sorun çıkaran bir özelliktir.</p></div></li>
+
+<li data-c="C" data-k="yz-10"><p class="q">Bugünkü sohbet modellerinin çoğunun ait olduğu transformer ailesi ve özelliği hangi seçenekte doğru verilmiştir?</p>
+<ul class="sec"><li>Yalnız kodlayıcı; metnin tamamına iki yönlü bakar ve metin üretmez</li><li>Tekrarlayan ağ (RNN); metni bir hafıza vektörüyle okur</li><li>Yalnız kod çözücü; maskeli öz-dikkatle yalnız öncesine bakar ve sonraki tokeni tahmin ederek metin üretir</li><li>Evrişimli ağ; metni filtrelerle tarar</li><li>Kodlayıcı + kod çözücü; yalnız çeviri yapabilir</li></ul>
+<div class="coz"><p>Sohbet modelleri metin ürettiği için kod çözücü tarafındadır; mimarisi açıklanmış olanların büyük çoğunluğu yalnız kod çözücüdür: maske sayesinde her konum yalnız geçmişe bakar ve sonraki token tahmin edilir (C). A, BERT gibi yalnız kodlayıcıları anlatır; bunlar RAG'deki gömme modelleri gibi anlamaya dönük işlerde kullanılır. B ve D transformer değildir. E 2017'deki özgün yapıdır ve yalnız çeviriyle sınırlı da değildir.</p></div></li>
+
+<li data-c="A" data-k="yz-11"><p class="q">Aynı soruyu bir modele birkaç kez sorduğunda her seferinde aynı cevabı almaya en yakın olmak için sıcaklık (temperature) ayarı nasıl seçilmelidir?</p>
+<ul class="sec"><li>Düşük (sıfıra yakın); model olasılığı en yüksek tokenlere yönelir</li><li>Çok yüksek; dağılım düzleşir ve cevaplar tutarlılaşır</li><li>Sıcaklığın cevap çeşitliliğiyle hiçbir ilgisi yoktur</li><li>Sıcaklık bağlam penceresini büyütür, bu yüzden en yükseğe çekilmelidir</li><li>Sıcaklık yalnız tokenleştirmeyi değiştirir</li></ul>
+<div class="coz"><p>Model her adımda bir sonraki token için bir olasılık dağılımı üretir ve sıcaklık bu dağılımdan örneklemenin ne kadar "cesur" olacağını belirler. Düşük sıcaklıkta yüksek olasılıklı tokenler baskın gelir, cevaplar daha tekrarlanabilir olur (A). Yüksek sıcaklık dağılımı düzleştirir ve çeşitliliği artırır; B bunu ters söyler. C yanlıştır, aynı soruya farklı cevabın başlıca nedeni örneklemedir. D ve E sıcaklığı başka kavramlarla (bağlam penceresi, tokenleştirme) karıştırır.</p></div></li>
+
+<li data-c="E" data-k="yz-12"><p class="q">Ölçekleme yasaları (scaling laws) ve 2022 "Chinchilla" çalışması ile ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Parametre sayısı arttıkça kayıp her zaman sıfıra iner.</li><li>Veri miktarının kayıp üzerinde hiçbir etkisi yoktur.</li><li>Sabit hesap bütçesinde en iyi yol, veriyi azaltıp yalnız parametreyi büyütmektir.</li><li>Ölçekleme yasaları yalnız görüntü modelleri için geçerlidir.</li><li>Parametre, veri ve hesap arttıkça kayıp öngörülebilir biçimde düşer; Chinchilla belirli bir hesap bütçesinde veri ile parametrenin dengelenmesi gerektiğini gösterdi.</li></ul>
+<div class="coz"><p>Ölçekleme yasaları (Kaplan ve ark. 2020) kaybın parametre, veri ve hesapla öngörülebilir biçimde düştüğünü gösterdi; Chinchilla (2022) aynı hesap bütçesinde parametreyi büyütüp veriyi az tutmak yerine ikisini dengelemenin daha iyi sonuç verdiğini bildirdi (E). A abartıdır; kayıp düşer ama sıfıra inmez. B ve C Chinchilla'nın bulgusunun tersidir. D yanlış: bu yasalar dil modellerinin ön eğitimi bağlamında öne çıktı.</p></div></li>
+
+<li data-c="B" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli" ne işe yarar?</p>
+<ul class="sec"><li>Ön eğitim verisini internetten toplar.</li><li>İnsanların iki cevaptan hangisini daha iyi bulduğuna dair seçimlerinden öğrenir ve yeni bir cevaba puan verir; dil modeli bu puana göre ayarlanır.</li><li>Kullanıcılara para ödülü dağıtır.</li><li>Metni tokenlere böler.</li><li>Modelin bağlam penceresini büyütür.</li></ul>
+<div class="coz"><p>RLHF'de insanlar aynı soruya verilmiş iki cevaptan iyisini seçer; ödül modeli bu tercihlerden öğrenerek bir cevabın ne kadar beğenileceğini tahmin eden bir puan üretir ve dil modeli bu puanı artıracak yönde ayarlanır (B). A ön eğitimin veri toplama işidir. C kelime oyunudur. D tokenleştirici, E mimari ve hesapla ilgili bir özelliktir; ödül modeliyle ilgisi yoktur.</p></div></li>
+
+<li data-c="D" data-k="yz-13"><p class="q">Ön eğitimden yeni çıkmış bir temel modele (base model) "Türkiye'nin başkenti neresidir?" yazıldığında cevap yerine benzer soruları sıralayan bir metin üretmesinin nedeni nedir?</p>
+<ul class="sec"><li>Temel modelin hiç parametresi yoktur.</li><li>Temel model yalnız resimlerle eğitilmiştir.</li><li>Sistem istemi temel modelde zorunludur ve verilmediği için model çalışmaz.</li><li>Temel model yalnız metni olası biçimde sürdürmeyi öğrenmiştir; soru sorulan bir metnin devamı çoğu zaman başka sorular olabilir. Soruya cevap verme davranışı ince ayarla kazandırılır.</li><li>Model soruyu anlamış ama cevabı bilerek gizlemektedir.</li></ul>
+<div class="coz"><p>Ön eğitimde model yalnız "bir sonraki tokeni tahmin et" oyununu oynar; bir soru listesinin devamı çoğu metinde başka sorulardır, bu yüzden temel model soruyu cevaplamak yerine devam ettirebilir (D). Denetimli ince ayar ve RLHF, modele iyi örnek konuşmalarla asistan gibi davranmayı öğretir. A ve B yanlış tanımlardır. C yanlıştır: sistem istemi (Parça 13) sohbet modeline rol ve kural vermenin bir yoludur, temel modelin çalışmasının şartı değildir. E modele niyet yükleyen bir yanılgıdır.</p></div></li>
+
+<li data-c="A" data-k="yz-14"><p class="q">Dil modellerinin halüsinasyon üretmesinin (bilmediği yerde akıcı ve kendinden emin uydurmasının) temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin eğitildiği hedefin olası metin üretmek olması; olası metin her zaman doğru metin değildir.</li><li>Modelin her cevabı bir veritabanından birebir kopyalaması</li><li>Bilgisayarın donanım arızası</li><li>Kullanıcının istemi Türkçe yazması</li><li>Modelin bilerek yalan söylemeye programlanmış olması</li></ul>
+<div class="coz"><p>Model, verilen metinden sonra en olası devamı üretmek üzere eğitilir. Bilmediği bir konuda da dil bilgisi ve üslup bakımından "olası" görünen bir metin üretebilir; bu metnin doğru olduğunun güvencesi yoktur (A). B tersidir: model bir veritabanından kopyalamaz, bu yüzden kaynak da uydurabilir. C ve D ilgisiz nedenlerdir. E modele niyet yükler; halüsinasyon mekanizmanın doğal yan ürünüdür.</p></div></li>
+
+<li data-c="C" data-k="yz-14"><p class="q">Bir modele "Bu sabah açıklanan faiz kararı neydi?" diye soruyorsun ve model bir oran söylüyor. Aşağıdakilerden hangisi en doğru tutumdur?</p>
+<ul class="sec"><li>Model kendinden emin konuştuğu için cevabı doğru kabul etmek</li><li>Modele "emin misin" diye sorup "evet" derse kabul etmek</li><li>Modelin bilgi kesim tarihinden sonraki olayları bilemeyeceğini hatırlayıp bilgiyi resmî ve güncel bir kaynaktan bağımsız olarak doğrulamak</li><li>Aynı soruyu sıcaklığı artırarak tekrar sormak</li><li>Modelin söylediği oranı ortalamaya katmak için üç kez sormak</li></ul>
+<div class="coz"><p>Model, eğitim verisinin bittiği tarihten (bilgi kesim tarihi) sonraki olayları kendi başına bilemez; araç ya da arama bağlı değilse "bu sabahki" bir kararı ancak uydurabilir. Kritik ve güncel bilgi resmî bir kaynaktan bağımsız olarak doğrulanmalıdır (C). A, akıcılığı doğrulukla karıştırır. B işe yaramaz, çünkü model kendi güven düzeyini her zaman doğru bilmez ve onaylamaya yatkın olabilir (yaltaklanma). D ve E aynı bilgisizliğin farklı örneklerini toplar.</p></div></li>
+
+<li data-c="E" data-k="yz-15"><p class="q">Bir modelden müşteri yorumlarını "olumlu / olumsuz / karışık" diye etiketlemesini istiyorsun. İsteme, her etiket için çözülmüş birer örnek ekliyorsun. Bu tekniğin adı nedir?</p>
+<ul class="sec"><li>Ön eğitim</li><li>Tokenleştirme</li><li>Geri yayılım</li><li>Niceleme</li><li>Birkaç örnekle istem (few-shot)</li></ul>
+<div class="coz"><p>İstemin içine istenen girdi–çıktı biçimini gösteren birkaç örnek koymak, birkaç örnekle (few-shot) istem yazmaktır (E). Model örneklerden hem görevi hem çıktı biçimini çıkarır; bu, modeli yeniden eğitmeden yapılır. A ve C modelin eğitimine ait süreçlerdir. B metnin parçalara bölünmesidir. D ağırlıkları daha az bitle saklamaktır.</p></div></li>
+
+<li data-c="B" data-k="yz-15"><p class="q">İstem yazmayla ilgili aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Model ne istendiğini yalnız yazılandan anlar; görev, bağlam, kısıt ve biçim açıkça yazılmalıdır.</li><li>İyi bir istem bir kez yazılır; aynı istem her modelde aynı sonucu verir, denemeye ve düzeltmeye gerek yoktur.</li><li>Belirsiz bir işte modelden, başlamadan önce soru sormasını istemek yararlı olabilir.</li><li>Parola, kişisel veri ya da şirket sırrı istemle paylaşılmamalıdır.</li><li>Büyük bir işi parçalara bölmek ve adım adım ilerletmek sonucu iyileştirebilir.</li></ul>
+<div class="coz"><p>Soru yanlış olanı soruyor. B yanlıştır: aynı istem farklı modellerde farklı sonuç verebilir ve istem yazmak deneme, karşılaştırma ve düzeltme döngüsüdür. A, C, D ve E Parça 15'in doğru öğütleridir: açık görev ve biçim, belirsizlikte soru istemek, gizli bilgiyi paylaşmamak (bu parçadaki API anahtarı kuralı da bunun bir uygulamasıdır) ve büyük işi parçalara bölmek.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-15">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-16">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-17">Sonraki parça: YZ ile yazılım geliştirmek</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"RAG retrieval augmented generation nasıl çalışır embedding vector database"</li>
+  <li>"LLM tool calling function calling explained"</li>
+  <li>"AI agent loop tools human in the loop"</li>
+  <li>"Model Context Protocol MCP nedir"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>API ayrıntıları 14 Ekim 2026'da Anthropic'in resmî belgelerinden (platform.claude.com) doğrulandı: "Create a Message" referans sayfasında uç nokta <code>POST https://api.anthropic.com/v1/messages</code>, örnek istekteki başlıklar (<code>Content-Type: application/json</code>, <code>anthropic-version: 2023-06-01</code>, <code>X-Api-Key</code>; HTTP başlık adları büyük–küçük harf ayırmaz) ve cevaptaki <code>content</code>, <code>stop_reason</code>, <code>usage.input_tokens</code>, <code>usage.output_tokens</code> alanları; ayrıca önbellek sayaçlarının (<code>cache_creation_input_tokens</code>, <code>cache_read_input_tokens</code>) varlığı. Metindeki örnek cevap JSON'u "Using the Messages API" sayfasından aynen alındı (12 girdi, 6 çıktı tokeni); <strong>bu cevap burada çalıştırılarak üretilmedi.</strong> Sayfaları bir özetleyici araç üzerinden okudum; belge sürekli güncellendiği için alan adları değişebilir.</li>
+  <li>Fiyat ve model: Anthropic'in resmî fiyat sayfası ve Claude Sonnet 5.5 model sayfası, 14 Ekim 2026 itibarıyla: model kimliği <code>claude-sonnet-5-5</code>, girdi 2 dolar/MTok, çıktı 10 dolar/MTok, yayın tarihi 28 Eylül 2026. Fiyatlar ve model adları hızla değişir; okuduğun gün fiyat sayfasına yeniden bak. Çözümlü örnek 1'deki iş yükü (1.500/400 token, günde 2.000 istek) uydurma bir senaryodur.</li>
+  <li>Araç kullanımı akışı (<code>tools</code> alanı, <code>stop_reason: "tool_use"</code>, <code>tool_use</code> ve <code>tool_result</code> blokları, <code>end_turn</code> ile döngü sonu) ve "model kendi başına hiçbir şey çalıştırmaz; kodun yürütür" ifadesi Anthropic'in "How tool use works" sayfasından alındı. <code>tool_result</code> bloğunun alan adlarını (ör. hangi araç isteğine ait olduğunu gösteren kimlik alanı) o sayfada göremedim; metinde bu yüzden alan ayrıntısına girmedim.</li>
+  <li>Anthropic'in kendi gömme modeli sunmadığı ve örnek olarak Voyage AI'ı gösterdiği bilgisi "Embeddings" belge sayfasından (14 Ekim 2026). RAG adının kaynağı: Lewis ve ark., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks", arXiv 2005.11401, ilk sürüm 22 Mayıs 2020; "parametrik ve parametrik olmayan bellek" ifadesi özetten. Yazarların kurumunu bu oturumda doğrulamadığım için metne yazmadım.</li>
+  <li>İş akışı ile ajan tanımları, ortamdan "gerçek" geri bildirim, durdurma koşulu ve insana danışma: Anthropic, "Building effective agents", 19 Aralık 2024 (anthropic.com/engineering).</li>
+  <li>MCP: Anthropic'in "Introducing the Model Context Protocol" duyurusu, 25 Kasım 2024 (açık standart, MCP sunucusu ve istemcisi); devir: Anthropic'in 9 Aralık 2025 tarihli duyurusu (Linux Foundation bünyesindeki Agentic AI Foundation; kurucular Anthropic, Block ve OpenAI). JSON-RPC 2.0 bilgisi Vikipedi'nin MCP sayfasından; protokol belirtimini birincil kaynaktan okumadım.</li>
+  <li>Hafızadan yazılan ve temkinli dille verilen noktalar: çıktı tokeninin girdiden pahalı olmasının gerekçesi (sıralı üretim) genel alan bilgisidir; herkese açık depolarda anahtar tarayan programların varlığı yaygın bilinen bir olgu olarak anlatıldı; vektör veritabanlarının "yaklaşık en yakın komşu" yöntemleri kavram düzeyinde ve kaynak gösterilmeden verildi; "harcama ayarları" ifadesi sağlayıcı panellerinin genel özelliği olarak yazıldı, belirli bir ayarı doğrulamadım.</li>
+  <li>Kod: dört betik (<code>api_istek.py</code>, <code>maliyet.py</code>, <code>rag_oyuncak.py</code>, <code>ajan_oyuncak.py</code>) bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı ve çıktıları birebir konuldu. <code>api_istek.py</code> anahtarsız (<code>ANTHROPIC_API_KEY</code> tanımsız) çalıştırıldı; hiçbir ücretli istek yapılmadı. Betiğin cevap ayrıştıran kısmı, adresi <code>127.0.0.1</code>'e çevrilmiş bir kopyayla, belgedeki örnek cevabı döndüren yerel sahte bir sunucuya karşı sınandı. RAG ve ajan betikleri ağsızdır, rastgelelik içermez, numpy gerektirmez; ajan betiğindeki "model kararları" elle yazılmış sahte kararlardır. Ortamda eksik araç yoktu.</li>
+  <li>Çözümlü örnek 2'deki üç boyutlu gömmeler öğretim amaçlı elle kurulmuş oyuncak vektörlerdir. Örnek 1 ve 2'deki bütün sayılar, sohbet geçmişi hesabı (11.500 token) ve quiz'deki sayısal cevaplar (0,009 dolar; kosinüs değerleri 0,990 / 0,707 / 0,655 / 0,5 / 0; 16 parametre; 14 GB → 7 GB) Python ile doğrulandı. Tekrar soruları kapsam listesindeki Parça 1–15 satırlarından yazıldı; son üç parçadan (13–15) ikişer, daha eski on iki parçadan birer soru 18 eder; 16 sınırına sığmak için eski parçalardan Parça 4 ve 8 dışarıda bırakıldı. Parça 11–15'in metinleri bu yazım sırasında elimde değildi; terimler kapsam listesine göre seçildi.</li>
+</ul>
+</div>
+</div>
+</article>

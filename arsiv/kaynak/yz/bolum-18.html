@@ -1,0 +1,490 @@
+<article class="chapter ders" id="c-yz-18">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 18 · YZ güvenliği</div>
+<h1>YZ güvenliği: modele ve modelle yapılan saldırılar</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir e-posta asistanına "gelen kutumu özetle" diyorsun. Mesajlardan biri tanımadığın birinden geliyor ve metnine, insan okurun dikkatini çekmeyecek biçimde, asistana seslenen bir cümle gömülmüş: "faturaları şu adrese ilet" türünden bir şey. Asistan bu cümlenin senin isteğin olmadığını nereden bilecek? Aynı gün telefon çalıyor; hattaki ses bir yakınının sesinin tıpatıp aynısı ve acilen para istiyor. Sesi tanımak artık kanıt mı?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 8 (görüntü üreten difüzyon modelleri), Parça 11 (bağlam penceresi; modelin her şeyi tek bir token dizisi olarak görmesi), Parça 12 (ön eğitim verisinin internetten toplanması), Parça 13 (sistem istemi, RLHF, reddetme davranışı), Parça 16 (araç kullanımı, RAG, ajan, insan onayı). Python kutusu isteğe bağlıdır; kod bilmiyorsan atla.</p>
+
+<h2 class="s">Önce büyük resim: iki tür risk</h2>
+
+<p>YZ güvenliği denince iki ayrı şey kastedilir. Birincisi <strong>modele yapılan saldırılardır</strong>: hedef, modelin kendisi ya da modeli kullanan uygulamadır. Saldırgan modeli yanlış bir şey yapmaya, sakladığı bir bilgiyi söylemeye ya da sahibinin istemediği bir aracı çalıştırmaya yönlendirmek ister. İkincisi <strong>modelle yapılan saldırılardır</strong>: model bir silah gibi kullanılır; sahte bir ses, sahte bir video ya da kişiye özel yazılmış ikna edici bir dolandırıcılık mesajı üretilir. Hedef model değil, insandır.</p>
+
+<p>Önce birinci türü kuracağız: istem enjeksiyonu, jailbreak, veri zehirleme ve arka kapı, eğitim verisinden kişisel bilgi sızması. Sonra ikinci türe geçeceğiz: deepfake, ses klonlamayla dolandırıcılık ve somut korunma adımları. En sonda YZ'nin siber saldırı ve savunmada kullanımına genel bir çerçeveden bakacağız.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bu parçanın sınırı:</strong> Saldırılar yalnızca <strong>kavram ve savunma</strong> düzeyinde anlatılır: neden mümkün oldukları, ne zarar verdikleri, nasıl azaltıldıkları. Çalışan bir saldırı metni, atlatma tarifi, zehirleme yöntemi ya da sahte ses üretme talimatı burada yoktur. Nedeni basit: bir açığın nasıl kapatıldığını anlamak için onu sömürecek metni bilmen gerekmez, ama o metin başkasının elinde gerçek zarara dönüşebilir. Başkasına ait bir sistemi izinsiz, "sadece denemek için" bile kurcalamak suçtur; hukuki tarafı siber rafındaki hukuk ve etik parçasında.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Saldırı</th><th>Neyi hedefler?</th><th>Örnek zarar</th><th>Ana savunma</th></tr>
+<tr><td>İstem enjeksiyonu</td><td>Modeli kullanan uygulama ve araçları</td><td>Ajan, belgedeki gizli cümleye uyup veriyi dışarı yollar</td><td>En az yetki, kritik işte insan onayı, çıktıyı kodla denetleme</td></tr>
+<tr><td>Jailbreak</td><td>Modelin kendi güvenlik eğitimi</td><td>Model reddetmesi gereken içeriği üretir</td><td>Katmanlı koruma: eğitim, sınıflandırıcılar, izleme</td></tr>
+<tr><td>Veri zehirleme, arka kapı</td><td>Eğitim verisi ya da ağırlıklar</td><td>Tetikleyici görünce model bozuk davranır</td><td>Veri kaynağını bilmek, ayıklama, güvenilir kaynaktan model</td></tr>
+<tr><td>Eğitim verisinden sızma</td><td>Modelin ezberlediği bilgi</td><td>Model bir kişinin telefonunu aynen yazar</td><td>Kişisel bilgiyi ayıklamak, tekrarı azaltmak, çıktı filtresi</td></tr>
+<tr><td>Deepfake, ses klonu</td><td>İnsan (model araçtır)</td><td>Sahte bir yönetici ya da yakın para ister</td><td>Süreç: ikinci kanaldan doğrulama, aile parolası, çift onay</td></tr>
+</table></div>
+
+<p>Bu riskleri sıralayan, alanda en çok başvurulan liste <strong>OWASP</strong>'ın büyük dil modeli uygulamaları için hazırladığı "Top 10" listesidir. OWASP, web güvenliğinde yıllardır benzer listeler yayımlayan kâr amacı gütmeyen bir topluluktur; web uygulamaları listesi siber rafında ayrıntılanacak. LLM listesinin 2025 sürümü Kasım 2024'te duyuruldu. Yazıldığı tarih itibarıyla (Ekim 2026) en yeni sürüm, Ağustos 2026'da yayımlanan 2026 sürümüdür.</p>
+
+<div class="tablo"><table>
+<tr><th>Sıra</th><th>2025 sürümü (Kasım 2024)</th><th>2026 sürümü (Ağustos 2026)</th></tr>
+<tr><td>1</td><td>İstem enjeksiyonu</td><td>İstem enjeksiyonu</td></tr>
+<tr><td>2</td><td>Hassas bilgi ifşası</td><td>Hassas bilgi ifşası</td></tr>
+<tr><td>3</td><td>Tedarik zinciri</td><td>Aşırı yetki (excessive agency)</td></tr>
+<tr><td>4</td><td>Veri ve model zehirleme</td><td>Tedarik zinciri</td></tr>
+<tr><td>5</td><td>Uygunsuz çıktı işleme</td><td>Veri ve model zehirleme</td></tr>
+<tr><td>6</td><td>Aşırı yetki</td><td>Sınırsız kaynak tüketimi</td></tr>
+<tr><td>7</td><td>Sistem istemi sızması</td><td>Yanlış bilgi</td></tr>
+<tr><td>8</td><td>Vektör ve gömme zayıflıkları</td><td>Gizli bağlamın açığa çıkması</td></tr>
+<tr><td>9</td><td>Yanlış bilgi</td><td>Vektör ve gömme zayıflıkları</td></tr>
+<tr><td>10</td><td>Sınırsız kaynak tüketimi</td><td>Uygunsuz çıktı işleme</td></tr>
+</table></div>
+
+<p>Tabloyu ezberleme; iki şeye bak. Listenin başı değişmedi: iki sürümde de birinci sırada istem enjeksiyonu var. Ve "aşırı yetki" altıncı sıradan üçüncüye çıktı. Aşırı yetki, bir modele ya da ajana işinin gerektirdiğinden fazla araç, izin ya da serbestlik verilmesidir. Yükselişin nedeni Parça 16'daki ajanların yaygınlaşmasıdır: model artık yalnız metin yazmıyor, e-posta gönderiyor, dosya siliyor, ödeme başlatıyor.</p>
+
+<h2 class="s">İstem enjeksiyonu: veri ile talimat aynı kanaldan akınca</h2>
+
+<p>Parça 11'deki en önemli fikri hatırla: model, önüne konan her şeyi <strong>tek bir token dizisi</strong> olarak görür. Sistem istemi, senin sorun, sohbet geçmişi, RAG ile eklenen belgeler, bir aracın döndürdüğü web sayfası: hepsi bağlam penceresinde art arda dizilmiş tokenlerdir. Bu dizide "şu kısım talimattır, şu kısım yalnız okunacak veridir" diyen ve modelin <strong>kesin olarak</strong> uymak zorunda olduğu bir ayraç yoktur.</p>
+
+<p>Sen bu ayrımı bağlamdan yaparsın. Bir arkadaşın sana bir mektup okutsa ve mektupta "bunu okuyan cüzdanını masaya koysun" yazsa, gülüp geçersin. Model de çoğu zaman bu ayrımı doğru yapar, çünkü Parça 13'teki ince ayar ona sistem istemine ve kullanıcıya öncelik vermeyi öğretmiştir. Ama "çoğu zaman" bir güvenlik garantisi değildir; öğrenilmiş bir eğilim, iyi kurgulanmış bir metin karşısında sapabilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İstem enjeksiyonu</strong> (prompt injection), modelin işlediği metnin içine konan talimatların, uygulama sahibinin ya da kullanıcının talimatı gibi ele alınması ve modelin bu yüzden istenmeyen bir şey yapmasıdır. <strong>Doğrudan</strong> enjeksiyonda talimatı kullanıcı kendisi yazar (örneğin bir müşteri hizmetleri sohbetinde uygulamanın kurallarını aşmaya çalışır). <strong>Dolaylı</strong> enjeksiyonda talimat, modelin işini yaparken okuduğu bir dış içeriğin içindedir: web sayfası, e-posta, PDF, takvim daveti, kod yorumu. Kullanıcı masumdur; çoğu zaman saldırıdan haberi bile olmaz.</p></div>
+
+<p>Kavramın kısa bir tarihi var. Preamble adlı bir güvenlik şirketinin Mayıs 2022'de bu tür bir açığı OpenAI'ye bildirdiği aktarılır. Eylül 2022'de Riley Goodside, GPT-3 üstüne kurulmuş bir çeviri isteminin, çevrilecek metne konan bir talimatla yoldan çıkarılabildiğini kamuya açık örneklerle gösterdi. Ertesi gün, 12 Eylül 2022'de yazılımcı Simon Willison bu soruna "istem enjeksiyonu" adını önerdi ve onu web güvenliğindeki <strong>SQL enjeksiyonuna</strong> benzetti. Şubat 2023'te Kai Greshake ve arkadaşlarının makalesi dolaylı enjeksiyonu ayrıntılı tarif etti; temel tespiti, dil modeli bağlanmış uygulamaların "veri ile talimat arasındaki çizgiyi bulanıklaştırdığı"dır.</p>
+
+<h3>SQL enjeksiyonuna benzerliği ve asıl farkı</h3>
+
+<p>SQL enjeksiyonu siber rafında ayrıntılanacak; özü şu: bir veritabanı komutu kullanıcıdan gelen metin yapıştırılarak kurulursa, kullanıcı o metne komut parçaları koyup veritabanına istemediği bir işi yaptırabilir. Benzerlik açık: iki durumda da <strong>güvenilmez veri, bir yorumlayıcıya komutmuş gibi karışıyor</strong>.</p>
+
+<p>Asıl ders farkta. SQL enjeksiyonunun kesin bir çaresi vardır: <strong>parametreli sorgu</strong>. Komutun iskeleti ve kullanıcının verisi ayrı kanallardan verilir; veritabanı veriyi hiçbir koşulda komut olarak yorumlamaz. Bu bir eğilim değil, kodla konmuş bir kuraldır. Dil modelinde bunun karşılığı yoktur: belgeyi "bu yalnız veridir" diye işaretlesen bile model o işareti de token olarak okur ve uyup uymaması olasılıksaldır. Birleşik Krallık Ulusal Siber Güvenlik Merkezi (NCSC) Ağustos 2023'te istem enjeksiyonunun bu teknolojinin doğasından gelebileceğini ve henüz kesin bir çaresi olmadığını yazmıştı.</p>
+
+<figure>
+<svg viewBox="0 0 400 420" role="img" aria-label="Güven sınırı: sistem istemi, kullanıcı isteği ve güvenilmez dış içerik tek bağlam penceresinde karışır; ayrım ancak modelden sonra koddaki denetim katmanıyla yeniden kurulur">
+  <rect class="sv-m" x="10" y="10" width="120" height="50" rx="10"/>
+  <text class="sv-t" x="70" y="31" text-anchor="middle">Sistem istemi</text><text class="sv-s" x="70" y="49" text-anchor="middle">güvenilir</text>
+  <rect class="sv-m" x="140" y="10" width="120" height="50" rx="10"/>
+  <text class="sv-t" x="200" y="31" text-anchor="middle">Kullanıcı isteği</text><text class="sv-s" x="200" y="49" text-anchor="middle">güvenilir</text>
+  <rect class="sv-a" x="270" y="10" width="120" height="50" rx="10"/>
+  <text class="sv-t" x="330" y="31" text-anchor="middle">Dış içerik</text><text class="sv-s" x="330" y="49" text-anchor="middle">güvenilmez</text>
+  <path class="sv-c" d="M70 60V90"/><path class="sv-c" d="M200 60V90"/><path class="sv-cl" d="M330 60V90"/>
+  <rect class="sv-k" x="20" y="90" width="360" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="111" text-anchor="middle">Bağlam penceresi</text><text class="sv-s" x="200" y="129" text-anchor="middle">hepsi tek token dizisi; kesin ayraç yok</text>
+  <path class="sv-c" d="M200 140V160"/>
+  <rect class="sv-l" x="110" y="160" width="180" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="180" text-anchor="middle">Model</text><text class="sv-s" x="200" y="197" text-anchor="middle">en olası devamı üretir</text>
+  <path class="sv-c" d="M200 206V226"/>
+  <rect class="sv-a" x="90" y="226" width="220" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="246" text-anchor="middle">Araç çağrısı önerisi</text><text class="sv-s" x="200" y="263" text-anchor="middle">bu da güvenilmez sayılır</text>
+  <path class="sv-c" d="M200 272V292"/>
+  <rect class="sv-m" x="20" y="292" width="360" height="54" rx="10"/>
+  <text class="sv-b" x="200" y="314" text-anchor="middle">Denetim katmanı (sıradan kod)</text><text class="sv-s" x="200" y="333" text-anchor="middle">izinli liste · doğrulama · insan onayı</text>
+  <path class="sv-c" d="M200 346V366"/>
+  <rect class="sv-k" x="100" y="366" width="200" height="46" rx="10"/>
+  <text class="sv-t" x="200" y="386" text-anchor="middle">Araçlar</text><text class="sv-s" x="200" y="403" text-anchor="middle">e-posta, dosya, ödeme</text>
+</svg>
+<figcaption>Güvenilir ve güvenilmez metin bağlam penceresine girdiği anda aynı token dizisine karışır. Bu yüzden güven sınırı modelin <strong>sonrasında</strong>, önerilen her eylemi denetleyen sıradan kodla yeniden çizilir. Turuncu kutular güvenilmezdir: dış içerik ve, ondan etkilenebileceği için, modelin önerisi.</figcaption>
+</figure>
+
+<h3>Neden özellikle ajanlarda tehlikeli?</h3>
+
+<p>Yalnız sohbet eden bir modelde başarılı bir enjeksiyonun sonucu çoğunlukla <strong>yanlış bir metindir</strong>: özet çarpıtılır, bir ürün haksız yere övülür. Bu zararlıdır ama sınırlıdır. Parça 16'daki araç kullanan ajanlarda ise modelin çıktısı bir <strong>eylemdir</strong>. Model "şu e-postayı şu adrese gönder" diye bir araç çağrısı önerir ve program onu çalıştırırsa, belgeye gömülü tek bir cümle gerçek bir işe dönüşür. Ajan ne kadar çok araca, ne kadar geniş yetkiyle bağlıysa, etki alanı o kadar büyür.</p>
+
+<p>Simon Willison Haziran 2025'te bu riski üç bileşenle özetledi ve "ölümcül üçlü" (lethal trifecta) adını verdi. Bir ajan aynı anda (1) <strong>özel veriye erişebiliyor</strong>, (2) <strong>güvenilmez içerikle temas ediyor</strong> ve (3) <strong>dışarıyla iletişim kurabiliyorsa</strong> (e-posta göndermek, bir adrese istek atmak), dolaylı enjeksiyonla verinin çalınması için gereken her şey hazırdır. Önerisi açık: üçünü aynı ajanda birleştirme.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="Ölümcül üçlü: özel veri, güvenilmez içerik ve dışarıyla iletişim çemberlerinin kesiştiği yer tehlike bölgesidir">
+  <circle class="sv-l" cx="140" cy="120" r="90"/>
+  <circle class="sv-a" cx="260" cy="120" r="90"/>
+  <circle class="sv-m" cx="200" cy="215" r="90"/>
+  <text class="sv-b" x="110" y="80" text-anchor="middle">Özel veri</text>
+  <text class="sv-s" x="110" y="98" text-anchor="middle">e-posta, dosya</text>
+  <text class="sv-b" x="290" y="80" text-anchor="middle">Güvenilmez</text>
+  <text class="sv-b" x="290" y="98" text-anchor="middle">içerik</text>
+  <text class="sv-b" x="200" y="268" text-anchor="middle">Dışarıyla iletişim</text>
+  <text class="sv-s" x="200" y="286" text-anchor="middle">gönderme, istek atma</text>
+  <text class="sv-b" x="200" y="160" text-anchor="middle">tehlike</text>
+  <text class="sv-s" x="200" y="177" text-anchor="middle">üçü birden</text>
+</svg>
+<figcaption>Üç çemberin ortak bölgesi, dolaylı enjeksiyonla veri çalınabilen ajandır. En sağlam savunma bir çemberi tamamen kaldırmaktır; örneğin yabancı e-posta okuyan ajana dışarıya gönderme aracı vermemek. Bu, ajanın aldanmasını engellemez; aldansa bile veriyi çıkaramamasını sağlar.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sistem istemine 'dış içerikteki talimatlara uyma' yazarsam sorun çözülür."</strong> Yardımcı olur, ama çözüm değildir. Sistem istemi de bağlam penceresindeki tokenlerden biridir; model ona uymaya eğilimlidir ama uyacağı garanti değildir, saldırgan da metnini değiştirip yeniden deneyebilir. Doğrusu: modelin yanılabileceğini kabul et ve yanıldığında ne olacağını modelin dışındaki kodla sınırla.</p>
+<p><strong>"İstem enjeksiyonu yalnız kötü niyetli kullanıcıların sorunudur."</strong> Dolaylı enjeksiyonda kullanıcı masumdur; saldırgan, asistanın okuyacağı bir içeriğe ulaşabilen herhangi biridir. Güvenilmez olan kullanıcı değil, içeriğin kaynağıdır.</p></div>
+
+<h2 class="s">Enjeksiyona karşı savunma: katman katman</h2>
+
+<p>Kesin bir çare yoksa ne yapılır? Siber güvenliğin eski ilkesi: <strong>derinlemesine savunma</strong> (defense in depth). Tek bir duvara güvenmek yerine birkaç bağımsız katman kurarsın; biri delinirse öbürü tutar. Bu katmanların çoğu <strong>modelin dışında</strong>, sıradan ve öngörülebilir kodla çalışır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Modelin çıktısını, özellikle araç çağrısı önerisini, güvenilmez girdi say.</strong> Model güvenilmez bir içerikle temas ettiyse ürettiği her şey ondan etkilenmiş olabilir. Önerilen her eylem çalıştırılmadan önce modelden bağımsız kurallarla denetlenir: (1) <strong>Veriyi talimattan ayır:</strong> dış içeriği işaretle, ayrı alanda ver (riski azaltır, sıfırlamaz). (2) <strong>En az yetki:</strong> ajana yalnız işinin gerektirdiği araçları ver; okuma işi yapana silme izni verme. Böylece model aldansa bile yapabileceği en kötü şey küçülür. (3) <strong>Çıktıyı doğrula:</strong> önerilen eylemin parametrelerini kodla denetle (alıcı şirket içinde mi, tutar sınırın altında mı). (4) <strong>Kritik işte insan onayı:</strong> geri alınamaz eylemleri (para, silme, dışarıya gönderme) kullanıcıya açıkça sor; yalnız "özetle" diyen kullanıcı "şu adrese e-posta gönderilsin mi?" sorusunu görünce bir terslik olduğunu anlar. (5) <strong>Kaydet ve izle:</strong> her araç çağrısını günlüğe yaz.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Savunma katmanı</th><th>Neyi zorlaştırır?</th><th>Sınırı</th></tr>
+<tr><td>Dış içeriği işaretleme, ayrı alan</td><td>Modelin dış metni talimat sanmasını</td><td>Olasılıksaldır; model işarete rağmen aldanabilir</td></tr>
+<tr><td>En az yetki, izinli araç listesi</td><td>Aldanmış modelin büyük zarar vermesini</td><td>İzinli araç kötü parametreyle çağrılabilir</td></tr>
+<tr><td>Parametreleri kodla doğrulama</td><td>Verinin dışarıya ya da yanlış yere gitmesini</td><td>Yalnız öngördüğün kötü durumları yakalar</td></tr>
+<tr><td>Kritik işte insan onayı</td><td>Geri alınamaz eylemin sessizce olmasını</td><td>Çok sık sorulursa insan düşünmeden "evet" der</td></tr>
+<tr><td>Ölümcül üçlüden birini kesmek</td><td>Verinin dışarı çıkarılmasını</td><td>Ajanın işi daralır</td></tr>
+<tr><td>Günlük ve izleme</td><td>Saldırının fark edilmeden sürmesini</td><td>Önlemez, yalnız görünür kılar</td></tr>
+</table></div>
+
+<p>"İnsan onayı" satırının sınırına dikkat et. Her küçük işte onay soran sistem, kullanıcıyı kısa sürede refleksle "evet"e basan birine dönüştürür; buna onay yorgunluğu denir. Bu yüzden onay yalnız gerçekten kritik işlere konur ve ekran ne yapılacağını açıkça gösterir.</p>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik bir <strong>oyuncak</strong> ajan akışıdır. İçinde gerçek bir model yoktur; <code>sahte_model</code>, aldanabilen bir modeli taklit eden birkaç satırlık bir benzetimdir: belgede <code>GIZLI_TALIMAT</code> diye soyut bir işaret görürse onu talimat sanıp iki araç çağrısı daha önerir. Hiçbir e-posta gönderilmez, dosya silinmez, ağa çıkılmaz; "CALISTI" satırları yalnız ekrana yazılan bir benzetimdir.</p>
+<pre class="kod" data-ad="python3 guvenli_ajan.py"># Oyuncak bir ajan akisi: gercek model yok, ag yok, hicbir sey gonderilmez.
+# Amac: savunma katmanlarini (veri/talimat ayrimi, izinli liste,
+# cikti dogrulama, insan onayi) gormek.
+
+IZINLI = {"ozetle", "eposta_gonder"}      # en az yetki: yalniz bu araclar
+KRITIK = {"eposta_gonder"}                # geri alinamaz: insan onayi ister
+ALAN = "@ornek-sirket.test"               # e-posta yalniz sirket icine
+
+def dis_icerik(metin, kaynak):
+    # Disaridan gelen her metin "veri" olarak etiketlenir, talimat sayilmaz.
+    return {"rol": "veri", "kaynak": kaynak, "metin": metin}
+
+def sahte_model(gorev, belgeler):
+    # GERCEK MODEL DEGIL. Kandirilabilen bir modeli taklit eder:
+    # belgede GIZLI_TALIMAT isareti gorurse onu talimat sanip arac onerir.
+    oneriler = [("ozetle", {"belge": len(belgeler)})]
+    if "ekibe gonder" in gorev:
+        oneriler.append(("eposta_gonder", {"alici": "ekip" + ALAN}))
+    for b in belgeler:
+        if "GIZLI_TALIMAT" in b["metin"]:
+            oneriler.append(("eposta_gonder", {"alici": "biri@disari.test"}))
+            oneriler.append(("dosya_sil", {"klasor": "faturalar"}))
+    return oneriler
+
+def insan_onayi(arac, arg):
+    # Gercekte ekranda sorulur; burada kullanicinin "evet" dedigini varsayiyoruz.
+    print("   ONAY SORULDU:", arac, arg, "-&gt; kullanici: evet")
+    return True
+
+def calistir(gorev, belgeler):
+    print("GOREV:", gorev)
+    for arac, arg in sahte_model(gorev, belgeler):
+        if arac not in IZINLI:
+            print(" ENGEL (izinli listede yok):", arac, arg)
+            continue
+        if arac == "eposta_gonder" and not arg["alici"].endswith(ALAN):
+            print(" ENGEL (alici sirket disi):", arg["alici"])
+            continue
+        if arac in KRITIK and not insan_onayi(arac, arg):
+            print(" ENGEL (kullanici reddetti):", arac)
+            continue
+        print(" CALISTI (benzetim):", arac, arg)
+
+temiz = dis_icerik("Toplanti notu: butce cuma gunu konusulacak.", "toplanti.txt")
+kirli = dis_icerik("Fatura listesi ... GIZLI_TALIMAT ...", "disaridan-gelen.eml")
+
+calistir("Toplanti notunu ozetle ve ekibe gonder", [temiz])
+print()
+calistir("Gelen kutumu ozetle", [temiz, kirli])</pre>
+<pre class="cikti">GOREV: Toplanti notunu ozetle ve ekibe gonder
+ CALISTI (benzetim): ozetle {'belge': 1}
+   ONAY SORULDU: eposta_gonder {'alici': 'ekip@ornek-sirket.test'} -&gt; kullanici: evet
+ CALISTI (benzetim): eposta_gonder {'alici': 'ekip@ornek-sirket.test'}
+
+GOREV: Gelen kutumu ozetle
+ CALISTI (benzetim): ozetle {'belge': 2}
+ ENGEL (alici sirket disi): biri@disari.test
+ ENGEL (izinli listede yok): dosya_sil {'klasor': 'faturalar'}</pre>
+<p><strong>Adım 1 (meşru iş).</strong> Birinci görevde kullanıcı gerçekten "ekibe gönder" demiş. Alıcı şirket içinde, e-posta kritik olduğu için onay soruluyor, iş benzetimde yapılıyor. Savunma meşru işi engellemedi.</p>
+<p><strong>Adım 2 (aldanmış model).</strong> İkinci görevde kullanıcı yalnız özet istedi, ama sahte model kirli belgedeki işarete aldandı ve iki eylem daha önerdi. <code>dis_icerik</code> etiketi modeli korumadı; benzetimdeki model, gerçek bir modelin bazen yapabileceği gibi, etiketi yok saydı.</p>
+<p><strong>Adım 3 (çıktı doğrulama).</strong> Dışarıya e-posta izinli bir araç, ama alıcı şirket alanında olmadığı için kod onu onaya bile ulaşmadan durdurdu.</p>
+<p><strong>Adım 4 (en az yetki).</strong> Dosya silme aracı izinli listede yok; model ne önerirse önersin çalıştırılamaz.</p>
+<p><strong>Sonuç:</strong> Model aldandı ama zarar olmadı, çünkü kararı modelin önerisini denetleyen sıradan kod verdi. Alıcı denetimini kaldırınca (o <code>if</code> satırını <code>if False:</code> yapıp yeniden çalıştırdım) ikinci görevin çıktısı şuna dönüşür:</p>
+<pre class="cikti"> CALISTI (benzetim): ozetle {'belge': 2}
+   ONAY SORULDU: eposta_gonder {'alici': 'biri@disari.test'} -&gt; kullanici: evet
+ CALISTI (benzetim): eposta_gonder {'alici': 'biri@disari.test'}
+ ENGEL (izinli listede yok): dosya_sil {'klasor': 'faturalar'}</pre>
+<p>Artık son savunma insandır ve benzetimdeki kullanıcı, onay yorgunluğuna düşmüş biri gibi her soruya "evet" diyor. Ders: bir katman kalkınca yük öbürlerine biner; "insan nasılsa bakar" varsayımına yaslanma. Betikte rastgelelik yoktur; aynı çıktıyı almalısın.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir şirket, çalışanların sorularını iç belgelerden cevaplayan bir RAG asistanı kuruyor (Parça 16). Belgeler, bütün çalışanların düzenleyebildiği bir iç wiki'den geliyor. Asistan "e-posta gönder" ve "müşteri kaydını güncelle" araçlarına da bağlı. Enjeksiyon nereden girer, hangi savunma neyi keser?</p>
+<p><strong>Adım 1 (güvenilmez içeriği bul).</strong> Sistem istemi güvenilir, çalışanın sorusu görece güvenilir. Wiki'yi herkes düzenleyebildiği için, şirket içi olsa bile <strong>güvenilmez</strong>dir: kötü niyetli ya da hesabı ele geçirilmiş tek bir çalışan bir sayfaya asistana yönelik bir cümle ekleyebilir. OWASP 2025'teki "vektör ve gömme zayıflıkları" maddesi bu tür RAG risklerini kapsar.</p>
+<p><strong>Adım 2 (ölümcül üçlüyü denetle).</strong> Özel veri: müşteri kayıtları. Güvenilmez içerik: wiki. Dışarıyla iletişim: e-posta aracı. Alıcılar sınırlı değilse üçü birden var.</p>
+<p><strong>Adım 3 (en az yetki).</strong> Soru cevaplayan asistanın kayıt güncellemesine gerek var mı? Yoksa aracı kaldır; gerekiyorsa wiki okumayan ayrı bir akışa taşı.</p>
+<p><strong>Adım 4 (üçlüden birini kes).</strong> E-postayı kodla, alan adı denetimiyle yalnız şirket içi alıcılara sınırla; veri dışarı çıkamaz.</p>
+<p><strong>Adım 5 (onay ve kayıt).</strong> Kalan gönderimlerde alıcıyı ve içeriği gösterip onay iste; araç çağrılarını ve wiki düzenleme geçmişini kaydet.</p>
+<p><strong>Sonuç:</strong> Enjeksiyonun girişi wiki'dir ve tamamen kapatılamaz, çünkü asistanın işi wiki okumaktır. Ama zararın yolu kapatılır: model aldansa bile yapabileceği şey bir yanlış özetten ibaret kalır.</p></div>
+
+<h2 class="s">Jailbreak: güvenlik eğitimini aşmaya çalışmak</h2>
+
+<p>Parça 13'te sohbet modellerinin bazı istekleri neden reddettiğini görmüştün: ince ayarda ve RLHF'de zararlı isteklere ret cevabı veren örnekler ödüllendirilir; bazı laboratuvarlar buna yazılı ilkelerle eğitimi ekler. Sonuçta model belirli isteklerde reddetmeye <strong>eğilimli</strong> hâle gelir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Jailbreak</strong> ("hapisten kaçış"), bir modeli kendi güvenlik eğitimiyle reddetmeye eğitildiği içeriği ürettirmeye yönelik girişimdir. İstem enjeksiyonundan farkı hedeftedir: enjeksiyon <strong>uygulamanın</strong> talimatlarını ve kullanıcının niyetini çiğner (model sahibinin değil saldırganın isteğini yapar); jailbreak <strong>modelin kendi kurallarını</strong> çiğner. İkisi birlikte kullanılabilir, ama savunmaları farklı yerlerde durur.</p></div>
+
+<p>Burada hiçbir jailbreak istemi vermiyoruz; anlaman gereken, güvenlik eğitiminin <strong>neden</strong> tam koruma sayılmadığıdır. Birincisi, reddetme bir kural değil, öğrenilmiş bir olasılıktır: model "bu istek zararlı mı?" sorusunu eğitim örneklerine benzerlikle cevaplar; isteği bir kurgunun içine koymak ya da masum görünen parçalara bölmek gibi alışılmadık çerçeveler bu benzerliği bozabilir. İkincisi, girdilerin uzayı neredeyse sonsuzdur; saldırgan bir boşluk bulsa yeter, savunmacı hepsini kapatmak zorundadır. Üçüncüsü, model ne kadar yetenekliyse dolambaçlı bir isteği anlama becerisi de o kadar yüksektir.</p>
+
+<p>Bu yüzden laboratuvarlar güvenliği tek katmana bırakmaz: girdiyi ve çıktıyı ayrıca inceleyen <strong>sınıflandırıcı</strong> modeller, kötüye kullanım izleme, ihlal eden hesapların kapatılması ve modeli bilerek zorlayan yetkili uzman ekipler, yani <strong>kırmızı takım</strong> (red teaming) çalışması. Değerlendirmeler ve tehlikeli yetenek testleri Parça 19'un konusu.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Model reddettiyse güvenlidir; reddetmediyse sorun yoktur."</strong> Reddetme bir güvenlik sınırı değil, bir eğilimdir. Uygulama yazıyorsan modelin uygunsuz bir şeyi asla üretmeyeceğine güvenme: çıktısı bir web sayfasına basılacaksa siber rafında göreceğin çıktı kodlamasından geçir; veritabanına gidecekse parametreli sorguyla kullan; kabuk komutuna gidecekse hiç gönderme ya da izinli komut listesiyle sınırla. OWASP'taki "uygunsuz çıktı işleme" maddesi tam bu hatadır.</p></div>
+
+<h2 class="s">Veri zehirleme ve arka kapı</h2>
+
+<p>Şimdiye kadarki saldırılar modelin <strong>kullanıldığı</strong> anda oluyordu. Veri zehirleme ise modelin <strong>öğrendiği</strong> anı hedefler. Parça 2'deki "çöp girer, çöp çıkar" ilkesinin kasıtlı biçimidir: biri verinin bir kısmını bilerek bozarsa, model bozukluğu da öğrenir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Veri zehirleme</strong> (data poisoning), eğitim verisine (ön eğitim, ince ayar ya da RAG belgeleri) kasıtlı olarak bozuk ya da yanıltıcı örnekler sokarak modelin davranışını değiştirmektir. <strong>Arka kapı</strong> (backdoor) onun sinsi bir biçimidir: model normal girdilerde düzgün çalışır, ama girdide belirli bir <strong>tetikleyici</strong> görünce önceden ayarlanmış kötü davranışa geçer. Normal sınamalarda tetikleyici kullanılmadığı için fark edilmeyebilir.</p></div>
+
+<p>Zehir nereden girer? Parça 12'de ön eğitim verisinin büyük ölçüde internetten toplandığını görmüştün; herkes internete sayfa koyabilir. İnce ayar verisi insanlar ya da başka modellerce hazırlanır. RAG belgeleri sürekli değişir. Bir de <strong>tedarik zinciri</strong> var: indirdiğin açık ağırlıklı bir model ya da hazır veri kümesi, göremediğin bir aşamada değiştirilmiş olabilir.</p>
+
+<p>İki araştırma sağlam bir sezgi verir. Ocak 2024'te Anthropic araştırmacılarının "Sleeper Agents" (uyuyan ajanlar) çalışması, tetikleyici görünce farklı davranan modelleri bilerek eğitti (örneğin istemdeki yıl değişince güvenli kod yerine açıklı kod yazan bir model) ve bunlara standart güvenlik eğitimleri uyguladı. Denetimli ince ayar, pekiştirmeli öğrenme ve modeli bilerek zorlayıp düzeltmeye dayanan eğitim arka kapıyı güvenilir biçimde silmedi; arka kapı en büyük modellerde en kalıcıydı. Ders: güvenlik eğitiminden geçmiş bir model arka kapısız sayılamaz.</p>
+
+<p>İkincisi, Ekim 2025'te Anthropic, Birleşik Krallık YZ Güvenlik Enstitüsü ve Alan Turing Enstitüsü'nün ortak çalışmasıdır. Soru şuydu: zehirlemek için verinin belli bir <strong>yüzdesi</strong> mi gerekir, yoksa belli <strong>sayıda</strong> belge yeter mi? 600 milyon ile 13 milyar parametre arasındaki modellerde, yaklaşık 250 zehirli belge, tetikleyici görülünce anlamsız metin üreten basit bir arka kapı için yetti; 100 belge güvenilir biçimde yetmedi. Bu sayı model büyüdükçe neredeyse sabit kaldı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Çalışmada 250 zehirli belgenin toplam yaklaşık 420 bin token tuttuğu bildiriliyor. Modellerin, Parça 12'deki Chinchilla ölçüsüne yakın biçimde, parametre başına yaklaşık 20 token veriyle eğitildiğini varsay. Zehirli tokenlerin oranı 600 milyonluk ve 13 milyarlık modelde yüzde kaçtır? Bu, "verinin belli bir yüzdesi gerekir" fikri hakkında ne söyler?</p>
+<p><strong>Adım 1 (küçük modelin verisi).</strong> 600 milyon × 20 = 12 milyar token.</p>
+<p><strong>Adım 2 (oran).</strong> 420.000 ÷ 12.000.000.000 = 0,000035; yani %0,0035.</p>
+<p><strong>Adım 3 (büyük modelin verisi).</strong> 13 milyar × 20 = 260 milyar token.</p>
+<p><strong>Adım 4 (oran).</strong> 420.000 ÷ 260.000.000.000 ≈ 0,0000016; yani yaklaşık %0,00016 (çalışmanın bildirdiği oran da budur).</p>
+<p><strong>Adım 5 (karşılaştırma).</strong> Büyük model yaklaşık 21,7 kat çok veri gördü (13 milyar ÷ 600 milyon); zehrin oranı aynı ölçüde küçüldü, ama iki modelde de arka kapı yerleşti.</p>
+<p><strong>Sonuç:</strong> Başarı orana değil, zehirli belgelerin <strong>mutlak sayısına</strong> bağlı görünüyor; veri büyüdükçe 250 belgeyi gözden kaçırmak kolaylaşır. Ama çalışmanın uyarılarını da oku: denenen arka kapı dar ve düşük riskliydi; 13 milyardan büyük modellerde ve daha zararlı davranışlarda sonucun geçerliliği bilinmiyor; saldırganın asıl zorluğu belgelerini eğitim verisine sokabilmektir.</p></div>
+
+<p>Savunma: <strong>verinin kaynağını bilmek</strong> (hangi belge nereden, ne zaman geldi); tekrar eden ya da tuhaf örüntü taşıyan metinleri eğitimden önce <strong>ayıklamak</strong>; modeli ve veri kümesini yalnız güvenilir kaynaktan indirip yayımlayıcının verdiği özet değeriyle (hash, siber rafında) karşılaştırmak; modeli yayından önce ve sonra tuhaf davranışlar için <strong>sınamak</strong>; RAG deposuna kimin yazabileceğini sınırlamak. Hiçbiri tek başına kesin değildir.</p>
+
+<h2 class="s">Eğitim verisinden kişisel bilgi sızması</h2>
+
+<p>Parça 2'de aşırı öğrenmeyi, yani modelin örnekleri ezberlemesini görmüştün. Büyük dil modelleri iyi genelleyebilir, ama eğitim verisinin bazı parçalarını <strong>kelimesi kelimesine</strong> ezberleyebilir. Bunlar arasında bir kişinin adı, telefonu ya da e-postası varsa, model doğru yönlendirmeyle onları geri yazabilir. Bilgi bir zamanlar internetin bir köşesinde durmuş olabilir, ama artık herkesin sorabileceği bir yere taşınmıştır.</p>
+
+<p>Bu riskin bilinen en önemli gösterimi, Nicholas Carlini ve arkadaşlarının 2021'de USENIX Güvenlik Sempozyumu'nda yayımlanan "Eğitim Verisini Büyük Dil Modellerinden Çıkarmak" çalışmasıdır. Araştırmacılar internetten toplanmış metinle eğitilmiş GPT-2'den yüzlerce metin dizisini birebir geri çıkardılar: adlar, telefon numaraları, e-posta adresleri, sohbet kayıtları, kod parçaları, 128 bitlik tanımlayıcılar. İki bulgu önemlidir: bazı diziler eğitim verisinde <strong>yalnızca tek bir belgede</strong> geçiyordu; ve büyük modeller daha çok ezberliyordu.</p>
+
+<p>Yakın iki risk daha var. <strong>Sistem istemi sızması</strong>: sistem istemi bağlam penceresinde durduğu için model onu dile getirebilir; bu yüzden oraya, açığa çıkması sorun olacak hiçbir şey yazılmaz, parola ve anahtar ise Parça 16'daki gibi ortam değişkenine aittir. <strong>Kullanıcının paylaştığı veri</strong>: Parça 15'te gördüğün gibi istemle paylaştığın kişisel ya da şirket bilgisi, sağlayıcının koşullarına göre saklanabilir.</p>
+
+<p>Savunmalar: eğitimden önce kişisel bilgiyi ayıklamak ya da maskelemek; tekrar eden metni azaltmak (çok tekrar eden metin daha kolay ezberlenir); tek tek örneklerin modele iz bırakmasını matematiksel olarak sınırlayan <strong>diferansiyel mahremiyet</strong> (genellikle bir miktar başarım kaybıyla); telefon, kimlik numarası gibi örüntüleri yakalayan çıktı filtreleri. Türkiye'de kişisel verilerin işlenmesi KVKK'ya tabidir; YZ açısından Parça 20'de, hukuku siber rafında.</p>
+
+<h2 class="s">Modelle yapılan saldırılar: deepfake ve ses klonlama</h2>
+
+<p>Parça 8'in sonunda gürültüden adım adım resim çıkaran difüzyon modellerine değinmiştik. Benzer fikirlerden gelen modeller bugün gerçekçi yüz, video ve ses üretebiliyor. Meşru kullanımı geniştir (dublaj, sesini kaybetmiş birine kendi sesini geri vermek), ama aynı yetenek birinin yüzünü ya da sesini izinsiz taklit etmeye de yarar. <strong>Deepfake</strong>, gerçek bir kişiyi söylemediği bir şeyi söylüyor ya da yapmadığı bir şeyi yapıyor gösteren YZ üretimi ses, görüntü ya da videodur. <strong>Ses klonlama</strong>, bir kişinin ses örnekleriyle onun sesinde istenen her cümleyi üretmektir. Üretim yöntemini anlatmıyoruz; bilmen gereken, bunun artık uzman işi olmaktan çıktığı ve kamuya açık kayıtların hammadde olabildiğidir.</p>
+
+<h3>Gerçek bir vaka: Hong Kong, 2024</h3>
+
+<p>İngiliz mühendislik şirketi Arup'un Hong Kong ofisindeki bir çalışan, Ocak 2024'te şirketin İngiltere'deki finans direktöründen geliyormuş gibi görünen ve "gizli bir işlem"den söz eden bir mesaj aldı. Ardından katıldığı görüntülü toplantıda finans direktörünün ve başka çalışanların görüntüsü ve sesi vardı; hepsi YZ ile üretilmiş sahtelerdi. Çalışan beş banka hesabına 15 transfer yaptı; toplam yaklaşık 200 milyon Hong Kong doları (kabaca 25 milyon ABD doları). Dolandırıcılık, çalışan durumu merkeze sorunca anlaşıldı. Hong Kong polisi olayı Şubat 2024'te şirket adı vermeden duyurdu; Arup Mayıs 2024'te hedef alındığını doğruladı.</p>
+
+<p>Ders teknik değil, <strong>süreçle</strong> ilgilidir: çalışan tanıdık yüzleri görünce ikna oldu; büyük transfer için tek bir toplantıdaki sözlü talimat yeterli sayıldı; doğrulama para gittikten <strong>sonra</strong> yapıldı. Savunma bu üç noktanın tersine çevrilmesidir.</p>
+
+<h3>Ses klonlamayla "acil para" dolandırıcılığı</h3>
+
+<p>Eski bir dolandırıcılık türü vardır: biri telefonda bir yakınınmış gibi kaza, gözaltı ya da hastane gibi acil bir durum anlatıp hemen para ister. Ses klonlama bu hileye güçlü bir araç ekledi: ses artık gerçekten o yakının sesine benzeyebilir. ABD Federal Soruşturma Bürosu (FBI) 3 Aralık 2024 tarihli kamu duyurusunda bu kullanımı bildirdi ve üç öneride bulundu: ailece gizli bir kelime ya da ifade belirlemek; kendini bir kurumdan tanıtan beklenmedik aramayı kapatıp numarayı kendin bularak geri aramak; internetteki ses ve görüntü paylaşımını sınırlamak, hesapları gizli yapmak.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Ses ve görüntü artık kimlik kanıtı değildir; kimliği kanal ve önceden paylaşılmış bir sırla doğrula.</strong> Para, parola ya da gizlilik isteyen her beklenmedik aramada: (1) <strong>Dur.</strong> Aciliyet ("hemen", "kimseye söyleme") başlı başına alarm işaretidir; amaç düşünme süreni elinden almaktır. (2) <strong>Kapat ve ikinci kanaldan doğrula.</strong> Kişiyi rehberinde zaten kayıtlı numaradan sen ara; arayanın verdiği numarayı kullanma. Kurumun numarasını resmî sitesinden ya da kartının arkasından bul. (3) <strong>Aile parolasını sor.</strong> Ses ne kadar tanıdık olursa olsun, cevabı bilmeyene para gönderme. (4) <strong>Kurumlarda tek kişi, tek kanal yetmez.</strong> Büyük transfer ikinci bir kişinin onayı ve talimatın geldiğinden farklı bir kanaldan teyitle yapılır.</p></div>
+
+<p>Aile parolası, sosyal medyadan ya da tahmin edilebilir bilgilerden (doğum yeri, evcil hayvan adı, tuttuğun takım) çıkarılamayacak bir şey olmalı. En iyisi ailece yüz yüze konuşup anlamsız ama akılda kalan bir ifade ya da yalnız sizin bildiğiniz bir anıya dayalı bir soru belirlemektir. Bu parolayı mesajla ya da telefonda "parolamız neydi?" diye asla paylaşma. Özellikle yaşlı aile bireyleriyle kullanımını arada bir hatırlatın: parolayı soran sensin, söyleyen değil; arayan senden parolayı söylemeni isterse, bu da alarm işaretidir.</p>
+
+<figure>
+<svg viewBox="0 0 400 470" role="img" aria-label="Beklenmedik acil para isteği karşısında doğrulama akışı: dur, kapat, kayıtlı numaradan ara, aile parolasını sor; doğrulanmadıysa para gönderme ve bildir">
+  <rect class="sv-a" x="40" y="10" width="320" height="54" rx="10"/>
+  <text class="sv-t" x="200" y="32" text-anchor="middle">Tanıdık bir ses ya da yüz</text><text class="sv-t" x="200" y="51" text-anchor="middle">acil para ya da gizlilik istiyor</text>
+  <path class="sv-c" d="M200 64V84"/>
+  <rect class="sv-k" x="40" y="84" width="320" height="54" rx="10"/>
+  <text class="sv-b" x="200" y="106" text-anchor="middle">1. Dur</text><text class="sv-s" x="200" y="125" text-anchor="middle">aciliyet ve "kimseye söyleme" alarm işaretidir</text>
+  <path class="sv-c" d="M200 138V158"/>
+  <rect class="sv-l" x="40" y="158" width="320" height="54" rx="10"/>
+  <text class="sv-b" x="200" y="180" text-anchor="middle">2. Kapat, kayıtlı numaradan sen ara</text><text class="sv-s" x="200" y="199" text-anchor="middle">arayanın verdiği numarayı kullanma</text>
+  <path class="sv-c" d="M200 212V232"/>
+  <rect class="sv-l" x="40" y="232" width="320" height="54" rx="10"/>
+  <text class="sv-b" x="200" y="254" text-anchor="middle">3. Ulaşamadıysan: aile parolasını sor</text><text class="sv-s" x="200" y="273" text-anchor="middle">ya da başka bir yakına danış</text>
+  <path class="sv-c" d="M200 286V300H105V320"/><path class="sv-c" d="M200 300H295V320"/>
+  <rect class="sv-m" x="15" y="320" width="180" height="70" rx="10"/>
+  <text class="sv-b" x="105" y="344" text-anchor="middle">Doğrulandı</text><text class="sv-s" x="105" y="363" text-anchor="middle">gerçek kişiyle, bildiğin</text><text class="sv-s" x="105" y="379" text-anchor="middle">kanaldan konuş</text>
+  <rect class="sv-a" x="205" y="320" width="180" height="70" rx="10"/>
+  <text class="sv-b" x="295" y="344" text-anchor="middle">Doğrulanmadı</text><text class="sv-s" x="295" y="363" text-anchor="middle">para gönderme; bankana</text><text class="sv-s" x="295" y="379" text-anchor="middle">ve polise bildir</text>
+  <text class="sv-s" x="200" y="420" text-anchor="middle">Ses, görüntü ve arayan numara tek başına</text>
+  <text class="sv-s" x="200" y="438" text-anchor="middle">kanıt sayılmaz; kanıt, senin seçtiğin kanal</text>
+  <text class="sv-s" x="200" y="456" text-anchor="middle">ve önceden paylaşılmış sırdır.</text>
+</svg>
+<figcaption>Doğrulama akışı, "sahte mi gerçek mi" diye kulak kabartmaya değil, saldırganın kontrol edemediği şeylere dayanır: senin kayıtlı numaran ve yalnız sizin bildiğiniz parola. Arayan numara da sahte gösterilebildiği için tek başına güvence değildir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bilinmeyen bir numaradan arama geliyor. Hattaki ses bir kardeşinin sesi; ağlıyor, kaza yaptığını, karakolda olduğunu söylüyor. Ardından "avukat" olduğunu söyleyen biri, bir saat içinde belirli bir hesaba para yatırılırsa işin kapanacağını, ama aileden kimseye söylememen gerektiğini ekliyor. Adım adım ne yaparsın?</p>
+<p><strong>Adım 1 (alarm işaretlerini say).</strong> Bilinmeyen numara, acil durum, kısa süre, gizlilik isteği, olağan dışı ödeme yolu (bir şahıs hesabı). Biri bile durmaya yeter; burada beşi birden var.</p>
+<p><strong>Adım 2 (bilgi verme, kapat).</strong> Kişisel bilgini, kart bilgini ya da aile parolasını söyleme. "Seni geri arayacağım" deyip kapat. Senin işin konuşmayı uzatmak değil, kanalı değiştirmektir.</p>
+<p><strong>Adım 3 (ikinci kanal).</strong> Kardeşini rehberindeki numarasından ara. Açarsa, sesini duyduğun kişi büyük olasılıkla o değildi. Açmazsa panikle karar verme; ortak bir yakını ya da iş yerini bildiğin numaralardan ara.</p>
+<p><strong>Adım 4 (parola sorusu).</strong> Arayan yeniden ulaşıp kardeşin olduğunu söylerse aile parola sorusunu sor. Cevap yoksa ya da konu değiştiriliyorsa para gönderme.</p>
+<p><strong>Adım 5 (bildir).</strong> Doğrulanamayan isteği bankana ve polise bildir; ödeme yaptıysan bankanı hemen ara, çünkü müdahalede zaman önemlidir.</p>
+<p><strong>Sonuç:</strong> Bu adımların hiçbiri sesin sahte olduğunu "duyarak" anlamana dayanmıyor; doğru karar, sahteyi ayırt etme becerinden bağımsız olarak verilebiliyor. Savunmanın gücü buradan gelir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ben sahteyi gözümden ya da kulağımdan anlarım."</strong> Bir dönem sık görülen kusurlar (dudakla sesin uyuşmaması, tuhaf göz kırpma, metalik ses) her yeni nesil modelde azalıyor; dün işe yarayan ipucu bugün güvenilmez olabilir. Tespit yazılımları da üretim yöntemleriyle bir yarış içindedir ve kesin değildir. Doğrusu: savunmanı algına değil, sürece dayandır. Önleyici olarak da hesaplarını gizli tutmak ve uzun ses ve video kayıtlarını herkese açık paylaşmamak saldırganın hammaddesini azaltır.</p></div>
+
+<h2 class="s">YZ'nin siber saldırı ve savunmada kullanımı</h2>
+
+<p>YZ siber güvenliğin iki tarafında da kullanılan, çift kullanımlı bir araçtır. Saldırgan tarafında belirgin etkisi <strong>ölçek ve akıcılıktır</strong>: eskiden dil hatalarıyla fark edilen oltalama e-postaları artık kusursuz Türkçeyle ve kişiye özel yazılabiliyor. Kasım 2025'te Anthropic, kendi modelinin, Çin devleti destekli olarak değerlendirdiği bir grup tarafından yaklaşık 30 kuruma yönelik bir siber casusluk kampanyasında büyük ölçüde otomatik bir ajan olarak kullanıldığını raporladı. Rapora göre saldırganlar kendilerini meşru bir güvenlik firması gibi tanıtarak modelin korumalarını aştı, işin yaklaşık %80–90'ını model yaptı; modelin uydurduğu sonuçlar, yani Parça 14'teki halüsinasyon, saldırganların işini zorlaştırdı. Şirket ilgili hesapları kapattı ve yetkilileri bilgilendirdi.</p>
+
+<p>Savunma tarafında aynı yetenekler günlük kayıtlarında olağan dışı örüntü bulmayı, uyarıları önceliklendirmeyi ve kodda açık aramayı hızlandırır. Google, "Big Sleep" adlı YZ ajanının Kasım 2024'te ilk gerçek güvenlik açığını bulduğunu, Temmuz 2025'te ise SQLite veritabanında yalnız saldırganların bildiği kritik bir açığı sömürülmeden önce bulup kapattırdığını duyurdu ve bunu bir YZ ajanının gerçek dünyada sömürüyü doğrudan önlediği ilk vaka olarak tanımladı.</p>
+
+<p>Bunun sana iki dersi var. Parça 17'de gördüğün, YZ ile kod yazarken ortaya çıkan açıklar (koda sır yazmak, girdiyi doğrulamamak) saldırganların da YZ ile daha hızlı bulabileceği açıklardır. Ve YZ ile güvenlik testi de bir güvenlik testidir: yalnız kendi sistemlerinde ya da yazılı izinli bir laboratuvarda yapılır; başkasının sistemini izinsiz kurcalamak, araç YZ olsa da suçtur.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 11, 13 ve 16'ya:</strong> İstem enjeksiyonu, bağlam penceresinin her şeyi tek bir token dizisi olarak görmesinden doğar; reddetme davranışı (Parça 13) bir eğilimdir, kural değil; araç kullanan ajanlar (Parça 16) enjeksiyonu metinden eyleme taşır ve oradaki "geri alınamaz işte insan onayı" burada bir savunma katmanı oldu.</p>
+<p><strong>Parça 2, 8, 12 ve 14'e:</strong> Zehirleme "çöp girer, çöp çıkar"ın kasıtlı biçimidir ve internetten toplanan ön eğitim verisinden beslenebilir; kişisel bilgi sızması ezberlemenin mahremiyet yüzüdür; deepfake, görüntü üreten modellerin kötüye kullanımıdır; halüsinasyon, YZ ile yapılan saldırıların da sınırıdır.</p>
+<p><strong>Sonraki parçalara ve öbür raflara:</strong> Parça 19'da hizalama, değerlendirmeler ve kırmızı takım; Parça 20'de KVKK ve AB Yapay Zekâ Yasası. Siber rafında SQL enjeksiyonu ve parametreli sorgu, girdi doğrulama ve çıktı kodlama, en az yetki, hash ile bütünlük ve izinsiz erişimin hukuki sonuçları ayrıntılanacak; bu parçadaki savunmalar onların YZ'ye uyarlanmış hâlidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>İstem enjeksiyonu neden SQL enjeksiyonu gibi kesin bir yöntemle kapatılamıyor?</summary><p>SQL'de parametreli sorgu komutu ve veriyi ayrı kanallardan verir ve veritabanı veriyi hiçbir koşulda komut saymaz; bu kodla konmuş bir kuraldır. Dil modelinde sistem istemi, kullanıcı isteği ve dış içerik tek bir token dizisidir; dış içeriği işaretlesen bile model işareti de token olarak okur ve uyması olasılıksaldır. Bu yüzden savunma, yanıldığında zararı sınırlayan katmanlara dayanır.</p></details>
+<details><summary>Doğrudan ve dolaylı istem enjeksiyonu arasındaki fark nedir? Hangisinde kullanıcı masumdur?</summary><p>Doğrudan enjeksiyonda talimatı kullanıcı kendisi yazar. Dolaylı enjeksiyonda talimat, modelin işini yaparken okuduğu bir web sayfası, e-posta ya da belgenin içindedir. Dolaylı enjeksiyonda kullanıcı masumdur ve çoğu zaman saldırıdan haberi olmaz.</p></details>
+<details><summary>"Ölümcül üçlü"nün üç bileşeni nedir ve savunmada neden işe yarar?</summary><p>Özel veriye erişim, güvenilmez içerikle temas ve dışarıyla iletişim kurma yolu. Üçü bir aradaysa dolaylı enjeksiyonla veri çalınabilir. İşe yarar, çünkü modelin aldanmasını önlemeye çalışmak yerine, aldansa bile veriyi çıkaramayacağı bir tasarım önerir: üçünden birini tamamen kesmek.</p></details>
+<details><summary>Jailbreak ile istem enjeksiyonu arasındaki fark nedir? Güvenlik eğitimi neden tam koruma sayılmaz?</summary><p>Jailbreak modelin kendi güvenlik eğitimini aşmaya, enjeksiyon uygulamanın talimatlarını ve kullanıcının niyetini çiğnetmeye yöneliktir. Güvenlik eğitimi tam koruma değildir, çünkü reddetme öğrenilmiş bir olasılıktır; girdi uzayı neredeyse sonsuzdur; ve yetenekli model dolambaçlı isteği de anlar. Bu yüzden sınıflandırıcılar, izleme ve kırmızı takım gibi ek katmanlar kullanılır.</p></details>
+<details><summary>Ekim 2025'teki zehirleme çalışmasının ana bulgusu ve sınırları nelerdir?</summary><p>600 milyon ile 13 milyar parametre arasındaki modellerde yaklaşık 250 zehirli belge basit bir arka kapı için yetti ve bu sayı model büyüdükçe neredeyse sabit kaldı; başarı orana değil mutlak sayıya bağlı görünüyor. Sınırlar: arka kapı dar ve düşük riskliydi; daha büyük modellerde ve daha zararlı davranışlarda geçerliliği bilinmiyor; asıl zorluk belgeleri eğitim verisine sokabilmektir.</p></details>
+<details><summary>Ses klonlamayla yapılan "acil para" dolandırıcılığına karşı dört somut adım say.</summary><p>Dur: aciliyet ve gizlilik isteği alarm işaretidir. Kapat ve kişiyi rehberindeki kayıtlı numarasından sen ara. Önceden yüz yüze belirlenmiş aile parola sorusunu sor; cevap yoksa para gönderme. Doğrulanamayan isteği bankana ve polise bildir; kurumlarda büyük transferi çift onay ve farklı kanaldan teyide bağla.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İki tür risk:</strong> modele yapılan saldırı (hedef model ve uygulama), modelle yapılan saldırı (hedef insan). Hepsi yalnız kavram ve savunma düzeyinde.</li>
+<li><strong>OWASP LLM Top 10:</strong> 2025 sürümü Kasım 2024, 2026 sürümü Ağustos 2026; ikisinde de 1. sırada istem enjeksiyonu; aşırı yetki 2026'da 3. sıraya çıktı.</li>
+<li><strong>İstem enjeksiyonu:</strong> dış içerikteki talimatın sahibinin talimatı gibi işlenmesi; doğrudan ve dolaylı. Ad 12 Eylül 2022, Simon Willison. Kök neden: veri ile talimat aynı token dizisinde; parametreli sorgu gibi kesin ayraç yok.</li>
+<li><strong>Savunma katmanları:</strong> dış içeriği işaretle; en az yetki; parametreleri kodla doğrula; kritik işte insan onayı (onay yorgunluğuna dikkat); günlük. Modelin önerisi de güvenilmez girdidir. Ölümcül üçlüden birini kes.</li>
+<li><strong>Jailbreak:</strong> modelin kendi güvenlik eğitimini aşma girişimi; reddetme eğilimdir. Model çıktısını doğrulamadan başka sisteme aktarma.</li>
+<li><strong>Zehirleme ve arka kapı:</strong> Sleeper Agents (Ocak 2024): güvenlik eğitimi arka kapıyı silmedi. Ekim 2025: ~250 belge yetti; oran değil sayı (sınırlarıyla).</li>
+<li><strong>Kişisel bilgi sızması:</strong> Carlini ve ark. 2021, GPT-2'den birebir dizi; büyük model daha çok ezberler. Sistem istemine sır koyma.</li>
+<li><strong>Deepfake ve ses klonu:</strong> Hong Kong, Ocak 2024, ~200 milyon HK$. Savunma süreçtir: dur, kapat, kayıtlı numaradan ara, aile parolası, kurumda çift onay.</li>
+<li><strong>Çift kullanım:</strong> YZ saldırıyı ölçekler, savunmayı hızlandırır; her test yalnız kendi sisteminde ya da izinli laboratuvarda.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-18">
+<h3>Quiz 18</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">İstem enjeksiyonunun kök nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin parametre sayısının çok fazla olması</li><li>Modelin internete bağlı olmadan çalışamaması</li><li>Sistem istemi, kullanıcı isteği ve dış içeriğin bağlam penceresinde tek bir token dizisi olarak durması ve modelin veri ile talimatı kesin olarak ayıramaması</li><li>Modelin her soruya aynı cevabı vermesi</li><li>Kullanıcıların parolalarını sık değiştirmemesi</li></ul>
+<div class="coz"><p>Model önüne konan her şeyi tek bir token dizisi olarak görür ve bu dizide "şu kısım yalnız veridir" diyen, modelin kesin olarak uymak zorunda olduğu bir ayraç yoktur (C). Bu yüzden dış içerikteki bir cümle talimat gibi işlenebilir. A ve B istem enjeksiyonuyla ilgisizdir; enjeksiyon küçük ya da çevrimdışı çalışan bir modelde de olabilir. D, sıcaklık ve örneklemeyle ilgili yanlış bir iddiadır. E bir parola güvenliği konusudur, enjeksiyonun nedeni değildir.</p></div></li>
+
+<li data-c="A"><p class="q">Aşağıdakilerden hangisi <strong>dolaylı</strong> istem enjeksiyonuna örnektir?</p>
+<ul class="sec"><li>Bir kullanıcının, özetlemesi için asistana verdiği web sayfasının içine bir başkası tarafından asistana yönelik bir talimat cümlesi gizlenmiş olması</li><li>Bir kullanıcının sohbet kutusuna doğrudan uygulamanın kurallarını aşmaya çalışan bir metin yazması</li><li>Bir modelin bilmediği bir konuda kaynak uydurması</li><li>Bir modelin eğitim verisindeki bir telefon numarasını ezberlemiş olması</li><li>Bir çalışanın sahte bir görüntülü toplantıda para transferi yapması</li></ul>
+<div class="coz"><p>Dolaylı enjeksiyonda talimat, modelin işini yaparken okuduğu dış içeriktedir ve kullanıcı masumdur; A tam olarak budur. B doğrudan enjeksiyondur, çünkü talimatı kullanıcı kendisi yazıyor. C, Parça 14'teki halüsinasyondur. D, eğitim verisinden kişisel bilgi sızması riskidir. E, modelle yapılan bir saldırıdır (deepfake), modele yapılan bir enjeksiyon değildir.</p></div></li>
+
+<li data-c="E"><p class="q">Telefonda bir yakınının sesiyle arayan biri acilen para istiyor ve kimseye söylememeni istiyor. Aşağıdakilerden hangisi en doğru ilk tepkidir?</p>
+<ul class="sec"><li>Ses tanıdık olduğu için parayı hemen göndermek</li><li>Arayana kendi kart bilgilerini vererek ödemeyi onun yapmasını istemek</li><li>Arayanın verdiği "avukat" numarasını arayıp durumu teyit etmek</li><li>Aile parolasını arayana söyleyip onun doğrulamasını istemek</li><li>Konuşmayı kapatıp yakınını rehberinde kayıtlı numarasından aramak; ulaşamazsan önceden belirlenmiş parola sorusunu sormak</li></ul>
+<div class="coz"><p>Ses artık kimlik kanıtı değildir; kimlik, senin seçtiğin kanal ve önceden paylaşılmış bir sırla doğrulanır (E). A, sesi kanıt saymaktır. B, dolandırıcıya doğrudan ödeme aracı vermektir. C'de doğrulama yine saldırganın kontrol ettiği kanaldan yapılıyor; verdiği numara da onun numarası olabilir. D'de parola ters yönde kullanılıyor: parolayı soran sen olmalısın, söyleyen değil; söylersen sırrı saldırgana vermiş olursun.</p></div></li>
+
+<li data-c="B"><p class="q">Jailbreak ile istem enjeksiyonu arasındaki fark için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>İkisi aynı şeyin farklı adlarıdır.</li><li>Jailbreak modelin kendi güvenlik eğitimini aşmaya çalışır; istem enjeksiyonu uygulamanın talimatlarını ve kullanıcının niyetini çiğnetir.</li><li>Jailbreak yalnız görüntü modellerinde, istem enjeksiyonu yalnız ses modellerinde görülür.</li><li>İstem enjeksiyonu modelin eğitim verisini bozmaktır.</li><li>Jailbreak, güvenlik eğitimi almış modellerde tamamen imkânsızdır.</li></ul>
+<div class="coz"><p>Fark hedeftedir: jailbreak modelin reddetmeye eğitildiği içeriği ürettirmeye, enjeksiyon ise modelin sahibinin değil saldırganın isteğini yapmasına yöneliktir (B). İkisi birlikte kullanılabilir ama aynı şey değildir, bu yüzden A yanlıştır. C uydurmadır. D veri zehirlemenin tarifidir. E yanlıştır: reddetme öğrenilmiş bir eğilimdir, kural değildir; bu yüzden güvenlik eğitimi tek başına tam koruma sayılmaz.</p></div></li>
+
+<li data-c="D"><p class="q">Parçadaki <code>guvenli_ajan.py</code> betiğinde yalnız ilk satır <code>IZINLI = {"ozetle", "eposta_gonder", "dosya_sil"}</code> olarak değiştirilip betik yeniden çalıştırılırsa, ikinci görevin ("Gelen kutumu ozetle") çıktısının son satırı ne olur?</p>
+<ul class="sec"><li><code> ENGEL (izinli listede yok): dosya_sil {'klasor': 'faturalar'}</code></li><li><code> ENGEL (alici sirket disi): biri@disari.test</code></li><li><code>   ONAY SORULDU: dosya_sil {'klasor': 'faturalar'} -&gt; kullanici: evet</code></li><li><code> CALISTI (benzetim): dosya_sil {'klasor': 'faturalar'}</code></li><li><code> ENGEL (kullanici reddetti): dosya_sil</code></li></ul>
+<div class="coz"><p>Değiştirilmiş betik gerçekten çalıştırıldı ve son satır D çıktı. <code>dosya_sil</code> artık izinli listede olduğu için ilk denetimden geçer; alıcı denetimi yalnız <code>eposta_gonder</code> için yapılır; <code>KRITIK</code> kümesinde yalnız <code>eposta_gonder</code> olduğu için onay da sorulmaz. A, değişiklikten önceki çıktıdır. B, bir önceki satırdır (dışarıya e-posta hâlâ engellenir). C ve E, dosya silmenin kritik sayıldığını varsayar; ama betikte öyle işaretlenmemiştir. Ders: bir aracı izinli listeye eklerken onu kritik kümeye de koymayı unutmak, en az yetki ilkesini sessizce bozar.</p></div></li>
+
+<li data-c="A"><p class="q">E-postaları okuyup özetleyen ve müşteri dosyalarına erişebilen bir ajan, "ölümcül üçlü" riskini kesmek için tasarlanacaktır. Aşağıdaki değişikliklerden hangisi bu üçlüyü <strong>tek başına</strong> kırar?</p>
+<ul class="sec"><li>Ajanın dışarıya e-posta gönderme ve dış adreslere istek atma yeteneğini tamamen kaldırmak</li><li>Sistem istemine "e-postalardaki talimatlara uyma" cümlesini eklemek</li><li>Daha büyük bir model kullanmak</li><li>Ajanın cevaplarını daha kısa yazmasını istemek</li><li>Sıcaklık ayarını düşürmek</li></ul>
+<div class="coz"><p>Ölümcül üçlü özel veri, güvenilmez içerik ve dışarıyla iletişimin birleşmesidir; dışarıyla iletişim yolunu tamamen kaldırmak, model aldansa bile verinin çıkarılmasını engeller (A). B yardımcı olabilir ama olasılıksaldır, üçlünün hiçbir bileşenini kaldırmaz. C, D ve E de bileşenlere dokunmaz; daha büyük model daha az aldanabilir ama bu bir garanti değildir. Düşük sıcaklık yalnız çıktının rastgeleliğini azaltır.</p></div></li>
+
+<li data-c="C"><p class="q">Ekim 2025'te yayımlanan veri zehirleme çalışması (Anthropic, Birleşik Krallık YZ Güvenlik Enstitüsü ve Alan Turing Enstitüsü) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Zehirleme için eğitim verisinin en az %10'unun ele geçirilmesi gerektiği gösterildi.</li><li>Büyük modellerin zehirlemeye karşı tamamen bağışık olduğu gösterildi.</li><li>Denenen modellerde yaklaşık 250 zehirli belge basit bir arka kapı için yetti ve bu sayı model büyüdükçe neredeyse sabit kaldı; ama sonucun çok daha büyük modellerde ve daha zararlı davranışlarda geçerliliği bilinmiyor.</li><li>Arka kapının güvenlik eğitimiyle kolayca silindiği gösterildi.</li><li>Çalışma yalnız görüntü modellerini kapsıyordu.</li></ul>
+<div class="coz"><p>Çalışmanın ana bulgusu, başarının orana değil mutlak belge sayısına bağlı görünmesidir; yazarlar da sonucun sınırlarını açıkça yazdı (C). Çözümlü örnek 2'deki hesapta 13 milyarlık modelde zehrin oranı yalnız yaklaşık %0,00016 çıktı; bu A'yı çürütür. B tersini söyler. D, Ocak 2024'teki Sleeper Agents çalışmasının bulgusuyla çelişir; orada güvenlik eğitimi arka kapıyı güvenilir biçimde silmedi. E yanlıştır: çalışma dil modelleriyle yapıldı.</p></div></li>
+
+<li data-c="B"><p class="q">Bir şirket, büyük para transferlerinin deepfake ile yapılan dolandırıcılığa karşı korunması için bir kural koyacak. Hong Kong vakasından çıkan ders göz önüne alınırsa en etkili önlem aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Çalışanlara sahte videoları göz kırpma ve dudak hareketlerinden ayırt etmeyi öğretmek ve yalnız buna güvenmek</li><li>Büyük transferlerde, talimatın geldiği kanaldan farklı, önceden tanımlı bir kanaldan teyit ve ikinci bir yetkilinin onayını zorunlu kılmak</li><li>Görüntülü toplantılarda kameraların her zaman açık olmasını şart koşmak</li><li>Finans direktörünün sesini şirket içinde daha sık duyurmak</li><li>Gizli işlemlerin yalnız görüntülü toplantıda konuşulmasını istemek</li></ul>
+<div class="coz"><p>Hong Kong vakasında çalışan tanıdık yüzleri ve sesleri görünce ikna oldu, büyük transfer tek bir toplantıdaki sözlü talimatla yapıldı ve doğrulama para gittikten sonra geldi. Etkili önlem, saldırganın kontrol edemediği bir süreçtir: farklı kanaldan teyit ve çift onay (B). A, algıya dayanır ve her yeni nesil sahte içerikte ipuçları azaldığı için güvenilmezdir. C ve E, vakada zaten aldatılan kanalı güçlendirmeye çalışır; sahte katılımcıların da kamerası açıktı. D, saldırganın ses örneği bulmasını kolaylaştırır.</p></div></li>
+
+<li data-c="D" data-k="yz-1"><p class="q">Turing'in 1950 tarihli makalesinde önerdiği "taklit oyunu" ile ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Bir makinenin satranç oynayıp oynayamadığını ölçer.</li><li>Yapay zekâ kışlarının nedenlerini açıklar.</li><li>İlk büyük dil modelinin adıdır.</li><li>"Makineler düşünebilir mi?" sorusunu, bir sorgulayıcının yazışarak makineyi insandan ayırt edip edemeyeceği sorusuna çevirir.</li><li>Derin öğrenmenin matematiksel temelini kurar.</li></ul>
+<div class="coz"><p>Turing, tanımı tartışmalı olan "düşünmek" kavramıyla uğraşmak yerine, ölçülebilir bir oyun önerdi: bir sorgulayıcı, yazışma yoluyla karşısındakinin makine mi insan mı olduğunu ayırt edebiliyor mu (D)? A, 1997 Deep Blue'yu çağrıştıran bir çeldiricidir. B, YZ kışları sonraki on yıllardaki abartılı vaat ve yetersiz hesap gücüyle ilgilidir. C ve E tarihsel olarak yanlıştır; büyük dil modelleri ve derin öğrenmenin dönüşü onlarca yıl sonradır.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir model eğitim verisinde %99 başarı gösteriyor, ama daha önce görmediği test verisinde %60'ta kalıyor. Bu durum için en uygun tanım aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Yetersiz öğrenme (underfitting)</li><li>Pekiştirmeli öğrenme</li><li>Denetimsiz öğrenme</li><li>Çıkarım (inference)</li><li>Aşırı öğrenme (overfitting): model genellemek yerine eğitim örneklerini ezberlemiştir</li></ul>
+<div class="coz"><p>Eğitimde çok yüksek, görülmemiş veride düşük başarı, modelin örnekleri ezberleyip genelleyemediğini gösterir; bu aşırı öğrenmedir (E). Yetersiz öğrenmede model eğitim verisinde de kötüdür (A). B ve C öğrenme türleridir, bir başarı örüntüsünü tanımlamaz. D, eğitilmiş modelin yeni girdide kullanılmasıdır. Bu parçadaki kişisel bilgi sızması da ezberlemenin bir başka yüzüdür.</p></div></li>
+
+<li data-c="A" data-k="yz-4"><p class="q">Karar ağaçlarının kolay açıklanabilir sayılmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bir tahminin, kökten yaprağa kadar sorulan evet/hayır sorularının zinciri olarak okunabilmesi</li><li>Milyarlarca parametresi olması</li><li>Her zaman en yüksek doğruluğu vermesi</li><li>Gradyan inişiyle değil, rastgele tahminle çalışması</li><li>Yalnız görüntü verisinde kullanılabilmesi</li></ul>
+<div class="coz"><p>Karar ağacında her tahmin, "metrekare 100'den büyük mü?", "semt merkezde mi?" gibi sorulardan oluşan bir yoldur; bu yol bir insana aynen okunabilir (A). B ters: karar ağaçları küçük modellerdir; milyarlarca parametre derin ağlara özgüdür ve açıklanabilirliği zorlaştırır. C yanlıştır; her problemde en iyi değildir. D uydurmadır. E de yanlıştır: karar ağaçları özellikle tablo verisinde güçlüdür.</p></div></li>
+
+<li data-c="C" data-k="yz-5"><p class="q">Goodhart yasası aşağıdakilerden hangisini anlatır?</p>
+<ul class="sec"><li>Bir model ne kadar büyükse o kadar doğru olur.</li><li>Test verisi her zaman eğitim verisinden büyük olmalıdır.</li><li>Bir ölçüt hedefe dönüştüğünde, ölçtüğü şeyi iyi ölçmeyi bırakır.</li><li>Dengesiz veride doğruluk her zaman en iyi ölçüttür.</li><li>Kesinlik ve duyarlılık her zaman eşittir.</li></ul>
+<div class="coz"><p>Goodhart yasası, bir sayıyı hedef hâline getirdiğinde insanların ya da modellerin o sayıyı asıl amaca hizmet etmeden yükseltmenin yollarını bulacağını söyler (C). Kıyaslama tablolarının tek başına yetmemesinin ve test verisine bulaşmanın sorun olmasının bir nedeni budur. A ölçekleme hakkında yanlış bir genellemedir. B'nin dayanağı yoktur. D tersini söyler; dengesiz veride doğruluk yanıltıcıdır. E yanlıştır; ikisi arasında takas vardır.</p></div></li>
+
+<li data-c="B" data-k="yz-7"><p class="q">Sinir ağı eğitiminde "erken durdurma" (early stopping) aşağıdakilerden hangisini amaçlar?</p>
+<ul class="sec"><li>Eğitimi mümkün olduğu kadar uzatmayı</li><li>Doğrulama kaybı yükselmeye başladığında eğitimi durdurup aşırı öğrenmenin önüne geçmeyi</li><li>Öğrenme oranını sıfıra eşitlemeyi</li><li>Ağın bütün katmanlarını silmeyi</li><li>Eğitim verisini test verisiyle birleştirmeyi</li></ul>
+<div class="coz"><p>Eğitim kaybı düşmeye devam ederken doğrulama kaybı yükselmeye başlarsa model ezberlemeye geçmiştir; erken durdurma, doğrulama kaybının en düşük olduğu noktada eğitimi keserek bunu önler (B). Dropout, ağırlık cezası ve veri artırmayla birlikte bir düzenlileştirme yöntemidir. A tam tersidir. C ve D anlamsız işlemlerdir. E bir veri sızıntısıdır ve sahte başarı üretir.</p></div></li>
+
+<li data-c="D" data-k="yz-8"><p class="q">Görüntü üreten difüzyon modellerinin temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Resmi piksel piksel internetten kopyalamak</li><li>Bir resmi evrişim filtreleriyle sınıflandırmak</li><li>Resmi kelimelere çevirip tek sıcak gösterimle saklamak</li><li>Gürültüden başlayıp gürültüyü adım adım azaltarak bir resim çıkarmak</li><li>Bir karar ağacıyla renk seçmek</li></ul>
+<div class="coz"><p>Difüzyon modelleri, rastgele gürültüden başlar ve öğrendikleri bir süreçle gürültüyü adım adım temizleyerek bir resim ortaya çıkarır (D). Bu parçada gördüğümüz deepfake görüntülerin bir kısmı bu aileden modellerle üretilebilir. A, modelin işleyişini kopyalamaya indirger. B, görüntü tanıyan evrişimli ağların işidir, üretimin değil. C ve E ilgisiz çeldiricilerdir.</p></div></li>
+
+<li data-c="E" data-k="yz-10"><p class="q">Transformer'da "çok başlı dikkat" ile ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Cümledeki her kelime yalnız bir sonraki kelimeye bakar.</li><li>Başların ne yapacağını insanlar elle yazar.</li><li>Çok başlı dikkat, konum bilgisinin yerine geçer.</li><li>Her baş ayrı bir cümleyi işler.</li><li>Aynı katmanda birkaç dikkat hesabı yan yana yapılır; her baş kendi sorgu, anahtar ve değer matrisleriyle cümleye farklı bir ölçütle bakar.</li></ul>
+<div class="coz"><p>Çok başlı dikkatte her baş kendi matrislerine sahiptir ve aynı cümledeki farklı ilişkileri yakalayabilir; çıktılar birleştirilip yeniden ana boyuta çevrilir (E). A, dikkatin işleyişine aykırıdır; her kelime bütün kelimelere bakabilir. B yanlıştır; başların rolleri eğitimde kendiliğinden ortaya çıkar. C yanlıştır; sırayı konum vektörleri verir. D de yanlıştır; başlar aynı cümleye farklı gözlerle bakar.</p></div></li>
+
+<li data-c="A" data-k="yz-11"><p class="q">Bir sohbet modelinin, aynı sohbette birkaç mesaj önce söylediğini "hatırlaması" nasıl gerçekleşir?</p>
+<ul class="sec"><li>Sohbet geçmişi her yeni istekte bağlam penceresine yeniden verilir; modelin kendi içinde kalıcı bir hafızası yoktur.</li><li>Model her mesajdan sonra ağırlıklarını güncelleyerek konuşmayı öğrenir.</li><li>Model geçmişi ekran kartının belleğine sonsuza kadar kaydeder.</li><li>Sıcaklık ayarı geçmişi saklar.</li><li>Tokenleştirme sırasında geçmiş otomatik olarak silinir ve yeniden tahmin edilir.</li></ul>
+<div class="coz"><p>Modelin hafızası yoktur; uygulama, sohbetin önceki mesajlarını her seferinde yeni istekle birlikte bağlam penceresine koyar (A). Bağlam penceresi dolunca eski kısımlar sığmaz. Bu parçadaki istem enjeksiyonu da bu yüzden mümkündür: bağlam penceresine giren her şey aynı token dizisinin parçasıdır. B yanlıştır; kullanım sırasında ağırlıklar değişmez. C, D ve E uydurmadır; sıcaklık yalnız örneklemedeki rastgeleliği ayarlar.</p></div></li>
+
+<li data-c="C" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli"nin görevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin bir sonraki tokeni internetten aramasını sağlamak</li><li>Eğitim verisindeki tekrarları silmek</li><li>İnsanların iki cevaptan hangisini daha iyi bulduğu tercihlerinden öğrenip yeni cevaplara puan vermek; dil modeli bu puana göre ayarlanır</li><li>Kullanıcının parolasını saklamak</li><li>Modelin sistem istemini gizlemek</li></ul>
+<div class="coz"><p>RLHF'de insanlar iki cevaptan iyisini seçer; bu tercihlerden bir ödül modeli eğitilir ve dil modeli bu ödülü artıracak biçimde ayarlanır (C). Modelin reddetme davranışının bir kaynağı da budur; bu parçada gördüğümüz gibi bu davranış öğrenilmiş bir eğilimdir, kesin bir kural değildir. A, B, D ve E ödül modelinin işi değildir.</p></div></li>
+
+<li data-c="B" data-k="yz-14"><p class="q">Dil modellerinin halüsinasyon üretmesinin mekanizmadan gelen temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin bilerek yalan söylemeye programlanmış olması</li><li>Modelin olası bir metin üretmeye eğitilmiş olması; olası metin her zaman doğru metin değildir</li><li>Modelin hiç eğitim verisi görmemiş olması</li><li>Ekran kartının ısınması</li><li>Bağlam penceresinin sınırsız olması</li></ul>
+<div class="coz"><p>Model, bir sonraki token için olası bir devam üretir; bilmediği yerde de akıcı ve olası görünen bir metin üretmeyi sürdürür, ama olası olan her zaman doğru olan değildir (B). A yanlıştır; uydurma kasıtlı bir programlamadan değil, mekanizmadan doğar. C ve D anlamsızdır. E yanlıştır; bağlam penceresi sınırlıdır. Bu parçada gördüğümüz gibi halüsinasyon, YZ'yi kötüye kullananların işini de zorlaştırabilir.</p></div></li>
+
+<li data-c="D" data-k="yz-15"><p class="q">İstem yazarken "few-shot" (birkaç örnekli) yaklaşım aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modele mümkün olan en kısa istemi yazmak</li><li>Aynı istemi farklı modellerde denemek</li><li>Modele bir rol vermek</li><li>İstenen girdi-çıktı biçimini gösteren birkaç örneği isteme eklemek</li><li>Modelin sıcaklığını sıfıra çekmek</li></ul>
+<div class="coz"><p>Few-shot, modele ne istendiğini yalnız tarif etmek yerine birkaç örnekle göstermektir; model, örneklerdeki biçimi ve üslubu izlemeye eğilimlidir (D). A, iyi istemin parçalarını (görev, bağlam, kısıt, biçim) atlamaktır. B bir deneme-karşılaştırma alışkanlığıdır, few-shot değildir. C rol vermektir ve ayrı bir tekniktir. E bir örnekleme ayarıdır, istem tekniği değildir.</p></div></li>
+
+<li data-c="A" data-k="yz-15"><p class="q">İstem yazmayla ilgili aşağıdaki davranışlardan hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Daha iyi sonuç alınsın diye isteme gerçek bir parola, kişisel veri ya da şirket sırrı eklemek</li><li>İstenen çıktının biçimini açıkça belirtmek</li><li>Belirsiz bir durumda modelden soru sormasını istemek</li><li>Büyük bir işi daha küçük adımlara bölmek</li><li>İstemi deneyip sonucu karşılaştırarak düzeltmek</li></ul>
+<div class="coz"><p>Parola, kişisel veri ya da şirket sırrını istemle paylaşmak gereksiz bir risktir; bu bilgiler hizmet sağlayıcının koşullarına göre saklanabilir ve bu parçada gördüğümüz gibi bağlama giren bilgi sızabilir (A). B, C, D ve E iyi istem alışkanlıklarıdır: biçimi belirtmek, belirsizlikte soru sordurmak, işi parçalara bölmek ve deneme-karşılaştırma-düzeltme döngüsü.</p></div></li>
+
+<li data-c="E" data-k="yz-16"><p class="q">Bir sohbet API'sini çağıran Python programında API anahtarı nerede tutulmalıdır?</p>
+<ul class="sec"><li>Kodun en üstünde bir değişkene yazılarak</li><li>Kod deposundaki README dosyasında</li><li>Sistem isteminin içinde</li><li>Kullanıcıya gösterilen hata mesajında</li><li>Bir ortam değişkeninde; program anahtarı oradan okur, anahtar koda ve depoya girmez</li></ul>
+<div class="coz"><p>Anahtar ortam değişkenine konur; böylece kod paylaşılsa ya da bir depoya gönderilse bile anahtar onunla birlikte gitmez (E). A ve B, anahtarın depoya ve oradan herkese sızmasının en yaygın yoludur. C özellikle tehlikelidir: sistem istemi bağlam penceresindedir ve bu parçada gördüğümüz gibi model onu dile getirebilir. D anahtarı doğrudan kullanıcılara gösterir.</p></div></li>
+
+<li data-c="C" data-k="yz-16"><p class="q">RAG (bilgiyle zenginleştirilmiş üretim) akışında adımların doğru sırası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modeli yeniden eğitmek → belgeleri silmek → soruyu cevaplamak</li><li>Soruyu cevaplamak → belgeleri bulmak → cevabı belgelere yazmak</li><li>Belgeleri gömme vektörlerine çevirip saklamak → soruya anlamca yakın parçaları aramak → bulunanları isteme ekleyip modele cevaplatmak</li><li>Belgeleri tek sıcak gösterime çevirmek → modelin sıcaklığını yükseltmek → cevap üretmek</li><li>Soruyu tokenlerine ayırıp her tokeni ayrı bir modele göndermek</li></ul>
+<div class="coz"><p>RAG'de belgeler önce gömme vektörlerine çevrilip bir vektör veritabanında saklanır; soru gelince ona anlamca yakın parçalar bulunur ve bu parçalar isteme eklenerek model cevaplatılır (C). Model yeniden eğitilmez, bu yüzden A yanlıştır. B sırayı tersine çevirir. D ve E uydurmadır. Bu parçada gördüğümüz gibi, isteme eklenen belgeler güvenilmez içerik olabilir ve dolaylı istem enjeksiyonunun girişi olabilir.</p></div></li>
+
+<li data-c="B" data-k="yz-17"><p class="q">Bir kod asistanı, var olmayan bir kütüphane fonksiyonunu kullanan ve ilk bakışta düzgün görünen bir kod yazdı. Bunu yakalamanın en güvenilir yolu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Asistana "emin misin?" diye bir kez sormak ve cevabına güvenmek</li><li>Kodu gerçekten çalıştırmak, testlerden geçirmek ve değişikliği (diff) okumak</li><li>Kodu daha uzun bir istemle yeniden yazdırmak</li><li>Kodu hiç okumadan ana dala birleştirmek</li><li>Kodun yorum satırlarını çoğaltmak</li></ul>
+<div class="coz"><p>Çalışıyor gibi görünen kod, ancak gerçekten çalıştırılıp test edildiğinde ve değişiklik satır satır okunduğunda doğrulanır; var olmayan bir fonksiyon çalıştırıldığı anda hata verir (B). A, modelin kendi güven düzeyini her zaman doğru bilmediğini unutmaktır. C, doğrulama değil, yeni bir tahmindir. D, sürüm kontrolündeki güvenli çalışma alışkanlıklarının tam tersidir. E kodun doğruluğunu değiştirmez.</p></div></li>
+
+<li data-c="D" data-k="yz-17"><p class="q">YZ ile yazılmış bir web uygulamasında aşağıdakilerden hangisi bir <strong>güvenlik açığı</strong> bırakma örneğidir?</p>
+<ul class="sec"><li>Değişiklikleri ayrı bir dalda yapıp PR ile birleştirmek</li><li>Her özelliği küçük adımlarla ekleyip test etmek</li><li>Kabul ölçütlerini işe başlamadan yazmak</li><li>Veritabanı parolasını kaynak kodun içine yazmak ve kullanıcı girdisini doğrulamadan veritabanı sorgusuna koymak</li><li>Test kullanıcılarından geri bildirim toplamak</li></ul>
+<div class="coz"><p>Sırrı koda yazmak ve girdi doğrulamayı atlamak, YZ ile kod yazarken en sık bırakılan iki güvenlik açığıdır (D): kod paylaşıldığında parola sızar, doğrulanmamış girdi de siber rafında göreceğimiz enjeksiyon açıklarına kapı açar. A, B, C ve E güvenli ve sağlıklı geliştirme alışkanlıklarıdır: dal ve PR ile çalışmak, küçük adımlarla test etmek, kabul ölçütü yazmak, kullanıcıdan geri bildirim almak.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-17">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-18">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-19">Sonraki parça: hizalama ve uzun vadeli riskler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"prompt injection explained indirect prompt injection AI agents defense"</li>
+  <li>"OWASP Top 10 for LLM applications overview"</li>
+  <li>"data poisoning backdoor language models explained"</li>
+  <li>"ses klonlama dolandırıcılığı nasıl korunulur aile parolası"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Saldırı sınırı:</strong> Bu parçada hiçbir çalışan enjeksiyon metni, jailbreak istemi, atlatma tarifi, zehirleme yöntemi ya da deepfake/ses klonu üretme talimatı yoktur. Python örneğindeki "saldırı" yalnız <code>GIZLI_TALIMAT</code> adlı soyut bir işarettir ve onu tetikleyen "model", birkaç satırlık bir benzetimdir; gerçek bir modele karşı işe yarayan bir metin değildir. Jailbreak'in genel kategorileri (kurgu çerçevesi, isteği parçalara bölme) yalnız güvenlik eğitiminin neden olasılıksal olduğunu açıklamak için adıyla anıldı.</li>
+  <li><strong>OWASP:</strong> 2025 listesinin on maddesi ve sırası OWASP GenAI Security Project'in resmî sayfasından (genai.owasp.org/llm-top-10) doğrulandı; duyuru tarihi 17 Kasım 2024 (basın bülteni 19 Kasım 2024). 2026 sürümünün kaynak sayfası 3 Ağustos 2026 tarihli, resmî duyurusu 1 Eylül 2026 tarihlidir; duyuruda "aşırı yetki artık üçüncü sırada" ifadesi geçer. 2026 listesinin tam sırasını resmî PDF'ten okuyamadım (sayfa yalnız indirme bağlantısı veriyor); sıra, birbirini tutan iki ikincil kaynaktan (Aembit ve Cycode blog yazıları, Eylül 2026) alındı. Cycode yayın tarihini 4 Ağustos 2026 olarak veriyor; resmî sayfayla bir günlük fark var. Madde adlarının Türkçesi benim çevirimdir.</li>
+  <li><strong>İstem enjeksiyonunun tarihi:</strong> Simon Willison'ın 12 Eylül 2022 tarihli "Prompt injection attacks against GPT-3" yazısı açılıp okundu: adı orada önerdiği, Riley Goodside'ın bir gün önceki örneklerine dayandığı ve SQL enjeksiyonuna benzettiği doğrulandı. Preamble'ın Mayıs 2022'de OpenAI'ye bildirimi ve NCSC'nin Ağustos 2023 değerlendirmesi Vikipedi'nin "Prompt injection" maddesinden alındı; birincil kaynaklarını açmadım. Greshake ve ark. makalesi (arXiv 2302.12173, ilk gönderim 23 Şubat 2023) arXiv sayfasından doğrulandı. "Ölümcül üçlü" Willison'ın 16 Haziran 2025 tarihli yazısından doğrulandı.</li>
+  <li><strong>Araştırmalar:</strong> Carlini ve ark., "Extracting Training Data from Large Language Models", 30. USENIX Security Symposium (Ağustos 2021); özet USENIX sayfasından doğrulandı (GPT-2, yüzlerce birebir dizi, ad/telefon/e-posta, IRC, kod, 128 bitlik UUID, tek belgede geçen diziler, büyük modellerin daha savunmasız olması). "Sleeper Agents" (arXiv 2401.05566, Ocak 2024) arXiv HTML sürümünden doğrulandı. Ekim 2025 zehirleme çalışması Anthropic'in 9 Ekim 2025 tarihli sayfasından doğrulandı (250 belge, 600M–13B, yaklaşık 420 bin token, %0,00016, 100 belgenin yetmemesi, yazarların sınırları). Çözümlü örnek 2'deki "parametre başına 20 token" varsayımı benimdir; çalışmanın verdiği "13B, 600M'den 20 kattan fazla veri gördü" bilgisi ve %0,00016 oranıyla tutarlı olduğu için seçildi. Hesaplar Python ile yapıldı.</li>
+  <li><strong>Hong Kong vakası:</strong> Dezeen'in 17 Mayıs 2024 tarihli haberinden (Financial Times'a dayanarak) doğrulandı: Ocak 2024, finans direktörü ve başka çalışanların sahte görüntüleri, 15 transfer, beş hesap, 200 milyon HK$, polisin Şubat 2024 duyurusu, Arup'un Mayıs 2024 teyidi. "Yaklaşık 25 milyon ABD doları" karşılığı birçok haber kaynağının başlığında geçiyor, ama okuduğum metin yalnız HK$ ve sterlin veriyordu; ABD doları karşılığını kurdan yaklaşık olarak verdim.</li>
+  <li><strong>FBI önerileri:</strong> IC3 sitesindeki 3 Aralık 2024 tarihli I-120324-PSA numaralı duyurudan doğrulandı (aile içi gizli kelime, kapatıp kurumu kendin bulduğun numaradan arama, çevrimiçi ses ve görüntüyü sınırlama). Aile parolasının seçimi ve kullanımıyla ilgili ayrıntılı öneriler (yüz yüze belirlemek, tahmin edilemez olması, "soran sen ol") bu öneriden türetilmiş genel güvenlik pratiğidir.</li>
+  <li><strong>YZ ve siber güvenlik:</strong> Anthropic'in Kasım 2025 raporunu doğrudan açamadım (bağlantı yönlendirmesi erişilemedi); ayrıntılar Paul Weiss hukuk bürosunun rapor özetinden alındı (Çin devleti destekli olarak değerlendirilen grup, yaklaşık 30 kurum, işin %80–90'ı, meşru güvenlik firması gibi davranma, halüsinasyonun saldırganı zorlaması, hesapların kapatılması). Big Sleep bilgileri Google'ın 15 Temmuz 2025 tarihli blog yazısından doğrulandı; ilk gerçek açığın Kasım 2024'te bulunduğu orada yazıyor, SQLite açığı (CVE-2025-6965) ise Temmuz 2025 tarihli vakadır.</li>
+  <li><strong>Hukuk:</strong> mevzuat.gov.tr'ye bu oturumda erişemediğim için TCK ve KVKK'nın madde numaralarını vermedim; yalnız "izinsiz erişim suçtur" ve "kişisel veriler KVKK'ya tabidir" genel bilgileriyle yetindim ve ayrıntıyı siber rafının hukuk parçasına bıraktım.</li>
+  <li><strong>Hafızadan:</strong> Tekrarlanan metnin daha kolay ezberlendiği ve diferansiyel mahremiyetin başarım kaybıyla geldiği bilgisi alan bilgisine dayanır; bu oturumda belirli bir makaleyle doğrulamadım. Deepfake tespit ipuçlarının yeni modellerde azaldığı ifadesi genel bir gözlemdir.</li>
+  <li><strong>Kod:</strong> <code>guvenli_ajan.py</code> ve alıcı denetimi kaldırılmış hâli bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı; çıktılar birebir konuldu. Quiz 5. sorudaki değişiklik de ayrı bir dosyada çalıştırılıp cevabı doğrulandı. Betiklerde rastgelelik ve ağ erişimi yoktur.</li>
+  <li><strong>Tekrar soruları:</strong> Parça 1–10 metinleri yazılı olduğu için onların terimleriyle; Parça 11–17 henüz eşzamanlı yazıldığından yalnız kapsam listesindeki satırlarına göre yazıldı. Parça 1–14'ten 1'er yerine toplam 16 sınırı yüzünden Parça 3, 6, 9 ve 12 atlandı (eşit aralıkla seçim).</li>
+</ul>
+</div>
+</div>
+</article>

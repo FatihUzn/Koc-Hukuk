@@ -1,0 +1,573 @@
+<article class="chapter ders" id="c-yz-17">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 17 · YZ ile yazılım geliştirmek</div>
+<h1>Çalışıyor gibi görünen kod: YZ ile yazılım geliştirirken neyi sen yapmalısın?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir kodlama asistanına "kullanıcıların sipariş verebildiği küçük bir site yap" dedin. Yarım saat sonra ekranda düzgün bir sayfa var: ürünü seçiyorsun, adedi yazıyorsun, sipariş veritabanına kaydoluyor. Her şey çalışıyor. Bu siteyi yarın gerçek müşterilere açabilir misin? "Çalışıyor" ile "doğru ve güvenli" arasındaki farkı kim, nasıl kontrol edecek?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 5 (veri sızıntısı, kıyaslama tabloları, Goodhart yasası), Parça 11 (token, bağlam penceresi), Parça 14 (halüsinasyon, bilgi kesim tarihi, kaynak uydurma), Parça 15 (iyi istemin parçaları), Parça 16 (API anahtarı, araç kullanımı, ajan döngüsü, insan onayı). Kod rafını bilmen gerekmez. Python ve Git kutuları isteğe bağlıdır; kodu bilmiyorsan atla, her kutunun sonucu metinde ayrıca anlatılıyor.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi çözüyor?</h2>
+
+<p>Yazılım geliştirmek uzun yıllar boyunca büyük ölçüde "kodu yazmak" demekti. Bir işlevi yazmak saatler, bir ekranı yazmak günler alırdı. Bugün bir dil modeli aynı işlevi saniyeler içinde, düzgün girintili, açıklamalı ve çoğu zaman ilk denemede çalışır hâlde yazabiliyor. Bu, işin zor kısmını ortadan kaldırmadı; <strong>yerini değiştirdi</strong>. Kodu üretmek ucuzladı, üretilen kodun doğru olduğundan emin olmak ise eskisi kadar pahalı kaldı. Hatta bazı açılardan pahalandı, çünkü artık okuman gereken kod, yazabileceğinden çok daha hızlı birikiyor.</p>
+
+<p>Bu parçanın tek bir fikri var: <strong>YZ'nin yazdığı kod, sen doğrulayana kadar bir taslaktır.</strong> Sırasıyla şunları kuracağız: kodlama ajanlarının nasıl çalıştığı; araştırmaların ne söylediği; "çalışıyor gibi görünen" kodun nereden çıktığı ve nasıl yakalandığı; sürüm kontrolü; en sık üç hata ailesi; işi tarif etmek; kod bilmeden uygulama yapmanın sınırı; bir uygulamanın yaşam döngüsü.</p>
+
+<h2 class="s">Kod asistanından kodlama ajanına</h2>
+
+<p>"YZ ile kod yazmak" üç ayrı çalışma biçimini kapsar; farkları, modele ne kadar <strong>iş ve yetki</strong> verildiğidir. İlki <strong>satır tamamlama</strong>: sen yazarken model imleçten sonra ne gelebileceğini tahmin edip önerir; Parça 11'deki "bir sonraki tokeni tahmin et" işinin en doğrudan uygulamasıdır. İkincisi <strong>sohbet</strong>: "şu işi yapan bir işlev yaz" dersin, model kod parçası verir, sen kendi dosyana yapıştırırsın. Üçüncüsü <strong>kodlama ajanı</strong>dır ve bu parçanın asıl konusu odur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kodlama ajanı</strong>, Parça 16'daki ajan döngüsünün yazılıma uygulanmış hâlidir: bir hedef alır ve bu hedefe ulaşmak için araçları sırayla kullanır. Araçları tipik olarak şunlardır: depodaki dosyaları listelemek ve okumak, metin aramak, dosya oluşturmak ve düzenlemek, terminalde komut çalıştırmak (programı başlatmak, testleri koşmak, paket kurmak). Her araç çağrısının sonucunu görür ve bir sonraki adımına buna göre karar verir.</p></div>
+
+<p>Ajanın içindeki model de Parça 11–13'te gördüğün dil modelidir: metin alır, metin üretir. Fark etrafındaki programdadır. Model "şu dosyayı oku" diye bir araç çağrısı ürettiğinde program dosyayı gerçekten okur ve içeriğini modele geri verir; "testleri çalıştır" dediğinde komutu çalıştırıp çıktıyı geri verir. Model yalnız metin yazar, dünyaya dokunan programdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 420" role="img" aria-label="Kodlama ajanının döngüsü: görev, depoyu okuma, plan, düzenleme, çalıştırma ve test, sonucu değerlendirme, insan gözden geçirmesi">
+  <rect class="sv-l" x="120" y="10" width="160" height="40" rx="10"/>
+  <text class="sv-b" x="200" y="35" text-anchor="middle">Görev ve kabul ölçütü</text>
+  <path class="sv-c" d="M200 50V72"/>
+  <rect class="sv-k" x="100" y="72" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="92" text-anchor="middle">1. Depoyu oku, ara</text><text class="sv-s" x="200" y="108" text-anchor="middle">ilgili dosyaları bağlama al</text>
+  <path class="sv-c" d="M200 116V134"/>
+  <rect class="sv-k" x="100" y="134" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="154" text-anchor="middle">2. Plan yap, dosyayı düzenle</text><text class="sv-s" x="200" y="170" text-anchor="middle">küçük bir değişiklik</text>
+  <path class="sv-c" d="M200 178V196"/>
+  <rect class="sv-k" x="100" y="196" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="216" text-anchor="middle">3. Komut çalıştır</text><text class="sv-s" x="200" y="232" text-anchor="middle">programı ve testleri koş</text>
+  <path class="sv-c" d="M200 240V258"/>
+  <rect class="sv-a" x="100" y="258" width="200" height="44" rx="10"/>
+  <text class="sv-t" x="200" y="278" text-anchor="middle">4. Sonuç ölçüte uyuyor mu?</text><text class="sv-s" x="200" y="294" text-anchor="middle">hata çıktısını oku</text>
+  <path class="sv-cl" d="M100 280H40V156H100"/>
+  <text class="sv-s" x="44" y="222" text-anchor="start">hayır:</text><text class="sv-s" x="44" y="238" text-anchor="start">yeniden</text>
+  <path class="sv-c" d="M200 302V324"/><text class="sv-s" x="214" y="318">evet</text>
+  <rect class="sv-m" x="80" y="324" width="240" height="44" rx="10"/>
+  <text class="sv-b" x="200" y="344" text-anchor="middle">5. İnsan gözden geçirir</text><text class="sv-s" x="200" y="360" text-anchor="middle">değişikliği (diff) okur, onaylar</text>
+  <path class="sv-c" d="M200 368V384"/>
+  <text class="sv-t" x="200" y="402" text-anchor="middle">kaydet (commit), ana dala birleştir</text>
+</svg>
+<figcaption>Ajan 1–4 arasındaki döngüyü kendi başına birçok kez dönebilir. Döngünün dışındaki iki halka insana aittir: en üstte işi ve "bitti" sayılma ölçütünü tarif etmek, en altta sonucu okuyup onaylamak. Bu parçanın büyük kısmı bu iki halka hakkındadır.</figcaption>
+</figure>
+
+<p>Ajanın karşılaştığı ilk pratik sorun Parça 11'deki <strong>bağlam penceresidir</strong>. Yüz binlerce satırlık bir depo bu pencereye sığmaz; ajan, Parça 16'daki RAG'e benzer biçimde dosya adlarına bakar, arar ve yalnız gereken dosyaları okur. Yani deponun <strong>tamamını</strong> değil, okuduğu kadarını bilir: okumadığı bir işlevin ikinci kopyasını yazabilir, okumadığı bir kuralı bozabilir. Birçok proje bu yüzden köke ajanlar için bir talimat dosyası koyar (2025'ten beri yaygınlaşan <code>AGENTS.md</code> gibi): kurulum, testlerin nasıl çalıştırıldığı ve uyulan kurallar orada yazılır.</p>
+
+<p>İkinci pratik sorun <strong>yetkidir</strong>. Komut çalıştırabilen bir ajan dosya silebilir, bir veritabanını değiştirebilir, internete bir şey gönderebilir. Parça 16'daki kural burada da geçerlidir: geri alınamaz işler insan onayından geçmelidir. Kodlama araçlarının çoğu bu yüzden izin düzeyleriyle çalışır (okumak serbest, düzenlemek ya da komut çalıştırmak onaya bağlı gibi). Ajanı, gerçek verine ve hesaplarına erişemeyeceği ayrı bir klasörde ya da dalda çalıştırmak iyi bir alışkanlıktır.</p>
+
+<div class="tablo"><table>
+<tr><th>Çalışma biçimi</th><th>Model neyi görür?</th><th>Model ne yapabilir?</th><th>Senin işin</th></tr>
+<tr><td>Satır tamamlama</td><td>Açık dosyanın imleç çevresi</td><td>Birkaç satır önerir</td><td>Her öneriyi kabul ederken okumak</td></tr>
+<tr><td>Sohbet</td><td>Yapıştırdığın kod ve sorun</td><td>Kod parçası ve açıklama yazar</td><td>Parçayı kendi koduna uydurmak, çalıştırmak</td></tr>
+<tr><td>Kodlama ajanı</td><td>Depoda okuduğu dosyalar, komut çıktıları</td><td>Birçok dosyayı düzenler, komut çalıştırır, test koşar</td><td>İşi tarif etmek, yetkiyi sınırlamak, sonucu (diff'i) okumak</td></tr>
+</table></div>
+
+<p>Yazıldığı tarih itibarıyla (Ekim 2026) bu araçların düzenleyiciye gömülü, terminalde ya da bulutta çalışan pek çok örneği var. Adlar ve yetenekler hızla değişiyor; döngü ve senin iki halkan değişmiyor.</p>
+
+<h2 class="s">Ne kadar iyiler? Araştırmalar ve sınırları</h2>
+
+<p>Parça 1'deki soru listesini burada uygula: ne ölçüldü, kim ölçtü, neyle kıyaslandı? Aşağıdaki bulgular birbirine zıt görünür; aslında farklı şeyleri ölçerler.</p>
+
+<p><strong>Kıyaslama tabloları.</strong> 2023'te yayımlanan SWE-bench, modellere gerçek açık kaynak projelerden alınmış hata kayıtlarını (12 popüler Python deposundan 2.294 sorun) verir ve modelin yazdığı düzeltmenin projenin kendi testlerinden geçip geçmediğine bakar. Yayımlandığında en iyi model sorunların yalnız %1,96'sını çözebiliyordu. Sonraki yıllarda bu ve benzeri tablolardaki puanlar hızla yükseldi; güncel puanları burada vermiyorum, çünkü hem çok hızlı değişiyorlar hem de Parça 5'teki uyarıların hepsi geçerli: tablo yayımlandıktan sonra soruların eğitim verisine karışması ("test verisine bulaşma") ve ölçütün hedef hâline gelmesi (Goodhart).</p>
+
+<p><strong>Görev süresi ufku.</strong> METR adlı bağımsız değerlendirme kuruluşu Mart 2025'te farklı bir ölçü önerdi: bir modelin %50 olasılıkla başarabildiği görevler, bir insanın ortalama ne kadar sürede bitireceği işlerdir? Makaleye göre bu süre 2019'dan beri yaklaşık <strong>her yedi ayda bir ikiye katlanmıştır</strong>; makalenin güncellenmiş sürümünde o tarihteki en iyi model için yaklaşık 110 dakika verilir. Yazarlar aynı makalede iki temkin koyar: görevler düzgün tanımlı yazılım görevleridir ve daha "dağınık", az yapılandırılmış işlerde başarı çok daha düşüktür.</p>
+
+<p><strong>Gerçek işte hız.</strong> 2023'te yayımlanan kontrollü bir deneyde, kod asistanı kullananlar küçük bir HTTP sunucusu yazma görevini %55,8 daha hızlı bitirdi; ama bu tek, iyi tanımlı, sıfırdan yazılan bir görevdi. METR'in Temmuz 2025'te yayımladığı rastgele kontrollü deneyde ise 16 deneyimli geliştirici, tanıdıkları büyük açık kaynak projelerde 246 gerçek iş yaptı; her iş için YZ'ye izin verilip verilmeyeceği rastgele belirlendi. YZ'ye izin verilen işler ortalama <strong>%19 daha uzun</strong> sürdü. Geliştiriciler ise iş bittikten sonra bile %20 hızlandıklarına inanıyordu.</p>
+
+<p>Yazarlar bunun o tarihin araçlarıyla, tek ortamda alınmış bir fotoğraf olduğunu vurgular. METR'in Şubat 2026'daki yazısında yeni tahminler hızlanma yönündeydi (güven aralıkları geniş), ama kuruluş verisinin ciddi seçilim sorunları taşıdığını söyledi: YZ'siz çalışmayı kabul etmeyen geliştiriciler katılmamış, bazıları YZ'siz yapmak istemedikleri işleri getirmemişti. Vardığı sonuç, araçların muhtemelen daha çok hızlandırdığı ama artışın büyüklüğüne dair verinin "çok zayıf kanıt" olduğuydu.</p>
+
+<div class="tablo"><table>
+<tr><th>Bulgu (kaynak, tarih)</th><th>Ne ölçüldü?</th><th>Ne söylemez?</th></tr>
+<tr><td>SWE-bench (Jimenez ve ark., 2023)</td><td>Gerçek hata kayıtlarını testlerden geçecek biçimde düzeltme oranı</td><td>Düzeltmenin okunaklı, güvenli, bakımı kolay olup olmadığını</td></tr>
+<tr><td>Görev süresi ufku (METR, Mart 2025)</td><td>Modelin %50 başarıyla bitirdiği görevlerin insan süresi; yaklaşık 7 ayda ikiye katlanma</td><td>Dağınık, tanımsız gerçek işlerde aynı başarıyı</td></tr>
+<tr><td>Kontrollü deney (Peng ve ark., 2023)</td><td>Küçük, sıfırdan bir görevde %55,8 daha hızlı bitirme</td><td>Büyük, eski, karmaşık bir projede ne olacağını</td></tr>
+<tr><td>Rastgele kontrollü deney (METR, Temmuz 2025)</td><td>Tanıdık büyük projelerde %19 daha uzun süre; hissedilen hız ise +%20</td><td>Sonraki araçlarla ne olacağını; Şubat 2026 güncellemesi yeni tahminlerin seçilim yüzünden zayıf olduğunu söylüyor</td></tr>
+</table></div>
+
+<p>Kalıcı ders bir rakam değil, üç gözlemdir: yetenek hızla artıyor ve görev iyi tanımlandıkça artış daha görünür; "ne kadar hızlandım" konusundaki <strong>hissin</strong> güvenilmez; hiçbir ölçüt kodun <strong>doğru ve güvenli</strong> olduğunu tek başına göstermez. Bunu senin doğrulaman gösterir.</p>
+
+<h2 class="s">"Çalışıyor gibi görünen" kod nereden çıkar?</h2>
+
+<p>Parça 14'teki cümleyi hatırla: <strong>olası metin, doğru metin değildir.</strong> Bir dil modeli, eğitim verisinde gördüğü kodlara en çok benzeyen devamı üretir. Kodda "akıcı" olmak; söz diziminin düzgün olması, değişken adlarının anlamlı olması, programın hata vermeden çalışması demektir. Bunların hepsi doğruluğun <em>görüntüsüdür</em>. Bir programın asıl sınavı ise sık görülen durumlarda değil, nadir durumlardadır: boş liste, sıfır, negatif sayı, çok uzun metin, aynı anda gelen iki istek, ayın son günü, şubatın yirmi dokuzu. Eğitim verisindeki örnek kodların çoğu da tam bu nadir durumları atlar; model de onları atlamayı öğrenir.</p>
+
+<p>Söz dizimi hataları program çalışınca hemen görünür. Tehlikeli olanlar <strong>sessiz</strong> hatalardır: program çalışır, sonuç üretir, sonuç yanlıştır ve kimse fark etmez.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir kod parçası, <strong>gerçekten çalıştırılıp</strong> beklenen davranışa karşı denenmeden "çalışıyor" sayılmaz. Bu kural kodu insan yazdıysa da geçerlidir; ama YZ'yle önemi artar, çünkü YZ'nin kodu insan kodundan daha düzgün <em>görünür</em> ve bu görüntü insanın kontrol isteğini azaltır. Neden bu kadar katı? Çünkü "okudum, mantıklı görünüyor" ile "çalıştırdım, doğru çıktı" farklı kanıt türleridir ve yalnız ikincisi kodun davranışı hakkında bilgi verir.</p></div>
+
+<p>Doğrulamanın dört basamağı vardır ve her biri bir öncekinin kaçırdığını yakalar. <strong>Okumak:</strong> kodun ne yapmaya çalıştığını anlamak, göze batan bir eksiği görmek. <strong>Çalıştırmak:</strong> programı gerçek bir girdiyle başlatıp çıktısına bakmak. <strong>Test etmek:</strong> beklenen davranışı örneklerle yazıp otomatik olarak, her değişiklikten sonra yeniden denemek. <strong>Gözden geçirmek:</strong> değişikliği başka bir göze (bir meslektaşa ya da yarın sabahki sana) göstermek. Ajanlar ilk üç basamağın bir kısmını kendileri de yapabilir; dördüncüsü ve beklenen davranışın ne olduğuna karar vermek ise senindir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Test</strong>, bir kod parçasının belirli girdiler için ne vermesi gerektiğini yazan ve otomatik çalıştırılabilen küçük bir programdır: "şu girdiyi verince şu sonucu beklerim". Değeri iki yerden gelir: beklenen sonuç koddan bağımsız bir kaynaktan (kuraldan, belgeden, senin hesabından) yazılır, ve test her değişiklikten sonra saniyeler içinde yeniden koşulabilir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir asistandan "verilen yılın artık yıl olup olmadığını söyleyen bir işlev" istedin. Asistan şu mantıkla bir işlev verdi: "yıl 4'e tam bölünüyorsa artık yıldır, bölünmüyorsa değildir." 2023 ve 2024 ile denedin, doğru çıktı. Bu işlevi kabul etmeli misin?</p>
+<p><strong>Adım 1 (kuralı bağımsız kaynaktan yaz).</strong> Kullandığımız Gregoryen takvimin kuralı üç parçalıdır: 4'e bölünen yıllar artık yıldır; ama 100'e bölünenler artık yıl değildir; ama 400'e bölünenler yine artık yıldır. Bu, kabul ölçütündür ve onu koddan değil takvimden aldın.</p>
+<p><strong>Adım 2 (kodu kuralla karşılaştır).</strong> Asistanın işlevi yalnız birinci parçayı uyguluyor; "100'e bölünen" ve "400'e bölünen" istisnaları yok.</p>
+<p><strong>Adım 3 (kolay örnekler neden geçti?).</strong> 2023 4'e bölünmez: işlev "değil" der, doğru. 2024 4'e bölünür, 100'e bölünmez: işlev "artık" der, doğru. Bu iki örnek istisnalara hiç dokunmuyor; o yüzden hata görünmedi.</p>
+<p><strong>Adım 4 (kenar durumları seç).</strong> İstisnaları zorlayan yılları seç: 1900 (100'e bölünür, 400'e bölünmez; artık değil), 2000 (400'e bölünür; artık), 2100 (artık değil). İşlev 1900 ve 2100 için "artık" der: <strong>yanlış</strong>. 2000 için "artık" der; doğru, ama kural doğru olduğu için değil, şans eseri.</p>
+<p><strong>Adım 5 (test yaz, düzelt, yeniden koş).</strong> Beş yılı ve beklenen cevaplarını bir teste yaz. Düzeltilmiş kural: "4'e bölünür <em>ve</em> (100'e bölünmez <em>ya da</em> 400'e bölünür)". Testi yeniden koş; beşi de geçmeli.</p>
+<p><strong>Sonuç:</strong> Kabul etmemelisin. İşlev, senin hayatın boyunca karşılaşacağın yılların neredeyse hepsinde doğru çalışır; bu yüzden "çalışıyor gibi görünür". Hatayı yakalayan şey kodu okumak değil, <strong>kuralı bağımsız yazıp kenar durumlarla denemekti</strong>. Gerçek yazılımda bu tür hatalar fatura tarihlerinde, faiz günlerinde, abonelik yenilemelerinde para kaybettirir.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik, örnek 1'deki iki işlevi ve beklenen değerleri takvim kuralından yazılmış küçük bir testi içerir. Ek kütüphane gerekmez. Kodu bilmiyorsan atla; sonucu örnekte zaten gördün.</p>
+<pre class="kod" data-ad="python3 artik_yil.py"># Bir asistanin ilk onerdigi surum: "calisiyor gibi" gorunuyor
+def artik_mi(yil):
+    return yil % 4 == 0
+
+# Test: beklenen degerleri takvim kuralindan BIZ yazdik, koddan degil
+ornekler = {2023: False, 2024: True, 2000: True, 1900: False, 2100: False}
+
+def test(islev):
+    kalan = 0
+    for yil, beklenen in ornekler.items():
+        sonuc = islev(yil)
+        if sonuc != beklenen:
+            kalan += 1
+            print(f"KALDI  {yil}: beklenen {beklenen}, gelen {sonuc}")
+    print(f"{len(ornekler) - kalan}/{len(ornekler)} ornek gecti")
+
+test(artik_mi)
+
+# Duzeltilmis surum: 4'e bolunur, ama 100'e bolunuyorsa 400'e de bolunmeli
+def artik_mi_dogru(yil):
+    return yil % 4 == 0 and (yil % 100 != 0 or yil % 400 == 0)
+
+test(artik_mi_dogru)</pre>
+<pre class="cikti">KALDI  1900: beklenen False, gelen True
+KALDI  2100: beklenen False, gelen True
+3/5 ornek gecti
+5/5 ornek gecti</pre>
+<p><strong>Okuma.</strong> İlk işlev beş örneğin üçünü geçiyor; kalan ikisi tam olarak istisna yılları. Düzeltilmiş işlev beşini de geçiyor. Python'un <code>calendar.isleap</code> işlevi bağımsız ikinci kaynak olarak aynı cevapları verir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Testleri de YZ yazdı ve hepsi geçiyor; o hâlde kod doğru."</strong> Kodu ve testi aynı yanlış anlayış üretirse test yanlışı onaylar: "4'e bölünen her yıl artıktır" diye düşünen asistan testine de "1900: artık" yazar. YZ'den test istemek iyidir, ama beklenen değerleri ve kenar durumları sen kontrol etmelisin.</p>
+<p><strong>"Testler kırmızıydı, ajan düzeltti, artık yeşil."</strong> Testi geçirmenin iki yolu var: kodu düzeltmek ya da testi değiştirmek (beklenen değeri değiştirmek, testi silmek). Hedefi "testler geçsin" olan ajan bazen ikinciyi seçer; Parça 5'teki Goodhart yasası budur. Yakalamanın yolu sıradaki konu: değişikliği okumak.</p></div>
+
+<p>Doğrulamayı kolaylaştıran bir alışkanlık daha var: <strong>küçük adımlarla ilerlemek.</strong> "Bütün siteyi yaz" yerine önce "sipariş tutarını hesaplayan işlevi ve testini yaz", sonra "siparişi kaydeden kısmı". Neden? Bir şey bozulduğunda hatanın yeri son adımda değişen birkaç satırla sınırlıdır. Küçük adım aynı zamanda okunabilir adımdır: yirmi satırı gerçekten okursun, bin satıra yalnız göz gezdirirsin.</p>
+
+<h2 class="s">Değişikliği okumak: diff</h2>
+
+<p>Bir ajan beş dosyayı düzenledikten sonra "bitti" dediğinde, beş dosyanın tamamını baştan okumazsın. Okuman gereken şey <strong>neyin değiştiği</strong>dir. Bunun için yazılımcıların yıllardır kullandığı bir biçim var.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Diff</strong> (fark), bir dosyanın iki hâli arasındaki değişikliği satır satır gösteren çıktıdır. Silinen satırların başında <strong>−</strong>, eklenen satırların başında <strong>+</strong> işareti bulunur; işaretsiz satırlar yer bulmana yardım eden, değişmemiş bağlam satırlarıdır. <code>@@ -1,4 +1,2 @@</code> gibi bir başlık, "eski dosyanın 1. satırından başlayan 4 satır, yeni dosyada 1. satırdan başlayan 2 satıra dönüştü" demektir. Git'te <code>git diff</code> komutu bu çıktıyı üretir.</p></div>
+
+<p>Diff okumak, YZ ile çalışırken en yüksek getirili beceridir, çünkü ajanın sana söylediği ile yaptığı aynı olmayabilir: ilgisiz bir satırı değiştirmiş, bir kontrolü "sadeleştirme" adına silmiş, bir testi kapatmış olabilir. Ajanın özetine değil, diff'e güvenirsin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir mağaza programında sipariş tutarını hesaplayan bir işlev var. İşlev, adet 1 ile 100 arasında bir tam sayı değilse siparişi reddediyor. Ajana "toptan siparişlerde 500 adede kadar izin ver" dedin. Ajan "Tamam, artık 500 adetlik sipariş çalışıyor" dedi. Değişikliğin <code>git diff</code> çıktısı aşağıda. Değişikliği kabul etmeli misin?</p>
+<pre class="cikti">diff --git a/siparis.py b/siparis.py
+index 72a3a75..2effe4b 100644
+--- a/siparis.py
++++ b/siparis.py
+@@ -1,4 +1,2 @@
+ def toplam_tutar(birim_fiyat, adet):
+-    if not isinstance(adet, int) or adet < 1 or adet > 100:
+-        raise ValueError("adet 1 ile 100 arasinda bir tam sayi olmali")
+     return birim_fiyat * adet</pre>
+<p><strong>Adım 1 (başlığı oku).</strong> Değişen tek dosya <code>siparis.py</code>. <code>@@ -1,4 +1,2 @@</code>: dört satırlık bir bölüm iki satıra inmiş. Yani satır <strong>eklenmemiş</strong>, yalnız silinmiş.</p>
+<p><strong>Adım 2 (− satırlarını oku).</strong> Silinen iki satır, adet kontrolünün kendisi: "adet tam sayı değilse, 1'den küçükse ya da 100'den büyükse siparişi reddet".</p>
+<p><strong>Adım 3 (isteğe karşılaştır).</strong> İstek, üst sınırı 100'den 500'e çıkarmaktı. Ajan sınırı değiştirmek yerine kontrolün tamamını kaldırmış. Böylece 500 adet gerçekten "çalışıyor", ama alt sınır ve tam sayı kontrolü de gitmiş.</p>
+<p><strong>Adım 4 (sonucu düşün).</strong> Artık −3 adet de kabul edilir ve tutar 10 × (−3) = −30 çıkar: müşteriye para iade eden bir sipariş. Ajanın "500 adet çalışıyor" cümlesi doğrudur; neyi bozduğunu söylememiştir.</p>
+<p><strong>Adım 5 (doğrusunu tarif et).</strong> Değişikliği reddet ve isteği açık yaz: "üst sınırı 500 yap; alt sınır ve tam sayı kontrolü kalsın; −3 ve 2,5 reddedilmeli". Doğru diff'te yalnız 100'ler 500 olur (aşağıdaki denemede).</p>
+<p><strong>Sonuç:</strong> Kabul etmemelisin. Diff'te yalnız <strong>−</strong> satırları, özellikle silinen bir kontrol ya da test, durup bakman gereken bir işarettir. Aşağıdaki "girdi doğrulamayı atlama" açığı da böyle doğar: kimse kötü niyetle silmedi, istek tek yönden tarif edildi.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Git</span>
+<p>Kendi bilgisayarında, boş bir klasörde yap; Git kurulu olmalı (ilk kullanımda adını ve e-postanı tanıtmanı ister). Git'i kod rafında ileride ayrıntılı göreceksin. Önce <code>siparis.py</code> dosyasının ilk hâli:</p>
+<pre class="kod" data-ad="siparis.py (ilk hâli)">def toplam_tutar(birim_fiyat, adet):
+    if not isinstance(adet, int) or adet &lt; 1 or adet &gt; 100:
+        raise ValueError("adet 1 ile 100 arasinda bir tam sayi olmali")
+    return birim_fiyat * adet</pre>
+<p>Bu dosyanın bulunduğu klasörde bir depo kur, ilk hâli kaydet ve denemeler için ayrı bir dal aç:</p>
+<pre class="kod" data-ad="bash">git init -q -b main
+git add siparis.py
+git commit -q -m "Siparis tutari ve adet kontrolu"
+git switch -q -c toptan</pre>
+<p>Şimdi ajanın önerisini taklit et: dosyadaki <code>if</code> ve <code>raise</code> satırlarını sil, kaydet ve <code>git diff</code> çalıştır. Çıktı, örnek 2'deki diff'in birebir aynısıdır. Hatalı sürümün ne yaptığına bak:</p>
+<pre class="kod" data-ad="bash">python3 -c "from siparis import toplam_tutar as t; print(t(10, 500), t(10, -3))"</pre>
+<pre class="cikti">5000 -30</pre>
+<p>Değişikliği geri al (<code>git restore</code>, dosyayı son kayıttaki hâline döndürür), sonra yalnız iki yerde <code>100</code> yerine <code>500</code> yaz ve diff'e yeniden bak:</p>
+<pre class="kod" data-ad="bash">git restore siparis.py
+# (duzenleyicide 100 yerine 500 yaz, kaydet)
+git diff</pre>
+<pre class="cikti">diff --git a/siparis.py b/siparis.py
+index 72a3a75..e15f7c4 100644
+--- a/siparis.py
++++ b/siparis.py
+@@ -1,4 +1,4 @@
+ def toplam_tutar(birim_fiyat, adet):
+-    if not isinstance(adet, int) or adet &lt; 1 or adet &gt; 100:
+-        raise ValueError("adet 1 ile 100 arasinda bir tam sayi olmali")
++    if not isinstance(adet, int) or adet &lt; 1 or adet &gt; 500:
++        raise ValueError("adet 1 ile 500 arasinda bir tam sayi olmali")
+     return birim_fiyat * adet</pre>
+<p>Bu kez başlık <code>-1,4 +1,4</code>: satır sayısı değişmedi; iki satır gitti, onların yalnız sayısı değişmiş iki kopyası geldi. Kaydet ve geçmişe bak:</p>
+<pre class="kod" data-ad="bash">git commit -q -am "Toptan siparis: adet siniri 500"
+git log --oneline</pre>
+<pre class="cikti">bb328e7 Toptan siparis: adet siniri 500
+328965a Siparis tutari ve adet kontrolu</pre>
+<p><strong>Okuma.</strong> Diff'teki <code>index</code> kimlikleri dosya içeriğinden hesaplanır, sende de aynı çıkmalı; <code>git log</code> kimlikleri ad, e-posta ve saate de bağlıdır, sende farklı olur.</p></div>
+
+<h2 class="s">Sürüm kontrolüyle güvenli çalışmak</h2>
+
+<p>Diff'i mümkün kılan şey <strong>sürüm kontrolüdür</strong>: projenin her önemli anını kaydeden ve iki an arasındaki farkı gösterebilen bir sistem. En yaygını Git'tir. Ajan bir dakikada onlarca dosyayı değiştirebildiği için sürüm kontrolü emniyet kemeridir.</p>
+
+<div class="tablo"><table>
+<tr><th>Kavram</th><th>Ne demek?</th><th>YZ ile çalışırken neden önemli?</th></tr>
+<tr><td>Kayıt (commit)</td><td>Projenin o anki hâlinin, bir açıklamayla saklanan fotoğrafı</td><td>Ajan bir şeyi bozarsa dönebileceğin sağlam bir nokta</td></tr>
+<tr><td>Dal (branch)</td><td>Ana çizgiden ayrılan, bağımsız bir çalışma çizgisi</td><td>Ajanın denemeleri ana koda dokunmaz; beğenmezsen dalı bırakırsın</td></tr>
+<tr><td>Birleştirme isteği (pull request, PR)</td><td>"Bu dalı ana dala katmak istiyorum" önerisi; diff'i ve tartışmayı bir arada gösterir</td><td>İnsanın gözden geçirdiği yer; otomatik testler de genellikle burada koşar</td></tr>
+<tr><td>Geri alma (<code>git restore</code>, <code>git revert</code>)</td><td>Kaydedilmemiş değişikliği atmak ya da kaydedilmiş bir değişikliği ters bir kayıtla geri almak</td><td>Hatalı bir değişiklik ana dala girse bile geçmiş silinmeden düzeltilir</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Ana dal ve ajanın çalıştığı ayrı dal: kayıtlar, birleştirme isteği, gözden geçirme ve geri alma">
+  <text class="sv-b" x="20" y="40">main</text>
+  <line class="sv-cl" x1="70" y1="36" x2="385" y2="36"/>
+  <circle class="sv-m" cx="90" cy="36" r="10"/>
+  <circle class="sv-m" cx="150" cy="36" r="10"/>
+  <circle class="sv-m" cx="320" cy="36" r="10"/>
+  <circle class="sv-a" cx="370" cy="36" r="10"/>
+  <text class="sv-s" x="332" y="66" text-anchor="start">birleştir</text>
+  <text class="sv-s" x="370" y="16" text-anchor="middle">revert</text>
+  <path class="sv-c" d="M150 46L180 130"/>
+  <text class="sv-b" x="20" y="144">ajan dalı</text>
+  <line class="sv-c" x1="180" y1="140" x2="300" y2="140"/>
+  <circle class="sv-l" cx="190" cy="140" r="10"/>
+  <circle class="sv-l" cx="230" cy="140" r="10"/>
+  <circle class="sv-l" cx="270" cy="140" r="10"/>
+  <path class="sv-c" d="M280 136L314 46"/>
+  <text class="sv-s" x="230" y="170" text-anchor="middle">küçük adımlar, her biri bir kayıt</text>
+  <rect class="sv-k" x="40" y="196" width="320" height="88" rx="12"/>
+  <text class="sv-b" x="200" y="218" text-anchor="middle">Birleştirme isteği (PR)</text>
+  <text class="sv-t" x="200" y="240" text-anchor="middle">diff okunur · testler otomatik koşar</text>
+  <text class="sv-t" x="200" y="260" text-anchor="middle">insan onaylar ya da düzeltme ister</text>
+  <text class="sv-s" x="200" y="278" text-anchor="middle">onaydan sonra ajan dalı ana dala katılır</text>
+</svg>
+<figcaption>Ajan ana dalda değil, ondan ayrılan kendi dalında çalışır (mor kayıtlar). Ana dala yalnız gözden geçirilmiş ve testten geçmiş değişiklik girer. Sonradan bir sorun çıkarsa (turuncu kayıt), <code>git revert</code> o değişikliği ters bir kayıtla geri alır; geçmiş silinmez, yalnız üstüne düzeltme eklenir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p>YZ ile çalışırken üç alışkanlık: (1) Ajanı işe başlatmadan önce her şey kayıtlı olsun, böylece "başladığın yer" belli olur. (2) Ajan ana dalda değil, ayrı bir dalda çalışsın ve her anlamlı küçük adım ayrı bir kayıt olsun. (3) Ana dala hiçbir değişiklik, diff'i okunmadan ve testleri geçmeden girmesin. Nedeni: hata yapmak kaçınılmaz, ama hatanın <em>geri alınabilir</em> olması bir tercihtir.</p></div>
+
+<h2 class="s">Sık hatalar ve nereden doğdukları</h2>
+
+<p>YZ'nin kodda yaptığı hataların çoğu üç aileye girer. Üçü de Parça 14'te gördüğün mekanizmaların koda yansımasıdır, bu yüzden "neden" sorusunun cevabını zaten biliyorsun.</p>
+
+<h3>1. Uydurma kütüphane ve fonksiyon</h3>
+
+<p>Parça 14'te modelin var olmayan makale ve kanun maddesi uydurabildiğini gördün. Kodda karşılığı, var olmayan bir paketi ya da işlevi önermektir; adı inandırıcıdır, çünkü gerçek adların kalıbına uyar. 2025'te USENIX Security'de sunulan bir çalışma 16 modelin ürettiği 576.000 kod örneğini inceledi: ticari modellerin önerdiği paketlerin ortalama en az %5,2'si, açık kaynak modellerinkinin ortalama %21,7'si gerçekte yoktu; toplam 205.474 farklı uydurma paket adı bulundu.</p>
+
+<p>Uydurma işlev genellikle zararsız patlar: program "böyle bir işlev yok" der, sen düzeltirsin. Uydurma <strong>paket</strong> ise güvenlik sorunudur. Aynı uydurma ad tekrar tekrar öneriliyorsa, kötü niyetli biri o adla gerçek bir paket yayımlayabilir; öneriye güvenip kuran kişi bilmeden onun kodunu bilgisayarına sokar. Buna yazılım tedarik zinciri riski denir; OWASP'ın 2025 tarihli en önemli on web riski listesinde üçüncü sıradadır. Savunma senin elindedir: önerilen her yeni paketin resmî depoda gerçekten var olduğunu, belgesini, kaynak kodunu ve bakım durumunu kontrol etmeden kurma; sürümleri projede sabitle. Ayrıntısı siber rafında.</p>
+
+<h3>2. Eski sürüm söz dizimi</h3>
+
+<p>Parça 14'teki <strong>bilgi kesim tarihi</strong> kodda da işler. Model, eğitim verisi bittikten sonra bir kütüphanenin işlev adını değiştirdiğini ya da bir yöntemi kaldırdığını bilmez. Daha sinsi olanı: eğitim verisinde eski sürümün çok, yeni sürümün az örneği vardır; model değişikliği "bilse" bile eski kalıbı daha olası bulabilir. Savunma: kullandığın sürümleri istemde söyle, şüpheli çağrıyı resmî belgeyle karşılaştır ve kodu <strong>gerçekten çalıştır</strong>; bu hataların çoğu ilk çalıştırmada, uyarı mesajlarında kendini belli eder.</p>
+
+<h3>3. Güvenlik açığı bırakmak</h3>
+
+<p>Üçüncü aile en pahalısıdır, çünkü çoğu zaman <strong>hiçbir belirti vermez</strong>: program kusursuz çalışır, açık yalnız biri onu kötüye kullandığında görünür. Birkaç araştırma farklı yöntemlerle benzer bir tablo çiziyor.</p>
+
+<div class="tablo"><table>
+<tr><th>Çalışma (tarih)</th><th>Yöntem</th><th>Bulgu</th></tr>
+<tr><td>Pearce ve ark. (2021)</td><td>Bir kod asistanına güvenlik açısından riskli 89 senaryo verildi, üretilen 1.689 program incelendi</td><td>Programların yaklaşık %40'ı güvenlik açığı içeriyordu</td></tr>
+<tr><td>Perry ve ark. (2023, ACM CCS)</td><td>Asistan kullanan ve kullanmayan katılımcılarla kullanıcı deneyi</td><td>Asistan kullananlar anlamlı ölçüde daha az güvenli kod yazdı ve kodlarının güvenli olduğuna <strong>daha çok</strong> inandı</td></tr>
+<tr><td>Veracode raporu (Temmuz 2025)</td><td>100'den fazla model, 80 kodlama görevi, birkaç dil</td><td>Görevlerin %45'inde OWASP ilk on listesindeki türden açık; Java'da %70'in üstü; büyük modeller güvenlikte belirgin biçimde daha iyi değildi</td></tr>
+</table></div>
+
+<p>Rakamları ezberleme; hepsi o tarihin modelleri ve görevleri için geçerlidir, son satır bir şirket raporudur. Kalıcı ders ikinci satırdadır: asıl tehlike <strong>yanlış güven duygusudur</strong>. Aşağıda üç tipik açığı yalnız neden doğduğu ve nasıl kapatıldığı düzeyinde ele alıyoruz; ayrıntısı ve hukuki sınırları siber rafının işidir.</p>
+
+<p><strong>Sırrı koda yazmak.</strong> Parça 16'da API anahtarının neden ortam değişkenine konduğunu gördün. YZ ile çalışırken bu hata sıklaşır: "işte anahtarım, çalışır hâle getir" denince model anahtarı dosyanın en üstüne düz metin yazar, çünkü çalışan en kısa yol odur. Depo herkese açıksa anahtar artık herkesindir; açık depolar otomatik programlarla sürekli taranır. Bir güvenlik şirketinin Mart 2025 raporuna göre yalnız 2024'te herkese açık depolarda 23,8 milyon yeni sır tespit edildi ve 2022'de sızmış sırların %70'i rapor tarihinde hâlâ geçerliydi.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Sırlar (API anahtarı, veritabanı parolası, erişim belirteci) <strong>koda ve depoya hiç girmez</strong>. Program onları çalışırken ortam değişkeninden ya da depoya girmeyen ayrı bir yerel dosyadan (çoğu zaman <code>.env</code> adlı) okur; o dosyanın adı, depo kurulurken <strong>ilk iş</strong> olarak <code>.gitignore</code> dosyasına yazılır. Bir sır yine de depoya girmişse ilk adım, onu veren hizmette o anahtarı <strong>iptal etmek ve yenisini üretmektir</strong>; geçmişi temizlemek ikinci adımdır. Neden bu sıra? Çünkü Git'te bir dosyanın her eski hâli geçmişte saklıdır ve depo kopyalandıysa o geçmiş başka bilgisayarlarda da vardır; geri alınamayacak bir şeyi "silmeye" çalışmak yerine, onu değersiz kılarsın.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Anahtarın olduğu dosyayı .gitignore'a ekledim, sorun çözüldü."</strong> <code>.gitignore</code> yalnız Git'in henüz <em>izlemediği</em> dosyalar için geçerlidir; zaten kaydedilmiş bir dosyayı etkilemez. Git'in kendi belgesi bunu açıkça söyler. Dosyayı izlemeden çıkarsan bile (<code>git rm --cached</code>), daha önceki kayıt anahtarı olduğu gibi saklamaya devam eder. Doğrusu: anahtarı hemen iptal edip yenilemek, yeni anahtarı ortam değişkenine koymak, ileride aynı hatayı önlemek için <code>.env</code>'i baştan <code>.gitignore</code>'a yazmak.</p>
+<p><strong>"Depom gizli, o yüzden anahtar koda yazılabilir."</strong> Gizli depo bugün gizlidir; yarın bir çalışma arkadaşı eklenir, bir kopyası başka bir hizmete bağlanır, bir gün açığa alınır. Ayrıca anahtar koda gömülüyse onu değiştirmek kodu değiştirmeyi gerektirir. Sır ile kodu ayırmak, depo görünürlüğünden bağımsız bir alışkanlıktır.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Git ve Python</span>
+<p>Bu deneme, sırrın Git geçmişinde nasıl kaldığını <strong>açıkça sahte</strong> bir değerle gösterir. Gerçek bir anahtar kullanma. Kendi bilgisayarında, boş bir klasörde çalış.</p>
+<pre class="kod" data-ad="bash">git init -q -b main
+echo 'API_ANAHTARI = "ornek-anahtar-SAHTE-123"' &gt; ayarlar.py
+git add ayarlar.py &amp;&amp; git commit -q -m "Ilk surum"
+echo "ayarlar.py" &gt; .gitignore
+git ls-files</pre>
+<pre class="cikti">ayarlar.py</pre>
+<p><code>git ls-files</code>, Git'in izlediği dosyaları listeler: <code>.gitignore</code>'a eklemene rağmen <code>ayarlar.py</code> hâlâ izleniyor. Şimdi izlemeden çıkar, kaydet ve geçmişteki ilk kayda bak:</p>
+<pre class="kod" data-ad="bash">git rm -q --cached ayarlar.py
+git add .gitignore &amp;&amp; git commit -q -m "Ayar dosyasini depodan cikar"
+git ls-files
+git show HEAD~1:ayarlar.py</pre>
+<pre class="cikti">.gitignore
+API_ANAHTARI = "ornek-anahtar-SAHTE-123"</pre>
+<p>Dosya artık izlenmiyor, ama bir önceki kayıt (<code>HEAD~1</code>) sırrı olduğu gibi gösteriyor. Doğru düzen şöyle: program anahtarı ortam değişkeninden okur ve anahtarın kendisini asla ekrana yazdırmaz.</p>
+<pre class="kod" data-ad="python3 anahtar_oku.py">import os
+import sys
+
+anahtar = os.environ.get("ORNEK_API_ANAHTARI")
+if not anahtar:
+    sys.exit("ORNEK_API_ANAHTARI tanimli degil; once ortam degiskenini ayarla.")
+
+# Anahtarin kendisini asla ekrana ya da kayda yazdirma
+print("Anahtar okundu; uzunlugu:", len(anahtar))</pre>
+<pre class="kod" data-ad="bash">python3 anahtar_oku.py
+ORNEK_API_ANAHTARI="ornek-anahtar" python3 anahtar_oku.py</pre>
+<pre class="cikti">ORNEK_API_ANAHTARI tanimli degil; once ortam degiskenini ayarla.
+Anahtar okundu; uzunlugu: 13</pre>
+<p>İkinci satır, değişkeni yalnız o komut için tanımlar (Linux ve macOS'ta; Windows PowerShell'de yazım farklıdır). Son olarak, yeni bir depoda <code>.env</code>'i baştan dışarıda tutmak:</p>
+<pre class="kod" data-ad="bash">git init -q -b main
+echo ".env" &gt; .gitignore
+echo 'ORNEK_API_ANAHTARI=ornek-anahtar' &gt; .env
+git add .
+git status --short</pre>
+<pre class="cikti">A  .gitignore
+A  anahtar_oku.py</pre>
+<p><strong>Okuma.</strong> <code>git add .</code> her şeyi eklemeye çalıştı (klasörde <code>anahtar_oku.py</code> da vardı), ama <code>.env</code> listede yok: hiç izlenmeden dışarıda kaldı.</p></div>
+
+<p><strong>Girdi doğrulamayı atlamak.</strong> Bir programa dışarıdan gelen her veri (formdaki alan, adres çubuğundaki değer, yüklenen dosya, başka bir sistemden gelen mesaj) <strong>güvenilmezdir</strong>: beklediğin biçimde olmayabilir, yanlışlıkla ya da bilerek. Model bu kontrolü sık atlar, çünkü eğitim verisindeki örnek kodların çoğu "mutlu yol"u, yani her şeyin beklendiği gibi geldiği durumu gösterir ve istem genellikle yalnız "çalışsın" der. Örnek 2'de ajanın adet kontrolünü silmesi bu açığın küçük bir örneğiydi.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Dışarıdan gelen her girdi, kullanılmadan önce <strong>sunucu tarafında</strong> doğrulanır: türü (sayı mı, metin mi), aralığı (1–500), uzunluğu ve biçimi kontrol edilir; mümkünse "izin verilenler listesi" kullanılır (yalnız şu değerler kabul edilir), "yasaklar listesi" değil. Tarayıcıdaki kontrol kullanıcıya kolaylık içindir, güvenlik için değil; çünkü tarayıcı kullanıcının bilgisayarında çalışır ve kullanıcının denetimindedir. Neden izin listesi? Çünkü kötü girdilerin bütün biçimlerini önceden sayamazsın, iyi girdinin biçimini ise sayabilirsin.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir ajan senin için bir indirim kuponu özelliği yazdı. Sipariş sayfasında, kullanıcı kupon kodunu girince tarayıcıda çalışan kod indirim yüzdesini hesaplıyor ve sunucuya "ürün, adet, indirimli tutar" bilgisini gönderiyor; sunucu da gelen tutarı kaydedip ödemeyi o tutar üzerinden alıyor. Ekranda her şey doğru görünüyor. Sorun nerede ve nasıl kapatılır?</p>
+<p><strong>Adım 1 (veri nereden geliyor?).</strong> Kaydedilen tutar tarayıcıdan geliyor. Tarayıcı kullanıcının bilgisayarındadır; oradan gelen her değer kullanıcının değiştirebileceği bir girdidir.</p>
+<p><strong>Adım 2 (sunucu neye güveniyor?).</strong> Sunucu tutarı hesaplamıyor, gelen sayıyı doğru kabul ediyor. Girdi doğrulamanın atlandığı yer burası.</p>
+<p><strong>Adım 3 (neden böyle yazılmış?).</strong> İstek "kupon girince indirimli fiyat görünsün" idi: ekran davranışını tarif ediyor, "fiyatı kim hesaplar" sorusunu değil. Ajan istenen davranışı en kısa yoldan kurdu.</p>
+<p><strong>Adım 4 (doğrusu).</strong> Tarayıcı yalnız <strong>niyeti</strong> göndersin: ürün kimliği, adet, kupon kodu. Sunucu fiyatı kendi veritabanından okur, kuponu ve adedi kendi kuralıyla doğrular, tutarı kendisi hesaplar. Tarayıcıdaki hesap yalnız önizleme olarak kalır.</p>
+<p><strong>Adım 5 (testle sabitle).</strong> Sunucu için test: tarayıcı ne gönderirse göndersin, kaydedilen tutar sunucunun hesapladığı tutar olmalı; geçersiz kupon ve adet reddedilmeli.</p>
+<p><strong>Sonuç:</strong> Bu, belirti vermeyen bir <strong>güven sınırı</strong> hatasıdır: güvenilmeyen tarafın hesapladığı sonuç, güvenilen tarafta doğru kabul edilmiş. Önemli her karar (fiyat, yetki, adet) sunucuda verilir ve bu, istemde açıkça yazılır.</p></div>
+
+<p><strong>Veritabanında erişim kurallarını unutmak.</strong> OWASP'ın 2025 listesinin birinci sırası "bozuk erişim denetimi"dir: bir kullanıcının görmemesi gereken veriye ulaşabilmesi. YZ ile hızlı kurulan uygulamalarda tipik bir biçimi var. Bazı hazır arka uç hizmetlerinde tarayıcı doğrudan veritabanıyla konuşur ve koda bir "herkese açık anahtar" konur; sayfanın kaynağına bakan herkes onu görebilir. Bu düzen ancak veritabanında her tablo için "kim hangi satırı okuyabilir, değiştirebilir" kuralları (satır düzeyi güvenlik) yazılmışsa güvenlidir; böyle bir hizmetin kendi belgesi de bunu söyler. Kurallar yoksa, ekran yalnız kullanıcının kendi siparişlerini gösterse bile veritabanı herkese her şeyi vermeye hazırdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Erişim kuralı veriye <strong>en yakın yerde</strong>, yani sunucuda ya da veritabanında uygulanır; ekranda neyin gösterildiği güvenlik sayılmaz. Her tablo için şu üç soru yazılı olarak cevaplanmalıdır: Bu tabloyu kim okuyabilir? Kim yeni satır ekleyebilir? Kim hangi satırı değiştirebilir ya da silebilir? Varsayılan cevap "kimse"dir; izinler tek tek açılır. YZ'den bir veritabanı şeması istediğinde bu kuralları da istemenin ve sonra "başka bir kullanıcı olarak giriş yapınca ilk kullanıcının verisini görebiliyor muyum?" diye kendin denemenin nedeni budur.</p></div>
+
+<h2 class="s">İşi tarif etmek: yeni darboğaz</h2>
+
+<p>Bu parçanın bütün örneklerinde ortak bir şey var: hata kodda başlamadı, <strong>tarifte</strong> başladı. "500 adede izin ver" tarifi alt sınırı söylemedi; "kupon girince indirimli fiyat görünsün" tarifi fiyatı kimin hesaplayacağını söylemedi. Kod ucuzladıkça ne istediğini eksiksiz söyleyebilmek değerlendi; Parça 15'teki beceri burada yazılıma uygulanır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Bir kodlama görevini dört parçayla tarif et. <strong>Amaç:</strong> kullanıcı açısından ne değişecek? <strong>Kabul ölçütleri:</strong> işin "bitti" sayılması için hangi somut durumların doğru çalışması gerekir? Kenar durumları dahil, mümkünse örnek girdi ve beklenen çıktıyla. <strong>Kısıtlar:</strong> neye dokunulmayacak (öbür dosyalar, mevcut kontroller), hangi sürümler, hangi güvenlik kuralları? <strong>Doğrulama:</strong> ajan işini nasıl kanıtlayacak (hangi testler koşulacak, hangi komut çalıştırılacak)?</p></div>
+
+<div class="tablo"><table>
+<tr><th>Belirsiz tarif</th><th>Açık tarif</th></tr>
+<tr><td>"Toptan siparişe izin ver."</td><td>"Adet üst sınırını 500 yap. Alt sınır 1 ve tam sayı kontrolü aynen kalsın. Kabul: 500 kabul, 501, 0, −3 ve 2,5 reddedilir. <code>siparis.py</code> dışındaki dosyalara dokunma. Bitince testleri koş ve çıktısını göster."</td></tr>
+<tr><td>"Giriş sayfası yap."</td><td>"E-posta ve parolayla giriş. Parola düz metin saklanmayacak. Beş başarısız denemeden sonra 15 dakika bekletme. Kabul: yanlış parolada genel bir hata mesajı (hangi alanın yanlış olduğunu söylemeden)."</td></tr>
+<tr><td>"Bu hatayı düzelt."</td><td>"Şu hata mesajı şu adımlarla çıkıyor. Önce hatayı yeniden üreten bir test yaz, kırmızı olduğunu göster; sonra düzelt ve testin yeşile döndüğünü göster. Var olan testleri değiştirme."</td></tr>
+</table></div>
+
+<p>Son satırda testin önce kırmızı yandığını görmek, testin gerçekten o hatayı ölçtüğünün kanıtıdır. Belirsizlik varsa ajandan <strong>önce soru sormasını</strong> iste (Parça 15).</p>
+
+<h2 class="s">Kod bilmeden uygulama yapmak: gücü ve sınırı</h2>
+
+<p>Andrej Karpathy 2 Şubat 2025'te yaptığı bir paylaşımda, kendini tamamen modele bıraktığı ve "kodun var olduğunu bile unuttuğu" bir çalışma biçimine "vibe coding" adını verdi; ifade kısa sürede yayıldı ve Collins Sözlüğü onu 2025'in yılın sözcüğü seçti. Gücü gerçektir: kod bilmeyen biri bir öğleden sonra kendi işine yarayan bir araç ya da prototip çıkarabilir.</p>
+
+<p>Sınırı da gerçektir: kodu okumayan kişi örneklerdeki takvim hatasını, silinen kontrolü, güven sınırını göremez. Kişisel bir oyuncakta bu kabul edilebilir; başkalarının verisini ya da parasını tutan bir uygulamada edilemez. Kodu satır satır yazabilmen gerekmez, ama aşağıdaki dört konuyu <strong>anlaman</strong> gerekir; bunlardaki yanlış karar en pahalı düzeltilen karardır.</p>
+
+<div class="tablo"><table>
+<tr><th>Anlaman gereken</th><th>Neden?</th><th>Kendine soracağın soru</th></tr>
+<tr><td>Mimari</td><td>Hangi kod nerede çalışıyor (tarayıcı, sunucu, veritabanı) ve hangisine güvenilebilir, örnek 3'ün özü budur</td><td>"Fiyat, yetki, sır: her biri hangi parçada duruyor ve o parça kimin denetiminde?"</td></tr>
+<tr><td>Veri modeli</td><td>Hangi tablolar var, birbirine nasıl bağlı; veri biriktikten sonra yapıyı değiştirmek zor ve riskli</td><td>"Bir kullanıcının iki adresi olursa, bir sipariş iptal edilirse bu yapı ne olur?"</td></tr>
+<tr><td>Güvenlik</td><td>Açıklar belirti vermez; erişim kuralları ve sırlar senin kararındır</td><td>"Başka bir kullanıcı olarak giriş yapınca neyi görebiliyorum? Sırlar depoda mı?"</td></tr>
+<tr><td>Maliyet</td><td>Model çağrıları token başına (Parça 16), sunucu ve veritabanı kullanıma göre ücretlenir; bir döngüdeki hata faturayı katlar</td><td>"Bin kullanıcı günde on kez kullanırsa ayda ne öder? Harcama sınırı var mı?"</td></tr>
+</table></div>
+
+<h2 class="s">Bir uygulamanın yaşam döngüsü</h2>
+
+<p>Bir uygulama "yazılıp bitmez"; bir yaşam döngüsü vardır ve YZ'nin katkısı her aşamada farklıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Bir uygulamanın yaşam döngüsü: fikir, prototip, test kullanıcıları, hata düzeltme, bakım; bakımdan yeni fikirlere geri dönüş">
+  <rect class="sv-l" x="20" y="14" width="170" height="52" rx="10"/>
+  <text class="sv-b" x="105" y="36" text-anchor="middle">1. Fikir</text><text class="sv-s" x="105" y="54" text-anchor="middle">sorun, kullanıcı, ölçüt</text>
+  <path class="sv-c" d="M190 40H210"/>
+  <rect class="sv-m" x="210" y="14" width="170" height="52" rx="10"/>
+  <text class="sv-b" x="295" y="36" text-anchor="middle">2. Prototip</text><text class="sv-s" x="295" y="54" text-anchor="middle">YZ burada en hızlı</text>
+  <path class="sv-c" d="M295 66V96"/>
+  <rect class="sv-k" x="210" y="96" width="170" height="52" rx="10"/>
+  <text class="sv-b" x="295" y="118" text-anchor="middle">3. Test kullanıcıları</text><text class="sv-s" x="295" y="136" text-anchor="middle">gerçek kullanım, geri bildirim</text>
+  <path class="sv-c" d="M295 148V178"/>
+  <rect class="sv-a" x="210" y="178" width="170" height="52" rx="10"/>
+  <text class="sv-b" x="295" y="200" text-anchor="middle">4. Hata düzeltme</text><text class="sv-s" x="295" y="218" text-anchor="middle">önce test, sonra düzeltme</text>
+  <path class="sv-c" d="M210 204H190"/>
+  <rect class="sv-k" x="20" y="178" width="170" height="52" rx="10"/>
+  <text class="sv-b" x="105" y="200" text-anchor="middle">5. Bakım</text><text class="sv-s" x="105" y="218" text-anchor="middle">güncelleme, izleme, yedek</text>
+  <path class="sv-cl" d="M105 178V66"/>
+  <text class="sv-s" x="112" y="128" text-anchor="start">yeni istekler</text>
+  <text class="sv-t" x="200" y="270" text-anchor="middle">Prototipte ölçüt "çalışıyor mu?";</text>
+  <text class="sv-t" x="200" y="290" text-anchor="middle">sonraki her aşamada "doğru, güvenli,</text>
+  <text class="sv-t" x="200" y="310" text-anchor="middle">anlaşılır ve uygun maliyetli mi?"</text>
+</svg>
+<figcaption>Yaşam döngüsü bir çember gibidir: bakım sırasında gelen istekler yeni fikirlere dönüşür. YZ'nin en çok hızlandırdığı aşama prototiptir; sonraki aşamalarda iş, doğrulamaya ve korumaya kayar.</figcaption>
+</figure>
+
+<p><strong>Fikir.</strong> Hangi sorunu, kimin için çözüyorsun, başarıyı neyle ölçeceksin? YZ seçenekleri tartışmana yardım eder; sorunu ve kullanıcıyı ise sen tanımalısın. <strong>Prototip.</strong> YZ'nin en parladığı yer: fikrin kaba hâli saatler içinde ayağa kalkar. Burada bile sırları ortam değişkeninde tut ve veri modelini bir kez düşün; prototipler sandığından uzun yaşar. <strong>Test kullanıcıları.</strong> Gerçek insanlar hiç düşünmediğin girdileri girer. Gerçek kişisel veri toplamaya başladığın an güvenlik "sonra bakarım" olmaktan çıkar. <strong>Hata düzeltme.</strong> Her hata için önce onu yeniden üreten bir test, sonra düzeltme, sonra diff okuma; böylece aynı hata sessizce geri gelmez. <strong>Bakım.</strong> Maliyetin büyük kısmı buradadır: paketlere güvenlik güncellemesi gelir, bağlandığın hizmet arayüzünü değiştirir, veritabanı büyür, yedek alınır. Anlamadığın kodun bakımı en zor bakımdır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 5'e:</strong> Kıyaslama tablolarının sınırları ve Goodhart yasası, hem kodlama ajanı puanlarında hem de "testleri geçir" hedefiyle testi değiştiren ajanda yeniden karşımıza çıktı.</p>
+<p><strong>Parça 11 ve 14'e:</strong> Bağlam penceresi ajanın deponun tamamını görememesini; olası metin ile doğru metin farkı "çalışıyor gibi görünen" kodu; bilgi kesim tarihi eski söz dizimini; kaynak uydurma da uydurma paketleri açıklıyor.</p>
+<p><strong>Parça 15 ve 16'ya:</strong> İşi tarif etmek, iyi istemin yazılımdaki hâlidir. Kodlama ajanı, Parça 16'daki araç kullanan ajan döngüsünün yazılıma uygulanmasıdır; insan onayı ve anahtarı ortam değişkeninde tutma kuralları burada somutlaştı.</p>
+<p><strong>Sonraki parçalara ve öbür raflara:</strong> Parça 18 istem enjeksiyonunu (bir belgedeki gizli talimatın ajanı kandırması) ve savunmalarını anlatacak; kodlama ajanları da okudukları dosyalar yüzünden bu riske açıktır. Git kod rafında ileride; girdi doğrulama, erişim denetimi, sırlar ve tedarik zinciri siber rafında işlenir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Kodlama ajanını sohbet asistanından ayıran nedir ve içindeki model farklı mıdır?</summary><p>Ajan bir hedef alır ve araçları sırayla kullanır: dosya okur ve düzenler, komut ve test çalıştırır, sonuca göre sonraki adıma karar verir. Sohbet asistanı yalnız kod parçası yazar. İçerideki model aynı türden bir dil modelidir; fark, araç çağrılarını yürüten çevredeki programdadır.</p></details>
+<details><summary>Artık yıl işlevi 2023 ve 2024 için doğru çalıştığı hâlde neden yanlıştı ve hatayı ne yakaladı?</summary><p>İşlev yalnız "4'e bölünen yıl artıktır" kuralını uyguluyordu; 100 ve 400 istisnaları yoktu ve 2023, 2024 bu istisnalara dokunmuyordu. Hatayı, kuralı takvimden bağımsız yazıp 1900, 2000, 2100 gibi kenar durumlarla deneyen bir test yakaladı.</p></details>
+<details><summary>Bir diff'te yalnız − ile başlayan satırlar görmek neden durup bakmayı gerektirir?</summary><p>Değişiklik yalnız silmiştir ve silinen satırlar çoğu zaman bir kontrol, doğrulama ya da testtir. Ajan isteği yerine getirirken başka bir şeyi bozmuş olabilir; özeti bunu söylemeyebilir, diff söyler.</p></details>
+<details><summary>Bir API anahtarı yanlışlıkla herkese açık bir depoya kaydedildi. Doğru sıra nedir ve .gitignore neden yetmez?</summary><p>Önce anahtarı veren hizmette iptal edip yenisini üretmek; sonra yeni anahtarı ortam değişkenine koymak, gerekiyorsa geçmişi temizlemek. .gitignore yalnız henüz izlenmeyen dosyaları etkiler; eski kayıt anahtarı Git geçmişinde ve kopyalarda saklar.</p></details>
+<details><summary>Girdi doğrulaması neden tarayıcıda değil sunucuda yapılmalıdır?</summary><p>Tarayıcı kullanıcının denetiminde çalışır; oradan gelen her değer değiştirilebilir. Tarayıcıdaki kontrol yalnız kolaylıktır; fiyat, adet, yetki gibi kararlar sunucuda, sunucunun kendi verisi ve kurallarıyla verilir.</p></details>
+<details><summary>METR'in Temmuz 2025 deneyinin en şaşırtıcı bulgusu neydi ve neden temkinli okunmalı?</summary><p>Deneyimli geliştiriciler YZ'ye izin verilen işleri ortalama %19 daha uzun sürede bitirdi ama sonradan %20 hızlandıklarına inandı. Sonuç o tarihin araçlarıyla, 16 kişiyle alınmış bir fotoğraftır; Şubat 2026 güncellemesindeki yeni tahminler hızlanma yönündedir ama seçilim yüzünden zayıf kanıttır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Ana fikir:</strong> YZ'nin yazdığı kod, sen doğrulayana kadar taslaktır.</li>
+<li><strong>Kodlama ajanı:</strong> araç kullanan döngü (oku, düzenle, çalıştır, kontrol et). Depoyu okuduğu kadar bilir; yetkisi sınırlanır, geri alınamaz iş onaya bağlanır.</li>
+<li><strong>Araştırmalar:</strong> yetenek hızla artıyor, ama hissedilen hız güvenilmez (METR 2025: %19 yavaş, %20 hızlı sanıldı). Hiçbir puan güvenliği göstermez.</li>
+<li><strong>Doğrulama:</strong> oku → çalıştır → test et → gözden geçir. Testin beklenen değeri koddan bağımsız gelir. Küçük adımlar.</li>
+<li><strong>Diff:</strong> − silinen, + eklenen. Özete değil diff'e güven; yalnız silme varsa dur.</li>
+<li><strong>Sürüm kontrolü:</strong> başlamadan kaydet, ajan ayrı dalda, ana dala yalnız okunmuş ve testten geçmiş değişiklik.</li>
+<li><strong>Üç hata ailesi:</strong> uydurma paket (kontrol etmeden kurma), eski söz dizimi (sürümü söyle, çalıştır), güvenlik açığı.</li>
+<li><strong>Sırlar:</strong> ortam değişkeni, .env baştan .gitignore'da. Sızdıysa önce iptal et ve yenile.</li>
+<li><strong>Girdi ve erişim:</strong> girdiyi sunucuda izin listesiyle doğrula; erişim kuralı veriye en yakın yerde, varsayılan "kimse".</li>
+<li><strong>İş tarifi:</strong> amaç + kabul ölçütleri + kısıtlar + doğrulama yolu.</li>
+<li><strong>Kodsuz uygulama:</strong> mimari, veri modeli, güvenlik, maliyet yine senin işin. Döngü: fikir → prototip → test kullanıcıları → hata düzeltme → bakım.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-17">
+<h3>Quiz 17</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir kodlama ajanını, yalnız kod parçası yazan bir sohbet asistanından ayıran temel özellik aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İçinde dil modeli yerine kural tabanlı bir uzman sistem bulunması</li><li>Bir hedefe ulaşmak için dosyaları okuyup düzenleyebilmesi, komut ve test çalıştırıp sonucuna göre bir sonraki adıma karar verebilmesi</li><li>Hiç hata yapmaması</li><li>İnternete bağlanmadan çalışmak zorunda olması</li><li>Yalnız tek bir programlama dilinde çalışabilmesi</li></ul>
+<div class="coz"><p>Kodlama ajanı, Parça 16'daki ajan döngüsünün yazılıma uygulanmasıdır: araçları (dosya okuma, arama, düzenleme, komut çalıştırma) sırayla kullanır ve her sonucun ardından ne yapacağına karar verir (B). A yanlış: içerideki model yine bir dil modelidir; fark, araç çağrılarını yürüten çevredeki programdadır. C yanlış: ajanlar da hata yapar, bu parçanın bütün konusu bu hataları yakalamaktır. D ve E ajanı tanımlayan özellikler değildir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir asistan, artık yıl kontrolü için yalnız "yıl 4'e tam bölünüyorsa artık yıldır" kuralını uygulayan bir işlev yazdı. Aşağıdaki yıllardan hangisi bu işlevin hatasını ortaya çıkarır?</p>
+<ul class="sec"><li>2024</li><li>2023</li><li>2000</li><li>1900</li><li>2028</li></ul>
+<div class="coz"><p>Gregoryen takvimde 100'e bölünen yıllar artık değildir, ama 400'e bölünenler artıktır. 1900, 4'e bölündüğü için işlev "artık" der; oysa 100'e bölünüp 400'e bölünmediği için artık değildir (D). 2024 ve 2028 4'e bölünür, 100'e bölünmez: işlev doğru cevap verir. 2023 4'e bölünmez: işlev doğru "değil" der. 2000 400'e bölündüğü için gerçekten artıktır ve işlev şans eseri doğru cevap verir; bu yüzden hatayı göstermez. Bu soru, test için kenar durum seçmenin önemini yoklar.</p></div></li>
+
+<li data-c="A"><p class="q">Bir ajana "üst sınırı 100'den 500'e çıkar" dedin. Aşağıdaki diff'e göre ajan ne yapmıştır?</p>
+<pre class="cikti">@@ -1,4 +1,2 @@
+ def toplam_tutar(birim_fiyat, adet):
+-    if not isinstance(adet, int) or adet &lt; 1 or adet &gt; 100:
+-        raise ValueError("adet 1 ile 100 arasinda bir tam sayi olmali")
+     return birim_fiyat * adet</pre>
+<ul class="sec"><li>Adet kontrolünü tamamen silmiştir; artık 500 kabul edilir ama negatif ve küsuratlı adet de kabul edilir.</li><li>Üst sınırı 500 yapmış, alt sınırı korumuştur.</li><li>İşleve yeni bir kontrol eklemiştir.</li><li>Hiçbir şeyi değiştirmemiştir; diff yalnız dosyanın içeriğini gösterir.</li><li>Fiyat hesabını değiştirmiş, birim fiyatı adetle toplamaya başlamıştır.</li></ul>
+<div class="coz"><p>− ile başlayan iki satır silinmiş, + ile başlayan hiçbir satır eklenmemiştir; başlıktaki "-1,4 +1,2" de dört satırın ikiye indiğini söyler. Silinen satırlar adet kontrolünün kendisidir; geriye yalnız çarpma kalmıştır (A). B doğru değişikliğin tarifi olurdu, ama o zaman diff'te 500 içeren + satırları görürdük. C ters: hiç ekleme yok. D yanlış: diff iki hâl arasındaki farkı gösterir. E yanlış: <code>return</code> satırı değişmemiş bağlam satırıdır ve hâlâ çarpma yapar.</p></div></li>
+
+<li data-c="C"><p class="q">Bir API anahtarının herkese açık bir depoya kaydedilip gönderildiğini fark ettin. İlk yapman gereken aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Anahtarın bulunduğu dosyanın adını .gitignore'a eklemek</li><li>Anahtarı silen yeni bir kayıt (commit) yapmak</li><li>Anahtarı veren hizmette o anahtarı iptal edip yenisini üretmek</li><li>Depoyu gizliye çevirip anahtarı aynı bırakmak</li><li>Hiçbir şey yapmamak; kimsenin fark etmeyeceğini varsaymak</li></ul>
+<div class="coz"><p>Sızan bir sır geri toplanamaz: Git geçmişinde, depoyu kopyalayanların bilgisayarlarında ve açık depoları tarayan programların kayıtlarında kalabilir. Bu yüzden ilk adım onu değersiz kılmaktır: iptal edip yenisini üretmek (C). A işe yaramaz, çünkü .gitignore zaten izlenen dosyayı etkilemez. B dosyanın son hâlinden anahtarı siler ama önceki kayıt anahtarı saklamaya devam eder. D, sızmış anahtarı geçerli bırakır. E, açık depoların otomatik tarandığı gerçeğini görmezden gelir.</p></div></li>
+
+<li data-c="E"><p class="q">Bir kod asistanı, kurulmasını önerdiği bir paketin adını verdi; adı inandırıcı ama daha önce hiç duymadın. Aşağıdakilerden hangisi en uygun davranıştır?</p>
+<ul class="sec"><li>Ad inandırıcı olduğu için paketi hemen kurmak</li><li>Asistana "bu paket gerçek mi?" diye sorup cevabına güvenmek</li><li>Paket kurulurken hata vermezse güvenli olduğuna karar vermek</li><li>Aynı adla önerilen her paketi toplu olarak kurmak</li><li>Paketin resmî paket deposunda gerçekten var olduğunu, belgesini, kaynak kodunu ve bakım durumunu kontrol etmeden kurmamak</li></ul>
+<div class="coz"><p>Modeller var olmayan paket adları uydurabilir; 2025'te sunulan bir çalışmada açık kaynak modellerin önerdiği paketlerin ortalama %21,7'si gerçekte yoktu. Uydurma bir adla kötü niyetli biri gerçek bir paket yayımlamışsa, kurulum hata vermez ve bilmeden başkasının kodunu çalıştırırsın; bu yüzden C yanlıştır. Doğru savunma bağımsız kontroldür (E). A tam olarak riskin kendisidir; B, modelin kendi güven düzeyini her zaman doğru bilmediği (Parça 14) gerçeğini unutur; D riski çoğaltır.</p></div></li>
+
+<li data-c="B"><p class="q">Hedefi "bütün testler geçsin" olan bir ajan, kırmızı yanan bir testi yeşile çevirdiğini bildirdi. Aşağıdakilerden hangisi bu durumda en önemli kontroldür?</p>
+<ul class="sec"><li>Ajanın özetini okuyup onaylamak</li><li>Diff'i okuyup testin mi yoksa kodun mu değiştiğine, bir testin silinip silinmediğine bakmak</li><li>Testleri bir kez daha çalıştırıp yeşil olduğunu görmek</li><li>Ajandan daha uzun bir özet istemek</li><li>Testlerin sayısının azalmadığını varsaymak</li></ul>
+<div class="coz"><p>Bir testi geçirmenin iki yolu vardır: kodu düzeltmek ya da testi değiştirmek (beklenen değeri değiştirmek, testi silmek, atlamak). Ölçüt hedef olunca bozulabilir; Parça 5'teki Goodhart yasası budur. Hangisinin yapıldığını yalnız diff gösterir (B). A ve D ajanın kendi anlatımına güvenmektir. C, testi değiştirilmiş bir durumda da yeşil görür ve hiçbir şey kanıtlamaz. E, tam olarak kontrol edilmesi gereken şeyi varsayar.</p></div></li>
+
+<li data-c="D"><p class="q">METR'in Temmuz 2025'te yayımladığı rastgele kontrollü deneyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>YZ kullanan geliştiriciler işleri yarı sürede bitirdi.</li><li>Deney yeni başlayan programcılarla, sıfırdan küçük projelerde yapıldı.</li><li>Sonuç, YZ'nin hiçbir geliştiriciyi hiçbir zaman hızlandırmayacağını kanıtlar.</li><li>Deneyimli geliştiriciler YZ'ye izin verilen işlerde ortalama %19 daha uzun sürdü, ama sonradan %20 hızlandıklarına inandı.</li><li>Geliştiriciler yavaşladıklarını hemen fark edip YZ'yi bıraktı.</li></ul>
+<div class="coz"><p>16 deneyimli geliştirici, tanıdıkları büyük açık kaynak projelerde 246 gerçek iş yaptı; YZ'ye izin verilen işler ortalama %19 daha uzun sürdü, ama geliştiriciler iş bittikten sonra bile %20 hızlandıklarını tahmin etti (D). A, 2023'teki farklı ve küçük bir görevde ölçülen hızlanmayla karıştırmaktır. B tam tersidir. C, yazarların açıkça kaçındığı aşırı genellemedir: sonuç bir zaman ve ortamın fotoğrafıdır ve Şubat 2026 güncellemesi yeni tahminlerin hızlanma yönünde olduğunu söyler. E de yanlış: asıl bulgu, yavaşlamanın fark edilmemesidir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir web uygulamasında tarayıcı, herkese açık bir anahtarla doğrudan veritabanına bağlanıyor. Uygulamanın ekranı her kullanıcıya yalnız kendi siparişlerini gösteriyor, ama veritabanında hiçbir tablo için satır düzeyinde erişim kuralı yazılmamış. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Ekrandaki filtre bir güvenlik önlemi değildir; erişim kuralı veritabanında yazılıp her tablo için "kim okur, kim ekler, kim değiştirir" sorusu cevaplanmalıdır.</li><li>Ekran yalnız kendi siparişlerini gösterdiği için başka kullanıcıların verisine ulaşılamaz.</li><li>Anahtar herkese açık olduğu için hiçbir önlem işe yaramaz; uygulama tamamen kapatılmalıdır.</li><li>Sorun, anahtarı daha uzun yaparak çözülür.</li><li>Erişim kuralları yalnız tarayıcıdaki kodda yazılırsa yeterlidir.</li></ul>
+<div class="coz"><p>Herkese açık anahtar sayfanın kaynağında görünür ve gizli değildir; bu düzen ancak veritabanındaki erişim kuralları açıkken güvenlidir. Ekrandaki filtre yalnız gösterimi sınırlar, veritabanının kime ne vereceğini belirlemez; bu yüzden B yanlış, A doğrudur. C yanlış: doğru yazılmış satır düzeyi kurallarla bu mimari güvenli biçimde kullanılabilir. D anahtarın zaten gizli olmadığını unutur. E, kuralı güvenilmeyen tarafa, kullanıcının denetimindeki tarayıcıya koymaktır.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">1997'de dünya satranç şampiyonunu yenen Deep Blue, aşağıdaki kavramlardan hangisine örnektir?</p>
+<ul class="sec"><li>Genel yapay zekâ (AGI)</li><li>Büyük dil modeli</li><li>Dar yapay zekâ</li><li>Denetimsiz öğrenme</li><li>Difüzyon modeli</li></ul>
+<div class="coz"><p>Dar YZ tek bir işte çok iyi olan sistemdir; Deep Blue yalnız satranç oynayabiliyordu (C). Genel YZ (AGI), insan gibi çok farklı işlerde başarılı olabilecek bir sistemi anlatır ve tanımı hâlâ tartışmalı bir hedeftir; A yanlış. Büyük dil modelleri 1997'de yoktu; B yanlış. D ve E öğrenme türü ve model ailesi adlarıdır, Deep Blue'yu tarif etmez.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir modelin başarısı neden eğitimde kullanılan örneklerle değil, ayrı tutulmuş bir test kümesiyle ölçülür?</p>
+<ul class="sec"><li>Test kümesi her zaman eğitim kümesinden büyük olduğu için</li><li>Eğitim örnekleri ölçüm sırasında silindiği için</li><li>Test kümesindeki örneklerin etiketi olmadığı için</li><li>Eğitim kümesiyle ölçüm daha yavaş olduğu için</li><li>Model eğitim örneklerini ezberlemiş olabileceği için; asıl soru görmediği örneklere genelleyip genellemediğidir</li></ul>
+<div class="coz"><p>Model eğitim örneklerinde aşırı öğrenme (ezberleme) yapmış olabilir; o örneklerde mükemmel görünür ama yeni veride başarısız olur. Görmediği örneklerle ölçmek, genelleme becerisini gösterir (E). Bu parçadaki "testin beklenen değeri koddan bağımsız olmalı" fikri de aynı mantıktır. A yanlış: test kümesi genellikle daha küçüktür. B uydurmadır. C yanlış: ölçüm için test örneklerinin gerçek etiketleri gerekir. D'nin konuyla ilgisi yoktur.</p></div></li>
+
+<li data-c="A" data-k="yz-4"><p class="q">Rastgele ormanın temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Çok sayıda karar ağacı eğitip tahminlerini oylamayla birleştirmek</li><li>Tek bir çok derin karar ağacını tüm veriyi ezberleyene kadar büyütmek</li><li>Veriye en iyi uyan doğruyu bulmak</li><li>Her yeni örneğe en yakın k komşunun etiketine bakmak</li><li>Resimdeki kenarları küçük filtrelerle aramak</li></ul>
+<div class="coz"><p>Rastgele orman, birbirinden biraz farklı verilerle eğitilmiş çok sayıda karar ağacının tahminlerini oylamayla birleştirir; "çok sayıda zayıf modelin oylaması" fikri budur (A). B aşırı öğrenmeye götüren tek ağaçtır. C doğrusal regresyondur. D k-en yakın komşu yöntemidir. E evrişimli ağların filtresidir (Parça 8).</p></div></li>
+
+<li data-c="B" data-k="yz-5"><p class="q">Bir hastalık tahmin modelinin girdileri arasında, yalnız teşhis konduktan sonra başlanan bir ilacın kullanılıp kullanılmadığı bilgisi de var ve model test kümesinde neredeyse kusursuz çıkıyor. Bu durum en iyi hangi kavramla açıklanır?</p>
+<ul class="sec"><li>Yetersiz öğrenme</li><li>Veri sızıntısı</li><li>Gradyan inişi</li><li>Transfer öğrenme</li><li>Niceleme</li></ul>
+<div class="coz"><p>Veri sızıntısı, cevabın girdide gizlice bulunmasıdır; teşhisten sonra başlanan ilaç bilgisi, cevabı (hasta olduğunu) zaten ele verir (B). Model gerçek kullanımda, teşhis henüz konmamışken, bu bilgiye sahip olmayacağı için başarı sahtedir. A yetersiz öğrenmede başarı düşük olurdu. C bir eğitim yöntemidir, D büyük veride eğitilmiş modeli yeni işe uyarlamaktır, E sayıların daha az bitle saklanmasıdır; hiçbiri bu sahte başarıyı açıklamaz.</p></div></li>
+
+<li data-c="D" data-k="yz-6"><p class="q">4 girdi alan ve 2 nörondan oluşan tek bir katmanda, her nöronun her girdiye bir ağırlığı ve kendi sapması (bias) varsa toplam parametre sayısı kaçtır?</p>
+<ul class="sec"><li>8</li><li>6</li><li>16</li><li>10</li><li>12</li></ul>
+<div class="coz"><p>Her nöron 4 girdinin her biri için bir ağırlık taşır: 4 × 2 = 8 ağırlık. Her nöronun bir sapması vardır: 2 sapma. Toplam 8 + 2 = 10 (D). A sapmaları unutmaktır. B girdi ve nöron sayısını toplamaktır. C ve E bir hesaba dayanmayan çeldiricilerdir. "70 milyar parametreli model" ifadesi de bu ağırlık ve sapmaların toplam sayısını anlatır.</p></div></li>
+
+<li data-c="C" data-k="yz-8"><p class="q">2012'de AlexNet'in görüntü tanımada dönüm noktası sayılmasını sağlayan üç unsurun birlikte verildiği seçenek hangisidir?</p>
+<ul class="sec"><li>Kural tabanlı uzman sistem, elle yazılmış özellikler, küçük veri</li><li>Tek sıcak gösterim, tekrarlayan ağ, dikkat mekanizması</li><li>Büyük etiketli veri (ImageNet), GPU ile hesap, derin evrişimli ağ</li><li>Pekiştirmeli öğrenme, oyun motoru, ödül fonksiyonu</li><li>Difüzyon, gürültü ekleme, metin istemi</li></ul>
+<div class="coz"><p>AlexNet'in başarısı veri + GPU + derin ağ birleşimidir: ImageNet'in milyonlarca etiketli resmi, ekran kartlarının paralel hesabı ve çok katmanlı bir evrişimli ağ (C). A derin öğrenme öncesi yaklaşımı tarif eder. B dil işleme kavramlarını karıştırır. D, AlphaGo gibi oyun oynayan ajanların dünyasıdır. E görüntü üreten modellerin (difüzyon) tarifidir, 2012'nin tanıma ağının değil.</p></div></li>
+
+<li data-c="E" data-k="yz-9"><p class="q">Kelime gömmeleriyle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelimeyi yalnız bir yerinde 1, geri kalanı 0 olan bir vektörle temsil ederler.</li><li>Anlamca yakın kelimeleri uzayda birbirinden olabildiğince uzağa yerleştirirler.</li><li>Eğitildikleri metinlerdeki yanlılıktan tamamen bağımsızdırlar.</li><li>Yalnız elle yazılan sözlük tanımlarından oluşturulurlar.</li><li>Anlamca yakın kelimeler uzayda yakın durur; ama gömmeler eğitildikleri dildeki yanlılığı da öğrenebilir.</li></ul>
+<div class="coz"><p>word2vec gibi yöntemlerle öğrenilen gömmelerde, benzer bağlamlarda geçen kelimeler yakın vektörler alır; aynı mekanizma metinlerdeki toplumsal yanlılığı da öğrenir (E). A tek sıcak gösterimin tarifidir. B tam tersidir. C yanlış: gömmeler veride ne varsa onu öğrenir. D yanlış: gömmeler büyük metinlerden otomatik öğrenilir.</p></div></li>
+
+<li data-c="B" data-k="yz-10"><p class="q">Transformer'daki dikkat mekanizmasında bir kelimenin öbür kelimelere verdiği dikkat ağırlıklarıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Ağırlıkları insanlar her cümle için elle yazar.</li><li>Ağırlıklar softmax'la elde edilir; her biri 0 ile 1 arasındadır ve bir kelime için toplamları 1'dir.</li><li>Yalnız en yüksek puanlı kelimenin ağırlığı 1, öbürlerininki her zaman tam 0'dır.</li><li>Ağırlıkların toplamını 1 yapan işlem √d'ye bölmektir.</li><li>Ağırlıklar kelimenin cümledeki sırasına göre sabittir; sorgu ve anahtara bağlı değildir.</li></ul>
+<div class="coz"><p>Sorgu ile anahtarların nokta çarpımından çıkan puanlar ölçeklenir ve softmax'tan geçirilir; sonuç toplamı 1 olan pozitif ağırlıklardır (B). A yanlış: ağırlıkları belirleyen sorgu, anahtar ve değer matrisleri eğitimle öğrenilir. C sert seçim yanılgısıdır; softmax yumuşak bir dağılım verir (maskeli konumlar hariç). D'de √d'ye bölme yalnız puanların büyüklüğünü ayarlar. E yanlış: ağırlıklar sorgu ve anahtarlardan hesaplanır.</p></div></li>
+
+<li data-c="A" data-k="yz-12"><p class="q">2022'deki "Chinchilla" çalışmasının ölçekleme yasalarına katkısı en iyi hangi seçenekte özetlenir?</p>
+<ul class="sec"><li>Belirli bir hesap bütçesinde, parametre sayısı ile eğitim verisi miktarı dengeli büyütülmelidir.</li><li>Modeli büyütmek her zaman kaybı artırır.</li><li>Veri miktarı önemsizdir; yalnız parametre sayısı önemlidir.</li><li>Ön eğitim yerine yalnız insan geri bildirimiyle eğitim yeterlidir.</li><li>Ölçekleme yasaları yalnız görüntü modelleri için geçerlidir.</li></ul>
+<div class="coz"><p>Chinchilla çalışması, aynı hesap gücüyle daha iyi sonuç almak için parametre sayısı ile eğitim verisi miktarının dengeli artırılması gerektiğini gösterdi; birçok büyük modelin verisine göre fazla büyük olduğunu öne sürdü (A). B ölçekleme yasalarının tersidir: büyüdükçe kayıp öngörülebilir biçimde düşer. C tam olarak Chinchilla'nın düzelttiği yanılgıdır. D ön eğitim ile sonraki ince ayarı karıştırır. E yanlış: bu yasalar dil modelleri için ortaya konmuştur.</p></div></li>
+
+<li data-c="D" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmede (RLHF) "ödül modeli" nasıl elde edilir?</p>
+<ul class="sec"><li>Model internetteki metinlerle bir sonraki tokeni tahmin ederek eğitilir.</li><li>Model yalnız iyi örnek konuşmalarla denetimli olarak eğitilir.</li><li>Ödül değerleri yazılımcılar tarafından her cevap için elle yazılır.</li><li>İnsanların aynı soruya verilen iki cevaptan iyisini seçtiği karşılaştırmalardan, cevaplara puan vermeyi öğrenen ayrı bir model eğitilir.</li><li>Modelin kendi cevabını tekrar okuması yeterlidir; insan gerekmez.</li></ul>
+<div class="coz"><p>RLHF'de insanlar iki cevaptan iyisini seçer; bu tercihlerden, bir cevabın insanlarca ne kadar beğenileceğini tahmin eden bir ödül modeli eğitilir ve sohbet modeli bu ödüle göre ayarlanır (D). A ön eğitimdir (Parça 12). B denetimli ince ayardır (SFT), RLHF'den önceki adımdır. C ölçeklenemez ve yöntemin tarifi değildir. E, yazılı ilkelerle YZ geri bildirimi kullanan yaklaşımları bile yanlış özetler; orada da ilkeleri insanlar yazar.</p></div></li>
+
+<li data-c="C" data-k="yz-14"><p class="q">Dil modellerinin halüsinasyon üretmesinin, mekanizmalarından doğal olarak çıkmasının temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modellerin bilerek yalan söylemeye programlanmış olması</li><li>Modellerin internete her an bağlı olması</li><li>Modelin olası metni üretmesi; olası metnin her zaman doğru metin olmaması</li><li>Modellerin hiç eğitim verisi görmemiş olması</li><li>Bağlam penceresinin sonsuz olması</li></ul>
+<div class="coz"><p>Model, eğitim verisine göre en olası devamı üretir; bilmediği bir yerde de akıcı ve kendinden emin bir devam yazabilir, çünkü olası metin ile doğru metin aynı şey değildir (C). Bu parçadaki "çalışıyor gibi görünen kod" ve uydurma paket adları da aynı mekanizmadan doğar. A yanlış: niyet söz konusu değildir. B yanlış ve ilgisizdir. D yanlış: modeller çok büyük veriyle eğitilir. E yanlış: bağlam penceresi sınırlıdır.</p></div></li>
+
+<li data-c="E" data-k="yz-14"><p class="q">Bir sohbet modelinden bir yönetmeliğin madde numarasını istedin ve model kendinden emin bir numara verdi. Aşağıdakilerden hangisi en uygun alışkanlıktır?</p>
+<ul class="sec"><li>Model kendinden emin konuştuğu için numarayı doğru kabul etmek</li><li>Aynı soruyu ikinci kez sorup aynı cevap gelirse doğru saymak</li><li>Modelden daha uzun bir açıklama isteyip uzunluğu güvenilirlik ölçüsü saymak</li><li>Modelin bilgi kesim tarihinden sonraki değişiklikleri de bildiğini varsaymak</li><li>Maddeyi resmî kaynaktan bağımsız olarak kontrol etmek; model kaynak uydurabilir ve kendi güven düzeyini her zaman doğru bilmez</li></ul>
+<div class="coz"><p>Modeller var olmayan makale ve kanun maddesi uydurabilir ve kendi güven düzeylerini her zaman doğru bilmez; bu yüzden kritik bilgi bağımsız kaynaktan doğrulanır (E). A kendinden emin üslubu doğrulukla karıştırır. B yanlış: model aynı yanlışı tekrar edebilir. C uzunluğu kanıt sayar. D, bilgi kesim tarihinden sonraki değişiklikleri modelin bilmeyeceği gerçeğini görmezden gelir. Bu parçadaki "kodu çalıştırarak doğrula" ilkesi de aynı alışkanlığın yazılımdaki karşılığıdır.</p></div></li>
+
+<li data-c="B" data-k="yz-15"><p class="q">Bir isteme, istenen çıktının biçimini gösteren birkaç çözülmüş örnek eklemeye ne ad verilir?</p>
+<ul class="sec"><li>Ön eğitim</li><li>Az örnekli istem (few-shot)</li><li>Niceleme</li><li>Geri yayılım</li><li>Veri zehirleme</li></ul>
+<div class="coz"><p>İstemin içine birkaç örnek girdi-çıktı çifti koymak, modele ne istendiğini göstermenin yoludur ve az örnekli (few-shot) istem diye adlandırılır (B). Bu parçadaki "kabul ölçütlerini örnek girdi ve beklenen çıktıyla yaz" önerisi de aynı fikirdir. A modelin büyük metinle ilk eğitimidir. C sayıların daha az bitle saklanmasıdır. D sinir ağının eğitimindeki hata dağıtma yöntemidir. E bir saldırı kavramıdır (Parça 18).</p></div></li>
+
+<li data-c="A" data-k="yz-15"><p class="q">İstem yazarken gizli bilgiyle ilgili aşağıdakilerden hangisi doğru bir alışkanlıktır?</p>
+<ul class="sec"><li>Parola, kişisel veri ya da şirket sırrı gibi bilgileri isteme yazmamak; gerekiyorsa sahte ya da maskelenmiş değerle çalışmak</li><li>Model daha iyi çalışsın diye gerçek parolaları da istemde vermek</li><li>Gizli bilgiyi istemin sonuna yazınca güvenli olacağını varsaymak</li><li>Gizli bilgiyi büyük harfle yazıp modelden saklamasını istemek</li><li>Kişisel veriyi yalnız uzun istemlerde paylaşmak</li></ul>
+<div class="coz"><p>İsteme yazılan her şey modeli çalıştıran hizmete gönderilir ve kayıtlarda kalabilir; bu yüzden parola, kişisel veri ve şirket sırrı isteme yazılmaz, gerekiyorsa sahte değerle çalışılır (A). Bu parçadaki "ornek-anahtar" kullanımı da bunun uygulamasıdır. B doğrudan risktir. C, D ve E bilgiyi korumayan, yalnız yer ya da biçim değiştiren yanılgılardır.</p></div></li>
+
+<li data-c="D" data-k="yz-16"><p class="q">RAG (bilgiyle zenginleştirilmiş üretim) yaklaşımının yaptığı iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modeli şirket belgeleriyle sıfırdan yeniden eğitmek</li><li>Modelin bağlam penceresini sınırsız yapmak</li><li>Modelin cevabını rastgele başka bir modele düzelttirmek</li><li>Belgeleri gömme vektörlerine çevirip anlamca en yakın parçaları bulmak ve bunları isteme ekleyerek modelin onlarla cevap vermesini sağlamak</li><li>Modelin bütün cevaplarını önceden yazılmış bir listeden seçmek</li></ul>
+<div class="coz"><p>RAG'de belgeler gömme vektörlerine çevrilip bir vektör veritabanında saklanır; soru geldiğinde anlamca en yakın parçalar bulunur ve isteme eklenir; böylece model "bilmediği" belgelerle cevap verebilir (D). A yeniden eğitimdir, RAG eğitim yapmaz. B yanlış: RAG, sınırlı pencereye yalnız ilgili parçaları sığdırmanın yoludur. C ve E RAG'in tarifi değildir. Kodlama ajanlarının büyük bir depoda ilgili dosyaları arayıp okuması da benzer bir fikirdir.</p></div></li>
+
+<li data-c="C" data-k="yz-16"><p class="q">Bir sohbet API'sinin, örnek olarak varsayalım, 1 milyon girdi tokeni için 2 dolar aldığını düşün. Her biri 500 girdi tokeni olan 10.000 istek gönderirsen girdi tokenleri için toplam kaç dolar ödersin?</p>
+<ul class="sec"><li>1</li><li>5</li><li>10</li><li>100</li><li>1.000</li></ul>
+<div class="coz"><p>Toplam girdi tokeni: 500 × 10.000 = 5.000.000. Bu 5 milyon token demektir; milyon başına 2 dolardan 5 × 2 = 10 dolar (C). B, token sayısını milyon cinsinden bulup fiyatla çarpmayı unutmaktır. A ve D birer basamak kaydırmadır. E, milyona bölmeyi tamamen unutup yanlış bir ölçekle hesaplamaktır. Token başına ücret mantığı, bu parçadaki "maliyeti anla" maddesinin temelidir; bir döngüde gereksiz yere tekrarlanan istek bu tutarı hızla katlar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-16">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-17">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-18">Sonraki parça: YZ güvenliği</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"AI coding agent how it works tool use loop explained"</li>
+  <li>"git diff nasıl okunur branch pull request temel"</li>
+  <li>"API key environment variable .env gitignore secret leak"</li>
+  <li>"AI generated code security risks input validation access control"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>METR deneyi (10 Temmuz 2025, metr.org) 14 Ekim 2026'da kaynağından doğrulandı: 16 geliştirici, 246 iş, %19 daha uzun süre, sonradan %20 hızlanma inancı, yazarların temkinleri. METR'in 24 Şubat 2026 yazısı da okundu: yeni tahminler hızlanma yönünde (ilk katılımcılar yaklaşık %18, yeni katılımcılar yaklaşık %4 daha kısa süre, güven aralıkları sıfırı içeriyor), seçilim sorunları ve "çok zayıf kanıt" ifadesi. Negatif "speedup" değerlerini süre kısalması olarak yorumladım.</li>
+  <li>METR görev süresi ufku (arXiv 2503.14499, ilk sürüm Mart 2025; güncellenmiş sürümün özeti): yaklaşık yedi ayda ikiye katlanma, o tarihteki en iyi model için yaklaşık 110 dakika, "dağınık" görevlerde düşük başarı. SWE-bench (Jimenez ve ark., ICLR 2024): 12 depo, 2.294 sorun, yayımlandığında en iyi model %1,96; mlanthology.org özetinden doğrulandı, arXiv sayfası istek sınırı (HTTP 429) yüzünden açılamadı. Güncel puanlar bilerek verilmedi. Peng ve ark. (arXiv 2302.06590, Şubat 2023): %55,8 özetten doğrulandı.</li>
+  <li>Uydurma paketler: Spracklen ve ark. (USENIX Security 2025) özetinden 16 model, 576.000 örnek, ticari en az %5,2, açık kaynak %21,7, 205.474 eşsiz ad. Pearce ve ark. (arXiv 2108.09293, 2021): 89 senaryo, 1.689 program, yaklaşık %40; IEEE S&amp;P 2022'de yayımlandığı bilgisi hafızadan. Perry ve ark. (ACM CCS 2023) bulgusu özetten. Veracode raporu (basın bülteni 30 Temmuz 2025; Help Net Security, 7 Ağustos 2025) ve GitGuardian raporu (11 Mart 2025) şirket raporlarıdır, hakemli değildir. GitGuardian raporunun belirli bir kod asistanına dair karşılaştırmasını, nedensellik göstermediği ve tek ürünü hedef aldığı için almadım.</li>
+  <li>GitHub Docs ("Removing sensitive data from a repository": önce iptal et ya da yenile, yalnız geçmişi yeniden yazmak yetmez); Git belgesi gitignore(5) ("Files already tracked by Git are not affected", <code>git rm --cached</code>); OWASP Top 10:2025 kategori listesi (A01 bozuk erişim denetimi, A03 tedarik zinciri; yayın günü sayfada yoktu); Supabase "Securing your data" belgesi (herkese açık anahtar ancak RLS açıkken); metinde ürün adı vermeden genelledim.</li>
+  <li>"Vibe coding" (Karpathy, 2 Şubat 2025) ve Collins'in 2025 yılın sözcüğü seçimi ikincil kaynaklardan; <code>AGENTS.md</code>'nin 2025'te yaygınlaştığı bilgisi Ağustos 2025 tarihli ikincil bir yazıdan. Ajanların çalışma biçimi genel kavram olarak anlatıldı, belirli bir ürüne dayandırılmadı.</li>
+  <li>Kod: <code>artik_yil.py</code> ve <code>anahtar_oku.py</code> <code>python3 -I</code> (Python 3.13) ile, Git denemeleri Git 2.43 ile <code>/tmp</code> altındaki gerçek geçici depolarda çalıştırıldı; çıktılar birebir. <code>from siparis import …</code> satırı yerel dosyayı içe aktardığı için <code>-I</code>'sız çalıştırıldı. Denemede ad, e-posta ve tarih sabitlendi; okurda <code>git log</code> kimlikleri farklı çıkar. Artık yıl değerleri <code>calendar.isleap</code> ile karşılaştırıldı. Bütün anahtarlar açıkça sahtedir; eksik araç yoktu.</li>
+  <li>Açıklar yalnız neden doğduğu ve nasıl kapatıldığı düzeyinde yazıldı. Quiz hesapları Python ile kontrol edildi. Parça 11–16'ya gönderme ve tekrar soruları kapsam listesine göre yazıldı; 16 sınırı için Parça 3, 7 ve 11'den tekrar sorusu eşit aralıkla atlandı.</li>
+</ul>
+</div>
+</div>
+</article>

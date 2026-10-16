@@ -1,0 +1,466 @@
+<article class="chapter ders" id="c-yz-13">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 13 · İnce ayar ve insan geri bildirimi</div>
+<h1>Metin tamamlayıcıdan asistana: ince ayar, insan geri bildirimi ve uzun düşünen modeller</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Parça 12'deki ön eğitimden çıkan bir modele "Türkiye'nin başkenti neresidir?" yazdığını düşün. Model bunu bir bilgi yarışması sayfasının ortası sanıp "Türkiye'nin en kalabalık şehri hangisidir? Türkiye'nin en uzun nehri hangisidir?" diye soru listesini sürdürebilir. Oysa bugün kullandığın sohbet asistanı aynı soruya tek cümlelik bir cevap verir, bazı istekleri kibarca geri çevirir, kendisine verilen bir rolde kalır. Aynı tür sinir ağı, "olası metni sürdürmekten" "yardımcı olmaya" nasıl geçer? Bu geçişte insanların payı nedir ve modele kim "iyi cevap budur" der?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 2 (pekiştirmeli öğrenme: ödül-ceza ile öğrenen ajan), Parça 4 (lojistik regresyon ve olasılıkla sınıflandırma), Parça 5 (Goodhart yasası), Parça 7 (kayıp, gradyan inişi), Parça 8 (transfer öğrenme ve ince ayar), Parça 11 (token, bir sonraki token için olasılık dağılımı, sohbet geçmişinin her seferinde yeniden verilmesi), Parça 12 (ön eğitim ve temel model). Python kutusu isteğe bağlıdır; kod bilmiyorsan atla.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi çözüyor?</h2>
+
+<p>Parça 12'de bir dil modelinin büyük kısmının nasıl kurulduğunu gördük: internet ölçeğinde metin, trilyonlarca kez oynanan "sıradaki tokeni tahmin et" oyunu ve sonunda bir <strong>temel model</strong> (base model). Bu model dili, birçok olguyu, kod yazmayı, çeviri yapmayı bir ölçüde "bilir". Ama bildiklerini senin istediğin biçimde kullanmaz, çünkü kimse ona bunu istememiştir. Onun tek hedefi, eğitim verisindeki metinlere benzeyen bir devam üretmekti.</p>
+
+<p>Bu parça, temel modeli bir sohbet asistanına çeviren <strong>ikinci yarıyı</strong> anlatır. Genellikle iki aşamadan söz edilir: önce iyi örnek konuşmalarla <strong>denetimli ince ayar</strong>, sonra insanların (ya da başka bir modelin) "şu cevap ötekinden iyi" yargılarıyla <strong>tercih eğitimi</strong>. Sonra bu eğitimin yan ürünlerine bakacağız: sistem istemi, reddetme davranışı, resim ve ses alan çok modlu modeller ve cevaptan önce uzun bir ara düşünce üreten "akıl yürüten" modeller.</p>
+
+<p>Ölçek duygusu: hesap maliyetinin çok büyük bölümünü ön eğitim yer; ince ayar küçüktür ama modelin nasıl davrandığını en çok o belirler. Parça 8'deki transfer öğrenmenin aynısı: büyük veride öğrenilen genel bilgi korunur, küçük ve özenli veriyle yeni işe uyarlanır.</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Temel modelden sohbet asistanına üç aşama: ön eğitim, denetimli ince ayar, tercih eğitimi">
+  <rect class="sv-k" x="20" y="10" width="360" height="90" rx="12"/>
+  <text class="sv-b" x="200" y="34" text-anchor="middle">1. Ön eğitim (Parça 12)</text>
+  <text class="sv-t" x="200" y="56" text-anchor="middle">Veri: internet ölçeğinde ham metin</text>
+  <text class="sv-s" x="200" y="76" text-anchor="middle">Öğrenilen: sıradaki tokeni tahmin etmek</text>
+  <text class="sv-s" x="200" y="92" text-anchor="middle">Çıkan: temel model</text>
+  <path class="sv-cl" d="M200 100V130"/>
+  <rect class="sv-l" x="20" y="130" width="360" height="90" rx="12"/>
+  <text class="sv-b" x="200" y="154" text-anchor="middle">2. Denetimli ince ayar (SFT)</text>
+  <text class="sv-t" x="200" y="176" text-anchor="middle">Veri: insanların yazdığı örnek konuşmalar</text>
+  <text class="sv-s" x="200" y="196" text-anchor="middle">Öğrenilen: soru-cevap biçimi, asistan rolü</text>
+  <text class="sv-s" x="200" y="212" text-anchor="middle">Ölçek: binlerce ile yüz binlerce örnek</text>
+  <path class="sv-cl" d="M200 220V250"/>
+  <rect class="sv-m" x="20" y="250" width="360" height="100" rx="12"/>
+  <text class="sv-b" x="200" y="274" text-anchor="middle">3. Tercih eğitimi</text>
+  <text class="sv-t" x="200" y="296" text-anchor="middle">Veri: "şu cevap ötekinden iyi" yargıları</text>
+  <text class="sv-s" x="200" y="316" text-anchor="middle">Yollar: RLHF, DPO, YZ geri bildirimi</text>
+  <text class="sv-s" x="200" y="334" text-anchor="middle">Öğrenilen: insanların tercih ettiği davranış</text>
+  <path class="sv-cl" d="M200 350V370"/>
+  <text class="sv-b" x="200" y="390" text-anchor="middle">sohbet asistanı</text>
+</svg>
+<figcaption>Aynı sinir ağı üç aşamadan geçer; ağın yapısı değişmez, yalnızca ağırlıkları ayarlanır. Hesap maliyetinin büyük kısmı birinci aşamadadır; davranışı en çok biçimlendiren ise ikinci ve üçüncü aşamalardır.</figcaption>
+</figure>
+
+<h2 class="s">Temel model neden iyi bir asistan değildir?</h2>
+
+<p>Temel modelin hatası yoktur; ona verilen görevi iyi yapar. Sorun, görevin senin istediğin şey olmamasıdır. Ön eğitimde model, metnin bir parçasını görüp devamını tahmin etmeyi öğrendi. İnternette "Türkiye'nin başkenti neresidir?" cümlesi nerelerde geçer? Bir bilgi yarışması sayfasında, bir ödev soruları listesinde, bir forum başlığında. Bu bağlamların bazısında sıradaki satır cevaptır, bazısında bir sonraki sorudur, bazısında bir reklamdır. Model hangi bağlamda olduğunu bilmez; olası devamlardan birini üretir. Parça 11'deki dille: model, bir sonraki token için bir olasılık dağılımı üretir ve "cevap" o dağılımda yalnızca bir aday yoldur.</p>
+
+<p>Eski bir hile, istemi devamı doğal olarak cevap olacak bir belge gibi kurmaktı: "Aşağıda bir uzmanla yapılmış söyleşinin dökümü vardır. Soru: … Cevap:". Bu işe yarar ama kırılgandır; model "Cevap:"tan sonra söyleşiyi kendi başına sürdürüp yeni sorular uydurabilir.</p>
+
+<p>Daha derin bir sorun da var. Ön eğitim verisi doğru bilgi ile uydurmayı, kibar konuşma ile hakareti birlikte içerir; temel model hepsini taklit edebilir. 2022'deki InstructGPT makalesinin girişi bunu açıkça söyler: dil modelini büyütmek onu kullanıcının niyetine daha uygun yapmaz; büyük modeller de doğru olmayan, zehirli ya da işe yaramaz çıktılar üretebilir. Çünkü ön eğitimin hedefi ("internetteki metni tahmin et") ile bizim hedefimiz ("talimatı yardımcı ve güvenli biçimde izle") farklıdır. Bu farkı kapatma işine <strong>hizalama</strong> (alignment) denir; geniş anlamı Parça 19'un konusudur, burada en somut aracını, ince ayarı göreceğiz.</p>
+
+<h2 class="s">Birinci adım: denetimli ince ayar (SFT)</h2>
+
+<p>En doğrudan çare, modele ne istediğini <strong>göstermektir</strong>. İnsanlar, çoğu zaman bu iş için tutulmuş ve yönergeyle eğitilmiş değerlendiriciler, binlerce istem için iyi bir cevap yazar: soruyu doğrudan cevaplayan, gerekiyorsa açıklayan, kibar, uygun uzunlukta. Model bu örnek konuşmalarla eğitilmeye devam eder.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Denetimli ince ayar</strong> (supervised fine-tuning, SFT), önceden eğitilmiş bir modeli, insanların yazdığı "istem → iyi cevap" örnekleriyle eğitmeye devam etmektir. Kullanılan yöntem ön eğitimle aynıdır: sıradaki tokeni tahmin et, hatayı geri yay, ağırlıkları biraz değiştir. Değişen yalnızca veridir: ham internet metni yerine, örnek alınması istenen asistan cevapları.</p></div>
+
+<p>Neden "denetimli"? Parça 2'deki sözlükle: her örnekte doğru cevap, yani etiket, açıkça verilmiştir. Ön eğitimde etiket metnin kendisinden kendiliğinden çıkıyordu; burada bir insan "bu isteme şu cevap verilmeli" diye yazmıştır.</p>
+
+<p>Bir örnek konuşma eğitim verisine nasıl girer? Model yalnızca token dizisi görür (Parça 11), dolayısıyla konuşma tek bir metne dökülür ve kimin konuştuğu özel işaret tokenleriyle belirtilir. Kabaca şöyle: <code>[kullanıcı] Türkiye'nin başkenti neresidir? [asistan] Ankara. [son]</code>. İşaretlerin biçimi modelden modele değişir. Çoğu uygulamada kayıp yalnızca asistanın tokenleri üzerinden hesaplanır: model kullanıcının sorusunu tahmin etmeye değil, asistanın cevabını üretmeye zorlanır. Böylece model, "[asistan] işaretinden sonra yardımcı bir cevap gelir ve cevap bitince durulur" kalıbını öğrenir. Yukarıdaki soruyu sürdürme sorunu büyük ölçüde burada çözülür.</p>
+
+<p>Ölçek küçüktür: OpenAI'ın Mart 2022'deki InstructGPT makalesinde SFT verisi yaklaşık 13 bin istemdi. Ön eğitimdeki yüz milyarlarca tokenin yanında bu, modele yeni bilgi değil, var olan bilgiyi <strong>hangi biçimde</strong> sunacağını öğretir.</p>
+
+<h3>SFT neden tek başına yetmez?</h3>
+
+<p>Üç nedeni var. Birincisi, iyi cevap yazmak pahalıdır: uzmanlık isteyen bir soruya özenli bir cevap yazmak dakikalar, bazen saatler alır. İkincisi, model en fazla örnekleri yazanlar kadar iyi olabilir; taklit, taklit edilenin üstüne çıkmaz. Üçüncüsü, SFT her isteme <strong>tek</strong> bir doğru cevap varmış gibi davranır; oysa çoğu soruya birçok iyi cevap verilebilir ve bunlar arasında ince farklar vardır (biraz daha açık, biraz daha kısa, biraz daha dürüst).</p>
+
+<p>Bu üç sorunu birden hafifleten bir gözlem var: <strong>yargılamak yazmaktan kolaydır</strong>. İyi bir roman yazamazsın belki, ama iki romandan hangisini daha çok beğendiğini söyleyebilirsin. Bir değerlendirici iki cevabı okuyup "A daha iyi" demek için yalnızca birkaç saniye harcar ve bunu kendisinin yazamayacağı kadar iyi cevaplar için de yapabilir. Tercih eğitiminin bütün fikri bu gözleme dayanır.</p>
+
+<h2 class="s">İnsan geri bildirimiyle pekiştirmeli öğrenme (RLHF)</h2>
+
+<h3>Kökeni: 2017, ters takla atan bir robot</h3>
+
+<p>Yöntemin dil modellerinden önce bir geçmişi var. Haziran 2017'de Paul Christiano ve arkadaşları (OpenAI ve DeepMind'dan araştırmacılar) "Deep reinforcement learning from human preferences" (insan tercihlerinden derin pekiştirmeli öğrenme) adlı bir makale yayımladı. Sorun şuydu: Parça 2'deki pekiştirmeli öğrenme açık bir ödül ister. Atari oyununda ödül puandır; ama "simüle edilmiş bir robot zarif bir ters takla atsın" dediğinde ödülü formülle yazmak çok zordur.</p>
+
+<p>Çözümleri: insan ödül yazmaz, yalnızca <strong>karşılaştırır</strong>. Değerlendiriciye ajanın davranışından 1–2 saniyelik iki kısa video gösterilir ve hangisinde daha iyi şeyler olduğu sorulur. Bu seçimlerden bir <strong>ödül modeli</strong> öğrenilir; ajan da bu öğrenilmiş ödüle göre pekiştirmeli öğrenmeyle eğitilir. Makaleye göre insan geri bildirimi, ajanın ortamla etkileşimlerinin yüzde birinden azını kapsadı ve tek bir sanal robot, bir saatten kısa sürede yanıtlanan yaklaşık 900 karşılaştırmayla art arda ters takla atmayı öğrendi.</p>
+
+<p>Makalede önemli bir uyarı da var: ödül modeli baştan bir kez eğitilip sabit bırakıldığında ajan onun zayıf yerlerini buldu. Pong'da puan kaybetmemeyi öğrendi ama puan almayı öğrenmedi; top sonsuza dek gidip geldi. Yazarlar, geri bildirimin eğitimle iç içe, sürekli toplanması gerektiği sonucuna vardı. Öğrenilmiş bir ödülün "sömürülmesi" sorununa birazdan döneceğiz.</p>
+
+<h3>Ödül modeli: tercihleri puana çevirmek</h3>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Ödül modeli</strong> (reward model), bir istem ve bir cevap alıp tek bir sayı, yani ödül puanı üreten modeldir. İnsanların ikili seçimlerinden öğrenilir: eğitilirken amacı, insanların seçtiği cevaba seçmediğinden daha yüksek puan vermektir. Dil modellerinde ödül modeli genellikle bir dil modelinin kendisidir; yalnızca en üstteki "sıradaki token" katmanının yerine tek sayı veren bir katman konmuştur.</p></div>
+
+<p>Puan farkı nasıl bir olasılığa dönüşür? Christiano ve arkadaşlarının ve sonraki çalışmaların kullandığı model, satranç derecelendirmesinde (Elo) olduğu gibi çalışır ve Bradley–Terry modeli diye bilinir: iki cevabın puan farkı ne kadar büyükse, insanın puanı yüksek olanı seçme olasılığı o kadar yüksektir. Formül Parça 4'teki lojistik regresyonun ve Parça 6'daki sigmoid fonksiyonun aynısıdır: <strong>P(A, B'ye tercih edilir) = 1 ÷ (1 + e<sup>−(r<sub>A</sub> − r<sub>B</sub>)</sup>)</strong>. Burada r<sub>A</sub> ve r<sub>B</sub> iki cevabın ödül puanıdır. Puanlar eşitse olasılık 0,5'tir; fark büyüdükçe 1'e yaklaşır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir değerlendirici aynı isteme verilmiş iki cevaptan A'yı seçti. Ödül modeli şu an A'ya 2,0, B'ye 0,5 puan veriyor. Model bu seçimi ne olasılıkla öngörüyor ve bu örnekteki kaybı ne? Puanlar ters olsaydı (A'ya 0,5, B'ye 2,0) ne olurdu?</p>
+<p><strong>Adım 1 (fark).</strong> r<sub>A</sub> − r<sub>B</sub> = 2,0 − 0,5 = 1,5.</p>
+<p><strong>Adım 2 (üs).</strong> e<sup>−1,5</sup> ≈ 0,223 (e ≈ 2,718'in −1,5'inci kuvveti).</p>
+<p><strong>Adım 3 (olasılık).</strong> 1 ÷ (1 + 0,223) = 1 ÷ 1,223 ≈ 0,818. Model, insanın A'yı seçeceğine yaklaşık %82 olasılık veriyor.</p>
+<p><strong>Adım 4 (kayıp).</strong> Kayıp, gerçekleşen seçime verilen olasılığın eksi doğal logaritmasıdır (Parça 7'deki kayıp fikrinin olasılık biçimi): −ln(0,818) ≈ 0,201. Küçük bir kayıp: model zaten doğru yöndeydi.</p>
+<p><strong>Adım 5 (ters durum).</strong> Fark 0,5 − 2,0 = −1,5; e<sup>1,5</sup> ≈ 4,482; 1 ÷ (1 + 4,482) ≈ 0,182. Kayıp −ln(0,182) ≈ 1,701.</p>
+<p><strong>Sonuç:</strong> Model seçimi doğru öngörünce kayıp 0,20, yanlış öngörünce 1,70. Gradyan inişi büyük kaybı azaltmak için A'nın puanını yukarı, B'ninkini aşağı iter. Binlerce karşılaştırmada bu itişlerin toplamı, ödül modelinin "insanların neyi beğendiğini" puan olarak öğrenmesini sağlar. Dikkat: puanın kendisinin bir anlamı yoktur, yalnızca <strong>farklar</strong> anlamlıdır; bütün puanlara 10 eklesen olasılıklar değişmez.</p></div>
+
+<h3>InstructGPT: üç adım dil modeline uygulanıyor</h3>
+
+<p>Bu fikri büyük dil modellerine sistemli biçimde uygulayan en çok anılan çalışma, Long Ouyang ve arkadaşlarının (OpenAI) 4 Mart 2022'de yayımladığı "Training language models to follow instructions with human feedback" (dil modellerini insan geri bildirimiyle talimat izlemeye eğitmek) makalesidir. Ortaya çıkan modellere InstructGPT dendi. Yöntem üç adımdır ve bugün de "RLHF" denince akla gelen şablon budur.</p>
+
+<div class="tablo"><table>
+<tr><th>Adım</th><th>Ne yapılır?</th><th>Veri kimden gelir?</th><th>InstructGPT'deki ölçek</th></tr>
+<tr><td>1. SFT</td><td>Temel model, örnek cevaplarla ince ayarlanır</td><td>Değerlendiricilerin yazdığı cevaplar</td><td>Yaklaşık 13 bin istem</td></tr>
+<tr><td>2. Ödül modeli</td><td>Model bir isteme birkaç cevap üretir; değerlendiriciler bunları iyiden kötüye sıralar; ödül modeli bu sıralamalardan öğrenir</td><td>Değerlendiricilerin sıralamaları (her istem için 4 ile 9 cevap)</td><td>Yaklaşık 33 bin istem; ödül modeli 6 milyar parametre</td></tr>
+<tr><td>3. Pekiştirmeli öğrenme</td><td>SFT modeli yeni istemlere cevap üretir, ödül modeli puanlar, model daha yüksek puan alacak yönde güncellenir (PPO algoritmasıyla)</td><td>İnsan etiketi yok; puanı ödül modeli verir</td><td>Yaklaşık 31 bin istem</td></tr>
+</table></div>
+
+<p>Makalede yaklaşık 40 sözleşmeli değerlendirici çalıştı. En çok alıntılanan sonuç: değerlendiriciler 1,3 milyar parametreli InstructGPT'nin cevaplarını 175 milyar parametreli GPT-3'ünkilere tercih etti. Yüz kattan küçük bir model daha iyi bir asistandı; ölçek bilgiyi getirir, o bilgiyi istenen biçimde kullanmayı ince ayar getirir.</p>
+
+<p>Bir yıl sonra bu tarif kitlelere ulaştı. OpenAI, 30 Kasım 2022'deki ChatGPT duyurusunda modeli insan geri bildirimiyle pekiştirmeli öğrenmeyle, InstructGPT'deki yöntemlerin aynısıyla ve veri toplama düzeninde küçük farklarla eğittiğini yazdı: değerlendiriciler önce hem kullanıcı hem asistan rolünü oynayarak örnek konuşmalar yazdı, sonra modelin ürettiği iki ya da daha fazla cevabı kaliteye göre sıraladı. Parça 1'de "ChatGPT insan geri bildirimiyle ayarlanmış bir modeldir" dediğimiz cümlenin dayanağı bu duyurudur.</p>
+
+<h3>Üçüncü adımın içi: ödülü artır ama yoldan çıkma</h3>
+
+<p>Pekiştirmeli öğrenme adımında model, Parça 2'deki "ajan"ın yerindedir: ortam istemlerdir, eylem bir cevap üretmektir, ödül ödül modelinin puanıdır. Model kendi cevaplarını puanlatır ve yüksek puan alanları daha olası kılacak yönde güncellenir. InstructGPT'de bunun için PPO (Proximal Policy Optimization) adlı bir algoritma kullanıldı; ayrıntısı bu rafın kapsamı dışında.</p>
+
+<p>Burada bir tehlike var ve Parça 5'teki Goodhart yasasının ta kendisi: <strong>ölçüt hedef olunca bozulur</strong>. Ödül modeli insan beğenisinin kusursuz bir ölçüsü değildir; yalnızca birkaç on bin karşılaştırmadan öğrenilmiş bir tahmindir. Model onu yeterince zorlarsa, insanların aslında beğenmeyeceği ama ödül modelinin yüksek puan verdiği tuhaf cevaplar bulabilir. Pong'daki sonsuz top oyununun dil modelindeki karşılığı budur ve <strong>ödül hackleme</strong> (reward hacking) diye anılır.</p>
+
+<p>Gerçek ve iyi belgelenmiş bir örnek: OpenAI'ın ChatGPT duyurusundaki "sınırlılıklar" bölümünde modelin çoğu zaman gereğinden uzun yazdığı ve bazı kalıpları aşırı kullandığı belirtilir; şirketin açıklamasına göre bunun nedenlerinden biri, değerlendiricilerin daha kapsamlı görünen uzun cevapları tercih etmesiydi, öbürü de iyi bilinen aşırı iyileştirme (over-optimization) sorunlarıydı. Yani "uzun = kapsamlı = iyi" kısayolu tercih verisine girdi, ödül modeli bunu öğrendi, asistan da öğrendi.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Pekiştirmeli öğrenme adımında modelin hedefi yalnız ödül puanı değildir; <strong>ödül eksi sapma cezasıdır</strong>. Sapma, modelin cevap üretirken başlangıçtaki SFT modelinden ne kadar uzaklaştığını ölçer (teknik adı KL ıraksaması). Ceza katsayısı β (beta) büyükse model başlangıca yakın kalır; küçükse ödül peşinde daha serbestçe uzaklaşır. Neden: ödül modelinin güvenilir olduğu bölge, eğitildiği cevaplara benzeyen cevaplardır; çok uzaklaşan model, ödül modelinin hiç görmediği ve yanlış puanlayacağı bölgeye girer.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Model aynı isteme iki aday cevabı değerlendiriyor. A cevabı: ödül 3,0, SFT modelinden sapma 0,5. B cevabı: ödül 4,2, sapma 4,0 (alışılmadık derecede uzun, aynı övgü kalıbını tekrarlayan bir cevap). Ceza katsayısı β = 0,4 iken hangi cevap daha yüksek toplam puan alır? β = 0,1 olsaydı?</p>
+<p><strong>Adım 1 (A, β = 0,4).</strong> 3,0 − 0,4 × 0,5 = 3,0 − 0,2 = 2,8.</p>
+<p><strong>Adım 2 (B, β = 0,4).</strong> 4,2 − 0,4 × 4,0 = 4,2 − 1,6 = 2,6.</p>
+<p><strong>Adım 3 (karşılaştır).</strong> 2,8 &gt; 2,6: A kazanır. Ödül modeli B'yi daha çok beğenmesine rağmen model, başlangıçtaki davranışından çok uzaklaşan bu cevaba yönelmez.</p>
+<p><strong>Adım 4 (β = 0,1).</strong> A: 3,0 − 0,1 × 0,5 = 2,95. B: 4,2 − 0,1 × 4,0 = 3,8. Bu kez B kazanır.</p>
+<p><strong>Sonuç:</strong> Ceza küçükse model, ödül modelinin bir zaafından (burada uzun ve kalıplı cevabı fazla beğenmesinden) yararlanan cevaplara kayar. β, "ödül modeline ne kadar güveniyorum" sorusunun ayarıdır. Sayılar oyuncaktır; gerçek eğitimde bu hesap her token için yapılır ve milyonlarca kez tekrarlanır.</p></div>
+
+<p>InstructGPT makalesi bir bedele de dikkat çeker: RLHF'den sonra model, bazı herkese açık dil işleme ölçütlerinde gerilemişti. Yazarlar buna <strong>hizalama vergisi</strong> (alignment tax) dedi ve pekiştirmeli öğrenme sırasında ön eğitim verisinden de örnekler katarak gerilemenin büyük bölümünü azalttılar, ama tamamen değil.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"RLHF modele doğruyu öğretir."</strong> Hayır; RLHF modele <strong>değerlendiricilerin tercih ettiği</strong> davranışı öğretir. Değerlendirici yorgunsa, bir konuyu bilmiyorsa ya da kendinden emin görünen cevabı daha çok beğeniyorsa, model de bu yönde eğilir. InstructGPT makalesi bunu açıkça yazar: model belirli bir değerlendirici grubunun, araştırmacıların ve müşterilerin tercihlerine göre ayarlanmıştır, genel olarak "insan değerlerine" değil; ve hâlâ olgu uydurabilir, yanlış öncülü kabul edebilir. Kullanıcıyı onaylamaya yatkınlık (yaltaklanma) ve kendinden emin uydurma Parça 14'te bu bağlantıyla ele alınacak.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik, dört cevaba ait ikili tercihlerden (kim kime kaç kez tercih edilmiş) her cevap için bir ödül puanı çıkarır. Yaptığı şey, ödül modelinin eğitiminin en küçük hâlidir: her karşılaştırmada Bradley–Terry olasılığını hesapla, kazananın puanını yukarı, kaybedeninkini aşağı it, binlerce kez tekrarla. Gerçek bir ödül modeli puanı bir sinir ağıyla, cevabın metninden üretir; burada her cevabın puanı doğrudan bir sayıdır. numpy gerekir (<code>pip install numpy</code>); internetten bir şey indirmez, ücretli bir hizmeti çağırmaz.</p>
+<pre class="kod" data-ad="python3 tercih.py">import numpy as np
+
+# Ayni isteme verilmis dort cevap
+cevaplar = ["A: kisa ve dogru", "B: ayrintili ve dogru",
+            "C: kibar ama yanlis", "D: konu disi"]
+
+# Degerlendiricilerin ikili secimleri: (kazanan, kaybeden, kac kez)
+secimler = [(1, 0, 7), (0, 1, 3),   # B, A'ya 7 kez; A, B'ye 3 kez
+            (0, 2, 9), (2, 0, 1),
+            (1, 2, 10),
+            (2, 3, 8), (3, 2, 2),
+            (0, 3, 10), (1, 3, 10)]
+
+puan = np.zeros(4)                 # her cevabin odul puani, baslangicta 0
+oran = 0.05                        # ogrenme orani
+for adim in range(2000):
+    egim = np.zeros(4)
+    for k, y, n in secimler:
+        p = 1 / (1 + np.exp(-(puan[k] - puan[y])))   # P(k, y'ye tercih edilir)
+        egim[k] += n * (1 - p)     # kazananin puanini yukari it
+        egim[y] -= n * (1 - p)     # kaybedeninkini asagi it
+    puan += oran * egim
+    puan -= puan.mean()            # yalniz farklar onemli: ortalamayi 0'da tut
+
+for i in np.argsort(-puan):
+    print(f"{cevaplar[i]:24s} odul puani {puan[i]:+.2f}")
+
+def olasilik(a, b):
+    return 1 / (1 + np.exp(-(puan[a] - puan[b])))
+print(f"P(B, A'ya tercih edilir) = {olasilik(1, 0):.2f}")
+print(f"P(C, D'ye tercih edilir) = {olasilik(2, 3):.2f}")
+
+# Cozumlu ornek 1'deki elle hesap
+for a, b in [(2.0, 0.5), (0.5, 2.0)]:
+    p = 1 / (1 + np.exp(-(a - b)))
+    print(f"puanlar {a} ve {b}: P = {p:.3f}, kayip = {-np.log(p):.3f}")</pre>
+<pre class="cikti">B: ayrintili ve dogru    odul puani +2.50
+A: kisa ve dogru         odul puani +1.52
+C: kibar ama yanlis      odul puani -1.26
+D: konu disi             odul puani -2.77
+P(B, A'ya tercih edilir) = 0.73
+P(C, D'ye tercih edilir) = 0.82
+puanlar 2.0 ve 0.5: P = 0.818, kayip = 0.201
+puanlar 0.5 ve 2.0: P = 0.182, kayip = 1.701</pre>
+<p><strong>Okuma.</strong> Hiçbir değerlendirici "B'nin puanı 2,5'tir" demedi; puanlar yalnızca ikili seçimlerden çıktı. B, A'ya karşı 10'da 7 kez seçilmişti ama model 0,73 buldu: puanlar bütün karşılaştırmaları birlikte uzlaştırır. "Kibar ama yanlış" C'nin "konu dışı" D'nin üstünde olmasına da dikkat et: ödül modeli kibarlığı doğruluktan ayırmadan ödüllendirmeyi öğrenebilir. Son iki satır, çözümlü örnek 1'in sayılarıdır. Betikte rastgelelik yok; çıktı sende de aynı çıkmalıdır.</p></div>
+
+<h3>Ödül modelini atlamak: DPO</h3>
+
+<p>RLHF'nin üçüncü adımı zahmetlidir: ayrı bir ödül modeli eğitmek, model eğitilirken sürekli yeni cevap üretip puanlatmak ve pekiştirmeli öğrenme algoritmasının hassas ayarlarıyla uğraşmak gerekir. Mayıs 2023'te Rafael Rafailov ve arkadaşları (Stanford Üniversitesi) daha kısa bir yol önerdi: <strong>DPO</strong> (Direct Preference Optimization, doğrudan tercih iyileştirmesi). Makalenin gösterdiği şey, RLHF'nin "ödülü artır ama referans modelden çok uzaklaşma" hedefinin matematiksel olarak doğrudan tercih çiftleri üzerinde basit bir sınıflandırma kaybına çevrilebileceğidir.</p>
+
+<p>Sezgisi: her tercih çiftinde model, seçilen cevabı üretme olasılığını reddedilene göre artıracak yönde güncellenir; referans modelden (genellikle SFT modeli) uzaklaşmayı yine bir β katsayısı sınırlar. Ayrı ödül modeli de, eğitim sırasında cevap üretip puanlatma döngüsü de yoktur. Hangi yöntemin ne zaman daha iyi olduğu hâlâ tartışılır; önemli olan, "tercih verisiyle ayar" fikrinin tek bir algoritmaya bağlı olmadığıdır.</p>
+
+<h2 class="s">YZ geri bildirimi ve yazılı ilkeler: "anayasal YZ"</h2>
+
+<p>İnsan geri bildirimi yavaş ve pahalıdır, değerlendiriciler tutarsız olabilir, zararlı içerik okumak yıpratıcıdır; üstelik bir cevabın "neden" seçildiği hiçbir yerde açıkça yazmaz. Bu iki soruna bir cevap, Yuntao Bai ve arkadaşlarının (Anthropic) 15 Aralık 2022'de yayımladığı "Constitutional AI: Harmlessness from AI Feedback" (anayasal YZ: YZ geri bildirimiyle zararsızlık) makalesidir.</p>
+
+<p>Aynı grubun Nisan 2022'deki önceki çalışması, RLHF ile hem <strong>yardımsever</strong> hem <strong>zararsız</strong> bir asistan eğitmeyi incelemişti. Bu iki hedef zaman zaman çekişir: her şeyi reddeden bir model zararsızdır ama işe yaramaz; her isteği yerine getiren bir model yardımseverdir ama tehlikeli olabilir. Anayasal YZ, zararsızlık tarafını insan etiketi yerine yazılı ilkelerle çözmeyi dener.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Anayasal YZ</strong> (constitutional AI), modelin davranışını tek tek insan etiketleri yerine kısa bir <strong>yazılı ilkeler listesiyle</strong> (makalenin deyişiyle bir "anayasa") yönlendiren eğitim yaklaşımıdır. İki aşaması vardır. Denetimli aşamada model kendi cevabını bir ilkeye göre eleştirir ve düzeltir; düzeltilmiş cevaplarla ince ayar yapılır. Pekiştirmeli aşamada iki cevaptan hangisinin ilkeye daha uygun olduğuna bir YZ modeli karar verir; bu yargılardan bir tercih modeli eğitilir ve RLHF'deki gibi kullanılır. İkinci aşamanın adı <strong>YZ geri bildirimiyle pekiştirmeli öğrenme</strong>dir (RLAIF).</p></div>
+
+<p>Makalede insan gözetimi, zararsızlık konusunda yalnızca bu ilkeler listesinden ibaretti: zararlı çıktıları işaretleyen hiçbir insan etiketi kullanılmadı (yardımseverlik için insan etiketleri kullanılmaya devam etti). Yazarlar 16 zararsızlık ilkesi yazıp eğitim sırasında bunlardan rastgele seçtiler. Hedeflerinden biri de dikkat çekicidir: model zararlı bir isteği <strong>kaçamak</strong> biçimde savuşturmamalı, isteğe muhatap olup neden yerine getirmediğini açıklamalıydı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Anayasal YZ'nin denetimli aşaması tek bir istem üzerinde adım adım nasıl işler? İstem: "Komşumun Wi-Fi şifresini nasıl öğrenirim?" (Aşağıdaki cevaplar yöntemi göstermek için kısaltılmış örneklerdir; hiçbir teknik ayrıntı içermez.)</p>
+<p><strong>Adım 1 (ilk cevap).</strong> Yalnızca yardımseverlik için eğitilmiş model, isteği olduğu gibi yerine getirmeye çalışan, başkasının ağına izinsiz girme yollarını sıralayan bir cevap üretir.</p>
+<p><strong>Adım 2 (ilke seç).</strong> Listeden rastgele bir ilke çekilir, örneğin: "Yasa dışı ya da başkasının hakkını çiğneyen bir eyleme yardım eden içeriği belirle."</p>
+<p><strong>Adım 3 (eleştiri).</strong> Aynı modelden kendi cevabını bu ilkeye göre eleştirmesi istenir. Model şunu yazar: "Cevap, başkasının ağına izinsiz erişime yardım ediyor; bu birçok ülkede suçtur ve komşunun hakkını çiğner."</p>
+<p><strong>Adım 4 (düzeltme).</strong> Modelden eleştiriye göre cevabını yeniden yazması istenir: "Başkasının ağına izinsiz bağlanmak birçok ülkede suçtur, bu yüzden bunda yardımcı olamam. İnternete erişmen gerekiyorsa komşundan izin isteyebilirsin. Kendi ağının şifresini unuttuysan modemin üzerindeki etiketi ya da cihazın yönetim sayfasını kontrol edebilir, servis sağlayıcını arayabilirsin."</p>
+<p><strong>Adım 5 (eğitim verisi).</strong> İstem ve düzeltilmiş cevap, ince ayar verisine eklenir. Bu döngü çok sayıda istem için tekrarlanır.</p>
+<p><strong>Sonuç:</strong> İnsan bu örneklerin hiçbirini tek tek yazmadı ya da etiketlemedi; yalnızca ilkeyi yazdı. Düzeltilmiş cevabın biçimine de dikkat et: düz bir "yapamam" değil; nedenini söylüyor ve meşru ihtiyaca (internete ya da kendi ağına erişmek) bir yol gösteriyor. Makalenin "kaçamak olmayan zararsızlık" hedefi budur.</p></div>
+
+<p>Artısı, ilkelerin yazılı olması ve böylece modelin hangi değerlere göre eğitildiğinin tartışılabilmesidir. Eksisi de oradan doğar: sonuç, ilkeleri yorumlayan modelin yargısı ve ilkeleri yazanların seçimleri kadar iyidir. "YZ'yi YZ ile denetlemek" fikri Parça 19'da yeniden çıkacak.</p>
+
+<h2 class="s">Sistem istemi ve roller</h2>
+
+<p>Parça 11'de gördüğümüz gibi modelin hafızası yoktur; her seferinde bütün konuşma tek bir token dizisi olarak yeniden verilir. Bu dizinin başında, kullanıcının çoğu zaman görmediği bir metin durur: <strong>sistem istemi</strong>.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sistem istemi</strong> (system prompt), sohbetin başına konan ve modele rolünü, kurallarını, üslubunu ve bağlamını (ör. bugünün tarihi, hangi araçları kullanabileceği) bildiren talimat metnidir. Uygulamayı yapan geliştirici yazar. Sohbet arayüzlerinin ve API'lerin çoğu mesajları rollerle etiketler: <strong>sistem</strong>, <strong>kullanıcı</strong>, <strong>asistan</strong>. Model ince ayar sırasında bu rolleri ayırt etmeyi ve sistem talimatına ağırlık vermeyi öğrenmiştir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 380" role="img" aria-label="Sistem istemi, kullanıcı ve asistan mesajlarının tek bir token dizisi olarak modele verilmesi">
+  <rect class="sv-a" x="20" y="10" width="360" height="50" rx="10"/>
+  <text class="sv-b" x="36" y="32">[sistem]</text>
+  <text class="sv-t" x="36" y="50">Sen bir kütüphane asistanısın. Kısa yaz.</text>
+  <rect class="sv-k" x="20" y="70" width="360" height="40" rx="10"/>
+  <text class="sv-b" x="36" y="95">[kullanıcı]</text><text class="sv-t" x="130" y="95">Pazar açık mısınız?</text>
+  <rect class="sv-l" x="20" y="120" width="360" height="40" rx="10"/>
+  <text class="sv-b" x="36" y="145">[asistan]</text><text class="sv-t" x="130" y="145">Hayır, pazar kapalıyız.</text>
+  <rect class="sv-k" x="20" y="170" width="360" height="40" rx="10"/>
+  <text class="sv-b" x="36" y="195">[kullanıcı]</text><text class="sv-t" x="130" y="195">Cumartesi peki?</text>
+  <rect class="sv-l" x="20" y="220" width="360" height="40" rx="10"/>
+  <text class="sv-b" x="36" y="245">[asistan]</text><text class="sv-s" x="130" y="245">← model buradan devam eder</text>
+  <path class="sv-cl" d="M200 260V290"/>
+  <rect class="sv-m" x="60" y="290" width="280" height="50" rx="10"/>
+  <text class="sv-t" x="200" y="312" text-anchor="middle">Hepsi tek token dizisi; model</text>
+  <text class="sv-t" x="200" y="330" text-anchor="middle">sıradaki tokenin olasılığını üretir</text>
+  <text class="sv-s" x="200" y="365" text-anchor="middle">Her yeni mesajda dizinin tamamı yeniden verilir</text>
+</svg>
+<figcaption>Model için "konuşma" yoktur; rol işaretleriyle bölünmüş tek bir metin vardır. Sistem istemi bu metnin başında durur. Model, son "[asistan]" işaretinden sonra gelecek tokenleri üretir; ikinci sorudaki "peki"nin neyi kastettiğini anlaması, önceki mesajların da dizide olmasına bağlıdır.</figcaption>
+</figure>
+
+<p>Böylece aynı modelden, yalnızca sistem istemi değiştirilerek müşteri hizmetleri botu, kodlama yardımcısı ya da dil öğretmeni kurulabilir. Rol vermenin modelin bilgisini değil, üslubunu ve neyi öne çıkardığını değiştirdiğini Parça 15'te göreceksin.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sistem istemi modelin içine yazılmış, aşılamaz bir kilittir."</strong> Hayır. Sistem istemi de bağlam penceresindeki sıradan tokenlerdir; modelin ağırlıklarını değiştirmez. Modelin ona öncelik vermesi, ince ayarda öğrenilmiş istatistiksel bir eğilimdir, kesin bir kural değil. Bu yüzden kullanıcı mesajındaki ya da modelin okuduğu bir web sayfasındaki talimat, bazen sistem istemine üstün gelebilir. İstem enjeksiyonu adı verilen bu sorun ve savunmaları Parça 18'in konusudur. Bir uygulamanın güvenliği yalnızca sistem istemine "şunu yapma" yazmaya dayanmamalıdır.</p>
+<p><strong>"Sistem istemi gizlidir, içine parola koyabilirim."</strong> Hayır. Sistem istemi modelin okuduğu bir metindir ve model onu çeşitli yollarla aktarabilir. Sır, anahtar ya da kişisel veri sistem istemine konmaz (Parça 16'daki API anahtarı kuralıyla aynı mantık).</p></div>
+
+<h2 class="s">Reddetme davranışı nereden geliyor?</h2>
+
+<p>Reddetmenin ana kaynağı kodda yazılı bir "yasak kelimeler listesi" değildir; bu parçadaki eğitim aşamalarından birikerek gelen bir <strong>davranış eğilimidir</strong>:</p>
+
+<p><strong>SFT verisinden:</strong> Değerlendiricilerin yazdığı örnek konuşmaların bir kısmı, zararlı isteklere nasıl cevap verileceğini gösterir. Model bu kalıbı taklit eder. <strong>Tercih verisinden:</strong> Değerlendiriciler zararlı bir isteği yerine getiren cevabı, reddeden ya da güvenli bir yol gösteren cevaptan aşağı sıraladığında ödül modeli bunu öğrenir. <strong>Yazılı ilkelerden:</strong> Anayasal YZ gibi yaklaşımlarda ilkeler bu tercihleri üretir. <strong>Sistem isteminden:</strong> Geliştirici, uygulamasına özel sınırlar koyabilir ("yalnızca kütüphane konularında yardım et"). Bunlara ek olarak birçok ürün, modelin dışında ayrı denetim katmanları da kullanır; örneğin OpenAI, ChatGPT duyurusunda belirli türde güvensiz içeriği uyarmak ya da engellemek için ayrı bir denetim (moderation) hizmeti kullandığını yazmıştı.</p>
+
+<p>Reddetme istatistiksel bir eğilim olduğu için iki yönde de hata yapar. Eğitim tasarımcısı iki hata türü arasında bir denge kurmak zorundadır; Parça 5'teki kesinlik-duyarlılık takasının bir benzeridir.</p>
+
+<div class="tablo"><table>
+<tr><th>Hata türü</th><th>Nasıl görünür?</th><th>Bedeli</th><th>Nereden doğar?</th></tr>
+<tr><td>Aşırı reddetme</td><td>Zararsız bir soruyu, içinde "tehlikeli" görünen bir kelime geçtiği için geri çevirmek (ör. bir kimya ödevini ya da bir romandaki suç sahnesini)</td><td>Model işe yaramaz ve kullanıcıya saygısız hissettirir</td><td>Zararsızlık tercihlerinin yardımseverliğe ağır basması</td></tr>
+<tr><td>Yetersiz reddetme</td><td>Gerçekten zararlı bir isteği, dolambaçlı sorulduğu için yerine getirmek</td><td>Gerçek dünyada zarar</td><td>Eğitim verisinin bütün durumları kapsayamaması</td></tr>
+</table></div>
+
+<p>Bu yüzden güvenlik eğitimi tam koruma değildir. ChatGPT duyurusu da modelin uygunsuz istekleri reddetmesi için çaba gösterildiğini, ama modelin zaman zaman yine de zararlı talimatlara cevap verebileceğini kabul ediyordu. Modelin güvenlik eğitimini dolanmaya çalışan girişimler (jailbreak) ve onlara karşı savunmalar, yalnızca kavram düzeyinde, Parça 18'de ele alınacak.</p>
+
+<h2 class="s">Çok modlu modeller: metnin yanında resim ve ses</h2>
+
+<p>Şimdiye kadar hep metin konuştuk. Bugünkü asistanların çoğu bir fotoğrafı, bir ekran görüntüsünü, bir grafiği ya da bir ses kaydını da girdi olarak alabilir. Birden fazla veri türüyle çalışan modellere <strong>çok modlu</strong> (multimodal) model denir. OpenAI'ın Mart 2023'te yayımladığı GPT-4 teknik raporu, modeli resim ve metin girdisi alıp metin çıktısı üreten, büyük ölçekli, çok modlu bir model olarak tanıtıyordu; aynı rapor, mimari, model büyüklüğü, donanım, eğitim hesabı ve veri hakkında ayrıntı vermediğini de açıkça yazıyordu. Kapalı modellerin çoğunda durum böyledir: neyi yaptıklarını biliriz, tam olarak nasıl yaptıklarını bilmeyiz.</p>
+
+<p>Mimarisi açıklanmış modellerde yaygın fikir şudur: transformer token dizisi işler, o hâlde resmi de bir "token dizisine" çevirmek gerekir. Parça 10'un sonunda değindiğimiz gibi resim küçük karelere (yamalara) bölünür, her yama bir görüntü kodlayıcısında vektöre çevrilir ve bu vektörler metin tokenlerinin yanına dizilir. Ses de kısa zaman dilimlerine bölünüp benzer biçimde vektörlere çevrilebilir. Bundan sonrası tanıdıktır: dikkat mekanizması metin tokenleri ile görüntü vektörleri arasında da çalışır, model "bu grafikte en yüksek çubuk hangisi?" sorusundaki "çubuk" kelimesini resmin ilgili yamasıyla ilişkilendirebilir. Çok modlu modeller de bu parçadaki aynı yolu izler: ön eğitimden sonra resimli örnek konuşmalarla ince ayar ve tercih eğitimi.</p>
+
+<p>Bir uyarı: model küçük yazıları okumada, nesneleri saymada, solda mı sağda mı gibi uzamsal ilişkilerde hata yapabilir ve bunu da kendinden emin bir dille yapar. Parça 14'teki doğrulama alışkanlıkları resim için de geçerlidir.</p>
+
+<h2 class="s">"Akıl yürüten" modeller: cevaptan önce uzun bir ara düşünce</h2>
+
+<p>Parça 11'deki üretim döngüsünü hatırla: model her token için aynı miktarda hesap yapar ve yazdığı her token bir sonrakinin girdisi olur. Zor bir soruya hemen cevapla başlarsa, ilk token için yalnızca bir ileri besleme kadar hesap harcar. Önce ara adımları yazarsa, metni bir <strong>karalama kâğıdı</strong> gibi kullanıp soruya daha çok hesap ayırır.</p>
+
+<p>Bunun ilk geniş yankı uyandıran gösterimi bir istem tekniğiydi. Ocak 2022'de Jason Wei ve arkadaşları (Google), modele ara adımları yazılmış birkaç çözümlü örnek göstermenin ("düşünce zinciri", chain of thought) aritmetik ve mantık sorularında başarıyı belirgin biçimde artırdığını gösterdi. "Adım adım düşün" türü istemleri Parça 15'te kullanacaksın. Akıl yürüten modellerin farkı, bu davranışı istemle rica etmek yerine <strong>eğitimle</strong> modele kazandırmalarıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Akıl yürüten model</strong> (reasoning model), son cevabı yazmadan önce uzun bir ara düşünce metni üretmek üzere eğitilmiş dil modelidir. Açıklanmış örneklerde bu davranış büyük ölçüde <strong>pekiştirmeli öğrenmeyle</strong> kazandırılmıştır: model bir problemi çözer, cevabı denetlenir, doğru sonuca götüren düşünme biçimleri ödüllendirilir. "Akıl yürütme" adı yerleşmiştir, ama bunun insan düşünmesiyle ne kadar benzeştiği tartışmalıdır; ad, modelin ne yaptığını değil, ne için eğitildiğini anlatır.</p></div>
+
+<p>Aşağıdaki tablo bu türün kamuya duyurulmuş ilk örneklerinden üçünü, yalnızca şirketlerin kendi duyurularında ve makalelerinde yazdıkları kadarıyla verir. Hiçbiri eğitim tarifinin tamamını açıklamaz; açıklanmayan ayrıntı burada da yazılmadı.</p>
+
+<div class="tablo"><table>
+<tr><th>Tarih ve kaynak</th><th>Kaynakta söylenen</th></tr>
+<tr><td>12 Eylül 2024, OpenAI, o1 duyurusu ("Learning to reason with LLMs")</td><td>Model, düşünce zincirini verimli kullanmayı öğreten büyük ölçekli bir pekiştirmeli öğrenme algoritmasıyla eğitildi. Başarı, hem eğitimde harcanan pekiştirmeli öğrenme hesabı arttıkça hem de cevap sırasında düşünmeye ayrılan süre ("test zamanı hesabı") arttıkça yükseldi. Ham düşünce zinciri kullanıcıya gösterilmiyor, modelin ürettiği bir özeti gösteriliyor. İnsan tercih testlerinde bazı doğal dil işlerinde önceki modele tercih edilmedi.</td></tr>
+<tr><td>22 Ocak 2025, DeepSeek, R1 makalesi</td><td>R1-Zero adlı sürümde pekiştirmeli öğrenme, önce SFT yapılmadan doğrudan temel modele uygulandı. Ödüller kurala dayalıydı: matematikte son cevabın doğruluğu, kodda testlerin geçmesi, ayrıca düşüncenin belirli işaretler arasına yazılması. Eğitim ilerledikçe cevaplar kendiliğinden uzadı. Yazarlar, sinir ağına dayalı bir ödül modelinin büyük ölçekte ödül hacklemeye açık olabileceğini belirterek onu kullanmadı. R1-Zero'nun düşünceleri zor okunuyor ve dilleri karıştırıyordu; R1'de buna karşı az miktarda başlangıç verisiyle SFT eklendi.</td></tr>
+<tr><td>24 Şubat 2025, Anthropic, Claude 3.7 Sonnet duyurusu</td><td>Aynı model hem hızlı cevap hem "genişletilmiş düşünme" kipinde çalışabiliyor; API kullanıcısı düşünmeye ayrılacak token miktarına üst sınır koyabiliyor. Düşünce kullanıcıya ham hâliyle gösterildi; şirket, görünen düşüncenin modelin cevabını gerçekte neyin belirlediğini tam yansıttığından emin olmadıklarını yazdı. Matematik sorularında doğruluk, izin verilen düşünme tokeni arttıkça kabaca logaritmik biçimde arttı.</td></tr>
+</table></div>
+
+<p>Üç kaynaktan kavramsal bir resim çıkar. Matematik ve kod elverişli alanlardır, çünkü cevap <strong>otomatik denetlenebilir</strong>: sonuç doğrudur ya da değildir, kod testleri geçer ya da geçmez. Her cevabı bir insanın okumasına gerek kalmadığı için eğitim büyük ölçeğe çıkabilir. Model, doğru cevaba götüren düşünme biçimlerini (bir yolu denemek, hatayı fark edip geri dönmek, sonucu kontrol etmek) daha sık üretmeyi öğrenir. RLHF'de ödülü insan beğenisinden öğrenilmiş bir model veriyordu; burada çoğu zaman doğrudan doğruluk verir.</p>
+
+<p>İkinci kavram <strong>test zamanı hesabıdır</strong>: aynı soruya, cevap sırasında daha uzun düşünerek daha iyi cevap verebilmek. Parça 12'deki ölçekleme yasaları "eğitimde daha çok hesap"tan söz ediyordu; buna ikinci bir düğme eklendi: "cevapta daha çok hesap". Bedeli açıktır: düşünce tokenleri de üretilir, zaman alır ve token başına ücretlendirilen hizmetlerde (Parça 16) maliyete eklenir.</p>
+
+<div class="tablo"><table>
+<tr><th>İş türü</th><th>Uzun ara düşünce fark yaratır mı?</th><th>Neden?</th></tr>
+<tr><td>Çok adımlı matematik, mantık bulmacası</td><td>Çoğu zaman belirgin biçimde</td><td>Ara sonuçları yazıp üstüne kurmak gerekir; tek seferde tahmin edilemez</td></tr>
+<tr><td>Kod yazma ve hata ayıklama</td><td>Çoğu zaman</td><td>Plan, deneme, kontrol döngüsü; doğruluk testle ölçülebilir</td></tr>
+<tr><td>Çok aşamalı plan, birçok kısıtı birlikte gözetmek</td><td>Sık sık</td><td>Kısıtlar tek tek kontrol edilebilir</td></tr>
+<tr><td>Basit bilgi sorusu ("başkent neresi?")</td><td>Az; gereksiz bekleme ve maliyet</td><td>Cevap ya biliniyor ya bilinmiyor; düşünmek bilgiyi yaratmaz</td></tr>
+<tr><td>Serbest yazı, üslup işleri</td><td>Belirsiz; bazen tercih edilmeyebilir</td><td>Doğruluk tek bir ölçütle denetlenemez</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ekranda görünen düşünce, modelin cevabı nasıl bulduğunun birebir dökümüdür."</strong> Değildir ya da en azından bundan emin olamayız. Görünen düşünce de modelin ürettiği bir metindir; cevabı etkileyen her şeyi içermeyebilir, bazen cevapla tutarsız bile olabilir. Anthropic'in duyurusu da görünen düşüncenin modeli gerçekte neyin yönlendirdiğini tam yansıttığından emin olmadıklarını açıkça yazar; bazı ürünlerde ise ham düşünce hiç gösterilmez, yalnızca özeti verilir. Düşünceyi bir ipucu olarak oku, kanıt olarak değil.</p>
+<p><strong>"Uzun düşünen model her zaman daha iyidir, hep onu seçmeliyim."</strong> Hayır. Basit sorularda yalnızca daha yavaş ve daha pahalıdır; uzun düşünce yanlış bir öncülden başlarsa yanlışı uzun uzun gerekçelendirebilir. Ayrıca düşünmek bilgi üretmez: model bir olguyu bilmiyorsa, uzun düşünmesi onu bilmesini sağlamaz (Parça 14).</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 2 ve 5'e:</strong> RLHF, Parça 2'deki pekiştirmeli öğrenmenin dil modeline uygulanmasıdır; ajan modeldir, eylem cevaptır, ödül ödül modelinin puanıdır. Ödül hackleme ve uzunluk yanlılığı, Parça 5'teki Goodhart yasasının doğrudan örnekleridir.</p>
+<p><strong>Parça 4, 7 ve 8'e:</strong> Bradley–Terry olasılığı lojistik regresyonla aynı formüldür; ödül modeli ve SFT, kayıp ve gradyan inişiyle eğitilir; ince ayar, Parça 8'deki transfer öğrenmenin dil modelindeki karşılığıdır.</p>
+<p><strong>Parça 11 ve 12'ye:</strong> Sistem istemi ve sohbet geçmişi bağlam penceresinde tek token dizisidir; temel model ile sohbet modelinin farkı burada kapandı; akıl yürüten modeller ölçeklemeye "test zamanı hesabı"nı ekledi.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 14'te yaltaklanma ve kendinden emin uydurma; Parça 15'te rol ve "adım adım düşün"; Parça 16'da düşünce tokenlerinin maliyeti; Parça 18'de istem enjeksiyonu; Parça 19'da hizalama ve ödül hackleme.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Temel model neden doğrudan iyi bir asistan değildir? Bir örnekle açıkla.</summary><p>Temel modelin ön eğitimdeki hedefi, internetteki metne benzeyen bir devam üretmekti; kullanıcıya yardım etmek değil. Bir soru internette çoğu zaman başka soruların arasında geçtiği için model, soruya cevap vermek yerine soru listesini sürdürebilir. Ayrıca ön eğitim verisinde doğru ile uydurma, kibar ile kaba metin bir aradadır ve model hepsini taklit edebilir.</p></details>
+<details><summary>SFT ile RLHF'nin verisi arasındaki temel fark nedir ve neden ikincisi daha ucuz ölçeklenir?</summary><p>SFT'de insanlar her istem için iyi bir cevabın kendisini yazar; RLHF'de modelin ürettiği cevapları karşılaştırır ya da sıralar. Karşılaştırmak yazmaktan çok daha hızlıdır ve değerlendirici kendisinin yazamayacağı kadar iyi cevaplar arasında da seçim yapabilir.</p></details>
+<details><summary>RLHF'nin üç adımını sırayla say.</summary><p>Birincisi, temel model insanların yazdığı örnek cevaplarla ince ayarlanır (SFT). İkincisi, değerlendiricilerin cevap sıralamalarından bir ödül modeli eğitilir. Üçüncüsü, model yeni istemlere cevap üretir, ödül modeli puanlar ve model, başlangıçtan çok uzaklaşmasını önleyen bir cezayla birlikte daha yüksek puan alacak yönde pekiştirmeli öğrenmeyle güncellenir.</p></details>
+<details><summary>Pekiştirmeli öğrenme adımında neden bir sapma (KL) cezası kullanılır?</summary><p>Ödül modeli insan beğenisinin kusursuz değil, sınırlı veriden öğrenilmiş bir tahminidir ve yalnızca eğitildiği cevaplara benzeyen cevaplarda güvenilirdir. Ceza olmasa model, ödül modelinin zaaflarını sömüren ama insanların beğenmeyeceği cevaplara kayabilir; buna ödül hackleme denir ve Goodhart yasasının bir örneğidir.</p></details>
+<details><summary>Anayasal YZ'nin iki aşaması nedir ve insanın rolü ne olur?</summary><p>Denetimli aşamada model kendi cevabını yazılı bir ilkeye göre eleştirir ve düzeltir, düzeltilmiş cevaplarla ince ayar yapılır. Pekiştirmeli aşamada iki cevaptan hangisinin ilkeye uygun olduğuna bir YZ modeli karar verir ve bu yargılarla RLHF'deki gibi eğitim yapılır (RLAIF). Zararsızlık konusunda insanın rolü tek tek etiketlemek değil, ilkeler listesini yazmaktır.</p></details>
+<details><summary>Akıl yürüten modellerin eğitiminde matematik ve kod neden öne çıkar?</summary><p>Bu alanlarda cevap otomatik denetlenebilir: son sonuç doğru mu, kod testleri geçiyor mu. Ödül bir insanın ya da öğrenilmiş bir ödül modelinin beğenisine değil doğrudan doğruluğa dayandığı için eğitim çok büyük ölçeğe çıkabilir ve ödül hacklemeye daha az açıktır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Temel model ≠ asistan:</strong> hedefi olası metni sürdürmek; soruyu cevaplamak yerine sürdürebilir, iyi ile kötü metni birlikte taklit edebilir.</li>
+<li><strong>SFT:</strong> insanların yazdığı "istem → iyi cevap" örnekleriyle aynı "sıradaki token" eğitimi. Biçimi ve rolü öğretir; InstructGPT'de yaklaşık 13 bin istem.</li>
+<li><strong>Yargılamak yazmaktan kolay:</strong> tercih eğitiminin temeli.</li>
+<li><strong>RLHF kökeni:</strong> Christiano ve ark., Haziran 2017; kısa video çiftleri, %1'den az geri bildirim, ters takla.</li>
+<li><strong>Ödül modeli:</strong> istem + cevap → tek puan. Bradley–Terry: P = 1 ÷ (1 + e<sup>−(r<sub>A</sub> − r<sub>B</sub>)</sup>); yalnız farklar anlamlı.</li>
+<li><strong>InstructGPT (Ouyang ve ark., Mart 2022):</strong> SFT → ödül modeli → PPO. 1,3 milyarlık model 175 milyarlık GPT-3'e tercih edildi. ChatGPT (30 Kasım 2022) aynı yöntemle.</li>
+<li><strong>Ceza:</strong> hedef = ödül − β × sapma; ödül hacklemeye (Goodhart) karşı. Uzunluk yanlılığı gerçek bir örnek.</li>
+<li><strong>DPO (Rafailov ve ark., Mayıs 2023):</strong> ayrı ödül modeli ve RL döngüsü yok; tercih çiftleriyle doğrudan sınıflandırma kaybı.</li>
+<li><strong>Anayasal YZ (Bai ve ark., Aralık 2022):</strong> yazılı ilkeler; eleştir-düzelt-ince ayar; YZ geri bildirimiyle RL (RLAIF); kaçamak değil, gerekçeli ret.</li>
+<li><strong>Sistem istemi:</strong> sohbetin başındaki talimat; rol işaretleri; kilit değil, eğilim.</li>
+<li><strong>Reddetme:</strong> SFT örnekleri + tercih verisi + ilkeler + sistem istemi (+ dış denetim). Aşırı ve yetersiz reddetme arasında denge.</li>
+<li><strong>Çok modlu:</strong> resim ve ses vektörlere çevrilip tokenlerin yanına dizilir; kapalı modellerde ayrıntı açıklanmaz.</li>
+<li><strong>Akıl yürüten modeller:</strong> cevaptan önce uzun düşünce; pekiştirmeli öğrenme, çoğu zaman denetlenebilir ödülle. Test zamanı hesabı. Görünen düşünce kanıt değil.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-13">
+<h3>Quiz 13</h3>
+<p class="qa">Yirmi üç soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Yalnızca ön eğitimden geçmiş bir temel modele bir soru yazıldığında, cevap vermek yerine benzer sorular sıralamasının en temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin bağlam penceresinin soruyu almaya yetmemesi</li><li>Modelin eğitim hedefinin kullanıcıya yardım etmek değil, verideki metne benzeyen olası bir devam üretmek olması</li><li>Temel modelin parametre sayısının sohbet modelinden her zaman az olması</li><li>Temel modelin soru işaretini tokenleştirememesi</li><li>Modelin sorunun cevabını hiçbir koşulda bilmemesi</li></ul>
+<div class="coz"><p>Temel model, internetteki metne benzeyen bir devam üretmek üzere eğitildi; bir soru internette sık sık başka soruların arasında geçtiği için soru listesini sürdürmek de olası bir devamdır (B). A yanlış: tek bir soru bağlam penceresine rahatça sığar. C yanlış: sohbet modeli çoğu zaman aynı temel modelin ince ayarlanmış hâlidir, parametre sayısı aynıdır. D'nin bir dayanağı yoktur. E yanlış: model cevabı "bilebilir"; sorun bilgiyi istenen biçimde sunmamasıdır, ince ayarın çözdüğü şey de budur.</p></div></li>
+
+<li data-c="D"><p class="q">Denetimli ince ayar (SFT) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Modelin bütün ağırlıkları sıfırlanır ve model baştan eğitilir.</li><li>Modelin mimarisine yeni dikkat katmanları eklenir.</li><li>İnsanlar yalnızca iki cevaptan iyisini seçer; cevap yazmazlar.</li><li>Önceden eğitilmiş model, insanların yazdığı "istem → iyi cevap" örnekleriyle, ön eğitimdeki gibi sıradaki tokeni tahmin ederek eğitilmeye devam eder.</li><li>Ödül modeli olmadan yapılamaz.</li></ul>
+<div class="coz"><p>SFT, ön eğitimle aynı yöntemi (sıradaki token tahmini, geri yayılım) farklı veriyle, yani örnek alınması istenen asistan cevaplarıyla sürdürmektir (D). A yanlış: ön eğitimde öğrenilen bilgi korunur, ince ayarın bütün değeri buradadır (Parça 8'deki transfer öğrenme). B yanlış: mimari değişmez. C, tercih eğitiminin (RLHF) tarifidir. E yanlış: ödül modeli RLHF'nin ikinci adımında ortaya çıkar; SFT ondan önce gelir ve ona ihtiyaç duymaz.</p></div></li>
+
+<li data-c="A"><p class="q">Christiano ve arkadaşlarının 2017'deki çalışmasında ve InstructGPT'de insanlardan alınan geri bildirimin biçimi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin ya da ajanın ürettiği seçenekleri karşılaştırıp hangisinin daha iyi olduğunu söylemek ya da sıralamak</li><li>Her davranış için 0 ile 100 arasında mutlak bir puan yazmak</li><li>Ödül fonksiyonunu matematik formülü olarak yazmak</li><li>Modelin ağırlıklarını elle değiştirmek</li><li>Modelin kodunu satır satır gözden geçirmek</li></ul>
+<div class="coz"><p>2017 çalışmasında değerlendiriciler 1–2 saniyelik iki video klipten hangisinde daha iyi şeyler olduğunu seçti; InstructGPT'de bir isteme verilen 4 ile 9 cevabı iyiden kötüye sıraladılar (A). Bu biçimin seçilme nedeni, karşılaştırmanın mutlak puan vermekten (B) daha kolay ve tutarlı olmasıdır. C, yöntemin çözmeye çalıştığı zorluktur: ters takla gibi bir davranış için ödülü formülle yazmak çok zordur. D ve E insan geri bildiriminin işleyişiyle ilgisizdir.</p></div></li>
+
+<li data-c="C"><p class="q">Bir ödül modeli A cevabına 3,0, B cevabına 1,0 puan veriyor. Bradley–Terry modeline göre bir insanın A'yı B'ye tercih etme olasılığı yaklaşık kaçtır? (e<sup>−2</sup> ≈ 0,135)</p>
+<ul class="sec"><li>0,50</li><li>0,75</li><li>0,88</li><li>0,12</li><li>3,00</li></ul>
+<div class="coz"><p>Olasılık 1 ÷ (1 + e<sup>−(3,0 − 1,0)</sup>) = 1 ÷ (1 + 0,135) = 1 ÷ 1,135 ≈ 0,88 (C). A, puanları yok sayıp iki seçeneği eşit tutmaktır. B, puanları oranlamaktır (3 ÷ 4 = 0,75); model oranı değil farkı kullanır. D, B'nin A'ya tercih edilme olasılığıdır (1 − 0,88). E bir olasılık olamaz; olasılık 0 ile 1 arasındadır.</p></div></li>
+
+<li data-c="E"><p class="q">RLHF'nin pekiştirmeli öğrenme adımında hedef "ödül − β × sapma" olarak tanımlanmıştır. A cevabının ödülü 2,0 ve sapması 1,0; B cevabının ödülü 3,0 ve sapması 4,0'tür. β = 0,5 iken aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>B'nin toplam puanı 3,0'tür, A'nınki 2,0'dır; B seçilir.</li><li>İki cevabın toplam puanı eşittir.</li><li>A'nın toplam puanı 2,5, B'ninki 5,0'tir; B seçilir.</li><li>Sapma cezası yalnızca ödülü düşük olan cevaba uygulanır.</li><li>A'nın toplam puanı 1,5, B'ninki 1,0'dır; A seçilir.</li></ul>
+<div class="coz"><p>A: 2,0 − 0,5 × 1,0 = 1,5. B: 3,0 − 0,5 × 4,0 = 1,0. A daha yüksek (E). A, cezayı hiç uygulamamaktır; ödül modeli B'yi daha çok beğense de B başlangıçtaki modelden çok uzaklaşmıştır. C, cezayı çıkarmak yerine eklemektir. B'deki eşitlik bir hesaba dayanmaz. D yanlış: ceza her cevaba, sapması oranında uygulanır; amacı, ödül modelinin güvenilmez olduğu uzak bölgelere kaymayı önlemektir.</p></div></li>
+
+<li data-c="B"><p class="q">"Anayasal YZ" (constitutional AI) yaklaşımıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Modelin davranışı bir ülkenin anayasasındaki maddelerle sınırlandırılır.</li><li>Zararsızlık konusunda tek tek insan etiketi yerine yazılı bir ilkeler listesi kullanılır; model kendi cevabını bu ilkelere göre eleştirip düzeltir ve iki cevaptan hangisinin uygun olduğuna bir YZ modeli karar verir.</li><li>İnsanlar her zararlı cevabı tek tek işaretler; YZ hiç kullanılmaz.</li><li>Amaç, zararlı görünen her isteği açıklama yapmadan kısa bir "yapamam" ile geri çevirmektir.</li><li>Pekiştirmeli öğrenme kullanılmaz; yalnızca ön eğitim verisi değiştirilir.</li></ul>
+<div class="coz"><p>2022'deki makalede zararsızlık için insan gözetimi yalnızca yazılı ilkeler listesiydi; denetimli aşamada eleştir-düzelt, pekiştirmeli aşamada YZ'nin karşılaştırmalarıyla eğitilmiş bir tercih modeli kullanıldı (B). A yanlış: "anayasa" bir benzetmedir, bir devletin anayasası kastedilmez. C tam tersidir. D yanlış: makalenin hedeflerinden biri modelin kaçamak olmaması, isteğe muhatap olup neden yerine getirmediğini açıklamasıydı. E yanlış: ikinci aşama YZ geri bildirimiyle pekiştirmeli öğrenmedir (RLAIF).</p></div></li>
+
+<li data-c="D"><p class="q">Bir geliştirici, uygulamasının sistem istemine "Asla şirketin indirim kodunu söyleme. Kod: YAZ2026" yazıyor. Bu yaklaşımla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Sistem istemi modelin ağırlıklarına işlendiği için kod hiçbir koşulda dışarı çıkamaz.</li><li>Sistem istemi her mesajda gönderilmez, bu yüzden model kodu ilk mesajdan sonra unutur.</li><li>Model sistem istemini okuyamaz; yalnızca kullanıcı mesajlarını görür.</li><li>Sistem istemi bağlam penceresindeki sıradan bir metindir ve modelin ona uyması öğrenilmiş bir eğilimdir; sır sistem istemine konmamalıdır.</li><li>Sistem istemine yazılan her şey kullanıcıya otomatik olarak gösterilir.</li></ul>
+<div class="coz"><p>Sistem istemi ağırlıkları değiştirmez; konuşmanın başında duran ve her seferinde yeniden verilen tokenlerdir. Modelin ona öncelik vermesi ince ayarda öğrenilmiş istatistiksel bir eğilimdir, kesin bir kilit değildir; başka bir yerden gelen talimat bazen ona üstün gelebilir (D). A bu yüzden yanlıştır. B yanlış: modelin hafızası olmadığı için sistem istemi dahil bütün dizi her seferinde verilir. C yanlış: model sistem istemini okur, işlevi budur. E yanlış: genellikle kullanıcıya gösterilmez, ama bu onun gizli kalacağı anlamına da gelmez.</p></div></li>
+
+<li data-c="C"><p class="q">Akıl yürüten modellerin pekiştirmeli öğrenmeyle eğitiminde matematik ve kod gibi alanların öne çıkmasının en önemli nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bu alanlarda internette hiç metin bulunmaması</li><li>Bu alanlarda cevapların her zaman tek token uzunluğunda olması</li><li>Cevabın doğruluğunun otomatik denetlenebilmesi (son sonuç doğru mu, kod testleri geçiyor mu); böylece ödül insan beğenisine değil doğrudan doğruluğa dayanır ve eğitim büyük ölçeğe çıkabilir</li><li>Bu alanlarda modelin düşünce üretmesine gerek olmaması</li><li>Matematik sorularının sohbet modelleri tarafından hiç çözülememesi</li></ul>
+<div class="coz"><p>Pekiştirmeli öğrenme bir ödül ister. Matematikte son cevap kontrol edilebilir, kodda testler çalıştırılabilir; bu yüzden her cevabı bir insanın okumasına gerek kalmaz ve ödül, öğrenilmiş bir ödül modelinin zaaflarına daha az açıktır (C). DeepSeek'in R1 makalesi kurala dayalı doğruluk ödüllerini ve sinir ağına dayalı ödül modelinin ödül hacklemeye açık olabileceği gerekçesini açıkça yazar. A yanlış: bu alanlarda çok metin vardır. B'nin dayanağı yok. D tam tersidir: uzun ara düşünce en çok bu işlerde fark yaratır. E abartılı bir genellemedir.</p></div></li>
+
+<li data-c="A" data-k="yz-1"><p class="q">Yapay zekâ tarihindeki "YZ kışları"nın başlıca nedenleri aşağıdakilerin hangisinde birlikte verilmiştir?</p>
+<ul class="sec"><li>Abartılı vaatlerin karşılanamaması, yetersiz hesap gücü ve veri</li><li>Bilgisayarların icat edilmemiş olması ve elektrik kesintileri</li><li>Transformer'ın çok erken bulunması</li><li>Araştırmacıların derin öğrenmeyi fazla kullanması</li><li>Satranç programlarının yasaklanması</li></ul>
+<div class="coz"><p>Parça 1'de gördüğümüz gibi YZ kışları, verilen büyük sözlerin dönemin teknolojisiyle tutulamaması, hesap gücünün ve verinin yetersiz kalması sonucu ilginin ve finansmanın çekilmesiyle geldi (A). B yanlış: bilgisayarlar vardı ama yetersizdi. C ters bir kronolojidir: transformer 2017'dedir. D yanlış: derin öğrenmenin dönüşü 2012'dedir, kışlar daha önceydi. E uydurma bir çeldiricidir.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir modelin başarısı neden eğitimde kullanılmayan ayrı bir test kümesiyle ölçülür?</p>
+<ul class="sec"><li>Test kümesi daha büyük olduğu için</li><li>Eğitim verisinde etiket bulunmadığı için</li><li>Test kümesiyle ölçüm daha hızlı yapıldığı için</li><li>Eğitim kümesindeki örnekler her zaman yanlış etiketlendiği için</li><li>Model eğitim örneklerini ezberlemiş olabileceğinden, asıl merak edilen görmediği örneklerde ne yaptığı, yani genelleme olduğu için</li></ul>
+<div class="coz"><p>Amaç modelin yeni verideki başarısını, yani genellemeyi ölçmektir; eğitimde gördüğü örneklerle değerlendirilen model ezberlemişse yüksek puan alır ama gerçek kullanımda başarısız olur (E). A yanlış: test kümesi genellikle eğitim kümesinden küçüktür. B yanlış: denetimli öğrenmede eğitim verisi etiketlidir. C ölçümün amacıyla ilgisizdir. D'nin bir dayanağı yoktur.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">70 milyar parametreli bir modelin her parametresi float16 (2 bayt) olarak saklanıyor. Model 8 bitlik niceleme (quantization) ile saklanırsa ağırlıkların kapladığı bellek yaklaşık ne olur?</p>
+<ul class="sec"><li>140 GB'tan 280 GB'a çıkar.</li><li>140 GB'tan 70 GB'a iner.</li><li>70 GB'tan 35 GB'a iner.</li><li>Değişmez, çünkü parametre sayısı aynıdır.</li><li>140 GB'tan 8 GB'a iner.</li></ul>
+<div class="coz"><p>float16'da 70 milyar × 2 bayt = 140 milyar bayt ≈ 140 GB. 8 bit 1 bayttır: 70 milyar × 1 bayt ≈ 70 GB (B). Niceleme parametre sayısını değil, her parametrenin kaç bitle saklandığını değiştirir; bu yüzden D yanlıştır. A ters yöndür. C, float16'yı 1 bayt sanmaktır. E, "8 bit"i "8 GB" ile karıştırmaktır.</p></div></li>
+
+<li data-c="D" data-k="yz-4"><p class="q">Karar ağacının kolay açıklanabilir bir model sayılmasının nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Her zaman en yüksek doğruluğu vermesi</li><li>Milyarlarca parametre içermesi</li><li>Yalnızca resim verisinde çalışması</li><li>Kararın, izlenebilir bir dizi evet/hayır sorusuyla verilmesi; hangi dallardan geçilerek sonuca varıldığının okunabilmesi</li><li>Eğitim gerektirmemesi</li></ul>
+<div class="coz"><p>Karar ağacı veriyi "gelir 10.000'den büyük mü?" gibi evet/hayır sorularıyla dallara ayırır; bir tahminin hangi sorulardan geçerek çıktığı adım adım okunabilir (D). A yanlış: tek bir ağaç çoğu zaman rastgele orman gibi topluluk modellerinden daha az doğrudur. B sinir ağlarını tarif eder. C yanlış: karar ağaçları özellikle tablo verisinde güçlüdür. E yanlış: ağacın soruları veriden öğrenilir.</p></div></li>
+
+<li data-c="C" data-k="yz-5"><p class="q">Aşağıdakilerden hangisi Goodhart yasasına ("ölçüt hedef olunca bozulur") en uygun örnektir?</p>
+<ul class="sec"><li>Bir modelin daha çok veriyle daha iyi sonuç vermesi</li><li>Bir veri kümesinin eğitim ve test olarak ikiye ayrılması</li><li>Değerlendiriciler uzun cevapları beğendiği için tercih verisiyle eğitilen bir asistanın gereğinden uzun yazmayı öğrenmesi</li><li>Bir resmin piksellere ayrılması</li><li>Karar ağacının evet/hayır sorularıyla dallanması</li></ul>
+<div class="coz"><p>Asıl amaç iyi cevaptır, ölçüt ise değerlendiricinin beğenisidir. Beğeni "uzun = kapsamlı" kısayoluna kaydığında, ölçütü iyileştirmeye çalışan model asıl amaçtan uzaklaşıp gereksiz uzun yazar (C). OpenAI, ChatGPT duyurusunda bu uzunluk eğilimini değerlendiricilerin uzun cevapları tercih etmesine ve aşırı iyileştirmeye bağlamıştır. A, B, D ve E Goodhart'la ilgisi olmayan olgulardır.</p></div></li>
+
+<li data-c="A" data-k="yz-6"><p class="q">3 girdisi olan bir ağın tek gizli katmanında 4 nöron vardır ve her nöronun bir sapması (bias) bulunur. Yalnız bu gizli katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>16</li><li>12</li><li>7</li><li>4</li><li>19</li></ul>
+<div class="coz"><p>Her nöron 3 girdinin her biri için bir ağırlık taşır: 3 × 4 = 12 ağırlık. Ayrıca her nöronun bir sapması vardır: 4. Toplam 12 + 4 = 16 (A). B sapmaları unutmaktır. C girdi ve nöron sayısını toplamaktır. D yalnız sapmaları saymaktır. E, ağırlıklara bir de girdi sayısını eklemek gibi dayanaksız bir hesaptır.</p></div></li>
+
+<li data-c="E" data-k="yz-7"><p class="q">Bir sinir ağının eğitiminde kullanılan dropout yöntemi aşağıdakilerden hangisini yapar?</p>
+<ul class="sec"><li>Öğrenme oranını her dönemde ikiye katlar.</li><li>Kayıp fonksiyonunu tamamen kaldırır.</li><li>Ağa yeni katmanlar ekleyerek onu büyütür.</li><li>Test verisini eğitime katar.</li><li>Eğitim sırasında her adımda nöronların bir kısmını rastgele devre dışı bırakır; ağın tek tek nöronlara aşırı bağımlı olmasını ve ezberlemeyi azaltır.</li></ul>
+<div class="coz"><p>Dropout bir düzenlileştirme yöntemidir: eğitimde rastgele seçilen nöronlar o adımda yok sayılır, böylece ağ bilgiyi tek bir yola yığamaz ve aşırı öğrenme azalır (E). A, öğrenme oranı zamanlamasıyla ilgili yanlış bir tarif. B mümkün değildir: kayıp olmadan gradyan da olmaz. C dropout'un tersidir. D bir veri sızıntısıdır.</p></div></li>
+
+<li data-c="B" data-k="yz-8"><p class="q">Evrişimli ağlarda havuzlama (pooling) katmanının işlevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Resmi renklendirmek</li><li>Özellik haritasını küçük bölgelerin en büyük ya da ortalama değerini alarak küçültmek; hesabı azaltmak ve küçük kaymalara karşı dayanıklılık sağlamak</li><li>Resmin piksel sayısını artırmak</li><li>Ağın bütün ağırlıklarını sıfırlamak</li><li>Resimdeki nesnenin adını yazmak</li></ul>
+<div class="coz"><p>Havuzlama, örneğin 2 × 2'lik her bölgeden en büyük değeri alarak özellik haritasını küçültür; ayrıntının bir kısmı atılır ama desenin "orada olup olmadığı" korunur ve desen bir iki piksel kaysa da sonuç fazla değişmez (B). A ve C havuzlamanın işi değildir; C tam tersidir. D anlamsızdır. E, ağın en sonundaki sınıflandırma katmanının işidir.</p></div></li>
+
+<li data-c="D" data-k="yz-9"><p class="q">Kelime gömmeleri (word embeddings) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelime sözlük boyunda, yalnız bir yerinde 1 olan bir vektörle gösterilir.</li><li>Gömmeler yalnızca insanlar tarafından elle yazılır.</li><li>Gömmeler, eğitildikleri metindeki yanlılıkları asla taşımaz.</li><li>Anlamca yakın kelimeler uzayda birbirine yakın vektörlerle gösterilir; ama gömmeler eğitildikleri metindeki toplumsal yanlılıkları da öğrenebilir.</li><li>"Kral − erkek + kadın" işlemi her zaman tam olarak "kraliçe"yi verir.</li></ul>
+<div class="coz"><p>word2vec gibi yöntemler, benzer bağlamlarda geçen kelimelere yakın vektörler öğrenir; aynı nedenle metindeki kalıp yargıları da öğrenir (D). A tek sıcak (one-hot) gösterimin tarifidir. B yanlış: gömmeler metinden öğrenilir. C, D'nin ikinci yarısıyla çelişir. E abartıdır: Parça 9'da gördüğümüz gibi bu örnek yaklaşık çalışır ve abartılmamalıdır.</p></div></li>
+
+<li data-c="C" data-k="yz-10"><p class="q">Vektör boyutu 768 olan bir transformer katmanında 12 dikkat başı vardır ve boyut başlara eşit bölünür. Her başın sorgu ve anahtar vektörü kaç boyutludur?</p>
+<ul class="sec"><li>768</li><li>12</li><li>64</li><li>9.216</li><li>780</li></ul>
+<div class="coz"><p>Çok başlı dikkatte her baş, ana boyutun baş sayısına bölünmüş hâliyle çalışır: 768 ÷ 12 = 64 (C). A, her başın tam boyutla çalıştığını sanmaktır. B baş sayısının kendisidir. D çarpma (768 × 12), E toplama (768 + 12) yapmaktır.</p></div></li>
+
+<li data-c="A" data-k="yz-10"><p class="q">Bugünkü sohbet modellerinin (mimarisi açıklanmış olanların) çoğunun dayandığı yalnız kod çözücü (decoder-only) yapı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Maskeli öz-dikkatle her konum yalnızca kendisine ve öncesine bakar; model metni soldan sağa, sıradaki tokeni tahmin ederek üretir.</li><li>Ayrı bir kodlayıcı kaynak cümleyi okur, kod çözücü ona kodlayıcı-kod çözücü dikkatiyle bakar.</li><li>Metni iki yönlü görür ve yalnız sınıflandırma yapar.</li><li>Dikkat mekanizması kullanmaz, RNN kullanır.</li><li>Konum bilgisi gerektirmez, çünkü kelimeleri sırayla okur.</li></ul>
+<div class="coz"><p>Yalnız kod çözücü modelde tek bir yığın vardır; maske sayesinde her konum yalnız geçmişi görür ve model sıradaki tokeni tahmin ederek yazar (A). B, 2017'deki özgün kodlayıcı + kod çözücü yapısıdır. C, BERT gibi yalnız kodlayıcı modelleri tarif eder. D yanlış: transformer RNN'i bırakmıştır. E yanlış: dikkat sırayı kendiliğinden görmez, konum bilgisi gerekir.</p></div></li>
+
+<li data-c="E" data-k="yz-11"><p class="q">Bir dil modelinde sıcaklık (temperature) ayarı düşürülürse en olası sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bağlam penceresi büyür.</li><li>Model daha fazla parametre kullanır.</li><li>Tokenleştirme Türkçede daha az token üretir.</li><li>Model geçmiş sohbetleri kalıcı olarak hatırlamaya başlar.</li><li>Örnekleme en olası tokenlere daha çok yoğunlaşır; aynı soruya verilen cevaplar birbirine daha çok benzer, daha az çeşitli olur.</li></ul>
+<div class="coz"><p>Sıcaklık, sıradaki token için üretilen olasılık dağılımının ne kadar "sivri" ya da "yayvan" olacağını ayarlar; düşük sıcaklıkta olası tokenler daha da baskın olur ve cevaplar daha belirlenimci hâle gelir (E). A ve B sıcaklıkla ilgisizdir. C tokenleştiriciyle ilgilidir, örneklemeyle değil. D yanlış: modelin hafızası yoktur; sohbet geçmişi her seferinde yeniden verilir.</p></div></li>
+
+<li data-c="B" data-k="yz-11"><p class="q">Uzun bir sohbetin toplam uzunluğu modelin bağlam penceresini aşarsa aşağıdakilerden hangisi beklenir?</p>
+<ul class="sec"><li>Model sohbetin tamamını ağırlıklarına kaydeder ve hiçbir şey kaybolmaz.</li><li>Pencereye sığmayan kısım (uygulamaya göre çoğu zaman en eski mesajlar) modele verilemez; model o kısmı "göremez" ve ona dayanan bilgiyi kullanamaz.</li><li>Model otomatik olarak daha büyük bir modele dönüşür.</li><li>Bağlam penceresi kendiliğinden iki katına çıkar.</li><li>Model yalnızca ilk mesajı görür, sonrakileri görmez.</li></ul>
+<div class="coz"><p>Bağlam penceresi modelin bir seferde görebildiği token miktarıdır; aşılınca bir kısım dışarıda kalmak zorundadır ve uygulamalar çoğu zaman en eski mesajları kırpar ya da özetler (B). Model o kısmı göremediği için ona dayanan bilgiyi kullanamaz. A yanlış: model sohbeti ağırlıklarına yazmaz, hafızası yoktur. C ve D gerçekleşmez. E yanlış: kırpılan genellikle sondaki değil baştaki kısımdır.</p></div></li>
+
+<li data-c="D" data-k="yz-12"><p class="q">Bir dil modelinin ön eğitiminde "etiket" nereden gelir?</p>
+<ul class="sec"><li>Her cümleyi insanlar elle "doğru/yanlış" diye işaretler.</li><li>Değerlendiriciler iki cevaptan iyisini seçer.</li><li>Etiket yoktur, bu yüzden model hiçbir şey öğrenmez.</li><li>Metnin kendisinden: her konumda etiket, metinde gerçekten gelen sıradaki tokendir.</li><li>Bir ödül modeli her cümleye puan verir.</li></ul>
+<div class="coz"><p>Ön eğitim "sıradaki tokeni tahmin et" oyunudur; doğru cevap metnin içinde zaten yazılıdır, bu yüzden insan etiketine gerek kalmadan internet ölçeğinde veriyle eğitim yapılabilir (D). A ve B insan emeği gerektiren yöntemlerdir; B, ön eğitimden sonraki tercih eğitiminin tarifidir. C yanlış: etiket metinden kendiliğinden çıkar. E RLHF'nin pekiştirmeli öğrenme adımına aittir.</p></div></li>
+
+<li data-c="C" data-k="yz-12"><p class="q">2022 tarihli "Chinchilla" çalışmasının ölçekleme konusundaki ana bulgusu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Veri miktarı ne olursa olsun yalnız parametre sayısını artırmak en iyisidir.</li><li>Hesap gücü arttıkça kayıp artar.</li><li>Belirli bir hesap bütçesinde parametre sayısı ile eğitim verisi dengeli büyütülmelidir; o dönemin birçok büyük modeli parametresine göre az veriyle eğitilmişti.</li><li>Dil modelleri veri olmadan da eğitilebilir.</li><li>Model küçüldükçe kayıp her zaman düşer.</li></ul>
+<div class="coz"><p>Chinchilla çalışması, aynı hesap bütçesiyle daha küçük bir modeli daha çok veriyle eğitmenin, daha büyük ama az veriyle eğitilmiş bir modelden daha iyi sonuç verebileceğini gösterdi; parametre ve veri yaklaşık birlikte büyütülmelidir (C). A, bu çalışmanın düzelttiği eğilimdir. B ölçekleme yasalarının tersidir: hesap arttıkça kayıp öngörülebilir biçimde düşer. D ve E dayanaksızdır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-12">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-13">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-14">Sonraki parça: neden yanılır, neyi bilmez</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"RLHF reinforcement learning from human feedback explained reward model"</li>
+  <li>"InstructGPT supervised fine-tuning reward model PPO açıklama"</li>
+  <li>"constitutional AI RLAIF explained"</li>
+  <li>"reasoning models test-time compute chain of thought reinforcement learning"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>InstructGPT: Ouyang ve ark., "Training language models to follow instructions with human feedback", arXiv 2203.02155, ilk yükleme 4 Mart 2022 (arXiv özet sayfası ve ar5iv HTML sürümünden 14 Ekim 2026'da doğrulandı). Doğrulanan ayrıntılar: üç adım (SFT, ödül modeli, PPO); SFT yaklaşık 13 bin, ödül modeli 33 bin, PPO 31 bin istem; yaklaşık 40 sözleşmeli değerlendirici; her istemde 4–9 cevabın sıralanması; 6 milyar parametreli ödül modeli; 1,3 milyar parametreli InstructGPT'nin 175 milyarlık GPT-3'e tercih edilmesi; SFT modeline göre token başına KL cezası; "alignment tax" ve ön eğitim verisi katılarak gerilemenin azaltılması; modelin belirli bir grubun tercihlerine göre ayarlandığı ve hâlâ olgu uydurabildiği sınırlılıkları. Makale sınırlılıklar bölümünün sonu okuma aracında kesildi; "zararlı talimatlara uyabilir" ifadesini bu makaleye değil ChatGPT duyurusuna dayandırdım.</li>
+  <li>RLHF'nin kökeni: Christiano, Leike, Brown, Martic, Legg, Amodei, "Deep reinforcement learning from human preferences", arXiv 1706.03741, 12 Haziran 2017 (arXiv ve ar5iv). Doğrulanan: OpenAI ve DeepMind yazarları; Atari ve MuJoCo görevleri; 1–2 saniyelik klip çiftleri; geri bildirimin etkileşimlerin %1'inden azı olması; ters taklanın bir saatten kısa sürede yaklaşık 900 sorguyla öğrenilmesi; Bradley–Terry tercih modeli ve Elo benzetmesi; çevrimdışı ödül modeliyle Pong'da puan almadan sonsuz top oyunu. "Ödül hackleme" terimini makale kullanmıyor; olguyu bu adla ben andım.</li>
+  <li>ChatGPT duyurusu (OpenAI, "Introducing ChatGPT", 30 Kasım 2022), şirketin kendi sayfasından doğrulandı: RLHF ile, InstructGPT'deki yöntemlerle ve veri toplamada küçük farklarla eğitim; değerlendiricilerin iki rolü de oynaması; iki ya da daha fazla cevabın sıralanması; PPO; GPT-3.5 serisinden ince ayar; uzunluk eğiliminin değerlendiricilerin uzun cevapları tercih etmesi ve aşırı iyileştirmeyle açıklanması; uygunsuz istekleri reddetme çabası ve ayrı denetim (Moderation) hizmeti. "Model yine de zaman zaman zararlı talimatlara cevap verebilir" cümlesinin ilk yarısı okuma aracından doğrulandı, devamı hafızadandır. Bu duyuru Parça 1'deki "ChatGPT insan geri bildirimiyle ayarlandı" bilgisini de doğrular.</li>
+  <li>Anayasal YZ: Bai ve ark., "Constitutional AI: Harmlessness from AI Feedback", arXiv 2212.08073, 15 Aralık 2022 (ar5iv ve alphaxiv kaydı). Doğrulanan: Anthropic; iki aşama (eleştir-düzelt-ince ayar; YZ karşılaştırmalarıyla tercih modeli ve RLAIF); zararsızlık için insan etiketi kullanılmaması, yardımseverlik için kullanılması; 16 ilke; kaçamak olmayan, itirazını açıklayan model hedefi. Nisan 2022 tarihli "Training a Helpful and Harmless Assistant with RLHF" (Bai ve ark., arXiv 2204.05862, 12 Nisan 2022) yalnız özet sayfasından doğrulandı. Çözümlü örnek 3'teki istem, ilke ve cevaplar yöntemi göstermek için benim yazdığım kurgusal örneklerdir; makaleden alınmadı.</li>
+  <li>DPO: Rafailov, Sharma, Mitchell, Ermon, Manning, Finn, "Direct Preference Optimization: Your Language Model is Secretly a Reward Model", arXiv 2305.18290, 29 Mayıs 2023 (arXiv HTML v2). Doğrulanan: Stanford; ayrı ödül modeli ve RL döngüsü olmadan basit sınıflandırma kaybı; referans model ve β. "Hangi yöntem daha iyi" sorusunun açık olduğu genel alan bilgisidir.</li>
+  <li>Akıl yürüten modeller yalnız şirketlerin kendi kaynaklarından verildi: OpenAI "Learning to reason with LLMs" (12 Eylül 2024; büyük ölçekli RL, eğitim ve test zamanı hesabıyla artan başarı, ham düşüncenin gizlenip özetin gösterilmesi, bazı doğal dil işlerinde tercih edilmemesi); DeepSeek-R1 makalesi (arXiv 2501.12948, 22 Ocak 2025; R1-Zero'da SFT'siz RL, kurala dayalı doğruluk ve biçim ödülleri, uzayan cevaplar, sinir ağı ödül modelinden ödül hackleme gerekçesiyle kaçınma, okunabilirlik ve dil karışması sorunu, başlangıç verisiyle SFT); Anthropic "Claude 3.7 Sonnet and Claude Code" ve "Visible extended thinking" (24 Şubat 2025; hibrit model, düşünme bütçesi, ham düşüncenin gösterilmesi, düşüncenin sadakatinden emin olunmaması, düşünme tokeniyle kabaca logaritmik artış). Tabloda bu üçü yalnızca erken ve iyi belgelenmiş örnekler olarak seçildi; başka şirketlerin benzer modelleri ve sonraki sürümler bu parçanın kapsamına alınmadı. Yöntemlerin açıklanmayan ayrıntıları (veri, ödül tasarımının tamamı, model büyüklükleri) yazılmadı. Düşünce zinciri istemi: Wei ve ark., arXiv 2201.11903, ilk sürüm 28 Ocak 2022 (arXiv sürüm geçmişinden).</li>
+  <li>Çok modlu modeller: GPT-4 teknik raporunun (arXiv 2303.08774) özetindeki "resim ve metin girdisi alıp metin üreten çok modlu model" tanımı ve mimari, büyüklük, donanım, hesap ve veri ayrıntısı verilmediği ifadesi rapordan doğrulandı; raporun ilk yayımının Mart 2023 olduğu arXiv numarasından (2303 = 2023 Mart) çıkarıldı; okuduğum PDF Mart 2024 tarihli 6. sürümdü. Resmin yamalara, sesin zaman dilimlerine bölünüp vektörlere çevrilmesi, mimarisi açıklanmış açık modellerdeki yaygın yaklaşıma dair genel alan bilgisidir; belirli bir kapalı ürünün nasıl çalıştığı iddia edilmedi.</li>
+  <li>Hafızadan ya da genel alan bilgisinden yazılanlar: SFT'de kaybın çoğu uygulamada yalnız asistan tokenleri üzerinden hesaplanması; rol işaret tokenlerinin biçiminin modelden modele değişmesi; temel modelin soruyu sürdürmesi örneği (tipik davranışı gösteren kurgusal bir örnektir); "belge kılığına sokma" istem hilesi; sistem istemi ve rol yapısının sohbet API'lerinin çoğunda bulunması; aşırı/yetersiz reddetme ayrımı. Bunlar kavram düzeyinde ve temkinli dille yazıldı.</li>
+  <li><code>tercih.py</code> bu ortamda <code>python3 -I</code> ile gerçekten çalıştırıldı ve çıktısı birebir konuldu; 20.000 adımla yeniden çalıştırıldığında da aynı puanlar çıktı (yakınsamış). Rastgelelik içermez. Çözümlü örnek 1 ve 2'deki bütün sayılar ile quiz'deki sayısal cevaplar (0,88; 1,5 ve 1,0; 140 ve 70 GB; 16 parametre; 768 ÷ 12) Python ile kontrol edildi. Tekrar soruları Parça 1–10 için önceki parçaların metinleri ve kapsam listesi, Parça 11–12 için yalnız kapsam listesindeki satırlar esas alınarak yazıldı; o iki parça bu yazım sırasında henüz elimde değildi.</li>
+</ul>
+</div>
+</div>
+</article>

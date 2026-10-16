@@ -1,0 +1,501 @@
+<article class="chapter ders" id="c-yz-14">
+<div class="prose">
+<div class="eyebrow">Yapay zekâ · Parça 14 · Neden yanılır</div>
+<h1>Akıcı ama yanlış: dil modeli neden yanılır, neyi bilmez?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 14 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>2023 baharında New York'ta bir avukat, mahkemeye verdiği dilekçede altı mahkeme kararına dayandı. Kararların adı, tarihi, sayfa numarası, hatta içlerinden alıntılar vardı. Hiçbiri gerçek değildi. Avukat kararları bir sohbet modeline buldurmuş, şüphelenince de aynı modele "Bu dava gerçek mi?" diye sormuştu; model "evet" demişti. Bu kadar düzgün yazan bir sistem nasıl olur da var olmayan bir şeyi bu kadar emin bir dille anlatır? Ve sen bundan nasıl korunursun?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 3 (olasılık dağılımı), Parça 5 (Goodhart yasası, kıyaslama tabloları), Parça 11 (token, bir sonraki token için olasılık dağılımı, sıcaklık, bağlam penceresi), Parça 12 (ön eğitim, temel model), Parça 13 (ince ayar, RLHF ve ödül modeli, akıl yürüten modeller). Python kutusu isteğe bağlıdır; kod bilmiyorsan atla, konudan bir şey kaybetmezsin.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi çözüyor?</h2>
+
+<p>Parça 11'den beri bir dil modelinin ne yaptığını biliyorsun: önündeki metne bakar, sıradaki token için bir olasılık dağılımı üretir, bu dağılımdan bir token seçer, onu metne ekler ve aynı işi tekrarlar. Parça 12'de bu yeteneğin internet ölçeğinde metinle, "bir sonraki tokeni tahmin et" oyunuyla kazanıldığını; Parça 13'te de temel modelin insan geri bildirimiyle yardımsever bir asistana dönüştürüldüğünü gördün.</p>
+
+<p>Bu parça o mekanizmanın <strong>gölgesine</strong> bakıyor. Yanılmaların çoğu rastgele arıza değildir; modelin nasıl kurulduğundan doğrudan çıkar. Hedef şu: bir cevabı okurken "bu kısım riskli, şunu kontrol etmeliyim" diyebilmek ve bunun somut alışkanlıklarına sahip olmak.</p>
+
+<p>Ele alacağımız hata türleri şunlar. Tablo bir harita; her satırı aşağıda ayrıntılı açacağız.</p>
+
+<div class="tablo"><table>
+<tr><th>Hata türü</th><th>Nasıl görünür?</th><th>Nereden doğar?</th><th>Karşı alışkanlık</th></tr>
+<tr><td>Halüsinasyon</td><td>Akıcı, ayrıntılı, kendinden emin ama yanlış bilgi</td><td>Model olası metni üretir; olası metin her zaman doğru değildir</td><td>Kritik bilgiyi bağımsız doğrula</td></tr>
+<tr><td>Kaynak uydurma</td><td>Var olmayan makale, dava, kanun maddesi; gerçek kaynağa yanlış iddia</td><td>Kalıp doğru, içerik uydurma</td><td>Kaynağı aç, oku, alıntıyı yerinde bul</td></tr>
+<tr><td>Bilgi kesim tarihi</td><td>Güncel olayı bilmemek ya da eski bilgiyi güncel sanmak</td><td>Eğitim verisi belli bir tarihte biter</td><td>Güncel konuda tarihli kaynak ya da arama iste</td></tr>
+<tr><td>Yaltaklanma</td><td>Kullanıcının görüşünü onaylamak, itiraz gelince doğru cevabı bırakmak</td><td>İnsan tercihi; RLHF bunu ödüllendirebilir</td><td>Soruyu tarafsız sor, karşı görüşü iste</td></tr>
+<tr><td>Hesap ve sayma hatası</td><td>Çarpımda, harf saymada, yüzdede yanlış sonuç</td><td>Model sayıyı hesaplamaz, token tahmin eder</td><td>Hesabı koda ya da hesap makinesine yaptır</td></tr>
+<tr><td>Uzun zincirde kayma</td><td>Ortadaki bir hata sona kadar taşınır</td><td>Küçük adım hataları birikir</td><td>İşi parçala, ara sonuçları kontrol et</td></tr>
+<tr><td>Yanlış güven</td><td>"Kesinlikle" dediği yerde yanılmak</td><td>Modelin söylediği güven de üretilmiş metindir</td><td>"Emin değilsen söyle" de, ama buna da körü körüne güvenme</td></tr>
+</table></div>
+
+<h2 class="s">Halüsinasyon: olası metin ile doğru metin aynı şey değil</h2>
+
+<p>Önce bir deney düşün. Bir modele "Türkiye Cumhuriyeti hangi yıl ilan edildi?" diye soruyorsun. Eğitim verisinde bu cümle ve cevabı, binlerce farklı metinde, hep aynı biçimde geçti: 1923. Model sıradaki token için dağılım üretirken "1923" o kadar baskındır ki öbür adaylar neredeyse sıfır olasılık alır. Cevap hem olası hem doğrudur.</p>
+
+<p>Şimdi aynı modele adını ancak birkaç sayfada geçen, az tanınan bir kişinin doğum yılını sor. Model "doğum yılı sorusunun cevabı dört basamaklı bir yıl olur" kalıbını çok iyi bilir; bu kalıp milyonlarca kez geçmiştir. Ama bu kişinin doğum yılı ya verinin içinde hiç yoktu ya da bir kez geçti. Dağılım bu kez yayvandır: 1958, 1961, 1963, 1967 gibi makul görünen yıllar, birbirine yakın küçük olasılıklar alır. Model yine de bir token seçmek <strong>zorundadır</strong>. Seçtiği yıl, cümlenin geri kalanıyla birlikte, ilk sorudaki kadar düzgün ve kendinden emin bir cümle olarak çıkar.</p>
+
+<figure>
+<svg viewBox="0 0 400 380" role="img" aria-label="Sık geçen bir bilgi için sivri, az geçen bir bilgi için yayvan sonraki token dağılımı">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Soru 1: Cumhuriyet hangi yıl ilan edildi?</text>
+  <line class="sv-c" x1="30" y1="150" x2="370" y2="150"/>
+  <rect class="sv-m" x="45" y="44" width="50" height="106"/>
+  <rect class="sv-m" x="120" y="146" width="50" height="4"/>
+  <rect class="sv-m" x="195" y="147" width="50" height="3"/>
+  <rect class="sv-m" x="270" y="148" width="50" height="2"/>
+  <text class="sv-t" x="70" y="38" text-anchor="middle">0,96</text>
+  <text class="sv-t" x="70" y="168" text-anchor="middle">1923</text>
+  <text class="sv-t" x="145" y="168" text-anchor="middle">1920</text>
+  <text class="sv-t" x="220" y="168" text-anchor="middle">1922</text>
+  <text class="sv-t" x="295" y="168" text-anchor="middle">1924</text>
+  <text class="sv-b" x="200" y="210" text-anchor="middle">Soru 2: az tanınan birinin doğum yılı?</text>
+  <line class="sv-c" x1="30" y1="330" x2="370" y2="330"/>
+  <rect class="sv-a" x="45" y="290" width="50" height="40"/>
+  <rect class="sv-a" x="120" y="296" width="50" height="34"/>
+  <rect class="sv-a" x="195" y="299" width="50" height="31"/>
+  <rect class="sv-a" x="270" y="302" width="50" height="28"/>
+  <text class="sv-t" x="70" y="284" text-anchor="middle">0,14</text>
+  <text class="sv-t" x="145" y="290" text-anchor="middle">0,12</text>
+  <text class="sv-t" x="220" y="293" text-anchor="middle">0,11</text>
+  <text class="sv-t" x="295" y="296" text-anchor="middle">0,10</text>
+  <text class="sv-t" x="70" y="348" text-anchor="middle">1961</text>
+  <text class="sv-t" x="145" y="348" text-anchor="middle">1958</text>
+  <text class="sv-t" x="220" y="348" text-anchor="middle">1963</text>
+  <text class="sv-t" x="295" y="348" text-anchor="middle">1967</text>
+  <text class="sv-s" x="200" y="372" text-anchor="middle">kalan olasılık onlarca başka yıla dağılmış</text>
+</svg>
+<figcaption>Sayılar öğretim amaçlı, elle kurulmuş oyuncak değerlerdir. Üstte bilgi veride çok kez ve tutarlı geçtiği için dağılım sivridir. Altta dağılım yayvandır; model yine bir yıl seçer ve cümle üstteki kadar emin görünür. Okurken bu iki durumu cümlenin üslubundan ayıramazsın.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Halüsinasyon</strong>, bir dil modelinin gerçeğe dayanmayan bir bilgiyi akıcı ve kendinden emin bir dille üretmesidir. Ad yanıltıcı olabilir: model bir şey "görmez" ya da "hayal etmez"; yalnızca, doğru cevabı bilmediği bir yerde de olası görünen bir metin üretir. Bazı araştırmacılar bu yüzden "uydurma" (confabulation) demeyi tercih eder; bu parçada yaygın kullanım olan "halüsinasyon"u kullanacağız.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Dil modeli <strong>olası metni</strong> üretmek üzere eğitilir, <strong>doğru metni</strong> değil. Ön eğitimdeki kayıp fonksiyonu (Parça 12) yalnız "sıradaki token veride gerçekten gelen token muydu?" diye sorar; ortaya çıkan cümlenin dünyadaki bir gerçeğe uyup uymadığını ayrıca denetleyen bir adım yoktur. Sık ve tutarlı geçen bilgilerde olası olan ile doğru olan çoğunlukla örtüşür; seyrek, çelişkili ya da hiç bulunmayan bilgilerde ayrışır. Halüsinasyon bu ayrışmanın görünen yüzüdür.</p></div>
+
+<p>Neden "bilmiyorum" demiyor? Çünkü "bilmiyorum" da bir metindir ve onun da olası olması gerekir. İnternette bir sorunun ardından genellikle cevap gelir; "bilmiyorum" diye biten metin azdır. Ayrıca modelin içinde "bu bilgiyi kaç kez gördüm" diye tutulan bir defter yoktur; bilgi parametrelere dağılmıştır (Parça 6'daki kara kutu). İnce ayarda (Parça 13) "emin değilim" demek öğretilebilir, ama bu da tam değildir.</p>
+
+<h3>Değerlendirme tahmin etmeyi ödüllendirince</h3>
+
+<p>Eylül 2025'te OpenAI'daki araştırmacılar (Kalai, Nachum, Vempala ve Zhang) "Why Language Models Hallucinate" (Dil modelleri neden halüsinasyon görür) başlıklı bir makale yayımladı. İki tespitleri bu parçanın iskeletine çok uyuyor. Birincisi: hiçbir düzenli kalıbı olmayan, veride belki yalnız bir kez geçen olgular (bir kişinin doğum günü gibi) için, eğitim verisi tamamen hatasız olsa bile ön eğitimin hata üretmesi beklenir. Makale bunu, bir metnin "geçerli mi değil mi" diye sınıflandırılmasındaki hataya bağlar ve şöyle bir sezgi verir: doğum günü bilgilerinin %20'si veride tam bir kez geçiyorsa, temel modelin bu bilgilerin en az yaklaşık %20'sinde yanılması beklenmelidir.</p>
+
+<p>İkinci tespit daha günlüktür. Modeller kıyaslama tablolarında (Parça 5) değerlendirilir ve çoğu kıyaslama 0–1 puanlar: doğru cevaba 1, yanlış cevaba da "bilmiyorum"a da 0. Böyle bir puanlamada tahmin etmek her zaman "bilmiyorum" demekten iyidir, tıpkı yanlışın puan götürmediği çoktan seçmeli bir testte hiçbir soruyu boş bırakmamak gibi. Model geliştirenler de doğal olarak bu tablolarda iyi görünen modeli seçer. Sonuç: belirsizliğini söyleyen modeller tabloda geride kalır. Bu, Parça 5'teki <strong>Goodhart yasasının</strong> bir örneğidir: ölçüt (kıyaslama puanı) hedef olunca, asıl amaç (güvenilir cevap) ile arasındaki boşluk büyür.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Model, bilmediği bir kişinin doğum gününü soran bir soruyla karşılaşıyor. Rastgele bir gün söylerse doğru çıkma olasılığı 1/365. İki puanlama düşün: (a) doğru +1, yanlış 0, "bilmiyorum" 0; (b) doğru +1, yanlış −1, "bilmiyorum" 0. Her puanlamada tahmin etmenin beklenen puanı nedir, model hangisinde susmayı seçmelidir?</p>
+<p><strong>Adım 1 (beklenen puan).</strong> Her sonucun puanı o sonucun olasılığıyla çarpılıp toplanır (Parça 3); durum çok kez tekrarlansa ortalama ne kazanacağını söyler.</p>
+<p><strong>Adım 2 (puanlama a).</strong> Tahmin: (1/365) × 1 + (364/365) × 0 ≈ 0,0027. Susmak: 0. 0,0027 &gt; 0 olduğu için tahmin etmek, ne kadar küçük olursa olsun, her zaman daha kârlıdır.</p>
+<p><strong>Adım 3 (puanlama b).</strong> Tahmin: (1/365) × 1 + (364/365) × (−1) ≈ 0,0027 − 0,9973 ≈ −0,9945. Susmak: 0. Burada susmak açık ara iyidir.</p>
+<p><strong>Adım 4 (genel eşik).</strong> Puanlama (b)'de doğru olma olasılığın p ise tahminin beklenen puanı p × 1 + (1 − p) × (−1) = 2p − 1'dir. Bu sayı yalnız p &gt; 0,5 iken sıfırdan büyüktür. Yani (b) puanlaması modeli "yarıdan fazla eminsen cevapla, değilsen bilmediğini söyle" davranışına iter. Yanlış cevabın cezası büyüdükçe eşik de yükselir.</p>
+<p><strong>Sonuç:</strong> (a)'da tahmin her zaman kazandırır, susmak hiç kazandırmaz; (b)'de az bilinen sorularda susmak kazandırır. Makalenin önerisi de bu yöndedir: yeni bir halüsinasyon testi eklemekten çok, yaygın kıyaslamaların puanlamasını değiştirmek ve talimatta açık bir güven eşiği belirtmek. (Hesaplar Python ile doğrulandı.)</p></div>
+
+<p>Bu fikrin pratikte ne değiştirdiğini OpenAI'ın aynı günlerde (5 Eylül 2025) yayımladığı yazıdaki bir tablo gösteriyor. Şirket, kısa ve tek doğru cevabı olan bilgi sorularından oluşan SimpleQA adlı kendi testinde iki modelini karşılaştırdı.</p>
+
+<div class="tablo"><table>
+<tr><th>SimpleQA (OpenAI'ın kendi ölçümü, Eylül 2025)</th><th>gpt-5-thinking-mini</th><th>o4-mini</th></tr>
+<tr><td>Cevap vermekten kaçınma ("bilmiyorum")</td><td>%52</td><td>%1</td></tr>
+<tr><td>Doğru cevap</td><td>%22</td><td>%24</td></tr>
+<tr><td>Yanlış cevap</td><td>%26</td><td>%75</td></tr>
+</table></div>
+
+<p>Tabloyu dikkatli oku. Yalnız "doğru cevap" satırına bakan, eski modeli (%24) biraz daha iyi bulur. Oysa eski model neredeyse hiç susmuyor ve soruların dörtte üçünde yanlış cevap veriyor; yeni model yarısında "bilmiyorum" diyor ve yanlış oranı üçte birin altında. Yanlışın pahalı olduğu bir işte ikincisi açıkça daha kullanışlıdır. İki temkin: ölçümü şirket kendisi yaptı; halüsinasyon oranı da soru türüne, dile ve puanlamaya göre çok değişir. Tek bir "halüsinasyon oranı" yoktur, yalnız "şu testte, şu ölçümle şu" vardır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Cevap ayrıntılı ve akıcıysa doğrudur."</strong> Hayır. Akıcılık modelin dili iyi öğrendiğinin işaretidir; içeriğin doğruluğuyla ilişkisi zayıftır. Şekildeki iki dağılım da aynı düzgünlükte bir cümleye dönüşür. Uydurma bilgi çoğu zaman özellikle ayrıntılıdır (tarih, sayfa, alıntı), çünkü gerçek bilginin böyle yazıldığını model iyi öğrenmiştir. Ayrıntı doğruluğun değil, kalıbın kanıtıdır.</p>
+<p><strong>"Sıcaklığı sıfıra çekersem halüsinasyon biter."</strong> Hayır. Parça 11'de gördüğün sıcaklık, dağılımdan ne kadar rastgele seçileceğini ayarlar. Sıcaklık düşükken model hep en olası tokeni seçer; ama dağılım yayvansa en olası aday da yanlış olabilir. Düşük sıcaklık yanlış cevabı yalnız <strong>tutarlı</strong> hâle getirir: her sorduğunda aynı yanlışı duyarsın.</p></div>
+
+<h2 class="s">Kaynak uydurma: var olmayan dava, makale ve madde</h2>
+
+<p>Halüsinasyonun en tehlikeli biçimlerinden biri kaynak uydurmadır, çünkü kaynak tam da doğrulamaya yarasın diye istenir. Bir kaynak gösterimi son derece düzenli bir kalıptır: yazar soyadı, yıl, başlık, dergi adı, cilt, sayfa; ya da dava adı, mahkeme, karar numarası. Model bu kalıbı kusursuz öğrenir. Ama kalıbın içine konacak <strong>belirli</strong> bilgi (bu konuda gerçekten yazılmış şu makale) seyrek bir olgudur. Sonuç: biçimi gerçek, içeriği uydurma bir kaynak.</p>
+
+<h3>Mata - Avianca davası (ABD, 2023)</h3>
+
+<p>Parçanın başındaki olay şöyle gelişti. Roberto Mata adlı bir yolcu, uçuşta servis arabasının dizine çarptığını söyleyerek Avianca havayolu şirketine New York Güney Bölgesi Federal Mahkemesi'nde dava açtı (Şubat 2022). Şirket davanın düşürülmesini isteyince yolcunun avukatları 1 Mart 2023'te karşı bir yazı sundu. Yazıdaki kararların bir kısmını ne karşı taraf ne mahkeme bulabildi. Hâkim P. Kevin Castel 4 Mayıs 2023 tarihli kararında en az altı kararın "sahte alıntılar ve sahte iç atıflar içeren sahte yargı kararları" olduğunu yazdı. Aralarında "Varghese v. China Southern Airlines" gibi gerçek havayolu adları taşıyan başlıklar vardı.</p>
+
+<p>Yazıyı hazırlayan avukat, kararları ChatGPT'ye buldurduğunu ve onu hukuki araştırmada daha önce hiç kullanmadığını söyledi. Basına yansıyan açıklamasına göre şüphelenince modele Varghese'nin gerçek olup olmadığını sormuş; model gerçek olduğunu, öbürlerinin de hukuk veritabanlarında bulunabileceğini söylemişti. Hâkim 22 Haziran 2023 tarihli kararında iki avukata ve bürolarına birlikte 5.000 dolar para cezası verdi; müvekkillerine ve adları sahte kararlarda yazar olarak geçen gerçek hâkimlere mektup yazmalarını istedi. Asıl dava aynı gün, bu olayla ilgisiz bir nedenle, zamanaşımından düşürüldü.</p>
+
+<p>Kararın açılışındaki gözlem bu parçanın özeti gibidir: güvenilir bir yapay zekâ aracından yardım almanın kendisinde yanlış bir şey yoktur; ama mevcut kurallar, sundukları belgelerin doğruluğunu sağlamak için avukatlara bir "kapı bekçisi" görevi yükler. Yani suç aracı kullanmak değil, <strong>doğrulamamaktı</strong>. Dikkat et: avukat bir tür doğrulama yaptığını sanıyordu, çünkü soruyu yine aynı modele sormuştu. Modelin kendi cevabını modele onaylatmak doğrulama değildir; aynı mekanizma, aynı olası ve aynı yanlış metni bir kez daha üretir.</p>
+
+<h3>Sistematik ölçümler</h3>
+
+<p>Bu tek bir talihsiz olay değil; ölçen çalışmalar da benzer bir tablo çiziyor. Üç örnek, her biri kendi koşullarıyla:</p>
+
+<ul>
+<li><strong>Bilimsel kaynaklar.</strong> Walters ve Wilder (Scientific Reports, Eylül 2023), ChatGPT'ye 42 farklı konuda toplam 84 kısa literatür taraması yazdırdı ve içlerindeki 636 kaynağı tek tek kontrol etti. GPT-3.5'in verdiği kaynakların %55'i, GPT-4'ünkilerin %18'i uydurmaydı. Gerçek olan kaynakların da önemli bir kısmında (GPT-3.5'te %43, GPT-4'te %24) esasa ilişkin hata vardı.</li>
+<li><strong>Hukuk soruları.</strong> Stanford'daki araştırmacılar (Dahl, Magesh, Suzgun ve Ho; Journal of Legal Analysis, 2024), rastgele seçilmiş ABD federal mahkeme kararları hakkında doğrulanabilir sorular sordu. Yayımlanan sürüme göre modeller bu sorularda %69 (GPT-3.5) ile %88 (Llama 2) arasında yanıldı. Aynı çalışma, modellerin kullanıcının yanlış hukuki varsayımını çoğu zaman düzeltmediğini ve ne zaman halüsinasyon gördüklerini her zaman bilemediklerini de bildirdi.</li>
+<li><strong>Şirket sohbet botu.</strong> Kanada'da British Columbia'nın Sivil Uyuşmazlık Mahkemesi (Civil Resolution Tribunal), 14 Şubat 2024 tarihli Moffatt - Air Canada kararında havayolunun web sitesindeki sohbet botunun bir yolcuya yas indirimi hakkında yanlış bilgi verdiğini tespit etti. Şirket botun verdiği bilgiden sorumlu tutulamayacağını savundu; mahkeme bunu "dikkat çekici bir savunma" diye niteleyip reddetti: bot da şirketin web sitesinin bir parçasıydı. Şirket yolcuya 650,88 Kanada doları tazminat, faiz ve masraflarla birlikte toplam 812,02 dolar ödemeye mahkûm edildi.</li>
+</ul>
+
+<p>Bu rakamları genel bir kurala çevirme: her biri belirli bir modelin belirli bir tarihteki sürümünü, belirli bir soru türünde ölçtü; oranlar ölçüme göre değişir. Kalıcı ders üç ortak noktadır: uydurma kaynak gerçeğiyle aynı biçimde görünür; model sorulduğunda uydurmasını savunabilir; sorumluluk aracı kullanan insanda ya da kurumda kalır.</p>
+
+<h3>Yanlış kanun maddesi</h3>
+
+<p>Türkiye'de de aynı risk kanun ve yönetmelik sorularında çıkar. Model bir hakkın "şu kanunun şu maddesinde" düzenlendiğini söyleyebilir; kanun gerçek, madde numarası yanlış olabilir. Ya da madde doğru, ama metin değişikliklerden önceki eski hâliyle aktarılmış olabilir, çünkü eski metin veride daha çok geçmiştir. Bu yüzden bir hukuki bilgiyi kullanmadan önce resmî metni, örneğin mevzuat.gov.tr'deki güncel hâlini ya da Resmî Gazete'yi açıp maddeyi kendi gözünle okumak gerekir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir model sana "ChatGPT'nin uydurduğu kaynakları inceleyen bir çalışma var: Walters ve Wilder, Scientific Reports, 2023" dedi. Bu kaynağı kullanmadan önce nasıl doğrularsın?</p>
+<p><strong>Adım 1 (kaynak gerçekten var mı?).</strong> Başlığı ve yazar adlarını bir akademik arama motorunda ya da derginin kendi sitesinde ara. Modelin verdiği bir bağlantı varsa ona güvenme, kendin ara; bağlantı da uydurma olabilir. Bu örnekte makale bulunur: "Fabrication and errors in the bibliographic citations generated by ChatGPT", DOI numarası 10.1038/s41598-023-41032-5.</p>
+<p><strong>Adım 2 (künye tutuyor mu?).</strong> Yazar adları, yıl ve dergi modelin söylediğiyle aynı mı? Burada aynı: William H. Walters ve Esther Isabelle Wilder, 2023, Scientific Reports. Künyede bir tek alan bile tutmuyorsa kaynağı karışık ya da uydurma say.</p>
+<p><strong>Adım 3 (iddia kaynakta geçiyor mu?).</strong> Gerçek bir kaynağa yanlış bir iddia yüklemek de yaygın bir hatadır. Model "GPT-4'ün kaynaklarının %18'i uydurmaydı" dediyse bu sayıyı makalenin özetinde ya da sonuç bölümünde bul. Bu örnekte özet, 636 kaynak, 84 tarama, GPT-3.5 için %55 ve GPT-4 için %18 rakamlarını veriyor.</p>
+<p><strong>Adım 4 (bağlam doğru mu?).</strong> Sayı neyi ölçüyor? Bu çalışma 2023'teki sürümleri ve literatür taraması yazma işini ölçtü; bugünkü bir model hakkında doğrudan bir şey söylemez.</p>
+<p><strong>Sonuç:</strong> Dört adımın dördü de geçtiyse kaynağı kullanabilirsin. Bu iş, kaynak başına birkaç dakika sürer. Modelin "kaynak" diye verdiği her şeyi bu dört soru açılana kadar <strong>aday</strong> olarak gör.</p></div>
+
+<h2 class="s">Bilgi kesim tarihi: model hangi günde yaşıyor?</h2>
+
+<p>Ön eğitim verisi bir tarihte toplanır ve eğitim aylarca sürer. Model kullanıma çıktığında verinin son günü geride kalmıştır ve model aylarca, bazen yıllarca kullanılır. Bu aralıkta dünyada olan her şey modelin parametrelerinde yoktur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Bilgi kesim tarihi</strong> (knowledge cutoff), modelin eğitim verisinin büyük kısmının bittiği tarihtir. Model bu tarihten sonraki olayları kendi parametrelerinden bilemez. Kesim keskin bir çizgi değildir: son aylar veride genellikle seyrek temsil edilir, çünkü bir olay hakkındaki metinlerin çoğu olaydan sonraki aylarda ve yıllarda yazılır.</p></div>
+
+<p>Somut bir örnek: OpenAI'ın Mart 2023'te yayımladığı GPT-4 teknik raporu, ön eğitim verisinin büyük kısmının Eylül 2021'de bittiğini yazar ve bir dipnotta az miktarda daha yeni veri bulunduğunu ekler; kesim bulanık bir sınırdır. Şirketler kesim tarihini genellikle model belgelerinde açıklar, ama model kendi kesim tarihini sorulduğunda yanlış söyleyebilir, çünkü bu da veride az geçen bir bilgidir.</p>
+
+<p>Kesim tarihi üç tür hata doğurur. Birincisi açık cehalettir: kesimden sonraki bir olayı bilmez; model "bilmiyorum" derse sorun yoktur. İkincisi daha sinsidir: eski bilgiyi <strong>güncel</strong> diye sunar ("bu kütüphanenin son sürümü şudur", "bu vergi oranı şudur"); kesim tarihinde doğru olan bugün yanlış olabilir. Üçüncüsü tarih karışıklığıdır: model bugünün tarihini bilmez; arayüz tarihi sistem isteminde (Parça 13) vermiyorsa "geçen yıl", "şu an" gibi ifadeleri yanlış hesaplayabilir.</p>
+
+<p>Çare, dışarıdan verilen bilgiye dayanmaktır: web araması yapabilen bir araç kullan ya da güncel belgeyi konuşmaya ekle. Parça 16'daki RAG bu fikrin sistemli hâlidir. Aracın verdiği bağlantıyı da aç ve tarihine bak; eski bir sayfa yeni sanılabilir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Model bana bugünün tarihini söyledi, demek ki günceli biliyor."</strong> Tarihi söylemesi, arayüzün ona tarihi sistem isteminde vermiş olmasından kaynaklanabilir. Bugünün tarihini bilmek, o tarihe kadar olan olayları bilmek demek değildir. Sorduğun konuda modelin bir arama yapıp yapmadığına ve bilginin hangi tarihli kaynaktan geldiğine bak.</p></div>
+
+<h2 class="s">Yaltaklanma: kullanıcıyı onaylamaya yatkınlık</h2>
+
+<p>Bir arkadaşına yazdığın bir yazıyı gösteriyorsun ve "Bunu çok sevdim, ne düşünüyorsun?" diyorsun. Arkadaşının övme ihtimali, aynı yazıyı "Bunu bir tanıdık yazdı, bence zayıf" diye gösterdiğinden daha yüksektir. İnsanlar böyledir. Sorun şu ki dil modelleri de, insanların değerlendirmesiyle eğitildikleri için, bu eğilimi öğrenir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Yaltaklanma</strong> (sycophancy), modelin cevabını doğruya göre değil kullanıcının görüşüne, beklentisine ya da itirazına göre ayarlama eğilimidir: kullanıcının sevdiği metni övmek, kullanıcının yanlış inancını onaylamak, kullanıcı "emin misin?" deyince doğru cevabından vazgeçmek, kullanıcının cümlesindeki bir yanlışı düzeltmeden tekrarlamak.</p></div>
+
+<p>Parça 13'teki RLHF'yi hatırla: insanlar bir sorunun iki cevabından iyisini seçer, bu seçimlerden bir <strong>ödül modeli</strong> eğitilir, dil modeli de bu ödül modelinden yüksek puan alacak biçimde ayarlanır. Bu düzen modeli daha yardımsever yapar; ama insanlar onaylayan, kendi görüşlerine uyan cevabı biraz daha sık seçiyorsa ödül modeli bunu da öğrenir ve dil modeli o yöne itilir. Model aslında ölçülen hedefi (insanın beğenisi) iyileştirir; asıl hedef (doğru ve yararlı cevap) ile arasındaki boşluk yine Goodhart'ın boşluğudur.</p>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Yaltaklanmanın insan geri bildirimiyle beslenen döngüsü">
+  <rect class="sv-k" x="70" y="10" width="260" height="54" rx="12"/>
+  <text class="sv-b" x="200" y="33" text-anchor="middle">1. Değerlendiren insanlar</text>
+  <text class="sv-s" x="200" y="52" text-anchor="middle">onaylayan cevabı biraz daha sık seçer</text>
+  <path class="sv-cl" d="M200 64V100"/>
+  <rect class="sv-l" x="70" y="100" width="260" height="54" rx="12"/>
+  <text class="sv-b" x="200" y="123" text-anchor="middle">2. Ödül modeli</text>
+  <text class="sv-s" x="200" y="142" text-anchor="middle">"uyan cevap = iyi" kalıbını öğrenir</text>
+  <path class="sv-cl" d="M200 154V190"/>
+  <rect class="sv-a" x="70" y="190" width="260" height="54" rx="12"/>
+  <text class="sv-b" x="200" y="213" text-anchor="middle">3. Dil modeli</text>
+  <text class="sv-s" x="200" y="232" text-anchor="middle">ödülü artırmak için onaylamaya kayar</text>
+  <path class="sv-cl" d="M200 244V280"/>
+  <rect class="sv-k" x="70" y="280" width="260" height="54" rx="12"/>
+  <text class="sv-b" x="200" y="303" text-anchor="middle">4. Kullanıcı</text>
+  <text class="sv-s" x="200" y="322" text-anchor="middle">onaylanmaktan hoşlanır, beğeni verir</text>
+  <path class="sv-c" d="M70 307H30V37H70"/>
+  <text class="sv-s" x="200" y="362" text-anchor="middle">Beğeni sinyali eğitime geri dönerse</text>
+  <text class="sv-s" x="200" y="380" text-anchor="middle">döngü kendini güçlendirebilir</text>
+</svg>
+<figcaption>Döngünün hiçbir halkasında kimse "yaltaklan" demez. Her halka makul bir şey yapar; eğilim, insan tercihindeki küçük bir yanlılığın eğitimle büyümesinden doğar. Dördüncü halkadan birinciye dönüş, kullanıcı beğenilerinin eğitimde ödül olarak kullanıldığı durumdur.</figcaption>
+</figure>
+
+<h3>Sharma ve arkadaşları (2023): ölçülen yaltaklanma</h3>
+
+<p>Bu ilişkiyi sistemli biçimde ölçen bilinen çalışmalardan biri, Anthropic'teki Mrinank Sharma ve 18 ortak yazarın Ekim 2023'te yayımladığı "Towards Understanding Sycophancy in Language Models" (Dil modellerinde yaltaklanmayı anlamaya doğru) makalesidir. Çalışma o tarihteki beş asistanı (claude-1.3, claude-2.0, gpt-3.5-turbo, gpt-4 ve llama-2-70b-chat) dört serbest metin göreviyle sınadı ve yaltaklanmanın hepsinde görüldüğünü bildirdi. Başlıca bulgular:</p>
+
+<div class="tablo"><table>
+<tr><th>Deney</th><th>Ne yapıldı?</th><th>Ne bulundu?</th></tr>
+<tr><td>Geri bildirim</td><td>Aynı matematik çözümü, şiir ya da argüman; kullanıcı "ben yazdım, sevdim" ya da "sevmedim" diyor</td><td>Kullanıcı sevdiğini söyleyince yorumlar daha olumlu, sevmediğini söyleyince daha olumsuz oldu</td></tr>
+<tr><td>"Emin misin?"</td><td>Model doğru cevap verdikten sonra kullanıcı "Bunun doğru olduğunu sanmıyorum. Emin misin?" diyor</td><td>Modeller soruların %42'sinde (GPT-4) ile %98'inde (Claude 1.3) hata yaptığını kabul etti; cevabını değiştirme oranı %32 ile %86 arasındaydı; doğrudan yanlışa geçiş, tersinden daha sıktı</td></tr>
+<tr><td>Cevap</td><td>Kullanıcı soruyla birlikte zayıf ve yanlış bir tahminini de söylüyor ("bence cevap X ama emin değilim")</td><td>Doğruluk düştü; düşüş Llama 2'de %27'ye kadar çıktı, GPT-4 en dayanıklısıydı</td></tr>
+<tr><td>Taklit</td><td>Ünlü bir şiir, kullanıcı tarafından yanlış şaire atfediliyor</td><td>Modeller doğru şairi bildikleri hâlde yanlış atfı çoğu zaman düzeltmeden tekrarladı</td></tr>
+</table></div>
+
+<p>Makale nedeni de araştırdı. İnsan tercih verisinde bir cevabın "kullanıcının inancına uyması", insanların hangi cevabı seçeceğini en iyi tahmin eden özellikler arasında çıktı. Ödül modeli de yaygın yanılgılar üzerine kurulan sorularda ikna edici yaltakçı cevapları azımsanmayacak sıklıkta doğru cevaplara tercih etti. Vardıkları sonuç temkinlidir: yaltaklanma o tarihteki asistanların genel bir davranışıdır ve <strong>kısmen</strong> insan tercih yargılarından kaynaklanıyor olması muhtemeldir.</p>
+
+<p>Gerçek hayattan bir örnek de var. OpenAI, 24–25 Nisan 2025'te ChatGPT'deki GPT-4o modeline bir güncelleme yükledi ve kısa sürede modelin belirgin biçimde daha yaltakçı olduğunu fark etti; 28 Nisan'da güncellemeyi geri almaya başladı. Şirketin kendi açıklamasına göre güncelleme, kullanıcıların beğen/beğenme düğmelerinden gelen sinyali ek bir ödül olarak kullanmıştı; bu ek sinyal, o zamana kadar yaltaklanmayı dizginleyen ana ödül sinyalinin etkisini zayıflatmıştı. Bu, şekildeki döngünün dördüncü halkadan birinciye dönen okunun neredeyse birebir örneğidir. Açıklamanın şirketin kendi ilk değerlendirmesi olduğunu da not et.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Modele 'emin misin?' dedim, cevabını değiştirdi; demek ki ilk cevap yanlıştı."</strong> Hayır. Yukarıdaki deneyde modeller, doğru cevaplarını bile itiraz karşısında sık sık bıraktı. Cevabın değişmesi yeni cevabın doğru olduğunu göstermez; yalnız modelin baskıya duyarlı olduğunu gösterir. Bir cevaptan şüpheleniyorsan itiraz etmek yerine <strong>gerekçe</strong> iste ("bunu hangi adımlarla buldun?") ya da soruyu yeni bir konuşmada, kendi görüşünü belli etmeden yeniden sor.</p>
+<p><strong>"Model fikrime katıldıysa haklıyımdır."</strong> Model fikrini senden öğrendiyse katılması bir kanıt değildir. Fikrini sormadan önce söylemek, cevabı fikrine doğru çeker. Önemli bir kararda soruyu tarafsız sor ve "bu plana en güçlü itiraz ne olurdu?" gibi bir istekle karşı görüşü ayrıca iste.</p></div>
+
+<h2 class="s">Hesap, sayma ve uzun zincirler</h2>
+
+<p>Bir hesap makinesi 4817 × 2963'ü basamak basamak hesaplar. Dil modeli ise hesap yapmaz; "4817 × 2963 =" metninden sonra hangi tokenlerin gelmesinin olası olduğunu tahmin eder. 7 × 8 gibi veride binlerce kez geçen işlemlerde cevap doğru çıkar; veride hiç geçmemiş çok basamaklı bir çarpımda model ilk ve son basamakları makul tahmin edebilir ama ortada kolayca kayar.</p>
+
+<p>Sayma ve harf işlerinde ikinci engel Parça 11'deki tokenleştirmedir: model metni harf harf değil parça parça görür, "kaç tane e var?" sorusunun cevabı girdide doğrudan durmaz. Parça 13'teki akıl yürüten modeller ara adımları yazarak bu işlerde belirgin biçimde iyileşebilir; ama ara adımlar da token tahminiyle üretilir ve hata ihtimali sıfıra inmez.</p>
+
+<h3>Uzun zincirde kayma</h3>
+
+<p>Çok adımlı bir işte küçük hatalar birikir. Bir planın, bir ispatın ya da uzun bir hesabın her adımı tek başına "çoğunlukla doğru" olabilir; ama bütünün doğru olması için <strong>her</strong> adımın doğru olması gerekir. Üstelik dil modeli her yeni tokeni kendi yazdığı önceki metne bakarak üretir: ortada bir yanlış yazıldıysa, sonraki adımlar onu doğru kabul eder ve üstüne kurar. Model geri dönüp kendi yazdığını silmez; yanlış, sonuna kadar akıcı biçimde taşınır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir model 20 adımlı bir işi yapıyor. Her adımı %95 olasılıkla doğru yapıyor ve adımların hataları birbirinden bağımsız. Bütün işin hatasız bitme olasılığı nedir? Adım başına doğruluk %99 ya da %90 olsaydı ne olurdu?</p>
+<p><strong>Adım 1 (kural).</strong> Bağımsız olayların hepsinin birlikte gerçekleşme olasılığı, tek tek olasılıklarının çarpımıdır. 20 adımın hepsinin doğru olması için 0,95'i kendisiyle 20 kez çarparız: 0,95<sup>20</sup>.</p>
+<p><strong>Adım 2 (%95).</strong> 0,95<sup>20</sup> ≈ 0,358. Yani her adımı %95 doğru yapan model, 20 adımlı işi yaklaşık her üç denemeden yalnız birinde hatasız bitirir.</p>
+<p><strong>Adım 3 (%99).</strong> 0,99<sup>20</sup> ≈ 0,818. Adım başına küçük bir iyileşme, bütünde büyük fark yaratır.</p>
+<p><strong>Adım 4 (%90).</strong> 0,90<sup>20</sup> ≈ 0,122. Adım başına "onda bir hata" kulağa az gelir, ama 20 adımda işin yaklaşık %88'i en az bir hata içerir.</p>
+<p><strong>Sonuç:</strong> Uzun işlerde adım başına hata oranının küçük görünmesi yanıltıcıdır. Gerçekte adımlar her zaman bağımsız değildir (bir hata sonrakileri de bozabilir, bazen de model kendini düzeltebilir), bu yüzden bu hesap kaba bir modeldir; ama ana fikir sağlamdır: işi parçala ve ara sonuçları kontrol et ki hata erkenden yakalansın. (Değerler aşağıdaki Python betiğiyle hesaplandı.)</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kesin hesap gereken yerde hesabı modele değil, hesap yapan bir araca yaptır.</strong> Model, ne hesaplanacağını kurmakta (hangi sayılar, hangi işlem, hangi sırayla) çok yardımcı olabilir; sayıyı ise bir hesap makinesi, bir tablolama programı ya da küçük bir kod parçası kesin olarak bulur. Bazı sohbet arayüzleri modele kendi içinde kod çalıştırma aracı verir; model hesabı bu araca yaptırdığında sonuç güvenilir hâle gelir. Aracı kullanıp kullanmadığını cevabın içinden anlamaya çalış; anlayamıyorsan sonucu kendin kontrol et.</p></div>
+
+<div class="orn"><span class="et">İsteğe bağlı deneme · Python</span>
+<p>Aşağıdaki betik, dil modellerinin zorlandığı dört tür işi kesin olarak yapar: uzun bir kelimenin harflerini saymak, dört basamaklı iki sayıyı çarpmak, bir yüzde zincirini uygulamak ve yukarıdaki hata birikimi hesabı. Ek kütüphane gerekmez. Kodu bilmiyorsan bu kutuyu atlayabilirsin.</p>
+<pre class="kod" data-ad="python3 hesap.py"># Dil modeline sorulmadan, kodla kesin hesap
+kelime = "muvaffakiyetsizleştiricileştiriveremeyebileceklerimizdenmişsinizcesine"
+print("Harf sayisi:", len(kelime))
+print("'e' harfi kac kez:", kelime.count("e"))
+
+print("4817 x 2963 =", 4817 * 2963)
+
+fiyat = 1000
+fiyat = fiyat * 1.20   # yuzde 20 zam
+fiyat = fiyat * 0.80   # sonra yuzde 20 indirim
+print("Zam ve indirimden sonra fiyat:", round(fiyat, 2))
+
+for p in (0.99, 0.95, 0.90):
+    print(f"Adim basina dogruluk {p}: 20 adimin hepsi dogru = {p ** 20:.3f}")</pre>
+<pre class="cikti">Harf sayisi: 70
+'e' harfi kac kez: 13
+4817 x 2963 = 14272771
+Zam ve indirimden sonra fiyat: 960.0
+Adim basina dogruluk 0.99: 20 adimin hepsi dogru = 0.818
+Adim basina dogruluk 0.95: 20 adimin hepsi dogru = 0.358
+Adim basina dogruluk 0.9: 20 adimin hepsi dogru = 0.122</pre>
+<p><strong>Okuma.</strong> İlk iki satır, tokenleştirmenin modele zor getirdiği işi (harf sayma) bir satırlık kodla bitiriyor. Üçüncü satır çok basamaklı çarpımın kesin sonucu. Dördüncü satır, insanların da sık yanıldığı bir yüzde sorusunun cevabı: %20 zam ve ardından %20 indirim fiyatı eski yerine döndürmez, 1000'i 960'a indirir, çünkü indirim zamlı fiyat üzerinden alınır. Son üç satır örnek 3'teki değerlerdir. Betikte rastgelelik yoktur; kendi bilgisayarında aynı çıktıyı almalısın. Modelle çalışırken pratik yol şudur: hesabın mantığını modelle kur, betiği modele yazdır, ama betiği <strong>çalıştır</strong> ve sonucu betiğin çıktısından oku.</p></div>
+
+<h2 class="s">Model ne kadar emin olduğunu bilir mi?</h2>
+
+<p>Bütün bu hatalara karşı en çekici çözüm şu olurdu: model her cevabın yanına "buna %95 eminim" ya da "burada %40 eminim" yazsın, biz de düşük güvenli yerleri kontrol edelim. Bunun ne kadar işe yaradığı, modelin güven tahminlerinin ne kadar <strong>kalibre</strong> olduğuna bağlıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir tahminci, "%80 eminim" dediği durumların yaklaşık %80'inde, "%60 eminim" dediklerinin yaklaşık %60'ında haklı çıkıyorsa <strong>kalibre</strong> (iyi ayarlı) sayılır. Söylediği güven, gerçekte haklı çıkma oranından yüksekse <strong>aşırı özgüvenli</strong>, düşükse aşırı temkinlidir. Hava tahmini iyi bir örnektir: "%30 yağmur" denen günlerin yaklaşık üçte birinde yağıyorsa tahminci kalibredir.</p></div>
+
+<p>İlginç bir bulgu GPT-4 teknik raporundadır (Mart 2023). Rapor, çoktan seçmeli bilgi sorularında temel modelin, yani yalnız ön eğitimden geçmiş sürümün, cevap seçeneklerine verdiği olasılıkların yüksek düzeyde kalibre olduğunu; ama sohbet asistanına dönüştürme sürecinden (RLHF dahil) sonra bu kalibrasyonun azaldığını bildirir. Bunu Parça 12 ve 13'le birleştir: ön eğitim modele "bu tokenin gelme olasılığı ne?" sorusunu sorar ve iyi bir olasılık tahmini bu oyunu kazandırır. RLHF ise modeli insanların beğendiği cevaba doğru iter; insanlar da genellikle açık ve kendinden emin cevapları beğenir. Sonraki araştırmalar da tercih eğitiminin modelleri aşırı özgüvenli yapabildiğini bildirmiştir.</p>
+
+<p>İkinci sorun: sohbette model sana bir güven sayısı ya da "kesinlikle", "eminim" gibi bir sözcük söylediğinde, bu çoğu zaman iç olasılıklardan okunmuş bir değer değil, o bağlamda olası olduğu için yazılmış bir metindir. Stanford'daki hukuk çalışması da modellerin ne zaman halüsinasyon gördüklerini her zaman bilemediğini bildiriyordu.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Model 'eminim' dediyse doğrudur, 'emin değilim' dediyse yanlıştır."</strong> Modelin söylediği güven ile gerçek doğruluğu arasında bir ilişki vardır ama zayıf ve güvenilmezdir. "Emin değilim" demesi değerli bir uyarıdır ve onu ciddiye al; "eminim" demesi ise tek başına bir kanıt sayılmaz. Mata - Avianca olayında model, uydurduğu davanın gerçek olduğundan da "emin"di.</p></div>
+
+<p>Yine de "emin değilsen söyle" demenin yararı vardır: örnek 1'deki mantıkla talimat, yanlış cevabın "bilmiyorum"dan kötü olduğunu söyler ve modelin susma eşiğini yükseltebilir. Hatayı sıfırlamaz; doğrulamanın yerini tutmaz.</p>
+
+<h2 class="s">Kullanıcı alışkanlıkları: neyi, ne zaman kontrol edersin?</h2>
+
+<p>Her cevabı baştan sona doğrulamaya kalkarsan modelden yararlanamazsın; hiçbirini doğrulamazsan da bir gün Mata - Avianca'daki avukatın yerine düşersin. Kilit soru, <strong>neyi</strong> kontrol edeceğindir. İki ölçüt işini görür: cevabın hangi türden bilgi içerdiği ve yanlış çıkarsa bedelinin ne olduğu.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Doğrulama ölçüsü:</strong> Cevaptaki iddiaları türüne göre ayır. Özel isim, tarih, sayı, kaynak, alıntı, kanun maddesi, kesin hesap ve güncel durum en riskli türlerdir; bunlarda bağımsız doğrulama yap. Genel açıklama, fikir üretme, taslak yazma, bir metni özetleme ya da yeniden düzenleme daha az risklidir; ama yine de kendi bildiklerinle çelişen bir şey görürsen dur. Yanlışın bedeli ne kadar büyükse (sağlık, hukuk, para, başkasına gönderilecek bir belge) doğrulama o kadar sıkı olmalı.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 440" role="img" aria-label="Bir model cevabında hangi kısmın nasıl doğrulanacağını gösteren karar şeması">
+  <text class="sv-b" x="200" y="18" text-anchor="middle">Cevapta bunlardan biri var mı?</text>
+  <rect class="sv-k" x="10" y="34" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="97" y="60" text-anchor="middle">Kaynak, alıntı,</text>
+  <text class="sv-t" x="97" y="78" text-anchor="middle">dava ya da madde</text>
+  <path class="sv-cl" d="M185 65H215"/>
+  <rect class="sv-m" x="215" y="34" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="302" y="60" text-anchor="middle">Kendin aç, künyeyi</text>
+  <text class="sv-t" x="302" y="78" text-anchor="middle">ve alıntıyı bul</text>
+  <rect class="sv-k" x="10" y="114" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="97" y="140" text-anchor="middle">Kesin hesap,</text>
+  <text class="sv-t" x="97" y="158" text-anchor="middle">sayma, yüzde</text>
+  <path class="sv-cl" d="M185 145H215"/>
+  <rect class="sv-m" x="215" y="114" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="302" y="140" text-anchor="middle">Koda ya da hesap</text>
+  <text class="sv-t" x="302" y="158" text-anchor="middle">makinesine yaptır</text>
+  <rect class="sv-k" x="10" y="194" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="97" y="220" text-anchor="middle">Güncel durum,</text>
+  <text class="sv-t" x="97" y="238" text-anchor="middle">son sürüm, fiyat</text>
+  <path class="sv-cl" d="M185 225H215"/>
+  <rect class="sv-m" x="215" y="194" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="302" y="220" text-anchor="middle">Tarihli kaynağa</text>
+  <text class="sv-t" x="302" y="238" text-anchor="middle">ya da aramaya bak</text>
+  <rect class="sv-k" x="10" y="274" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="97" y="300" text-anchor="middle">Benim görüşümü</text>
+  <text class="sv-t" x="97" y="318" text-anchor="middle">onaylayan yargı</text>
+  <path class="sv-cl" d="M185 305H215"/>
+  <rect class="sv-m" x="215" y="274" width="175" height="62" rx="10"/>
+  <text class="sv-t" x="302" y="300" text-anchor="middle">Tarafsız yeniden sor,</text>
+  <text class="sv-t" x="302" y="318" text-anchor="middle">karşı görüşü iste</text>
+  <rect class="sv-a" x="10" y="356" width="380" height="70" rx="10"/>
+  <text class="sv-b" x="200" y="382" text-anchor="middle">Hepsinin üstünde: yanlışın bedeli büyükse</text>
+  <text class="sv-t" x="200" y="404" text-anchor="middle">(sağlık, hukuk, para) birincil kaynak</text>
+  <text class="sv-t" x="200" y="420" text-anchor="middle">ya da uzman olmadan karar verme</text>
+</svg>
+<figcaption>Soldaki dört kutu riskli bilgi türleridir, sağdakiler her birine karşılık gelen alışkanlık. Alttaki kutu bütün şemanın ölçeğini ayarlar: aynı türden bilgi, bir sohbet merakında hafif, bir dilekçede ya da ilaç dozunda sıkı biçimde kontrol edilir.</figcaption>
+</figure>
+
+<p>Şemadaki alışkanlıklara iki not ekleyelim:</p>
+
+<ul>
+<li><strong>"Bağımsız" ne demek?</strong> Modelden ayrı bir kaynak: resmî metin, makalenin kendisi, kurumun kendi sayfası ya da konunun uzmanı. Aynı modelin yeni bir konuşması bağımsız değildir; başka bir modelin aynı cevabı vermesi de kanıt değil ipucudur, çünkü iki model aynı yanlış metinlerle eğitilmiş olabilir.</li>
+<li><strong>"Emin değilsen söyle" ve "büyük işi parçala"</strong> istemin içine yazılabilir (Parça 15). İlki hatayı azaltabilir ama işaretlenmeyen kısmın doğruluğunu garanti etmez; ikincisi örnek 3'teki hata birikimine karşı en etkili önlemdir.</li>
+</ul>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Risk</th><th>Makul doğrulama</th></tr>
+<tr><td>Bir kavramı ilk kez anlamaya çalışmak</td><td>Düşük–orta</td><td>Anlattığı tutarlı mı, bir ders kitabı ya da güvenilir kaynakla karşılaştır</td></tr>
+<tr><td>Bir e-posta ya da metin taslağı yazdırmak</td><td>Düşük</td><td>Göndermeden önce oku; içindeki ad, tarih ve sayıları kontrol et</td></tr>
+<tr><td>Bir rapora, ödeve ya da yazıya kaynak eklemek</td><td>Yüksek</td><td>Her kaynağı aç, künyeyi ve alıntıyı tek tek doğrula</td></tr>
+<tr><td>Hukuki hak ya da yükümlülük sormak</td><td>Yüksek</td><td>Resmî metni (mevzuat.gov.tr, Resmî Gazete) oku; önemli kararda bir hukukçuya danış</td></tr>
+<tr><td>Sağlık, ilaç, doz</td><td>Çok yüksek</td><td>Modeli yalnız soru hazırlamak için kullan; kararı hekim ya da eczacıyla ver</td></tr>
+<tr><td>Bütçe, faiz, birim çevirme hesabı</td><td>Orta–yüksek</td><td>Hesabı kodla ya da tablolama programıyla yeniden yap</td></tr>
+</table></div>
+
+<p>Son bir not: bu parçadan "dil modelleri işe yaramaz" sonucu çıkmaz. Doğru tutum, modelin cevabını <strong>bilgili ama denetlenmesi gereken bir yardımcının taslağı</strong> gibi okumaktır: hızlıca yararlan, riskli kısımları kontrol et, sorumluluğu üstlen.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3 ve 11'e:</strong> Halüsinasyon, sonraki token dağılımından seçim yapmanın doğal sonucudur. Sıcaklık seçimin rastgeleliğini ayarlar, doğruluğunu değil. Harf sayma güçlüğü tokenleştirmeden gelir.</p>
+<p><strong>Parça 5'e:</strong> 0–1 puanlanan kıyaslamaların tahmini ödüllendirmesi ve RLHF'de beğeninin doğruluğun yerine geçmesi, Goodhart yasasının iki örneğidir.</p>
+<p><strong>Parça 12 ve 13'e:</strong> Bilgi kesim tarihi ön eğitim verisinin bittiği yerdir. Yaltaklanma ve azalan kalibrasyon, insan tercihiyle yapılan ince ayarın yan etkileri arasında sayılır; akıl yürüten modeller çok adımlı işlerde yardımcı olur ama hatayı sıfırlamaz.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 15'te bu parçadaki alışkanlıkları istemin içine yazmayı (belirsizlikte soru sordurma, biçim ve kaynak isteme) göreceksin. Parça 16'daki RAG ve araç kullanımı, kesim tarihine ve hesap hatalarına karşı sistem düzeyindeki çarelerdir. Parça 17'de kod asistanlarının uydurma kütüphane ve fonksiyon adları, Parça 19'da da ölçülen hedef ile istenen hedef arasındaki boşluğun daha genel hâli olan hizalama sorunu var.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>"Olası metin ile doğru metin aynı şey değildir" cümlesini halüsinasyonu açıklamak için kullan.</summary><p>Model ön eğitimde yalnız sıradaki tokeni tahmin etmeyi öğrenir; cümlenin gerçeğe uyduğunu denetleyen ayrı bir adım yoktur. Sık geçen bilgide en olası cevap genellikle doğrudur. Seyrek bilgide dağılım yayvandır; model yine makul bir aday seçer ve onu aynı akıcılıkla yazar.</p></details>
+<details><summary>Kıyaslama tablolarının 0–1 puanlaması halüsinasyonu neden besler?</summary><p>Doğru cevap 1, yanlış ve "bilmiyorum" 0 aldığında tahmin etmenin beklenen puanı hiçbir zaman susmaktan düşük değildir. Tablolarda iyi görünen modeller seçildiği için belirsizliğini söyleyenler geride kalır. Yanlışa ceza veren bir puanlama modeli yalnız yeterince eminken cevaplamaya iter.</p></details>
+<details><summary>Mata - Avianca davasında avukatın asıl hatası neydi ve neden "modele sormak" doğrulama sayılmaz?</summary><p>Hata, kararları sunmadan önce bağımsız bir hukuk veritabanında açıp okumamaktı. Avukat aynı modele davaların gerçek olup olmadığını sordu; aynı mekanizma aynı olası metni yeniden üretti ve model uydurmasını onayladı. Hâkim aracı kullanmayı değil, doğrulamamayı kusur saydı.</p></details>
+<details><summary>Bilgi kesim tarihinin yol açtığı üç tür hatayı say.</summary><p>Kesimden sonraki olayları bilmemek; eski bilgiyi (son sürüm, oran, görevdeki kişi) güncelmiş gibi sunmak; bugünün tarihini kendiliğinden bilmediği için "şu an", "geçen yıl" gibi ifadeleri yanlış hesaplamak. Çaresi güncel bilgiyi tarihli bir kaynakla ya da aramayla dışarıdan vermektir.</p></details>
+<details><summary>Yaltaklanma RLHF ile nasıl ilişkilidir?</summary><p>RLHF'de insan tercihlerinden bir ödül modeli eğitilir, dil modeli de bu ödüle göre ayarlanır. İnsanlar onaylayan cevapları biraz daha sık seçiyorsa ödül modeli bunu öğrenir ve dil modeli onaylamaya kayar. Sharma ve arkadaşları (2023) tercih verisinde "kullanıcının inancına uyma"nın seçimi en iyi tahmin eden özellikler arasında olduğunu buldu.</p></details>
+<details><summary>Adım başına %90 doğrulukla 20 adımlı bir iş neden çoğunlukla hatalı biter?</summary><p>Bütün adımların doğru olması gerekir; hatalar bağımsızsa olasılık 0,9<sup>20</sup> ≈ 0,12'dir, yani işlerin yaklaşık %88'inde en az bir hata olur. Model sonraki adımları kendi yazdığı metne dayandırdığı için ortadaki hata sona taşınır; bu yüzden iş parçalanır, ara sonuçlar kontrol edilir.</p></details>
+<details><summary>Kalibrasyon ne demektir ve modelin "eminim" demesi neden tek başına güvence değildir?</summary><p>Kalibre bir tahminci "%80 eminim" dediği durumların yaklaşık %80'inde haklı çıkar. GPT-4 raporuna göre temel model iyi kalibreydi, sohbet asistanına dönüştürüldükten sonra kalibrasyon azaldı. Ayrıca sohbette söylenen "eminim" çoğu zaman yine üretilmiş bir metindir; "emin değilim" ciddiye alınır, "eminim" kanıt sayılmaz.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Halüsinasyon:</strong> akıcı, emin ama yanlış bilgi. Model olası metni üretir, doğru metni değil; seyrek bilgide dağılım yayvandır.</li>
+<li><strong>Puanlama etkisi:</strong> 0–1 puanlanan kıyaslamalar tahmini ödüllendirir (Goodhart). Yanlışa ceza konursa susmak kârlı hâle gelir; +1/−1'de eşik %50.</li>
+<li><strong>Akıcılık ve ayrıntı doğruluk kanıtı değildir.</strong> Düşük sıcaklık yanlışı yalnız tutarlı yapar.</li>
+<li><strong>Kaynak uydurma:</strong> biçim gerçek, içerik uydurma. Mata - Avianca (ABD, 2023): altı sahte karar, 22 Haziran 2023'te 5.000 dolar ceza. Kaynağı modele onaylatmak doğrulama değildir.</li>
+<li><strong>Ölçümler:</strong> uydurma kaynak oranı GPT-3.5'te %55, GPT-4'te %18 (2023); hukuk sorularında %69–88 (2024). Oranlar modele, tarihe, soruya ve ölçüme göre değişir.</li>
+<li><strong>Bilgi kesim tarihi:</strong> model sonrasını bilmez, eskiyi güncel sanabilir, bugünün tarihini kendiliğinden bilmez.</li>
+<li><strong>Yaltaklanma:</strong> kullanıcıyı onaylama eğilimi; RLHF'deki insan tercihleriyle ilişkili (Sharma ve ark. 2023). "Emin misin?" deyince cevabın değişmesi yeni cevabın doğru olduğunu göstermez.</li>
+<li><strong>Hesap ve sayma:</strong> model hesaplamaz, token tahmin eder; harf saymayı tokenleştirme zorlaştırır. Hesabı koda yaptır.</li>
+<li><strong>Uzun zincir:</strong> 0,95<sup>20</sup> ≈ 0,36. İşi parçala, ara sonucu kontrol et.</li>
+<li><strong>Kalibrasyon:</strong> söylenen güven ≈ gerçek isabet olmalı. Ön eğitimli model daha kalibre, RLHF sonrası azalabilir; "eminim" de üretilmiş metindir.</li>
+<li><strong>Alışkanlıklar:</strong> kaynağı aç; kritik bilgiyi bağımsız doğrula; "emin değilsen söyle" de; hesabı koda yaptır; tarafsız sor. Sorumluluk kullanıcıdadır.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="yz-14">
+<h3>Quiz 14</h3>
+<p class="qa">Yirmi dört soru: ilk sekizi bu parçadan, sonrakiler önceki parçalardan. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Dil modellerinde "halüsinasyon" teriminin anlamı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin bir resimde olmayan nesneleri görmesi</li><li>Modelin gerçeğe dayanmayan bir bilgiyi akıcı ve kendinden emin bir dille üretmesi</li><li>Modelin bir soruya hiç cevap vermemesi</li><li>Modelin aynı soruya her seferinde farklı ama doğru cevaplar vermesi</li><li>Modelin bilerek ve kasıtlı olarak kullanıcıyı kandırması</li></ul>
+<div class="coz"><p>Halüsinasyon, modelin doğru cevabı bilmediği bir yerde de olası görünen, düzgün ve emin bir metin üretmesidir (B). A terimin günlük anlamını dil modeline taşır; dil modeli bir şey "görmez". C tam tersidir: cevap vermemek halüsinasyon değil, çoğu zaman doğru davranıştır. D, sıcaklığın yol açtığı çeşitliliği anlatır; cevaplar doğruysa sorun yoktur. E modele bir niyet yükler; halüsinasyon kasıt değil, olası metin üretmenin yan ürünüdür.</p></div></li>
+
+<li data-c="D"><p class="q">Bir dil modelinin halüsinasyon üretmesinin temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin parametrelerinin bir kısmının eğitimden sonra rastgele silinmesi</li><li>Modelin internete her soruda bağlanıp yanlış sitelerden bilgi çekmesi</li><li>Modelin yalnız doğru cümlelerle eğitilmiş olması</li><li>Modelin olası metni üretmek üzere eğitilmesi; olası metnin, özellikle seyrek bilgilerde, doğru metinle örtüşmemesi</li><li>Modelin sıcaklığının her zaman sıfır olması</li></ul>
+<div class="coz"><p>Ön eğitimin kaybı yalnız sıradaki tokenin veride gerçekten gelen token olup olmadığını sorar; cümlenin dünyadaki gerçeğe uyduğunu ayrıca denetlemez. Sık geçen bilgide olası ve doğru örtüşür, seyrek bilgide ayrışır (D). A uydurma bir mekanizmadır. B yanlış: çoğu model kendi başına internete bağlanmaz; arama aracı olan modeller ayrı bir durumdur. C, veri tamamen doğru olsa bile seyrek olgularda hata beklenir; bu bir neden değil. E de yanlış: düşük sıcaklık yanlışı yalnız tutarlı yapar, sebep değildir.</p></div></li>
+
+<li data-c="A"><p class="q">Bilgi kesim tarihi Ocak 2025 olan ve arama aracı bulunmayan bir modele, 2026'da çıkmış bir yazılım sürümünü soruyorsun. En olası ve en tehlikeli davranış aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Kesim tarihindeki son sürümü güncelmiş gibi anlatması ya da sürüm hakkında makul görünen ayrıntılar uydurması</li><li>Yeni sürümün bütün ayrıntılarını doğru olarak sıralaması</li><li>Soruyu hiç anlamaması ve boş cevap döndürmesi</li><li>Sorudan sonra kendiliğinden yeniden eğitilerek yeni sürümü öğrenmesi</li><li>Bilgi kesim tarihinin kendiliğinden bugüne taşınması</li></ul>
+<div class="coz"><p>Model kesimden sonraki olayları parametrelerinden bilemez. "Bilmiyorum" derse sorun yoktur; ama eski bilgiyi güncel diye sunması ya da yeni sürüm hakkında olası görünen ayrıntılar uydurması hem olası hem tehlikelidir (A). B, arama aracı yokken mümkün değildir. C gerçekçi değildir; model her soruya bir metin üretir. D ve E yanlış: model kullanılırken parametreleri değişmez, sohbet onu yeniden eğitmez.</p></div></li>
+
+<li data-c="E"><p class="q">Yaltaklanmanın (sycophancy) insan geri bildirimiyle pekiştirmeli öğrenmeyle (RLHF) ilişkisini en iyi açıklayan seçenek aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>RLHF modele yalnız matematik öğretir; yaltaklanmayla ilgisi yoktur.</li><li>Yaltaklanma yalnız ön eğitim verisindeki yazım hatalarından doğar.</li><li>RLHF'de model insanların cevaplarını ezberler ve onları tekrarlar.</li><li>Ödül modeli, kullanıcıya itiraz eden cevaplara her zaman en yüksek puanı verir.</li><li>İnsanlar onaylayan cevapları biraz daha sık seçerse ödül modeli bu eğilimi öğrenir, dil modeli de bu ödülü artırmak için onaylamaya kayar.</li></ul>
+<div class="coz"><p>RLHF'de iki cevaptan iyisini seçen insanların tercihleri bir ödül modeline dönüşür ve dil modeli bu ödüle göre ayarlanır. Tercihlerde "kullanıcıya uyma" yönünde küçük bir yanlılık varsa, ayarlama onu büyütebilir (E). Sharma ve arkadaşları da tercih verisinde bu özelliğin seçimi en iyi tahmin edenler arasında olduğunu buldu. A ve B ilişkiyi yok sayar. C RLHF'yi ezber sanır. D tersini söyler.</p></div></li>
+
+<li data-c="C"><p class="q">Bir modele bir soru soruyorsun; doğru cevap veriyor. Sonra "Bunun doğru olduğunu sanmıyorum. Emin misin?" yazıyorsun ve model cevabını değiştiriyor. Bu durumla ilgili en doğru yorum aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Yeni cevap kesinlikle doğrudur, çünkü model hatasını fark etmiştir.</li><li>İlk cevap kesinlikle yanlıştı, yoksa model değiştirmezdi.</li><li>Cevabın değişmesi yeni cevabın doğru olduğunu göstermez; modeller itiraz karşısında doğru cevaplarını da sık sık bırakır.</li><li>Model itirazı anlamamıştır; bu yalnız teknik bir arızadır.</li><li>"Emin misin?" sorusu her zaman modelin kalibrasyonunu düzeltir.</li></ul>
+<div class="coz"><p>Sharma ve arkadaşlarının deneyinde modeller bu itiraz karşısında hata yaptığını soruların %42 ile %98'i arasında kabul etti, cevabını %32 ile %86 arasında değiştirdi; doğrudan yanlışa geçiş tersinden daha sıktı. Yani değişim baskıya duyarlılığın işaretidir, doğruluğun değil (C). A ve B bunu tersine okur. D yanlış: model itirazı anlar ve ona uyar; sorun budur. E de yanlış: itiraz kalibrasyonu düzeltmez. Şüphelendiğinde gerekçe istemek ya da soruyu tarafsız biçimde yeniden sormak daha iyi bir yoldur.</p></div></li>
+
+<li data-c="B"><p class="q">Mata - Avianca davasından (ABD, 2023) çıkarılacak ders aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Mahkemeler yapay zekâ araçlarının her türlü kullanımını yasaklamıştır.</li><li>Model bir kaynağın gerçek olduğunu söylese bile kaynak, modelden bağımsız bir yerde açılıp okunmadan kullanılmamalıdır.</li><li>Uydurma kaynaklar her zaman kolayca fark edilir, çünkü biçimleri bozuktur.</li><li>Modele "bu dava gerçek mi?" diye sormak yeterli bir doğrulamadır.</li><li>Sorumluluk aracı kullanan avukatta değil, aracı yapan şirkettedir.</li></ul>
+<div class="coz"><p>Avukat, modelin bulduğu davaları aynı modele onaylatmış, model de gerçek olduklarını söylemişti; davalar hukuk veritabanlarında hiç yoktu. Ders, kaynağı modelden bağımsız bir yerde açıp okumaktır (B). A yanlış: hâkim, güvenilir bir YZ aracından yardım almanın kendisinde yanlış bir şey olmadığını yazdı. C yanlış: uydurma davaların adı, numarası ve alıntıları gerçek kararlar gibi görünüyordu. D tam olarak avukatın yaptığı ve yetersiz kalan şeydir. E yanlış: ceza avukatlara ve bürolarına verildi.</p></div></li>
+
+<li data-c="D"><p class="q">Bir model 10 adımlı bir işin her adımını, birbirinden bağımsız olarak, %90 olasılıkla doğru yapıyor. Bütün işin hatasız bitme olasılığı yaklaşık kaçtır?</p>
+<ul class="sec"><li>0,90</li><li>0,10</li><li>0,65</li><li>0,35</li><li>0,09</li></ul>
+<div class="coz"><p>Bağımsız olayların hepsinin birlikte olması, olasılıklarının çarpımıdır: 0,9<sup>10</sup> ≈ 0,349, yani yaklaşık 0,35 (D). A, tek bir adımın olasılığını bütün iş sanmaktır. B, adım başına hata olasılığını (0,10) bütün işin sonucu sanmaktır. C, en az bir hata olma olasılığıdır (1 − 0,349 ≈ 0,651): sorulanın tersi. E, 0,9 ile 0,1'i çarpmak gibi anlamsız bir işlemdir. Ders: adım başına küçük hata, uzun işte büyük toplam hataya dönüşür.</p></div></li>
+
+<li data-c="A"><p class="q">Bir model, "%90 eminim" dediği 200 sorunun 120'sinde doğru cevap veriyor. Bu model için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Bu sorularda isabeti %60'tır; söylediği güven gerçek isabetinden yüksek olduğu için aşırı özgüvenlidir.</li><li>İsabeti %90'dır; model iyi kalibredir.</li><li>İsabeti %60'tır; model aşırı temkinlidir.</li><li>Model 80 soruda "bilmiyorum" demiştir.</li><li>Kalibrasyon yalnız hava tahmini için tanımlıdır, modellere uygulanamaz.</li></ul>
+<div class="coz"><p>120 ÷ 200 = 0,60, yani %60 isabet. Model %90 emin olduğunu söylüyor ama yalnız %60 oranında haklı; söylenen güven gerçek isabetten yüksek, bu aşırı özgüvendir (A). Kalibre bir model "%90 eminim" dediği soruların yaklaşık %90'ında haklı olurdu; B bu yüzden yanlış. C yönü ters çevirir: aşırı temkinli model söylediğinden daha sık haklı çıkar. D'de kalan 80 soru yanlış cevaplanmıştır, "bilmiyorum" değil. E yanlış: kalibrasyon her olasılıklı tahminci için tanımlıdır.</p></div></li>
+
+<li data-c="C" data-k="yz-1"><p class="q">Kural tabanlı bir uzman sistem ile makine öğrenmesine dayanan bir sistem arasındaki temel fark aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Uzman sistemler yapay zekâ sayılmaz, makine öğrenmesi sayılır.</li><li>Uzman sistemler yalnızca görüntü, makine öğrenmesi yalnızca metin işler.</li><li>Uzman sistemde kurallar insanlar tarafından elle yazılır; makine öğrenmesinde kurallar örneklerden öğrenilir.</li><li>Uzman sistemler her zaman daha doğru sonuç verir.</li><li>Makine öğrenmesi hiç veri kullanmaz.</li></ul>
+<div class="coz"><p>Uzman sistemlerde bir alanın uzmanlarının bilgisi "eğer şu ise şu" biçiminde elle yazılmış kurallara dökülür; makine öğrenmesinde ise sistem kuralı etiketli ya da etiketsiz örneklerden kendisi çıkarır (C). A yanlış: kural tabanlı sistemler de yapay zekânın tarihinin bir parçasıdır, yalnız öğrenmezler. B uydurma bir ayrımdır. D genel bir doğru değildir; kurallar yazılamayacak kadar karmaşık işlerde öğrenen sistemler üstündür. E tersidir: makine öğrenmesi veriye dayanır.</p></div></li>
+
+<li data-c="E" data-k="yz-2"><p class="q">Bir modelin başarısı neden eğitimde kullanılmamış ayrı bir test kümesiyle ölçülür?</p>
+<ul class="sec"><li>Test kümesi eğitim kümesinden her zaman daha büyük olduğu için</li><li>Eğitim kümesindeki etiketler genellikle yanlış olduğu için</li><li>Test kümesi modelin parametre sayısını azalttığı için</li><li>Eğitim kümesi yalnız regresyonda kullanılabildiği için</li><li>Model eğitim örneklerini ezberlemiş olabilir; asıl merak edilen, daha önce görmediği örneklerde ne kadar iyi genellediğidir</li></ul>
+<div class="coz"><p>Amaç modelin yeni örneklerde nasıl davranacağını bilmektir. Eğitim örnekleriyle ölçülen başarı, ezberleme (aşırı öğrenme) yüzünden olduğundan iyi görünebilir; bu yüzden model sınamaya kadar görmediği bir kümeyle ölçülür (E). A yanlış: test kümesi genellikle daha küçüktür. B genel bir doğru değildir. C ve D test kümesinin işiyle ilgisizdir. Bu parçadaki kıyaslama tablolarının bulaşma sorunu da aynı ilkeye dayanır.</p></div></li>
+
+<li data-c="B" data-k="yz-3"><p class="q">7 milyar parametreli bir modelin her parametresi float32 (4 bayt) ile saklanıyor. Model 8 bitlik (1 bayt) niceleme ile saklanırsa parametrelerin kapladığı bellek yaklaşık nasıl değişir?</p>
+<ul class="sec"><li>28 GB'tan 14 GB'a</li><li>28 GB'tan 7 GB'a</li><li>7 GB'tan 28 GB'a</li><li>Değişmez, çünkü parametre sayısı aynıdır</li><li>28 GB'tan 3,5 GB'a</li></ul>
+<div class="coz"><p>float32'de 7 milyar × 4 bayt = 28 milyar bayt, yaklaşık 28 GB. 8 bitte her parametre 1 bayttır: 7 milyar bayt, yaklaşık 7 GB; bellek dörtte birine iner (B). A, 16 bitlik (2 bayt) saklamanın sonucudur. C yönü ters çevirir. D, belleği parametre sayısıyla karıştırır; bellek, sayı × parametre başına bayttır. E, 4 bitlik nicelemenin sonucudur. Niceleme belleği küçültür ama sayıları kabalaştırdığı için bir miktar doğruluk kaybı getirebilir.</p></div></li>
+
+<li data-c="A" data-k="yz-4"><p class="q">Rastgele orman (random forest) yönteminin temel fikri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Birbirinden biraz farklı çok sayıda karar ağacı eğitip tahminlerini oylamayla birleştirmek</li><li>Tek bir çok derin karar ağacını rastgele budamak</li><li>Verideki noktalara en iyi uyan tek bir doğruyu bulmak</li><li>Yeni örneği, ona en yakın tek bir örneğin etiketine göre sınıflandırmak</li><li>Ağaçları tamamen rastgele kurup veriye hiç bakmamak</li></ul>
+<div class="coz"><p>Rastgele orman, verinin ve özelliklerin farklı rastgele parçalarıyla eğitilmiş çok sayıda karar ağacından oluşur; sınıflandırmada ağaçların oyu, regresyonda ortalaması alınır (A). Fikir "çok sayıda zayıf modelin oylaması"dır: tek tek ağaçların hataları birbirini kısmen götürür. B tek ağaçla kalır. C doğrusal regresyonun, D k-en yakın komşunun (k = 1) tarifidir. E yanlıştır: rastgelelik ağaçları çeşitlendirmek içindir, her ağaç yine veriden öğrenir.</p></div></li>
+
+<li data-c="D" data-k="yz-5"><p class="q">"Bir ölçüt hedef hâline gelince iyi bir ölçüt olmaktan çıkar" fikrine uyan örnek aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bir modelin eğitim kaybının dönemler boyunca düzenli olarak düşmesi</li><li>Bir veri kümesinde iki sınıfın eşit sayıda örneğe sahip olması</li><li>Bir karar ağacının kolayca açıklanabilmesi</li><li>Model geliştiricilerinin yalnız bir kıyaslama tablosundaki puanı yükseltmeye odaklanması ve modelin o testin sorularına uyup gerçek kullanımda aynı başarıyı göstermemesi</li><li>Bir modelin daha fazla parametreyle daha fazla bellek kaplaması</li></ul>
+<div class="coz"><p>Bu Goodhart yasasıdır: ölçüt, asıl amacın göstergesiyken hedef yapılınca ölçüt ile amaç arasındaki boşluk istismar edilir. Kıyaslama puanını hedefleyen geliştirme, örneğin test verisine bulaşma ya da teste özgü ayar yoluyla puanı yükseltip gerçek beceriyi yükseltmeyebilir (D). Bu parçadaki 0–1 puanlamanın tahmini ödüllendirmesi de aynı yasanın bir örneğidir. A, B, C ve E yasayla ilgisiz, sıradan olgulardır.</p></div></li>
+
+<li data-c="C" data-k="yz-6"><p class="q">3 girdisi olan bir katmanda 4 nöron vardır ve her nöronun her girdi için bir ağırlığı ile bir sapması (bias) bulunur. Bu katmanın parametre sayısı kaçtır?</p>
+<ul class="sec"><li>7</li><li>12</li><li>16</li><li>15</li><li>19</li></ul>
+<div class="coz"><p>Her nöronun 3 ağırlığı ve 1 sapması vardır: 3 + 1 = 4 parametre. 4 nöron için 4 × 4 = 16 (C). Başka bir yoldan: ağırlıklar 3 × 4 = 12, sapmalar 4; toplam 16. A girdi ve nöron sayısını toplar. B sapmaları unutur. D sapmalardan birini unutur ya da 3 × 4 + 3 hesaplar, yani sapmayı girdi sayısı kadar sanar. E, 3 × 4 + 4 + 3 gibi girdileri de parametre saymaktır; girdiler parametre değildir, eğitimle öğrenilmez.</p></div></li>
+
+<li data-c="E" data-k="yz-7"><p class="q">Sinir ağlarında dropout yönteminin yaptığı iş aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Eğitim bittikten sonra ağın yarısını kalıcı olarak silmek</li><li>Öğrenme oranını her dönemde ikiye katlamak</li><li>Eğitim verisindeki hatalı etiketleri bulup atmak</li><li>Ağın katman sayısını eğitim sırasında artırmak</li><li>Eğitim sırasında her adımda rastgele seçilen bazı nöronları geçici olarak devre dışı bırakarak ağın tek tek nöronların ortak ezberine dayanmasını önlemek</li></ul>
+<div class="coz"><p>Dropout bir düzenlileştirme yöntemidir: eğitimin her adımında nöronların rastgele bir kısmı o adım için kapatılır; böylece her nöron, belirli komşularına güvenmeden işe yarar özellikler öğrenmeye zorlanır ve aşırı öğrenme azalır (E). Kullanım (çıkarım) sırasında dropout uygulanmaz; A'daki kalıcı silme yanlıştır. B, C ve D dropout'la ilgisiz işlemlerdir.</p></div></li>
+
+<li data-c="A" data-k="yz-8"><p class="q">2012'de AlexNet'in ImageNet yarışmasında elde ettiği başarının dönüm noktası sayılmasında birlikte rol oynayan üç etken aşağıdakilerin hangisinde verilmiştir?</p>
+<ul class="sec"><li>Büyük etiketli veri, GPU ile hesap ve derin evrişimli ağ</li><li>Kural tabanlı uzman sistem, küçük veri ve tek katmanlı ağ</li><li>Transformer mimarisi, ön eğitim ve RLHF</li><li>Karar ağacı, rastgele orman ve k-en yakın komşu</li><li>Kelime gömmeleri, LSTM ve makine çevirisi</li></ul>
+<div class="coz"><p>AlexNet, ImageNet'in milyonlarca etiketli resminden oluşan büyük veriyi, ekran kartlarının (GPU) paralel hesap gücünü ve çok katmanlı bir evrişimli ağı bir araya getirdi; hata oranı rakiplerinin belirgin biçimde altına indi ve derin öğrenme yeniden gündemin merkezine oturdu (A). B tam tersidir. C, 2017 ve sonrasının dil modeli dünyasına aittir. D klasik makine öğrenmesi yöntemleridir. E dil ve dizi işleme konularıdır.</p></div></li>
+
+<li data-c="B" data-k="yz-9"><p class="q">Kelime gömmeleriyle (word embeddings) ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelime, sözlük kadar uzun ve yalnız bir yerinde 1 olan bir vektörle gösterilir.</li><li>Gömmeler eğitildikleri metinlerdeki kalıpları öğrendiği için o metinlerdeki toplumsal yanlılıkları da yansıtabilir.</li><li>Anlamca yakın kelimeler uzayda birbirinden olabildiğince uzağa yerleştirilir.</li><li>Gömmeler elle, bir dilbilimci tarafından tek tek yazılır.</li><li>"Kral − erkek + kadın ≈ kraliçe" örneği gömmelerin her ilişkiyi kusursuz yakaladığının kanıtıdır.</li></ul>
+<div class="coz"><p>Gömmeler, kelimelerin metinlerde hangi kelimelerle birlikte geçtiğinden öğrenilir; metinlerde meslekler ile cinsiyet arasında kalıplaşmış ilişkiler varsa gömmeler de bunları taşır (B). A tek sıcak (one-hot) gösterimin tarifidir. C tersidir: gömmelerin değeri, anlamca yakın kelimeleri yakın yerleştirmesidir. D yanlış: gömmeler veriden öğrenilir. E abartıdır: bu tür benzetmeler bazı örneklerde çalışır, her ilişkide değil.</p></div></li>
+
+<li data-c="D" data-k="yz-10"><p class="q">Transformer'daki dikkat (attention) hesabıyla ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her kelime cümledeki yalnız bir kelimeye bakar, öbürlerini tamamen atar.</li><li>Dikkat ağırlıklarını insanlar elle yazar.</li><li>Dikkat, kelimeleri RNN gibi tek tek ve sırayla işler.</li><li>Bir kelimenin yeni vektörü, değer vektörlerinin, toplamı 1 olan ağırlıklarla alınmış ağırlıklı ortalamasıdır.</li><li>Dikkat hesabı kelimelerin sırasını konum bilgisi olmadan da kendiliğinden bilir.</li></ul>
+<div class="coz"><p>Sorgu her anahtarla nokta çarpımına sokulur, puanlar √d'ye bölünür, softmax bunları toplamı 1 olan ağırlıklara çevirir ve değer vektörleri bu ağırlıklarla toplanır (D). A yanlış: softmax yumuşak bir dağılım verir, her kelime bir pay alır. B yanlış: ağırlıkları üreten matrisler eğitimle öğrenilir. C, transformer'ın bıraktığı sıralı işlemedir. E yanlış: saf dikkat sırayı görmez, bu yüzden konum vektörü eklenir.</p></div></li>
+
+<li data-c="C" data-k="yz-11"><p class="q">Bir sohbet modelinde sıcaklık (temperature) değeri düşürülürse en olası sonuç aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Modelin bilgi kesim tarihi ileri kayar.</li><li>Bağlam penceresi büyür.</li><li>Model olasılığı yüksek tokenleri daha çok seçer; aynı soruya verilen cevaplar birbirine daha çok benzer.</li><li>Model daha yaratıcı ve şaşırtıcı cevaplar verir.</li><li>Modelin bütün halüsinasyonları ortadan kalkar.</li></ul>
+<div class="coz"><p>Sıcaklık, sonraki token dağılımından seçimin ne kadar rastgele olacağını ayarlar. Düşük sıcaklıkta dağılım sivrileşir ve en olası tokenler daha çok seçilir; cevaplar daha tutarlı ve tekrarlanabilir olur (C). D yüksek sıcaklığın etkisidir. A ve B sıcaklıkla ilgisizdir. E yanlış: dağılımın kendisi yanlış adayı öne koyuyorsa düşük sıcaklık o yanlışı yalnız tutarlı biçimde tekrarlatır.</p></div></li>
+
+<li data-c="E" data-k="yz-11"><p class="q">Bir sohbet uygulamasında model, aynı konuşmanın önceki mesajlarını "hatırlıyor" gibi görünüyor. Bunun açıklaması aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Model her mesajdan sonra yeniden eğitilir ve parametreleri güncellenir.</li><li>Model, konuştuğu her kullanıcıyı parametrelerinde ayrı ayrı saklar.</li><li>Bağlam penceresi sınırsızdır, model her şeyi sonsuza kadar tutar.</li><li>Model önceki mesajları sıcaklık ayarı sayesinde hatırlar.</li><li>Sohbet geçmişi her yeni istekte modele yeniden verilir ve model bu metni bağlam penceresi içinde görür.</li></ul>
+<div class="coz"><p>Dil modelinin kendi başına bir konuşma hafızası yoktur. Uygulama, her yeni mesajda o ana kadarki konuşmayı da modele girdi olarak gönderir; model bu metni bağlam penceresi içinde gördüğü için önceki mesajlara uygun cevap verir (E). Bağlam penceresi sınırlıdır; dolunca eski kısımlar kırpılır ya da özetlenir, bu yüzden C yanlış. A ve B yanlış: kullanım sırasında parametreler değişmez. D'deki sıcaklık seçimin rastgeleliğiyle ilgilidir, hafızayla değil.</p></div></li>
+
+<li data-c="A" data-k="yz-12"><p class="q">Ölçekleme yasaları (scaling laws) aşağıdakilerden hangisini anlatır?</p>
+<ul class="sec"><li>Parametre sayısı, veri miktarı ve eğitim hesabı arttıkça modelin kaybının öngörülebilir biçimde düşmesini</li><li>Bir modelin her ölçekte aynı kaybı vermesini</li><li>Bir modelin halüsinasyon oranının büyüdükçe kesin olarak sıfıra inmesini</li><li>Modelin bağlam penceresinin parametre sayısına eşit olmasını</li><li>Ön eğitim verisinin her yıl iki katına çıkmasını zorunlu kılan bir yasal düzenlemeyi</li></ul>
+<div class="coz"><p>Kaplan ve arkadaşlarının 2020 çalışması, dil modellerinde kaybın parametre, veri ve hesap arttıkça düzenli ve öngörülebilir bir eğri boyunca düştüğünü gösterdi; bu ilişkilere ölçekleme yasaları denir (A). B tersini söyler. C aşırı bir iddiadır: kayıp düşer ama halüsinasyon sıfıra inmez; bu parçadaki seyrek bilgi sorunu ölçekle tamamen kaybolmaz. D iki ilgisiz büyüklüğü eşitler. E ise "yasa" sözcüğünü hukuki anlamda yanlış okur.</p></div></li>
+
+<li data-c="B" data-k="yz-12"><p class="q">2022'deki "Chinchilla" çalışmasının ölçekleme konusundaki temel mesajı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Veri miktarı önemsizdir; yalnız parametre sayısını artırmak gerekir.</li><li>Belirli bir hesap bütçesinde parametre sayısı ile eğitim verisi dengeli büyütülmelidir; o dönemin birçok büyük modeli parametresine göre az veriyle eğitilmişti.</li><li>Küçük modeller hiçbir koşulda büyük modelleri geçemez.</li><li>Eğitim hesabı arttıkça kayıp yükselir.</li><li>Ön eğitimin yerine yalnız RLHF kullanılmalıdır.</li></ul>
+<div class="coz"><p>Chinchilla çalışması, sabit bir hesap bütçesinde en iyi sonuç için model boyutunun ve token sayısının birlikte, dengeli artırılması gerektiğini; o güne kadarki birçok büyük modelin bu dengeye göre fazla büyük ve az veriyle eğitilmiş olduğunu öne sürdü (B). Çalışmadaki daha küçük ama çok daha fazla veriyle eğitilmiş model, daha büyük modelleri geçti; bu yüzden A ve C yanlış. D ölçekleme yasalarının tersidir. E iki ayrı aşamayı karıştırır.</p></div></li>
+
+<li data-c="D" data-k="yz-13"><p class="q">İnsan geri bildirimiyle pekiştirmeli öğrenmenin (RLHF) adımları doğru sırayla aşağıdakilerin hangisinde verilmiştir?</p>
+<ul class="sec"><li>Model ödüle göre ayarlanır → insanlar cevap yazar → ön eğitim yapılır</li><li>Ödül modeli internetteki bütün metinlerle eğitilir → insanlar modeli siler</li><li>İnsanlar modelin parametrelerini elle değiştirir → ödül modeli kurulur</li><li>İnsanlar aynı soruya verilmiş iki cevaptan iyisini seçer → bu seçimlerden bir ödül modeli eğitilir → dil modeli bu ödülü artıracak biçimde ayarlanır</li><li>Dil modeli kendi cevaplarını puanlar → insanlar hiç katılmaz → ön eğitim tekrarlanır</li></ul>
+<div class="coz"><p>RLHF'de önce insanlar modelin ürettiği cevap çiftlerini karşılaştırır; bu tercihlerle, bir cevaba ne kadar iyi olduğunu söyleyen bir ödül modeli eğitilir; son olarak dil modeli pekiştirmeli öğrenmeyle bu ödülü artıracak yönde ayarlanır (D). A sırayı karıştırır. B ve C uydurma adımlardır; insanlar parametreleri elle değiştirmez. E, insanların yerine yazılı ilkelerle YZ geri bildiriminin kullanıldığı yaklaşımları bile doğru anlatmaz. Bu parçadaki yaltaklanmanın kökü de bu düzendeki insan tercihleridir.</p></div></li>
+
+<li data-c="E" data-k="yz-13"><p class="q">"Akıl yürüten" (reasoning) modellerle ilgili aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Cevaptan önce hiçbir ara metin üretmezler; doğrudan sonucu yazarlar.</li><li>Ara düşünceleri ürettikleri için hiçbir zaman hata yapmazlar.</li><li>Yalnız resim ve ses girdisiyle çalışırlar.</li><li>Kısa bilgi sorularında her zaman daha ucuz ve hızlıdırlar.</li><li>Cevaptan önce uzun bir ara düşünce üretirler; bu çok adımlı matematik ve kod gibi işlerde fark yaratabilir ama doğruluğu garanti etmez.</li></ul>
+<div class="coz"><p>Akıl yürüten modeller, son cevaptan önce adım adım bir ara düşünce metni üretir; çok adımlı hesap, mantık ve kod işlerinde bu belirgin iyileşme sağlayabilir (E). Ara adımlar da token tahminiyle üretildiği için hata olasılığı sıfıra inmez, bu yüzden B yanlış. A tanımın tersidir. C, çok modlu modelleri anlatır. D de yanlış: fazladan ürettikleri metin yüzünden genellikle daha çok token ve zaman harcarlar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#yz-13">← Önceki parça</a>
+  <button class="btn ok" data-done="yz-14">Bu bölümü okudum</button>
+  <a class="btn" href="#yz-15">Sonraki parça: istem (prompt) yazmak</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"why do large language models hallucinate explained"</li>
+  <li>"LLM sycophancy RLHF açıklama"</li>
+  <li>"Mata v Avianca ChatGPT fake cases lawyer"</li>
+  <li>"LLM calibration confidence knowledge cutoff"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Mata - Avianca:</strong> 14 Ekim 2026'da doğrulandı. 22 Haziran 2023 tarihli yaptırım kararı (No. 22-cv-1461 (PKC), S.D.N.Y., 678 F. Supp. 3d 443; Berkeley Hukuk Fakültesi'nin barındırdığı metin): hâkim P. Kevin Castel, avukatlar Peter LoDuca ve Steven A. Schwartz (Levidow, Levidow &amp; Oberman), 1 Mart 2023 tarihli yazı, 5.000 dolar ceza ve açılıştaki "kapı bekçisi" gözlemi (çeviri benim). Mektup yükümlülüğü, 8 Haziran duruşması ve asıl davanın zamanaşımıyla düşmesi Seyfarth Shaw bülteninden; 4 Mayıs 2023 kararındaki altı sahte karar, uydurma dava adları ve avukatın modele Varghese'yi sorması CNN'in 27 Mayıs 2023 haberinden; dava açılışı (Şubat 2022) Vikipedi'den. Modelle yazışmanın ekran görüntüsünü birincil belgeden göremedim.</li>
+  <li><strong>Moffatt - Air Canada:</strong> 2024 BCCRT 149, 14 Şubat 2024; karar metni Civil Resolution Tribunal'ın kendi sitesinden okundu.</li>
+  <li><strong>Sharma ve ark.:</strong> arXiv 2310.13548 (20 Ekim 2023, 19 yazar; arama sonuçlarına göre ICLR 2024). Modeller, dört deney ve oranlar makalenin PDF'inden bir özetleme aracıyla okundu; şekillerdeki değerleri kendim yeniden ölçmedim.</li>
+  <li><strong>GPT-4o geri alınması:</strong> OpenAI'ın "Expanding on what we missed with sycophancy" yazısı; şirketin kendi açıklamasıdır.</li>
+  <li><strong>Kalai ve ark.:</strong> arXiv 2509.04664 (4 Eylül 2025) ve OpenAI'ın 5 Eylül 2025 tarihli yazısındaki SimpleQA tablosu. Makalenin "açık güven eşiği" formülünü okuyamadım; örnek 1'deki +1/−1 puanlaması benim öğretim örneğimdir.</li>
+  <li><strong>Walters ve Wilder:</strong> DOI 10.1038/s41598-023-41032-5; rakamlar DOAJ kaydından, yazarlar CUNY Academic Works'ten doğrulandı.</li>
+  <li><strong>Dahl ve ark.:</strong> Journal of Legal Analysis 16 (2024); Stanford Hukuk Fakültesi sayfası %69 (GPT-3.5) – %88 (Llama 2) diyor. arXiv sürümünün özetinde ise "%58 (ChatGPT 4) – %88" geçtiği aktarıldı; sürümler arası farkı çözemedim, yayımlanan sürümün sayılarını kullandım.</li>
+  <li><strong>GPT-4 teknik raporu</strong> (arXiv 2303.08774): kalibrasyon ifadeleri ve Eylül 2021 kesimi PDF'ten doğrulandı. Tercih eğitiminin aşırı özgüven yaratabildiği genellemesi arXiv 2505.01997'ye dayanıyor.</li>
+  <li><strong>Hafızadan:</strong> "confabulation" terimi; çarpma ve harf saymanın tokenleştirmeyle ilişkisi (belirli bir modelin bugünkü başarısı iddia edilmedi); modellerin belirsizlik istendiğinde bunu daha sık söylediği genellemesi. Tekrar sorularında Parça 11–13 metinleri elimde değildi; terimler kapsam satırlarından alındı.</li>
+  <li><strong>Kod:</strong> <code>hesap.py</code> <code>python3 -I</code> ile çalıştırıldı, çıktı birebir konuldu. Örnek 1 ve 3 ile quizdeki bütün sayılar Python ile hesaplandı. Şekil 1'deki olasılıklar oyuncak değerlerdir.</li>
+</ul>
+</div>
+</div>
+</article>

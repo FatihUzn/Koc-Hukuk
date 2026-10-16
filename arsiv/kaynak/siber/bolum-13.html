@@ -1,0 +1,750 @@
+<article class="chapter ders" id="c-siber-13">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 13 · Süreçler ve sinyaller</div>
+<h1>Süreçler ve sinyaller: makinende şu anda ne çalışıyor?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvar makinende işlemci fanı durup dururken bağırıyor ve <code>top</code> listesinin tepesinde hiç tanımadığın bir ad duruyor. Bu süreci kim başlattı, kimin adına çalışıyor, diskte hangi dosyadan geliyor, hangi porta bağlı? Onu hemen öldürmeli misin, yoksa önce bakmalı mısın? Öldürmek istesen <code>kill</code> neden bazen işe yarıyor, bazen yaramıyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 5 (süreç, <code>fork</code>, yazınca kopyala, gerçek ve etkin kimlik, <code>/proc/self/status</code>), Parça 8 (<code>/proc</code> ve "her şey dosyadır"), Parça 9 (boru, <code>grep</code>), Parça 11 (kullanıcılar, hizmet kullanıcıları), Parça 12 (SUID biti). Kod rafından Parça 16 (standart girdi, çıktı, hata ve numaraları) ve Parça 17 (çıkış kodu, <code>$?</code>). Bütün denemeler kendi Linux makinende ya da laboratuvar VM'inde, yalnız kendi başlattığın süreçlerle yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 5'te sürecin ne olduğunu çekirdeğin içinden gördün: her sürecin bir numarası, kendine ait bir sanal adres uzayı, açık dosyaları ve kimliği vardır; yeni süreçler <code>fork</code> ile doğar. Orada süreci <em>kavram</em> olarak kurduk. Bu parça aynı şeyi <strong>yöneticinin ve savunmacının gözüyle</strong> ele alıyor: çalışan bir makinede süreçleri nasıl listelersin, aralarındaki aile bağını nasıl okursun, bir sürecin kimliğini, komut satırını, ortamını ve açık dosyalarını nereden görürsün, ona nasıl haber gönderirsin ve hangisinin şüpheli olduğuna nasıl karar verirsin.</p>
+
+<p>Araçlarımız: <strong><code>ps</code></strong> (anlık fotoğraf), <strong><code>pstree</code></strong> (aile ağacı), <strong><code>/proc/&lt;pid&gt;</code></strong> (sürecin çekirdekteki kaydının dosya görünümü), <strong>sinyaller</strong> ve <strong><code>kill</code></strong> (sürece gönderilen kısa mesajlar), <strong>iş denetimi</strong> (<code>&amp;</code>, <code>jobs</code>, <code>fg</code>, <code>bg</code>), <strong><code>top</code></strong> (canlı kaynak izleme) ve <strong><code>ss</code>/<code>lsof</code></strong> (süreç hangi bağlantıyı tutuyor). Parçanın sonunda bunları bir <strong>savunmacı soru listesine</strong> bağlayacağız: beklenmeyen kullanıcı, beklenmeyen yol, beklenmeyen ağ bağlantısı.</p>
+
+<p>Sınır baştan belli: hizmetlerin systemd ile yönetimi Parça 14'ün, ağ ayrıntısı ve <code>ss</code>'in bütün seçenekleri Parça 15'in konusu. Burada yalnız "bu süreç hangi bağlantıyı tutuyor?" sorusuna cevap vereceğiz.</p>
+
+<h2 class="s">1. Çalışan süreçleri görmek: <code>ps</code></h2>
+
+<p><code>ps</code> (process status), çağrıldığı andaki süreçlerin bir fotoğrafını çeker. Bunu sihirle yapmaz: Parça 8'de gördüğün <code>/proc</code> sanal dosya sisteminde her süreç için bir dizin vardır ve <code>ps</code> bu dizinlerdeki dosyaları okuyup tabloya döker. Yani <code>ps</code>'in gösterdiği her şeyi, biraz zahmetle, <code>/proc</code>'tan kendin de okuyabilirsin; aşağıda bunu yapacağız.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>PID</strong> (process ID), çekirdeğin her sürece verdiği numaradır; süreç yaşadığı sürece değişmez, süreç bitince numara bir gün yeniden kullanılabilir. <strong>PPID</strong> (parent PID), o süreci <code>fork</code> ile doğuran <strong>ana sürecin</strong> numarasıdır. <strong>Kullanıcı</strong> sütunu sürecin kimin adına çalıştığını, <strong>STAT</strong> o anki durumunu, <strong>ELAPSED</strong> ne zamandır çalıştığını, <strong>CMD</strong> komut satırını gösterir.</p></div>
+
+<p><code>ps</code>'in iki ayrı söz dizimi vardır ve ikisi de yaygındır, çünkü araç hem Unix hem BSD geleneğini taşır. <code>ps -ef</code> Unix biçimidir (tire ile), <code>ps aux</code> BSD biçimidir (tiresiz); ikisi de bütün süreçleri listeler, sütunları biraz farklıdır. Ezberlemek yerine istediğin sütunları kendin seç: <code>ps -eo pid,ppid,user,stat,etime,cmd</code>. <code>-e</code> "her süreç", <code>-o</code> "şu sütunlar" demektir; <code>--forest</code> eklersen çocuklar ananın altına girintili yazılır.</p>
+
+<p>STAT sütunundaki harfler, çekirdeğin süreç için tuttuğu durumu özetler. <code>ps(1)</code> belgesindeki listenin en sık göreceğin kısmı şudur:</p>
+
+<div class="tablo"><table>
+<tr><th>Harf</th><th>Anlamı</th><th>Savunmacı için notu</th></tr>
+<tr><td><code>R</code></td><td>Çalışıyor ya da çalışmak için sırada</td><td>Sürekli R'de duran ve işlemciyi tüketen süreç incelenmeye değer</td></tr>
+<tr><td><code>S</code></td><td>Kesilebilir uykuda: bir olay bekliyor</td><td>Süreçlerin çoğu çoğu zaman buradadır</td></tr>
+<tr><td><code>D</code></td><td>Kesilemez uykuda (genellikle disk ya da ağ girdi-çıktısı)</td><td>Bu durumdaki süreç <code>SIGKILL</code>'e bile hemen yanıt vermeyebilir</td></tr>
+<tr><td><code>T</code></td><td>İş denetimi sinyaliyle durdurulmuş</td><td>Ctrl+Z ya da <code>SIGSTOP</code> sonrası</td></tr>
+<tr><td><code>Z</code></td><td>Zombi: bitmiş ama anası henüz toplamamış</td><td>Kaynak tüketmez ama birikmesi ana süreçte bir hata işaretidir</td></tr>
+<tr><td><code>s</code>, <code>+</code>, <code>l</code>, <code>&lt;</code>, <code>N</code></td><td>Ek bilgi: oturum lideri, ön plandaki süreç grubunda, çok iş parçacıklı, yüksek öncelik, düşük öncelik</td><td><code>Ss</code> bir oturumu başlatan kabuğu, <code>S+</code> terminalde ön planda bekleyen komutu gösterir</td></tr>
+</table></div>
+
+<p>Olağan bir Debian VM'inde listede çekirdeğin kendi iş parçacıklarını da köşeli parantezli adlarla (<code>[kthreadd]</code>, <code>[kworker/…]</code>) görürsün; PPID'leri 2'dir ve diskte dosyaları yoktur. Bu parçanın çıktılarının alındığı WSL2 ortamında bunlar görünmedi.</p>
+
+<h2 class="s">2. Süreç ağacı: ana ve çocuk</h2>
+
+<p>Her süreç bir başkasından doğduğu için süreçler bir ağaç oluşturur. Kökte PID 1 vardır: çekirdeğin önyüklemenin sonunda başlattığı ilk kullanıcı alanı süreci, bugün çoğu dağıtımda systemd (Parça 4'teki önyükleme zincirinin son halkası). Sen terminal açtığında oturum yöneticisi bir kabuk başlatır; kabuğa <code>sleep 600</code> yazdığında kabuk <code>fork</code> ile kendini ikiye böler, çocuk <code>execve</code> ile <code>sleep</code>'e dönüşür (Parça 5). Çocuğun PPID'i kabuğun PID'idir.</p>
+
+<p>Ağacın savunmadaki değeri büyüktür, çünkü <strong>bir sürecin ne olduğu kadar kimden doğduğu da anlam taşır</strong>. Bir web sunucusunun çocuğu olarak bir kabuk görmek, bir masaüstü oturumunun çocuğu olarak kabuk görmekten çok farklıdır: ilki web uygulamasında bir açıktan sızılıp komut çalıştırıldığının en bilinen işaretlerinden biridir. <code>pstree -p</code> ağacı PID'lerle çizer; <code>pstree -p -s PID</code> bir sürecin bütün atalarını kökten aşağı gösterir.</p>
+
+<p>Ağaçta iki özel durum vardır ve ikisi de anadan çocuğa giden bağın nasıl işlediğini gösterir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Zombi:</strong> Bir çocuk bittiğinde çekirdek onu hemen silmez; çıkış kodunu ve birkaç bilgisini, ana süreç <code>wait</code> ailesinden bir çağrıyla toplayana kadar saklar. <code>wait(2)</code> belgesine göre beklenmemiş bitmiş çocuk "zombi"dir ve çekirdeğin süreç tablosunda bir yer kaplar; tablo dolarsa yeni süreç açılamaz. <strong>Öksüz:</strong> Ana süreç çocuğundan önce ölürse çocuk ortada kalmaz; en yakın canlı "alt toplayıcı" (subreaper) ataya ya da yoksa PID 1'e bağlanır, o da ileride çocuğu toplar. Zombiye sinyal göndermek işe yaramaz, çünkü o artık çalışmıyor; çözüm anasının <code>wait</code> çağırması ya da ananın bitip zombinin PID 1'e geçmesidir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 360" role="img" aria-label="Süreç ağacı: PID 1'den kabuğa, kabuktan sleep ve ps süreçlerine inen ana-çocuk bağları; bitmiş ama toplanmamış çocuk zombi olarak kalır, anası ölen çocuk alt toplayıcıya bağlanır">
+  <rect class="sv-l" x="130" y="10" width="140" height="40" rx="8"/>
+  <text class="sv-b" x="200" y="35" text-anchor="middle">PID 1 (systemd)</text>
+  <line class="sv-c" x1="200" y1="50" x2="200" y2="75"/>
+  <rect class="sv-k" x="120" y="75" width="160" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="100" text-anchor="middle">oturum yöneticisi</text>
+  <line class="sv-c" x1="200" y1="115" x2="200" y2="140"/>
+  <rect class="sv-m" x="120" y="140" width="160" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="165" text-anchor="middle">bash (PID 597)</text>
+  <line class="sv-cl" x1="160" y1="180" x2="75" y2="215"/>
+  <line class="sv-cl" x1="200" y1="180" x2="200" y2="215"/>
+  <line class="sv-cl" x1="240" y1="180" x2="325" y2="215"/>
+  <rect class="sv-m" x="15" y="215" width="120" height="40" rx="8"/>
+  <text class="sv-t" x="75" y="232" text-anchor="middle">sleep 600</text>
+  <text class="sv-s" x="75" y="248" text-anchor="middle">PPID 597, S</text>
+  <rect class="sv-m" x="145" y="215" width="110" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="232" text-anchor="middle">ps</text>
+  <text class="sv-s" x="200" y="248" text-anchor="middle">PPID 597, R</text>
+  <rect class="sv-a" x="265" y="215" width="120" height="40" rx="8"/>
+  <text class="sv-t" x="325" y="232" text-anchor="middle">bitmiş çocuk</text>
+  <text class="sv-s" x="325" y="248" text-anchor="middle">Z: toplanmadı</text>
+  <text class="sv-s" x="325" y="275" text-anchor="middle">ana wait() çağırınca</text>
+  <text class="sv-s" x="325" y="291" text-anchor="middle">kayıt silinir</text>
+  <text class="sv-s" x="100" y="290" text-anchor="middle">Ana ölürse çocuk öksüz</text>
+  <text class="sv-s" x="100" y="306" text-anchor="middle">kalır ve alt toplayıcıya</text>
+  <text class="sv-s" x="100" y="322" text-anchor="middle">ya da PID 1'e bağlanır.</text>
+  <text class="sv-s" x="200" y="350" text-anchor="middle">Her ok: fork ile doğum; çocuğun PPID'i ananın PID'idir.</text>
+</svg>
+<figcaption>Süreç ağacı. Kabuk her komut için bir çocuk doğurur; çocuğun PPID sütunu anasını gösterir. Bitmiş ama anası tarafından toplanmamış çocuk zombi (Z) olarak listede kalır; anası ölen çocuk ağaçta yukarıya, bir alt toplayıcıya ya da PID 1'e taşınır.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: zombiyi ve öksüzü gözünle görmek</span>
+<p><strong>Soru:</strong> Bir Python programı <code>fork</code> ile çocuk doğuruyor; çocuk hemen bitiyor, ana ise üç saniye <code>wait</code> çağırmadan bekliyor. Bu sırada çocuk listede nasıl görünür? Ayrıca anası hemen biten bir <code>sleep</code>'in PPID'i ne olur?</p>
+<pre class="kod" data-ad="zombi.py">import os, time
+pid = os.fork()
+if pid == 0:
+    os._exit(7)            # cocuk hemen biter
+print("ana", os.getpid(), "cocuk", pid, flush=True)
+time.sleep(3)              # ana wait() cagirmiyor: cocuk zombi kalir
+os.waitpid(pid, 0)         # simdi topla
+time.sleep(3)</pre>
+<p><strong>Adım 1.</strong> Programı arka planda başlat, bir saniye sonra ananın çocuklarını listele.</p>
+<pre class="kod" data-ad="bash">python3 zombi.py &amp;
+ps -o pid,ppid,stat,cmd --ppid 1695</pre>
+<pre class="cikti">ana 1695 cocuk 1697
+    PID    PPID STAT CMD
+   1697    1695 Z+   [python3] &lt;defunct&gt;</pre>
+<p><strong>Adım 2.</strong> Çocuk bitti ama silinmedi: durumu <code>Z</code>, komutu <code>&lt;defunct&gt;</code> (ölmüş). Komut satırı boş olduğu için <code>ps</code> adı köşeli parantezle yazdı: <code>proc_pid_cmdline(5)</code> belgesine göre zombinin komut satırı dosyası boş okunur.</p>
+<p><strong>Adım 3.</strong> Üç saniye sonra ana <code>waitpid</code> çağırdı; aynı sorgu artık çocuk bulamıyor.</p>
+<pre class="kod" data-ad="bash">ps -o pid,ppid,stat,cmd --ppid 1695 || echo 'cocuk kalmadi'</pre>
+<pre class="cikti">    PID    PPID STAT CMD
+cocuk kalmadi</pre>
+<p><strong>Adım 4.</strong> Şimdi öksüz: <code>oksuz.sh</code> arka planda bir <code>sleep 600</code> başlatıp hemen bitiyor.</p>
+<pre class="kod" data-ad="bash">bash oksuz.sh
+ps -o pid,ppid,stat,cmd -p 1824
+ps -o pid,cmd -p $(ps -o ppid= -p 1824)</pre>
+<pre class="cikti">cocuk 1824 , ana 1823
+    PID    PPID STAT CMD
+   1824    1355 S+   sleep 600
+    PID CMD
+   1355 /init</pre>
+<p><strong>Sonuç:</strong> Ana 1823 bitti; <code>sleep</code>'in PPID'i 1823 değil, 1355 oldu. Bu ortamda (WSL2) çocuğu sahiplenen, oturumu yöneten <code>/init</code> sürecidir; olağan bir VM'de bu rolü PID 1 ya da kullanıcının <code>systemd --user</code> süreci üstlenir. Zombi beklemeyle, öksüz evlat edinmeyle çözülür. Zombiye <code>kill -9</code> göndermenin de işe yaramadığını denedik: durum <code>Z</code> olarak kaldı.</p></div>
+
+<h2 class="s">3. Kimin adına çalışıyor: sahibi, gerçek ve etkin kimlik</h2>
+
+<p><code>ps</code>'in kullanıcı sütunu tek bir ad gösterir, ama Parça 5'ten hatırla: bir sürecin aslında birkaç kullanıcı kimliği vardır. <strong>Gerçek</strong> kimlik süreci kimin başlattığını, <strong>etkin</strong> kimlik çekirdeğin izin denetiminde hangisini kullandığını, <strong>saklanmış</strong> kimlik ise programın sonradan geri dönebileceği yetkiyi tutar. <code>ps(1)</code> belgesi de böyle tanımlar: gerçek kimlik süreci oluşturan kullanıcıyı belirtir, etkin kimlik dosya erişim izinleri kullanılan kullanıcıyı. <code>ps</code>'in varsayılan <code>user</code> sütunu <strong>etkin</strong> kimliktir.</p>
+
+<p>Çoğu süreçte bu üç değer aynıdır. Ayrıştıkları yer Parça 12'deki <strong>SUID</strong> bitidir: SUID'li bir programı çalıştırdığında süreç senin gerçek kimliğinle ama dosya sahibinin etkin kimliğiyle çalışır. Bu, parolanı değiştirmek gibi ayrıcalıklı ama sınırlı işler için tasarlanmıştır ve savunmacı açısından "beklenmeyen kullanıcı" sorusunun en ince hâlidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: SUID'li bir sürecin iki yüzü</span>
+<p><strong>Soru:</strong> Sıradan kullanıcı <code>passwd</code> komutunu başlatıyor ve program parola sorarken bekliyor. Bu süreç kimin adına çalışıyor? Süreci başlatan kişi onun ortamını okuyabilir mi?</p>
+<p><strong>Adım 1.</strong> <code>passwd</code> parola sorusunda bekleyip dururken, ayrı bir terminalde gerçek, etkin ve saklanmış kimlikleri iste.</p>
+<pre class="kod" data-ad="bash">ps -o pid,ppid,ruser,euser,suser,ruid,euid,cmd -p 1101
+grep -E '^(Uid|Gid)' /proc/1101/status
+cat /proc/1101/environ</pre>
+<pre class="cikti">    PID    PPID RUSER    EUSER    SUSER     RUID  EUID CMD
+   1101    1098 kullanici root     root      1000     0 passwd
+Uid:	1000	0	0	0
+Gid:	1000	1000	1000	1000
+cat: /proc/1101/environ: Permission denied</pre>
+<p><strong>Adım 2.</strong> Gerçek kimlik 1000 (başlatan sensin), etkin ve saklanmış kimlik 0 (root). <code>Uid:</code> satırı sırasıyla gerçek, etkin, saklanmış ve dosya sistemi kimliğini yazar: <code>1000 0 0 0</code>. Program <code>/etc/shadow</code>'a (Parça 11) yazabilmek için root yetkisi taşıyor.</p>
+<p><strong>Adım 3.</strong> Süreci sen başlattın ama ortamını okuyamıyorsun. Neden? <code>/proc/&lt;pid&gt;/environ</code> erişimi bir <code>ptrace</code> erişim denetimine bağlıdır ve <code>ptrace(2)</code> belgesine göre bu denetim, hedefin gerçek, etkin ve saklanmış kimliklerinin <strong>hepsinin</strong> seninkine eşit olmasını ister. Etkin kimlik root olduğu için çekirdek reddetti. Böylece root yetkisiyle çalışan sürecin belleğindeki bilgiler, onu başlatan sıradan kullanıcıya sızmaz.</p>
+<p><strong>Sonuç:</strong> "Bu süreç kimin?" sorusunun cevabı bazen iki kişidir. SUID'li programlar bu yüzden az ve iyi bilinen olmalıdır (Parça 12'deki envanter). Bu deneme journal'a da bir PAM satırı ("(old) token not obtained") düşürdü: kimlik doğrulama girişimleri kayıt altına alınır (Parça 17).</p></div>
+
+<h2 class="s">4. <code>/proc/&lt;pid&gt;</code>: sürecin dosya hâlindeki kaydı</h2>
+
+<p>Parça 8'de <code>/proc</code>'un diskte yer kaplamayan, çekirdeğin o anda ürettiği bir dosya sistemi olduğunu söylemiştik. Her sürecin orada PID'iyle adlandırılmış bir dizini vardır ve bu dizin, sürecin çekirdekteki kaydını dosyalar hâlinde sunar. Bir sürecin ne olduğunu anlamak için savunmacının ilk baktığı yer burasıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Girdi</th><th>Ne gösterir</th><th>Kim okuyabilir</th></tr>
+<tr><td><code>cmdline</code></td><td>Komut satırı; argümanlar NUL baytıyla ayrılır</td><td><strong>Herkes</strong> (izin <code>-r--r--r--</code>)</td></tr>
+<tr><td><code>environ</code></td><td>Program başlarken aldığı ortam değişkenleri; NUL ayrımlı</td><td>Yalnız sahibi (ptrace denetimi, izin <code>-r--------</code>)</td></tr>
+<tr><td><code>exe</code></td><td>Çalışan programın dosyasına sembolik bağ</td><td>Yalnız sahibi (ptrace denetimi)</td></tr>
+<tr><td><code>cwd</code></td><td>Sürecin çalışma dizini</td><td>Yalnız sahibi</td></tr>
+<tr><td><code>fd/</code></td><td>Açık dosya tanıtıcıları: her numara bir dosyaya, boruya, sokete bağ</td><td>Yalnız sahibi</td></tr>
+<tr><td><code>status</code></td><td>Ad, durum, PPID, kimlikler, bellek, yetenekler (Parça 5)</td><td>Herkes</td></tr>
+<tr><td><code>maps</code></td><td>Bellek haritası (Parça 3 ve 5)</td><td>Yalnız sahibi</td></tr>
+</table></div>
+
+<p>Tablonun üçüncü sütunu, bu parçanın en önemli güvenlik derslerinden birini taşıyor. <code>cmdline</code> makinedeki <strong>bütün kullanıcılara</strong> açıktır; <code>ps</code> başka kullanıcıların komut satırlarını bu yüzden gösterebilir. <code>environ</code> ise yalnız sahibine açıktır. <code>proc_pid_environ(5)</code> belgesine göre bu dosya, program <code>execve</code> ile başlarken kurulan <em>ilk</em> ortamı gösterir; süreç sonradan ortamını değiştirirse dosya bunu yansıtmaz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Sırrı komut satırına koyma.</strong> Komut satırı <code>/proc/&lt;pid&gt;/cmdline</code> üzerinden makinedeki her kullanıcıya görünür, kabuk geçmişine yazılır ve süreç izleme araçlarının günlüklerine düşebilir. Sır gerekiyorsa izinleri dar bir dosyadan, standart girdiden ya da (sınırlarını bilerek) bir ortam değişkeninden verilir. Ortam değişkeni de mükemmel değildir: çocuk süreçlere miras geçer ve hata dökümlerine karışabilir; sır saklamanın bütün seçenekleri Parça 18'de.</p></div>
+
+<p>Bu varsayılan açıklığı yönetici daraltabilir. <code>proc(5)</code> belgesine göre <code>/proc</code>, <code>hidepid</code> seçeneğiyle bağlanabilir (Parça 8'deki bağlama seçenekleri): <code>hidepid=1</code> başkalarının <code>/proc/&lt;pid&gt;</code> içindeki dosyalarını, <code>cmdline</code> ve <code>status</code> dahil, erişilmez yapar; <code>hidepid=2</code> ayrıca bu dizinleri görünmez kılar. <code>gid=</code> seçeneğiyle izleme ekibinin grubuna istisna tanınabilir. Bu ortamda <code>findmnt -no OPTIONS /proc</code> çıktısı <code>rw,nosuid,nodev,noexec,noatime</code> idi: <code>hidepid</code> yok, yani varsayılan açık davranış geçerli. Değiştirmek root ister; burada çalıştırılmadı.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Komut satırındaki parolayı yalnız ben görürüm."</strong> <code>mysql -p'Parola123'</code>, <code>curl -u ad:parola</code> ya da betiğe <code>--parola</code> argümanı vermek yaygın bir alışkanlıktır. Ama süreç yaşadığı sürece aynı makinedeki herhangi bir kullanıcı <code>ps -eo args</code> ile o satırı okuyabilir. Aşağıdaki "Kendi makinende dene" bölümünde sahte bir parolayla bunu göreceksin. Doğrusu: aracın parolayı kendisinin sormasına izin vermek, parolayı izinleri <code>600</code> olan bir yapılandırma dosyasından okutmak ya da standart girdiden geçirmektir. Yanlışlıkla yazdıysan o parolayı "yanmış" say ve değiştir (Parça 58).</p></div>
+
+<p>İki savunmacı ipucu daha. Birincisi, <code>exe</code> bağı çekirdeğin gerçekten yüklediği dosyayı gösterir; <code>cmdline</code> ise sürecin kendi belleğinde durur ve <code>proc_pid_cmdline(5)</code> belgesine göre süreç onu sonradan değiştirebilir. Bu yüzden "bu süreç ne?" sorusunun güvenilir cevabı adda değil, <code>exe</code>'dedir. İkincisi, bir dosya silindiğinde aslında yalnız adı silinir; onu açık tutan bir süreç varsa içerik yerinde durur ve <code>/proc/&lt;pid&gt;/fd/</code> altındaki bağın sonunda <code>(deleted)</code> yazar. <code>proc_pid_exe(5)</code> belgesine göre çalışan programın dosyası silinmişse <code>exe</code> bağına da aynı ek düşer. Diskten silinmiş bir programdan çalışan süreç meşru olabilir (güncellemeden sonra yeniden başlatılmamış bir hizmet gibi), ama incelenmesi gereken güçlü bir işarettir.</p>
+
+<h2 class="s">5. Sinyaller: sürece gönderilen kısa mesajlar</h2>
+
+<p>Çalışan bir sürece "dur", "bitir", "yapılandırmanı yeniden oku" demenin yolu <strong>sinyal</strong>dir. Sinyal, çekirdeğin bir sürece ilettiği küçük bir numaradır; içinde veri taşımaz, yalnız "şu olay oldu" der. Kaynağı başka bir süreç (<code>kill</code> komutu), terminal (Ctrl+C) ya da çekirdeğin kendisi olabilir: Parça 5'te geçersiz bir adrese dokunan sürece çekirdeğin <code>SIGSEGV</code> gönderdiğini, seccomp'un yasak çağrıda <code>SIGKILL</code> kullandığını görmüştün.</p>
+
+<p>Sinyal gelince ne olacağına sürecin <strong>sinyal eğilimi</strong> (disposition) karar verir. Üç seçenek vardır: varsayılan eylem, yok saymak ya da kendi işleyicini (handler) çalıştırmak. <code>signal(7)</code> belgesi her sinyalin varsayılanını tanımlar: Term (sonlandır), Core (sonlandır ve bellek dökümü bırak), Stop (durdur), Cont (durdurulmuşsa sürdür), Ign (yok say).</p>
+
+<div class="tablo"><table>
+<tr><th>Numara ve ad</th><th>Varsayılan</th><th>Yakalanabilir mi</th><th>Tipik kaynağı</th></tr>
+<tr><td>1 <code>SIGHUP</code></td><td>Term</td><td>Evet</td><td>Terminal kapandı; hizmetlerde gelenek olarak "yapılandırmayı yeniden oku"</td></tr>
+<tr><td>2 <code>SIGINT</code></td><td>Term</td><td>Evet</td><td>Terminalde Ctrl+C</td></tr>
+<tr><td>9 <code>SIGKILL</code></td><td>Term</td><td><strong>Hayır</strong></td><td><code>kill -9</code>; çekirdek (bellek tükendiğinde, seccomp)</td></tr>
+<tr><td>11 <code>SIGSEGV</code></td><td>Core</td><td>Evet</td><td>Çekirdek: geçersiz bellek erişimi</td></tr>
+<tr><td>15 <code>SIGTERM</code></td><td>Term</td><td>Evet</td><td><code>kill</code>'in varsayılanı; kapatma sırasında hizmet yöneticisi</td></tr>
+<tr><td>17 <code>SIGCHLD</code></td><td>Ign</td><td>Evet</td><td>Çekirdek: bir çocuk bitti ya da durdu</td></tr>
+<tr><td>18 <code>SIGCONT</code></td><td>Cont</td><td>Evet</td><td><code>bg</code>, <code>fg</code>, <code>kill -CONT</code></td></tr>
+<tr><td>19 <code>SIGSTOP</code></td><td>Stop</td><td><strong>Hayır</strong></td><td><code>kill -STOP</code></td></tr>
+<tr><td>20 <code>SIGTSTP</code></td><td>Stop</td><td>Evet</td><td>Terminalde Ctrl+Z</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>signal(7)</code> belgesinin ifadesiyle <strong><code>SIGKILL</code> ve <code>SIGSTOP</code> yakalanamaz, engellenemez, yok sayılamaz.</strong> Bu bir tasarım kararıdır: süreç ne kadar bozuk ya da kötü niyetli olursa olsun, yetkili biri onu her zaman durdurabilmeli ya da dondurabilmelidir. Bedeli şudur: <code>SIGKILL</code> alan süreç geçici dosyalarını silemez, tamponunu diske yazamaz, kilidini bırakamaz. Bu yüzden önce <code>SIGTERM</code> gönderilir, süreç kibarca kapanmak için birkaç saniye alır; yanıt vermezse <code>SIGKILL</code>.</p></div>
+
+<p>Sinyal göndermenin de izni vardır. <code>kill(2)</code> belgesine göre gönderenin gerçek ya da etkin kimliği, hedefin gerçek ya da saklanmış kimliğine eşit olmalıdır; yoksa çekirdek "Operation not permitted" der. Parça 5'teki <code>CAP_KILL</code> yeteneği bu denetimi atlatır. Sıradan kullanıcı olarak <code>kill -TERM 1</code> denediğimizde tam bu ret geldi. Aynı sayfanın iki inceliği: 0 numaralı sinyal hiçbir şey göndermez, yalnız varlık ve izin denetimini yapar (<code>kill -0 PID</code> "bu süreç hâlâ yaşıyor mu?" sorusudur); eksi işaretli bir PID ise bütün bir süreç grubunu hedefler.</p>
+
+<p>Kabuk, sinyalle ölen bir komutun çıkış kodunu 128 + sinyal numarası olarak verir (Bash kılavuzundaki kural; kod rafı Parça 17'deki <code>$?</code>). <code>SIGTERM</code> ile ölen süreç 143, <code>SIGKILL</code> ile ölen 137 döndürür; Parça 5'teki seccomp örneğinde gördüğün 137 buydu.</p>
+
+<figure>
+<svg viewBox="0 0 400 440" role="img" aria-label="Bir sürece sinyal geldiğinde karar akışı: SIGKILL ya da SIGSTOP ise çekirdek doğrudan uygular; değilse süreç sinyali yok sayıyorsa bir şey olmaz; işleyici varsa işleyici çalışır; yoksa varsayılan eylem uygulanır">
+  <rect class="sv-l" x="110" y="10" width="180" height="36" rx="8"/>
+  <text class="sv-b" x="200" y="33" text-anchor="middle">Sürece sinyal geldi</text>
+  <line class="sv-c" x1="200" y1="46" x2="200" y2="66"/>
+  <rect class="sv-k" x="90" y="66" width="220" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="91" text-anchor="middle">SIGKILL ya da SIGSTOP mu?</text>
+  <line class="sv-cl" x1="310" y1="86" x2="330" y2="86"/>
+  <text class="sv-s" x="320" y="78" text-anchor="middle">evet</text>
+  <rect class="sv-a" x="300" y="100" width="95" height="74" rx="8"/>
+  <text class="sv-t" x="347" y="122" text-anchor="middle">Çekirdek</text>
+  <text class="sv-t" x="347" y="140" text-anchor="middle">doğrudan</text>
+  <text class="sv-t" x="347" y="158" text-anchor="middle">uygular</text>
+  <line class="sv-cl" x1="330" y1="86" x2="347" y2="100"/>
+  <line class="sv-c" x1="200" y1="106" x2="200" y2="136"/>
+  <text class="sv-s" x="215" y="125">hayır</text>
+  <rect class="sv-k" x="40" y="136" width="250" height="40" rx="8"/>
+  <text class="sv-t" x="165" y="161" text-anchor="middle">Süreç bu sinyali yok sayıyor mu?</text>
+  <line class="sv-c" x1="40" y1="156" x2="20" y2="156"/>
+  <line class="sv-c" x1="20" y1="156" x2="20" y2="210"/>
+  <text class="sv-s" x="34" y="196">evet</text>
+  <rect class="sv-k" x="5" y="210" width="110" height="40" rx="8"/>
+  <text class="sv-t" x="60" y="235" text-anchor="middle">Hiçbir şey olmaz</text>
+  <line class="sv-c" x1="200" y1="176" x2="200" y2="266"/>
+  <text class="sv-s" x="215" y="225">hayır</text>
+  <rect class="sv-k" x="70" y="266" width="260" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="291" text-anchor="middle">İşleyici (trap, handler) kurulu mu?</text>
+  <line class="sv-cl" x1="140" y1="306" x2="95" y2="340"/>
+  <line class="sv-cl" x1="260" y1="306" x2="305" y2="340"/>
+  <text class="sv-s" x="100" y="325" text-anchor="middle">evet</text>
+  <text class="sv-s" x="300" y="325" text-anchor="middle">hayır</text>
+  <rect class="sv-m" x="10" y="340" width="175" height="60" rx="8"/>
+  <text class="sv-t" x="97" y="363" text-anchor="middle">İşleyici çalışır:</text>
+  <text class="sv-s" x="97" y="383" text-anchor="middle">temizlik, sonra çıkış ya da devam</text>
+  <rect class="sv-a" x="215" y="340" width="175" height="60" rx="8"/>
+  <text class="sv-t" x="302" y="363" text-anchor="middle">Varsayılan eylem:</text>
+  <text class="sv-s" x="302" y="383" text-anchor="middle">Term, Core, Stop, Cont, Ign</text>
+  <text class="sv-s" x="200" y="428" text-anchor="middle">Sinyalle ölen komutun çıkış kodu: 128 + sinyal numarası.</text>
+</svg>
+<figcaption>Bir sinyalin yolculuğu. <code>SIGKILL</code> ve <code>SIGSTOP</code> sürece hiç sorulmadan çekirdekte uygulanır. Öbür sinyallerde süreç önceden "yok say" ya da "şu işleyiciyi çalıştır" demiş olabilir; demediyse <code>signal(7)</code> tablosundaki varsayılan eylem geçerlidir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: <code>trap</code> ile temizlik, <code>SIGKILL</code> ile temizliksiz ölüm</span>
+<p><strong>Soru:</strong> Bir Bash betiği başlarken bir kilit dosyası oluşturuyor ve <code>SIGTERM</code> gelince bu dosyayı silip çıkacak bir işleyici kuruyor. Betiğe önce <code>SIGTERM</code>, sonra (yeniden başlatıp) <code>SIGKILL</code> gönderilirse kilit dosyasına ne olur?</p>
+<pre class="kod" data-ad="temizlikci.sh">#!/usr/bin/env bash
+kilit=/tmp/yazar/siber-13/temizlikci.kilit
+echo $$ &gt; "$kilit"
+temizle() {
+    echo "[$$] SIGTERM geldi: kilit dosyasi siliniyor"
+    rm -f "$kilit"
+    exit 0
+}
+trap temizle TERM
+echo "[$$] calisiyorum, kilit: $kilit"
+while true; do
+    sleep 1 &amp;
+    wait $!
+done</pre>
+<p><strong>Adım 1.</strong> Döngüdeki <code>sleep 1 &amp;</code> ve <code>wait</code> bilinçli seçildi: Bash, ön plandaki bir komut bitene kadar işleyiciyi çalıştırmaz, ama <code>wait</code> sinyal gelince hemen döner. Böylece betik sinyale anında yanıt verir.</p>
+<pre class="kod" data-ad="bash">bash temizlikci.sh &amp;
+p=$!
+ls temizlikci.kilit
+grep SigCgt /proc/$p/status
+kill -TERM $p; wait $p; echo "cikis kodu: $?"
+ls temizlikci.kilit</pre>
+<pre class="cikti">[1419] calisiyorum, kilit: /tmp/yazar/siber-13/temizlikci.kilit
+temizlikci.kilit
+SigCgt:	0000000000014000
+[1419] SIGTERM geldi: kilit dosyasi siliniyor
+cikis kodu: 0
+ls: cannot access 'temizlikci.kilit': No such file or directory</pre>
+<p><strong>Adım 2.</strong> <code>SigCgt</code> satırı, sürecin işleyici kurduğu ("yakaladığı") sinyallerin bit maskesidir (Parça 1'deki onaltılık). Sinyal n, maskenin n − 1 numaralı bitidir. <code>0x14000</code> = 2<sup>14</sup> + 2<sup>16</sup>, yani sinyal 15 (<code>SIGTERM</code>, bizim <code>trap</code>'imiz) ve sinyal 17 (<code>SIGCHLD</code>, Bash'in çocuklarını izlemek için kendi kurduğu).</p>
+<p><strong>Adım 3.</strong> <code>SIGTERM</code> gelince işleyici çalıştı, kilidi sildi ve 0 ile çıktı. Kibar kapanış budur.</p>
+<pre class="kod" data-ad="bash">bash temizlikci.sh &amp;
+p=$!
+kill -KILL $p; wait $p; echo "cikis kodu: $?"
+ls temizlikci.kilit
+cat temizlikci.kilit</pre>
+<pre class="cikti">[1445] calisiyorum, kilit: /tmp/yazar/siber-13/temizlikci.kilit
+/tmp/yazar/siber-13/lab3.sh: line 5:  1445 Killed                     bash temizlikci.sh
+cikis kodu: 137
+temizlikci.kilit
+1445</pre>
+<p><strong>Adım 4.</strong> <code>SIGKILL</code>'de işleyici hiç çalışmadı: çıkış kodu 137 (128 + 9) ve kilit dosyası, artık var olmayan 1445 numaralı sürecin PID'iyle yerinde duruyor. Bir sonraki çalıştırma "başka bir kopya çalışıyor" sanabilir. ("lab3.sh: line 5" öneki, komutların bir sarmalayıcı betikten çalıştırılmasından geliyor; etkileşimli kabukta yalnız <code>Killed</code> görürsün.)</p>
+<p><strong>Adım 5.</strong> <code>SIGKILL</code>'i yakalamaya çalışınca ne olur? Bash <code>trap … KILL</code> satırını sessizce kabul etti ama süreç yine 137 ile öldü. Python daha açık konuşur: çekirdek isteği reddeder.</p>
+<pre class="kod" data-ad="bash">python3 -c 'import signal; signal.signal(signal.SIGKILL, lambda s, f: None)'</pre>
+<pre class="cikti">Traceback (most recent call last):
+  File "&lt;string&gt;", line 1, in &lt;module&gt;
+    import signal; signal.signal(signal.SIGKILL, lambda s, f: None)
+                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/signal.py", line 58, in signal
+    handler = _signal.signal(_enum_to_int(signalnum), _enum_to_int(handler))
+OSError: [Errno 22] Invalid argument</pre>
+<p><strong>Sonuç:</strong> <code>SIGTERM</code> sürece son sözünü söyleme fırsatı verir; <code>SIGKILL</code> vermez ve arkasında yarım kalmış iş bırakabilir. Kendi betiklerine <code>trap … TERM</code> ve <code>trap … EXIT</code> ile temizlik koymak iyi bir alışkanlıktır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Her süreci doğrudan <code>kill -9</code> ile öldürmek.</strong> Hızlı görünür ama veritabanı gibi bir süreci yarım yazılmış dosyalarla, bir betiği silinmemiş kilitlerle bırakabilir. Doğru sıra: <code>kill PID</code> (yani <code>SIGTERM</code>), birkaç saniye bekle, <code>kill -0 PID</code> ile hâlâ yaşıyor mu bak, yaşıyorsa <code>kill -KILL PID</code>. Şüpheli bir süreç söz konusuysa bir adım daha var: öldürmeden önce <code>kill -STOP PID</code> ile dondurup aşağıdaki soruları sormak. Ölü süreçten <code>/proc</code> kaydı okunamaz; dondurulmuş süreçten okunur. Olay müdahalesinde bu karar planlı verilir (Parça 70 ve 71).</p></div>
+
+<h2 class="s">6. Ön plan ve arka plan işleri</h2>
+
+<p>Terminalde bir komut çalıştırdığında kabuk onu <strong>ön planda</strong> başlatır: klavyen o komuta bağlanır ve kabuk komut bitene kadar bekler. Komutun sonuna <code>&amp;</code> koyarsan kabuk onu <strong>arka planda</strong> başlatır, hemen yeni komut almaya döner. Kabuğun bu işleri takip etmesine <strong>iş denetimi</strong> (job control) denir. Her iş bir numara alır: <code>%1</code>, <code>%2</code>; <code>%+</code> (ya da <code>%%</code>) şimdiki işi, <code>%-</code> bir öncekini gösterir.</p>
+
+<p>İş denetiminin bütün düğmeleri aslında sinyallerdir. Bash kılavuzuna göre terminalde askıya alma karakterine (genellikle Ctrl+Z) basmak çalışan işi durdurup kabuğa dönmeni sağlar: terminal sürücüsü işe <code>SIGTSTP</code> gönderir. Ardından <code>bg</code> işi arka planda, <code>fg</code> ön planda sürdürür; ikisi de işe <code>SIGCONT</code> gönderir. Ctrl+C ön plandaki işe <code>SIGINT</code> gönderir. Arka plandaki bir iş terminalden okumaya kalkarsa <code>SIGTTIN</code> alır ve durur.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="İş denetimi durumları: ön planda çalışan iş Ctrl+Z ile durdurulur, bg ile arka planda sürer, fg ile ön plana döner; komut ve ampersand doğrudan arka planda başlatır; Ctrl+C ve kill işi sonlandırır">
+  <rect class="sv-m" x="120" y="15" width="160" height="50" rx="10"/>
+  <text class="sv-b" x="200" y="37" text-anchor="middle">Ön planda</text>
+  <text class="sv-s" x="200" y="55" text-anchor="middle">klavye bu işte (S+, R+)</text>
+  <rect class="sv-a" x="15" y="150" width="150" height="50" rx="10"/>
+  <text class="sv-b" x="90" y="172" text-anchor="middle">Durdurulmuş</text>
+  <text class="sv-s" x="90" y="190" text-anchor="middle">STAT: T</text>
+  <rect class="sv-l" x="235" y="150" width="150" height="50" rx="10"/>
+  <text class="sv-b" x="310" y="172" text-anchor="middle">Arka planda</text>
+  <text class="sv-s" x="310" y="190" text-anchor="middle">kabuk yeni komut alır</text>
+  <line class="sv-cl" x1="140" y1="65" x2="80" y2="150"/>
+  <text class="sv-s" x="60" y="100">Ctrl+Z</text>
+  <text class="sv-s" x="60" y="116">SIGTSTP</text>
+  <line class="sv-cl" x1="165" y1="168" x2="235" y2="168"/>
+  <text class="sv-s" x="200" y="160" text-anchor="middle">bg</text>
+  <text class="sv-s" x="200" y="185" text-anchor="middle">SIGCONT</text>
+  <line class="sv-cl" x1="300" y1="150" x2="250" y2="65"/>
+  <text class="sv-s" x="325" y="100">fg</text>
+  <text class="sv-s" x="325" y="116">SIGCONT</text>
+  <line class="sv-c" x1="310" y1="200" x2="310" y2="235"/>
+  <text class="sv-s" x="310" y="252" text-anchor="middle">"komut &amp;" doğrudan buradan başlar</text>
+  <text class="sv-s" x="200" y="278" text-anchor="middle">Ctrl+C (SIGINT) ya da kill %n (SIGTERM): iş sonlanır.</text>
+</svg>
+<figcaption>İş denetimi bir sinyal oyunudur. Ctrl+Z işe <code>SIGTSTP</code> gönderip onu durdurur; <code>bg</code> ve <code>fg</code> işe <code>SIGCONT</code> gönderip sürdürür ve klavyenin kimde olacağını belirler.</figcaption>
+</figure>
+
+<p>Güvenlik açısından iki not. Birincisi, terminali kapattığında kabuk <code>SIGHUP</code> alır ve Bash kılavuzuna göre çıkmadan önce bunu bütün işlerine iletir; arka plan işlerin de genellikle ölür. Uzun bir işin oturumdan bağımsız sürmesi için <code>nohup</code> ya da <code>disown</code> kullanılır; kalıcı işler ise hizmet olarak tanımlanır (Parça 14). İkincisi, iş denetimi açık olmayan bir kabukta (betikler) <code>&amp;</code> ile başlatılan komutun standart girdisi Bash kılavuzuna göre <code>/dev/null</code> olur; aşağıdaki çıktılarda <code>fd 0</code>'ın <code>/dev/null</code>'a bağlı olması bundandır.</p>
+
+<h2 class="s">7. Kaynak kullanımını izlemek</h2>
+
+<p>Bir sürecin işlemciyi ya da belleği beklenmedik ölçüde tüketmesi hem arıza hem güvenlik işaretidir: kontrolden çıkmış bir döngü olabileceği gibi, izinsiz yerleştirilmiş bir kripto para madencisi de olabilir. <code>top</code> canlı bir tablo verir ve varsayılan olarak işlemci kullanımına göre sıralar. Etkileşimli kullanımda <code>P</code> işlemciye, <code>M</code> belleğe göre sıralar, <code>k</code> sinyal gönderir, <code>q</code> çıkar; çıktıyı bir dosyaya almak için toplu kip <code>top -b -n 1</code> kullanılır. <code>htop</code> aynı işi renkli ve ağaç görünümüyle yapar; bu ortamda kurulu değildi, laboratuvarında <code>sudo apt install htop</code> ile kurabilirsin.</p>
+
+<p><code>top</code>'un üst satırlarını okumayı öğren. İlk satırdaki <strong>yük ortalaması</strong> (load average) son 1, 5 ve 15 dakikada çalışmak için sırada bekleyen ya da çalışan (ve kesilemez uykudaki) ortalama görev sayısıdır; tek başına anlamı yoktur, <strong>çekirdek sayısıyla</strong> (<code>nproc</code>) kıyaslanır. 12 çekirdekli bir makinede 1,5 yük boşta sayılır, tek çekirdekli bir makinede kuyruk demektir. Bellek satırındaki <code>buff/cache</code> çekirdeğin disk önbelleğidir ve gerektiğinde geri verilir; asıl bakılacak değer <code>avail Mem</code>'dir. Süreç satırında <code>VIRT</code> sürecin bütün sanal adres uzayını (Parça 5), <code>RES</code> o anda RAM'de duran kısmını gösterir; bellek baskısı için <code>RES</code> önemlidir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong><code>ps</code>'teki <code>%CPU</code>'yu "şu anki işlemci kullanımı" sanmak.</strong> <code>ps(1)</code> belgesine göre bu değer, sürecin harcadığı işlemci zamanının, çalıştığı toplam süreye oranıdır: ömür boyu ortalamadır. <code>top(1)</code>'daki <code>%CPU</code> ise son ekran yenilemesinden bu yana geçen süredeki paydır. Aşağıdaki denemede 100 MiB ayırıp uykuya geçen bir Python süreci <code>top</code>'ta %0,0, <code>ps</code>'te %19,1 göründü: ilk saniyedeki bellek ayırma işi ortalamayı yukarı çekiyordu. "Şimdi ne yanıyor?" sorusu için <code>top</code>, "ömrü boyunca kim ne harcadı?" sorusu için <code>ps</code> kullan.</p></div>
+
+<h2 class="s">8. Bu süreç hangi bağlantıyı tutuyor?</h2>
+
+<p>Bir süreç ağa dinleyen bir soket açtığında ya da dışarıya bağlandığında, bu soket de sürecin açık dosya tanıtıcılarından biridir ("her şey dosyadır", Parça 8). O hâlde iki yönden sorabilirsin. Porttan sürece: "8013 numaralı portu kim dinliyor?" Bunu <code>ss -tlnp</code> yanıtlar: <code>-t</code> TCP, <code>-l</code> yalnız dinleyenler, <code>-n</code> sayısal adres, <code>-p</code> soketi tutan süreç; ayrıntısı Parça 15'te. Süreçten porta: "Bu süreç hangi bağlantıları tutuyor?" Bunu <code>lsof -a -i -p PID</code> yanıtlar. Kendi süreçlerin için root gerekmez; başka kullanıcıların süreçlerindeki <code>-p</code> bilgisini görmek için laboratuvarında <code>sudo</code> gerekir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong><code>lsof -i -p PID</code> yazıp "bu süreç çok bağlantı açmış" sanmak.</strong> <code>lsof(8)</code> belgesine göre seçim seçenekleri varsayılan olarak <strong>VEYA</strong> ile birleşir: bu komut "ağ dosyaları ya da bu sürecin dosyaları" demektir ve sürecin bütün kütüphanelerini, makinedeki öbür ağ soketlerini de döker. Denemede bu biçim 24 satır verdi; <code>-a</code> ile (seçimleri VE ile birleştir) yalnız tek bir dinleyen soket kaldı. Doğrusu: <code>lsof -a -i -P -n -p PID</code>. <code>-P</code> port numaralarını, <code>-n</code> adresleri ada çevirmeden gösterir.</p></div>
+
+<h2 class="s">9. Şüpheli bir süreci tanımak: savunmacı soru listesi</h2>
+
+<p>Bir süreç tek bir özelliğiyle kötü niyetli ilan edilmez. Ad yanıltıcı olabilir, yüksek işlemci kullanımı derleme işinden gelebilir, silinmiş bir program güncelleme sonrası yeniden başlatılmamış bir hizmet olabilir. Savunmacı bu yüzden her süreç için aynı soruları sırayla sorar ve cevapları <strong>beklenenle</strong> karşılaştırır. Beklenen, makineni tanıdığında oluşur: hangi hizmetler hangi kullanıcıyla, hangi yoldan, hangi portta çalışır. Bu temel çizginin (baseline) kurumsal ölçekte kurulması Parça 67 ve 69'un konusu.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Nereye bakılır</th><th>Beklenen</th><th>Kuşku uyandıran</th></tr>
+<tr><td>Kimin adına çalışıyor?</td><td><code>ps -o ruser,euser</code>, <code>status</code>'taki <code>Uid:</code></td><td>Hizmet kendi hizmet kullanıcısıyla (Parça 11)</td><td>Web sunucusu kullanıcısıyla çalışan kabuk; beklenmedik root; gerçek ve etkin kimliği farklı, bilinmeyen program</td></tr>
+<tr><td>Kim doğurdu?</td><td>PPID, <code>pstree -p -s</code></td><td>Hizmet yöneticisi, oturum kabuğu</td><td>Web sunucusunun, veritabanının ya da belge görüntüleyicinin çocuğu olan kabuk</td></tr>
+<tr><td>Diskte hangi dosya?</td><td><code>ls -l /proc/PID/exe</code></td><td><code>/usr/bin</code>, <code>/usr/sbin</code>, paket yöneticisinin bildiği bir yol (Parça 10)</td><td><code>/tmp</code>, <code>/dev/shm</code>, gizli bir dizin; sonunda <code>(deleted)</code></td></tr>
+<tr><td>Nerede çalışıyor?</td><td><code>ls -l /proc/PID/cwd</code></td><td>Hizmetin kendi dizini, <code>/</code></td><td>Herkese yazılabilir bir dizin (Parça 12)</td></tr>
+<tr><td>Komut satırı ne diyor?</td><td><code>cmdline</code> (değiştirilebilir, <code>exe</code> ile karşılaştır)</td><td>Paketin belgelediği seçenekler</td><td>Adla <code>exe</code>'nin uyuşmaması; uzun, kodlanmış (Parça 6) argümanlar</td></tr>
+<tr><td>Ağda ne yapıyor?</td><td><code>lsof -a -i -p PID</code>, <code>ss -tnp</code></td><td>Belgelenmiş portta dinleme</td><td>Beklenmeyen dinleyen port; bilinmeyen bir adrese süren bağlantı</td></tr>
+<tr><td>Ne kadar kaynak?</td><td><code>top</code>, <code>ps --sort</code></td><td>İşiyle orantılı</td><td>Boşta olması gereken makinede sürekli %100</td></tr>
+<tr><td>Ne zamandan beri?</td><td><code>ps -o lstart,etime</code></td><td>Açılıştan ya da bakım saatinden beri</td><td>Bir uyarının, garip bir girişin olduğu saatte başlamış (Parça 17)</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Önce bak, sonra dondur, en son öldür.</strong> 1. Soru listesini çalıştır ve cevapları not et (saatle birlikte). 2. <code>exe</code> silinmiş olsa bile <code>/proc/PID/exe</code> üzerinden program dosyasının özetini al, gerekiyorsa kopyasını sakla (Parça 6'daki hash, Parça 71'deki delil bütünlüğü). 3. Kurum içindeysen olay müdahale planına göre haber ver (Parça 70). 4. Gerekirse <code>SIGSTOP</code> ile dondur, kanıt toplandıktan sonra sonlandır. 5. Kökü bul: süreç nasıl başladı, yeniden başlatılacak mı (Parça 14'teki hizmetler ve zamanlanmış görevler)? Kökü bulunmayan süreç geri gelir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: kendi kurduğun "şüpheli" süreci soru listesinden geçirmek</span>
+<p><strong>Soru:</strong> Kendi makinende, bilerek kuşku uyandıracak bir süreç kur: Python yorumlayıcısının bir kopyasını gizli bir dizine <code>guncelleyici</code> adıyla koy, onunla <code>127.0.0.1</code>'de küçük bir HTTP sunucusu başlat ve kopyayı sil. Soru listesi bu süreç hakkında ne söyler?</p>
+<p><strong>Adım 1.</strong> Soruları tek komutta soran küçük bir betik yaz. Yalnız okur, hiçbir şeyi değiştirmez.</p>
+<pre class="kod" data-ad="sorgu.sh">#!/usr/bin/env bash
+# Kullanim: bash sorgu.sh PID  -> bir surec icin savunmaci sorular
+p=$1
+ana=$(ps -o ppid= -p "$p" | tr -d ' ')
+echo "kim     : $(ps -o user= -p "$p") (gercek/etkin uid: $(awk '/^Uid/{print $2"/"$3}' /proc/$p/status))"
+echo "ebeveyn : $ana $(ps -o comm= -p "$ana")"
+echo "baslangic: $(ps -o lstart= -p "$p")"
+echo "dosya   : $(readlink /proc/$p/exe)"
+echo "dizin   : $(readlink /proc/$p/cwd)"
+echo "komut   : $(tr '\0' ' ' &lt; /proc/$p/cmdline)"
+echo "ag      :"
+lsof -a -i -P -n -p "$p" 2&gt;/dev/null | tail -n +2 | awk '{print "          " $8, $9, $10}'</pre>
+<p><strong>Adım 2.</strong> Deney süreci kur ve betiği önce ona, sonra kıyas için kendi kabuğuna uygula.</p>
+<pre class="kod" data-ad="bash">mkdir -p .gizli
+cp /usr/bin/python3 .gizli/guncelleyici
+(cd .gizli &amp;&amp; exec ./guncelleyici -m http.server 8014 --bind 127.0.0.1 &gt; /dev/null 2&gt;&amp;1) &amp;
+rm .gizli/guncelleyici
+bash sorgu.sh 1589
+bash sorgu.sh 1553</pre>
+<pre class="cikti">kim     : kullanici (gercek/etkin uid: 1000/1000)
+ebeveyn : 1553 bash
+baslangic: Fri Oct 16 16:56:01 2026
+dosya   : /tmp/yazar/siber-13/.gizli/guncelleyici (deleted)
+dizin   : /tmp/yazar/siber-13/.gizli
+komut   : ./guncelleyici -m http.server 8014 --bind 127.0.0.1
+ag      :
+          TCP 127.0.0.1:8014 (LISTEN)
+kim     : kullanici (gercek/etkin uid: 1000/1000)
+ebeveyn : 1552 script
+baslangic: Fri Oct 16 16:56:00 2026
+dosya   : /usr/bin/bash
+dizin   : /tmp/yazar/siber-13
+komut   : bash /tmp/yazar/siber-13/lab6.sh
+ag      :</pre>
+<p><strong>Adım 3.</strong> Kimlik beklenen (kendi kullanıcın), ebeveyn bir kabuk; bunlar tek başına kuşku vermez. Ama <strong>yol</strong> üç işaret birden veriyor: <code>/tmp</code> altında, nokta ile başlayan gizli bir dizinde ve <code>(deleted)</code>. Ad "güncelleyici" diyor ama komut satırının devamı bir HTTP sunucusu çalıştırdığını söylüyor: ad ile iş uyuşmuyor.</p>
+<p><strong>Adım 4.</strong> <strong>Ağ</strong> sorusu dördüncü işareti veriyor: beklenmeyen bir dinleyen port. Kıyas satırları (kendi kabuğun) ise sıkıcı derecede olağan: <code>/usr/bin/bash</code>, bağlantı yok.</p>
+<p><strong>Sonuç:</strong> Hiçbir tek cevap "kötü" demedi; birlikte okununca beklenmeyen yol, silinmiş dosya, ad ile iş uyuşmazlığı ve beklenmeyen port bir inceleme gerekçesidir. Deney süreci sonra <code>kill</code> ile durduruldu ve <code>ss</code> artık dinleyen göstermedi.</p></div>
+
+<p>Bu rafın sınırını bir kez daha hatırla: bu sorular kendi makineni ya da yönetmekle yetkilendirildiğin sistemleri tanımak içindir. Başkasına ait bir sistemde süreç listelemek, sinyal göndermek ya da dosya kopyalamak izinsiz erişimdir ve suçtur; yasal ve etik çerçeve Parça 72 ve 73'te.</p>
+
+<h2 class="s">Kendi makinende dene: süreç ağacı, <code>/proc</code>, işler ve portlar</h2>
+
+<p>Bu alıştırma yalnız kendi Linux makinende ya da laboratuvar VM'inde, yalnız kendi başlattığın süreçlerle yapılır; root gerekmez ve hiçbir sistem ayarı değişmez. Çalışma klasörü <code>/tmp/yazar/siber-13</code>; sen kendine bir geçici klasör seç. Aşağıdaki çıktılar WSL2 üstündeki Kali Rolling'den, komutları bir sözde terminalde (<code>script</code>) çalıştıran bir sarmalayıcı betikle alındı; bu yüzden ağaçta <code>script</code> ve <code>bash …lab1.sh</code> görünüyor. Senin VM'inde PID'ler, ağacın üst kısmı ve sayılar farklı olacak.</p>
+
+<h3>Adım 1: ağacın tepesi ve kendi yerin</h3>
+<pre class="kod" data-ad="bash">ps -eo pid,ppid,user,etime,cmd --forest | head -6
+pstree -p -s -l $$</pre>
+<pre class="cikti">    PID    PPID USER         ELAPSED CMD
+      1       0 root           00:04 /sbin/init
+      2       1 root           00:04 /init
+      7       2 root           00:03  \_ plan9 --control-socket 7 --log-level 4 --server-fd 8 --pipe-fd 10 --log-truncate
+    432       2 root           00:00  \_ /init
+    433     432 root           00:00  |   \_ /init
+systemd(1)───init-systemd(ka(2)───SessionLeader(432)───Relay(434)(433)───bash(434)───bash(580)───script(596)───bash(597)───pstree(601)</pre>
+<p>Satır satır: PID 1 <code>/sbin/init</code>, yani systemd (<code>pstree</code> onu adıyla yazıyor); <code>ELAPSED</code> 00:04, çünkü WSL bu komuttan hemen önce yeniden başlamıştı. PID 2 ve altındaki <code>plan9</code>, <code>/init</code>, <code>SessionLeader</code>, <code>Relay</code> WSL'nin kendi yardımcılarıdır; Windows ile dosya paylaşımını ve terminal köprüsünü yönetirler. Olağan bir VM'de bu katta <code>sshd</code>, <code>login</code> ya da masaüstü oturum yöneticisi ve onun doğurduğu kabuğu görürsün. <code>pstree -s</code> satırı, <code>$$</code> ile verdiğim sürecin (<code>bash</code> 597) kökten aşağı bütün atalarını sıralıyor; adlar çekirdekte en çok 15 karakter tutulduğu için <code>init-systemd(ka</code> kesik görünüyor.</p>
+
+<h3>Adım 2: kendi sürecinin <code>/proc</code> kaydı</h3>
+<pre class="kod" data-ad="bash">DENEME_NOTU=yalniz-bana-ait sleep 600 &amp;
+p=$!
+ps -o pid,ppid,user,stat,etime,cmd -p $p
+ps -o pid,ppid,user,etime,cmd --forest --sid $$
+tr '\0' ' ' &lt; /proc/$p/cmdline; echo
+tr '\0' '\n' &lt; /proc/$p/environ | grep DENEME
+ls -l /proc/$p/exe /proc/$p/cwd
+ls -l /proc/$p/fd
+ls -l /proc/$p/cmdline /proc/$p/environ</pre>
+<pre class="cikti">    PID    PPID USER     STAT     ELAPSED CMD
+    603     597 kullanici S+         00:00 sleep 600
+    PID    PPID USER         ELAPSED CMD
+    597     596 kullanici      00:00 bash /tmp/yazar/siber-13/lab1.sh
+    603     597 kullanici      00:00  \_ sleep 600
+    605     597 kullanici      00:00  \_ ps -o pid,ppid,user,etime,cmd --forest 
+sleep 600 
+DENEME_NOTU=yalniz-bana-ait
+lrwxrwxrwx 1 kullanici kullanici 0 Oct 16 17:09 /proc/603/cwd -&gt; /tmp/yazar/siber-13
+lrwxrwxrwx 1 kullanici kullanici 0 Oct 16 17:09 /proc/603/exe -&gt; /usr/bin/sleep
+total 0
+lr-x------ 1 kullanici kullanici 64 Oct 16 17:09 0 -&gt; /dev/null
+lrwx------ 1 kullanici kullanici 64 Oct 16 17:09 1 -&gt; /dev/pts/2
+lrwx------ 1 kullanici kullanici 64 Oct 16 17:09 2 -&gt; /dev/pts/2
+-r--r--r-- 1 kullanici kullanici 0 Oct 16 17:09 /proc/603/cmdline
+-r-------- 1 kullanici kullanici 0 Oct 16 17:09 /proc/603/environ</pre>
+<p>Etkileşimli kabukta <code>&amp;</code>'tan sonra ayrıca <code>[1] 603</code> gibi bir satır görürsün. <code>$!</code> son arka plan işinin PID'ini verir. PPID 597: <code>sleep</code>'i kabuk doğurdu; <code>--forest --sid</code> görünümü aynı aileyi ağaç olarak gösteriyor, <code>ps</code>'in kendisi de kardeş olarak listede. <code>cmdline</code>'daki NUL baytlarını <code>tr</code> boşluğa çevirdi. <code>environ</code>'da başlatırken verdiğim değişken duruyor. <code>exe</code> gerçek programı, <code>cwd</code> çalışma dizinini gösteriyor. <code>fd</code> dizininde 0 (standart girdi) <code>/dev/null</code>'da, çünkü iş denetimi kapalı bir betikten başlatıldı (bölüm 6); 1 ve 2 terminalde (kod rafı Parça 16'daki numaralar). Açık tanıtıcılar <code>fork</code> ve <code>execve</code> boyunca çocuğa geçer; <code>sleep</code> bunları kabuktan miras aldı. Son iki satır izinleri gösteriyor: <code>cmdline</code> herkese açık, <code>environ</code> yalnız sahibine.</p>
+
+<h3>Adım 3: başka kullanıcının süreci</h3>
+<pre class="kod" data-ad="bash">tr '\0' ' ' &lt; /proc/1/cmdline; echo
+cat /proc/1/environ
+ls /proc/1/fd
+ls -l /proc/1/exe
+kill -TERM 1
+kill $p; wait $p; echo "cikis kodu: $?"</pre>
+<pre class="cikti">/sbin/init 
+cat: /proc/1/environ: Permission denied
+ls: cannot open directory '/proc/1/fd': Permission denied
+ls: cannot read symbolic link '/proc/1/exe': Permission denied
+lrwxrwxrwx 1 root root 0 Oct 16 17:09 /proc/1/exe
+/tmp/yazar/siber-13/lab1.sh: line 5: kill: (1) - Operation not permitted
+cikis kodu: 143</pre>
+<p>Root'a ait PID 1'in komut satırını okuyabildin, ama ortamını, açık dosyalarını ve program bağını okuyamadın: tablo 2'deki ayrım. <code>kill -TERM 1</code> reddedildi, çünkü gerçek ya da etkin kimliğin hedefin kimliğine eşit değil (iletinin önündeki betik adı sarmalayıcıdan geliyor; etkileşimli kabukta <code>bash: kill: (1) - Operation not permitted</code> görürsün). Kendi <code>sleep</code>'in ise <code>kill</code> ile 143 (128 + 15) koduyla bitti.</p>
+
+<h3>Adım 4: silinmiş ama açık dosya, silinmiş program</h3>
+<pre class="kod" data-ad="bash">printf "gunluk satiri 1\ngunluk satiri 2\n" &gt; kayit.txt
+sleep 600 3&lt; kayit.txt &amp;
+p=$!
+rm kayit.txt; ls kayit.txt
+ls -l /proc/$p/fd/3
+cat /proc/$p/fd/3
+lsof -p $p -a -d 3
+find /proc/[0-9]*/fd -lname '*(deleted)' 2&gt;/dev/null</pre>
+<pre class="cikti">ls: cannot access 'kayit.txt': No such file or directory
+lr-x------ 1 kullanici kullanici 64 Oct 16 16:54 /proc/581/fd/3 -&gt; '/tmp/yazar/siber-13/kayit.txt (deleted)'
+gunluk satiri 1
+gunluk satiri 2
+COMMAND PID      USER FD   TYPE DEVICE SIZE/OFF   NODE NAME
+sleep   581 kullanici 3r   REG   8,48       32 674266 /tmp/yazar/siber-13/kayit.txt (deleted)
+/proc/453/fd/34
+/proc/453/fd/37
+/proc/453/fd/40
+/proc/581/fd/3</pre>
+<p><code>3&lt; kayit.txt</code>, dosyayı <code>sleep</code>'e 3 numaralı tanıtıcı olarak açık verdi. Ad silindi, <code>ls</code> bulamıyor; ama bağ <code>(deleted)</code> ile duruyor ve içerik <code>/proc/581/fd/3</code> üzerinden hâlâ okunuyor. Savunmacı için iki anlamı var: silinmiş bir günlük ya da program, onu tutan süreç yaşadığı sürece kurtarılabilir; diskte yer de ancak süreç kapanınca boşalır. <code>find … -lname</code> satırı makinedeki bütün kendi süreçlerinde silinmiş açık dosyaları aradı; 581 dışında 453 çıktı. Bu, ses sunucusu <code>pipewire</code>'dı ve bağları <code>/memfd:pipewire-memfd… (deleted)</code> biçimindeydi: <code>memfd</code> bellekte yaratılan, hiç diskte adı olmamış dosyalardır ve bu programda olağandır. "Silinmiş" her zaman "kötü" değildir; yine bağlam. <code>lsof +L1</code> aynı aramanın kısa yoludur.</p>
+<pre class="kod" data-ad="bash">cp /usr/bin/sleep ./uyku
+./uyku 600 &amp;
+q=$!
+rm uyku
+ls -l /proc/$q/exe
+ps -o pid,user,cmd -p $q
+sha256sum /proc/$q/exe /usr/bin/sleep</pre>
+<pre class="cikti">lrwxrwxrwx 1 kullanici kullanici 0 Oct 16 16:54 /proc/590/exe -&gt; '/tmp/yazar/siber-13/uyku (deleted)'
+    PID USER     CMD
+    590 kullanici ./uyku 600
+83c0db85657e2cd1799b5e113317252d7865dd78157148d8757fab0ede52b1db  /proc/590/exe
+83c0db85657e2cd1799b5e113317252d7865dd78157148d8757fab0ede52b1db  /usr/bin/sleep</pre>
+<p>Program dosyası silindi ama süreç çalışıyor ve <code>exe</code> bağı silinmiş yolu gösteriyor. <code>ps</code> ise yalnız <code>./uyku 600</code> diyor; silinmişliği göstermez, bu yüzden <code>exe</code>'ye bakmak gerekir. Silinmiş programın içeriği <code>/proc/590/exe</code> üzerinden okunabildi ve özeti <code>/usr/bin/sleep</code> ile aynı çıktı: bu süreç, adı ne olursa olsun, bilinen bir programın kopyası. Gerçek bir incelemede bu özet bilinen iyi programlarla ve tehdit istihbaratıyla (Parça 69) karşılaştırılır.</p>
+
+<h3>Adım 5: komut satırındaki parola herkese görünür</h3>
+<pre class="kod" data-ad="bash">python3 istemci.py --kullanici deneme --parola SahteParola-123 &amp;
+r=$!
+ps -eo pid,user,args | grep '[S]ahteParola'
+ls -l /proc/$r/cmdline</pre>
+<pre class="cikti">    596 kullanici python3 istemci.py --kullanici deneme --parola SahteParola-123
+-r--r--r-- 1 kullanici kullanici 0 Oct 16 16:54 /proc/596/cmdline</pre>
+<p><code>istemci.py</code> yalnız 600 saniye uyuyan iki satırlık bir programdı; parola da sahte. <code>grep '[S]ahteParola'</code> kalıbındaki köşeli parantez, <code>grep</code>'in kendi komut satırını eşleşmekten çıkarır (Parça 9'daki düzenli ifade). Önemli olan izin: <code>-r--r--r--</code>. Makinede hesabı olan herkes bu satırı aynı komutla görebilirdi. Bu ortamda <code>/proc</code> <code>hidepid</code>'siz bağlıydı.</p>
+
+<h3>Adım 6: ön plan ve arka plan işleri</h3>
+<p>İş denetimi etkileşimli kabukta kendiliğinden açıktır; betikte <code>set -m</code> ile açıldı. Ctrl+Z tuşuna basmak etkileşimsiz ortamda mümkün olmadığı için <strong>burada çalıştırılmadı</strong>; aynı sinyal (<code>SIGTSTP</code>) <code>kill -TSTP %1</code> ile gönderildi.</p>
+<pre class="kod" data-ad="bash">sleep 300 &amp;
+sleep 400 &amp;
+jobs -l
+kill -TSTP %1
+jobs -l
+ps -o pid,stat,cmd -p 837,838
+bg %1
+jobs -l
+kill %2
+jobs -l
+sleep 2 &amp;
+fg
+kill %1</pre>
+<pre class="cikti">[1]-   837 Running                    sleep 300 &amp;
+[2]+   838 Running                    sleep 400 &amp;
+[1]+   837 Stopped                    sleep 300
+[2]-   838 Running                    sleep 400 &amp;
+    PID STAT CMD
+    837 T    sleep 300
+    838 S    sleep 400
+[1]+ sleep 300 &amp;
+[1]-   837 Running                    sleep 300 &amp;
+[2]+   838 Running                    sleep 400 &amp;
+[1]-   837 Running                    sleep 300 &amp;
+[2]+   838 Terminated                 sleep 400
+sleep 2</pre>
+<p><code>jobs -l</code> iş numarasını, PID'i ve durumu verir; <code>+</code> şimdiki, <code>-</code> önceki iştir. <code>SIGTSTP</code> sonrası 837 "Stopped" ve <code>ps</code>'te <code>T</code>: süreç yaşıyor ama işlemci almıyor. <code>bg %1</code> ona <code>SIGCONT</code> gönderdi, yeniden "Running". <code>kill %2</code> iş numarasıyla <code>SIGTERM</code> gönderdi: "Terminated". <code>fg</code> şimdiki işi (yeni <code>sleep 2</code>) ön plana aldı, komutu yazdı ve iki saniye kabuğu bekletti. Son satır kalan işi temizledi.</p>
+
+<h3>Adım 7: kaynak kullanımı</h3>
+<p>Bir boş döngü (işlemci yakıcı) ve 100 MiB ayırıp uyuyan bir Python süreci başlat, sonra yalnız bu ikisine bak (<code>top -p</code> yalnız verilen PID'leri gösterir).</p>
+<pre class="kod" data-ad="bash">sh -c 'while :; do :; done' &amp;
+yakici=$!
+python3 -c 'b = bytearray(100 * 1024 * 1024); import time; time.sleep(30)' &amp;
+bellek=$!
+top -b -n 1 -p $yakici -p $bellek
+ps -o pid,user,%cpu,%mem,rss,etime,comm --sort=-%cpu -p $yakici,$bellek
+grep -E '^(Name|State|VmRSS|Threads)' /proc/$bellek/status
+cat /proc/loadavg
+nproc
+kill $yakici $bellek</pre>
+<pre class="cikti">top - 16:57:06 up 6 min,  1 user,  load average: 1.57, 0.77, 0.33
+Tasks:   2 total,   1 running,   1 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  8.7 us,  3.8 sy,  0.0 ni, 77.2 id,  8.2 wa,  0.0 hi,  2.2 si,  0.0 st
+MiB Mem :   7872.6 total,     86.8 free,    862.2 used,   7121.7 buff/cache
+MiB Swap:   2048.0 total,   2047.8 free,      0.2 used.   7010.4 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   2181 kullanici 20   0    2700   1932   1828 R  83.3   0.0   0:06.26 sh
+   2183 kullanici 20   0  117192 111808   6160 S   0.0   1.4   0:01.20 python3
+    PID USER     %CPU %MEM   RSS     ELAPSED COMMAND
+   2181 kullanici  100  0.0  1932       00:06 sh
+   2183 kullanici 19.1  1.3 111808      00:06 python3
+Name:	python3
+State:	S (sleeping)
+VmRSS:	  111808 kB
+Threads:	1
+1.57 0.77 0.33 3/283 2194
+12</pre>
+<p>Döngü <code>R</code> durumunda ve bir çekirdeği dolduruyor (<code>top</code>'ta %83,3, <code>ps</code>'te ömür ortalaması %100). Python süreci uykuda (<code>S</code>), <code>top</code>'a göre şu an işlemci kullanmıyor ama <code>RES</code> 111.808 KiB: ayırdığı 100 MiB (102.400 KiB) ve yorumlayıcının kendisi RAM'de. <code>VmRSS</code> aynı sayıyı <code>/proc</code>'tan veriyor. Yük ortalaması 1,57 ve <code>nproc</code> 12: makine rahat. <code>free</code>'nin küçüklüğü telaş nedeni değil; <code>avail Mem</code> 7.010 MiB.</p>
+
+<h3>Adım 8: yerel sunucu hangi portta?</h3>
+<pre class="kod" data-ad="bash">python3 -m http.server 8013 --bind 127.0.0.1 &gt; sunucu.log 2&gt;&amp;1 &amp;
+s=$!
+ss -tlnp | grep 8013
+lsof -i -P -n -p $s | wc -l
+lsof -a -i -P -n -p $s
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8013/
+kill $s
+ss -tlnp | grep 8013 || echo 'artik dinleyen yok'</pre>
+<pre class="cikti">LISTEN 0      5           127.0.0.1:8013      0.0.0.0:*    users:(("python3",pid=1555,fd=3))
+24
+COMMAND  PID      USER FD   TYPE DEVICE SIZE/OFF NODE NAME
+python3 1555 kullanici 3u  IPv4  32828      0t0  TCP 127.0.0.1:8013 (LISTEN)
+200
+artik dinleyen yok</pre>
+<p>Sunucu yalnız <code>127.0.0.1</code>'e bağlandı; bu adres makinenin dışından erişilemez (Parça 24). <code>ss</code> satırı porttan sürece gidiyor: 8013'ü <code>python3</code>, PID 1555, 3 numaralı tanıtıcıyla dinliyor. <code>lsof -a</code> süreçten porta gidiyor ve aynı tanıtıcıyı (<code>3u</code>, okuma-yazma) gösteriyor; <code>-a</code>'sız biçim 24 satır döktü (bölüm 8'deki hata). <code>curl</code>'ün 200 yanıtı sunucunun çalıştığını, son satır kapandığını doğruluyor.</p>
+
+<h3>Adım 9: temizlik</h3>
+<p>Başlattığın her şeyi durdur: <code>jobs</code> boş olmalı, <code>pgrep -u "$USER" -a sleep</code> ve <code>ss -tlnp</code> deney süreçlerini göstermemeli. Bu alıştırmada bütün deney süreçleri <code>kill</code> ile durduruldu, kilit ve geçici dosyalar silindi; <code>/tmp/yazar/siber-13</code> dışında hiçbir dosya oluşturulmadı.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 5'teki süreç, <code>fork</code> ve kimlik kavramları burada <code>ps</code>, <code>pstree</code> ve <code>/proc</code> ile gözlenebilir oldu; seccomp'un <code>SIGKILL</code>'i ve 137 çıkış kodu sinyal tablosuna oturdu. Parça 8'deki <code>/proc</code> ve bağlama seçenekleri <code>hidepid</code>'e, Parça 11'deki hizmet kullanıcıları "beklenen kullanıcı" sorusuna, Parça 12'deki SUID gerçek ve etkin kimlik ayrımına bağlandı.</p>
+<p><strong>Sonraki parçalara:</strong> Süreçleri hizmet olarak başlatmak, yeniden başlatmak ve sertleştirmek, zamanlanmış görevlerle kalıcılık Parça 14'te; dinleyen portlar ve <code>ss</code>'in ayrıntısı Parça 15'te; süreç başlangıçlarının günlüklerde izlenmesi Parça 17'de; sırların komut satırı dışında saklanması Parça 18'de. Uç noktada süreç telemetrisi ve davranış göstergeleri Parça 69'da, şüpheli süreçle karşılaşınca izlenecek müdahale ve delil adımları Parça 70 ve 71'de.</p>
+<p><strong>Kod rafına:</strong> Parça 16'daki standart girdi, çıktı ve hata numaraları <code>/proc/&lt;pid&gt;/fd</code>'de dosya olarak göründü; Parça 17'deki <code>$?</code> ve <code>exit</code>, 128 + sinyal kuralıyla genişledi; Parça 14'teki <code>argparse</code> ile yazdığın komut satırı araçlarına parola argümanı koymamanın nedeni burada.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>PID ile PPID arasındaki fark nedir ve PPID neden savunmada işe yarar?</summary><p>PID sürecin kendi numarası, PPID onu fork ile doğuran ana sürecin numarasıdır. PPID sayesinde süreç ağacı kurulur ve bir sürecin kimden doğduğu görülür. Bir web sunucusunun ya da veritabanının çocuğu olarak çalışan bir kabuk, uygulamada bir açıktan komut çalıştırıldığının güçlü bir işaretidir.</p></details>
+<details><summary>Zombi süreç nedir, ona kill -9 göndermek neden işe yaramaz?</summary><p>Zombi, bitmiş ama anası wait çağırıp çıkış durumunu toplamadığı için çekirdeğin süreç tablosunda kaydı duran süreçtir. Artık çalışmadığı için sinyal ona bir şey yapamaz. Çözüm ananın wait çağırması ya da ananın bitmesidir; o zaman zombi PID 1'e ya da bir alt toplayıcıya geçer ve oradan toplanır.</p></details>
+<details><summary>/proc/PID/cmdline ile /proc/PID/environ dosyalarının erişim farkı nedir ve bunun parola için sonucu ne olur?</summary><p>cmdline makinedeki herkese okunur, environ yalnız sahibine ve ptrace denetimini geçenlere açıktır. Bu yüzden komut satırına yazılan parola, süreç yaşadığı sürece aynı makinedeki her kullanıcıya görünür. Yönetici /proc'u hidepid seçeneğiyle bağlayarak bunu daraltabilir, ama asıl çözüm sırrı komut satırına hiç koymamaktır.</p></details>
+<details><summary>SIGTERM ile SIGKILL arasındaki fark nedir, hangisi önce gönderilmelidir?</summary><p>SIGTERM yakalanabilir; süreç bir işleyiciyle temizlik yapıp kibarca kapanabilir. SIGKILL ve SIGSTOP yakalanamaz, engellenemez, yok sayılamaz; çekirdek süreci doğrudan sonlandırır ve geçici dosya, kilit gibi işler yarım kalabilir. Önce SIGTERM gönderilir, birkaç saniye beklenir, süreç yaşıyorsa SIGKILL gelir.</p></details>
+<details><summary>Ctrl+Z, bg ve fg hangi sinyalleri kullanır?</summary><p>Ctrl+Z ön plandaki işe SIGTSTP gönderir ve onu durdurur; ps'te durumu T olur. bg işe SIGCONT gönderip arka planda, fg yine SIGCONT ile ön planda sürdürür. Ctrl+C ise ön plandaki işe SIGINT gönderir.</p></details>
+<details><summary>/proc/PID/exe bağının sonunda "(deleted)" görmek ne anlama gelir ve ne yaparsın?</summary><p>Süreç başladıktan sonra program dosyası diskten silinmiş, ama süreç çalışmaya devam ediyor. Bu, güncellemeden sonra yeniden başlatılmamış bir hizmet olabileceği gibi izini silmeye çalışan bir zararlı da olabilir. Süreci öldürmeden önce /proc/PID/exe üzerinden dosyanın özetini alır, gerekirse kopyasını saklar, öbür soruları (kullanıcı, ebeveyn, ağ) sorarsın.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>ps</strong> = /proc'un fotoğrafı. <code>ps -eo pid,ppid,user,stat,etime,cmd --forest</code>; <code>ps -ef</code> (Unix), <code>ps aux</code> (BSD).</li>
+<li><strong>STAT:</strong> R çalışıyor, S uyuyor, D kesilemez uyku, T durdurulmuş, Z zombi; s oturum lideri, + ön plan.</li>
+<li><strong>Ağaç:</strong> PID 1 kök; PPID ana. <code>pstree -p -s PID</code> ataları gösterir. Zombi: anası wait çağırana kadar kayıt. Öksüz: alt toplayıcıya ya da PID 1'e geçer.</li>
+<li><strong>Kimlik:</strong> gerçek (başlatan), etkin (izin denetimi), saklanmış. <code>ps</code>'in user sütunu etkin kimlik. SUID'de ikisi ayrışır (passwd: 1000 / 0).</li>
+<li><strong>/proc/PID:</strong> cmdline (herkese açık, değiştirilebilir), environ (yalnız sahip, ilk ortam), exe (gerçek program), cwd, fd/, status, maps. Sırrı komut satırına koyma; <code>hidepid</code>.</li>
+<li><strong>(deleted):</strong> silinmiş ama açık dosya ya da program; içerik /proc/PID/fd/N ve /proc/PID/exe'den okunur. <code>lsof +L1</code>.</li>
+<li><strong>Sinyaller:</strong> HUP 1, INT 2 (Ctrl+C), KILL 9, SEGV 11, TERM 15 (<code>kill</code> varsayılanı), CHLD 17, CONT 18, STOP 19, TSTP 20 (Ctrl+Z).</li>
+<li><strong>KILL ve STOP</strong> yakalanamaz. Önce TERM, bekle, <code>kill -0</code>, sonra KILL. Çıkış kodu 128 + n (143, 137).</li>
+<li><strong>İzin:</strong> gönderenin gerçek ya da etkin kimliği = hedefin gerçek ya da saklanmış kimliği; yoksa "Operation not permitted". <code>CAP_KILL</code> atlatır.</li>
+<li><strong>trap:</strong> <code>trap temizle TERM</code>; <code>SigCgt</code> maskesi yakalanan sinyalleri gösterir (sinyal n = bit n − 1).</li>
+<li><strong>İşler:</strong> <code>komut &amp;</code>, <code>jobs -l</code>, <code>%1 %+ %-</code>, <code>bg</code>, <code>fg</code>, <code>kill %n</code>; terminal kapanınca SIGHUP; kalıcı iş = hizmet (Parça 14).</li>
+<li><strong>Kaynak:</strong> top (anlık %CPU), ps (ömür ortalaması %CPU); RES gerçek RAM, VIRT sanal; yükü <code>nproc</code> ile kıyasla; avail Mem'e bak.</li>
+<li><strong>Bağlantı:</strong> <code>ss -tlnp</code> porttan sürece; <code>lsof -a -i -P -n -p PID</code> süreçten porta (-a unutma).</li>
+<li><strong>Soru listesi:</strong> kim, kim doğurdu, hangi dosya, hangi dizin, komut satırı, ağ, kaynak, ne zamandan beri. Önce bak, sonra dondur (STOP), en son öldür; kökü bul.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-13">
+<h3>Quiz 13</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on beş tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>ps -eo pid,ppid,cmd</code> çıktısında bir satır <code>603  597  sleep 600</code> biçimindedir. 597 sayısı neyi gösterir?</p>
+<ul class="sec"><li><code>sleep</code> sürecinin kendi numarasını</li><li><code>sleep</code>'i fork ile doğuran ana sürecin numarasını</li><li><code>sleep</code>'in çalıştığı kullanıcının kimliğini</li><li><code>sleep</code>'in kaç saniyedir çalıştığını</li><li><code>sleep</code>'in bağlı olduğu terminalin numarasını</li></ul>
+<div class="coz"><p>İkinci sütun PPID'dir: süreci doğuran ana sürecin numarası. Denemede 597 numaralı süreç <code>sleep</code>'i başlatan kabuktu. Sürecin kendi numarası ilk sütundaki 603'tür (A). Kullanıcı kimliği (C) <code>user</code> ya da <code>uid</code> sütununda, süre (D) <code>etime</code> sütununda, terminal (E) <code>tty</code> sütununda gösterilir; bu komutta istenmediler.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki sinyallerden hangisi bir süreç tarafından yakalanıp işleyiciyle temizlik yapılmasına <strong>izin vermez</strong>?</p>
+<ul class="sec"><li><code>SIGTERM</code></li><li><code>SIGINT</code></li><li><code>SIGHUP</code></li><li><code>SIGKILL</code></li><li><code>SIGTSTP</code></li></ul>
+<div class="coz"><p><code>signal(7)</code> belgesine göre <code>SIGKILL</code> ve <code>SIGSTOP</code> yakalanamaz, engellenemez, yok sayılamaz; çekirdek eylemi doğrudan uygular. Örnek 3'te <code>trap … KILL</code> kurulmuş betik yine 137 koduyla öldü, Python ise işleyici kurmayı "Invalid argument" ile reddetti. <code>SIGTERM</code> (A) tam da temizlik için yakalanır; <code>SIGINT</code> (B, Ctrl+C), <code>SIGHUP</code> (C) ve <code>SIGTSTP</code> (E, Ctrl+Z) de yakalanabilir sinyallerdir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir betik, veritabanı parolasını komut satırı argümanı olarak alan bir aracı çalıştırıyor: <code>aracim --parola Gizli123</code>. Bunun temel güvenlik sorunu nedir?</p>
+<ul class="sec"><li><code>/proc/&lt;pid&gt;/cmdline</code> varsayılan olarak her kullanıcıya okunur olduğundan parola aynı makinedeki herkese görünür.</li><li>Parola yalnız root tarafından okunabilir hâle gelir ve araç çalışmaz.</li><li>Komut satırı argümanları şifrelenerek saklandığı için parola bozulur.</li><li>Parola <code>/proc/&lt;pid&gt;/environ</code> dosyasına yazılır ve herkese açılır.</li><li>Komut satırı yalnız ağ üzerinden dinlenebilir, yerel kullanıcılar göremez.</li></ul>
+<div class="coz"><p>Denemede <code>cmdline</code> dosyasının izni <code>-r--r--r--</code> çıktı ve <code>ps -eo args</code> sahte parolayı açıkça gösterdi; <code>hidepid</code> kullanılmayan bir sistemde bunu herkes görür. B ve C yanlıştır: argümanlar olduğu gibi okunur ve araç çalışır. D iki şeyi karıştırır: argüman <code>environ</code>'a değil <code>cmdline</code>'a düşer ve <code>environ</code> yalnız sahibine açıktır. E'de sorun tam tersine yerel kullanıcılardır.</p></div></li>
+
+<li data-c="E"><p class="q">Bash'te aşağıdaki satır çalıştırılıyor. Son olarak ekrana hangi sayı yazılır?</p>
+<pre class="kod" data-ad="bash">sleep 100 &amp; kill -KILL $!; wait $!; echo $?</pre>
+<ul class="sec"><li>0</li><li>9</li><li>1</li><li>143</li><li>137</li></ul>
+<div class="coz"><p>Bash, sinyalle sonlanan bir komutun çıkış kodunu 128 + sinyal numarası olarak verir; <code>SIGKILL</code> 9 olduğundan 128 + 9 = 137. Komut çalıştırılınca gerçekten 137 yazdı. 143 (D), <code>SIGTERM</code> (15) ile ölümün kodudur: aynı satırda <code>kill</code> yalnız bırakılınca 143 çıktı. 9 (B) sinyal numarasının kendisidir, kod değildir. 0 (A) başarılı bitiştir; 1 (C) genel hatadır.</p></div></li>
+
+<li data-c="C"><p class="q">Bir sunucuda <code>ls -l /proc/4242/exe</code> çıktısı <code>/tmp/.x/upd (deleted)</code> gösteriyor. Aşağıdakilerden hangisi en doğru savunmacı davranıştır?</p>
+<ul class="sec"><li>Dosya silindiği için sürecin artık zararsız olduğunu kabul etmek</li><li>Hemen <code>kill -9 4242</code> çalıştırıp başka bir şey yapmamak</li><li>Kullanıcı, ebeveyn ve ağ bağlantılarına bakmak, <code>/proc/4242/exe</code> üzerinden özet ve kopya almak, ardından plana göre dondurup sonlandırmak</li><li>Program dosyası silindiği için içeriğine artık hiçbir yoldan ulaşılamayacağını kaydetmek</li><li><code>/proc</code> dosya sistemini yeniden bağlayıp kaydı sıfırlamak</li></ul>
+<div class="coz"><p><code>/tmp</code> altında gizli bir dizin ve <code>(deleted)</code>, incelenmesi gereken güçlü işaretlerdir. Silinen yalnız addır; süreç yaşadıkça içerik <code>/proc/PID/exe</code>'den okunabilir, denemede silinmiş kopyanın özeti alınmıştı. Bu yüzden D yanlış, A ise tehlikeli bir varsayımdır. B kanıtı yok eder ve süreci geri getirecek kökü bulmaz. E hiçbir şeyi çözmez ve kaydı da korumaz; doğru sıra "önce bak, sonra dondur, en son öldür"dür.</p></div></li>
+
+<li data-c="A"><p class="q">PID'i 1555 olan bir sürecin <strong>yalnız</strong> ağ bağlantılarını görmek istiyorsun. Hangi komut bunu doğru yapar?</p>
+<ul class="sec"><li><code>lsof -a -i -P -n -p 1555</code></li><li><code>lsof -i -P -n -p 1555</code></li><li><code>lsof -p 1555</code></li><li><code>lsof -i</code></li><li><code>lsof +L1 -p 1555</code></li></ul>
+<div class="coz"><p><code>lsof</code>'ta seçim seçenekleri varsayılan olarak VEYA ile birleşir; <code>-a</code> onları VE yapar ve "bu sürecin ağ dosyaları" anlamı çıkar. Denemede A tek satır (<code>127.0.0.1:8013 (LISTEN)</code>) verdi, B ise 24 satır: sürecin bütün dosyaları artı makinedeki ağ dosyaları. C sürecin bütün açık dosyalarını, D bütün ağ dosyalarını listeler. E silinmiş açık dosyaları arar; ağla ilgisi yoktur.</p></div></li>
+
+<li data-c="D"><p class="q">Bir kullanıcı <code>passwd</code> çalıştırıyor ve program parola sorarken <code>ps -o ruser,euser,cmd</code> çıktısı <code>kullanici root passwd</code> gösteriyor. Aynı kullanıcı <code>cat /proc/&lt;pid&gt;/environ</code> denediğinde "Permission denied" alıyor. Bunun en doğru açıklaması hangisidir?</p>
+<ul class="sec"><li>Süreç başka bir kullanıcı tarafından başlatıldığı için kullanıcı onun sahibi değildir.</li><li><code>environ</code> dosyası her süreçte yalnız root'a açıktır.</li><li><code>passwd</code> ortam değişkeni taşımadığı için dosya boştur ve hata verir.</li><li>SUID nedeniyle sürecin etkin kimliği root'tur; <code>environ</code> erişimindeki ptrace denetimi hedefin gerçek, etkin ve saklanmış kimliklerinin hepsinin seninkine eşit olmasını ister.</li><li><code>passwd</code> süreci zombi olduğu için <code>/proc</code> kaydı okunamaz.</li></ul>
+<div class="coz"><p>Gerçek kimlik kullanıcınındır (A yanlış: süreci kendisi başlattı), ama SUID bit etkin ve saklanmış kimliği root yaptı (<code>Uid: 1000 0 0 0</code>). <code>environ</code> erişimi ptrace denetimine bağlıdır ve bu denetim üç kimliğin hepsinin eşleşmesini ister; böylece root yetkili sürecin içeriği sıradan kullanıcıya sızmaz. B yanlıştır: denemede kendi <code>sleep</code>'inin <code>environ</code>'unu okuyabildin. C'de boş dosya hata vermez. E'de süreç zombi değil, parola bekliyordu.</p></div></li>
+
+<li data-c="B"><p class="q">Bir süreç için <code>grep SigCgt /proc/PID/status</code> çıktısı <code>0000000000004002</code> veriyor. Sinyal n'nin maskenin n − 1 numaralı biti olduğunu bilerek, bu süreç hangi sinyaller için işleyici kurmuştur?</p>
+<ul class="sec"><li><code>SIGINT</code> (2) ve <code>SIGCHLD</code> (17)</li><li><code>SIGINT</code> (2) ve <code>SIGTERM</code> (15)</li><li><code>SIGHUP</code> (1) ve <code>SIGKILL</code> (9)</li><li><code>SIGQUIT</code> (3) ve <code>SIGTERM</code> (15)</li><li><code>SIGHUP</code> (1) ve <code>SIGTERM</code> (15)</li></ul>
+<div class="coz"><p><code>0x4002</code> = <code>0x4000</code> + <code>0x2</code> = 2<sup>14</sup> + 2<sup>1</sup>. Bit 1 sinyal 2'ye (<code>SIGINT</code>), bit 14 sinyal 15'e (<code>SIGTERM</code>) karşılık gelir. E, biti sinyal numarasıyla aynı sanmanın (bit 1 = sinyal 1) sonucudur; D aynı hatayı yukarı kaydırır. A, Örnek 3'teki <code>0x14000</code> maskesindeki <code>SIGCHLD</code>'ı karıştırır. C imkânsızdır: <code>SIGKILL</code> için işleyici kurulamaz. Python'da <code>[b + 1 for b in range(64) if 0x4002 &gt;&gt; b &amp; 1]</code> → <code>[2, 15]</code>.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q"><code>0b1100 XOR 0b1010</code> işleminin sonucu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><code>0b1000</code></li><li><code>0b1110</code></li><li><code>0b0110</code></li><li><code>0b0010</code></li><li><code>0b1111</code></li></ul>
+<div class="coz"><p>XOR, iki bit farklıysa 1, aynıysa 0 verir. Bit bit: 1⊕1 = 0, 1⊕0 = 1, 0⊕1 = 1, 0⊕0 = 0; sonuç <code>0110</code>. A, VE işleminin (<code>1000</code>) sonucudur; B, VEYA işleminin (<code>1110</code>) sonucudur. D ve E bit bit hesap hatalarıdır. Python'da <code>bin(0b1100 ^ 0b1010)</code> → <code>0b110</code>.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir geliştirici, API anahtarını C programının içine sabit dizgi olarak yazıp derliyor ve "kaynak kodu vermediğim sürece anahtar gizli" diyor. En doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Doğrudur; derleme kaynağı geri dönülmez biçimde şifreler.</li><li>Doğrudur; makine kodu insanlar tarafından okunamaz.</li><li>Yalnız <code>-O0</code> ile derlenirse sorun vardır, <code>-O2</code> anahtarı gizler.</li><li>Yalnız program assembly'ye çevrilirse anahtar görünür, makine kodunda görünmez.</li><li>Yanlıştır; derleme gizleme değildir, gömülü dizgi ve komutlar ikili dosyadan okunabilir.</li></ul>
+<div class="coz"><p>Parça 2'nin dersi: derleme bir çeviri, gizleme değildir. Makine kodu <code>objdump</code> ile assembly olarak okunur, sabit dizgiler de dosyanın içinde olduğu gibi durur. A şifreleme ile derlemeyi karıştırır. B yanlıştır, makine kodu araçlarla okunur. C'de en iyileştirme düzeyi gömülü dizgiyi ortadan kaldırmaz. D yanlıştır, çünkü assembly makine kodunun bire bir metin karşılığıdır. Sır programa gömülmez.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Bir C programında <code>malloc</code> ile ayrılan bellek sürecin hangi bölgesinde durur (küçük istekler için)?</p>
+<ul class="sec"><li>Öbekte (heap)</li><li>Yığında (stack)</li><li>Kod bölgesinde</li><li>Salt okunur veri bölgesinde</li><li>Yazmaçlarda</li></ul>
+<div class="coz"><p><code>malloc</code> ile istenen dinamik bellek öbekten gelir ve <code>free</code> çağrılana kadar yaşar; Parça 3'te küçük isteklerin <code>[heap]</code> bölgesine, 128 KiB ve üstünün ayrı <code>mmap</code> eşlemelerine gittiğini görmüştün. Yığın (B) fonksiyonların yerel değişkenleri ve dönüş adresi içindir. Kod (C) çalıştırılabilir ama yazılamaz, salt okunur veri (D) sabitler içindir. Yazmaçlar (E) işlemcinin içindedir ve adresle ayrılmaz.</p></div></li>
+
+<li data-c="D" data-k="siber-4"><p class="q">root kullanıcısıyla çalışan sıradan bir program (örneğin bir kabuk) x86 işlemcide hangi halkada çalışır?</p>
+<ul class="sec"><li>Halka 0, çünkü root çekirdekle aynı yetkidedir</li><li>Halka 1</li><li>Halka 2</li><li>Halka 3, çünkü root bir kullanıcı kimliğidir, işlemci kipi değildir</li><li>Programın ayarına göre halka 0 ya da 3</li></ul>
+<div class="coz"><p>Parça 4'ün ayrımı: root ≠ halka 0. root, çekirdeğin izin denetimlerinde ayrıcalıklı sayılan bir kimliktir; programın kendisi yine kullanıcı modunda, halka 3'te çalışır ve ayrıcalıklı işleri sistem çağrısıyla çekirdekten ister. Halka 0 yalnız çekirdeğindir (A). Linux halka 1 ve 2'yi kullanmaz (B, C). Bir kullanıcı programı kendi halkasını seçemez (E).</p></div></li>
+
+<li data-c="B" data-k="siber-5"><p class="q">443 numaralı portta dinleyecek bir web sunucusuna, root'un bütün gücünü vermeden yalnız bu iş için gereken yetenek hangisidir?</p>
+<ul class="sec"><li><code>CAP_SYS_ADMIN</code></li><li><code>CAP_NET_BIND_SERVICE</code></li><li><code>CAP_DAC_OVERRIDE</code></li><li><code>CAP_KILL</code></li><li><code>CAP_NET_RAW</code></li></ul>
+<div class="coz"><p><code>CAP_NET_BIND_SERVICE</code>, 1024'ün altındaki ayrıcalıklı portlara bağlanma iznidir; en az yetki ilkesinin tipik örneğidir. <code>CAP_SYS_ADMIN</code> (A) neredeyse root'a eşdeğer, aşırı yüklenmiş bir yetenektir. <code>CAP_DAC_OVERRIDE</code> (C) dosya izinlerini atlar. <code>CAP_KILL</code> (D) sinyal izin denetimini atlar; bu parçadaki <code>kill(2)</code> kuralının istisnasıdır. <code>CAP_NET_RAW</code> (E) ham soket açar.</p></div></li>
+
+<li data-c="E" data-k="siber-6"><p class="q">"şifre" sözcüğü (5 karakter) UTF-8 ile kodlandığında kaç bayt tutar?</p>
+<ul class="sec"><li>5</li><li>10</li><li>20</li><li>7</li><li>6</li></ul>
+<div class="coz"><p>UTF-8'de ASCII harfleri 1 bayt, "ş" gibi Türkçe harfler 2 bayttır. "ş" 2, "i", "f", "r", "e" birer bayt: 2 + 4 = 6. <code>printf 'şifre' | wc -c</code> → 6. A, karakter sayısını bayt sayısı sanmaktır. B UTF-16, C UTF-32 karşılığıdır. D'de "ş" yanlışlıkla 3 bayt sayılmıştır.</p></div></li>
+
+<li data-c="C" data-k="siber-7"><p class="q">Laboratuvar VM'inin anlık görüntüsü (snapshot) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Anlık görüntü tam bir yedektir; ana makinenin diski bozulsa da VM kurtarılır.</li><li>Anlık görüntü yalnız VM kapalıyken alınabilir.</li><li>Hızlı geri dönüş sağlar ama yedek değildir; genellikle aynı diskteki temel diske bağlı fark dosyalarıdır.</li><li>Anlık görüntü alındıktan sonra VM'de yapılan değişiklikler kaydedilmez.</li><li>Anlık görüntü VM'i ağdan yalıtır.</li></ul>
+<div class="coz"><p>Parça 7'nin ayrımı: anlık görüntü, dondurulmuş disk ile fark dosyasından oluşur ve deneme öncesine hızlı dönmeyi sağlar. Ama aynı diskteki dosyalara bağlı olduğu için disk bozulursa birlikte gider; bu yüzden ayrı yedek ve geri yükleme testi gerekir (A yanlış). Görüntü çalışan VM'de de alınabilir (B). Değişiklikler fark dosyasına yazılır (D). Ağ yalıtımı ağ kipinin işidir (E).</p></div></li>
+
+<li data-c="A" data-k="siber-8"><p class="q">Bir bölüm <code>nosuid</code> seçeneğiyle bağlandığında ne olur?</p>
+<ul class="sec"><li>O bölümdeki dosyaların SUID ve SGID bitleri çalıştırma sırasında dikkate alınmaz.</li><li>O bölümdeki hiçbir dosya çalıştırılamaz.</li><li>O bölüme yalnız root yazabilir.</li><li>O bölümdeki dosyalar salt okunur olur.</li><li>O bölümdeki aygıt dosyaları kullanılamaz.</li></ul>
+<div class="coz"><p><code>nosuid</code>, o bölümdeki programların SUID/SGID bitleriyle yetki kazanmasını engeller; <code>/tmp</code> gibi herkesin yazabildiği yerlerde yerleştirilmiş bir SUID dosyanın işe yaramaması için kullanılır. Hiç çalıştırmayı engelleyen <code>noexec</code>'tir (B). Salt okunurluk <code>ro</code> (D), aygıt dosyalarını engelleyen <code>nodev</code>'dir (E); bu parçada <code>/proc</code>'un bağlama seçeneklerinde <code>nosuid,nodev,noexec</code> üçünü birlikte görmüştün. C bağlama seçeneğiyle değil izinlerle ilgilidir.</p></div></li>
+
+<li data-c="D" data-k="siber-9"><p class="q">Aşağıdaki <code>ornek.log</code> dosyasında <code>grep 'Failed' ornek.log | wc -l</code> komutu ne yazar?</p>
+<pre class="kod" data-ad="ornek.log">Oct 16 10:00:01 sunucu sshd[101]: Failed password for ali from 10.0.0.5
+Oct 16 10:00:09 sunucu sshd[102]: Accepted password for ayse from 10.0.0.7
+Oct 16 10:01:15 sunucu sshd[103]: Failed password for ali from 10.0.0.5
+Oct 16 10:02:30 sunucu sshd[104]: Failed password for root from 10.0.0.9</pre>
+<ul class="sec"><li>4</li><li>1</li><li>2</li><li>3</li><li>0</li></ul>
+<div class="coz"><p><code>grep 'Failed'</code> içinde "Failed" geçen satırları seçer: birinci, üçüncü ve dördüncü satır. Boru bu üç satırı <code>wc -l</code>'ye verir, o da satır sayar: 3. Çalıştırınca 3 çıktı; <code>grep -c 'Failed'</code> da aynı sonucu verir. A bütün satırları sayar, "Accepted" satırını da. C yalnız "ali" satırlarını, B tek bir IP'yi sayar gibi davranır. E, <code>grep</code>'in büyük-küçük harfe duyarlı olduğunu yanlış uygulamaktır; kalıp dosyadakiyle aynı yazılmıştır.</p></div></li>
+
+<li data-c="B" data-k="siber-10"><p class="q">APT'nin depo meta verisini (Release dosyası) imzalı olarak doğrulaması neyi sağlar?</p>
+<ul class="sec"><li>Paketlerin içinde hiçbir güvenlik açığı bulunmadığını</li><li>Paket listesinin ve özetlerinin, anahtarına güvenilen depodan değiştirilmeden geldiğini</li><li>İndirmenin şifreli bir bağlantıyla yapıldığını</li><li>Paketlerin en güncel sürüm olduğunu</li><li>Paketlerin kurulumdan sonra değiştirilemeyeceğini</li></ul>
+<div class="coz"><p>APT güven zinciri şöyle işler: depo imzalı bir Release dosyası yayımlar, içinde paket listelerinin özetleri vardır; listelerde de her paketin özeti. İmza ve özetler tutunca paketin güvenilen depodan değiştirilmeden geldiği anlaşılır. İmza kodun açıksız olduğunu söylemez (A); bu yüzden güvenlik güncellemeleri gerekir. Bağlantının şifreli olmasıyla (C) ayrı bir konudur. Güncellik (D) ve kurulum sonrası bütünlük (E) imzanın kapsamı dışındadır.</p></div></li>
+
+<li data-c="E" data-k="siber-10"><p class="q">Bir kurulum sayfası <code>curl -s https://ornek.example/kur.sh | bash</code> çalıştırmanı istiyor. Bunun yerine en güvenli yaklaşım hangisidir?</p>
+<ul class="sec"><li>Aynı komutu <code>sudo</code> ile çalıştırmak</li><li><code>curl</code> yerine <code>wget</code> kullanmak</li><li>Komutu gece, makine boşken çalıştırmak</li><li>Betiği <code>sh</code> yerine <code>bash</code> ile çalıştırmak</li><li>Mümkünse dağıtımın paketini kullanmak; değilse betiği indirip okumak, yayıncının özet ya da imzasını doğrulamak, sonra çalıştırmak</li></ul>
+<div class="coz"><p>Kabuğa borulanan betik görülmeden, doğrulanmadan ve senin yetkinle çalışır; sunucu ele geçmişse ya da bağlantı kesilip yarım betik çalışırsa sonuç öngörülemez. Önce dağıtım deposu (imzalı güven zinciri), değilse indir, oku, özet ve imzayı doğrula. A riski büyütür: betik root olarak çalışır. B ve D yalnız araç değiştirir. C zamanlamadır, güvenle ilgisi yoktur.</p></div></li>
+
+<li data-c="C" data-k="siber-11"><p class="q">Linux'ta kullanıcıların parola özetleri hangi dosyada tutulur ve neden ayrı bir dosyadadır?</p>
+<ul class="sec"><li><code>/etc/passwd</code>'de; herkesin giriş yapabilmesi için okunur olmalıdır.</li><li><code>/etc/group</code>'ta; grup üyeliğiyle birlikte saklanır.</li><li><code>/etc/shadow</code>'da; <code>/etc/passwd</code> herkese okunur olduğu için özetler yalnız root'un (ve <code>shadow</code> grubunun) okuyabildiği ayrı dosyaya alınmıştır.</li><li><code>/etc/sudoers</code>'da; parola yalnız <code>sudo</code> için gereklidir.</li><li><code>/etc/shadow</code>'da; parolalar orada düz metin olarak saklanır.</li></ul>
+<div class="coz"><p><code>/etc/passwd</code> kullanıcı adı, UID ve kabuk gibi bilgileri tutar ve birçok programın okuyabilmesi için herkese açıktır; parola özetleri bu yüzden <code>/etc/shadow</code>'a taşınmıştır ve sıradan kullanıcı orayı okuyamaz (okuma root ve <code>shadow</code> grubuna açıktır). Bu parçadaki <code>passwd</code> süreci de <code>/etc/shadow</code>'a yazabilmek için SUID ile root etkin kimliği taşıyordu. A eski düzeni anlatır, B ve D yanlış dosyalardır. E yanlıştır: parolalar özet olarak tutulur, düz metin değil.</p></div></li>
+
+<li data-c="A" data-k="siber-11"><p class="q">Bir web sunucusunu root yerine kendine ayrılmış <code>www-data</code> gibi bir hizmet kullanıcısıyla çalıştırmanın temel gerekçesi nedir?</p>
+<ul class="sec"><li>Sunucu ele geçirilirse saldırganın eline yalnız o kullanıcının dar yetkileri geçer (en az yetki).</li><li>Hizmet kullanıcıları daha hızlı çalışır.</li><li>root kullanıcısı ağ portu açamaz.</li><li>Hizmet kullanıcısının parolası olmadığı için sunucu hiç ele geçirilemez.</li><li>Günlük kayıtları yalnız hizmet kullanıcılarıyla tutulabilir.</li></ul>
+<div class="coz"><p>Her süreç bir gün bir açıkla ele geçirilebilir; ele geçirilen süreç ancak kimliğinin yetkileri kadar zarar verebilir. Ayrı hizmet kullanıcısı bu zararı sınırlar; bu parçadaki soru listesinde "web sunucusu kullanıcısıyla çalışan kabuk" işaretinin anlamı da budur. B ve E temelsizdir. C yanlıştır, root her portu açabilir. D yanlıştır: parolasızlık giriş yapılamamasını sağlar ama uygulamadaki bir açığı kapatmaz.</p></div></li>
+
+<li data-c="D" data-k="siber-12"><p class="q"><code>umask</code> değeri <code>027</code> iken <code>touch</code> ile oluşturulan yeni bir dosyanın izni ne olur?</p>
+<ul class="sec"><li><code>750</code> (<code>rwxr-x---</code>)</li><li><code>644</code> (<code>rw-r--r--</code>)</li><li><code>027</code> (<code>----w-rwx</code>)</li><li><code>640</code> (<code>rw-r-----</code>)</li><li><code>600</code> (<code>rw-------</code>)</li></ul>
+<div class="coz"><p>Yeni dosya için başlangıç izni <code>666</code>'dır; <code>umask</code> bundan bitleri kaldırır: 666'dan 027'nin bitleri silinince <code>640</code>. Denemede <code>umask 027; touch u1</code> → <code>640 -rw-r-----</code>. A dizinin sonucudur (777'den başlar; denemede <code>750</code> çıktı). B, <code>umask 022</code> ile oluşan dosyadır. C, umask'ı izin sanmaktır. E, <code>umask 077</code> sonucudur.</p></div></li>
+
+<li data-c="B" data-k="siber-12"><p class="q">Bir kullanıcının bir dizindeki başka birine ait dosyayı <strong>silebilmesi</strong> öncelikle neye bağlıdır?</p>
+<ul class="sec"><li>Dosyanın kendisinde yazma izni olmasına</li><li>Dizinde yazma (ve çalıştırma) izni olmasına; sticky bit varsa ayrıca dosyanın ya da dizinin sahibi olmasına</li><li>Dosyada okuma izni olmasına</li><li>Dosyanın SUID biti taşımasına</li><li>Dosyanın ACL listesinde adının geçmesine</li></ul>
+<div class="coz"><p>Silmek, dizinden bir adı kaldırmaktır; bu yüzden yetki dizinden gelir: dizinde <code>w</code> ve <code>x</code> gerekir. <code>/tmp</code> gibi sticky bitli dizinlerde ek kural vardır: yalnız dosyanın sahibi, dizinin sahibi ya da root silebilir. Dosyanın kendi yazma izni (A) içeriği değiştirmeyi, okuma izni (C) okumayı belirler. SUID (D) çalıştırma kimliğiyle ilgilidir. ACL (E) dosyanın izinlerini genişletir ama silme yine dizine bağlıdır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-12">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-13">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-14">Sonraki parça: Hizmetler ve zamanlanmış görevler →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux processes ps pstree proc filesystem"</li>
+  <li>"linux signals SIGTERM SIGKILL trap bash"</li>
+  <li>"bash job control jobs bg fg"</li>
+  <li>"linux investigate suspicious process proc exe deleted"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> süreç ağacı (<code>ps --forest</code>, <code>pstree -p -s -l</code>), arka plan <code>sleep</code>'inin <code>cmdline</code>, <code>environ</code>, <code>exe</code>, <code>cwd</code>, <code>fd</code>, <code>status</code> okumaları; PID 1'e erişim ve <code>kill -TERM 1</code> retleri; silinmiş açık dosya ve silinmiş program (<code>(deleted)</code>, <code>lsof -d</code>, <code>find -lname</code>, <code>sha256sum</code>); komut satırında sahte parola; <code>trap</code> betiğine <code>SIGTERM</code> ve <code>SIGKILL</code>, <code>SigCgt</code>; Python ile <code>SIGKILL</code> işleyicisi denemesi; <code>jobs</code>, <code>kill -TSTP</code>, <code>bg</code>, <code>fg</code>, <code>kill %n</code>; <code>top -b -n 1 -p</code>, <code>ps --sort</code>, <code>/proc/loadavg</code>; <code>python3 -m http.server --bind 127.0.0.1</code> ile <code>ss -tlnp</code>, <code>lsof</code> (<code>-a</code>'lı ve <code>-a</code>'sız), <code>curl</code>; zombi ve öksüz süreç; <code>sorgu.sh</code>; <code>passwd</code>'nin gerçek/etkin kimliği. Quiz'deki 137/143, XOR, UTF-8 bayt sayısı, <code>grep | wc -l</code>, <code>umask 027/022</code>, zombiye <code>kill -9</code> ve <code>SigCgt</code> çözümü çalıştırılarak doğrulandı. Ortam: WSL2 üzerinde Kali Rolling, çekirdek 6.18, systemd PID 1, Python 3.13.</li>
+  <li><strong>Ortama özgü:</strong> Komutlar <code>script</code> ile açılan bir sözde terminalde, bir sarmalayıcı betikten çalıştırıldı; ağaçtaki <code>script</code>, <code>lab*.sh</code> adları ve hata iletilerindeki "lab3.sh: line 5" öneki bundandır. Adımlar ayrı çalıştırmalardan alındığı için PID'ler adımdan adıma değişir; her adımın içi kendi içinde tutarlıdır. Çekirdek iş parçacıkları (<code>[kthreadd]</code> vb.) bu WSL2 ortamında listede görünmedi; olağan VM'deki görünümleri hafızadan yazıldı. Bazı çalıştırmalarda süreçlerde WSL terminal köprüsünden miras kalmış fazladan bir tanıtıcı (<code>5 -&gt; /dev/ptmx</code>) göründü; metindeki Adım 2 çıktısı bu tanıtıcının olmadığı bir çalıştırmadan alındı. Öksüz sürecin <code>/init</code>'e bağlanması WSL'ye özgüdür; olağan VM'de PID 1 ya da <code>systemd --user</code> beklenir (doğrulanmadı).</li>
+  <li><strong>Gizlilik:</strong> Çıktılarda kullanıcı adı <code>kullanici</code> olarak sadeleştirildi ve sütun hizaları elle düzeltildi (gerçek <code>ps</code>, 8 karakterden uzun adları kısaltıp "+" ile gösterir). Makine adı, ev dizini ve Windows yolları hiçbir çıktıda bırakılmadı; yalnız geçici klasör <code>/tmp/yazar/siber-13</code> görünür. Başka çalışmalara ait süreçlerin göründüğü <code>top</code> çıktısı yerine yalnız deney süreçlerini gösteren <code>top -p</code> kullanıldı.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> Ctrl+Z ve Ctrl+C tuşları (etkileşimsiz ortam; aynı sinyal <code>kill -TSTP</code> ile gönderildi); <code>htop</code> (kurulu değil, kurulum yapılmadı); <code>/proc</code>'u <code>hidepid</code> ile yeniden bağlamak ve başka kullanıcıların süreçlerini <code>sudo lsof</code>/<code>sudo ss -p</code> ile görmek (root gerekir). <code>passwd</code> denemesi bir kez yapıldı ve journal'a bir PAM satırı ("(old) token not obtained") düşürdü; tekrarlanmadı.</li>
+  <li><strong>Resmî belgeden:</strong> man7.org <code>signal(7)</code> (varsayılan eylemler, <code>SIGKILL</code>/<code>SIGSTOP</code>'un yakalanamazlığı, <code>fork</code>/<code>execve</code>'de eğilimler), <code>kill(2)</code> (izin kuralı, sinyal 0, negatif PID), <code>wait(2)</code> (zombi, evlat edinme), <code>PR_SET_CHILD_SUBREAPER(2const)</code>, <code>proc_pid_cmdline(5)</code>, <code>proc_pid_environ(5)</code>, <code>proc_pid_exe(5)</code>, <code>proc(5)</code> (<code>hidepid</code>, <code>gid</code>), <code>ptrace(2)</code> (erişim denetimi adımları), <code>credentials(7)</code>, <code>ps(1)</code> (durum kodları, <code>%cpu</code>, <code>rss</code>, <code>ruid/euid/suid</code>), <code>top(1)</code> (<code>%CPU</code>, <code>RES</code>, <code>VIRT</code>, <code>-b -n -p</code>), <code>lsof(8)</code> (<code>-a</code>, VEYA varsayılanı, <code>+L1</code>, <code>cwd/rtd/txt/mem</code>). GNU Bash kılavuzu web sayfası istek sınırı nedeniyle açılamadı; iş denetimi (Ctrl+Z, <code>bg</code>/<code>fg</code>, <code>SIGTTIN</code>, <code>SIGHUP</code>'ın işlere iletilmesi, <code>disown</code>), 128+N çıkış kodu ve iş denetimi kapalıyken <code>&amp;</code>'ın standart girdisinin <code>/dev/null</code> olması ortamdaki <code>man bash</code> metninden doğrulandı.</li>
+  <li><strong>Hafızadan / tartışmalı:</strong> Bash'in ön plandaki komut bitene kadar <code>trap</code> işleyicisini ertelemesi (denemenin <code>wait</code> ile kurulması bu yüzden) yerleşik bilgiye dayanır. Yük ortalamasının Linux'ta kesilemez uykudaki görevleri de sayması, <code>D</code> durumundaki sürecin <code>SIGKILL</code>'e hemen yanıt vermeyebilmesi, çekirdekte süreç adının 15 karakterle sınırlı olması ve "exec'te kapat" bayrağı hafızadan yazıldı. Soru listesindeki "beklenen/kuşku uyandıran" örnekleri yaygın savunma pratiğinin özetidir, tek bir standarttan alınmadı. Parça 10'un dosyası yazım sırasında yoktu; onun tekrar soruları yalnız <code>siber.md</code>'deki konu satırından kuruldu. Parça 8, 9, 11 ve 12 yazımın sonunda yayımlandı; tekrar soruları onların özetleriyle karşılaştırılıp terimler uyumlu hâle getirildi.</li>
+  <li><strong>Saldırı sınırı:</strong> Süreç gizleme, ad taklidi ya da tespitten kaçınma yöntemi anlatılmadı; "şüpheli" süreç yalnız savunmacı sorularını sınamak için kendi makinede, <code>127.0.0.1</code>'de kurulup kaldırıldı. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

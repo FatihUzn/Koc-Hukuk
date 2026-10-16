@@ -1,0 +1,729 @@
+<article class="chapter ders" id="c-siber-19">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 19 · Sertleştirme</div>
+<h1>Sertleştirme ve güncelleme disiplini: saldırı yüzeyini ölçerek küçültmek</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvarına yeni bir Debian sanal makinesi kurdun. Parça 8'den 18'e kadar her biri ayrı bir kapıyı anlattı: paketler, kullanıcılar, izinler, süreçler, servisler, ağ, güvenlik duvarı, günlükler, SSH. Şimdi elinde onlarca ayar ve bir o kadar komut var. Hangisinden başlarsın? Bir ayarı değiştirdiğinde makinenin gerçekten daha güvenli olduğunu nereden bilirsin, bir şey bozulursa nasıl geri dönersin ve bir denetim aracı sana "61 puan" dediğinde bu ne anlama gelir?</p></div>
+<p class="hint">Önce bilmen gerekenler: bu parça Linux bloğunu (Parça 8–18) toparlar; özellikle Parça 8 (bağlama seçenekleri), Parça 10 (APT, güncelleme), Parça 11 (kullanıcılar, <code>sudo</code>), Parça 12 (izinler, SUID envanteri), Parça 15 (<code>ss</code>) ve Parça 7 (laboratuvar, anlık görüntü). Kod rafından Parça 17 (betik, fonksiyon, koşul) ve Parça 34 (Git ile değişikliği kayıt altına almak). Bütün denemeler kendi makinende ya da laboratuvar VM'inde yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bir işletim sistemi kurulduğu gün herkes için çalışacak biçimde ayarlanır: birçok servis açık, birçok seçenek "kolay olsun" diye geniş. Dağıtımı yapanlar makineni hangi iş için kullanacağını bilemez; varsayılanlar güvenlik ile kullanışlılık arasında orta bir noktadadır. Sertleştirme bu noktayı makinenin gerçek işine göre daraltmaktır.</p>
+
+<p>Linux bloğunun her parçası bu işin bir parçasını tek tek gösterdi. Bu parça üç şey ekliyor: <strong>yöntem</strong> (kontrol listesi ve CIS kıyaslamaları gibi ortak ölçütler), <strong>öncelik</strong> (önce en çok riski en az emekle azaltan adımlar) ve <strong>disiplin</strong> (ölçmeden değiştirmemek, değiştirdiğini yazmak, geri dönüş yolunu önceden hazırlamak). Sonda bütün bloğu, her maddeyi anlatan parçaya bağlayan tek bir kontrol listesinde toplayacağız.</p>
+
+<p>Pratikte önce kendi yazdığın salt okur bir betikle makineyi ölçecek, sonra açık kaynak denetim aracı Lynis'i kurmadan, <code>/tmp</code> altına açarak çalıştırıp raporunu yorumlayacaksın. Raporun hangi satırlarının gerçek bulgu, hangilerinin bu ortama (WSL) ya da dağıtıma (Kali) özgü olduğunu ayırmak bu parçanın en önemli becerisi.</p>
+
+<h2 class="s">1. Sertleştirme nedir?</h2>
+
+<p>Parça 49'da ayrıntısıyla göreceğin <strong>saldırı yüzeyi</strong> kavramıyla başlayalım: bir sisteme dışarıdan ya da içeriden ulaşılabilecek bütün noktaların toplamı. Dinleyen her port, kurulu her program, oturum açabilen her hesap, yazılabilir her dizin, yüklenebilen her çekirdek modülü bu yüzeyin bir parçasıdır. Yüzeydeki her nokta bir gün açık verebilir; kullanmadığın bir servisin yaması da kullandığın servisinki kadar önemlidir, çünkü saldırgan senin neyi kullandığına değil neyin açık olduğuna bakar.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sertleştirme</strong> (hardening), bir sistemin saldırı yüzeyini, sistemin görevi için gereken en küçük hâline indirmek ve kalan her parçayı en kısıtlı güvenli ayarla çalıştırmaktır. Üç hamleden oluşur: <strong>kaldırmak</strong> (gerekmeyen paket, servis, hesap, port), <strong>daraltmak</strong> (kalanın yetkisini, erişimini, seçeneklerini kısmak) ve <strong>güncel tutmak</strong> (kalan parçaların bilinen açıklarını kapatmak). Sertleştirme bir ürün değil, tekrarlanan bir süreçtir.</p></div>
+
+<p>"Görevi için gereken" ifadesi işin özüdür: web sunucusunda 443 açık kalmak zorundadır. Sertleştirme "her şeyi kapat" değil, "neye ihtiyacın olduğunu bil, gerisini kapat" demektir; Parça 11'deki en az yetki ilkesinin makine düzeyindeki karşılığıdır. Bir ödünleşim de vardır: <code>/tmp</code>'yi <code>noexec</code> bağlarsan bazı kurulum betikleri çalışmaz, parola girişini kapatırsan anahtarını kaybettiğinde konsola gitmen gerekir. Her adım bir karar, her karar kayıt altına alınacak bir değişikliktir.</p>
+
+<h2 class="s">2. Kontrol listesi yaklaşımı ve CIS kıyaslamaları</h2>
+
+<p>Aklında tuttuğun ayarlarla sertleştirirsen bir şeyi mutlaka unutursun ve ne yaptığını kanıtlayamazsın; havacılıkta ve tıpta kontrol listeleri aynı sorunu çözer. Güvenlikte kontrol listesi unutmayı önler, ekipte ortak bir dil kurar ve "bu sistem şu ölçüte uyuyor" sözünü denetlenebilir kılar. Herkes kendi listesini sıfırdan yazmasın diye kuruluşlar ortak listelere yaslanır; en yaygınlarından biri kâr amacı gütmeyen Center for Internet Security'nin (CIS) yayımladığı <strong>CIS Benchmarks</strong>, yani CIS kıyaslamalarıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>CIS kıyaslaması</strong> (CIS Benchmark), belirli bir ürün sürümü (ör. Debian 13, Ubuntu 24.04 LTS) için güvenli yapılandırma önerilerinin, her önerinin gerekçesi, denetim yöntemi ve düzeltme adımıyla birlikte yazıldığı belgedir. CIS'e göre gönüllü uzmanların uzlaşmasıyla hazırlanır ve PDF biçiminde ücretsiz dağıtılır. Öneriler <strong>profillere</strong> ayrılır: <strong>Seviye 1</strong> temel öneridir, görece çabuk uygulanır ve sistemi belirgin biçimde yavaşlatmadan yüzeyi küçültmeyi hedefler; <strong>Seviye 2</strong> "derinlemesine savunma" profilidir, güvenliğin öncelikli olduğu ortamlar içindir ve dikkatsiz uygulanırsa işleyişi bozabilir. Seviye 2, Seviye 1'in üstüne kurulur.</p></div>
+
+<p>Her önerinin bir de değerlendirme durumu vardır. <strong>Otomatik</strong> (Automated) işaretli bir öneri, bir yapılandırma denetim aracıyla geçti/kaldı biçiminde kendiliğinden sınanabilir. <strong>Elle</strong> (Manual) işaretli öneri ise insan yargısı ister: "gereksiz servisleri kapat" maddesinde neyin gereksiz olduğunu araç bilemez. CIS eskiden "puanlanan/puanlanmayan" ayrımı kullanıyordu; kullanıcılar puanlanmayan maddeleri önemsiz sandığı için adları değiştirildi. Elle işaretli bir madde daha az önemli değildir, yalnızca otomatikleştirilemez.</p>
+
+<div class="tablo"><table>
+<tr><th>Ölçüt</th><th>Seviye 1</th><th>Seviye 2</th></tr>
+<tr><td>Amaç</td><td>Temel hijyen: yüzeyi küçült, sistemi kullanılır bırak</td><td>Derinlemesine savunma: güvenlik öncelikli ortam</td></tr>
+<tr><td>Uygulama hızı</td><td>Görece çabuk</td><td>Planlama ve sınama ister</td></tr>
+<tr><td>İşleyişe etkisi</td><td>Belirgin yavaşlama ya da kırılma beklenmez</td><td>Bazı uygulamaları bozabilir; önce laboratuvarda dene</td></tr>
+<tr><td>İlişki</td><td>Taban</td><td>Seviye 1'in bütün önerilerini içerir, üstüne ekler</td></tr>
+<tr><td>Bu raftaki yeri</td><td>Bu parçadaki kontrol listesinin büyük kısmı</td><td>Ayrı bölümleme, zorunlu erişim denetimi gibi daha ağır kararlar</td></tr>
+</table></div>
+
+<p>Kıyaslamalar ürün sürümüne bağlıdır ve sürekli güncellenir. 16 Ekim 2026'da CIS'in liste sayfasında Debian Linux 13 için 1.1.0, Debian Linux 12 için 2.0.0, Ubuntu Linux 24.04 LTS için 2.0.0 ve Ubuntu Linux 26.04 LTS için 1.0.0 sürümleri görünüyor; Debian 12 ve Ubuntu 24.04'ün 2.0.0 sürümleri Haziran 2026 duyurusunda yayımlanmış. Laboratuvarında hangi dağıtım sürümünü kullanıyorsan onun belgesini indir; Debian 12 belgesini Debian 13'e uygulamak, bir sürümde değişen yolları ve varsayılanları kaçırmak demektir. Bu parçada madde numarası vermiyorum: numaralar sürümden sürüme değişiyor ve her birini belgenin kendisinden doğrulamadan yazmak yanıltıcı olur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kıyaslamanın bütün maddelerini uyguladım, sistem güvenli."</strong> Kontrol listesi bir taban çizgisidir, tehdit modelinin (Parça 50) yerini tutmaz. Liste, senin uygulamandaki bir yetki hatasını, zayıf bir parolanın bir web formunda kullanılmasını ya da yedeğin hiç sınanmamış olmasını bilemez. Tersi de doğrudur: listeyi körü körüne uygulamak sistemi bozabilir, bozulan sistemi düzeltmek için de biri "geçici olarak" bütün korumaları kapatır. Doğrusu: her maddeyi "bu benim makinemde ne işe yarar, neyi bozar?" sorusuyla oku, uygulamadığın maddeyi gerekçesiyle yaz (istisna kaydı), uyguladığını ölç ve listeyi tehdit modelinle tamamla.</p></div>
+
+<h2 class="s">3. Ölçmeden sertleştirme olmaz</h2>
+
+<p>Sertleştirmenin ilk adımı değiştirmek değil, ölçmektir. "Bu makinede ne açık?" sorusunun cevabını bilmeden bir şeyi kapatırsan iki hata yaparsın: gereken bir şeyi kapatırsın ya da asıl açığı görmeden kolay olanla uğraşırsın. Ölçüm ayrıca bir <strong>taban çizgisi</strong> (baseline) verir: değişiklikten sonra aynı ölçümü yeniden yapınca neyin değiştiğini görürsün.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="Sertleştirme döngüsü: envanter ve ölçüm, önceliklendirme, yedek ve kayıt, değişiklik, sınama, yeniden ölçüm; sonra başa dönülür">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Sertleştirme bir döngüdür</text>
+  <rect class="sv-l" x="130" y="34" width="140" height="44" rx="8" />
+  <text class="sv-b" x="200" y="54" text-anchor="middle">1. Ölç</text>
+  <text class="sv-s" x="200" y="70" text-anchor="middle">envanter, taban çizgisi</text>
+  <rect class="sv-k" x="262" y="104" width="128" height="44" rx="8" />
+  <text class="sv-b" x="326" y="124" text-anchor="middle">2. Önceliklendir</text>
+  <text class="sv-s" x="326" y="140" text-anchor="middle">risk × emek</text>
+  <rect class="sv-a" x="262" y="190" width="128" height="44" rx="8" />
+  <text class="sv-b" x="326" y="210" text-anchor="middle">3. Yedek + kayıt</text>
+  <text class="sv-s" x="326" y="226" text-anchor="middle">geri dönüş hazır</text>
+  <rect class="sv-m" x="130" y="258" width="140" height="44" rx="8" />
+  <text class="sv-b" x="200" y="278" text-anchor="middle">4. Değiştir</text>
+  <text class="sv-s" x="200" y="294" text-anchor="middle">tek seferde tek şey</text>
+  <rect class="sv-a" x="10" y="190" width="128" height="44" rx="8" />
+  <text class="sv-b" x="74" y="210" text-anchor="middle">5. Sına</text>
+  <text class="sv-s" x="74" y="226" text-anchor="middle">çalışıyor mu, kapandı mı</text>
+  <rect class="sv-k" x="10" y="104" width="128" height="44" rx="8" />
+  <text class="sv-b" x="74" y="124" text-anchor="middle">6. Yeniden ölç</text>
+  <text class="sv-s" x="74" y="140" text-anchor="middle">taban çizgisiyle kıyas</text>
+  <line class="sv-cl" x1="270" y1="66" x2="300" y2="104" />
+  <line class="sv-cl" x1="326" y1="148" x2="326" y2="190" />
+  <line class="sv-cl" x1="300" y1="234" x2="270" y2="270" />
+  <line class="sv-cl" x1="130" y1="270" x2="100" y2="234" />
+  <line class="sv-cl" x1="74" y1="190" x2="74" y2="148" />
+  <line class="sv-cl" x1="100" y1="104" x2="130" y2="66" />
+  <text class="sv-s" x="200" y="160" text-anchor="middle">Değişiklik bozduysa</text>
+  <text class="sv-s" x="200" y="176" text-anchor="middle">5'ten 3'teki yedeğe dön</text>
+</svg>
+<figcaption>Sertleştirme döngüsü. Ölçüm hem başlangıçta hem sonda var: ilki neyin açık olduğunu, ikincisi değişikliğin işe yarayıp yaramadığını söyler. Turuncu kutular güvenlik ağıdır: yedek ve kayıt değişiklikten önce gelir, sınama başarısızsa yedeğe dönülür.</figcaption>
+</figure>
+
+<p>Ölçüm için büyük bir araç gerekmez: bloğun komutları (<code>sysctl</code>, <code>findmnt</code>, <code>ss</code>, <code>systemctl</code>, <code>find</code>, <code>apt</code>) bir betikte birleşince, ne sınadığını satır satır bildiğin küçük bir denetim aracı olur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: salt okur bir denetim betiği yazmak ve çıktısını okumak</span>
+<p><strong>Soru:</strong> Hiçbir ayarı değiştirmeden; çekirdek parametrelerini, geçici dizinlerin bağlama seçeneklerini, dinleyen portları, açılışta etkin birim sayısını, SUID dosya sayısını ve bekleyen güncellemeleri tek komutla ölçen bir betik yaz. Sonucu yorumla.</p>
+<p><strong>Adım 1.</strong> Her ölçümü "beklenen değer" ile karşılaştıran bir işlev tanımla (kod rafı Parça 17). <code>sysctl -n</code> yalnız değeri yazar; beklenen değerler <code>|</code> ile ayrılır, böylece "1 ya da 2 olur" diyebilirsin. Bağlama seçeneklerinde her yer için hangi seçeneklerin istendiğini ayrı yaz: <code>/home</code>'a <code>noexec</code> istemek gerçekçi değildir.</p>
+<pre class="kod" data-ad="denetim.sh"># denetim.sh - salt okur küçük sertleştirme denetimi
+# Hiçbir ayarı değiştirmez; yalnız okur ve beklenenle karşılaştırır.
+
+beklenen() {   # anahtar  beklenen_degerler(| ile)
+    local deger
+    deger=$(sysctl -n "$1" 2&gt;/dev/null) || deger="(yok)"
+    if [[ "|$2|" == *"|$deger|"* ]]; then durum="TAMAM"; else durum="FARKLI"; fi
+    printf '%-32s %-8s beklenen %-6s %s\n' "$1" "$deger" "$2" "$durum"
+}
+
+echo "== 1. Çekirdek parametreleri"
+beklenen kernel.kptr_restrict        "1|2"
+beklenen kernel.dmesg_restrict       "1"
+beklenen kernel.yama.ptrace_scope    "1|2|3"
+beklenen kernel.randomize_va_space   "2"
+beklenen fs.protected_symlinks       "1"
+beklenen fs.protected_hardlinks      "1"
+beklenen fs.suid_dumpable            "0"
+beklenen net.ipv4.ip_forward         "0"
+beklenen net.ipv4.tcp_syncookies     "1"
+
+echo "== 2. Bağlama seçenekleri"
+for satir in "/tmp nodev,nosuid,noexec" "/dev/shm nodev,nosuid,noexec" \
+             "/var/tmp nodev,nosuid,noexec" "/home nodev,nosuid"; do
+    yer=${satir% *}; istenen=${satir#* }
+    secenek=$(findmnt -n -o OPTIONS --target "$yer")
+    kaynak=$(findmnt -n -o TARGET --target "$yer")
+    eksik=""
+    for s in ${istenen//,/ }; do
+        [[ ",$secenek," == *",$s,"* ]] || eksik="$eksik $s"
+    done
+    printf '%-9s (bağlama noktası %-9s) eksik:%s\n' "$yer" "$kaynak" "${eksik:- yok}"
+done
+
+echo "== 3. Dinleyen TCP portları (yerel adres:port)"
+ss -tlnH | awk '{print "  " $4}' | sort -u
+
+echo "== 4. Açılışta etkin birim sayısı"
+systemctl list-unit-files --state=enabled --no-legend | wc -l
+
+echo "== 5. SUID dosya sayısı (kök dosya sistemi)"
+find / -xdev -perm -4000 -type f 2&gt;/dev/null | wc -l
+
+echo "== 6. Yükseltilebilir paketler (yerel önbelleğe göre)"
+apt list --upgradable 2&gt;/dev/null | grep -c upgradable
+echo "  önbellek tarihi: $(date -r /var/lib/apt/lists +%F)"</pre>
+<p><strong>Adım 2.</strong> Betiği root olmadan çalıştır. Hepsi okuma komutu; <code>find</code> okuyamadığı dizinleri sessizce atlar, bu yüzden sayı root'la alınacak sayıdan küçük olabilir.</p>
+<pre class="kod" data-ad="bash">bash denetim.sh</pre>
+<pre class="cikti">== 1. Çekirdek parametreleri
+kernel.kptr_restrict             0        beklenen 1|2    FARKLI
+kernel.dmesg_restrict            0        beklenen 1      FARKLI
+kernel.yama.ptrace_scope         1        beklenen 1|2|3  TAMAM
+kernel.randomize_va_space        2        beklenen 2      TAMAM
+fs.protected_symlinks            1        beklenen 1      TAMAM
+fs.protected_hardlinks           1        beklenen 1      TAMAM
+fs.suid_dumpable                 0        beklenen 0      TAMAM
+net.ipv4.ip_forward              0        beklenen 0      TAMAM
+net.ipv4.tcp_syncookies          1        beklenen 1      TAMAM
+== 2. Bağlama seçenekleri
+/tmp      (bağlama noktası /        ) eksik: nodev nosuid noexec
+/dev/shm  (bağlama noktası /dev/shm ) eksik: noexec
+/var/tmp  (bağlama noktası /        ) eksik: nodev nosuid noexec
+/home     (bağlama noktası /        ) eksik: nodev nosuid
+== 3. Dinleyen TCP portları (yerel adres:port)
+  10.255.255.254:53
+== 4. Açılışta etkin birim sayısı
+35
+== 5. SUID dosya sayısı (kök dosya sistemi)
+35
+== 6. Yükseltilebilir paketler (yerel önbelleğe göre)
+0
+  önbellek tarihi: 2026-08-20</pre>
+<p><strong>Adım 3.</strong> Çekirdek bölümünü oku. Yedi parametre beklenen değerde, ikisi farklı: çekirdek adresleri (<code>kptr_restrict</code>) ve çekirdek iletileri (<code>dmesg_restrict</code>) ayrıcalıksız kullanıcıya açık. Bunların ne anlama geldiğini 9. bölümde göreceksin; "farklı" kendiliğinden "yanlış" demek değildir, Lynis bölümünde bunun bir dağıtım tercihi olduğunu kanıtlayacağız.</p>
+<p><strong>Adım 4.</strong> Bağlama bölümünü oku. <code>/tmp</code>, <code>/var/tmp</code> ve <code>/home</code> ayrı dosya sistemi değil; hepsi kökün (<code>/</code>) parçası, bu yüzden kendi seçenekleri olamaz. Bu bir WSL kurulumunun özelliği: tek bir sanal disk var. Debian 13'te <code>/tmp</code> varsayılan olarak ayrı bir tmpfs'tir (Parça 8); senin VM'inde bu satır farklı çıkacak. <code>/dev/shm</code>'de yalnız <code>noexec</code> eksik.</p>
+<p><strong>Adım 5.</strong> Kalan satırları oku. Dinleyen tek TCP soketi WSL'nin DNS aracısı (<code>10.255.255.254:53</code>); yerel servis yok. 35 etkin birim ve 35 SUID dosyası tek başına iyi ya da kötü değildir; değeri, ileride aynı ölçümle kıyaslanacak taban çizgisi olmasıdır. Son satır en önemli uyarıyı taşıyor: 0 bekleyen güncelleme, ama paket listeleri 20 Ağustos'tan beri tazelenmemiş. <code>apt list --upgradable</code> depoya sormaz, yerel önbelleğe bakar; burada <code>apt update</code> çalıştırmadım, çünkü o komut root ister ve sistemin durumunu değiştirir. Eski önbellekle "güncelleme yok" demek, "bilmiyorum" demenin yanıltıcı bir biçimidir.</p>
+<p><strong>Sonuç:</strong> Betik iki çekirdek parametresi, eksik bağlama seçenekleri ve bayat paket önbelleği olmak üzere üç yeri işaret etti. Ayrıca bir taban çizgisi bıraktı: aynı betiği her değişiklikten sonra yeniden çalıştırıp çıktıyı <code>diff</code> ile kıyaslayabilirsin.</p></div>
+
+<h2 class="s">4. Öncelik: önce ne yapılır?</h2>
+
+<p>Bir denetim aracı sana elli öneri verdiğinde elli işi aynı anda yapamazsın. Öncelik iki soruyla belirlenir: <strong>Bu zayıflık ne kadar kolay kullanılır ve kullanılırsa ne olur?</strong> ve <strong>Kapatmak ne kadar emek ister, neyi bozabilir?</strong> Riski yüksek, emeği düşük olan iş en başa gelir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önce bilinen açıkları kapat, sonra yüzeyi küçült, sonra kapıları kilitle, en son içi daralt; ve bütün bunları izle.</strong> Neden: saldırıların çoğu yaması çoktan yayımlanmış bilinen açıkları ve açık bırakılmış servisleri kullanır; bunlar ucuz ve etkili kapanır. Kaldırdığın bir servisi ayrıca sertleştirmen gerekmez. Çekirdek parametresi ve bağlama seçeneği gibi derin ayarlar ise yüzey küçüldükten sonra kalanı daha da zorlaştırır. İzleme her katmanda gerekir, çünkü hiçbir sıralama her şeyi önlemez.</p></div>
+
+<p>Kural bir başlangıç noktasıdır: internete açık bir SSH sunucusunda parola girişini kapatmak, masaüstündeki gereksiz bir yazıcı servisini kaldırmaktan daha acildir.</p>
+
+<h2 class="s">5. Güncel tutma</h2>
+
+<p>Parça 10 APT'nin güven zincirini, <code>update</code>/<code>upgrade</code> farkını ve <code>unattended-upgrades</code>'i anlattı. Disiplin tarafında güncelleme üç adımdır ve üçüncüsü sık unutulur: listeyi tazelemek, yükseltmek ve <strong>yeni kodu gerçekten çalıştırmak</strong>. Kütüphane yükseltilince diskteki dosya değişir, ama onu daha önce belleğe yüklemiş süreçler eski kopyayı kullanmayı sürdürür (Parça 13'teki "silinmiş ama açık dosya"). Yamalı OpenSSL diske indiği hâlde web sunucusu yeniden başlatılmadıysa açık hâlâ dinlemededir. Debian'daki <code>needrestart</code> hangi servislerin eski kütüphaneyle çalıştığını söyler; çekirdek güncellemesi ise ancak yeniden başlatmayla devreye girer.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Güncelleme, yeni kod çalışmaya başlayınca tamamlanmış sayılır.</strong> Neden: diskteki yamalı dosya, bellekteki yamasız süreci korumaz. Kural: Listeyi tazele, bekleyenleri gör, yükselt, eski kütüphaneyle çalışan servisleri yeniden başlat, çekirdek değiştiyse uygun bir zamanda yeniden başlat; otomatik güncelleme kullanıyorsan onun günlüğünü de oku (Parça 10). Bir de güvenlik güncellemesi alamayan sürümü (destek süresi bitmiş dağıtım) güncel sayma.</p></div>
+
+<p>Okurun laboratuvar VM'inde bu adımlar şöyle görünür; bu komutlar root istediği ve sistemi değiştirdiği için <strong>burada çalıştırılmadı</strong>:</p>
+<pre class="kod" data-ad="laboratuvar VM'inde, sudo ile (burada çalıştırılmadı)">sudo apt update                 # listeleri tazele (imza zinciri, Parça 10)
+apt list --upgradable           # artık güncel önbelleğe göre bekleyenler
+sudo apt full-upgrade           # yükselt; gerekirse paket kaldırabilir, çıktıyı oku
+sudo needrestart                # eski kütüphaneyle çalışan servisler
+sudo systemctl reboot           # çekirdek değiştiyse, uygun bir saatte</pre>
+
+<h2 class="s">6. Gereksizi kaldırmak: paket, servis, hesap</h2>
+
+<p>Kaldırmak, sertleştirmenin en ucuz ve en kalıcı hamlesidir: yüzeyden silinen bir parçayı ne yamalaman ne izlemen gerekir. <strong>Paketler:</strong> her paket bir bağımlılık ağacı, belki bir SUID dosyası (Parça 12), belki bir servis getirir. <code>apt remove</code> yapılandırma dosyalarını bırakır, <code>apt purge</code> onları da siler. Bu ortamda Lynis şifresiz eski protokollerin (<code>rsh</code>, TFTP) istemcilerini bulacak. <strong>Servisler:</strong> Parça 14'teki sırayı izle: servisin ne yaptığını ve kimin ona bağlı olduğunu öğren, durdur, bir süre gözle, sonra etkinliğini kaldır, hiç gerekmeyecekse paketi kaldır. <code>systemctl disable --now</code> durdurur ve açılışta başlamasını engeller; <code>mask</code> başka bir birim istese bile başlatılmasını yasaklar. <strong>Hesaplar:</strong> gereksiz insan hesapları silinmeden önce kilitlenir ve süresi doldurulur (Parça 11); böylece dosyaları incelenebilir, bir servisin sahibi çıkarsa geri açılabilir.</p>
+
+<pre class="kod" data-ad="laboratuvar VM'inde, sudo ile (burada çalıştırılmadı)">systemctl list-unit-files --state=enabled     # envanter (salt okur, burada çalıştı: 35)
+sudo systemctl disable --now cups.service     # örnek: yazıcı gerekmiyorsa
+sudo apt purge rsh-client tftp-hpa            # örnek: eski, şifresiz istemciler
+sudo apt autoremove --purge                   # artık kimsenin istemediği bağımlılıklar
+sudo usermod -L -e 1 eskideneme               # hesabı kilitle ve süresini doldur (Parça 11)</pre>
+
+<p>Paket adları dağıtıma göre değişir; kaldırmadan önce <code>apt-get -s purge</code> ile simülasyon yap ve listede beklemediğin bir paket var mı bak (Parça 10).</p>
+
+<h2 class="s">7. Güçlü kimlik doğrulama ve kapıyı kilitlemek</h2>
+
+<p>Yüzey küçüldükten sonra geriye kalan kapıların kilidine bakarsın. Linux'ta en önemli kapılar uzaktan oturum (SSH) ve yetki yükseltme (<code>sudo</code>) kapılarıdır. Parça 18 anahtarla girişi, root ve parola girişinin kapatılmasını, izinli kullanıcıları; Parça 11 dar <code>sudo</code> kurallarını ve kayıtlarını anlattı. Üç nokta ekleyelim. <strong>Parola hâlâ gerekiyorsa kalitesini sistem denetlesin:</strong> PAM'in parola kalitesi modülü (Debian'da <code>libpam-pwquality</code>) uzunluk ve sözlük denetimi yapar; Lynis'in "parola yaşlandırma" önerilerini Parça 36'daki güncel parola kılavuzuyla birlikte değerlendir. <strong>Başarısız girişler görünür olsun:</strong> kimse izlemiyorsa kaba kuvvet denemesinin sınırı yoktur (günlükler Parça 17, oran sınırlama Parça 53). <strong>Root bir oturum hesabı değil, bir yetkidir:</strong> paylaşılan root parolası kimin ne yaptığını bilmeyi imkânsız kılar.</p>
+
+<h2 class="s">8. Gereksiz portu kapatmak</h2>
+
+<p>Dinleyen bir port, ağdan gelen herkese "konuşabilirsin" demektir. Parça 15'te <code>ss -tlnp</code> ile hangi sürecin hangi portu tuttuğunu ve <code>127.0.0.1</code> ile <code>0.0.0.0</code>'a bağlanmanın farkını gördün; Parça 16'da ana makine güvenlik duvarını ve varsayılan reddet ilkesini göreceksin. Doğru sıra şudur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Önce servisi kaldır, sonra bağlama adresini daralt, en son güvenlik duvarıyla süz.</strong> Neden: dinlemeyen bir port için kurala gerek yoktur ve kural yanlışlıkla silinse bile açık kalmaz. Yalnız makinenin kendisinin kullandığı bir servis (yerel veritabanı, yönetim paneli) <code>127.0.0.1</code>'e bağlanırsa ağdan hiç görünmez. Güvenlik duvarı, gerçekten dışarıya açık olması gereken servisleri kimin görebileceğini sınırlar ve beklenmedik yeni bir dinleyiciye karşı ikinci bir katman oluşturur. Üç katman birbirinin yerini tutmaz; derinlemesine savunmanın küçük bir örneğidir.</p></div>
+
+<p>Kali gibi araç yüklü bir dağıtımda Apache, PostgreSQL gibi servisler kurulu ama kapalı durabilir. Kapalı servis, birinin "deneyeyim" diye başlattığı gün yüzeye çıkar; kullanmıyorsan paketi kaldırmak daha temizdir.</p>
+
+<h2 class="s">9. Bağlama seçenekleri ve çekirdek parametreleri</h2>
+
+<h3>Bağlama seçenekleri</h3>
+
+<p>Parça 8'de üç seçeneği gördün: <code>nodev</code> bir dosya sisteminde aygıt dosyalarının yorumlanmasını, <code>nosuid</code> SUID/SGID bitlerinin ve dosya yeteneklerinin etkisini, <code>noexec</code> ise programların doğrudan çalıştırılmasını engeller. Sertleştirmede kural, <strong>herkesin yazabildiği yerlere</strong> bu seçenekleri koymaktır: <code>/tmp</code>, <code>/var/tmp</code>, <code>/dev/shm</code>. Mantık Parça 12'deki SUID dersine dayanır: yazabildiğin bir yere SUID'li bir dosya bırakabiliyorsan, o dosya sistemi o biti dikkate almamalıdır. <code>/home</code> için <code>nodev</code> ve <code>nosuid</code> yaygındır; <code>noexec</code> ise kullanıcıların kendi betiklerini çalıştırmasını engellediği için ortama göre karar verilir.</p>
+
+<p>Parça 8'deki uyarı: <code>noexec</code> yorumlayıcıyı durdurmaz; <code>/tmp/betik.sh</code> doğrudan çalışmaz ama <code>sh /tmp/betik.sh</code> çalışır. Kazara ya da otomatik çalıştırmayı keser, kararlı bir saldırganı durdurmaz. Laboratuvar VM'inde <code>/dev/shm</code> için tipik satır şöyledir; <code>/etc/fstab</code>'ı değiştirdiği için <strong>burada çalıştırılmadı</strong>:</p>
+
+<pre class="kod" data-ad="/etc/fstab (laboratuvar VM'inde, burada çalıştırılmadı)">tmpfs  /dev/shm  tmpfs  defaults,nodev,nosuid,noexec  0  0</pre>
+<p>Ardından <code>sudo mount -o remount /dev/shm</code> ile yeniden bağlanır ve <code>findmnt /dev/shm</code> ile seçenekler doğrulanır. Debian 13'te <code>/tmp</code> systemd'nin <code>tmp.mount</code> birimiyle bağlandığı için onun seçenekleri <code>fstab</code> yerine birimin üstüne yazılan bir ek dosyayla değiştirilir; dağıtımının belgesine bakmadan yazma.</p>
+
+<h3>Çekirdek parametreleri: sysctl</h3>
+
+<p>Çekirdeğin çalışma anında değiştirilebilen yüzlerce ayarı vardır; Parça 8'de gördüğün <code>/proc/sys</code> altında birer dosya olarak dururlar ve <code>sysctl</code> komutuyla okunup yazılırlar. <code>kernel.dmesg_restrict</code> anahtarı <code>/proc/sys/kernel/dmesg_restrict</code> dosyasıdır. Sertleştirme açısından önemli olanların çoğu bir bilgiyi ayrıcalıksız kullanıcıdan saklar ya da tehlikeli bir davranışı kapatır.</p>
+
+<div class="tablo"><table>
+<tr><th>Anahtar</th><th>Ne yapar</th><th>Sertleştirilmiş değer</th><th>Bu makinede</th></tr>
+<tr><td><code>kernel.kptr_restrict</code></td><td>Çekirdek adreslerinin ayrıcalıksız kullanıcıya gösterilmesi; 1'de <code>CAP_SYSLOG</code> olmayana, 2'de herkese sıfır gösterilir</td><td>1 ya da 2</td><td>0</td></tr>
+<tr><td><code>kernel.dmesg_restrict</code></td><td>1 ise çekirdek iletilerini (<code>dmesg</code>) okumak <code>CAP_SYSLOG</code> ister</td><td>1</td><td>0 (Kali tercihi)</td></tr>
+<tr><td><code>kernel.yama.ptrace_scope</code></td><td>Bir sürecin başka bir sürece <code>ptrace</code> ile bağlanması; 1'de yalnız kendi soyundan gelene, 2'de yalnız yöneticiye, 3'te kimseye</td><td>1 ya da üstü</td><td>1</td></tr>
+<tr><td><code>kernel.randomize_va_space</code></td><td>Adres rastgeleleştirme (ASLR, Parça 5); 2 tam</td><td>2</td><td>2</td></tr>
+<tr><td><code>fs.protected_symlinks</code>, <code>fs.protected_hardlinks</code></td><td>Herkese yazılabilir yapışkan dizinlerde (Parça 12, <code>/tmp</code>) başkasının sembolik bağını izlemeyi, sahibi olmadığın dosyaya sabit bağ kurmayı kısıtlar</td><td>1</td><td>1</td></tr>
+<tr><td><code>fs.suid_dumpable</code></td><td>Yetki değiştirmiş süreçlerin çekirdek dökümü (core dump) bırakması; 1 güvensiz hata ayıklama kipidir</td><td>0</td><td>0</td></tr>
+<tr><td><code>net.ipv4.ip_forward</code></td><td>Makinenin yönlendirici gibi paket aktarması (Parça 24)</td><td>0 (yönlendirici değilse)</td><td>0</td></tr>
+<tr><td><code>net.ipv4.conf.all.accept_redirects</code></td><td>ICMP yönlendirme iletileriyle rota tablosunun değiştirilmesi</td><td>0</td><td>1</td></tr>
+<tr><td><code>net.ipv4.tcp_syncookies</code></td><td>SYN seline karşı SYN çerezleri (Parça 28)</td><td>1</td><td>1</td></tr>
+</table></div>
+
+<p>Kalıcı ayar, <code>/etc/sysctl.d/</code> altına yazılan küçük dosyalarla yapılır; <code>systemd-sysctl</code> açılışta bunları uygular. Bütün dizinlerdeki (<code>/etc</code>, <code>/run</code>, <code>/usr/local/lib</code>, <code>/usr/lib</code> altındaki <code>sysctl.d</code>) dosyalar, hangi dizinde olurlarsa olsunlar <strong>adlarına göre</strong> sıralanır; aynı anahtar iki dosyada varsa adı sıralamada sonra gelen kazanır. Kılavuz sayfası bu yüzden dosya adlarının iki haneli bir sayıyla başlamasını, yerel yöneticinin 60–90 aralığını kullanmasını önerir: senin <code>60-sertlestirme.conf</code> dosyan dağıtımın <code>50-default.conf</code>'unu ezer. Debian 13'ten itibaren eski <code>/etc/sysctl.conf</code> dosyası artık okunmuyor; yerel ayarlar <code>/etc/sysctl.d/*.conf</code> dosyalarına yazılmalı.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: sysctl ek dosyasını yalıtık bir ad alanında sınamak</span>
+<p><strong>Soru:</strong> Denetimin işaret ettiği parametreleri düzelten bir ek dosya yaz. Gerçek sistemi değiştirmeden dosyanın sözdizimini ve etkisini sına; hangi satırların gerçek root gerektirdiğini gör.</p>
+<p><strong>Adım 1.</strong> Dosyayı gerçek <code>/etc/sysctl.d</code> yerine bir kopya klasöre yaz. Başına tarihi ve gerekçeyi koy: altı ay sonra bu satırı okuyan kişi "neden" sorusunun cevabını dosyanın içinde bulmalı.</p>
+<pre class="kod" data-ad="bash">mkdir -p kopya/sysctl.d
+cat &gt; kopya/sysctl.d/60-sertlestirme.conf &lt;&lt;'EOF'
+# 2026-10-16 · gerekçe: Lynis KRNL-6000 ve denetim.sh
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.log_martians = 1
+EOF</pre>
+<p><strong>Adım 2.</strong> Dosyayı Parça 7 ve 15'te gördüğün boş bir ağ ad alanında uygula. <code>unshare -rn</code> sahte bir root ve kendine ait bir ağ yığını verir; ağ parametreleri ad alanı başınadır, süreç bitince kaybolur.</p>
+<pre class="kod" data-ad="bash">unshare -rn sh -c 'sysctl -p kopya/sysctl.d/60-sertlestirme.conf; echo "--- ad alanı içinde:"; sysctl net.ipv4.conf.all.accept_redirects net.ipv4.conf.all.log_martians kernel.kptr_restrict' 2&gt;&amp;1
+echo "--- ad alanından çıkınca, gerçek sistemde:"
+sysctl net.ipv4.conf.all.accept_redirects net.ipv4.conf.all.log_martians kernel.kptr_restrict</pre>
+<pre class="cikti">sysctl: permission denied on key "kernel.kptr_restrict"
+sysctl: permission denied on key "kernel.dmesg_restrict"
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.log_martians = 1
+--- ad alanı içinde:
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.log_martians = 1
+kernel.kptr_restrict = 0
+--- ad alanından çıkınca, gerçek sistemde:
+net.ipv4.conf.all.accept_redirects = 1
+net.ipv4.conf.all.log_martians = 0
+kernel.kptr_restrict = 0</pre>
+<p><strong>Adım 3.</strong> Çıktıyı oku. Dört ağ satırı kabul edildi; dosyanın sözdizimi doğru. İki <code>kernel.</code> satırı reddedildi: bunlar bütün makineye ait genel ayarlardır ve kullanıcı ad alanındaki sahte root onları değiştiremez. Bu, Parça 7'deki "konteyner tam güvenlik sınırı değildir ama sahte root da gerçek root değildir" dersinin somut hâli.</p>
+<p><strong>Adım 4.</strong> Son üç satır asıl kanıt: ad alanından çıkınca gerçek sistemde <code>accept_redirects</code> hâlâ 1, <code>log_martians</code> hâlâ 0. Hiçbir şey kalıcı olarak değişmedi.</p>
+<p><strong>Adım 5.</strong> Laboratuvar VM'inde kalıcı uygulama şöyle olur; root istediği için <strong>burada çalıştırılmadı</strong>: <code>sudo cp kopya/sysctl.d/60-sertlestirme.conf /etc/sysctl.d/</code>, ardından <code>sudo sysctl --system</code> ve denetim betiğini yeniden çalıştırıp farkı gör.</p>
+<p><strong>Sonuç:</strong> Bir ayar dosyasını önce yalıtık bir ortamda sınayıp sonra gerçek sisteme koymak, sertleştirmenin "ölç, değiştir, sına" döngüsünün küçük bir örneğidir. Ağ parametreleri ad alanında denenebilir, genel çekirdek parametreleri yalnız gerçek root'la ya da laboratuvar VM'inde.</p></div>
+
+<p>Bir uyarı: bazı parametreler tek yönlüdür. Çekirdek belgesine göre <code>kernel.modules_disabled</code> 1 olunca modül ne yüklenebilir ne kaldırılabilir ve ayar yeniden başlatmadan geri alınamaz; <code>kernel.yama.ptrace_scope</code> 3 olunca da değiştirilemez.</p>
+
+<h2 class="s">10. Değişiklikleri kayıt altına almak ve geri dönüş planı</h2>
+
+<p>Bozulan sistem, sertleştirilmemiş sistem kadar tehlikelidir: biri onu çalıştırmak için bütün ayarları geri açar. Bu yüzden her değişikliğin bir <strong>kaydı</strong>, bir <strong>yedeği</strong> ve bir <strong>geri dönüş planı</strong> olur; üçü de değişiklikten <em>önce</em> hazırlanır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Geri dönüş yolunu, değişikliği yapmadan önce kur ve sına.</strong> Neden: bir şey ters gittiğinde baskı altındasın, belki de makineye artık bağlanamıyorsun; o anda yedek almak ya da eski değeri hatırlamak mümkün değildir. Kural: Dosyayı tarihli bir adla, sahiplik ve zamanı koruyarak yedekle (<code>cp -a</code>); değişikliği <code>diff</code> ile gör; yapılandırmayı uygulamadan önce aracın kendi sözdizimi denetimiyle sına (<code>sshd -t</code>, <code>visudo -c</code>, <code>nft -c</code>); uzak makinede açık oturumu kapatmadan yeni bir oturumla dene; her değişikliği kim, ne zaman, neyi, neden, nasıl geri alınır sorularıyla bir kayda yaz. Büyük adımlardan önce VM'in anlık görüntüsünü al (Parça 7).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: yedek, fark, sözdizimi sınaması, kayıt ve geri dönüş</span>
+<p><strong>Soru:</strong> SSH sunucusunun yapılandırmasında Parça 18'deki üç sertleştirmeyi (root girişini, parola girişini ve X11 iletimini kapatmak) gerçek dosyaya dokunmadan bir kopya üzerinde uygula; değişikliği gör, sına, kaydet ve geri al.</p>
+<p><strong>Adım 1.</strong> Gerçek dosyayı bir çalışma klasörüne kopyala, kopyanın da tarihli bir yedeğini al. <code>-a</code> sahipliği, izinleri ve değişiklik zamanını korur; özetler iki dosyanın birebir aynı olduğunu kanıtlar.</p>
+<pre class="kod" data-ad="bash">cp -a /etc/ssh/sshd_config etc/ssh/
+cp -a etc/ssh/sshd_config etc/ssh/sshd_config.2026-10-16.yedek
+sha256sum etc/ssh/sshd_config*</pre>
+<pre class="cikti">f1805313ad346bdb80dff4a560a080edfca9a998f620b64da2a1aba6bcf6782e  etc/ssh/sshd_config
+f1805313ad346bdb80dff4a560a080edfca9a998f620b64da2a1aba6bcf6782e  etc/ssh/sshd_config.2026-10-16.yedek</pre>
+<p><strong>Adım 2.</strong> Değişikliği yap ve farkı gör. <code>-U0</code> yalnız değişen satırları, bağlamsız gösterir.</p>
+<pre class="kod" data-ad="bash">sed -i -e 's/^#PermitRootLogin prohibit-password/PermitRootLogin no/' \
+       -e 's/^#PasswordAuthentication yes/PasswordAuthentication no/' \
+       -e 's/^X11Forwarding yes/X11Forwarding no/' etc/ssh/sshd_config
+diff -U0 etc/ssh/sshd_config.2026-10-16.yedek etc/ssh/sshd_config</pre>
+<pre class="cikti">--- etc/ssh/sshd_config.2026-10-16.yedek	2026-06-01 13:37:05.000000000 +0300
++++ etc/ssh/sshd_config	2026-10-16 17:37:27.803488672 +0300
+@@ -33 +33 @@
+-#PermitRootLogin prohibit-password
++PermitRootLogin no
+@@ -57 +57 @@
+-#PasswordAuthentication yes
++PasswordAuthentication no
+@@ -92 +92 @@
+-X11Forwarding yes
++X11Forwarding no</pre>
+<p>Başlık satırlarına bak: yedeğin zamanı 1 Haziran, yani paketin kurduğu dosyanın zamanı; <code>cp -a</code> bunu korudu. Düz <code>cp</code> kullansaydın yedek "bugün" görünür ve özgün dosyanın ne zamandan beri değişmediği bilgisi kaybolurdu. <code>@@ -33 +33 @@</code> satırları değişikliğin yerini verir. Bir tuzak: dosyanın 12. satırı <code>Include /etc/ssh/sshd_config.d/*.conf</code> ve OpenSSH'de ilk değer kazanır (Parça 18); oradaki bir ek dosya aynı seçeneği farklı verirse bu satırlar etkisiz kalır. Etkin değeri <code>sshd -T</code> gösterir.</p>
+<p><strong>Adım 3.</strong> Uygulamadan önce sına. <code>sshd -t</code> yapılandırmayı okur ve hata varsa söyler; root olmadan çalıştırabilmek için kendi deneme anahtarımı verdim (Parça 18'deki gibi, yalnız bu klasörde). Ardından bilerek bozuk bir satır ekleyip sınamanın gerçekten yakaladığını gör.</p>
+<pre class="kod" data-ad="bash">ssh-keygen -q -t ed25519 -N '' -f deneme_anahtar -C deneme
+/usr/sbin/sshd -t -f etc/ssh/sshd_config -o HostKey=$PWD/deneme_anahtar &amp;&amp; echo "sözdizimi tamam"
+echo bozuk &gt;&gt; etc/ssh/sshd_config
+/usr/sbin/sshd -t -f etc/ssh/sshd_config -o HostKey=$PWD/deneme_anahtar; echo "çıkış: $?"</pre>
+<pre class="cikti">sözdizimi tamam
+etc/ssh/sshd_config line 125: no argument after keyword "bozuk"
+etc/ssh/sshd_config: terminating, 1 bad configuration options
+çıkış: 255</pre>
+<p>Bozuk dosyayla sunucuyu yeniden yükleseydin sunucu başlamaz ve uzaktaki makineye bir daha SSH ile giremezdin. Sınama bu yüzden pazarlık konusu değildir.</p>
+<p><strong>Adım 4.</strong> Kaydı yaz ve geri dönüşü dene. Geri dönüş, yedeği <code>cp -a</code> ile geri koymaktır; ardından <code>diff</code> sessiz kalmalı.</p>
+<pre class="kod" data-ad="bash">cat &gt;&gt; DEGISIKLIK.log &lt;&lt;'KAYIT'
+2026-10-16 | lab | etc/ssh/sshd_config | PermitRootLogin no, PasswordAuthentication no, X11Forwarding no
+  neden: Parça 18, Lynis SSH bölümü | sınama: sshd -t, ikinci oturum | geri dönüş: yedeği geri kopyala, sshd -t, reload
+KAYIT
+cp -a etc/ssh/sshd_config.2026-10-16.yedek etc/ssh/sshd_config
+diff -u etc/ssh/sshd_config.2026-10-16.yedek etc/ssh/sshd_config &amp;&amp; echo "fark yok"
+cat DEGISIKLIK.log</pre>
+<pre class="cikti">fark yok
+2026-10-16 | lab | etc/ssh/sshd_config | PermitRootLogin no, PasswordAuthentication no, X11Forwarding no
+  neden: Parça 18, Lynis SSH bölümü | sınama: sshd -t, ikinci oturum | geri dönüş: yedeği geri kopyala, sshd -t, reload</pre>
+<p><strong>Sonuç:</strong> Değişiklik dört parçalı bir iş oldu: yedek, fark, sınama, kayıt. Laboratuvar VM'inde gerçek dosyada aynı adımlar <code>sudo</code> ile yapılır, ardından <code>sudo systemctl reload ssh</code> çalıştırılır ve <strong>mevcut oturum açıkken</strong> ikinci bir terminalden yeni bir SSH bağlantısı denenir; yeni oturum açılmazsa eski oturumdan yedek geri konur. Bu son adımlar root istediği için <strong>burada çalıştırılmadı</strong>.</p></div>
+
+<p>Daha güçlü bir kayıt yolu, yapılandırma klasörünü Git ile izlemektir: her değişiklik bir commit, her ileti bir gerekçe, geri dönüş <code>git revert</code> (kod rafı Parça 34). Debian'da <code>/etc</code> için bunu yapan <code>etckeeper</code> paketi var; ölçek büyüyünce kuruluşlar yapılandırmayı kod olarak yönetir (Parça 58).</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Uzaktaki bir sunucuda SSH ya da güvenlik duvarı ayarını değiştirip oturumu hemen kapatmak.</strong> Yeni ayar hatalıysa (yanlış kullanıcı adı, eksik anahtar, SSH portunu kapatan bir kural) kendini dışarıda bırakırsın ve makineye ancak fiziksel ya da sanal konsoldan ulaşabilirsin; bulutta bu, saatler süren bir kurtarma demektir. Doğrusu: değişiklikten önce yedek al ve sözdizimini sına; mevcut oturumu açık tut; ikinci bir oturumla dene; güvenlik duvarında belirli bir süre sonra kendiliğinden geri dönen geçici bir kural kullanmayı düşün (Parça 16); konsol erişimin olduğundan emin ol. Laboratuvarda bu hatayı yapmak ucuzdur, bu yüzden önce orada dene.</p></div>
+
+<h2 class="s">Kendi makinende dene: Lynis ile denetim raporu almak ve yorumlamak</h2>
+
+<p>Lynis, CISOfy firmasının geliştirdiği, GPL lisanslı, kabuk betiklerinden oluşan bir denetim aracıdır. Sistemini tarar, yüzlerce sınama yapar ve sonunda uyarılar, öneriler ve bir "sertleştirme indeksi" verir. Sistemi değiştirmez; yalnız okur ve rapor yazar. Belgesine göre tam denetim için root ister; root olmadan çalışınca kendini "ayrıcalıksız" kipe alır ve root gerektiren sınamaları atlar. 16 Ekim 2026'da projenin GitHub sayfasındaki son sürüm 25 Haziran 2026 tarihli 3.1.7; bu makinenin deposundaki sürüm ise 3.1.6. Normal kurulum <code>sudo apt install lynis</code>'tir; ben sisteme bir şey kurmamak için paketi yalnız indirip <code>/tmp</code> altına açtım.</p>
+
+<p>Sınır notu: Lynis'i yalnız kendi makinende ya da yönetmeye yetkili olduğun laboratuvar makinesinde çalıştır. Bir denetim raporu, bir makinenin zayıf noktalarının haritasıdır; başkasının sisteminde izinsiz çalıştırmak ya da raporunu paylaşmak Parça 72–73'teki hukuki ve etik sınırın dışındadır. Aşağıdaki çıktılar WSL2 üzerindeki Kali Linux'tan alındı; laboratuvarındaki Debian ya da Ubuntu VM'inde sayılar ve bulgular farklı olacak.</p>
+
+<h3>Adım 1: paketi indir ve kurmadan aç</h3>
+<pre class="kod" data-ad="bash">mkdir -p /tmp/yazar/siber-19/araclar &amp;&amp; cd /tmp/yazar/siber-19/araclar
+apt-cache policy lynis
+apt-get download lynis
+dpkg-deb -x lynis_3.1.6-1_all.deb kok
+ls kok kok/usr/share/lynis</pre>
+<pre class="cikti">lynis:
+  Installed: (none)
+  Candidate: 3.1.6-1
+  Version table:
+     3.1.6-1 500
+        500 http://kali.download/kali kali-last-snapshot/main amd64 Packages
+Get:1 http://kali.download/kali kali-last-snapshot/main amd64 lynis all 3.1.6-1 [276 kB]
+Fetched 276 kB in 0s (1,614 kB/s)
+kok:
+etc
+usr
+
+kok/usr/share/lynis:
+db
+include</pre>
+<p><code>apt-cache policy</code> paketin kurulu olmadığını ve deponun 3.1.6 sunduğunu söylüyor. <code>apt-get download</code> root istemez: paketi yalnız bulunduğun klasöre indirir, imza zinciri Parça 10'daki gibi denetlenir. <code>dpkg-deb -x</code> paketin içindeki dosya ağacını kurulum betiklerini çalıştırmadan açar. Lynis'in iki parçası var: <code>include</code> altında sınama betikleri, <code>db</code> altında veri; programın kendisi <code>kok/usr/sbin/lynis</code>.</p>
+
+<h3>Adım 2: ayrıcalıksız kipte çalıştır</h3>
+<pre class="kod" data-ad="bash">K=/tmp/yazar/siber-19/araclar/kok
+mkdir -p /tmp/yazar/siber-19/rapor2 /tmp/yazar/siber-19/profil
+cp $K/etc/lynis/default.prf /tmp/yazar/siber-19/profil/lab.prf
+cd $K/usr/share/lynis
+sh $K/usr/sbin/lynis audit system --no-colors --quick \
+  --profile /tmp/yazar/siber-19/profil/lab.prf --plugindir $K/etc/lynis/plugins \
+  --logfile /tmp/yazar/siber-19/rapor2/lynis.log \
+  --report-file /tmp/yazar/siber-19/rapor2/lynis-report.dat &gt; /tmp/yazar/siber-19/rapor2/ekran.txt 2&gt;&amp;1</pre>
+<pre class="cikti">[+] Initializing program
+------------------------------------
+
+  ###################################################################
+  #                                                                 #
+  #   NON-PRIVILEGED SCAN MODE                                      #
+  #                                                                 #
+  ###################################################################
+
+  NOTES:
+  --------------
+  * Some tests will be skipped (as they require root permissions)
+  * Some tests might fail silently or give different results
+
+ - Detecting OS...   [ DONE ]
+ - Checking profiles...  [ DONE ]
+
+  ---------------------------------------------------
+  Program version:           3.1.6
+  Operating system:          Linux
+  Operating system name:     Kali Linux
+  Operating system version:  Rolling release
+  End-of-life:               UNKNOWN
+  Kernel version:            6.18.33.2
+  Hardware platform:         x86_64
+  Hostname:                  lab
+  ---------------------------------------------------
+  Profiles:                  /tmp/yazar/siber-19/profil/lab.prf
+  Log file:                  /tmp/yazar/siber-19/rapor2/lynis.log
+  Report file:               /tmp/yazar/siber-19/rapor2/lynis-report.dat
+  Report version:            1.0</pre>
+<p>Lynis sınama betiklerini önce standart yerlerde, en son bulunduğun dizinde arar; açılmış ağacın <code>usr/share/lynis</code> klasörüne girmemin nedeni bu. <code>--quick</code> bölüm aralarında Enter beklemesini kapatır; günlük ve rapor yollarını <code>/tmp</code>'ye verdim, çünkü varsayılanlar <code>/var/log</code> altındadır. Profili <code>lab.prf</code> adıyla kopyaladım: ilk denememde özgün adıyla verince Lynis'in kodu <code>default.prf</code> adlı dosyayı çekirdek karşılaştırmasında atladı ve o bölüm boş kaldı. Aracın kendisini de sorgulamak gerekir.</p>
+<p>Çıktının en önemli satırı <strong>NON-PRIVILEGED SCAN MODE</strong>: bazı sınamalar atlanacak, bazıları sessizce farklı sonuç verebilir. Tarama yaklaşık dört dakika sürdü; makine adını <code>lab</code> diye sadeleştirdim.</p>
+
+<h3>Adım 3: sonuç bölümünü oku</h3>
+<p>Ekran çıktısının sonunda özet var. Uyarıyı rapor dosyasından, makinenin okuyacağı biçimde, sertleştirme indeksini ve önerilerin başını ekrandan alalım:</p>
+<pre class="kod" data-ad="bash">cd /tmp/yazar/siber-19
+grep '^warning\[\]' rapor2/lynis-report.dat
+grep -c '^suggestion\[\]' rapor2/lynis-report.dat
+grep '^hardening_index' rapor2/lynis-report.dat</pre>
+<pre class="cikti">warning[]=NETW-2705|Couldn't find 2 responsive nameservers|-|-|
+51
+hardening_index=61</pre>
+<pre class="cikti">  Suggestions (51):
+  ----------------------------
+  * Install libpam-tmpdir to set $TMP and $TMPDIR for PAM sessions [DEB-0280]
+    - Related resources
+      * Website: https://cisofy.com/lynis/controls/DEB-0280/
+
+  * Install apt-listbugs to display a list of critical bugs prior to each APT installation. [DEB-0810]
+    - Related resources
+      * Website: https://cisofy.com/lynis/controls/DEB-0810/
+…
+  Details:
+  Hardening index : 61 [############        ]
+  Tests performed : 252
+  Plugins enabled : 1</pre>
+<p>Bir uyarı, 51 öneri, 252 sınama. Lynis'in belgesine göre uyarılar genellikle gerçekten eylem gerektirir, öneriler iyileştirme alanı gösterir; her uyarı "kötü" değildir, "OK" da güvenli yapılandırma kanıtı değildir. Satır sonundaki kimlik (<code>DEB-0280</code>) sınamanın adıdır; ayrıntıyı <code>lynis show details DEB-0280</code> ya da günlük verir. Listeyi "…" ile kısalttım.</p>
+
+<h3>Adım 4: sertleştirme indeksi nereden geliyor?</h3>
+<pre class="kod" data-ad="bash">grep 'Hardening: assigned' rapor2/lynis.log | tail -1 | cut -c21-</pre>
+<pre class="cikti">Hardening: assigned partial number of hardening points (1 of 3). Currently having 154 points (out of 250)</pre>
+<p>İndeks bir "güvenlik yüzdesi" değildir. Lynis puan veren her sınamada en yüksek puanı ve aldığın puanı toplar: 154 / 250 × 100 = 61,6, aşağı yuvarlanınca 61. Ayrıcalıksız kipte atlanan sınamalar paydaya girmez; ağırlıklar Lynis'in tercihidir, senin tehdit modelin değil. Asıl değeri aynı makinede, aynı kipte zaman içindeki değişimidir: değişiklikten sonra 61'den 64'e çıkması bir şey söyler, başka bir makinenin 70 alması hiçbir şey söylemez.</p>
+
+<h3>Adım 5: çekirdek bölümü ve dağıtım tercihi</h3>
+<pre class="cikti">[+] Kernel Hardening
+------------------------------------
+ - Comparing sysctl key pairs with scan profile
+ - dev.tty.ldisc_autoload (exp: 0)  [ OK ]
+ - fs.protected_fifos (exp: 2)  [ DIFFERENT ]
+…
+ - kernel.dmesg_restrict (exp: 1)  [ DIFFERENT ]
+ - kernel.kptr_restrict (exp: 2)  [ DIFFERENT ]
+ - kernel.modules_disabled (exp: 1)  [ DIFFERENT ]
+ - kernel.perf_event_paranoid (exp: 2 3 4)  [ OK ]
+ - kernel.randomize_va_space (exp: 2)  [ OK ]
+ - kernel.sysrq (exp: 0)  [ DIFFERENT ]
+ - kernel.unprivileged_bpf_disabled (exp: 1)  [ DIFFERENT ]
+ - kernel.yama.ptrace_scope (exp: 1 2 3)  [ OK ]
+ - net.ipv4.conf.all.accept_redirects (exp: 0)  [ DIFFERENT ]
+…</pre>
+<p>Lynis'in listesi benim betiğimden uzun (36 anahtar; çıktıyı "…" ile kısalttım), ama aynı iki farkı buluyor. Şimdi "farklı" satırlarının nedenine bak:</p>
+<pre class="kod" data-ad="bash">sysctl kernel.dmesg_restrict kernel.unprivileged_bpf_disabled kernel.sysrq
+grep -v '^#' /usr/lib/sysctl.d/50-kali-defaults-dmesg.conf | grep .
+dpkg -S /usr/lib/sysctl.d/50-kali-defaults-dmesg.conf</pre>
+<pre class="cikti">kernel.dmesg_restrict = 0
+kernel.unprivileged_bpf_disabled = 2
+kernel.sysrq = 438
+kernel.dmesg_restrict = 0
+kali-defaults: /usr/lib/sysctl.d/50-kali-defaults-dmesg.conf</pre>
+<p>Üç ders var. <code>dmesg_restrict = 0</code> unutkanlık değil: Kali'nin <code>kali-defaults</code> paketi bunu bilerek kapatıyor ve dosyanın yorumu değişiklik için Kali'nin kendi ayar aracını gösteriyor; sızma testi dağıtımı için anlamlı, sunucu için uygunsuz bir tercih. <code>unprivileged_bpf_disabled</code> 2, Lynis 1 bekliyor; çekirdek belgesine göre ikisi de ayrıcalıksız <code>bpf()</code>'yi kapatır, fark yalnız 2'nin geri açılabilmesidir. Bu bir açık değil, aracın daha katı beklentisidir. <code>modules_disabled = 1</code> ise 9. bölümdeki tek yönlü ayardır; çoğu genel amaçlı makinede uygulanamaz.</p>
+
+<h3>Adım 6: bulguları ayır: ortam mı, dağıtım mı, gerçek mi?</h3>
+<p>Raporu okumanın en önemli adımı her satıra "bu kimin sorunu?" diye sormaktır. Tablo öne çıkan bulguları sınıflandırıyor; WSL'ye ve Kali'ye özgü olanlar senin VM'inde büyük olasılıkla çıkmayacak.</p>
+
+<div class="tablo"><table>
+<tr><th>Bulgu (Lynis kimliği)</th><th>Sınıf</th><th>Neden, ne yapılır</th></tr>
+<tr><td>Tek ad sunucusu yanıt veriyor (NETW-2705, tek uyarı)</td><td>WSL'ye özgü</td><td>WSL, DNS'i Windows'a aktaran tek bir aracı adres (<code>10.255.255.254</code>) kullanır. VM'inde iki çözücü tanımlıysa çıkmaz.</td></tr>
+<tr><td><code>/vmlinuz</code> yok, önyükleyici bulunamadı (KRNL-5788, BOOT)</td><td>WSL'ye özgü</td><td>WSL'nin çekirdeğini Windows sağlar; diskte çekirdek dosyası ve önyükleyici yoktur.</td></tr>
+<tr><td><code>/home</code>, <code>/tmp</code>, <code>/var</code> ayrı bölüm değil (FILE-6310)</td><td>Büyük ölçüde WSL'ye özgü</td><td>WSL tek sanal disk kullanır. VM kurarken ayrı bölümler ya da en azından tmpfs <code>/tmp</code> düşünülebilir.</td></tr>
+<tr><td>USB ve FireWire depolama sürücüleri açık (USB-1000, STRG-1846)</td><td>WSL'de anlamsız</td><td>WSL'de bu donanım yok. Fiziksel makinede, kullanılmıyorsa kapatılması anlamlıdır.</td></tr>
+<tr><td><code>rsh</code>, TFTP istemcisi kurulu; Apache ve PHP bulundu (INSE, HTTP, PHP)</td><td>Kali'ye özgü</td><td>Kali bir saldırı-test araç dağıtımıdır; bu paketler onun içindir. Sunucu sertleştirmesine taban olarak Kali seçilmez.</td></tr>
+<tr><td>Çekirdek parametreleri farklı (KRNL-6000)</td><td>Karışık</td><td><code>dmesg_restrict</code> Kali tercihi; <code>kptr_restrict</code>, <code>accept_redirects</code> gerçek iyileştirme alanı; <code>modules_disabled</code> çoğu yerde uygulanamaz.</td></tr>
+<tr><td>Güncelleme aracı yok, <code>needrestart</code> yok (PKGS-7420, DEB-0831)</td><td>Gerçek</td><td>Güvenlik güncellemelerini otomatikleştir ve yükseltmeden sonra servisleri yeniden başlat (5. bölüm).</td></tr>
+<tr><td>Başarısız giriş kaydı kapalı, auditd yok, dosya bütünlüğü aracı yok (AUTH, ACCT-9628, FINT-4350)</td><td>Gerçek</td><td>İzleme katmanı eksik (Parça 17). Laboratuvarda denemeye değer.</td></tr>
+<tr><td>Bir hizmet hesabının ev dizini 750'den gevşek (HOME-9304)</td><td>Gerçek</td><td>İzin kontrol listesinin bir maddesi (Parça 12): sahibini ve gereğini öğren, sonra daralt.</td></tr>
+</table></div>
+
+<p>Bir de atlananlara bak. Raporun sonu ayrıcalıksız kip yüzünden atlanan 18 sınamayı sayıyor; aralarında <code>sudo</code> yapılandırma dosyalarının izinleri, gölge parola dosyası, güvenlik duvarı kurallarının içeriği ve Debian/Ubuntu güvenlik güncellemeleri var.</p>
+<pre class="cikti">  Skipped tests due to non-privileged mode:
+
+    BOOT-5108 - Check Syslinux as bootloader
+…
+    AUTH-9252 - Check ownership and permissions for sudo configuration files
+    AUTH-9288 - Checking for expired passwords
+    FILE-6368 - Checking ACL support on root file system
+    PKGS-7390 - Check Ubuntu database consistency
+    PKGS-7392 - Check for Debian/Ubuntu security updates
+    FIRE-4508 - Check used policies of iptables chains
+…</pre>
+<p>Ayrıcalıksız rapor eksik bir rapordur: en öncelikli madde olan güvenlik güncellemesi denetimi bu taramada hiç yapılmadı.</p>
+
+<h3>Adım 7: laboratuvar VM'inde tam tarama</h3>
+<p>Laboratuvar VM'inde aracı normal yoldan kurup root'la çalıştırırsın; şifresiz <code>sudo</code> olmadığı için bu adım <strong>burada çalıştırılmadı</strong>:</p>
+<pre class="kod" data-ad="laboratuvar VM'inde (burada çalıştırılmadı)">sudo apt install lynis
+sudo lynis audit system --quick
+sudo grep -E '^(warning|suggestion)\[\]|^hardening_index' /var/log/lynis-report.dat</pre>
+<p>İlk tam taramanın raporunu tarihli bir adla sakla: bu senin taban çizgin. Ardından bir öneri seç, bu parçadaki döngüyle (yedek, değişiklik, sınama, kayıt) uygula ve taramayı yeniden çalıştır. İndeksin değişimini ve kaybolan öneriyi değişiklik kaydına not et.</p>
+
+<h3>Adım 8: temizlik</h3>
+<p>Bu denemede arka planda çalışan bir süreç yok; bütün dosyalar <code>/tmp/yazar/siber-19/</code> altında. İşin bitince <code>rm -rf /tmp/yazar/siber-19</code> ile hepsini silebilirsin; sistemde hiçbir paket kurulmadı, hiçbir ayar değişmedi.</p>
+
+<h2 class="s">11. Linux bloğunun özet kontrol listesi</h2>
+
+<p>Şimdi bloğu bir araya getirelim. Liste ayrıntıyı yeniden anlatmaz; her maddenin nedeni son sütundaki parçada. Sıra 4. bölümdeki öncelik kuralını izler; "nasıl ölçülür" sütunu maddenin yapıldığını kanıtlamanın yoludur.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Linux bloğunun öncelik merdiveni: güncel tut, yüzeyi küçült, kapıları kilitle, içi daralt; yanında hepsini kesen izleme sütunu; her basamakta ilgili parça numaraları">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Öncelik merdiveni ve parçalar</text>
+  <rect class="sv-m" x="10" y="36" width="300" height="56" rx="8" />
+  <text class="sv-b" x="24" y="58">1. Güncel tut</text>
+  <text class="sv-s" x="24" y="78">paketler, yeniden başlatma · Parça 10</text>
+  <rect class="sv-k" x="10" y="102" width="300" height="56" rx="8" />
+  <text class="sv-b" x="24" y="124">2. Yüzeyi küçült</text>
+  <text class="sv-s" x="24" y="144">paket 10 · servis 14 · hesap 11 · port 15</text>
+  <rect class="sv-l" x="10" y="168" width="300" height="56" rx="8" />
+  <text class="sv-b" x="24" y="190">3. Kapıları kilitle</text>
+  <text class="sv-s" x="24" y="210">SSH 18 · sudo 11 · güvenlik duvarı 16</text>
+  <rect class="sv-a" x="10" y="234" width="300" height="56" rx="8" />
+  <text class="sv-b" x="24" y="256">4. İçi daralt</text>
+  <text class="sv-s" x="24" y="276">izin, SUID 12 · bağlama 8 · sysctl 19</text>
+  <rect class="sv-k" x="322" y="36" width="68" height="254" rx="8" />
+  <text class="sv-b" x="356" y="150" text-anchor="middle">İzle</text>
+  <text class="sv-s" x="356" y="170" text-anchor="middle">günlük 17</text>
+  <text class="sv-s" x="356" y="188" text-anchor="middle">süreç 13</text>
+  <text class="sv-s" x="200" y="316" text-anchor="middle">Yukarıdan aşağı: risk azaltma / emek oranı genellikle düşer.</text>
+</svg>
+<figcaption>Linux bloğunun öncelik merdiveni. Üstteki basamaklar en çok riski en az emekle azaltır; alttakiler kalan yüzeyi zorlaştırır. Sağdaki izleme sütunu her basamağı keser: hiçbir sıralama her saldırıyı önlemez, bu yüzden ne olduğunu görebilmen gerekir.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Basamak</th><th>Madde</th><th>Nasıl ölçülür (salt okur)</th><th>Parça</th></tr>
+<tr><td>1</td><td>Desteklenen bir dağıtım sürümü kullan; depolar imzalı ve <code>Signed-By</code> ile bağlı olsun</td><td><code>cat /etc/os-release</code>, <code>apt-cache policy</code></td><td>10</td></tr>
+<tr><td>1</td><td>Güvenlik güncellemeleri düzenli ya da otomatik kurulsun; yükseltmeden sonra servisler yeniden başlasın</td><td>Taze önbellekle <code>apt list --upgradable</code>; otomatik güncellemenin günlüğü</td><td>10, 19</td></tr>
+<tr><td>2</td><td>Gereksiz paketi kaldır (<code>purge</code>), dağıtım dışı yazılımı imzası ve özetiyle doğrula</td><td><code>dpkg -l</code>, <code>dpkg -V</code></td><td>10</td></tr>
+<tr><td>2</td><td>Gereksiz servisi ve zamanlayıcıyı kapat; zamanlanmış görevlerin envanterini çıkar</td><td><code>systemctl list-unit-files --state=enabled</code>, <code>systemctl list-timers</code>, <code>crontab -l</code></td><td>14</td></tr>
+<tr><td>2</td><td>Gereksiz hesabı kilitle; hizmetler ayrı, oturum açamayan kullanıcılarla çalışsın</td><td><code>getent passwd</code>, <code>ps -eo user,cmd</code></td><td>11, 13</td></tr>
+<tr><td>2</td><td>Dinleyen her portun sahibini bil; yerel servisi <code>127.0.0.1</code>'e bağla</td><td><code>ss -tlnp</code>, <code>ss -ulnp</code></td><td>15</td></tr>
+<tr><td>3</td><td>SSH'de anahtarla giriş, root ve parola girişi kapalı, izinli kullanıcılar sınırlı</td><td><code>sshd -T</code> (etkin yapılandırma), <code>sshd -t</code></td><td>18</td></tr>
+<tr><td>3</td><td><code>sudo</code> kuralları dar, günlük iş root'suz, <code>sudo</code> kayıtları okunuyor</td><td><code>sudo -l</code>, <code>visudo -c</code>, <code>journalctl</code></td><td>11</td></tr>
+<tr><td>3</td><td>Ana makine güvenlik duvarı: varsayılan reddet, yalnız gereken servis ve kaynak</td><td><code>nft list ruleset</code></td><td>16</td></tr>
+<tr><td>4</td><td>SUID/SGID envanteri, herkese yazılabilir dosya, sırların 600/700 izni, <code>umask</code></td><td><code>find / -xdev -perm -4000</code>, <code>find -perm -0002</code>, <code>stat</code></td><td>12</td></tr>
+<tr><td>4</td><td>Herkesin yazabildiği yerlere <code>nodev,nosuid,noexec</code></td><td><code>findmnt /tmp /dev/shm /var/tmp</code></td><td>8, 19</td></tr>
+<tr><td>4</td><td>Çekirdek parametreleri: bilgi sızdırmayı ve tehlikeli davranışı kapat, <code>/etc/sysctl.d/</code> altında</td><td><code>sysctl</code>, denetim betiği</td><td>19</td></tr>
+<tr><td>İzle</td><td>Kimlik doğrulama günlükleri okunuyor, günlükler döndürülüyor ve saklanıyor; kritik dosyalarda bütünlük izleme</td><td><code>journalctl</code>, <code>logrotate</code> yapılandırması</td><td>17</td></tr>
+<tr><td>İzle</td><td>Şüpheli süreç soru listesi: beklenmeyen kullanıcı, yol, bağlantı</td><td><code>ps</code>, <code>/proc/PID</code>, <code>lsof</code></td><td>13</td></tr>
+<tr><td>Hepsi</td><td>Her değişiklik için yedek, fark, sınama, kayıt ve geri dönüş planı; düzenli denetim taraması</td><td><code>diff</code>, değişiklik kaydı, Lynis raporu</td><td>19</td></tr>
+</table></div>
+
+<p>Listenin dışında kalanlar başka parçaların işi: ağ bölümleme Parça 26'da, günlüklerin merkezde toplanması ve bütünlüğü Parça 66'da, aynı mantığın Windows etki alanına uygulanması Parça 65'te.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Linux bloğunun (Parça 8–18) toparlayıcısıdır; kontrol listesinin her satırı bir parçaya döner. Yalıtık ad alanı ve anlık görüntü Parça 7'nin, ASLR Parça 5'in dersidir.</p>
+<p><strong>Sonraki parçalara:</strong> Ağ bloğu (Parça 20'den itibaren) makinenin dışına çıkar; Parça 26 bölümlemeyi, Parça 28 SYN çerezlerini açar. Parça 49 saldırı yüzeyini ve yamayı, Parça 50 tehdit modellemeyi, Parça 58 yapılandırmanın kodla yönetilmesini, Parça 65 AD sertleştirmesini, Parça 66 günlükleme stratejisini işler.</p>
+<p><strong>Kod rafına:</strong> Denetim betiği Parça 17'deki işlev, koşul ve döngüyü; değişiklik kaydı fikri Parça 34'teki Git'i kullanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Sertleştirmenin üç hamlesi nedir ve neden "her şeyi kapat" demek değildir?</summary><p>Kaldırmak (gerekmeyen paket, servis, hesap, port), daraltmak (kalanın yetkisini ve seçeneklerini kısmak) ve güncel tutmak (kalanın bilinen açıklarını kapatmak). Ölçüt sistemin görevidir: web sunucusunda 443 açık kalmak zorundadır. Sertleştirme neye ihtiyaç olduğunu bilip gerisini kapatmaktır; en az yetki ilkesinin makine düzeyindeki karşılığıdır.</p></details>
+<details><summary>CIS kıyaslamasında Seviye 1 ile Seviye 2 arasındaki fark nedir? "Elle" işaretli bir öneri daha mı az önemlidir?</summary><p>Seviye 1 temel öneridir, görece çabuk uygulanır ve işleyişi belirgin biçimde bozmadan yüzeyi küçültmeyi hedefler. Seviye 2 derinlemesine savunma profilidir, güvenliğin öncelikli olduğu ortamlar içindir, Seviye 1'in üstüne kurulur ve dikkatsiz uygulanırsa uygulamaları bozabilir. Elle işaretli öneri yalnızca bir araçla otomatik sınanamayan, insan yargısı isteyen öneridir; önemi daha az değildir.</p></details>
+<details><summary>Kütüphane güncellemesi kurulduğu hâlde bir servis neden hâlâ açık olabilir?</summary><p>Yükseltme diskteki dosyayı değiştirir, ama kütüphaneyi daha önce belleğe yüklemiş süreçler eski kopyayı kullanmayı sürdürür. Servis yeniden başlatılana kadar yamasız kod çalışır. needrestart gibi bir araç hangi servislerin eski kütüphaneyle çalıştığını söyler; çekirdek güncellemesi ise yeniden başlatmayla devreye girer.</p></details>
+<details><summary>/etc/sysctl.d/60-sertlestirme.conf ile /usr/lib/sysctl.d/50-default.conf aynı anahtara farklı değer verirse hangisi geçerli olur ve neden?</summary><p>60-sertlestirme.conf geçerli olur. sysctl.d dosyaları hangi dizinde olurlarsa olsunlar adlarına göre sıralanır ve aynı anahtarda adı sıralamada sonra gelen dosya kazanır. Kılavuz bu yüzden yerel yöneticinin dosya adlarına 60–90 arası bir sayı koymasını önerir. Debian 13'te eski /etc/sysctl.conf artık okunmaz.</p></details>
+<details><summary>Lynis'in sertleştirme indeksi 61 çıktı. Bu sayı neyi söyler, neyi söylemez?</summary><p>Lynis'in puan veren sınamalarında alınan puanın en yüksek puana oranıdır: bu taramada 250 üzerinden 154, yani 61,6, aşağı yuvarlanınca 61. Makinenin yüzde 61 güvenli olduğunu söylemez; ağırlıklar aracın tercihidir, ayrıcalıksız kipte atlanan sınamalar hesaba girmez. Değeri, aynı makinede aynı kipte zaman içindeki değişimidir.</p></details>
+<details><summary>Uzaktaki bir sunucuda SSH yapılandırmasını değiştirirken kendini dışarıda bırakmamak için hangi adımları atarsın?</summary><p>Dosyayı cp -a ile tarihli bir adla yedeklersin, değişikliği diff ile görürsün, uygulamadan önce sshd -t ile sözdizimini sınarsın, servisi yeniden yüklerken mevcut oturumu açık tutar ve ikinci bir terminalden yeni bağlantı denersin. Yeni oturum açılmazsa eski oturumdan yedeği geri koyarsın. Değişikliği ve geri dönüş yolunu bir kayda yazar, büyük adımlardan önce anlık görüntü alırsın.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Sertleştirme:</strong> saldırı yüzeyini görev için gereken en küçüğe indirmek. Üç hamle: kaldır, daralt, güncel tut. Bir kerelik değil, döngü.</li>
+<li><strong>Döngü:</strong> ölç (taban çizgisi) → önceliklendir → yedek ve kayıt → değiştir (tek seferde tek şey) → sına → yeniden ölç.</li>
+<li><strong>CIS kıyaslaması:</strong> ürün sürümüne özgü, uzlaşmayla yazılmış, ücretsiz PDF. Seviye 1 temel ve çabuk; Seviye 2 derinlemesine savunma, Seviye 1'i içerir, kırabilir. Otomatik / Elle = sınanabilirlik, önem değil. Ekim 2026: Debian 13 1.1.0, Debian 12 2.0.0, Ubuntu 24.04 2.0.0, Ubuntu 26.04 1.0.0. Madde numarasını belgeden al.</li>
+<li><strong>Öncelik:</strong> güncel tut → yüzeyi küçült → kapıları kilitle → içi daralt; her aşamada izle.</li>
+<li><strong>Güncelleme:</strong> update, upgrade, servisleri yeniden başlat (needrestart), çekirdekte yeniden başlatma. Bayat önbellekle "güncelleme yok" = bilmiyorum.</li>
+<li><strong>Kaldırma:</strong> <code>apt purge</code> (yapılandırma da gider), <code>systemctl disable --now</code>, <code>mask</code>; hesap önce kilitlenir.</li>
+<li><strong>Port:</strong> önce servisi kaldır, sonra <code>127.0.0.1</code>'e bağla, en son güvenlik duvarı.</li>
+<li><strong>Bağlama:</strong> <code>/tmp</code>, <code>/var/tmp</code>, <code>/dev/shm</code> → <code>nodev,nosuid,noexec</code>; <code>/home</code> → <code>nodev,nosuid</code>. <code>noexec</code> yorumlayıcıyı durdurmaz.</li>
+<li><strong>sysctl:</strong> <code>kptr_restrict</code> 1–2, <code>dmesg_restrict</code> 1, <code>ptrace_scope</code> ≥ 1, <code>randomize_va_space</code> 2, <code>protected_symlinks/hardlinks</code> 1, <code>suid_dumpable</code> 0, <code>ip_forward</code> 0, <code>accept_redirects</code> 0. Kalıcı: <code>/etc/sysctl.d/60-….conf</code>, adı sonra gelen kazanır; Debian 13'te <code>/etc/sysctl.conf</code> okunmaz. <code>modules_disabled</code> ve <code>ptrace_scope = 3</code> geri alınamaz.</li>
+<li><strong>Değişiklik:</strong> <code>cp -a</code> yedek, <code>diff -u</code>, <code>sshd -t</code> / <code>visudo -c</code> / <code>nft -c</code>, açık oturum + ikinci oturum, kayıt (kim, ne, neden, nasıl geri), anlık görüntü; ölçek büyüyünce Git ve yapılandırma yönetimi.</li>
+<li><strong>Lynis:</strong> salt okur denetim; root'suz = ayrıcalıksız kip, sınamalar atlanır. Uyarı = eylem; öneri = iyileştirme alanı. İndeks = puan / en yüksek puan, güvenlik yüzdesi değil.</li>
+<li><strong>Raporu okumak:</strong> her satıra "ortam mı, dağıtım mı, gerçek mi?" diye sor. WSL: tek DNS, <code>/vmlinuz</code> yok, tek disk. Kali: <code>dmesg_restrict = 0</code>, rsh/TFTP/Apache.</li>
+<li><strong>Sınır:</strong> denetim yalnız kendi ya da yetkili olduğun makinede; rapor bir zayıflık haritasıdır (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-19">
+<h3>Quiz 19</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on altı tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Aşağıdakilerden hangisi sertleştirmenin (hardening) en doğru tanımıdır?</p>
+<ul class="sec"><li>Sisteme olabildiğince çok güvenlik aracı kurmak</li><li>Saldırı yüzeyini sistemin görevi için gereken en küçük hâline indirmek ve kalanı en kısıtlı güvenli ayarla, güncel olarak çalıştırmak</li><li>Bütün portları ve servisleri, görevinden bağımsız olarak kapatmak</li><li>Sistemi bir kez kurup bir daha hiç değiştirmemek</li><li>Yalnızca güvenlik duvarı kuralı yazmak</li></ul>
+<div class="coz"><p>Sertleştirmenin ölçütü sistemin görevidir: gerekmeyen kaldırılır, kalan daraltılır ve güncel tutulur. Daha çok araç kurmak yüzeyi büyütebilir; kurulan her araç da bir yüzeydir. Görevden bağımsız her şeyi kapatmak sistemi işe yaramaz kılar; web sunucusunun 443'ü açık kalmalıdır. Sertleştirme bir kerelik değil, ölçme ve yeniden ölçme döngüsüdür. Güvenlik duvarı yalnız bir katmandır; dinlemeyen bir servis kuraldan daha sağlam bir korumadır.</p></div></li>
+
+<li data-c="D"><p class="q">CIS kıyaslamalarındaki Seviye 1 ve Seviye 2 profilleri için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Seviye 2, Seviye 1'den bağımsızdır; ikisinden yalnız biri seçilir.</li><li>Seviye 1 yalnız masaüstü, Seviye 2 yalnız sunucu içindir.</li><li>Seviye 1 önerileri isteğe bağlıdır, yalnız Seviye 2 denetlenir.</li><li>Seviye 1 görece çabuk uygulanan temel öneridir; Seviye 2 onun üstüne kurulan, güvenlik öncelikli ortamlar için derinlemesine savunma profilidir ve dikkatsiz uygulanırsa işleyişi bozabilir.</li><li>Seviye 2 önerileri hiçbir zaman uygulamaları etkilemez.</li></ul>
+<div class="coz"><p>CIS'e göre Seviye 1 temel ve çabuk uygulanabilir öneridir; Seviye 2 derinlemesine savunma içindir, Seviye 1'i içerir ve dikkatsiz uygulanırsa sorun çıkarabilir. A yanlış, Seviye 2 bağımsız değil Seviye 1'in üstüne kuruludur. B'deki masaüstü/sunucu ayrımı ayrı belgeler ya da profiller konusudur, seviyelerin anlamı bu değildir. C'de Seviye 1 tabandır, denetimin ilk konusudur. E, Seviye 2'nin en önemli uyarısını tersine çeviriyor.</p></div></li>
+
+<li data-c="A"><p class="q">Aynı anahtar <code>/usr/lib/sysctl.d/50-default.conf</code> dosyasında <code>0</code>, <code>/etc/sysctl.d/60-sertlestirme.conf</code> dosyasında <code>1</code> olarak yazılmış. <code>systemd-sysctl</code> açılışta hangi değeri uygular?</p>
+<ul class="sec"><li><code>1</code>, çünkü dosyalar dizinden bağımsız olarak adlarına göre sıralanır ve adı sonra gelen dosya kazanır</li><li><code>0</code>, çünkü <code>/usr/lib</code> altındaki dağıtım dosyası her zaman önceliklidir</li><li>İkisi çakıştığı için hiçbiri uygulanmaz, çekirdeğin derleme varsayılanı kalır</li><li>Önce okunan dosyanın değeri, yani <code>0</code></li><li>Yalnız <code>/etc/sysctl.conf</code>'taki değer uygulanır; <code>sysctl.d</code> dosyaları okunmaz</li></ul>
+<div class="coz"><p>sysctl.d(5) kılavuzuna göre bütün dizinlerdeki dosyalar adlarına göre sözlük sırasıyla sıralanır ve aynı anahtarda adı en sonra gelen dosyanın değeri geçerli olur; "60-" "50-"den sonra gelir. Yerel yöneticinin 60–90 aralığını kullanmasının nedeni budur. B ve D sırayı tersine çeviriyor. C'deki gibi bir "çakışınca iptal" kuralı yoktur. E iki yönden yanlış: sysctl.d dosyaları okunur ve Debian 13'te /etc/sysctl.conf artık okunmaz.</p></div></li>
+
+<li data-c="C"><p class="q"><code>/tmp</code> dosya sistemi <code>noexec</code> seçeneğiyle bağlanmış. <code>/tmp/betik.sh</code> çalıştırma izinli bir kabuk betiğidir. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li><code>./betik.sh</code> de <code>sh /tmp/betik.sh</code> de çalışır; <code>noexec</code> yalnız SUID bitini etkiler.</li><li>İkisi de çalışmaz; <code>noexec</code> o dosya sistemindeki her dosyanın okunmasını engeller.</li><li><code>/tmp/betik.sh</code> doğrudan çalıştırılamaz, ama <code>sh /tmp/betik.sh</code> çalışır; çünkü çalışan program <code>/usr/bin/sh</code>'tir ve betik yalnız okunur.</li><li>Yalnız root betiği doğrudan çalıştırabilir; <code>noexec</code> root'a uygulanmaz.</li><li><code>noexec</code> betiği siler.</li></ul>
+<div class="coz"><p><code>noexec</code>, o dosya sistemindeki dosyaların doğrudan program olarak yürütülmesini engeller; yorumlayıcıya argüman olarak verilen betik ise yalnız okunur ve çalışan program başka bir dosya sistemindeki <code>sh</code>'tir. Bu yüzden <code>noexec</code> bir engel değil, kazara ya da otomatik çalıştırmayı kesen bir tümsektir. A, <code>noexec</code> ile <code>nosuid</code>'i karıştırıyor. B yanlış, okuma serbesttir. D yanlış, bağlama seçeneği root için de geçerlidir. E'nin bir dayanağı yoktur.</p></div></li>
+
+<li data-c="E"><p class="q">Root olmadan çalıştırılan bir Lynis taraması "Hardening index : 61" verdi ve günlükte "154 points (out of 250)" yazıyor. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>Makine yüzde 61 güvenlidir; 100'e ulaşınca saldırılara kapalı olur.</li><li>Makinede 61 açık bulunmuştur.</li><li>İndeks 61'in altına düşerse Lynis sistemi kendiliğinden düzeltir.</li><li>Root'la taranınca indeks mutlaka aynı çıkar, çünkü aynı makinedir.</li><li>İndeks, puan veren sınamalarda alınan puanın en yüksek puana oranıdır (154 / 250); ağırlıklar aracın tercihidir, ayrıcalıksız kipte atlanan sınamalar hesaba girmez ve sayı en çok aynı makinede zaman içindeki değişimiyle anlamlıdır.</li></ul>
+<div class="coz"><p>154 / 250 × 100 = 61,6, aşağı yuvarlanınca 61; bu oran Lynis'in kendi sınamalarına verdiği ağırlıklarla hesaplanır. A, bir araç puanını güvenlik yüzdesi sanıyor; indeks 100 olsa bile uygulamandaki bir açığı bilemez. B, indeksi bulgu sayısıyla karıştırıyor; bu taramada 1 uyarı ve 51 öneri vardı. C yanlış, Lynis yalnız okur ve rapor yazar. D yanlış, root'la taramada atlanan 18 sınama da yapılacağı için hem pay hem payda değişir.</p></div></li>
+
+<li data-c="B"><p class="q">Lynis'in çekirdek bölümünde <code>kernel.unprivileged_bpf_disabled (exp: 1) [ DIFFERENT ]</code> satırı çıktı; makinedeki değer <code>2</code>. Çekirdek belgesine göre en doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Değer 2 olduğu için ayrıcalıksız <code>bpf()</code> çağrıları açıktır; acil bir açıktır.</li><li>2 de ayrıcalıksız <code>bpf()</code> çağrılarını kapatır; farkı yöneticinin değeri sonradan geri açabilmesidir. Bu, aracın daha katı (geri alınamaz) beklentisidir, kendiliğinden bir açık değildir.</li><li>Lynis yanılıyor, çünkü bu anahtar Linux'ta yoktur.</li><li>Değeri 0 yapmak "farkı" giderir ve sistemi daha güvenli kılar.</li><li>Değer 2 olduğu için çekirdek modülleri artık yüklenemez.</li></ul>
+<div class="coz"><p>Çekirdek belgesine göre 0 ayrıcalıksız <code>bpf()</code> çağrılarını açar, 1 kapatır ve geri açılamaz, 2 kapatır ama yönetici sonradan 0 ya da 1 yazabilir. Yani makine zaten kısıtlı; "DIFFERENT" satırı bir açık değil, aracın beklentisiyle bir farktır. Raporu okurken her "farklı" satırını belgeyle sınamak bu yüzden gerekir. A, 2'nin anlamını tersine çeviriyor. C yanlış, anahtar vardır ve okundu. D sistemi gevşetir. E, <code>kernel.modules_disabled</code> ile karıştırıyor.</p></div></li>
+
+<li data-c="A"><p class="q">Laboratuvarındaki bir sunucunun denetiminde şu bulgular çıktı. Bu parçadaki öncelik kuralına göre <strong>ilk</strong> ele alınması gereken hangisidir?</p>
+<ul class="sec"><li>İnternete açık SSH servisinin paketi için yayımlanmış ve henüz kurulmamış bir güvenlik güncellemesi</li><li><code>/etc/issue</code> dosyasında yasal uyarı metninin bulunmaması</li><li><code>kernel.sysrq</code> değerinin 0 olmaması</li><li><code>/home</code>'un ayrı bir bölümde olmaması</li><li>Kurulu ama kapalı bir yazıcı servisinin bulunması</li></ul>
+<div class="coz"><p>Kural önce bilinen açıkları kapatmayı söyler: yaması yayımlanmış bir açık, üstelik ağdan ulaşılabilen bir servisteyse, saldırganın en kolay ve en olası yoludur ve güncellemeyle ucuza kapanır. Yasal uyarı metni ve <code>sysrq</code> değeri düşük riskli iyileştirmelerdir. <code>/home</code>'u ayrı bölüme almak emeği yüksek bir yapı kararıdır. Kapalı yazıcı servisi yüzeyi küçültme basamağındadır ve kaldırılmalıdır, ama çalışmadığı için güncelleme bekleyen açık servisten sonra gelir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir yönetici uzaktaki sunucuda SSH sertleştirmesi yapacak. Aşağıdaki sıralamalardan hangisi bu parçadaki değişiklik disiplinine en uygundur?</p>
+<ul class="sec"><li>Dosyayı düzenle, servisi yeniden başlat, oturumu kapat, yeniden bağlanmayı dene; olmazsa yedek al.</li><li>Yalnız <code>diff</code> ile farkı gör; sözdizimi sınaması gereksizdir, çünkü SSH hatalı satırı yok sayar.</li><li>Önce VM'i sil ve yeniden kur; böylece yedek gerekmez.</li><li><code>cp -a</code> ile tarihli yedek al, düzenle, <code>diff</code> ile farkı gör, <code>sshd -t</code> ile sına, mevcut oturumu açık tutarak yeniden yükle, ikinci bir oturumla dene, değişikliği ve geri dönüş yolunu kayda yaz.</li><li>Önce güvenlik duvarında SSH portunu kapat, sonra yapılandırmayı değiştir.</li></ul>
+<div class="coz"><p>Geri dönüş yolu değişiklikten önce hazırlanır: yedek, fark, sözdizimi sınaması, açık oturumla yeniden yükleme, ikinci oturumla deneme ve kayıt. A'da yedek en sona kalmış ve oturum kapatıldığı için hata durumunda dönüş yolu kalmamış. B yanlış: bu parçadaki denemede <code>sshd</code>, bozuk bir satırla "terminating" deyip 255 koduyla çıktı; hatalı satırı yok saymaz. C bir değişiklik disiplini değildir. E kendini dışarıda bırakmanın tarifidir.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">8 bitlik işaretsiz bir sayaç 255 değerindeyken 1 artırılırsa, sabit genişlikli aritmetikte sonuç ne olur?</p>
+<ul class="sec"><li>256</li><li>−1</li><li>0</li><li>255 (sayaç doymuş kalır)</li><li>Program her zaman hata verip durur</li></ul>
+<div class="coz"><p>n bitlik işaretsiz bir işlemin sonucu, gerçek sonucun 2<sup>n</sup>'ye bölümünden kalandır: 8 bitte 255 + 1 = 256 mod 256 = 0. Buna sarma denir. 256'yı yazmak için 9 bit gerekir ve kutuda yer yoktur, bu yüzden A olamaz. −1, aynı bit dizisinin işaretli okunuşuyla ilgili bir karışıklıktır (<code>1111 1111</code> işaretli −1'dir). Doyma bazı özel komutlarda vardır ama sıradan işaretsiz toplamada olmaz. C'de işaretsiz sarma tanımlı davranıştır, hata vermez.</p></div></li>
+
+<li data-c="E" data-k="siber-3"><p class="q"><code>/proc/self/maps</code> çıktısında programın makine komutlarını taşıyan kod bölümü normalde hangi izinlerle görünür?</p>
+<ul class="sec"><li><code>rw-</code></li><li><code>rwx</code></li><li><code>---</code></li><li><code>-w-</code></li><li><code>r-x</code></li></ul>
+<div class="coz"><p>Kod bölümü okunabilir ve yürütülebilir, ama yazılamaz: <code>r-x</code>. Yığın, öbek ve veri bölümleri <code>rw-</code>'dir, yani yazılabilir ama yürütülemez. Bir bölgenin aynı anda hem yazılabilir hem yürütülebilir (<code>rwx</code>) olması W^X ilkesine aykırıdır ve bellek güvenliği açıklarına zemin hazırlar. <code>---</code> ve <code>-w-</code> kod için anlamsızdır; komutu getirmek için en az okuma ve yürütme gerekir.</p></div></li>
+
+<li data-c="A" data-k="siber-4"><p class="q">"root kullanıcısı ile x86'nın halka 0'ı" hakkında aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>root bir kullanıcı kimliğidir ve root'un programları da kullanıcı alanında, halka 3'te çalışır; halka 0 yalnız çekirdeğin çalıştığı işlemci kipidir.</li><li>root olarak çalışan her program halka 0'da çalışır.</li><li>Halka 0'a geçmek için root parolası girilir.</li><li>root ve halka 0 aynı şeyin iki adıdır.</li><li>Halka 3'te yalnız root'un programları çalışır.</li></ul>
+<div class="coz"><p>Ayrıcalık ayrımını işlemci uygular: çekirdek halka 0'da, root dahil bütün kullanıcı programları halka 3'te çalışır. root, çekirdeğin izin denetimlerinde ayrıcalıklı sayılan bir kimliktir; donanıma doğrudan erişemez, işini sistem çağrısıyla çekirdekten ister. B ve D bu ayrımı yok sayıyor. C yanlış; halka geçişi parolayla değil, sistem çağrısı gibi işlemci mekanizmalarıyla olur. E yanlış; halka 3 bütün kullanıcı programlarınındır.</p></div></li>
+
+<li data-c="B" data-k="siber-6"><p class="q">Bir dosyanın türünü adından bağımsız olarak, içeriğinin ilk baytlarından tanımaya yarayan sabit imzaya ne denir?</p>
+<ul class="sec"><li>Dosya uzantısı</li><li>Sihirli bayt (magic bytes)</li><li>Bayt sırası işareti (BOM) her biçimde aynı amaçla</li><li>Hash özeti</li><li>Base64 dolgusu</li></ul>
+<div class="coz"><p>Sihirli bayt, bir dosya biçiminin dosyanın belirli bir konumuna, çoğunlukla başına koyduğu sabit bayt dizisidir: PNG için <code>89 50 4E 47</code>, ZIP için <code>PK</code>. Uzantı yalnız adın parçasıdır ve içerik hakkında bir şey kanıtlamaz. BOM yalnız metin kodlamasının bayt sırasını bildirir, dosya türünü değil. Hash özeti bütünlük içindir ve dosyanın içine gömülü değildir. Base64 dolgusu bir kodlamanın parçasıdır.</p></div></li>
+
+<li data-c="D" data-k="siber-7"><p class="q">Laboratuvar VM'inin anlık görüntüsü (snapshot) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Anlık görüntü tam bir yedektir; başka bir yere yedek almaya gerek kalmaz.</li><li>Anlık görüntü yalnız VM kapalıyken alınabilir ve geri alma yapılamaz.</li><li>Anlık görüntü VM'in ağ kipini host-only'ye çevirir.</li><li>Anlık görüntü hızlı geri alma sağlar ama yedek değildir; aynı diske ve temel dosyaya bağlıdır, bu yüzden düzenli olarak başka bir ortama ayrıca yedek alınır.</li><li>Anlık görüntü VM'in içindeki zararlı yazılımı temizler.</li></ul>
+<div class="coz"><p>Anlık görüntü, VM'in diskini belli bir anda dondurur ve sonraki değişiklikleri bir fark dosyasına yazar; bir denemeden önce hızlıca geri dönmeyi sağlar. Ancak temel disk ve fark dosyaları aynı yerde durduğu için o disk bozulur ya da silinirse görüntüler de gider; bu yüzden yedek değildir. A bu yanılgının kendisidir. B yanlış, geri alma görüntünün ana işidir. C'nin ağ kipiyle ilgisi yoktur. E yanlış, görüntü temizlemez, yalnız önceki duruma döndürür. Bu parçada büyük sertleştirme adımlarından önce anlık görüntü almanın nedeni de budur.</p></div></li>
+
+<li data-c="C" data-k="siber-9"><p class="q">Bir günlükteki IP adreslerini saymak için neden <code>sort | uniq -c</code> yazılır, yalnız <code>uniq -c</code> yetmez?</p>
+<ul class="sec"><li><code>uniq</code> yalnız sayıları sıralar, metni sayamaz.</li><li><code>sort</code> olmadan <code>uniq</code> hiç çıktı vermez.</li><li><code>uniq</code> yalnız art arda gelen (komşu) aynı satırları birleştirir; aynı IP günlüğün farklı yerlerindeyse önce <code>sort</code> ile yan yana getirilmesi gerekir.</li><li><code>sort</code> IP adreslerini şifreler, <code>uniq</code> çözer.</li><li><code>uniq -c</code> yalnız dosyadan okur, borudan okuyamaz.</li></ul>
+<div class="coz"><p><code>uniq</code> her satırı yalnız bir öncekiyle karşılaştırır; aynı satırlar arada başka satırlar varsa ayrı ayrı sayılır. <code>sort</code> aynı değerleri yan yana getirdiği için <code>sort | uniq -c</code> her değerin toplamını verir; ardından <code>sort -rn</code> en çok görüleni üste koyar. A ve D'nin dayanağı yoktur. B yanlış, <code>uniq</code> sıralanmamış girdide de çıktı verir ama sayılar bölünür. E yanlış, <code>uniq</code> standart girdiden okur.</p></div></li>
+
+<li data-c="E" data-k="siber-10"><p class="q">APT'nin indirdiği <code>InRelease</code> dosyasındaki <code>Valid-Until</code> alanı hangi tehdide karşı korur?</p>
+<ul class="sec"><li>Paketlerin sıkıştırılarak bozulmasına</li><li>Depo sunucusunun yavaş yanıt vermesine</li><li>Paket adlarının yanlış yazılmasına</li><li>Kullanıcının yanlış sürümü kurmasına</li><li>Tekrar saldırısına: bir saldırganın eski ama imzası geçerli bir depo listesini sunarak güvenlik güncellemelerini gizlemesine</li></ul>
+<div class="coz"><p>İmza bir verinin gerçek olduğunu kanıtlar ama güncel olduğunu kanıtlamaz; eski bir <code>InRelease</code> da geçerli imzalıdır. Depo, verinin hangi tarihe kadar geçerli sayılacağını <code>Valid-Until</code> ile imzanın içine yazar; o tarih geçtiği hâlde yeni veri gelmezse APT hata verir. Böylece eski listeyle "güncelleme yok" yanılgısı yaratılamaz. Öbür seçeneklerin bu alanla ilgisi yoktur. Bu parçadaki bayat önbellek uyarısı da aynı "güncel mi?" sorusunun yerel hâlidir.</p></div></li>
+
+<li data-c="A" data-k="siber-12"><p class="q"><code>umask</code> değeri <code>027</code> olan bir kabukta yeni oluşturulan sıradan bir dosya hangi izinle doğar?</p>
+<ul class="sec"><li><code>640</code></li><li><code>750</code></li><li><code>644</code></li><li><code>027</code></li><li><code>666</code></li></ul>
+<div class="coz"><p>Program sıradan dosya için <code>0666</code> ister; çekirdek istenen kipten umask'taki bitleri siler: <code>0666 &amp; ~0027 = 0640</code>. Sahip okur ve yazar, grup okur, diğerleri hiçbir şey yapamaz. 750 aynı umask'la oluşturulan dizinin iznidir (<code>0777 &amp; ~0027</code>). 644, umask 022'nin sonucudur. 027 umask'ın kendisidir, izin değildir. 666 umask hiç uygulanmasaydı çıkardı. Lynis'in "umask 027 olabilir" önerisi bu hesaba dayanır.</p></div></li>
+
+<li data-c="B" data-k="siber-13"><p class="q">Çalışan bir servisi durdurmak için önerilen sıra hangisidir ve neden?</p>
+<ul class="sec"><li>Önce <code>kill -9</code>; çünkü SIGKILL süreç tarafından yakalanabilir ve temizlik yaptırır.</li><li>Önce SIGTERM (<code>kill</code>'in varsayılanı) gönder, bekle, süreç hâlâ yaşıyorsa SIGKILL gönder; çünkü SIGTERM sürece temizlik yapma fırsatı verir, SIGKILL ise yakalanamaz ve süreci hemen sonlandırır.</li><li>Önce SIGSTOP, sonra SIGCONT; süreç kendiliğinden kapanır.</li><li>Yalnız SIGHUP gönderilir; başka sinyal servisleri etkilemez.</li><li>Sinyal sırası önemsizdir, hepsi aynı sonucu verir.</li></ul>
+<div class="coz"><p>SIGTERM (15) <code>kill</code>'in varsayılanıdır ve süreç onu yakalayıp dosyalarını kapatabilir, geçici dosyalarını silebilir. SIGKILL (9) ve SIGSTOP yakalanamaz; SIGKILL süreci hemen bitirir ve temizlik fırsatı vermez, bu yüzden son çaredir. A, SIGKILL'in özelliğini tersine çeviriyor. C'de STOP/CONT süreci dondurup çözer, sonlandırmaz. D'deki SIGHUP birçok servise yapılandırmayı yeniden okut anlamına gelir, durdurma için tasarlanmamıştır. E yanlış, sinyallerin anlamları farklıdır.</p></div></li>
+
+<li data-c="D" data-k="siber-15"><p class="q">Yalnız aynı makinedeki programların erişmesi gereken bir yönetim servisi hangi adrese bağlanmalıdır ve neden?</p>
+<ul class="sec"><li><code>0.0.0.0</code>'a; böylece bütün arayüzlerden erişilir ve güvenlik duvarı gerekmez.</li><li>Makinenin genel IP adresine; böylece en hızlı çalışır.</li><li><code>255.255.255.255</code>'e; yayın adresi yalnız yereldir.</li><li><code>127.0.0.1</code>'e; döngü adresine bağlanan servis yalnız makinenin içinden erişilebilir, ağdan görünmez.</li><li>Hangi adrese bağlandığı önemsizdir; <code>ss</code> zaten portu gizler.</li></ul>
+<div class="coz"><p><code>127.0.0.1</code> döngü arayüzünün adresidir; ona bağlanan bir soket ağ arayüzlerinden gelen bağlantıları hiç kabul etmez. <code>0.0.0.0</code> ise bütün IPv4 adreslerinden dinlemek demektir, A'nın tersine yüzeyi büyütür. Genel IP'ye bağlamak servisi dışarıya açar. 255.255.255.255 bir yayın adresidir, dinleme adresi olarak bu amaca hizmet etmez. <code>ss</code> portu gizlemez, gösterir. Yine de döngüdeki servise de kimlik doğrulama gerekir, çünkü makinedeki her yerel süreç ona ulaşabilir.</p></div></li>
+
+<li data-c="C" data-k="siber-16"><p class="q">Durum takipli (stateful) bir ana makine güvenlik duvarında, gelen trafiği varsayılan olarak reddeden bir kural setine "kurulu bağlantılara (established, related) izin ver" kuralı neden eklenir?</p>
+<ul class="sec"><li>Gelen bütün yeni bağlantıların kabul edilmesi için</li><li>Giden trafiği tamamen engellemek için</li><li>Makinenin kendi başlattığı bağlantıların dönüş paketlerinin, gelen trafiği reddeden politikaya takılmadan içeri girebilmesi için</li><li>Kuralların sırasını önemsiz kılmak için</li><li>Güvenlik duvarının günlük tutmasını kapatmak için</li></ul>
+<div class="coz"><p>Durum takibi, güvenlik duvarının bir bağlantının hangi aşamada olduğunu bilmesidir. Makine dışarıya bir bağlantı başlattığında yanıt paketleri "gelen" yönde gelir; varsayılan reddet politikası onları da düşürürdü. "established, related" kuralı yalnız zaten kurulmuş ya da onunla ilişkili trafiğe izin verir, yeni gelen bağlantılara değil; A bu farkı kaçırıyor. Kural giden trafiği engellemez. Kural sırası önemini korur; ilk eşleşen kural uygulanır. Günlükle ilgisi yoktur.</p></div></li>
+
+<li data-c="E" data-k="siber-16"><p class="q">Uzaktaki bir laboratuvar VM'inde SSH üzerinden bağlıyken ana makine güvenlik duvarına "varsayılan reddet" politikası uygulayacaksın. Kendini dışarıda bırakmamak için en doğru yaklaşım hangisidir?</p>
+<ul class="sec"><li>Önce varsayılan politikayı reddet yap, sonra SSH için izin kuralı ekle.</li><li>Güvenlik duvarını yalnız giden trafik için yapılandır; gelen trafik zaten güvenlidir.</li><li>SSH portunu kural setinden çıkar; kurulu oturum nasılsa kopmaz.</li><li>Kuralı uyguladıktan hemen sonra oturumu kapatıp yeniden bağlanmayı dene.</li><li>SSH'ye (tercihen yalnız iç ağdan) ve kurulu bağlantılara izin veren kuralları reddet politikasından önce yerleştir, kural setini sına, mevcut oturumu açık tutarak ikinci bir oturumla dene ve gerekirse konsoldan ya da kendiliğinden geri dönen bir düzenekle eski kurallara dönmeyi hazırla.</li></ul>
+<div class="coz"><p>Varsayılan reddet ilkesi doğrudur, ama uzak oturumda izin kuralları politikadan önce gelmelidir; A'daki sırayla politika uygulandığı anda SSH paketleri düşer. Kuralı sınamak, mevcut oturumu korumak ve ikinci bir oturumla denemek bu parçadaki değişiklik disipliniyle aynıdır. B, gelen trafiğin denetlenmesi gerektiğini yok sayıyor. C'de durum takibi yeni bağlantıları kesecek, kopan oturum geri gelemeyecektir. D, hata varsa geri dönüş yolunu yok ediyor.</p></div></li>
+
+<li data-c="A" data-k="siber-17"><p class="q">systemd kullanan bir makinede SSH sunucusunun son bir saatteki günlüklerini görmek için aşağıdakilerden hangisi uygundur?</p>
+<ul class="sec"><li><code>journalctl -u ssh --since "1 hour ago"</code></li><li><code>journalctl --delete ssh</code></li><li><code>logrotate -u ssh</code></li><li><code>systemctl enable --since ssh</code></li><li><code>cat /proc/ssh/log</code></li></ul>
+<div class="coz"><p><code>journalctl</code> journal'ı okur; <code>-u</code> belirli bir birimin kayıtlarını, <code>--since</code> belirli bir zamandan sonrasını süzer. Birimin adı dağıtıma göre <code>ssh</code> ya da <code>sshd</code> olabilir. B'deki gibi bir seçenek yoktur ve günlük silmek savunmacının işi değildir. <code>logrotate</code> günlük dosyalarını döndürür, okumaz. <code>systemctl enable</code> birimi açılışta etkinleştirir, günlükle ilgisi yoktur. <code>/proc</code> altında böyle bir günlük dosyası yoktur. Debian'da klasik dosya <code>/var/log/auth.log</code>, Red Hat ailesinde <code>/var/log/secure</code>'dur; journal kullanan kurulumlarda bu dosya olmayabilir.</p></div></li>
+
+<li data-c="B" data-k="siber-17"><p class="q">Dosya bütünlüğü izleme bir sistemde neyi yakalamayı amaçlar?</p>
+<ul class="sec"><li>Ağ üzerinden gelen bütün paketlerin içeriğini</li><li>Önceden kaydedilmiş güvenilir bir taban çizgisine (dosyaların özetleri, izinleri, sahipleri) göre kritik dosyalarda beklenmeyen değişiklikleri</li><li>Kullanıcıların parolalarını düz metin olarak</li><li>İşlemcinin anlık sıcaklığını</li><li>Silinen günlük satırlarını geri getirmeyi</li></ul>
+<div class="coz"><p>Dosya bütünlüğü izleyicisi, kritik dosyaların bilinen iyi bir andaki özetlerini ve özniteliklerini saklar, sonra düzenli olarak yeniden hesaplayıp karşılaştırır; fark beklenmeyen bir değişikliğin işaretidir. Taban çizgisi güvenilir bir yerde saklanmalıdır, yoksa değişikliği yapan onu da değiştirir. Paket içeriği ağ izlemenin işidir. Parolalar düz metin olarak hiçbir yerde tutulmamalıdır. Sıcaklıkla ilgisi yoktur. Bütünlük izleme değişikliği fark eder, silineni geri getirmez. Lynis bu ortamda böyle bir araç bulamadığı için öneri yazdı.</p></div></li>
+
+<li data-c="D" data-k="siber-18"><p class="q">Bir sunucuya ilk kez SSH ile bağlanırken istemci sunucunun anahtar parmak izini gösterip onay istiyor. Bu anda doğru davranış hangisidir?</p>
+<ul class="sec"><li>Her zaman "yes" yazmak; parmak izi yalnız bilgi amaçlıdır.</li><li>Parmak izini <code>known_hosts</code> dosyasından silip yeniden bağlanmak</li><li>Bağlantıyı reddetmek ve parola girişini açmak</li><li>Parmak izini sunucunun yöneticisinden ya da sunucunun konsolundan güvenilir bir yoldan öğrenip karşılaştırmak; eşleşiyorsa kabul etmek</li><li>Parmak izini rastgele bir web sitesinde aratmak</li></ul>
+<div class="coz"><p>İlk bağlantıda istemcinin elinde karşılaştıracak bir kayıt yoktur; onay verdiğin anda o anahtar <code>known_hosts</code>'a yazılır ve sonraki bağlantılar ona göre doğrulanır. Yani ilk onay, güvenin kurulduğu andır; parmak izini bağımsız ve güvenilir bir yoldan doğrulamak araya giren bir sahte sunucuyu yakalar. A bu korumayı boşa çıkarır. B'de dosyada henüz kayıt yoktur. C parola girişini açarak riski artırır. E güvenilir bir kaynak değildir.</p></div></li>
+
+<li data-c="C" data-k="siber-18"><p class="q">Bir API belirtecini (token) bir komuta vermenin yollarından hangisi sır saklama açısından en az risklidir?</p>
+<ul class="sec"><li>Belirteci komutun argümanı olarak yazmak: <code>arac --token abc123</code></li><li>Belirteci <code>~/.bashrc</code> içine <code>export</code> satırı olarak yazıp herkesin okuyabileceği izinle bırakmak</li><li>Belirteci yalnız sahibinin okuyabildiği (600) bir dosyada ya da bir parola yöneticisi/kasada tutmak ve aracın oradan okumasını sağlamak</li><li>Belirteci betiğin içine yazıp Git deposuna göndermek</li><li>Belirteci günlük dosyasına yazdırarak kaybolmamasını sağlamak</li></ul>
+<div class="coz"><p>Sırrı sıkı izinli bir dosyada ya da kasada tutmak, onu yalnız gereken sürece açar. Argüman olarak yazılan sır kabuk geçmişine düşer ve süreç çalışırken <code>/proc/PID/cmdline</code> üzerinden makinedeki herkese görünür (Parça 13). Herkese okunur bir dosyadaki <code>export</code> sırrı paylaşmak demektir; ortam değişkeni de alt süreçlere miras kalır ve sınırlı bir korumadır. Git deposuna giden sır geri alınamaz biçimde yayılır ve "yanmış" sayılıp döndürülmelidir. Günlüğe yazılan sır, günlüğü okuyan herkese açılır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-18">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-19">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-20">Sonraki parça: Ağ nedir ve katmanlı modeller →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"Linux server hardening checklist"</li>
+  <li>"Lynis security audit tutorial"</li>
+  <li>"CIS Benchmark Level 1 vs Level 2 explained"</li>
+  <li>"sysctl kernel hardening parameters Linux"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>CIS:</strong> Seviye 1/Seviye 2 tanımları, uzlaşmayla geliştirme ve PDF'in ücretsiz dağıtılması CIS Benchmarks SSS sayfasından (cisecurity.org); Seviye 2'nin Seviye 1'in üstüne kurulduğu CIS Hardened Images sözlüğünden; Otomatik/Elle değerlendirme durumu ve eski "puanlanan/puanlanmayan" adlarının neden değiştirildiği CIS bilgi tabanı ve blog yazısından doğrulandı. Sürümler (Debian 13 1.1.0, Debian 12 2.0.0, Ubuntu 24.04 LTS 2.0.0, Ubuntu 26.04 LTS 1.0.0) 16 Ekim 2026'da CIS liste sayfasından; Debian 12 ve Ubuntu 24.04 2.0.0'ın yayımı CIS'in Haziran 2026 güncelleme duyurusundan alındı. CIS'in ürün sayfalarından biri Debian 12 için hâlâ 1.1.0 gösteriyordu; liste sayfasını esas aldım. Madde numarası bilerek verilmedi; belgelerin kendisini (PDF) açmadım, hangi önerinin hangi seviyede olduğunu da bu yüzden yazmadım.</li>
+  <li><strong>Lynis:</strong> son sürümün 3.1.7 (25 Haziran 2026) ve bir öncekinin 3.1.6 (23 Ekim 2025) olduğu GitHub sürüm sayfasından; tam denetim için root gerektiği, root'suz çalışmanın ayrıcalıksız (pentest) kip olduğu, uyarı ile öneri ayrımı ve "OK"nin güvenlik kanıtı olmadığı cisofy.com belgesinden doğrulandı. Sertleştirme indeksinin hesabı belgede yoktu; Lynis'in kendi kodundaki (<code>include/functions</code>) puan toplama satırlarından ve günlükteki "154 points (out of 250)" satırından çıkardım. Betiklerin önce standart yerlerde, en son bulunulan dizinde arandığı ve <code>--profile</code> ile verilen <code>default.prf</code> adlı dosyanın çekirdek karşılaştırmasında atlandığı da Lynis 3.1.6 kodu ve ilk denememin gözlemiyle belirlendi; ilk taramada çekirdek bölümü boş kaldı, ikinci taramada profil <code>lab.prf</code> adıyla verildi.</li>
+  <li><strong>Çekirdek:</strong> <code>kptr_restrict</code>, <code>dmesg_restrict</code>, <code>unprivileged_bpf_disabled</code> ve <code>modules_disabled</code> değerlerinin anlamı docs.kernel.org sysctl/kernel sayfasından; <code>ptrace_scope</code> değerleri ve 3'ün geri alınamaması Yama belgesinden; <code>protected_symlinks</code>, <code>protected_hardlinks</code>, <code>protected_fifos</code>, <code>suid_dumpable</code> sysctl/fs sayfasından doğrulandı. <code>accept_redirects</code>, <code>ip_forward</code>, <code>log_martians</code> ve <code>tcp_syncookies</code>'in tanımlarını hafızadan yazdım; bu oturumda ip-sysctl belgesini açmadım.</li>
+  <li><strong>sysctl.d:</strong> dizinler, dosya adına göre sıralama, adı sonra gelenin kazanması ve 60–90 önerisi sysctl.d(5) kılavuzundan (man7.org); Debian 13'te <code>/etc/sysctl.conf</code>'un artık okunmadığı ve yerel ayarların <code>/etc/sysctl.d/*.conf</code>'a yazılması gerektiği Debian 13 sürüm notlarından doğrulandı.</li>
+  <li><strong>Hafızadan yazdıklarım:</strong> <code>needrestart</code>'ın işlevi (Lynis önerisinin metniyle de uyumlu), <code>etckeeper</code>, <code>libpam-pwquality</code>, <code>apt purge</code> ile <code>remove</code> farkı, <code>systemctl mask</code>, <code>/dev/shm</code> için örnek <code>fstab</code> satırı ve Debian 13'te <code>/tmp</code>'nin <code>tmp.mount</code> ile bağlandığı. <code>fstab</code> satırı ve <code>tmp.mount</code> ayrıntısı dağıtım belgesiyle karşılaştırılmadı; metinde de "dağıtımının belgesine bak" dedim. Örnek paket adları (<code>rsh-client</code>, <code>tftp-hpa</code>, <code>cups</code>) dağıtıma göre değişebilir.</li>
+  <li><strong>Çalıştırılan örnekler (hepsi gerçekten koştu, çıktılar birebir):</strong> <code>denetim.sh</code> (Çözümlü örnek 1), ad alanında <code>sysctl -p</code> (Çözümlü örnek 2), <code>cp -a</code>/<code>diff</code>/<code>sshd -t</code>/kayıt/geri dönüş (Çözümlü örnek 3) ve Lynis bölümündeki bütün komutlar. Ortam: Windows 11 üstünde WSL2, Kali GNU/Linux Rolling 2026.2, çekirdek 6.18.33.2, root'suz kullanıcı. Lynis taraması iki kez yapıldı (her biri yaklaşık 4 dakika); gösterilen çıktılar ikinci taramadan. İki taramada sınama sayısı 256 ve 252 çıktı, öneri sayısı 50 ve 51 (ikincide çekirdek karşılaştırması eklendi); indeks ikisinde de 61.</li>
+  <li><strong>/tmp'ye açılmış araç ve kullanıcı ad alanı:</strong> Lynis kurulmadı; <code>apt-get download lynis</code> ile indirilen 3.1.6-1 paketi <code>dpkg-deb -x</code> ile <code>/tmp/yazar/siber-19/araclar/kok</code> altına açılıp oradan root'suz çalıştırıldı. Okurun normal kurulumu <code>sudo apt install lynis</code>'tir. sysctl denemesi <code>unshare -rn</code> ile açılan, yalıtık ve geçici bir ağ ad alanında yapıldı; bu gerçek root değildir, <code>kernel.</code> anahtarları reddedildi ve gerçek sistemin değerleri değişmedi (çıktıda görülüyor). SSH yapılandırması yalnız kopya üzerinde, <code>sshd -t</code> kendi ürettiğim deneme anahtarıyla çalıştırıldı; sunucu başlatılmadı.</li>
+  <li><strong>Burada çalıştırılmadı (root gerekir, şifresiz sudo yok ya da sistemi değiştirir):</strong> <code>apt update</code>, <code>apt full-upgrade</code>, <code>needrestart</code>, yeniden başlatma, <code>systemctl disable --now</code>, <code>apt purge</code>, <code>apt autoremove</code>, <code>usermod -L</code>, <code>/etc/fstab</code> düzenlemesi ve <code>mount -o remount</code>, <code>/etc/sysctl.d</code>'ye kopyalama ve <code>sysctl --system</code>, gerçek <code>sshd_config</code> değişikliği ve <code>systemctl reload ssh</code>, root'la tam Lynis taraması. Bu komutların çıktıları metinde verilmedi.</li>
+  <li><strong>Sadeleştirmeler ve ortama özgü durumlar:</strong> Lynis çıktısında makine adı <code>lab</code> olarak değiştirildi; Lynis <code>--no-colors</code> ile de imleç hareket kodları (<code>ESC[nC</code>) yazdığı için bunlar birer boşlukla değiştirildi; uzun listeler "…" ile kısaltıldı. Paket listelerinin 20 Ağustos 2026'dan beri tazelenmediği için "0 bekleyen güncelleme" bilgisi güvenilir değildir; bu bilerek gösterildi. WSL'de <code>/tmp</code> ayrı bağlanmıyor, çekirdek dosyası ve önyükleyici yok, tek DNS aracısı var; Kali bilerek <code>dmesg_restrict = 0</code> kullanıyor ve saldırı-test araçları kuruyor. Okurun Debian/Ubuntu VM'inde bulgular, sayılar ve indeks farklı olacaktır. Lynis taraması sırasında makinede bir SSH sunucusu dinliyordu ("Checking running SSH daemon FOUND"); bu, aynı makinede başka bir denemenin geçici sunucusuydu, benim denetim betiğim birkaç dakika sonra dinleyen bir SSH portu görmedi.</li>
+  <li><strong>Quiz:</strong> umask hesabı (<code>0666 &amp; ~0027 = 0640</code>, dizin <code>0750</code>) ve 154/250 oranı hesaplanarak; sysctl.d sırası kılavuzla; <code>sshd</code>'nin bozuk satırla 255 koduyla çıktığı çalıştırılarak; <code>unprivileged_bpf_disabled</code> yorumu çekirdek belgesiyle doğrulandı. Parça 16, 17 ve 18'in tekrar soruları önce kapsam listesinden kuruldu, sonra bu parçaların bitmiş metinleriyle (özet ve kural kutuları) karşılaştırıldı: <code>ct state established,related accept</code>, zamanlı geri alma ve "açık oturumun çalışması kanıt değildir" (16); <code>journalctl -u ssh.service</code>, Debian 12+'da <code>auth.log</code>'un olmayabilmesi ve taban çizgisine dayalı bütünlük izleme (17); TOFU ve sır yollarının sıralaması (18) tutarlı. Parça 1, 3, 4, 6, 7, 9, 10, 12, 13 ve 15'ten gelen sorular da o parçaların metinleriyle karşılaştırıldı. Örnek 3'teki <code>Include</code> uyarısı bu makinedeki <code>sshd_config</code>'in 12. satırı ve Parça 18'deki "ilk değer kazanır" kuralıyla doğrulandı.</li>
+  <li><strong>Saldırı sınırı ve iz:</strong> Bu parçada hiçbir zayıflığın nasıl kullanılacağı anlatılmadı; bütün bulgular "neden önemli, nasıl ölçülür, nasıl kapatılır" düzeyinde kaldı. Ağ hedefi kullanılmadı; yalnız paket indirildi ve Lynis yerel ad sunucusunu sınadı. Sistemde kalıcı bir şey değişmedi; bütün dosyalar <code>/tmp/yazar/siber-19/</code> altında kaldı.</li>
+</ul>
+</div>
+</div>
+</article>

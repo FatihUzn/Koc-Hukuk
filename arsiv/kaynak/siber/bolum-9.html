@@ -1,0 +1,802 @@
+<article class="chapter ders" id="c-siber-9">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 9 · Komut satırı ve metin</div>
+<h1>Komut satırında iz sürmek: dolaşmak, aramak, süzmek, saymak ve kazara silmemek</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvardaki sunucunun kimlik günlüğünde binlerce satır var. Sabah bir uyarı geliyor: "Gece SSH'ye çok sayıda başarısız giriş denemesi yapılmış." Hangi adresler denedi, hangi kullanıcı adlarını denediler, aralarından biri sonunda <strong>içeri girebildi mi</strong>? Bunu bir grafik arayüz olmadan, birkaç dakikada ve yanlış sayıya kanmadan nasıl bulursun? Sonra temizlik yaparken yazdığın tek bir <code>rm</code> satırı, boş kalan bir değişken yüzünden bütün sistemi silmeye kalkarsa onu önceden nasıl görürsün?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 8 (Linux dosya sistemi hiyerarşisi, kabuk, gizli dosyalar), Parça 4 (glibc tamponu: <code>printf</code> çıktısının ne zaman <code>write</code> ile çekirdeğe gittiği), Parça 6 (bayt ile karakter farkı, UTF-8). Kod rafından: Parça 15 (kabuk temelleri, joker karakterler), Parça 16 (stdin/stdout/stderr, borular, <code>grep</code>, <code>sort</code>, <code>uniq</code>, <code>awk</code>'ın temeli), Parça 17 (tırnaklama, <code>set -euo pipefail</code>), Parça 18 (<code>find</code>, <code>xargs</code>), Parça 12 (düzenli ifadeler). Bu parça onları tekrar anlatmaz; savunmacı gözüyle derinleştirir.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Kod rafında bu komutları <strong>bir işi yapmak</strong> için öğrendin. Savunmacı aynı araçları başka bir soruyla kullanır: <strong>bu sayı doğru mu, bu satıra güvenebilir miyim, bu komut yanlış giderse ne olur?</strong> Bir olayın ilk dakikalarında elinde çoğu zaman yalnız bir terminal, birkaç günlük dosyası ve zaman baskısı vardır; yanlış desenle sayılmış bir saldırı ya da yanlışlıkla boşaltılmış bir günlük, yanlış karara götürür.</p>
+
+<p>Sıra şöyle: <strong>dolaşmak ve bakmak</strong> (<code>pwd</code>, <code>cd</code>, <code>ls</code>, <code>less</code>, <code>head</code>, <code>tail -f</code>), <strong>aramak ve süzmek</strong> (<code>find</code>, <code>grep</code>, düzenli ifade), <strong>boru hattında saymak</strong> (yönlendirme, <code>sort</code>, <code>uniq</code>, <code>wc</code>, <code>cut</code>, <code>awk</code>) ve <strong>tehlikeli komutlar ile tırnaklama</strong>. "Kendi makinende dene" bölümünde hepsini kendi ürettiğin sentetik bir SSH günlüğünde birleştireceksin.</p>
+
+<p>Ana fikir: <strong>kabuk, komutu çalıştırmadan önce senin yazdığın satırı yeniden yazar</strong>; araçlar da kendi girdilerine körü körüne güvenir. Savunmacı, kabuğun ve aracın gerçekte ne gördüğünü önceden görmeyi alışkanlık edinir.</p>
+
+<div class="tablo"><table>
+<tr><th>Konu</th><th>Kod rafında gördüğün</th><th>Bu parçada eklenen (siber gözüyle)</th></tr>
+<tr><td>Gezinme, <code>ls</code></td><td>Parça 15: yol, <code>cd</code>, <code>ls -la</code>, gizli dosya</td><td>Dosya adında boşluk ve satır sonu, <code>ls -b</code>; sembolik bağda <code>pwd -P</code></td></tr>
+<tr><td>Dosya görüntüleme</td><td>Parça 15–16: <code>cat</code>, <code>less</code>, <code>head</code>, <code>tail -f</code></td><td>Günlükteki kontrol karakterleri, <code>cat -v</code>; <code>tail -F</code> ve günlük döndürme</td></tr>
+<tr><td><code>grep</code> ve düzenli ifade</td><td>Parça 12: Python <code>re</code>; Parça 16: <code>grep -i -v -n -r -E</code></td><td>BRE/ERE/PCRE farkı, IP aramada <code>-F -w</code>, sayının doğruluğu</td></tr>
+<tr><td>Boru ve yönlendirme</td><td>Parça 16: <code>&gt; &gt;&gt; 2&gt; |</code></td><td>Kendi girdisinin üstüne yazmak, <code>noclobber</code>, hataları gizlemenin bedeli, borudaki tampon</td></tr>
+<tr><td>Sayma araçları</td><td>Parça 16: <code>sort | uniq -c | sort -nr</code></td><td>Komşu satır kuralı, sayısal sıralama, IP sıralama, alanı satırın sonundan saymak</td></tr>
+<tr><td><code>find</code>, <code>xargs</code></td><td>Parça 18: ölçüte göre bulma, <code>-print0</code></td><td>Olay sonrası "son değişenler", ifade sırası ve <code>-delete</code> tuzağı</td></tr>
+<tr><td>Tırnak, <code>rm</code></td><td>Parça 15 ve 17: <code>rm</code> geri dönmez, <code>"$x"</code></td><td>Boş değişken + joker, <code>${x:?}</code>, <code>--</code>, "önce <code>echo</code>"</td></tr>
+</table></div>
+
+<h2 class="s">Dolaşmak: pwd, cd, ls ve dosya adlarına güvenmemek</h2>
+
+<p>Temel gezinmeyi kod rafı Parça 15'ten biliyorsun. Savunmacı için iki ayrıntı önemlidir: dosya adının neler içerebileceği ve "nerede olduğum" sorusunun iki cevabı olabileceği.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Linux'ta bir dosya adı, eğik çizgi (<code>/</code>) ve sıfır baytı (NUL) dışında her baytı içerebilir:</strong> boşluk, sekme, satır sonu, tire ile başlama, terminal kontrol karakterleri. Neden: çekirdek adı yalnız bir bayt dizisi olarak saklar; yolu bölmek için <code>/</code>'ye, dizgiyi bitirmek için NUL'a ihtiyaç duyar, gerisine karışmaz. Sonuç: "her satır bir dosya adıdır" ya da "her sözcük bir dosyadır" varsayımı, birinin bilerek ya da kazara verdiği tuhaf bir adla bozulur. Dosya adı, dışarıdan gelen veri gibi ele alınır.</p></div>
+
+<p>Bunu gör. Boşluklu, satır sonu içeren ve gizli üç dosya açıp listele:</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab9 &amp;&amp; mkdir garip &amp;&amp; cd garip
+touch 'bos luklu.txt' $'satir\nkirik.txt' .gizli
+ls
+ls | wc -l
+ls -b
+ls -A</pre>
+<pre class="cikti">bos luklu.txt
+satir
+kirik.txt
+3
+bos\ luklu.txt
+satir\nkirik.txt
+bos luklu.txt
+.gizli
+satir
+kirik.txt</pre>
+
+<p><code>$'satir\nkirik.txt'</code> Bash'in ANSI-C tırnağıdır; <code>\n</code>'yi gerçek bir satır sonuna çevirir. Çıktı boruya gittiği için <code>ls</code> adları olduğu gibi bastı: iki dosya üç satır gibi görünüyor ve <code>ls | wc -l</code> 3 diyor. <code>ls -b</code> basılamayan karakterleri C kaçışlarıyla (<code>\n</code>, <code>\ </code>) gösterir; adın gerçekte ne olduğu bellidir. <code>ls -A</code> gizli dosyaları da gösterir. Terminalde GNU <code>ls</code> tuhaf adları kendiliğinden tırnaklar; tuzak, çıktıyı boruya verdiğinde başlar. Dosya adlarını işleyen bir betik <code>ls</code> çıktısını ayrıştırmamalı; doğru yol <code>find -print0</code>'dır (6. adım).</p>
+
+<p>İkinci ayrıntı sembolik bağlardır (Parça 8). Bağın içine girdiğinde kabuk yolu bağın adıyla söyler; gerçek konumu <code>pwd -P</code> verir:</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab9 &amp;&amp; mkdir -p gercek/ic &amp;&amp; ln -s gercek/ic kisayol
+cd kisayol
+pwd
+pwd -P
+cd -</pre>
+<pre class="cikti">/home/kullanici/lab9/kisayol
+/home/kullanici/lab9/gercek/ic
+/home/kullanici/lab9</pre>
+
+<p><code>pwd</code> nasıl geldiğini (mantıksal yol), <code>pwd -P</code> gerçekte nerede olduğunu (fiziksel yol) yazdı; <code>cd -</code> önceki dizine döner. <code>/var/www/yedek</code> diye girdiğin dizin başka bir diske bağlanmış olabilir; sileceğin ya da rapora yazacağın yolu <code>pwd -P</code> ile doğrula.</p>
+
+<h2 class="s">Bakmak: less, head, tail ve günlükteki görünmez karakterler</h2>
+
+<p><code>head -n 20</code> ilk, <code>tail -n 20</code> son 20 satırı verir. <code>less</code> dosyayı sayfa sayfa açar, gigabaytlık bir günlükte de hızlıdır ve <strong>salt okur</strong>: incelerken dosyayı kazara değiştirmezsin. İçinde <kbd>/</kbd> ileri, <kbd>?</kbd> geri arar, <kbd>n</kbd> sonraki eşleşmeye gider, <kbd>&amp;</kbd> yalnız eşleşen satırları gösterir, <kbd>G</kbd> sona, <kbd>F</kbd> büyüyen dosyayı izlemeye geçer, <kbd>q</kbd> çıkar (etkileşimli oldukları için burada çalıştırılmadı).</p>
+
+<p>Günlük satırlarının bir kısmını karşı taraf yazar: denenen kullanıcı adı, istenen adres, tarayıcı adı. Bu metnin içine terminal kontrol dizileri (ekranı silen, rengi değiştiren <code>ESC [ …</code> dizileri) girerse, günlüğü <code>cat</code> ile bastığında terminal onları <strong>komut olarak uygular</strong>. Bu hata sınıfı CWE-117'de "günlükler için uygunsuz çıktı nötrleştirme" diye geçer. Zararsız bir örnekle gör:</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab9
+printf 'normal satir\n\033[2J\033[1;31mSAHTE UYARI\033[0m\n' > renkli.txt
+cat -v renkli.txt
+grep -c $'\033' renkli.txt</pre>
+<pre class="cikti">normal satir
+^[[2J^[[1;31mSAHTE UYARI^[[0m
+1</pre>
+
+<p>İkinci satır <code>cat</code> ile basılsaydı ekranı silip "SAHTE UYARI"yı kırmızı yazacaktı. <code>cat -v</code> basılamayan baytları görünür yazar: <code>^[</code> ESC karakteridir (0x1B). <code>grep -c $'\033'</code> bu karakteri içeren satırları sayar; bir günlükte sıfırdan farklı çıkması kendi başına incelemeye değer bir bulgudur. <code>less</code> belgesine göre kontrol karakterlerini varsayılan olarak <code>^A</code> gibi şapkalı gösterir; ham basan <code>-r</code>'yi belge önermez. <strong>Güvenmediğin günlüğü <code>cat</code> ile değil, <code>less</code> ya da <code>cat -v</code> ile oku.</strong></p>
+
+<p><code>tail -f</code> dosya büyüdükçe yeni satırları basar. GNU belgesine göre <code>-f</code> varsayılan olarak <strong>dosya tanımlayıcısını</strong> izler: günlük döndürme eski dosyanın adını değiştirip yenisini açınca <code>tail -f</code> eskiye bakmaya devam eder. <code>tail -F</code> (<code>--follow=name --retry</code>) adı izler ve yeni dosyayı açar. Günlük döndürme ve günlüklerin yerleri Parça 17'de.</p>
+
+<h2 class="s">Aramak: find ile ölçüte göre dosya bulmak</h2>
+
+<p><code>find</code>'ın temelini kod rafı Parça 18'den biliyorsun. Savunmadaki en sık sorusu: <strong>"Şu olaydan beri ne değişti?"</strong> Yetkisiz girişten şüpheleniyorsan ilk bakılacaklardan biri son saatlerde değişmiş yapılandırma dosyaları ve geçici dizinlerde beliren gizli adlı, çalıştırılabilir dosyalardır.</p>
+
+<div class="tablo"><table>
+<tr><th>Sınama</th><th>Anlamı</th><th>Savunmada örnek soru</th></tr>
+<tr><td><code>-type f</code> / <code>d</code> / <code>l</code></td><td>Normal dosya / dizin / sembolik bağ</td><td>Yalnız dosyalara bak</td></tr>
+<tr><td><code>-name 'desen'</code></td><td>Ad, kabuk deseniyle</td><td>Bütün <code>.sh</code> dosyaları nerede?</td></tr>
+<tr><td><code>-mmin -30</code></td><td>İçeriği 30 dakikadan kısa süre önce değişmiş</td><td>Son yarım saatte ne yazıldı?</td></tr>
+<tr><td><code>-mtime +7</code></td><td>7 günden uzun süre önce değişmiş (24 saatlik dilimler)</td><td>Hangi dosyalar dokunulmamış?</td></tr>
+<tr><td><code>-newer referans</code></td><td>Referans dosyadan daha yeni</td><td>Olay saatinden sonra ne değişti?</td></tr>
+<tr><td><code>-perm -u+x</code></td><td>Sahibi için çalıştırma biti açık (Parça 12)</td><td><code>/tmp</code>'de çalıştırılabilir dosya var mı?</td></tr>
+<tr><td><code>-printf '%TF %TH:%TM %m %p\n'</code></td><td>Zaman, sekizli izin, yol</td><td>Zaman çizelgesi satırı</td></tr>
+<tr><td><code>-print0</code> + <code>xargs -0</code></td><td>Adları NUL ile ayırmak</td><td>Tuhaf adlarda yanılmamak</td></tr>
+</table></div>
+
+<p>Eksi "daha az", artı "daha fazla", işaretsiz sayı "tam olarak" demektir; belge <code>-mtime</code>'da yuvarlamanın sonucu etkilediğini uyarır, dakika hassasiyetinde <code>-mmin</code> ya da <code>-newer</code> daha açıktır. Değişiklik zamanı <code>touch</code> ile değiştirilebilir; kanıt değil, ipucudur (Parça 71).</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong><code>find</code>'ın komut satırı soldan sağa okunan bir mantıksal ifadedir; eylemler (<code>-print</code>, <code>-exec</code>, <code>-delete</code>) bulundukları yerde çalışır.</strong> <code>find dizin -name '*.txt' -delete</code> yalnız <code>.txt</code>'leri siler; <code>find dizin -delete -name '*.txt'</code> ise önce her şeyi siler. GNU <code>find</code> belgesi bunu açıkça uyarır. Yöntem: aynı ifadeyi önce <code>-print</code> ile çalıştır, listeyi oku, sonra yalnız son eylemi değiştir.</p></div>
+
+<p>Sırayı zararsız <code>-print</code> ile gör:</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab9 &amp;&amp; mkdir -p tara/alt &amp;&amp; touch tara/a.txt tara/b.log tara/alt/c.txt
+find tara -name '*.txt' -print | sort
+find tara -print -name '*.txt' | sort</pre>
+<pre class="cikti">tara/alt/c.txt
+tara/a.txt
+tara
+tara/alt
+tara/alt/c.txt
+tara/a.txt
+tara/b.log</pre>
+
+<p>İlk satırda <code>-print</code> ad sınamasından sonra geldiği için yalnız iki <code>.txt</code> basıldı; ikincisinde önce geldi ve her şeyi bastı. Orada <code>-delete</code> olsaydı ağacın tamamı silinirdi.</p>
+
+<h2 class="s">Süzmek: grep ve düzenli ifade, savunmacının elinde</h2>
+
+<p>Düzenli ifadeyi kod rafı Parça 12'de Python'la, <code>grep</code>'in temelini Parça 16'da öğrendin. Komut satırında yeni olan, <strong>aynı fikrin birkaç lehçesi</strong> olmasıdır; hangisini konuştuğunu bilmezsen desen sessizce başka şey yapar. GNU <code>grep</code> belgesine göre:</p>
+
+<div class="tablo"><table>
+<tr><th>Seçenek</th><th>Desen nasıl yorumlanır?</th><th>Ne zaman?</th></tr>
+<tr><td>(yok) / <code>-G</code></td><td>Temel (BRE): <code>+ ? | ( )</code> düz karakter, özel anlam için önüne <code>\</code></td><td>Basit desenler</td></tr>
+<tr><td><code>-E</code></td><td>Genişletilmiş (ERE): <code>+ ? | ( ) { }</code> doğrudan özel</td><td><code>(root|admin)</code> gibi seçenekler</td></tr>
+<tr><td><code>-F</code></td><td>Düz metin; hiçbir karakter özel değil</td><td><strong>IP, dosya adı, kullanıcı adı</strong></td></tr>
+<tr><td><code>-P</code></td><td>Perl uyumlu (PCRE): <code>\d</code>, ileri bakış; Python'a en yakın</td><td>Karmaşık çıkarma</td></tr>
+<tr><td><code>-w</code> / <code>-x</code></td><td>Eşleşme bütün sözcük / bütün satır olmalı</td><td><code>.1</code>'in <code>.10</code>'u yakalamaması</td></tr>
+<tr><td><code>-c</code>, <code>-o</code>, <code>-n</code></td><td>Eşleşen satır sayısı, yalnız eşleşen parça, satır numarası</td><td>Saymak, alan çıkarmak</td></tr>
+<tr><td><code>-A</code>/<code>-B</code>/<code>-C 2</code>, <code>-v</code></td><td>Sonraki/önceki/çevredeki 2 satır; eşleşmeyenler</td><td>Bağlam görmek, gürültüyü atmak</td></tr>
+</table></div>
+
+<p>BRE ve ERE'de Python'daki <code>\d</code>'nin karşılığı <code>[0-9]</code> ya da <code>[[:digit:]]</code>'dir; <code>\d</code>'yi yalnız <code>-P</code> anlar. Parça 12'deki ReDoS uyarısı burada da geçerlidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bir IP adresini, kullanıcı adını ya da dosya adını ararken <code>grep -F -w</code> kullan.</strong> Neden: düzenli ifadede nokta "herhangi bir karakter" demektir ve <code>grep</code> deseni satırın her yerinde arar; <code>192.0.2.1</code> hem <code>192.0.2.10</code>'un içinde hem <code>192x0y2z1</code>'de eşleşir. <code>-F</code> noktayı düz nokta yapar; <code>-w</code> eşleşmenin iki yanında sözcük karakteri (belgeye göre harf, rakam, alt çizgi) olmamasını ister.</p></div>
+
+<pre class="kod" data-ad="bash">cd ~/lab9 &amp;&amp; bash uret.sh ssh-ornek.log
+grep -c 192.0.2.1 ssh-ornek.log
+grep -c -F -w 192.0.2.1 ssh-ornek.log
+grep -o 'user=[a-z]*' ssh-ornek.log | sort | uniq -c
+grep -o -w 'user=[a-z]*' ssh-ornek.log | sort | uniq -c</pre>
+<pre class="cikti">4
+2
+      6 user=
+      6 user=root
+      6 user=root</pre>
+
+<p>(<code>uret.sh</code>, "Kendi makinende dene"deki üreticidir.) <code>192.0.2.1</code>'den yalnız iki satır var; düz arama <code>192.0.2.10</code>'un iki satırını da saydı. Raporda "bu adres dört kez giriş yaptı" yazmak, masum bir adresi suçlamaktır. İkinci örnekte desen <code>ruser=</code>'in içindeki <code>user=</code>'i de yakaladı ve altı boş "kullanıcı" uydurdu; <code>-w</code> önünde <code>r</code> olan eşleşmeyi reddetti. Ders: <strong>desenin yakaladığına <code>-o</code> ile bak ve her sayıyı başka yoldan da doğrula</strong>.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>grep -i fail</code> ile başarısız girişleri sayarım."</strong> Bu desen, aynı denemeyi PAM katmanından ikinci kez kaydeden <code>authentication failure</code> satırlarını da yakalar: örnek günlükte <code>'Failed password'</code> 21, <code>-i fail</code> 27 diyor. Doğrusu: önce satırları gözle oku, her olayın <strong>hangi tek satırla</strong> temsil edildiğine karar ver, deseni ona özgü yaz ve geriye kalanlara <code>grep -v</code> ile bakarak sına.</p></div>
+
+<h2 class="s">Boru ve yönlendirme: kodda gördüğünün tuzakları</h2>
+
+<p>Her sürecin üç standart akışı vardır: 0 girdi, 1 çıktı, 2 hata (kod rafı Parça 16). Boru, bir sürecin 1 numaralı çıktısını bir sonrakinin 0 numaralı girdisine bağlar; hata akışı boruya girmez, doğrudan terminale gider. Yönlendirmeleri <strong>kabuk</strong> kurar, hem de komut çalışmaya başlamadan önce. Aşağıdaki şekil bunu gösteriyor.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 260" role="img" aria-label="Boru hattı şeması: grep, awk ve sort süreçleri borularla bağlı; her birinin standart çıktısı bir sonrakinin girdisine gidiyor, hata akışları ayrı ayrı terminale gidiyor; son çıktı dosyaya yönlendirilmiş; borulardaki tampon kutuları">
+  <rect class="sv-k" x="10" y="70" width="90" height="50" rx="6"/>
+  <text class="sv-b" x="55" y="92" text-anchor="middle">günlük</text>
+  <text class="sv-s" x="55" y="110" text-anchor="middle">dosyası</text>
+  <rect class="sv-m" x="135" y="70" width="100" height="50" rx="6"/>
+  <text class="sv-b" x="185" y="92" text-anchor="middle">grep</text>
+  <text class="sv-s" x="185" y="110" text-anchor="middle">0 ← dosya</text>
+  <rect class="sv-m" x="300" y="70" width="100" height="50" rx="6"/>
+  <text class="sv-b" x="350" y="92" text-anchor="middle">awk</text>
+  <text class="sv-s" x="350" y="110" text-anchor="middle">0 ← boru</text>
+  <rect class="sv-m" x="465" y="70" width="80" height="50" rx="6"/>
+  <text class="sv-b" x="505" y="92" text-anchor="middle">sort</text>
+  <text class="sv-s" x="505" y="110" text-anchor="middle">0 ← boru</text>
+  <rect class="sv-l" x="565" y="70" width="70" height="50" rx="6"/>
+  <text class="sv-b" x="600" y="92" text-anchor="middle">rapor</text>
+  <text class="sv-s" x="600" y="110" text-anchor="middle">&gt; dosya</text>
+  <line class="sv-cl" x1="100" y1="95" x2="135" y2="95"/>
+  <line class="sv-cl" x1="235" y1="95" x2="300" y2="95"/>
+  <line class="sv-cl" x1="400" y1="95" x2="465" y2="95"/>
+  <line class="sv-cl" x1="545" y1="95" x2="565" y2="95"/>
+  <rect class="sv-a" x="244" y="30" width="48" height="28" rx="4"/>
+  <text class="sv-s" x="268" y="48" text-anchor="middle">tampon</text>
+  <rect class="sv-a" x="409" y="30" width="48" height="28" rx="4"/>
+  <text class="sv-s" x="433" y="48" text-anchor="middle">tampon</text>
+  <text class="sv-s" x="268" y="88" text-anchor="middle">1 → 0</text>
+  <text class="sv-s" x="433" y="88" text-anchor="middle">1 → 0</text>
+  <rect class="sv-k" x="135" y="200" width="410" height="45" rx="6"/>
+  <text class="sv-b" x="340" y="220" text-anchor="middle">terminal</text>
+  <text class="sv-s" x="340" y="237" text-anchor="middle">hata akışları (2) boruya girmez, doğrudan buraya gelir</text>
+  <line class="sv-c" x1="185" y1="120" x2="185" y2="200"/>
+  <line class="sv-c" x1="350" y1="120" x2="350" y2="200"/>
+  <line class="sv-c" x1="505" y1="120" x2="505" y2="200"/>
+  <text class="sv-s" x="200" y="165">2</text>
+  <text class="sv-s" x="365" y="165">2</text>
+  <text class="sv-s" x="520" y="165">2</text>
+</svg>
+<figcaption>Kalın çizgiler standart çıktıdan (1) sonraki sürecin girdisine (0) giden borulardır. Her sürecin hata akışı (2) ayrı bir yoldan terminale gider; bu yüzden <code>grep</code>'in "izin yok" uyarısı rapor dosyasına karışmaz. Turuncu kutular, çıktının terminal yerine boruya gittiği her yerde araçların kullandığı tampondur (Parça 4).</figcaption>
+</figure>
+
+<p>"Kabuk yönlendirmeyi önce kurar" cümlesinin en acı sonucu, bir dosyayı işleyip sonucu yine aynı dosyaya yazmaya çalışmaktır:</p>
+
+<pre class="kod" data-ad="bash">cp ssh-ornek.log kopya.log
+sort kopya.log > kopya.log
+wc -l kopya.log
+cp ssh-ornek.log kopya.log
+set -o noclobber
+sort kopya.log > kopya.log
+wc -l kopya.log
+set +o noclobber
+sort -o kopya.log kopya.log
+wc -l kopya.log</pre>
+<pre class="cikti">0 kopya.log
+bash: kopya.log: cannot overwrite existing file
+41 kopya.log
+41 kopya.log</pre>
+
+<p>41 satırlık kopya 0 satıra indi: kabuk <code>&gt; kopya.log</code>'u görünce dosyayı açıp <strong>sıfırlar</strong>, <code>sort</code> ancak sonra boş dosyayı okur. Aynı tuzak <code>grep -v gürültü günlük &gt; günlük</code> gibi "temizlik" komutlarında da vardır ve kanıt niteliğindeki bir günlükte telafisi yoktur. <code>noclobber</code> (<code>set -C</code>) açıkken <code>&gt;</code> var olan dosyanın üstüne yazmayı reddeder (kasten yazmak için <code>&gt;|</code>); <code>sort -o</code> önce hepsini okuduğu için güvenlidir. Özgün günlüğe hiç yazma; kopyası üstünde çalış.</p>
+
+<p>İkinci tuzak hata akışını susturmaktır; <code>2&gt;/dev/null</code> okuyamadığın yerleri de gizler:</p>
+
+<pre class="kod" data-ad="bash">find /etc -name '*.conf' 2> hatalar.txt | wc -l
+wc -l &lt; hatalar.txt
+head -n 2 hatalar.txt</pre>
+<pre class="cikti">502
+8
+find: ‘/etc/ipsec.d/private’: Permission denied
+find: ‘/etc/polkit-1/rules.d’: Permission denied</pre>
+
+<p>502 dosya bulundu, ama 8 dizine hiç girilemedi; <code>2&gt;/dev/null</code> deseydin "502" eksiksiz bir sayım gibi görünürdü. "Bulamadım" ile "bakamadım"ı ayırmak için hataları dosyaya yazıp say (sayılar sistemden sisteme değişir). Sıra da önemlidir: <code>komut &gt; dosya 2&gt;&amp;1</code> iki akışı da dosyaya yollar; <code>komut 2&gt;&amp;1 &gt; dosya</code> hatayı terminale yollar, çünkü <code>2&gt;&amp;1</code> "2'yi şu an 1 neredeyse oraya bağla" demektir.</p>
+
+<p>Üçüncü ayrıntı Parça 4'ten: çıktı boruya gidince glibc, <code>grep</code> ve <code>awk</code> tamponlar. Sayımda fark edilmez, canlı izlemede satırları geciktirir; 5. adımda saniye saniye ölçeceksin.</p>
+
+<h2 class="s">Sıralamak, saymak, kesmek: sort, uniq, wc, cut</h2>
+
+<p>Kod rafı Parça 16'daki <code>sort | uniq -c | sort -nr</code> kalıbının her halkasında bir varsayım saklıdır; varsayım bozulunca sayı sessizce yanlış çıkar.</p>
+
+<pre class="kod" data-ad="bash">printf 'a\nb\na\n' | uniq -c
+printf 'a\nb\na\n' | sort | uniq -c
+printf 'bir\niki' | wc -l
+printf 'bir\niki\n' | wc -l</pre>
+<pre class="cikti">      1 a
+      1 b
+      1 a
+      2 a
+      1 b
+1
+2</pre>
+
+<p><code>uniq</code> belgesine göre yalnız <strong>komşu</strong> aynı satırları birleştirir; sırasız girdide <code>a</code> iki kez birer sayıldı. Karışık gelen denemeler böyle olduğundan az görünür: önce <code>sort</code>, sonra <code>uniq -c</code>. <code>wc -l</code> satır sonu karakteri sayar; son satırı satır sonsuz dosyada bir eksik söyler. <code>wc -c</code> bayt, <code>wc -m</code> karakter sayar (Parça 6).</p>
+
+<p><code>sort</code> varsayılan olarak metin karşılaştırır (<code>10</code>, <code>100</code>, <code>9</code>); sayı için <code>-n</code>, büyükten küçüğe <code>-rn</code>. IP adresleri ise dört ayrı sayıdır:</p>
+
+<pre class="kod" data-ad="bash">grep 'Failed password' ssh-ornek.log | awk '{print $(NF-3)}' | sort -u
+grep 'Failed password' ssh-ornek.log | awk '{print $(NF-3)}' | sort -u -t . -k1,1n -k2,2n -k3,3n -k4,4n</pre>
+<pre class="cikti">192.0.2.1
+198.51.100.23
+198.51.100.7
+203.0.113.45
+192.0.2.1
+198.51.100.7
+198.51.100.23
+203.0.113.45</pre>
+
+<p>Metin sıralamasında <code>.23</code>, <code>.7</code>'den önce geldi (<code>2</code> &lt; <code>7</code>). <code>-t .</code> ayırıcıyı nokta yapar, <code>-k1,1n</code> "birinci alan, sayısal" demektir; dört anahtarla adresler gerçek sıraya girer ve aynı bloktan gelen adresler küme hâlinde görünür.</p>
+
+<p><code>cut -d ' ' -f 5</code> "boşlukla ayrılmış beşinci alan" demektir. Sorun, geleneksel syslog'un tek haneli günü <strong>iki boşlukla</strong> yazmasıdır (<code>Oct  9</code>); <code>cut</code> için arada boş bir alan vardır:</p>
+
+<pre class="kod" data-ad="bash">cut -d ' ' -f 5 ssh-ornek.log | sort | uniq -c
+awk '{print $5}' ssh-ornek.log | sort | uniq -c</pre>
+<pre class="cikti">      3 lab
+     20 sshd[2210]:
+     12 sshd[2305]:
+      1 sshd[2400]:
+      4 sshd[2450]:
+      1 sshd[2460]:
+      1 sshd[1801]:
+      2 sshd[1830]:
+     20 sshd[2210]:
+     12 sshd[2305]:
+      1 sshd[2400]:
+      4 sshd[2450]:
+      1 sshd[2460]:</pre>
+
+<p>9 Ekim'in üç satırında <code>cut</code> makine adını (<code>lab</code>) verdi ve o günün süreçleri sayımdan düştü. <code>awk</code> <strong>ardışık boşlukları tek ayırıcı</strong> sayar; iki biçimde de beşinci alan süreç adıdır. Boşluk sayısı değişen metinde <code>awk</code>, ayırıcısı kesin olan metinde (<code>/etc/passwd</code>'deki <code>:</code>) <code>cut</code> kullan.</p>
+
+<h2 class="s">awk'a giriş: alanlar, koşullar ve sayaçlar</h2>
+
+<p><code>awk</code> her satırı alanlara böler ve <code>desen { eylem }</code> kurallarını çalıştırır. <code>$1</code>, <code>$2</code>… alanlar, <code>$0</code> bütün satır, <code>NF</code> alan sayısıdır; <code>$NF</code> son, <code>$(NF-3)</code> sondan dördüncü alandır. Desen bir düzenli ifade (<code>/Failed password/</code>) ya da koşul (<code>$1 &gt;= 5</code>) olabilir; <code>END { … }</code> girdi bitince bir kez çalışır. Parça 16'daki temele iki şey ekleniyor: alanı sondan saymak ve sayaç dizileri.</p>
+
+<div class="tablo"><table>
+<tr><th>Satır türü</th><th>Kullanıcı</th><th>IP</th><th>NF</th></tr>
+<tr><td><code>… sshd[2305]: Failed password for root from 198.51.100.7 port 41001 ssh2</code></td><td><code>$9</code> = <code>$(NF-5)</code></td><td><code>$11</code> = <code>$(NF-3)</code></td><td>14</td></tr>
+<tr><td><code>… sshd[2210]: Failed password for invalid user admin from 203.0.113.45 port 40039 ssh2</code></td><td><code>$11</code> = <code>$(NF-5)</code></td><td><code>$13</code> = <code>$(NF-3)</code></td><td>16</td></tr>
+<tr><td><code>… sshd[2210]: Invalid user admin from 203.0.113.45 port 40039</code></td><td><code>$8</code> = <code>$(NF-4)</code></td><td><code>$10</code> = <code>$(NF-2)</code></td><td>12</td></tr>
+<tr><td><code>… sshd[2400]: Accepted publickey for deniz from 192.0.2.10 port 52114 ssh2: ED25519 SHA256:…</code></td><td><code>$9</code></td><td><code>$11</code> (sondan sayılmaz: sonda anahtar bilgisi var)</td><td>16</td></tr>
+</table></div>
+
+<p>Tablo OpenSSH kaynak kodundaki biçim dizgisine dayanır: "<code>Failed/Accepted yöntem for [invalid user ]ad from adres port numara ssh2</code>", ayrıca "<code>Invalid user ad from adres port numara</code>"; açık anahtarlı girişte sona anahtar bilgisi eklenir. Satırın <strong>başı</strong> kayar (<code>invalid user</code> iki sözcük ekler; yeni Debian sürümlerinde rsyslog'un varsayılan zaman damgası da <code>2026-10-16T09:00:52.123456+03:00</code> gibi tek alandır), "Failed password" satırlarının <strong>sonu</strong> ise sabittir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Günlük satırında karşı tarafın yazdığı alanlar (kullanıcı adı, istenen adres) veri, sabit kalıp çerçevedir; alanı çerçeveye göre, satırın değişmeyen ucundan ya da sabit bir anahtar sözcükten (<code>from</code>) sayarak çıkar.</strong> Neden: kullanıcı adının içeriğini giriş deneyen belirler; OpenSSH onu yalnız uzunluğundan kısaltır. Boşluk içeren bir ad, baştan sayan ayrıştırıcıda alanları kaydırır ve sahte bir değer gerçek adres sanılabilir.</p></div>
+
+<p>Sayaç dizisinde <code>say[anahtar]++</code> o anahtarın sayacını artırır; ilk görülen anahtar sıfırdan başlar (Python'daki sözlükle sayma, kod rafı Parça 5):</p>
+
+<pre class="kod" data-ad="awk">awk '/Failed password/ {say[$(NF-3)]++}
+     END {for (ip in say) print say[ip], ip}' ssh-ornek.log | sort -rn</pre>
+<pre class="cikti">11 203.0.113.45
+6 198.51.100.7
+3 198.51.100.23
+1 192.0.2.1</pre>
+
+<p><code>for (ip in say)</code>'nın sırası tanımsızdır; çıktıyı hep <code>sort</code>'tan geçir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Sentetik günlükte başarısız girişleri kullanıcı adına göre saymak istiyorsun. İlk denemen <code>grep 'Failed password' ssh-ornek.log | awk '{print $9}' | sort | uniq -c | sort -rn</code> ve en üstte "10 invalid" çıkıyor. Ne yanlış, doğrusu ne?</p>
+<p><strong>Adım 1.</strong> Şüpheli sonucu gör: "invalid" bir kullanıcı adı değil, <code>invalid user</code> ifadesinin ilk sözcüğü. Demek ki bazı satırlarda dokuzuncu alan kullanıcı adı değil.</p>
+<p><strong>Adım 2.</strong> İki satır türünü yan yana koy (yukarıdaki tablo): var olan kullanıcıda <code>for root from</code>, olmayanda <code>for invalid user admin from</code>. İkinci türde kullanıcı iki alan sağa kayıyor.</p>
+<p><strong>Adım 3.</strong> Sabit ucu bul: iki türde de satır <code>from adres port numara ssh2</code> ile biter ve kullanıcı <code>from</code>'un hemen solundadır. Sondan saymak: <code>ssh2</code> = <code>$NF</code>, adres = <code>$(NF-3)</code>, <code>from</code> = <code>$(NF-4)</code>, kullanıcı = <code>$(NF-5)</code>.</p>
+<p><strong>Adım 4.</strong> Komutu <code>awk '{print $(NF-5)}'</code> ile yeniden çalıştır ("Kendi makinende dene", Adım 3): <code>root</code> 7, <code>admin</code> 4, <code>deniz</code> 3, <code>test</code> 2 çıkıyor.</p>
+<p><strong>Adım 5.</strong> Sağlama yap: kullanıcı sayılarının toplamı 7 + 4 + 3 + 2 + 1 + 1 + 1 + 1 + 1 = 21, <code>grep -c 'Failed password'</code> de 21. Toplamlar tutuyor.</p>
+<p><strong>Sonuç:</strong> Alan konumu satır türüne göre değişiyordu; kullanıcı <code>$(NF-5)</code> ile sabit uçtan sayılır ve sonuç toplamla sağlanır. Yanlış sürüm, var olmayan adları deneyen bir saldırıyı "invalid" adlı tek hesaba indirgiyordu.</p></div>
+
+<h2 class="s">Tehlikeli komutlar: rm -rf, joker ve seçenek sanılan adlar</h2>
+
+<p><code>rm</code>'in çöp kutusu yoktur ve <code>-rf</code> en geniş yetkiyi verir (kod rafı Parça 15). Tehlike çoğu zaman <code>rm</code>'de değil, <strong>kabuğun ona ne verdiğindedir</strong>: argüman listesini kabuğun genişletmeleri üretir.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Kabuğun genişletme sırası: yazılan satır, parametre genişletmesi, sözcük bölme, yol adı genişletmesi, tırnak kaldırma, sonra rm'in gördüğü argümanlar; boş değişken örneği">
+  <rect class="sv-k" x="20" y="10" width="360" height="40" rx="6"/>
+  <text class="sv-s" x="200" y="26" text-anchor="middle">senin yazdığın satır</text>
+  <text class="sv-b" x="200" y="43" text-anchor="middle">rm -rf "$hedef"/*      (hedef boş)</text>
+  <rect class="sv-l" x="20" y="65" width="360" height="40" rx="6"/>
+  <text class="sv-s" x="200" y="81" text-anchor="middle">1. parametre genişletmesi: $hedef → ""</text>
+  <text class="sv-t" x="200" y="98" text-anchor="middle">rm -rf ""/*</text>
+  <rect class="sv-l" x="20" y="120" width="360" height="40" rx="6"/>
+  <text class="sv-s" x="200" y="136" text-anchor="middle">2. sözcük bölme: tırnaklı kısım bölünmez</text>
+  <text class="sv-t" x="200" y="153" text-anchor="middle">rm · -rf · ""/*</text>
+  <rect class="sv-a" x="20" y="175" width="360" height="40" rx="6"/>
+  <text class="sv-s" x="200" y="191" text-anchor="middle">3. yol adı genişletmesi: /* kök dizinde eşleşir</text>
+  <text class="sv-t" x="200" y="208" text-anchor="middle">rm -rf /bin /boot /dev /etc /home …</text>
+  <rect class="sv-l" x="20" y="230" width="360" height="40" rx="6"/>
+  <text class="sv-s" x="200" y="246" text-anchor="middle">4. tırnak kaldırma</text>
+  <text class="sv-t" x="200" y="263" text-anchor="middle">argv: rm, -rf, /bin, /boot, /dev, …</text>
+  <rect class="sv-m" x="20" y="285" width="360" height="40" rx="6"/>
+  <text class="sv-b" x="200" y="302" text-anchor="middle">rm ancak burada çalışır</text>
+  <text class="sv-s" x="200" y="318" text-anchor="middle">"$hedef" diye bir şey hiç görmez; yalnız listeyi görür</text>
+  <line class="sv-c" x1="200" y1="50" x2="200" y2="65"/>
+  <line class="sv-c" x1="200" y1="105" x2="200" y2="120"/>
+  <line class="sv-c" x1="200" y1="160" x2="200" y2="175"/>
+  <line class="sv-c" x1="200" y1="215" x2="200" y2="230"/>
+  <line class="sv-c" x1="200" y1="270" x2="200" y2="285"/>
+</svg>
+<figcaption>Bash kılavuzundaki sıraya göre (kısaltılmış: küme ayracı, tilde, komut ikamesi ve aritmetik de 1. adımla aynı aşamadadır) boş bir değişken, tırnaklı olsa bile <code>/</code>'nin önünü boşaltır ve joker kök dizinde genişler. <code>rm</code>'e varan şey bir değişken değil, hazır bir dosya listesidir.</figcaption>
+</figure>
+
+<p>GNU <code>rm</code> varsayılan olarak <code>--preserve-root</code> ile <code>/</code>'yi silmeyi reddeder; ama burada <code>rm</code>'e <code>/</code> değil, <code>/bin</code>, <code>/etc</code>, <code>/home</code> gibi tek tek dizinler gider ve koruma onları kapsamaz. 7. adımda bunu yalnız <code>echo</code> ile göreceksin.</p>
+
+<p>İkinci tehlike tireyle başlayan adlardır. Joker adları olduğu gibi listeye koyar; <code>getopt</code> da belgesine göre varsayılan olarak argümanların <strong>arasındaki</strong> seçenekleri tanır. Böylece <code>-l</code> adlı dosya bir seçeneğe dönüşür. Zararsız <code>ls</code> ile gör:</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab9 &amp;&amp; mkdir deneme &amp;&amp; cd deneme
+touch a.txt 'rapor 2026.txt' 7 -- -l
+ls
+ls *
+ls -- *
+ls ./*
+echo grep [0-9] ../ssh-ornek.log
+echo grep '[0-9]' ../ssh-ornek.log</pre>
+<pre class="cikti">7
+a.txt
+-l
+rapor 2026.txt
+-rw-r--r-- 1 kullanici kullanici 0 Oct 16 16:59 7
+-rw-r--r-- 1 kullanici kullanici 0 Oct 16 16:59 a.txt
+-rw-r--r-- 1 kullanici kullanici 0 Oct 16 16:59 rapor 2026.txt
+7
+a.txt
+-l
+rapor 2026.txt
+./7
+./a.txt
+./-l
+./rapor 2026.txt
+grep 7 ../ssh-ornek.log
+grep [0-9] ../ssh-ornek.log</pre>
+
+<p><code>touch</code>'taki <code>--</code> "seçenekler bitti" demektir; <code>-l</code> adlı dosyayı ancak böyle üretebildik. <code>ls *</code> uzun liste verdi ve <code>-l</code> listede yok: <code>ls</code> onu seçenek saydı. Çözüm ya <code>--</code> ya da adların başına <code>./</code> koymaktır. <code>ls</code> yerine <code>rm -rf</code> olsaydı, komutun davranışı dosya adını koyan kişinin elinde olurdu. (<code>-l</code>'nin sırada ortada çıkması yerel ayardandır.)</p>
+
+<p>Son iki satırda tırnaksız <code>[0-9]</code>, kabuk tarafından joker olarak okundu ve dizinde <code>7</code> adlı dosya bulunduğu için <code>grep 7</code>'ye dönüştü. Düzenli ifadeyi her zaman tek tırnak içinde ver.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Silmeden önce gör.</strong> (1) Aynı satırın başına <code>echo</code> koy ve kabuğun ürettiği listeyi oku (<code>echo rm -rf …</code>). (2) Değişkenle yol kuruyorsan <code>"${hedef:?hedef bos}"</code> yaz: değişken boş ya da tanımsızsa kabuk komutu çalıştırmaz. (3) Jokerden önce <code>--</code> koy ya da <code>./*</code> kullan. (4) Betiklerde <code>set -u</code> aç, ama tek başına yetmediğini bil (aşağıda). (5) <code>find … -delete</code>'den önce aynı ifadeyi <code>-print</code> ile çalıştır. (6) Laboratuvarda tehlikeli bir temizliğe girişmeden önce VM'in anlık görüntüsünü al (Parça 7).</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Betiğe <code>set -u</code> koydum, boş değişkenle <code>rm</code> artık tehlikeli değil."</strong> <code>set -u</code> yalnız <strong>tanımsız</strong> değişkeni hata sayar; <code>hedef=""</code> onun için geçerlidir ve <code>"$hedef"/*</code> yine <code>/*</code> olur (7. adımda göreceksin). Boş değer çoğu zaman başarısız bir komut ikamesinden (<code>hedef=$(bir_komut)</code>) gelir. Doğrusu: <code>${hedef:?ileti}</code> değişken <strong>boş ya da tanımsızsa</strong> iletiyi yazar ve etkileşimsiz kabuğu durdurur. İkisini birlikte kullan.</p></div>
+
+<h2 class="s">Tırnaklama alışkanlıkları</h2>
+
+<p>Tırnak kurallarını kod rafı Parça 17'de gördün. Siber gözüyle özeti: <strong>tırnak, verinin komuta dönüşmesini engelleyen sınırdır.</strong> Tırnaksız değişken önce boşluklardan bölünür, sonra her parçası joker gibi genişletilir; içinde dosya adı ya da günlükten okunmuş bir alan varsa, dışarıdan gelen veri komutun yapısını değiştirir. Parça 52'deki komut enjeksiyonunun kabuktaki kökü budur.</p>
+
+<pre class="kod" data-ad="bash">f='rapor 2026.txt'
+printf '[%s]\n' $f
+printf '[%s]\n' "$f"
+printf '[%s]\n' 'tek: $HOME' "cift: $((2+3))" $'dolar-tek: a\tb'</pre>
+<pre class="cikti">[rapor]
+[2026.txt]
+[rapor 2026.txt]
+[tek: $HOME]
+[cift: 5]
+[dolar-tek: a	b]</pre>
+
+<p><code>printf '[%s]\n'</code> her argümanı ayraç içinde ayrı satıra yazar; argüman saymanın en temiz yoludur. Tırnaksız <code>$f</code> ikiye bölündü. Çift tırnak bölmeyi ve jokeri durdurur ama <code>$</code> genişletmelerini yapar (<code>$((2+3))</code> → 5); tek tırnak hiçbir şeyi genişletmez; <code>$'…'</code> kaçışları çevirir (<code>\t</code> gerçek sekme oldu).</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Değişkeni çift tırnakla (<code>"$x"</code>, <code>"$@"</code>), düzenli ifadeyi ve <code>awk</code> programını tek tırnakla ver; adları başka komuta NUL ayırıcıyla aktar (<code>find -print0 | xargs -0</code>).</strong> Neden: tırnaksız değişken bölünür ve joker olarak genişler; çift tırnaklı desende <code>$</code> ve <code>\</code>'yi kabuk yorumlar; satır sonuyla ayrılmış ad listesi, adında satır sonu olan dosyayla bozulur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir temizlik betiğinde <code>YEDEK_DIZIN</code> değişkeni bir yapılandırma dosyasından okunuyor ve betiğin sonunda <code>rm -rf $YEDEK_DIZIN/*</code> satırı var. Bu satırı adım adım güvenli hâle getir.</p>
+<p><strong>Adım 1.</strong> Kötü durumları say. (a) Değişken boş ya da tanımsız: satır <code>rm -rf /*</code> olur. (b) Değer boşluk içeriyor (<code>/srv/eski yedek</code>): iki ayrı yola bölünür, <code>/srv/eski</code> ve <code>yedek/*</code>. (c) Dizinde tireyle başlayan bir dosya var: seçenek sanılır.</p>
+<p><strong>Adım 2.</strong> (b) için değişkeni çift tırnağa al: <code>rm -rf "$YEDEK_DIZIN"/*</code>; joker tırnağın dışında kalmalı ki genişlesin.</p>
+<p><strong>Adım 3.</strong> (a) için <code>${YEDEK_DIZIN:?YEDEK_DIZIN bos}</code> kullan; değişken boşsa satır çalışmaz.</p>
+<p><strong>Adım 4.</strong> (c) için jokerden önce <code>--</code> koy: <code>rm -rf -- "${YEDEK_DIZIN:?YEDEK_DIZIN bos}"/*</code>.</p>
+<p><strong>Adım 5.</strong> İlk çalıştırmadan önce başına <code>echo</code> koyup listeyi oku; betiğe <code>set -euo pipefail</code> ekle (kod rafı Parça 17). <code>*</code>'ın gizli dosyaları kapsamadığını da unutma.</p>
+<p><strong>Sonuç:</strong> <code>rm -rf -- "${YEDEK_DIZIN:?YEDEK_DIZIN bos}"/*</code>, önce <code>echo</code> ile denenmiş olarak. Her koruma ayrı bir kötü durumu kapatır; biri eksikse o durum açık kalır.</p></div>
+
+<h2 class="s">Kendi makinende dene: sentetik SSH günlüğünde iz sürmek</h2>
+
+<p>Bu bölümdeki her komut gerçekten çalıştırıldı ve çıktılar birebir aktarıldı (ortam: Windows 11 üstünde WSL 2, Kali GNU/Linux Rolling, GNU grep 3.12, gawk 5.3.2, coreutils 9.10, findutils 4.10, Bash 5.3; ev dizini ve kullanıcı adı genel adlarla değiştirildi). Hiçbir adım yönetici yetkisi istemez, ağa çıkmaz, <code>~/lab9</code> dışında bir şey yazmaz ve hiçbir şey silmez; tehlikeli komutlar yalnız <code>echo</code> ile gösterilir. Bu rafta saldırılar yalnız kavram ve savunma düzeyinde anlatılır; bu araçları yalnız kendi makinenin ya da açıkça izinli laboratuvarının günlüklerinde kullan. Başkasına ait bir sistemin günlüklerine izinsiz erişmek suçtur (Parça 72–73).</p>
+
+<h3>Adım 1. Sentetik günlüğü üret</h3>
+
+<p>Gerçek bir sunucunun günlüğünü kullanmıyoruz: hem içinde gerçek kişilerin adları ve adresleri olur hem de herkeste farklıdır. Aşağıdaki betik, OpenSSH'nin satır kalıbına uyan 41 satır üretir. IP adreslerinin hepsi RFC 5737'nin belgeleme aralıklarındandır (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24); RFC bunların genel internette görünmemesi gerektiğini söyler, yani hiçbiri gerçek bir makineye ait değildir. Kullanıcı adları uydurmadır.</p>
+
+<pre class="kod" data-ad="uret.sh">#!/usr/bin/env bash
+# Sentetik SSH gunlugu ureticisi. IP'ler yalniz RFC 5737 belgeleme araliklarindan.
+set -euo pipefail
+cikti=${1:?kullanim: bash uret.sh dosya-adi}
+t=0
+satir() {   # $1 gun, $2 pid, $3 ileti
+  t=$((t + 13))
+  printf 'Oct %2d %02d:%02d:%02d lab sshd[%d]: %s\n' \
+    "$1" $((9 + t / 3600)) $((t / 60 % 60)) $((t % 60)) "$2" "$3"
+}
+{
+  satir 9 1801 "Accepted publickey for deniz from 192.0.2.10 port 50110 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI"
+  satir 9 1830 "Failed password for ayse from 192.0.2.1 port 50201 ssh2"
+  satir 9 1830 "Accepted password for ayse from 192.0.2.1 port 50201 ssh2"
+  for k in admin test oracle admin ubuntu guest test admin pi admin; do
+    p=$((40000 + t))
+    satir 16 2210 "Invalid user $k from 203.0.113.45 port $p"
+    satir 16 2210 "Failed password for invalid user $k from 203.0.113.45 port $p ssh2"
+  done
+  for i in 1 2 3 4 5 6; do
+    satir 16 2305 "pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.7  user=root"
+    satir 16 2305 "Failed password for root from 198.51.100.7 port $((41000 + i)) ssh2"
+  done
+  satir 16 2400 "Accepted publickey for deniz from 192.0.2.10 port 52114 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI"
+  for i in 1 2 3; do
+    satir 16 2450 "Failed password for deniz from 198.51.100.23 port $((43000 + i)) ssh2"
+  done
+  satir 16 2450 "Accepted password for deniz from 198.51.100.23 port 43004 ssh2"
+  satir 16 2460 "Failed password for root from 203.0.113.45 port 40999 ssh2"
+} > "$cikti"</pre>
+
+<pre class="kod" data-ad="bash">mkdir -p ~/lab9 &amp;&amp; cd ~/lab9      # uret.sh'yi buraya kaydet
+bash uret.sh ssh-ornek.log
+wc -l ssh-ornek.log
+sha256sum ssh-ornek.log
+head -n 4 ssh-ornek.log</pre>
+<pre class="cikti">41 ssh-ornek.log
+46f7c6d87c9c5267527f93c3c62f4bfe7ca755ceaaa3e2a50def1499195413f7  ssh-ornek.log
+Oct  9 09:00:13 lab sshd[1801]: Accepted publickey for deniz from 192.0.2.10 port 50110 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI
+Oct  9 09:00:26 lab sshd[1830]: Failed password for ayse from 192.0.2.1 port 50201 ssh2
+Oct  9 09:00:39 lab sshd[1830]: Accepted password for ayse from 192.0.2.1 port 50201 ssh2
+Oct 16 09:00:52 lab sshd[2210]: Invalid user admin from 203.0.113.45 port 40039</pre>
+
+<p>Betik rastgelelik kullanmaz (zaman her satırda 13 saniye ilerler), bu yüzden dosya sende de birebir aynı olmalı: özet <code>46f7c6d8…</code> ile başlamıyorsa kopyalarken bir şey değişmiştir (Windows'tan kopyaladıysan satır sonlarına bak; Parça 6). <code>printf 'Oct %2d'</code> tek haneli günü syslog gibi iki boşlukla yazar; <code>${1:?…}</code> bu parçadaki korumadır.</p>
+
+<h3>Adım 2. Neyi sayacağına karar ver</h3>
+
+<pre class="kod" data-ad="bash">grep -c 'Failed password' ssh-ornek.log
+grep -c -i 'fail' ssh-ornek.log
+grep -c 'Invalid user' ssh-ornek.log
+grep -v -e 'Failed password' -e 'Invalid user' -e 'pam_unix' ssh-ornek.log | cut -c 33-</pre>
+<pre class="cikti">21
+27
+10
+Accepted publickey for deniz from 192.0.2.10 port 50110 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI
+Accepted password for ayse from 192.0.2.1 port 50201 ssh2
+Accepted publickey for deniz from 192.0.2.10 port 52114 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI
+Accepted password for deniz from 198.51.100.23 port 43004 ssh2</pre>
+
+<p>21 başarısız parola denemesi var; <code>-i fail</code> altı PAM satırını da saydı. 10 "Invalid user" satırı, "Failed password for invalid user" satırlarının eşidir: aynı denemenin iki kaydı. Son komut bilinen üç gürültü türünü atıp geriye kalanı gösteriyor: yalnız dört başarılı giriş (<code>cut -c 33-</code> zaman, makine ve süreç kısmını keser). Başka türden bir satır olsaydı burada çıkardı.</p>
+
+<h3>Adım 3. IP'ye ve kullanıcıya göre say</h3>
+
+<pre class="kod" data-ad="bash">grep 'Failed password' ssh-ornek.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn
+grep 'Failed password' ssh-ornek.log | awk '{print $(NF-5)}' | sort | uniq -c | sort -rn | head -n 4
+grep 'Failed password' ssh-ornek.log | awk '{print $9}' | sort | uniq -c | sort -rn</pre>
+<pre class="cikti">     11 203.0.113.45
+      6 198.51.100.7
+      3 198.51.100.23
+      1 192.0.2.1
+      7 root
+      4 admin
+      3 deniz
+      2 test
+     10 invalid
+      7 root
+      3 deniz
+      1 ayse</pre>
+
+<p>Birinci hat: en çok deneyen adres 203.0.113.45 (11 deneme), sonra 198.51.100.7 (6). Hattın her halkası bir iş yapar: <code>grep</code> satırı seçer, <code>awk</code> sondan dördüncü alanı (adres) çıkarır, <code>sort</code> aynı adresleri yan yana getirir, <code>uniq -c</code> sayar, <code>sort -rn</code> sayıya göre büyükten küçüğe dizer. İkinci hat kullanıcıları sayıyor: en çok <code>root</code> denenmiş; <code>admin</code>, <code>test</code> gibi var olmayan, tahmin edilen adlar da listede. Üçüncü hat Çözümlü örnek 1'deki yanlış sürümdür: 10 "invalid" tek bir sahte kullanıcıya dönüştü. Sende aynı sayıya sahip satırların sırası (örneğin birer kez denenen adlar) yerel ayara göre farklı olabilir.</p>
+
+<h3>Adım 4. Eşik ve "başarısızlıktan sonra giriş"</h3>
+
+<pre class="kod" data-ad="bash">grep 'Failed password' ssh-ornek.log | awk '{print $(NF-3)}' | sort | uniq -c | awk '$1 >= 5 {print $2, $1}'
+awk '/Failed password/ { for (i = 1; i &lt;= NF; i++) if ($i == "from") f[$(i+1)]++ }
+     /Accepted/ { for (i = 1; i &lt;= NF; i++) if ($i == "from") ip = $(i+1)
+                  if (ip in f) print "DIKKAT", $1, $2, $3, ip, f[ip], "basarisizliktan sonra giris:", $9 }' ssh-ornek.log</pre>
+<pre class="cikti">198.51.100.7 6
+203.0.113.45 11
+DIKKAT Oct 9 09:00:39 192.0.2.1 1 basarisizliktan sonra giris: ayse
+DIKKAT Oct 16 09:08:40 198.51.100.23 3 basarisizliktan sonra giris: deniz</pre>
+
+<p>İlk satır, <code>uniq -c</code>'nin çıktısını ikinci bir <code>awk</code>'a verip eşik uyguluyor: birinci alan (sayı) 5 ya da daha büyükse adresi ve sayıyı yaz. Eşiğin kaç olacağı bir karardır, doğal bir sabit değildir. İkinci komut tek bir <code>awk</code> programıdır ve bu parçadaki en önemli sorunun cevabını verir. "Failed password" satırlarında <code>from</code> sözcüğünü bulup ardındaki adresi <code>f</code> dizisinde sayar; "Accepted" satırında yine <code>from</code>'dan sonraki adresi alır ve bu adres daha önce başarısız olmuşsa uyarı basar. Burada <code>$(NF-3)</code> değil <code>from</code> araması kullanıldı, çünkü açık anahtarlı giriş satırının sonunda fazladan alanlar vardır (alan tablosuna bak). <code>awk</code> satırları sırayla okuduğu için yalnız <strong>önceki</strong> başarısızlıklar sayılır. Bu, Parça 67'de SIEM'de yazacağın korelasyon kuralının ("kısa sürede çok başarısızlık, ardından başarı") en küçük hâlidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Adım 4'ün iki "DIKKAT" satırını yorumla. Hangisi bir olay olabilir, hangisi büyük olasılıkla yanlış alarmdır ve sonraki adımın ne olur?</p>
+<p><strong>Adım 1.</strong> Bağlamı topla. <code>grep -B2 -F 'Accepted password for deniz' ssh-ornek.log</code> girişten önceki iki satırı gösterir; <code>grep -n -F -w 192.0.2.1</code> ile <code>ayse</code>'nin satırlarını bulursun.</p>
+<p><strong>Adım 2.</strong> <code>ayse</code>: 9 Ekim'de 192.0.2.1'den <strong>bir</strong> başarısız deneme, 13 saniye sonra aynı adresten ve aynı bağlantı numarasından (port 50201) başarılı giriş. Tek bir yanlış yazılmış parola ve düzeltme, insan davranışına uyar. Büyük olasılıkla yanlış alarmdır, ama "büyük olasılıkla"yı kullanıcıya sorarak doğrularsın.</p>
+<p><strong>Adım 3.</strong> <code>deniz</code>: 16 Ekim'de 198.51.100.23'ten üç ardışık başarısızlık ve dördüncüde parolayla giriş. Aynı kullanıcı her zamanki adresinden (192.0.2.10) <strong>açık anahtarla</strong> giriyor; bu sefer başka bir adresten ve <strong>parolayla</strong> girmiş. Alışkanlıktan iki sapma ve parola tahmini örüntüsü birlikte: ciddi bir olay adayıdır.</p>
+<p><strong>Adım 4.</strong> Sonraki adımlar (bu parçanın kapsamı dışında, yalnız yön): kullanıcıyla bağımsız bir kanaldan konuş, oturumun o adresten ne yaptığına bak, parolayı değiştir, mümkünse parola girişini kapatıp yalnız anahtarla girişe izin ver (Parça 18) ve olay müdahale sürecini başlat (Parça 70).</p>
+<p><strong>Sonuç:</strong> İki uyarı da aynı kurala takıldı ama ağırlıkları farklı: <code>ayse</code> düşük, <code>deniz</code> yüksek öncelikli. Komut satırı sana adayları bulur; karar, bağlamı (alışılmış adres, yöntem, saat, deneme sayısı) okuyarak verilir. Yanlış alarmın ne olduğunu Parça 69'da tespit mühendisliğiyle göreceksin.</p></div>
+
+<h3>Adım 5. tail -f ile kısa süreli canlı izleme</h3>
+
+<p>Şimdi büyüyen bir günlük taklit edelim: <code>yazici.sh</code> saniyede bir satır ekleyip üç satırdan sonra biter. <code>timeout 5</code>, <code>tail</code>'i beş saniye sonra durdurur; izleme sonsuza kadar açık kalmaz.</p>
+
+<pre class="kod" data-ad="yazici.sh">for ip in 203.0.113.45 198.51.100.7 203.0.113.45; do
+  sleep 1
+  echo "$(date +%T) lab sshd[3000]: Failed password for root from $ip port 40000 ssh2" >> canli.log
+done</pre>
+
+<pre class="kod" data-ad="bash">: > canli.log
+bash yazici.sh &amp; timeout 5 tail -n 0 -f canli.log; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">16:59:12 lab sshd[3000]: Failed password for root from 203.0.113.45 port 40000 ssh2
+16:59:13 lab sshd[3000]: Failed password for root from 198.51.100.7 port 40000 ssh2
+16:59:14 lab sshd[3000]: Failed password for root from 203.0.113.45 port 40000 ssh2
+(cikis kodu 124)</pre>
+
+<p><code>: &gt; canli.log</code> boş bir dosya açar (ya da var olanı sıfırlar; yalnız kendi deneme dosyanda yap). <code>&amp;</code> yazıcıyı arka planda başlatır. <code>tail -n 0 -f</code> eski satırları göstermeden yalnız yenilerini basar. Satırlar saniye arayla geldi; 124 çıkış kodu, <code>timeout</code>'un süre dolduğu için komutu durdurduğunu söyler. Saatler sende farklı olacaktır.</p>
+
+<p>Gerçek izlemede <code>tail</code>'i süzersin. Satırların <strong>ne zaman</strong> geldiğini ölçmek için her satırın başına başlangıçtan beri geçen saniyeyi yazalım:</p>
+
+<pre class="kod" data-ad="bash">: > canli.log; bas=$(date +%s)
+bash yazici.sh &amp; timeout 5 tail -n 0 -f canli.log | grep Failed | awk '{print $(NF-3)}' |
+  while read -r ip; do echo "$(( $(date +%s) - bas )). saniye: $ip"; done</pre>
+<pre class="cikti">5. saniye: 203.0.113.45
+5. saniye: 198.51.100.7
+5. saniye: 203.0.113.45</pre>
+
+<pre class="kod" data-ad="bash">: > canli.log; bas=$(date +%s)
+bash yazici.sh &amp; timeout 5 tail -n 0 -f canli.log | grep --line-buffered Failed | awk '{print $(NF-3); fflush()}' |
+  while read -r ip; do echo "$(( $(date +%s) - bas )). saniye: $ip"; done</pre>
+<pre class="cikti">1. saniye: 203.0.113.45
+2. saniye: 198.51.100.7
+3. saniye: 203.0.113.45</pre>
+
+<p>İlk sürümde üç satır da <strong>5. saniyede</strong>, yani <code>tail</code> durdurulunca geldi. Saldırı 1. saniyede başlamıştı, sen 5. saniyede gördün; gerçek bir izlemede bu gecikme dakikalar olabilir. Nedeni Parça 4'teki tampondur: <code>grep</code>'in ve <code>awk</code>'ın çıktısı terminal değil boru olduğu için ikisi de satırları biriktirir ve ancak tampon dolunca ya da girdi bitince yazar. İkinci sürümde <code>grep --line-buffered</code> (belgeye göre satır tamponu, karşılığında biraz yavaşlık) ve <code>awk</code>'ın <code>fflush()</code> işlevi her satırı hemen gönderir; satırlar 1., 2. ve 3. saniyede geldi. Yalnız birini düzeltmek yetmez: bu parçadaki denemede yalnız <code>--line-buffered</code> eklendiğinde de satırlar 5. saniyede geldi, çünkü <code>awk</code> hâlâ tamponluyordu. <strong>Canlı izleyen bir hattın her halkası satır tamponlu olmalı.</strong> Günlük döndürülen gerçek bir dosyada <code>-f</code> yerine <code>-F</code> kullanırsın.</p>
+
+<h3>Adım 6. find ile son değişen dosyaları bul</h3>
+
+<p>Küçük bir dizin ağacı kuralım: bazı dosyalar eski tarihli, sonra "olay" anı için bir referans dosya, ardından bir yapılandırma dosyasına satır eklenmesi, geçici dizinde gizli adlı çalıştırılabilir bir betik ve boşluklu adlı bir dosya. Bunlar bir saldırı değil, yalnız "olaydan sonra değişenleri bul" alıştırmasının malzemesidir.</p>
+
+<pre class="kod" data-ad="bash">mkdir -p agac/etc agac/bin agac/tmp
+touch -d '2026-09-01 10:00' agac/etc/ayar.conf agac/etc/kullanicilar agac/bin/araclar.sh
+touch -d '2026-10-10 08:00' agac/etc/hosts
+touch referans
+sleep 1
+echo 'yeni satir' >> agac/etc/ayar.conf
+printf '#!/bin/sh\necho merhaba\n' > agac/tmp/.gizli-betik
+chmod +x agac/tmp/.gizli-betik
+touch 'agac/tmp/bos luklu ad.txt'
+find agac -type f | sort</pre>
+<pre class="cikti">agac/bin/araclar.sh
+agac/etc/ayar.conf
+agac/etc/hosts
+agac/etc/kullanicilar
+agac/tmp/bos luklu ad.txt
+agac/tmp/.gizli-betik</pre>
+
+<p><code>touch -d</code> bir dosyanın değişiklik zamanını istediğin tarihe ayarlar; burada eski dosyaları taklit etmek için kullandık ve aynı kolaylığın bir saldırganın elinde de olduğunu unutma. <code>touch referans</code> "olay anı"nı işaretler; <code>sleep 1</code>, sonraki değişikliklerin ondan kesin olarak yeni olmasını sağlar.</p>
+
+<pre class="kod" data-ad="bash">find agac -type f -newer referans | sort
+find agac -type f -mtime +7 | sort
+find agac -type f -newer referans -printf '%TF %TH:%TM  %m  %p\n' | sort</pre>
+<pre class="cikti">agac/etc/ayar.conf
+agac/tmp/bos luklu ad.txt
+agac/tmp/.gizli-betik
+agac/bin/araclar.sh
+agac/etc/kullanicilar
+2026-10-16 16:59  644  agac/etc/ayar.conf
+2026-10-16 16:59  644  agac/tmp/bos luklu ad.txt
+2026-10-16 16:59  755  agac/tmp/.gizli-betik</pre>
+
+<p>Referanstan sonra üç dosya değişti: eski tarihli olduğu hâlde içine satır eklenen <code>ayar.conf</code>, yeni boşluklu dosya ve gizli betik. <code>-mtime +7</code> bir haftadan eski iki dosyayı verdi; <code>hosts</code> 6 gün önceye ayarlandığı için ikisinde de yok. <code>-printf</code> satırı bir zaman çizelgesi gibi okunur: tarih, saat, sekizli izin (<code>755</code>, çalıştırılabilir demek; Parça 12) ve yol. <code>/tmp</code> altında, gizli adlı ve çalıştırılabilir bir dosya, gerçek bir incelemede ilk bakılacaklardandır. Saatler sende farklı olacaktır.</p>
+
+<pre class="kod" data-ad="bash">find agac -type f -newer referans | xargs wc -c
+find agac -type f -newer referans -print0 | xargs -0 wc -c</pre>
+<pre class="cikti">wc: agac/tmp/bos: No such file or directory
+wc: luklu: No such file or directory
+wc: ad.txt: No such file or directory
+23 agac/tmp/.gizli-betik
+11 agac/etc/ayar.conf
+34 total
+ 0 agac/tmp/bos luklu ad.txt
+23 agac/tmp/.gizli-betik
+11 agac/etc/ayar.conf
+34 total</pre>
+
+<p>Sonuçları başka bir komuta verirken fark ortaya çıkar. Düz <code>xargs</code> girdiyi boşluklardan böldü ve <code>bos luklu ad.txt</code>'yi üç olmayan dosyaya dönüştürdü; toplam yine "34" dediği için hata kolayca gözden kaçar. <code>-print0</code> adları NUL baytıyla ayırır, <code>xargs -0</code> da yalnız NUL'dan böler; NUL bir dosya adında bulunamayacağı için bu yol her adla doğru çalışır (dolaşmak bölümündeki kurala bak). Kod rafı Parça 18'deki bütünlük izleyicisi de bu yüzden <code>-print0</code> kullanır.</p>
+
+<h3>Adım 7. rm'i önceden görmek: boş değişken ve joker</h3>
+
+<p>Bu adımda hiçbir şey silinmez; her satır <code>echo</code> ile yalnız kabuğun <code>rm</code>'e vereceği listeyi yazar. Yine de kopyalarken <code>echo</code>'yu atlamamaya dikkat et.</p>
+
+<pre class="kod" data-ad="bash">hedef=''
+echo rm -rf "$hedef"/* | cut -c 1-48</pre>
+<pre class="cikti">rm -rf /bin /boot /dev /etc /home /init /lib /li</pre>
+
+<p>Değişken boş, tırnak yerinde, ama <code>/*</code> kök dizinde genişledi ve liste sistemin bütün üst düzey dizinlerini içeriyor (<code>cut</code> ile ilk 48 karakteri gösterdik; <code>/init</code> WSL'ye özgüdür). <code>echo</code> olmasaydı <code>rm</code> bu listeyi alacaktı; sıradan kullanıcı olduğun için çoğu sistem dizinine yazamazsın, ama ev dizinin ve bağlı Windows sürücülerin (<code>/mnt/c</code>) silinebilirdi.</p>
+
+<pre class="kod" data-ad="bash">bash -c 'set -u; echo rm -rf "$hedef2"/*'; echo "(cikis kodu $?)"
+bash -c 'set -u; hedef2=""; echo rm -rf "$hedef2"/* | cut -c 1-48'
+bash -c 'hedef2=""; echo rm -rf "${hedef2:?bos ya da tanimsiz}"/*'; echo "(cikis kodu $?)"
+bash -c 'hedef2=deneme; echo rm -rf -- "${hedef2:?bos ya da tanimsiz}"/*'</pre>
+<pre class="cikti">bash: line 1: hedef2: unbound variable
+(cikis kodu 127)
+rm -rf /bin /boot /dev /etc /home /init /lib /li
+bash: line 1: hedef2: bos ya da tanimsiz
+(cikis kodu 127)
+rm -rf -- deneme/7 deneme/a.txt deneme/-l deneme/rapor 2026.txt</pre>
+
+<p>Her satır, betik gibi davranması için ayrı bir <code>bash -c</code> içinde koşuyor. Birincide <code>hedef2</code> hiç tanımlanmamış; <code>set -u</code> bunu yakaladı ve kabuk komutu çalıştırmadan çıktı. İkincide değişken <strong>tanımlı ama boş</strong>; <code>set -u</code> hiçbir şey demedi ve tehlikeli liste yine üretildi. Üçüncüde <code>${hedef2:?…}</code> boşluğu yakaladı, iletiyi yazdı ve satır çalışmadı. Dördüncüde değişken dolu, <code>--</code> yerinde: liste yalnız <code>deneme</code>'nin içindekiler ve <code>-l</code> dosyası artık bir ad. <code>echo</code> çıktısında <code>rapor 2026.txt</code> iki sözcük gibi görünse de <code>rm</code>'e tek argüman olarak gider; emin olmak istersen <code>echo</code> yerine <code>printf '[%s]\n'</code> kullan.</p>
+
+<p>İş bitince <code>~/lab9</code>'u silebilirsin; bunu da önce <code>echo</code> ile dene: <code>echo rm -rf -- ~/lab9</code>.</p>
+
+<h2 class="s">Bu araçların sınırı ve sonraki adımlar</h2>
+
+<p>Bu boru hatları tek dosya ve tek makine için yeterlidir. Gerçek sistemde kimlik günlükleri systemd günlüğünde (journal) olabilir; bu ortamda <code>/var/log/auth.log</code> yoktu. Günlüklerin yerleri ve <code>journalctl</code> Parça 17'de; günlükleri merkezde toplamak ve korelasyon Parça 66–67'de; biçim karmaşıklaşınca aynı sayım Python'da (kod rafı Parça 7, 12) daha sınanabilirdir. Debian ve Ubuntu'da varsayılan <code>awk</code> çoğunlukla <code>mawk</code>'tır, bu ortamda <code>gawk</code> vardı; burada kullanılan özellikler ikisinde de bulunur.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 4 ve 6'ya:</strong> Borudaki tampon, Parça 4'teki glibc tamponunun aynısıdır; <code>wc -c</code> ile <code>wc -m</code> farkı Parça 6'daki bayt-karakter ayrımıdır.</p>
+<p><strong>Parça 7 ve 8'e:</strong> Tehlikeli temizlikten önce anlık görüntü alırsın; dosya sistemi hiyerarşisi, gizli dosyalar ve sembolik bağlar Parça 8'den.</p>
+<p><strong>Parça 12, 17 ve 18'e:</strong> <code>find -perm</code> ve <code>755</code> gibi izinler Parça 12'de; günlüklerin yeri, <code>journalctl</code> ve günlük döndürme Parça 17'de; anahtarla giriş ve parola girişini kapatma Parça 18'de.</p>
+<p><strong>Parça 52, 66–67, 69–71 ve 72–73'e:</strong> Tırnaksız değişkenin veriyi komuta çevirmesi, komut enjeksiyonunun kabuktaki köküdür (Parça 52). "Başarısızlıktan sonra giriş" kuralı SIEM korelasyonunun çekirdeğidir (Parça 66–67); yanlış alarm (Parça 69), olay müdahalesi (Parça 70) ve zaman çizelgesi (Parça 71) buradan büyür. Bu araçların yalnız kendi ya da izinli sistemlerde kullanılmasının hukuki dayanağı Parça 72–73'te.</p>
+<p><strong>Kod rafına:</strong> Parça 15–18 (kabuk, boru, tırnak, <code>find</code>/<code>xargs</code>) bu parçanın zemini; Parça 12'deki düzenli ifade burada <code>grep -E</code> ve <code>-P</code> lehçelerinde yeniden çıktı; Parça 7 ve 12'deki Python günlük analizi aynı sayımın betik hâlidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir dizindeki dosyaları saymak için ls | wc -l kullanmak neden güvenilmez, doğrusu nedir?</summary><p>Linux'ta dosya adı eğik çizgi ve NUL dışında her baytı, satır sonu da dahil, içerebilir. Çıktı boruya giderken ls adları olduğu gibi basar; adında satır sonu olan tek bir dosya iki satır sayılır. Doğrusu adları NUL ile ayırmaktır: find dizin -maxdepth 1 -type f -print0 gibi bir çıktıyı NUL'a göre sayan bir araçla işlemek; tuhaf adları görmek için de ls -b kullanılır.</p></details>
+<details><summary>grep -c 192.0.2.1 neden 192.0.2.10'un satırlarını da sayar ve nasıl düzeltilir?</summary><p>Düzenli ifadede nokta herhangi bir karakterle eşleşir ve grep deseni satırın her yerinde arar; 192.0.2.10 dizgisinin içinde 192.0.2.1 vardır. -F noktayı düz karakter yapar, -w eşleşmenin önünde ve arkasında harf, rakam ya da alt çizgi olmamasını ister. grep -c -F -w 192.0.2.1 yalnız o adresi sayar.</p></details>
+<details><summary>sort kopya.log > kopya.log neden dosyayı boşaltır ve hangi üç yolla önlenir?</summary><p>Kabuk yönlendirmeyi komuttan önce kurar: > dosyayı yazmak için açıp sıfırlar, sort ancak sonra boş dosyayı okur. Önlemler: sort -o kopya.log kopya.log (önce hepsini okur), sonucu yeni bir dosyaya yazıp sonra taşımak, set -o noclobber ile var olan dosyanın üstüne > ile yazmayı engellemek.</p></details>
+<details><summary>uniq -c'den önce neden sort gerekir?</summary><p>uniq yalnız art arda gelen aynı satırları birleştirir. Sırasız girdide aynı değer başka satırlarla ayrılmışsa her parçası ayrı sayılır ve sayı olduğundan küçük görünür. sort aynı değerleri yan yana getirir; ardından uniq -c doğru sayar.</p></details>
+<details><summary>Günlükten kullanıcı adı çıkarırken alanı neden satırın sonundan sayarsın?</summary><p>Satırın başı kayar: var olmayan kullanıcı için invalid user iki sözcük ekler, zaman damgası dağıtıma göre bir ya da üç alan olabilir ve kullanıcı adını karşı taraf seçtiği için içeriği öngörülemez. Failed password satırlarının sonu ise sabittir (adres port numara ssh2); kullanıcı NF-5, adres NF-3 alanındadır. Satır sonu da değişken olabiliyorsa from gibi sabit bir anahtar sözcüğe göre sayılır.</p></details>
+<details><summary>tail -f | grep | awk hattında satırlar neden geç gelir ve nasıl düzeltilir?</summary><p>grep ve awk'ın çıktısı terminal değil boru olduğunda ikisi de tamponlar ve satırları ancak tampon dolunca ya da girdi bitince yazar. grep --line-buffered ve awk içinde fflush() her satırı hemen gönderir; hattın her halkası satır tamponlu olmalıdır, birini düzeltmek yetmez.</p></details>
+<details><summary>set -u ile ${hedef:?} arasındaki fark nedir?</summary><p>set -u yalnız tanımlanmamış değişkeni hata sayar; hedef="" gibi tanımlı ama boş bir değişkene ses çıkarmaz ve "$hedef"/* yine /* olur. ${hedef:?ileti} değişken boşsa da tanımsızsa da iletiyi yazar ve komutu çalıştırmaz; etkileşimsiz kabuk çıkar.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Dosya adı veridir:</strong> <code>/</code> ve NUL dışında her bayt olabilir (boşluk, satır sonu, baştaki tire). <code>ls -b</code> ile gör; <code>ls</code> çıktısını ayrıştırma; <code>find -print0 | xargs -0</code>.</li>
+<li><strong>Konum:</strong> <code>pwd -P</code> gerçek yolu verir; bağı <code>ls -l</code> gösterir.</li>
+<li><strong>Bakmak:</strong> <code>less</code> salt okur ve kontrol karakterlerini <code>^[</code> diye gösterir; güvenmediğin günlüğü <code>cat</code> ile basma (<code>cat -v</code>). <code>tail -F</code> günlük döndürmeye dayanır.</li>
+<li><strong>find:</strong> <code>-type f -mmin -30</code>, <code>-mtime +7</code>, <code>-newer referans</code>, <code>-perm -u+x</code>, <code>-printf</code>. İfade soldan sağa: <code>-delete</code>'den önce <code>-print</code> ile dene.</li>
+<li><strong>grep:</strong> BRE (varsayılan), ERE (<code>-E</code>), düz metin (<code>-F</code>), PCRE (<code>-P</code>). IP/ad ararken <code>-F -w</code>. Desenin yakaladığını <code>-o</code> ile gör, geriye kalanı <code>-v</code> ile sına.</li>
+<li><strong>Yönlendirme:</strong> kabuk önce kurar → <code>sort f &gt; f</code> dosyayı boşaltır; <code>sort -o</code>, yeni dosya, <code>set -o noclobber</code>. <code>2&gt;/dev/null</code> bakamadığın yeri gizler; hataları dosyaya yaz ve say.</li>
+<li><strong>Sayma:</strong> <code>sort | uniq -c | sort -rn</code>; <code>uniq</code> yalnız komşuları birleştirir; <code>-n</code> sayısal; IP için <code>sort -t . -k1,1n -k2,2n -k3,3n -k4,4n</code>; <code>wc -l</code> satır sonu sayar.</li>
+<li><strong>cut / awk:</strong> değişken boşluklu metinde <code>awk</code>; alanı sabit uçtan (<code>$(NF-3)</code>) ya da <code>from</code> gibi anahtar sözcükten say; <code>say[x]++</code> ve <code>END</code>; sonucu toplamla sağla.</li>
+<li><strong>Canlı izleme:</strong> <code>timeout 5 tail -n 0 -f</code>; her halka satır tamponlu: <code>grep --line-buffered</code>, <code>awk … fflush()</code>.</li>
+<li><strong>rm:</strong> önce <code>echo</code>; <code>"${x:?ileti}"</code> boş ve tanımsızı durdurur, <code>set -u</code> yalnız tanımsızı; <code>--</code> ya da <code>./*</code>; <code>--preserve-root</code> <code>/*</code>'ı kapsamaz.</li>
+<li><strong>Tırnak:</strong> değişken <code>"$x"</code>, desen ve <code>awk</code> programı <code>'…'</code>; tırnaksız veri komuta dönüşür.</li>
+<li><strong>Sınır:</strong> yalnız kendi ya da izinli sistemlerin günlükleri (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-9">
+<h3>Quiz 9</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on bir tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>~/lab9/agac</code> altında, içeriği son 30 dakika içinde değişmiş normal dosyaları listelemek için hangi komut doğrudur?</p>
+<ul class="sec"><li><code>find ~/lab9/agac -type d -mmin -30</code></li><li><code>find ~/lab9/agac -type f -mmin -30</code></li><li><code>find ~/lab9/agac -type f -mmin +30</code></li><li><code>find ~/lab9/agac -type f -mtime -30</code></li><li><code>ls -R ~/lab9/agac | grep 30</code></li></ul>
+<div class="coz"><p><code>-type f</code> normal dosyaları seçer, <code>-mmin -30</code> içeriği 30 dakikadan kısa süre önce değişmiş olanları; eksi işareti "daha az" demektir. A dizinleri (<code>-type d</code>) arar. C'deki artı işareti "30 dakikadan daha eski" demektir, tam tersi. D'deki <code>-mtime</code> gün cinsindendir; son 30 günü verir. E zamanla hiç ilgilenmez, yalnız adında ya da satırında "30" geçenleri süzer.</p></div></li>
+
+<li data-c="D"><p class="q"><code>printf 'x\ny\ny\nx\n' | uniq -c</code> komutunun çıktısı hangisidir? (Satırları "sayı ad" diye, sırayla yazıyoruz.)</p>
+<ul class="sec"><li>2 x · 2 y</li><li>1 x · 1 y</li><li>2 y · 2 x</li><li>1 x · 2 y · 1 x</li><li>4 x</li></ul>
+<div class="coz"><p><code>uniq</code> yalnız art arda gelen aynı satırları birleştirir: önce tek bir <code>x</code>, sonra yan yana iki <code>y</code>, sonra yine tek bir <code>x</code>; çıktı <code>1 x</code>, <code>2 y</code>, <code>1 x</code> olur (bu parçanın ortamında çalıştırılarak doğrulandı). A, girdi önce <code>sort</code>'tan geçseydi alınacak sonuçtur. B, <code>sort -u</code> gibi tekrarları atmakla saymayı karıştırıyor. C sıralanmış ve büyükten küçüğe dizilmiş bir sonucu varsayıyor. E bütün satırları aynı sanıyor.</p></div></li>
+
+<li data-c="A"><p class="q">Bir günlükte <code>192.0.2.1</code> adresinden yalnız iki satır olduğunu biliyorsun, ama <code>grep -c 192.0.2.1 gunluk</code> 4 diyor. En doğru açıklama ve düzeltme hangisidir?</p>
+<ul class="sec"><li>Nokta düzenli ifadede herhangi bir karakterle eşleşir ve desen <code>192.0.2.10</code>'un içinde de bulunur; <code>grep -c -F -w 192.0.2.1</code> kullanılmalıdır.</li><li><code>grep</code> varsayılan olarak büyük-küçük harf ayırmaz; <code>-i</code> kapatılmalıdır.</li><li><code>-c</code> satırları değil, satırdaki eşleşme sayısını toplar; <code>-l</code> kullanılmalıdır.</li><li>IP adresleri günlükte ikili sayı olarak saklandığı için metin araması yanılır; <code>xxd</code> ile bakılmalıdır.</li><li>Sayım doğrudur; adres her satırda iki kez geçtiği için 4 çıkar.</li></ul>
+<div class="coz"><p>Deseni düzenli ifade olarak yorumlayan <code>grep</code>, noktayı "herhangi bir karakter" sayar ve eşleşmeyi satırın her yerinde arar; <code>192.0.2.10</code> içeren satırlar da sayılır. <code>-F</code> deseni düz metin yapar, <code>-w</code> eşleşmenin bütün sözcük olmasını ister; bu parçadaki günlükte sonuç 4'ten 2'ye indi. B yanlış: <code>grep</code> varsayılan olarak harf duyarlıdır ve rakamlarda harf yoktur. C yanlış: <code>-c</code> eşleşen <strong>satırları</strong> sayar; <code>-l</code> ise yalnız dosya adını verir. D yanlış: metin günlüğünde adres yazı olarak durur. E, olmayan bir veriyi varsayıyor.</p></div></li>
+
+<li data-c="C"><p class="q"><code>sort kopya.log &gt; kopya.log</code> komutundan sonra <code>kopya.log</code> için hangisi doğrudur?</p>
+<ul class="sec"><li>Dosya sıralanmış hâliyle güvenle kaydedilir.</li><li>Kabuk hata verir ve dosya hiç değişmeden kalır.</li><li>Dosya boşalır, çünkü kabuk <code>&gt;</code> yönlendirmesini <code>sort</code> çalışmadan önce kurup dosyayı sıfırlar; <code>sort</code> boş bir dosya okur.</li><li>Her satır iki kez yazılır, çünkü <code>sort</code> hem okur hem yazar.</li><li>Dosya ikili biçime dönüşür ve <code>less</code> ile açılamaz.</li></ul>
+<div class="coz"><p>Yönlendirmeleri komuttan önce kabuk kurar: <code>&gt;</code> hedefi yazmak için açar ve uzunluğunu sıfırlar; ardından çalışan <code>sort</code> boş dosyayı okur ve boş bir sonuç yazar. Bu parçadaki denemede 41 satır 0'a indi. A, <code>sort -o kopya.log kopya.log</code>'un sonucudur; <code>-o</code> önce bütün girdiyi okur. B ancak <code>set -o noclobber</code> açıksa olur; varsayılan bu değildir. D ve E'nin dayanağı yoktur.</p></div></li>
+
+<li data-c="E"><p class="q"><code>g.log</code> şu beş satırdan oluşuyor:<br><code>Failed password for root from 203.0.113.5 port 1 ssh2</code><br><code>Failed password for invalid user admin from 198.51.100.9 port 2 ssh2</code><br><code>Failed password for root from 198.51.100.9 port 3 ssh2</code><br><code>Accepted password for deniz from 192.0.2.4 port 4 ssh2</code><br><code>Failed password for invalid user test from 198.51.100.9 port 5 ssh2</code><br><code>grep Failed g.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn | head -n 1</code> komutunun çıktısı hangisidir?</p>
+<ul class="sec"><li><code>1 203.0.113.5</code></li><li><code>2 user</code></li><li><code>4 198.51.100.9</code></li><li><code>2 root</code></li><li><code>3 198.51.100.9</code></li></ul>
+<div class="coz"><p>Dört "Failed" satırında sondan dördüncü alan adrestir: 203.0.113.5 bir kez, 198.51.100.9 üç kez; <code>sort -rn | head -n 1</code> en büyüğü verir: <code>3 198.51.100.9</code> (çalıştırılarak doğrulandı). A, <code>-r</code> unutulup küçükten büyüğe sıralandığında çıkar. B, alan sabit konumdan (<code>$5</code>) okunduğunda çıkar: <code>invalid user</code> satırlarında beşinci alan "user" olur. C, "Failed" satır sayısını (4) adresin sayısı sanmaktır. D, kullanıcı alanı (<code>$(NF-5)</code>) sayılınca çıkar.</p></div></li>
+
+<li data-c="A"><p class="q"><code>f='rapor 2026.txt'</code> atamasından sonra <code>ls -l $f</code> çalıştırılıyor (tırnaksız). Ne olur?</p>
+<ul class="sec"><li>Kabuk değeri boşluktan böler; <code>ls</code> <code>rapor</code> ve <code>2026.txt</code> diye iki ayrı argüman alır ve ikisini de bulamaz.</li><li><code>ls</code> dosyayı sorunsuz listeler; tırnak yalnız görünüş içindir.</li><li><code>ls</code> argüman olarak <code>$f</code> dizgisini alır ve o adla bir dosya arar.</li><li><code>ls</code> tek argüman alır: tırnak işaretleri dahil <code>'rapor 2026.txt'</code>.</li><li>Kabuk dosyayı siler, çünkü boşluklu adlar geçersizdir.</li></ul>
+<div class="coz"><p>Tırnaksız değişken genişletildikten sonra sözcük bölmesine uğrar; boşluk ayırıcı olduğu için iki argüman çıkar. Bu parçada <code>printf '[%s]\n' $f</code> çıktısı <code>[rapor]</code> ve <code>[2026.txt]</code> oldu; <code>ls</code> iki olmayan dosya için hata verir. B tırnağın işlevini yok sayıyor. C yanlış: kabuk değişkeni genişletir, <code>ls</code> <code>$</code> işaretini hiç görmez. D yanlış: atamadaki tek tırnaklar değerin parçası değildir, kaldırılmıştır. E'nin dayanağı yoktur; boşluklu ad geçerlidir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir betikte <code>rm -rf "$hedef"/*</code> satırı var ve <code>hedef</code> bazen boş bir değerle geliyor. Aşağıdakilerden hangisi bu satırı en iyi korur?</p>
+<ul class="sec"><li>Betiğin başına yalnız <code>set -u</code> eklemek</li><li>Tırnakları kaldırmak: <code>rm -rf $hedef/*</code></li><li>Hata akışını susturmak: <code>rm -rf "$hedef"/* 2&gt;/dev/null</code></li><li><code>rm -rf -- "${hedef:?hedef bos}"/*</code></li><li>Jokeri tırnağa almak: <code>rm -rf "$hedef/*"</code></li></ul>
+<div class="coz"><p><code>${hedef:?ileti}</code>, değişken boş ya da tanımsızsa iletiyi yazar ve komutu çalıştırmaz; <code>--</code> da tireyle başlayan adların seçenek sanılmasını önler. A yetmez: <code>set -u</code> yalnız tanımsızı yakalar; bu parçadaki denemede <code>hedef=""</code> iken liste yine <code>/bin /boot …</code> diye üretildi. B durumu kötüleştirir: boşluklu değerler bölünür ve boşken yine <code>/*</code> çıkar. C hataları gizler, silmeyi durdurmaz. E jokeri tırnak içine aldığı için genişlemesini engeller ve <code>*</code> adlı tek bir dosyayı arar; amaç bu değildir ve boşluk sorununu çözmez.</p></div></li>
+
+<li data-c="C"><p class="q"><code>timeout 5 tail -n 0 -f canli.log | grep Failed | awk '{print $(NF-3)}'</code> hattında, dosyaya saniyede bir satır eklendiği hâlde çıktılar ancak beş saniyenin sonunda topluca görünüyor. Nedeni ve düzeltmesi hangisidir?</p>
+<ul class="sec"><li><code>tail -f</code> dosyayı yalnız kapanırken okur; <code>tail -F</code> kullanılmalıdır.</li><li><code>timeout</code> çıktıyı süre dolana kadar bekletir; <code>timeout</code> kaldırılmalıdır.</li><li><code>grep</code> ve <code>awk</code>'ın çıktısı terminal değil boru olduğu için ikisi de tamponlar; <code>grep --line-buffered</code> ve <code>awk</code>'ta <code>fflush()</code> gerekir.</li><li>Borular veriyi yalnız yazan süreç bitince iletir; boru kullanmadan ara dosya yazılmalıdır.</li><li><code>awk</code> bütün girdiyi belleğe almadan satır işleyemez; <code>cut</code> kullanılmalıdır.</li></ul>
+<div class="coz"><p>Çıktı terminale gitmediğinde araçlar tam tampon kullanır ve satırları ancak tampon dolunca ya da girdi bitince yazar (Parça 4'teki glibc tamponu). Bu parçadaki denemede iki düzeltme birlikte uygulanınca satırlar 1., 2. ve 3. saniyede geldi; yalnız <code>--line-buffered</code> eklemek yetmedi. A yanlış: <code>tail -f</code> yeni satırları hemen basar (ilk denemede saniye arayla geldiler); <code>-F</code> günlük döndürmeyle ilgilidir. B yanlış: <code>timeout</code> yalnız süreyi sınırlar. D yanlış: boru veriyi yazıldığı anda iletir. E yanlış: <code>awk</code> satır satır işler; sorun işlemede değil, çıktının tamponlanmasındadır.</p></div></li>
+
+<li data-c="E" data-k="siber-1"><p class="q">8 bitlik ikiye tümleyen gösteriminde <code>11111111</code> deseninin işaretli değeri nedir?</p>
+<ul class="sec"><li>255</li><li>−127</li><li>−128</li><li>0</li><li>−1</li></ul>
+<div class="coz"><p>İkiye tümleyende en soldaki bitin ağırlığı −128'dir; öbür yedi bit 64 + 32 + 16 + 8 + 4 + 2 + 1 = 127 eder; −128 + 127 = −1. Saat kadranı benzetmesiyle, 0'dan bir adım geri gidince bu desene düşülür. A aynı desenin işaretsiz okunuşudur. B, işaret-büyüklük gösterimiyle karıştırmaktır. C, <code>10000000</code> deseninin değeridir. D, <code>00000000</code>'dır; ikiye tümleyende tek bir sıfır vardır.</p></div></li>
+
+<li data-c="B" data-k="siber-2"><p class="q">x86-64 için derlenmiş bir program bir ARM işlemcide neden doğrudan çalışmaz?</p>
+<ul class="sec"><li>ARM işlemcilerde yazmaç bulunmadığı için</li><li>İki işlemci ailesinin komut kümesi mimarisi farklı olduğu için: aynı baytlar iki ailede başka anlamlara gelir ya da geçersizdir</li><li>ARM işlemciler yalnız yorumlanan dilleri çalıştırabildiği için</li><li>Programın onaltılık değil ikili biçimde saklanması gerektiği için</li><li>ARM'de program sayacı olmadığı için</li></ul>
+<div class="coz"><p>Komut kümesi, bir işlemci ailesinin hangi komutları tanıdığını ve her komutun hangi baytlarla yazıldığını belirleyen sözleşmedir; x86-64 ve ARM ayrı sözleşmelerdir (x86-64 komutları 1–15 bayt arası değişken uzunlukta, ARM'ınkiler 4 bayttır). A ve E yanlış: her işlemcide yazmaçlar ve bir program sayacı vardır. C yanlış: ARM için derlenmiş makine kodu doğrudan çalışır. D anlamsızdır: onaltılık yalnız baytları gösterme biçimidir, saklanan her şey ikilidir.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">x86-64'te <code>call</code> komutu yığına hangi değeri iter?</p>
+<ul class="sec"><li><code>call</code>'dan hemen sonra gelen komutun adresini (dönüş adresi)</li><li>Çağrılan fonksiyonun ilk komutunun adresini</li><li>Çağrılan fonksiyonun döndüreceği değeri</li><li>Yığının o anki boyutunu</li><li>Öbekten ayrılan bloğun adresini</li></ul>
+<div class="coz"><p><code>call</code>, kendisinden hemen sonra gelen komutun adresini yığına iter ve program sayacını çağrılan fonksiyonun başına atar; <code>ret</code> bu değeri yığından alıp program sayacına koyar ve yürütme kaldığı yerden sürer. B, <code>call</code>'ın atladığı hedeftir; yığına konan değil. C dönüş değeridir; x86-64'te çoğunlukla bir yazmaçla döner. D ve E'nin <code>call</code> ile ilgisi yoktur.</p></div></li>
+
+<li data-c="C" data-k="siber-4"><p class="q">Satırlarını <code>printf</code> ile yazan bir C programı terminalde çalışırken çöktüğünde son satırlarını gösteriyor, ama <code>./prog | grep hata</code> biçiminde boruya verildiğinde çöktüğünde son satırlar hiç görünmüyor. En doğru açıklama hangisidir?</p>
+<ul class="sec"><li><code>grep</code>, çöken programların çıktısını kendiliğinden siler.</li><li><code>printf</code> bir sistem çağrısıdır ve borulara yazamaz.</li><li>Çıktı boruya giderken glibc tam tampon kullanır; satırlar tamponda bekler, program çöktüğünde <code>write</code> hiç yapılmamış olur.</li><li>Borular yalnız ikili veri taşır, metin taşımaz.</li><li>Çekirdek, boruya bağlı süreçlerin sistem çağrılarını engeller.</li></ul>
+<div class="coz"><p><code>printf</code> bir sistem çağrısı değil, glibc'nin tamponlu işlevidir: çıktı terminaldeyse satır tamponu (her satır sonunda bir <code>write</code>), dosya ya da boruysa tam tampon (tampon dolunca bir <code>write</code>) kullanılır. Program çökerse tamponda bekleyen satırlar çekirdeğe hiç ulaşmaz. B bu ayrımı tersine çeviriyor. A, D ve E'nin dayanağı yoktur: <code>grep</code> girdisini silmez, borular bayt taşır, çekirdek boruya yazmayı engellemez.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">443 numaralı portta dinleyecek bir web sunucusunu en az yetki ilkesine göre çalıştırmak için hangisi en uygundur?</p>
+<ul class="sec"><li>Sunucuyu bütün root yetkileriyle çalıştırmak</li><li>Sunucunun çalıştırılabilir dosyasının iznini herkese yazılabilir yapmak</li><li>ASLR'yi sistem genelinde kapatmak</li><li>Sürece yalnız <code>CAP_NET_BIND_SERVICE</code> yeteneğini vermek, öbür root güçlerini vermemek</li><li>Sunucuyu çekirdek modunda (ring 0) çalıştırmak</li></ul>
+<div class="coz"><p>Yetenekler root'un gücünü parçalara böler; 1024'ün altındaki portlara bağlanmak için yalnız <code>CAP_NET_BIND_SERVICE</code> gerekir. Böylece süreç ele geçirilse bile dosya izinlerini atlama gibi başka güçleri yoktur. A tam tersidir. B herkesin sunucu dosyasını değiştirebilmesi demektir. C bütün süreçlerin korumasını kaldırır ve portla ilgisi yoktur. E, kullanıcı programını çekirdek ayrıcalığına çıkarmak olurdu; böyle bir yol zaten yoktur.</p></div></li>
+
+<li data-c="B" data-k="siber-6"><p class="q">UTF-8 kullanan bir sistemde <code>printf 'ğ' | wc -c</code> ne yazar?</p>
+<ul class="sec"><li>1</li><li>2</li><li>3</li><li>4</li><li>8</li></ul>
+<div class="coz"><p><code>wc -c</code> bayt sayar; UTF-8'de <code>ğ</code> (U+011F) iki baytla, <code>C4 9F</code> ile yazılır. Bu ortamda çalıştırılarak 2 bulundu; <code>wc -m</code> ise 1 karakter dedi. A, karakter ile baytı karıştırmaktır (cp1254'te <code>ğ</code> gerçekten tek bayttır, ama soru UTF-8'i soruyor). C ve D, üç ve dört baytlık UTF-8 karakterleri için geçerlidir. E bayt ile biti karıştırıyor.</p></div></li>
+
+<li data-c="E" data-k="siber-6"><p class="q">Aşağıdakilerden hangisi bir anahtar kullanır ve veriyi ancak anahtarın sahibi geri çevirebilir?</p>
+<ul class="sec"><li>Base64</li><li>URL kodlaması</li><li>gzip sıkıştırması</li><li>SHA-256</li><li>AES şifrelemesi</li></ul>
+<div class="coz"><p>Gizlilik yalnız şifrelemede vardır: AES bir anahtarla şifreler ve yalnız anahtarı bilen çözebilir. Base64 ve URL kodlaması anahtarsızdır, herkes geri çevirir. gzip de anahtarsızdır, herkes açar. SHA-256 bir hash'tir: anahtar kullanmaz ve geri dönüşü yoktur; yalnız aynı girdinin aynı özeti verdiği karşılaştırılabilir.</p></div></li>
+
+<li data-c="A" data-k="siber-7"><p class="q">Ana makinede <code>uname -r</code> çıktısı <code>6.18.33.2-microsoft-standard-WSL2</code>. Aynı makinede çalışan bir Linux konteynerinin içinde <code>uname -r</code> ne yazar?</p>
+<ul class="sec"><li>Aynı sürümü: <code>6.18.33.2-microsoft-standard-WSL2</code>, çünkü konteyner ana makinenin çekirdeğini paylaşır</li><li>Konteyner kalıbına özgü, ana makineninkinden farklı bir çekirdek sürümü</li><li>Hiçbir şey; konteynerin çekirdeği olmadığı için komut çalışmaz</li><li>Hipervizörün sürüm numarasını</li><li>Her çalıştırmada rastgele bir sürüm</li></ul>
+<div class="coz"><p>Konteyner, ad alanları ve cgroup'larla yalıtılmış süreçlerdir; altta tek çekirdek vardır ve "çekirdek ad alanı" diye bir şey yoktur. Parça 7'deki denemede ad alanının içinde ve dışında <code>uname -r</code> aynı çıktı. B, konteyneri küçük bir sanal makine sanmaktır. C yanlış: komut ortak çekirdeğe sorar ve cevap alır. D, sanal makineyle karıştırmaktır. E'nin dayanağı yoktur.</p></div></li>
+
+<li data-c="C" data-k="siber-7"><p class="q">İndirdiğin bir kalıp için <code>gpg --verify</code> "BAD signature" diyor, ama <code>sha256sum -c SHA256SUMS</code> "OK" veriyor. Ne yapmalısın?</p>
+<ul class="sec"><li>Özet tuttuğu için kalıbı kurmalısın; imza ikincil bir ayrıntıdır.</li><li>İmza uyarısını yok saymak için anahtarı yeniden içe aktarıp kurmalısın.</li><li>Kurmamalısın: listenin kendisi değiştirilmiş olabilir; saldırgan kalıbı değiştirip yeni özetini listeye yazmışsa tam bu tabloyu görürsün.</li><li>Yalnız MD5 özetine bakıp karar vermelisin.</li><li>Kalıbı bir konteynerde çalıştırırsan güvenli olur.</li></ul>
+<div class="coz"><p>Doğrulama zinciri iki halkalıdır ve sırası değişmez: önce listenin imzası, sonra kalıbın özeti. İmza BAD ise <code>SHA256SUMS</code> dosyasına güvenilemez; ona dayanan "OK" hiçbir şey kanıtlamaz. Parça 7'de bu, "OK kelimesi yanlış güven verdiği için" en tehlikeli durum diye geçti. A zinciri tersine çeviriyor. B imzayı geçersiz kılmaz. D, artık güvenli sayılmayan bir özete geri dönmektir. E yanlış: konteyner tam bir güvenlik sınırı değildir ve sorun zaten kalıbın kaynağıdır.</p></div></li>
+
+<li data-c="D" data-k="siber-8"><p class="q">Linux dosya sistemi hiyerarşisinde sistem geneli yapılandırma dosyaları ve günlük gibi değişken veriler geleneksel olarak hangi dizinlerde bulunur?</p>
+<ul class="sec"><li><code>/usr</code> ve <code>/home</code></li><li><code>/dev</code> ve <code>/proc</code></li><li><code>/tmp</code> ve <code>/root</code></li><li><code>/etc</code> ve <code>/var</code></li><li><code>/sys</code> ve <code>/usr</code></li></ul>
+<div class="coz"><p>Sistem geneli yapılandırma <code>/etc</code>'de, çalışırken değişen veriler (günlükler, kuyruklar, önbellekler) <code>/var</code>'da durur; bu parçada <code>find /etc -name '*.conf'</code> yaptığın da bu yüzdendir. <code>/usr</code> kurulu programları ve paylaşılan verileri, <code>/home</code> kullanıcıların ev dizinlerini tutar. <code>/dev</code> aygıt dosyalarını, <code>/proc</code> ve <code>/sys</code> çekirdeğin sunduğu sanal dosya sistemlerini içerir. <code>/tmp</code> geçici dosyalar, <code>/root</code> root kullanıcısının ev dizinidir.</p></div></li>
+
+<li data-c="B" data-k="siber-8"><p class="q">Bir dosya sistemi <code>noexec</code> bağlama seçeneğiyle bağlanmışsa ne olur?</p>
+<ul class="sec"><li>O dosya sistemine hiçbir dosya yazılamaz.</li><li>O dosya sistemindeki programlar doğrudan çalıştırılamaz.</li><li>O dosya sistemindeki dosyalar otomatik olarak şifrelenir.</li><li>SUID bitleri yok sayılır ama programlar çalışır.</li><li>Dosya sistemi yalnız root tarafından okunabilir.</li></ul>
+<div class="coz"><p><code>noexec</code>, o bağlama noktasındaki dosyaların doğrudan program olarak çalıştırılmasını engeller; örneğin herkesin yazabildiği <code>/tmp</code>'ye bırakılan bir dosyanın oradan çalıştırılmasını zorlaştırmak için kullanılır. A, salt okunur bağlamayı (<code>ro</code>) anlatıyor. D, <code>nosuid</code> seçeneğinin işidir. C ve E'nin bu seçenekle ilgisi yoktur. Bu parçadaki <code>/tmp</code> altında gizli çalıştırılabilir dosya arayışı, bu seçeneğin neden önemli olduğunu gösterir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-8">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-9">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-10">Sonraki parça: Paket yönetimi ve yazılım tedarik güveni →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux grep awk sort uniq log analizi başarısız ssh girişleri"</li>
+  <li>"bash quoting word splitting globbing rm -rf boş değişken"</li>
+  <li>"find komutu mtime mmin newer print0 xargs"</li>
+  <li>"tail -f grep line-buffered pipe buffering"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan komutlar (16 Ekim 2026, Windows 11 üstünde WSL 2, Kali GNU/Linux Rolling, çekirdek 6.18; GNU grep 3.12, gawk 5.3.2, GNU coreutils 9.10, GNU findutils 4.10.0, GNU bash 5.3.9, less 668; yerel ayar en_US.UTF-8):</strong> metindeki ve "Kendi makinende dene"deki bütün kabuk komutları, <code>uret.sh</code> ve <code>yazici.sh</code> gerçekten çalıştırıldı; çıktılar birebir aktarıldı. Quiz'deki <code>uniq -c</code>, beş satırlık <code>g.log</code> hattı (doğru cevap ve <code>-r</code>'siz, <code>$5</code>'li, <code>$(NF-5)</code>'li çeldiriciler), tırnaksız <code>$f</code>, <code>set -u</code>/<code>${x:?}</code> ayrımı, tampon davranışı, <code>printf 'ğ' | wc -c</code> (2) ve <code>0xFF</code>'in işaretli değeri (Python 3 ile −1) de çalıştırılarak doğrulandı.</li>
+  <li><strong>Sadeleştirmeler ve gizlilik:</strong> Komutlar gerçekte <code>/tmp/yazar/siber-9/</code> altında, <code>HOME</code> oraya yönlendirilmiş bir kabukta çalıştırıldı; metinde <code>~/lab9</code>, <code>pwd</code> çıktılarında <code>/home/kullanici/lab9</code> gösterildi. <code>ls *</code> çıktısındaki gerçek kullanıcı ve grup adı <code>kullanici</code> ile değiştirildi (sütun hizası bu yüzden özgün çıktıdan biraz farklı). <code>noclobber</code> hata satırı gerçekte bir betik içinden alındı ve "<code>betik-yolu: line 41: kopya.log: cannot overwrite existing file</code>" biçimindeydi; metinde etkileşimli Bash'in kullandığı "<code>bash:</code>" önekiyle gösterildi. Sentetik günlükteki makine adı <code>lab</code> uydurmadır. <code>tail</code> ve <code>find -printf</code> çıktılarındaki saatler o çalıştırmaya özgüdür; <code>find /etc</code> sayıları (502 dosya, 8 izin hatası) bu Kali kurulumuna özgüdür.</li>
+  <li><strong>Sentetik veri:</strong> Bütün IP adresleri RFC 5737'nin belgeleme aralıklarındandır (192.0.2.0/24 TEST-NET-1, 198.51.100.0/24 TEST-NET-2, 203.0.113.0/24 TEST-NET-3; rfc-editor.org'dan doğrulandı). Kullanıcı adları uydurmadır; anahtar parmak izi yerine <code>ORNEK-PARMAK-IZI</code> yazıldı. Gerçek sshd her bağlantı için ayrı bir süreç kimliği kullanır; betik aynı denemeler için aynı numarayı yazar.</li>
+  <li><strong>Komut davranışları:</strong> Kurulu sürümlerin kılavuz sayfalarından (<code>man</code>) okundu: <code>rm</code>'in <code>--preserve-root</code>'un varsayılan olduğu; <code>find -delete</code> uyarısı ("putting -delete first will make find try to delete everything below the starting points") ve <code>-mtime</code>'ın <code>n*24</code> saatlik dilim ve yuvarlama notu; <code>tail -F</code> = <code>--follow=name --retry</code> ve <code>-f</code>'nin varsayılan olarak tanımlayıcıyı izlemesi; <code>grep</code>'in <code>-E -F -G -P -w</code> tanımları, "sözcük karakteri" tanımı, <code>--line-buffered</code>; <code>uniq</code>'in yalnız komşu satırları süzmesi; <code>wc -l</code>'nin satır sonu sayması; <code>sort -o</code>, <code>-t</code>, <code>-k</code>; <code>cut -d -f</code>; gawk'ın <code>fflush()</code>'ı; <code>less -r</code>'nin ham kontrol karakteri basması ve varsayılan şapkalı gösterim; Bash'in <code>noclobber</code>/<code>&gt;|</code>, <code>${parameter:?word}</code> ve <code>globskipdots</code> açıklamaları; <code>getopt(3)</code>'ün varsayılan olarak argümanları yeniden sıralaması. gnu.org sayfalarına bu oturumda erişim sınırlaması (HTTP 429) nedeniyle ulaşılamadı; aynı belgelerin kurulu man sayfaları kullanıldı.</li>
+  <li><strong>OpenSSH günlük biçimi:</strong> openssh-portable deposundaki <code>auth.c</code>'den: başarı/başarısızlık satırı "<code>%s %s%s%s for %s%.100s from %.200s port %d ssh2%s%s</code>" (var olmayan kullanıcıda "invalid user " eki), ayrıca "<code>Invalid user %.100s from %.100s port %d</code>". Kullanıcı adının bu katmanda yalnız 100 karakterle kısaltıldığı oradan; günlük katmanının (<code>do_log</code>) basılamayan karakterleri ayrıca kaçırıp kaçırmadığını bu oturumda kaynaktan doğrulamadım. Açık anahtarlı girişte sona eklenen anahtar bilgisinin tam biçimi hafızadan; örnekte uydurma bir değer kullanıldı. <code>pam_unix</code> satırının biçimi hafızadan yazıldı.</li>
+  <li><strong>Diğer kaynaklar:</strong> CWE-117 başlığı ("Improper Output Neutralization for Logs") cwe.mitre.org'dan. Bash 5.2'de <code>globskipdots</code>'un eklendiği ve varsayılan açık geldiği, Bash NEWS dosyasının bir yansısından ve Gentoo/Arch geliştirici kayıtlarından (ikincil); bu ortamda <code>shopt globskipdots</code> "on" dedi. Debian'da rsyslog'un varsayılan zaman damgasının yüksek hassasiyetli RFC 3339 biçimine geçtiği Debian rsyslog değişiklik günlüğü ve Proxmox/Virtualmin forumlarından (ikincil); değişikliğin hangi sürümle (rsyslog 8.2210, Debian 12) geldiğini birincil sürüm notundan doğrulamadım.</li>
+  <li><strong>Hafızadan yazılanlar ve doğrulanamayanlar:</strong> Linux dosya adlarında yalnız <code>/</code> ve NUL'ın yasak olduğu; GNU <code>ls</code>'in terminalde tuhaf adları tırnaklayarak gösterdiği; <code>less</code>'in büyük dosyayı bütünüyle belleğe yüklemediği, <kbd>&amp;</kbd> ve <kbd>F</kbd> tuşları (etkileşimli oldukları için burada denenmedi); en_US.UTF-8'de sıralamanın noktalamayı görmezden gelmesi (çıktıda gözlendi, kuralı belgeden okumadım); Debian ve Ubuntu'da varsayılan <code>awk</code>'ın <code>mawk</code> olduğu (bu Kali'de <code>/etc/alternatives/awk</code> gawk'ı gösteriyordu); <code>set -u</code> hatasında etkileşimsiz Bash'in 127 ile çıkması yalnız gözlendi. Bash kılavuzundaki genişletme sırası şekilde kısaltılarak verildi. Etkileşimli <code>less</code> ve gerçek bir <code>rm</code> silmesi hiç çalıştırılmadı; tehlikeli komutların hepsi yalnız <code>echo</code> ile gösterildi. Bu ortamda <code>/var/log/auth.log</code> yoktu; gerçek sistem günlükleri okunmadı, yalnız sentetik günlük kullanıldı.</li>
+  <li><strong>Tekrar soruları:</strong> Parça 1–7'nin metinleri ve yazım sırasında tamamlanan Parça 8 metni (<code>/etc</code>, <code>/var</code> ve <code>noexec</code> anlatımı) okunarak, onların terim ve örnekleriyle tutarlı kuruldu.</li>
+  <li><strong>Saldırı sınırı ve sisteme etki:</strong> Hiçbir saldırı tekniği, araç ya da günlük silme/gizleme yöntemi verilmedi; kontrol karakteri ve tireyle başlayan dosya adı örnekleri yalnız "neden tehlikeli, nasıl görülür, nasıl önlenir" düzeyinde, zararsız deneme dosyalarıyla gösterildi. Root yetkisi, kurulum ya da ağ erişimi kullanılmadı; <code>/tmp/yazar/siber-9/</code> dışında hiçbir şey yazılmadı ve arka plan süreçlerinin hepsi kendiliğinden ya da <code>timeout</code> ile bitti.</li>
+</ul>
+</div>
+</div>
+</article>

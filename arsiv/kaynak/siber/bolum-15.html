@@ -1,0 +1,788 @@
+<article class="chapter ders" id="c-siber-15">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 15 · Linux'ta ağ yapılandırması</div>
+<h1>Linux'ta ağ yapılandırması: makinen ağda kim, nereye gidiyor, kime kapı açmış?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p><code>curl http://example.com/</code> yazdığında hiçbir adres ya da sunucu söylemedin. Yine de makinen adı bir sayıya çevirdi, hangi karttan çıkacağına ve paketi ilk kime teslim edeceğine karar verdi. Bu kararlar bir dosyada ya da çekirdekteki bir tabloda yazılı; onları okuyabilir misin? Ve şu anda makinende hangi program, hangi kapıyı, kime açık tutuyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (ikili sayılar, maskeleme), Parça 7 (ad alanı), Parça 8 (<code>/etc</code>, bağlama), Parça 9 (boru, <code>awk</code>), Parça 13 (<code>ss -tlnp</code>, <code>lsof</code>). Kod rafından Parça 13 (soket, <code>gethostbyname</code>, HTTP isteği). Denemelerde hedef yalnız <code>127.0.0.1</code>, kendi yerel sunucun ve kendi ağ geçidindir.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 13 sürece bakıyordu; bu parça makinenin ağ tarafına bakıyor. Bir program ağa çıkmak istediğinde işletim sistemi dört soruya cevap verir; bunlar parçanın dört ana bölümüdür:</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Cevabın durduğu yer</th><th>Okuma aracı</th></tr>
+<tr><td>Ben ağda kimim? Hangi kartlarım, hangi adreslerim var?</td><td>Çekirdekteki arayüz listesi</td><td><code>ip addr</code>, <code>ip -br addr</code></td></tr>
+<tr><td>Bu hedefe giden paketi kime, hangi karttan teslim ederim?</td><td>Çekirdekteki yönlendirme tablosu</td><td><code>ip route</code>, <code>ip route get</code></td></tr>
+<tr><td>Bu adın adresi ne?</td><td><code>/etc/nsswitch.conf</code>, <code>/etc/hosts</code>, <code>/etc/resolv.conf</code>, varsa systemd-resolved</td><td><code>getent</code>, <code>resolvectl</code>, <code>dig</code></td></tr>
+<tr><td>Kim hangi kapıyı dinliyor, kim kiminle konuşuyor?</td><td>Çekirdekteki soket tablosu</td><td><code>ss</code></td></tr>
+</table></div>
+
+<p>Bunlara üç sınama aracı eklenir: <code>ping</code>, <code>traceroute</code> ve <code>curl</code>. Bu bir <strong>araç parçasıdır</strong>: her kavram, aracı doğru okumaya yetecek kadar açıklanıyor. Katmanlı modeller Parça 20'de, IP başlığı ve TTL Parça 24'te, alt ağ hesabı Parça 25'te, TCP durumları Parça 28'de, DNS zinciri Parça 29'da, HTTP Parça 31'de derinleşecek.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 400" role="img" aria-label="Bir programın ağa çıkış yolu: uygulama, ad çözümleme, soket, yönlendirme tablosu, arayüz ve ağ geçidi; her katmanın yanında onu okuyan araç">
+  <rect class="sv-l" x="40" y="12" width="330" height="40" rx="8"/>
+  <text class="sv-b" x="205" y="37" text-anchor="middle">Program: curl http://example.com/</text>
+  <line class="sv-c" x1="205" y1="52" x2="205" y2="70"/>
+  <rect class="sv-k" x="40" y="70" width="330" height="58" rx="8"/>
+  <text class="sv-b" x="205" y="92" text-anchor="middle">1. Ad → adres</text>
+  <text class="sv-s" x="205" y="112" text-anchor="middle">nsswitch.conf: önce /etc/hosts, sonra DNS</text>
+  <line class="sv-c" x1="205" y1="128" x2="205" y2="146"/>
+  <rect class="sv-k" x="40" y="146" width="330" height="58" rx="8"/>
+  <text class="sv-b" x="205" y="168" text-anchor="middle">2. Soket aç, bağlan</text>
+  <text class="sv-s" x="205" y="188" text-anchor="middle">yerel adres:port ↔ uzak adres:port</text>
+  <line class="sv-c" x1="205" y1="204" x2="205" y2="222"/>
+  <rect class="sv-k" x="40" y="222" width="330" height="58" rx="8"/>
+  <text class="sv-b" x="205" y="244" text-anchor="middle">3. Yönlendirme tablosu</text>
+  <text class="sv-s" x="205" y="264" text-anchor="middle">hangi kart, doğrudan mı ağ geçidiyle mi</text>
+  <line class="sv-c" x1="205" y1="280" x2="205" y2="298"/>
+  <rect class="sv-k" x="40" y="298" width="150" height="44" rx="8"/>
+  <text class="sv-t" x="115" y="325" text-anchor="middle">lo (127.0.0.1)</text>
+  <rect class="sv-k" x="220" y="298" width="150" height="44" rx="8"/>
+  <text class="sv-t" x="295" y="325" text-anchor="middle">eth0 (172.29.x.x)</text>
+  <line class="sv-cl" x1="295" y1="342" x2="295" y2="358"/>
+  <rect class="sv-a" x="170" y="358" width="250" height="34" rx="8"/>
+  <text class="sv-t" x="295" y="380" text-anchor="middle">ağ geçidi → dış ağ</text>
+  <text class="sv-b" x="500" y="96" text-anchor="middle">getent, dig, resolvectl</text>
+  <text class="sv-b" x="500" y="172" text-anchor="middle">ss -tan, ss -tlnp</text>
+  <text class="sv-b" x="500" y="248" text-anchor="middle">ip route, ip route get</text>
+  <text class="sv-b" x="500" y="324" text-anchor="middle">ip addr, ip -br addr</text>
+  <text class="sv-b" x="530" y="380" text-anchor="middle">ping, traceroute</text>
+  <line class="sv-c" x1="370" y1="99" x2="420" y2="92"/>
+  <line class="sv-c" x1="370" y1="175" x2="440" y2="168"/>
+  <line class="sv-c" x1="370" y1="251" x2="425" y2="244"/>
+  <line class="sv-c" x1="370" y1="320" x2="425" y2="320"/>
+  <line class="sv-c" x1="420" y1="376" x2="470" y2="376"/>
+</svg>
+<figcaption>Şekil 1. Bir isteğin makinenden çıkış yolu ve her basamağı okuyan araç. <code>curl</code> ise en üstten, uygulamanın gözünden bütün yolu sınar. Adresler bu parçadaki WSL makinesinden.</figcaption>
+</figure>
+
+<h2 class="s">1. Ağ arayüzleri ve <code>ip addr</code></h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Ağ arayüzü</strong>, çekirdeğin paket alıp gönderebildiği bir kapıdır; arkasında donanım da olabilir, yalnız yazılım da. <strong><code>lo</code></strong> döngü (loopback) arayüzüdür: makineden hiç çıkmayan, kendine konuşma kapısı. Kablolu kartlar <code>eth0</code> ya da systemd'nin öngörülebilir adlandırmasıyla <code>enp0s3</code>, kablosuzlar <code>wlan0</code> gibi adlar alır; VPN tünelleri (<code>tun0</code>, <code>wg0</code>) ve konteyner köprüleri (<code>docker0</code>) de arayüzdür. Her arayüzün bir durumu, bir MAC adresi ve sıfır ya da daha çok IP adresi olabilir.</p></div>
+
+<p>Arayüzleri bugün <code>iproute2</code> paketindeki <code>ip</code> komutu yönetir; eski belgelerdeki <code>ifconfig</code> ve <code>route</code> (<code>net-tools</code>) birçok dağıtımda artık kurulu gelmez. Söz dizimi "nesne, eylem"dir: <code>ip addr show</code>, <code>ip link set lo up</code>, <code>ip route get</code>.</p>
+
+<h3>Kısa görünüm: <code>ip -br addr</code></h3>
+
+<p><code>-br</code> (brief) her arayüzü tek satıra indirir: ad, durum, adresler.</p>
+
+<pre class="cikti">lo               UNKNOWN        127.0.0.1/8 10.255.255.254/32 ::1/128
+eth0             UP             172.29.10.190/20 fe80::215:5dff:fexx:xxxx/64 </pre>
+
+<p><code>eth0</code> açık ve iki adresi var: bir IPv4, bir de <code>fe80::</code> ile başlayan IPv6 adresi. <code>lo</code>'nun <code>UNKNOWN</code> durumu arıza değildir: altında kablo olmadığı için çekirdek bağlantı durumunu bildirmez. Bakılacak yer bayraklardır; <code>lo</code>'da <code>UP</code> açık.</p>
+
+<h3>Ayrıntılı görünüm: <code>ip addr show</code></h3>
+
+<pre class="cikti">2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:15:5d:xx:xx:xx brd ff:ff:ff:ff:ff:ff
+    inet 172.29.10.190/20 brd 172.29.15.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::215:5dff:fexx:xxxx/64 scope link proto kernel_ll
+       valid_lft forever preferred_lft forever</pre>
+
+<p>Satır satır oku. <strong><code>2: eth0:</code></strong> sıra numarası ve ad. <strong>Bayraklar:</strong> <code>UP</code> yöneticinin arayüzü açtığını, <code>LOWER_UP</code> alttaki bağlantının (kablo, sanal bağ) gerçekten var olduğunu söyler; <code>UP</code> var <code>LOWER_UP</code> yoksa kablo takılı değildir. <strong><code>mtu 1500</code></strong> tek seferde gönderilebilecek en büyük paket boyutudur (Parça 21).</p>
+
+<p><strong><code>link/ether</code></strong> kartın MAC adresidir; yerel ağda kartı tanıtır, sahtelenebilir (Parça 21). <code>00:15:5d</code> öneki Hyper-V sanal kartlarınındır; WSL2 bir Hyper-V sanal makinesinde çalışır.</p>
+
+<p><strong><code>inet 172.29.10.190/20</code></strong> IPv4 adresidir; <code>brd</code> ağın yayın adresi, <code>scope global</code> makine dışında da geçerli demektir. <strong><code>inet6 fe80::…/64 scope link</code></strong> bağlantı yerel IPv6 adresidir: yalnız bu bağlantının üstünde geçerlidir. Son yarısı MAC'ten türetildiği (ortasına <code>ff:fe</code> eklenmiş MAC; Parça 27) için onu da kişisel iz sayıp gizledik. <code>valid_lft forever</code> süresiz demektir; DHCP adreslerinde burada kalan kira süresi görünür.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Adres kapsamı</strong> (scope) adresin nerede anlamlı olduğunu söyler: <code>host</code> yalnız bu makinenin içinde (<code>127.0.0.1</code>, <code>::1</code>), <code>link</code> yalnız bu bağlantı üstünde (<code>fe80::</code> adresleri), <code>global</code> yönlendirilebilir, makine dışında da geçerli. Bir servise kimlerin ulaşabileceğini düşünürken ilk soru budur: servisin dinlediği adresin kapsamı ne?</p></div>
+
+<h3>Eğik çizgi: önek uzunluğu</h3>
+
+<p>Bir IPv4 adresi 32 bittir (Parça 24). <code>/20</code>, bu bitlerin <strong>soldan kaç tanesinin ağı</strong> belirttiğini söyler (CIDR gösterimi); kalan bitler ağ içindeki makineyi seçer. Eski biçimi <strong>alt ağ maskesidir</strong>: soldan n biti 1 olan 32 bitlik sayı; adresle VE'lenince ağ adresi çıkar (Parça 1). El hesabı Parça 25'te.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önek</strong> <code>/n</code>: adresin ilk n biti ağ, son 32 − n biti makine kısmıdır. Ağdaki adres sayısı 2<sup>32 − n</sup>'dir. Aynı ağdaki iki adres ilk n bitte aynıdır ve birbirine doğrudan, ağ geçidi olmadan ulaşır. <code>/32</code> tek bir adres demektir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Önek</th><th>Maske</th><th>Adres sayısı</th><th>Nerede görürsün</th></tr>
+<tr><td><code>/8</code></td><td>255.0.0.0</td><td>16.777.216</td><td><code>127.0.0.1/8</code>: bütün 127.x.x.x döngüye ayrılmış</td></tr>
+<tr><td><code>/16</code></td><td>255.255.0.0</td><td>65.536</td><td>Büyük iç ağlar</td></tr>
+<tr><td><code>/20</code></td><td>255.255.240.0</td><td>4.096</td><td>Bu makinedeki WSL ağı</td></tr>
+<tr><td><code>/24</code></td><td>255.255.255.0</td><td>256</td><td>Tipik ev ve laboratuvar ağı (ör. 192.168.56.0/24)</td></tr>
+<tr><td><code>/32</code></td><td>255.255.255.255</td><td>1</td><td>Tek bir makine; <code>lo</code>'daki 10.255.255.254/32</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: <code>172.29.10.190/20</code> satırını okumak ve doğrulamak</span>
+<p><strong>Soru:</strong> <code>inet 172.29.10.190/20 brd 172.29.15.255</code> satırına göre bu makinenin ağı hangisidir, kaç adres içerir, <code>172.29.5.5</code> ve <code>1.1.1.1</code> bu ağda mıdır?</p>
+<p><strong>Adım 1.</strong> <code>/20</code> → ilk 20 bit ağ. İlk iki sekizli (16 bit) tam ağ, üçüncü sekizlinin ilk 4 biti de ağdır. Maske 255.255.<strong>240</strong>.0, çünkü 11110000 = 240 (Parça 1).</p>
+<p><strong>Adım 2.</strong> Üçüncü sekizli 10 = 0000<strong>1010</strong>; ilk dört biti 0000. Ağ adresi 172.29.0.0. Makine kısmı 12 bit: 2<sup>12</sup> = 4.096 adres, 172.29.0.0'dan 172.29.15.255'e. Sonuncusu yayın adresi; çıktıdaki <code>brd</code> ile aynı.</p>
+<p><strong>Adım 3.</strong> 172.29.5.5'in üçüncü sekizlisi 5 = 0000<strong>0101</strong>, ilk dört biti 0000: aynı ağ. 1.1.1.1'in ilk sekizlisi bile farklı: başka ağ.</p>
+<p><strong>Adım 4.</strong> Elle bulduğunu kod rafındaki Python'la doğrula:</p>
+<pre class="kod" data-ad="python3 -I">import ipaddress
+i = ipaddress.ip_interface("172.29.10.190/20")
+print(i.network, i.netmask, i.network.broadcast_address, i.network.num_addresses)
+print(ipaddress.ip_address("172.29.5.5") in i.network, ipaddress.ip_address("1.1.1.1") in i.network)
+print(ipaddress.ip_interface("127.0.0.1/8").network.num_addresses)</pre>
+<pre class="cikti">172.29.0.0/20 255.255.240.0 172.29.15.255 4096
+True False
+16777216</pre>
+<p><strong>Sonuç:</strong> Ağ 172.29.0.0/20, 4.096 adres; 172.29.5.5 aynı ağda, 1.1.1.1 değil. Bu ayrım yönlendirme tablosunun iki satırını açıklayacak. Son satır: 127 ile başlayan 16 milyondan fazla adresin hepsi makinenin kendisidir.</p></div>
+
+<p><code>lo</code>'daki <code>10.255.255.254/32</code> WSL'ye özgüdür: DNS tünelleme özelliği ad sorgularını bu adreste karşılar (bölüm 3). Debian ya da Ubuntu VM'inde <code>lo</code>'da yalnız <code>127.0.0.1/8</code> ve <code>::1/128</code> görürsün.</p>
+
+<h2 class="s">2. Yönlendirme tablosu ve varsayılan ağ geçidi</h2>
+
+<p>Adresini bilen makine, paketi <em>nereye</em> göndereceğini henüz bilmiyor. Hedef aynı ağdaysa doğrudan teslim eder; değilse paketi başka ağlara taşıyan bir <strong>yönlendiriciye</strong> verir. Bu karar için çekirdek bir <strong>yönlendirme tablosu</strong> tutar; <code>ip route</code> onu yazar:</p>
+
+<pre class="cikti">default via 172.29.0.1 dev eth0 proto kernel
+172.29.0.0/20 dev eth0 proto kernel scope link src 172.29.10.190 </pre>
+
+<p>İkinci satır: "172.29.0.0/20'ye giden paketler <code>eth0</code>'dan doğrudan çıkar." <code>scope link</code> arada aracı olmadığını, <code>src</code> tercih edilecek kaynak adresi söyler. <code>proto kernel</code>: arayüze <code>/20</code>'lik adres verilince çekirdek bu satırı kendiliğinden yazdı. Böyle satırlara <strong>bağlı rota</strong> denir.</p>
+
+<p>Birinci satır <strong>varsayılan rotadır</strong>. <code>ip-route(8)</code>'e göre <code>default</code>, <code>0/0</code>'a, yani "her adres" önekine eşittir. <code>via 172.29.0.1</code> "paketi bu yönlendiriciye ver" demektir: <strong>varsayılan ağ geçidi</strong>. WSL2'de bu, Windows ana makinesinin adresidir; Microsoft'un WSL belgesi de Windows'un adresini bulmak için bu satıra bakmayı önerir. Ev ağında modemin, laboratuvar VM'inde sanallaştırma yazılımının NAT ağ geçidi olur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çekirdek, hedefi kapsayan rotalar arasından önek uzunluğu en büyük olanı seçer</strong> (en uzun önek eşleşmesi). <code>default</code> (<code>/0</code>) her adresi kapsadığı için ancak hiçbir daha özel rota eşleşmezse kullanılır. Seçilen rotada <code>via</code> varsa paket o ağ geçidine, yoksa doğrudan hedefe teslim edilir. <code>127.0.0.0/8</code> gibi yerel adresler <code>ip route</code>'un göstermediği ayrı bir <strong>local</strong> tabloda durur (<code>ip route show table local</code>) ve her şeyden önce bakılır. Algoritmanın ayrıntısı ve paketin ağdan ağa sıçraması Parça 24'te.</p></div>
+
+<h3>Çekirdeğe sor: <code>ip route get</code></h3>
+
+<p>Tabloyu kafanda eşleştirmek yerine çekirdeğe "bu adrese paket göndersem hangi yolu seçerdin?" diye sorabilirsin. <code>ip-route(8)</code>'e göre komut rotayı çekirdeğin gördüğü biçimde yazar ve <strong>hiçbir paket gönderilmez</strong>.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Üç hedef için yönlendirme kararı: 127.0.0.1 yerel tablodan lo arayüzüne, 172.29.5.5 bağlı rotadan eth0 üzerinden doğrudan, 1.1.1.1 varsayılan rotadan ağ geçidi 172.29.0.1'e">
+  <text class="sv-b" x="100" y="24" text-anchor="middle">Hedef</text>
+  <text class="sv-b" x="320" y="24" text-anchor="middle">Eşleşen rota</text>
+  <text class="sv-b" x="540" y="24" text-anchor="middle">Sonuç</text>
+  <rect class="sv-l" x="30" y="44" width="140" height="44" rx="8"/>
+  <text class="sv-t" x="100" y="71" text-anchor="middle">127.0.0.1</text>
+  <rect class="sv-k" x="220" y="44" width="200" height="44" rx="8"/>
+  <text class="sv-t" x="320" y="64" text-anchor="middle">local 127.0.0.0/8</text>
+  <text class="sv-s" x="320" y="80" text-anchor="middle">(local tablo, önce bakılır)</text>
+  <rect class="sv-m" x="470" y="44" width="150" height="44" rx="8"/>
+  <text class="sv-t" x="545" y="71" text-anchor="middle">lo, makineden çıkmaz</text>
+  <line class="sv-cl" x1="170" y1="66" x2="220" y2="66"/>
+  <line class="sv-cl" x1="420" y1="66" x2="470" y2="66"/>
+  <rect class="sv-l" x="30" y="124" width="140" height="44" rx="8"/>
+  <text class="sv-t" x="100" y="151" text-anchor="middle">172.29.5.5</text>
+  <rect class="sv-k" x="220" y="124" width="200" height="44" rx="8"/>
+  <text class="sv-t" x="320" y="144" text-anchor="middle">172.29.0.0/20 dev eth0</text>
+  <text class="sv-s" x="320" y="160" text-anchor="middle">(bağlı rota, /20)</text>
+  <rect class="sv-m" x="470" y="124" width="150" height="44" rx="8"/>
+  <text class="sv-t" x="545" y="151" text-anchor="middle">eth0, doğrudan</text>
+  <line class="sv-cl" x1="170" y1="146" x2="220" y2="146"/>
+  <line class="sv-cl" x1="420" y1="146" x2="470" y2="146"/>
+  <rect class="sv-l" x="30" y="204" width="140" height="44" rx="8"/>
+  <text class="sv-t" x="100" y="231" text-anchor="middle">1.1.1.1</text>
+  <rect class="sv-k" x="220" y="204" width="200" height="44" rx="8"/>
+  <text class="sv-t" x="320" y="224" text-anchor="middle">default via 172.29.0.1</text>
+  <text class="sv-s" x="320" y="240" text-anchor="middle">(/0, başka eşleşme yok)</text>
+  <rect class="sv-a" x="470" y="204" width="150" height="44" rx="8"/>
+  <text class="sv-t" x="545" y="231" text-anchor="middle">eth0 → ağ geçidi</text>
+  <line class="sv-cl" x1="170" y1="226" x2="220" y2="226"/>
+  <line class="sv-cl" x1="420" y1="226" x2="470" y2="226"/>
+  <text class="sv-s" x="320" y="284" text-anchor="middle">Hepsi ip route get ile sorulabilir; soru sırasında hiçbir paket gönderilmez.</text>
+</svg>
+<figcaption>Şekil 2. Üç hedef, üç karar. Önce yerel tablo, sonra en uzun eşleşen önek. Varsayılan rota yalnız başka hiçbir rota tutmadığında devreye girer.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: üç hedef için çekirdeğin kararı</span>
+<p><strong>Soru:</strong> <code>127.0.0.1</code>, <code>172.29.5.5</code> ve <code>1.1.1.1</code> adreslerine gidecek paketler için çekirdek hangi kartı, hangi kaynak adresi ve hangi aracıyı seçer?</p>
+<pre class="kod" data-ad="bash">ip route get 1.1.1.1; ip route get 172.29.5.5; ip route get 127.0.0.1</pre>
+<pre class="cikti">1.1.1.1 via 172.29.0.1 dev eth0 src 172.29.10.190 uid 1000
+    cache
+172.29.5.5 dev eth0 src 172.29.10.190 uid 1000
+    cache
+local 127.0.0.1 dev lo src 127.0.0.1 uid 1000
+    cache &lt;local&gt; </pre>
+<p><strong>Adım 1.</strong> <code>1.1.1.1</code>, 172.29.0.0/20'nin dışında (Örnek 1); tek eşleşen rota <code>default</code>. Çıktıda <code>via 172.29.0.1</code>: paket ağ geçidine verilecek.</p>
+<p><strong>Adım 2.</strong> <code>172.29.5.5</code>'i hem /20 hem /0 kapsıyor; uzun olan kazanır. <code>via</code> yok: paket doğrudan <code>eth0</code>'dan gidecek. Hedefin MAC adresini ARP bulur (Parça 23).</p>
+<p><strong>Adım 3.</strong> <code>127.0.0.1</code>: <code>local</code>, yerel tablodan; arayüz <code>lo</code>, paket makineden çıkmaz.</p>
+<p><strong>Adım 4.</strong> <code>uid 1000</code> soruyu soranın kimliğidir (Linux rotayı kullanıcıya göre de seçebilir); <code>cache</code> sonucun yol önbelleğinden geldiğini belirtir.</p>
+<p><strong>Sonuç:</strong> Üç yol: kendine (<code>lo</code>), komşuya (doğrudan), dünyaya (ağ geçidi). Bir bağlantı sorununda ilk soru budur: paket düşündüğün kapıdan mı çıkıyor?</p></div>
+
+<p>Rota tablosu güvenlik için de okunur: ağ geçidi dışarı giden bütün trafiğin ilk durağıdır; kim ağ geçidi olursa trafiği o görür. VPN istemcileri kendi rotalarını ekler (çoğu zaman <code>0.0.0.0/1</code> ve <code>128.0.0.0/1</code>; daha uzun önek oldukları için asıl varsayılanı ezerler). Savunmacı sorar: tek bir varsayılan rota mı var, ağ geçidi beklediğin adres mi, tanımadığın bir rota var mı?</p>
+
+<h3>Kalıcı yapılandırma nerede durur?</h3>
+
+<p><code>ip addr add</code>, <code>ip route add</code> gibi değişiklikler yalnız o anki tabloları değiştirir, yeniden başlatmada kaybolur. Kalıcı ayarı açılışta tabloları dolduran bir yönetici tutar:</p>
+
+<div class="tablo"><table>
+<tr><th>Yönetici</th><th>Tipik dağıtım</th><th>Yapılandırma yeri</th></tr>
+<tr><td>ifupdown</td><td>Debian sunucu kurulumu</td><td><code>/etc/network/interfaces</code></td></tr>
+<tr><td>NetworkManager</td><td>Masaüstü dağıtımlar, Kali masaüstü</td><td><code>nmcli</code>, <code>/etc/NetworkManager/</code></td></tr>
+<tr><td>systemd-networkd</td><td>Sunucular, en küçük kurulumlar</td><td><code>/etc/systemd/network/*.network</code></td></tr>
+<tr><td>netplan (üst katman)</td><td>Ubuntu</td><td><code>/etc/netplan/*.yaml</code> → networkd ya da NetworkManager</td></tr>
+<tr><td>WSL2</td><td>Windows üstünde WSL</td><td>Windows tarafı üretir; <code>/etc/wsl.conf</code>, <code>.wslconfig</code></td></tr>
+</table></div>
+
+<p>Bu makinede NetworkManager, systemd-networkd ve systemd-resolved üçü de <code>inactive</code>: WSL2'de adres, rota ve DNS ayarını Windows verir. Laboratuvar VM'inde değişikliği tablodaki yöneticinin üzerinden yap, yoksa yeniden başlatmada geri gelir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ağ geçidi ping'e yanıt vermiyor, demek ki bağlantım yok" (ya da tersi, "ağ geçidine ulaşıyorsam her şey çalışıyor").</strong> Denemede Windows ağ geçidi <code>ping</code>'e hiç yanıt vermedi, ama aynı makineden DNS sorguları ve web istekleri çalıştı: Windows Güvenlik Duvarı gelen yankı isteklerini yanıtsız bırakabilir. Ağ geçidine ulaşmak da yetmez; ardından ad çözümleme, öteki yönlendiriciler ve sunucu gelir. "Yanıt yok" bir gözlem, "makine kapalı" bir çıkarımdır; aradaki boşluğu başka bir sınamayla doldurursun.</p></div>
+
+<h2 class="s">3. DNS yapılandırması: adlar nereden çözülür?</h2>
+
+<p>Programlar adlarla, ağ sayılarla çalışır. Kod rafı Parça 13'teki <code>socket.gethostbyname</code> da, <code>curl</code> da sonunda glibc'nin <code>getaddrinfo</code> işlevini çağırır; onun nereye bakacağını üç dosya belirler.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Ad çözümleme sırası <code>/etc/nsswitch.conf</code>'taki <code>hosts:</code> satırıdır.</strong> <code>nsswitch.conf(5)</code>'e göre bu satırdaki kaynaklar soldan sağa denenir ve bir sonuç bulunduğunda durulur. <code>files</code> kaynağı <code>/etc/hosts</code> dosyasını, <code>dns</code> kaynağı <code>/etc/resolv.conf</code>'ta yazan ad sunucularını kullanır. <code>[NOTFOUND=return]</code> gibi bir eylem, hemen solundaki kaynak "böyle bir kayıt yok" derse aramayı orada bitirir. Sonuç: <code>/etc/hosts</code>'ta yazan bir ad, DNS'e hiç sorulmadan cevaplanır.</p></div>
+
+<p>Bu makinenin satırı: <code>hosts: files myhostname mdns4_minimal [NOTFOUND=return] dns</code>. Önce <code>/etc/hosts</code>; sonra <code>myhostname</code> (systemd'nin, makinenin adını ve <code>localhost</code>'u her durumda çözen eklentisi); sonra <code>.local</code> adlar için çok noktaya yayınlı DNS; en son gerçek DNS. Sunucularda çoğu zaman yalnız <code>files dns</code> kalır.</p>
+
+<h3><code>/etc/hosts</code>: yerel ad tablosu</h3>
+
+<p><code>hosts(5)</code>'e göre her satır "IP adresi, asıl ad, takma adlar" biçimindedir; belge, tablonun yerini DNS'in aldığını ama açılış ve küçük yalıtılmış ağlar için hâlâ kullanıldığını söyler. Bu makinede ilk satırlar:</p>
+
+<pre class="cikti"># This file was automatically generated by WSL. To stop automatic generation of this file, add the following entry to /etc/wsl.conf:
+# [network]
+# generateHosts = false
+127.0.0.1	localhost
+127.0.1.1	lab.localdomain	lab</pre>
+
+<p>Yorum satırları, dosyayı WSL'nin her açılışta <strong>kendisinin ürettiğini</strong> söylüyor: elle değişiklik silinir, önce <code>/etc/wsl.conf</code>'ta üretimi kapatmak gerekir. <code>127.0.1.1</code> satırı makinenin adını (burada <code>lab</code> diye değiştirildi) bir döngü adresine bağlar; Debian'da yaygın bir alışkanlıktır.</p>
+
+<h3><code>/etc/resolv.conf</code>: hangi ad sunucusuna sorulur?</h3>
+
+<pre class="cikti">lrwxrwxrwx 1 root root 20 Oct 16 17:19 /etc/resolv.conf -> /mnt/wsl/resolv.conf
+# This file was automatically generated by WSL. To stop automatic generation of this file, add the following entry to /etc/wsl.conf:
+# [network]
+# generateResolvConf = false
+nameserver 10.255.255.254</pre>
+
+<p><code>/etc/resolv.conf</code> bir <strong>sembolik bağ</strong> (baştaki <code>l</code>, Parça 12): dosyayı yönetici programın ürettiği yere bağlamak "bu dosyayı ben yönetiyorum" demektir. Asıl bilgi tek satır: <code>nameserver 10.255.255.254</code>; <code>dns</code> kaynağı soruları bu adresin 53 numaralı portuna gönderir. Bu, <code>lo</code>'daki WSL adresidir; Microsoft'un belgesine göre DNS tünelleme Windows 11 22H2'den beri olağan olarak açıktır ve soruları ağ paketi yerine bir sanallaştırma özelliğiyle Windows'a iletir.</p>
+
+<p><code>resolv.conf(5)</code>'e göre en çok üç <code>nameserver</code> kullanılır; hiç yoksa yerel makineye sorulur. <code>search</code> kısa adlara eklenecek alan adlarını, <code>options</code> zaman aşımı (olağan 5 saniye), deneme sayısı (2) ve <code>ndots</code> (1) gibi ayarları verir.</p>
+
+<h3>systemd-resolved ve <code>resolvectl</code></h3>
+
+<p>Ubuntu gibi dağıtımlarda araya yerel bir çözücü servis girer: <strong>systemd-resolved</strong>. <code>systemd-resolved.service(8)</code>'e göre servis <code>127.0.0.53</code>'te bir "koçan" (stub) çözücü dinler; o zaman <code>resolv.conf</code>'ta yalnız <code>nameserver 127.0.0.53</code> görürsün ve önerilen kipte dosya <code>/run/systemd/resolve/stub-resolv.conf</code>'a bağdır (belge dört kip sayar). Gerçek sunucuları <code>resolvectl status</code> arayüz başına gösterir; önbelleği <code>resolvectl flush-caches</code> boşaltır. Bu makinede <code>resolvectl</code> yoktu ve servis <code>inactive</code> idi; <code>resolvectl status</code> burada çalıştırılmadı. Ubuntu VM'inde <code>127.0.0.53</code> ile gerçek sunucuyu yan yana koymak iyi bir alıştırmadır.</p>
+
+<div class="tablo"><table>
+<tr><th>Kaynak</th><th>Ne tutar</th><th>Kim yönetir (bu makinede)</th><th>Ne zaman devreye girer</th></tr>
+<tr><td><code>/etc/nsswitch.conf</code></td><td>Kaynakların sırası</td><td>Paket, yönetici</td><td>Her <code>getaddrinfo</code> çağrısında</td></tr>
+<tr><td><code>/etc/hosts</code></td><td>Elle yazılmış ad → adres eşleşmeleri</td><td>WSL üretiyor</td><td><code>files</code> sırası gelince, DNS'ten önce</td></tr>
+<tr><td><code>/etc/resolv.conf</code></td><td>Ad sunucuları, arama alanları</td><td>WSL üretiyor (bağ)</td><td><code>dns</code> sırası gelince</td></tr>
+<tr><td>systemd-resolved</td><td>Arayüz başına sunucular, önbellek</td><td>Burada yok</td><td><code>resolv.conf</code> 127.0.0.53'ü gösterdiğinde</td></tr>
+</table></div>
+
+<h3><code>getent</code> ile <code>dig</code> aynı soruyu sormaz</h3>
+
+<p><strong><code>getent ahosts ad</code></strong> sıradan bir program gibi glibc'ye sorar ve <code>nsswitch.conf</code> sırasını izler. <strong><code>dig</code></strong>, <code>host</code>, <code>nslookup</code> ise DNS'i kendileri konuşur: doğrudan <code>resolv.conf</code>'taki sunucuya sorar, <code>/etc/hosts</code>'a bakmazlar. "Programım nereye gidiyor?" sorusunun cevabı <code>getent</code>'te, "DNS ne diyor?" sorusununki <code>dig</code>'dedir (ayrıntısı Parça 29).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: <code>/etc/hosts</code> DNS'i ezer, <code>dig</code> bunu görmez</span>
+<p><strong>Soru:</strong> <code>/etc/hosts</code>'a <code>127.0.0.1 example.com</code> satırı eklenirse <code>getent</code>, <code>curl</code> ve <code>dig</code> ne yapar? Bunu gerçek <code>/etc/hosts</code>'a dokunmadan nasıl denersin?</p>
+<p><strong>Adım 1.</strong> Gerçek dosyayı değiştirmek root ister ve kalıcıdır. Bunun yerine <code>unshare -rm</code> ile sahte root ve ayrı bir bağlama tablosu aç; kopyayı gerçek dosyanın üstüne bağla (Parça 8: alttaki içerik görünmez olur, silinmez). Kabuk bitince bağlama da biter.</p>
+<pre class="kod" data-ad="bash">cd /tmp/yazar/siber-15
+cp /etc/hosts hosts.kopya
+printf '127.0.0.1\texample.com\n' &gt;&gt; hosts.kopya
+(cd www; python3 -m http.server 8015 --bind 127.0.0.1 &gt; ../s.log 2&gt;&amp;1 &amp;)
+sleep 1
+getent ahostsv4 example.com | head -1
+unshare -rm bash -c 'mount --bind /tmp/yazar/siber-15/hosts.kopya /etc/hosts
+tail -n 1 /etc/hosts
+getent ahostsv4 example.com | head -1
+curl -sS http://example.com:8015/
+dig example.com A +short'</pre>
+<pre class="cikti">104.20.23.154   STREAM example.com
+127.0.0.1	example.com
+127.0.0.1       STREAM example.com
+merhaba
+104.20.23.154
+172.66.147.243</pre>
+<p><strong>Adım 2.</strong> İlk satır olağan durum: DNS'ten gerçek adres. (Belgeleme alan adı <code>example.com</code> için tek bir olağan ad sorgusu yapıldı; başka dış istek yok.)</p>
+<p><strong>Adım 3.</strong> İçeride <code>getent</code> <code>127.0.0.1</code> veriyor: <code>files</code> ilk sırada, DNS'e hiç gidilmedi.</p>
+<p><strong>Adım 4.</strong> <code>curl</code> isteği internete değil yerel sunucuya gitti ve <code>merhaba</code> getirdi; uygulama "example.com'a bağlandım" sanıyor.</p>
+<p><strong>Adım 5.</strong> <code>dig</code> hâlâ gerçek adresleri yazıyor (sıraları çalıştırmadan çalıştırmaya değişebilir): <code>/etc/hosts</code>'u okumaz.</p>
+<p><strong>Sonuç:</strong> <code>/etc/hosts</code> her programın ad çözümlemesini DNS'ten önce belirler. Laboratuvarda yararlıdır, ama saldırganların da bilinen bir yönlendirme ve kalıcılık yöntemidir. Savunma: dosya <code>644 root:root</code> (Parça 12), içeriği tabana kaydedilip bütünlük izlemesinde (Parça 17), şüphede <code>dig</code> ile <code>getent</code> karşılaştırılır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>dig</code> doğru adresi veriyor, öyleyse programım da oraya gidiyor."</strong> <code>dig</code> DNS sunucusunu sınar, programın çözümleme yolunu değil; Örnek 3'te <code>dig</code> gerçek adresi verirken <code>curl</code> yerel makineye gitti. <code>/etc/hosts</code>, <code>nsswitch.conf</code> sırası, resolved önbelleği ya da VPN'in DNS ayarı farkı yaratabilir. Doğrusu: programın gördüğünü <code>getent ahosts</code>, DNS'inkini <code>dig</code> ile sor ve karşılaştır.</p></div>
+
+<p><code>resolv.conf</code> da kritiktir: oradaki sunucu her ad sorusunu görür ve cevabını belirler. Aynı yöntemle yerine <code>nameserver 127.0.0.1</code> (orada DNS yok) bağladığımızda <code>getent hosts example.com</code> hemen başarısız oldu (çıkış kodu 2), <code>localhost</code> ise çözülmeye devam etti, çünkü DNS'e sorulmuyor. DNS'e karşı saldırılar ve savunmalar Parça 30'da.</p>
+
+<h2 class="s">4. Dinleyen portlar ve bağlantılar: <code>ss</code></h2>
+
+<p>Kod rafı Parça 13'te istemci <code>connect((adres, port))</code> yaptı; sunucu ise <code>bind</code> ile bir adres ve porta bağlanıp <code>listen</code> ile bekler. <strong>Port</strong>, aynı makinedeki servisleri ayıran 16 bitlik numaradır. Çekirdeğin soket tablosunu <code>ss</code> yazar (eski <code>netstat</code>'ın yerine). TCP, UDP ve durumlar Parça 28'de.</p>
+
+<div class="tablo"><table>
+<tr><th>Seçenek</th><th><code>ss(8)</code>'e göre anlamı</th><th>Ne zaman</th></tr>
+<tr><td><code>-t</code> / <code>-u</code></td><td>TCP / UDP soketleri</td><td>Hep birini seç; ikisi birden de olur (<code>-tu</code>)</td></tr>
+<tr><td><code>-l</code></td><td>Yalnız dinleyen soketler (olağan çıktıda yoktur)</td><td>"Kim kapı açmış?"</td></tr>
+<tr><td><code>-a</code></td><td>Dinleyen ve dinlemeyen (TCP'de kurulu bağlantılar) hepsi</td><td>Tam görünüm</td></tr>
+<tr><td><code>-n</code></td><td>Port numaralarını servis adına çevirme</td><td>Her zaman; <code>:53</code>, <code>:domain</code>'den açıktır</td></tr>
+<tr><td><code>-p</code></td><td>Soketi kullanan süreç</td><td>Porttan sürece gitmek (Parça 13)</td></tr>
+<tr><td><code>-e</code></td><td>Ayrıntı: soketin sahibi UID, düğüm numarası</td><td>Süreç görünmüyorsa sahibini öğrenmek</td></tr>
+<tr><td><code>-s</code></td><td>Özet sayılar</td><td>Çok sayıda bağlantıda genel bakış</td></tr>
+<tr><td><code>-4</code> / <code>-6</code></td><td>Yalnız IPv4 / IPv6</td><td>IPv6 dinleyenleri unutmamak için ayrıca bak</td></tr>
+</table></div>
+
+<p><strong>Süzgeçler:</strong> <code>ss -tln 'sport = :8015'</code> yerel portu 8015 olanlar, <code>'( sport = :8015 or dport = :8015 )'</code> iki yön, <code>state established</code> kurulu bağlantılar. Süzgeci tek tırnağa al (Parça 9).</p>
+
+<h3>Bir satırı okumak</h3>
+
+<pre class="cikti">State  Recv-Q Send-Q  Local Address:Port Peer Address:PortProcess
+LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*
+LISTEN 0      5           127.0.0.1:8015      0.0.0.0:*    users:(("python3",pid=768,fd=3))</pre>
+
+<p><strong>State</strong> <code>LISTEN</code>: bağlantı bekleyen soket. <strong>Recv-Q / Send-Q</strong>: dinleyen sokette kabul bekleyen bağlantı sayısı ve kuyruğun üst sınırı (Python 5, WSL'nin DNS dinleyicisi 1000). <strong>Local Address:Port</strong>: bağlanılan yerel adres ve port. <strong>Peer</strong>: dinleyen sokette <code>0.0.0.0:*</code>, "herhangi biri". <strong>Process</strong>: süreç adı, PID ve tanıtıcı numarası.</p>
+
+<p>İlk satırda Process boş. Bu gizlenme değil izin sınırıdır: <code>ss</code> bu bilgiyi <code>/proc/PID/fd</code>'den toplar ve sıradan kullanıcı root'un süreçlerininkini okuyamaz (Parça 13). Laboratuvarda <code>sudo ss -tlnp</code> hepsini gösterir; burada <code>sudo</code> kullanılmadığı için çalıştırılmadı.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bir servisin kimden bağlantı kabul edeceğini önce bağlandığı adres belirler.</strong> <code>127.0.0.1:port</code> (ya da <code>[::1]:port</code>): yalnız bu makinenin içinden. Belirli bir adres (ör. <code>172.29.10.190:port</code>): yalnız o arayüzden gelenler. <code>0.0.0.0:port</code>: makinenin <strong>bütün IPv4 adreslerinden</strong>, yani dışarıdan da. <code>[::]:port</code> ya da <code>*:port</code>: bütün IPv6 (ve sistem ayarına göre IPv4) adreslerinden. Güvenlik duvarı (Parça 16) ikinci duvardır; birinci duvar, servisi gerekenden geniş bir adrese hiç bağlamamaktır.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Bağlanma adresi farkı: 127.0.0.1'e bağlı sunucuya yalnız makine içinden, 0.0.0.0'a bağlı sunucuya hem içeriden hem eth0 üzerinden dışarıdan ulaşılır">
+  <rect class="sv-k" x="150" y="20" width="470" height="250" rx="12"/>
+  <text class="sv-b" x="385" y="44" text-anchor="middle">Senin makinen</text>
+  <rect class="sv-m" x="420" y="70" width="180" height="56" rx="8"/>
+  <text class="sv-t" x="510" y="94" text-anchor="middle">sunucu A</text>
+  <text class="sv-s" x="510" y="112" text-anchor="middle">127.0.0.1:8015</text>
+  <rect class="sv-a" x="420" y="170" width="180" height="56" rx="8"/>
+  <text class="sv-t" x="510" y="194" text-anchor="middle">sunucu B</text>
+  <text class="sv-s" x="510" y="212" text-anchor="middle">0.0.0.0:8016</text>
+  <rect class="sv-l" x="250" y="70" width="110" height="56" rx="8"/>
+  <text class="sv-t" x="305" y="94" text-anchor="middle">lo kapısı</text>
+  <text class="sv-s" x="305" y="112" text-anchor="middle">127.0.0.1</text>
+  <rect class="sv-l" x="150" y="170" width="110" height="56" rx="8"/>
+  <text class="sv-t" x="205" y="194" text-anchor="middle">eth0 kapısı</text>
+  <text class="sv-s" x="205" y="212" text-anchor="middle">172.29.10.190</text>
+  <line class="sv-cl" x1="360" y1="98" x2="420" y2="98"/>
+  <line class="sv-cl" x1="360" y1="110" x2="420" y2="185"/>
+  <line class="sv-cl" x1="260" y1="198" x2="420" y2="198"/>
+  <line class="sv-c" x1="260" y1="186" x2="420" y2="104"/>
+  <text class="sv-s" x="340" y="146" text-anchor="middle">bağlanamaz</text>
+  <rect class="sv-k" x="10" y="176" width="110" height="44" rx="8"/>
+  <text class="sv-t" x="65" y="196" text-anchor="middle">başka bir</text>
+  <text class="sv-t" x="65" y="212" text-anchor="middle">makine</text>
+  <line class="sv-cl" x1="120" y1="198" x2="150" y2="198"/>
+  <text class="sv-s" x="385" y="258" text-anchor="middle">Denemede: eth0 adresinden 8016 → 200, 8015 → bağlanamadı; 127.0.0.1'den 8015 → 200.</text>
+</svg>
+<figcaption>Şekil 3. Aynı makinede iki sunucu. A yalnız döngü kapısını dinler; dışarıdan gelen bir bağlantı için o adreste dinleyen soket yoktur. B her kapıyı dinler; dışarıdan ulaşılmasını yalnız güvenlik duvarı engelleyebilir.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Geliştirme sunucusu dışarıdan açılmayınca "<code>0.0.0.0</code>'a bağla, düzelir" demek; ya da "<code>127.0.0.1</code>'deki servis güvende, parolasız olur" sanmak.</strong> Birincisi servisi aynı ağdaki herkese (kafe, yurt, ofis) açar; Microsoft'un WSL belgesi de bu uyarıyı yapar. İkincisi eksiktir: döngüye makinedeki bütün kullanıcılar ve süreçler ulaşır, kandırılmış bir web uygulaması da bu adrese istek atabilir (SSRF, Parça 57). Doğrusu: yalnız gereken adrese bağla, döngüdeki servise de kimlik doğrulama koy.</p></div>
+
+<p><code>ss</code> savunmada bir envanterdir; dinleyen her satıra üç soru: <strong>kim</strong> (Process), <strong>neden</strong> (Parça 14'teki servis listesinde karşılığı var mı), <strong>kime açık</strong> (adres). Beklenmeyen port Parça 13'teki soru listesini başlatır; gereksiz servis kapatılır (Parça 14), gerekli olan güvenlik duvarıyla daraltılır (Parça 16). UDP'yi unutma: <code>ss -ulnp</code> burada DNS dinleyicisinin UDP eşini ve <code>127.0.0.1:323</code>'te (chrony'nin denetim portu; süreç adı izin yüzünden görünmedi) bir zaman servisini gösterdi.</p>
+
+<h2 class="s">5. Sınama: <code>ping</code>, <code>traceroute</code>, <code>curl</code></h2>
+
+<h3><code>ping</code>: yankı isteği</h3>
+
+<p><code>ping</code> hedefe ICMP yankı isteği gönderir ve yanıtı bekler (ICMP, IP'nin denetim iletileri protokolü; Parça 24). Her satırda <code>icmp_seq</code> (sıra), <code>ttl</code> ve <code>time</code> (gidiş-dönüş süresi) vardır; özet satırı kaybı sayar. Çıkış kodu denemede yanıt varsa 0, yanıt yoksa 1, ağa çıkılamıyorsa 2 oldu.</p>
+
+<p>Eskiden <code>ping</code> SUID root'tu (Parça 12). Bu makinede sıradan <code>-rwxr-xr-x</code> izinli ve yeteneksiz; ayrıcalıksız ICMP yankı soketini kullanıyor. <code>icmp(7)</code>'ye göre <code>ping_group_range</code> bu soketi açabilecek grupları belirler, çekirdek varsayılanı "1 0" (hiçbiri); burada systemd'nin <code>50-default.conf</code>'u <code>0 2147483647</code> yapmış. En az yetkinin örneği: dar bir izin, bir SUID programın yerini aldı.</p>
+
+<h3><code>traceroute</code>: yol üstündekiler</h3>
+
+<p><code>traceroute(8)</code>'e göre araç TTL'yi 1'den başlatıp artırır; TTL'si biten paketi düşüren her yönlendiricinin "zaman aşıldı" iletisinden adresini öğrenir. Olağan yöntem, 33434'ten başlayan UDP portlarına giden ve root gerektirmeyen datagramlardır; adım başına üç deneme, en çok 30 adım. Yanıtsız deneme <code>*</code> ile yazılır. Ağ geçidine giden denemede her adım <code>* *</code> çıktı: yol yok demek değil, Windows bu ICMP yanıtlarını üretmiyor. ICMP'yi süzen her duvarda <code>traceroute</code> kör kalır.</p>
+
+<h3><code>curl</code>: uygulamanın gözünden</h3>
+
+<p>Asıl soru çoğu zaman "servis yanıt veriyor mu?"dur. <code>curl -v</code> yaptığı her şeyi yazar; kılavuz sayfasına göre <code>&gt;</code> gönderilen, <code>&lt;</code> alınan başlık, <code>*</code> curl'ün açıklaması, <code>{</code> <code>}</code> veridir. <code>-I</code> yalnız başlıkları ister, <code>-w</code> durum kodu ve adresleri yazdırır, <code>-s</code> ilerleme çubuğunu gizler. Hata 7 (<code>Could not connect</code>) o adres ve portta dinleyen olmadığını ya da bir duvarı, hata 6 (<code>Could not resolve host</code>) ad çözümleme sorununu gösterir. HTTP Parça 31'de.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Bağlantı sorununu aşağıdan yukarıya, her adımda tek bir soruyla ara.</strong> <strong>1.</strong> Arayüz açık ve adresi var mı? <code>ip -br addr</code>. <strong>2.</strong> Hedefe hangi yol seçiliyor? <code>ip route get HEDEF</code>. <strong>3.</strong> Ad doğru adrese çözülüyor mu? <code>getent ahosts AD</code>, gerekirse <code>dig</code> ile karşılaştır. <strong>4.</strong> Karşı taraf ağ katmanında yanıt veriyor mu? <code>ping</code> (yanıtsızlık tek başına kanıt değil). <strong>5.</strong> Port açık ve uygulama yanıt veriyor mu? <code>curl -v</code>; sunucu senin makinense <code>ss -tlnp</code> ile hangi adreste dinlediğine bak. Her adımın olumsuz sonucu sorunu bir katmana hapseder; atlayarak gidersen yanlış katmanı onarırsın. Bu sıra, Parça 20'deki katmanlı modelin pratikteki karşılığıdır.</p></div>
+
+<p>Bu sınamalar yalnız kendi makinende, ağ geçidinde ve sunucunda yapılır; başkasının ağında port taramak ya da servis yoklamak izinsiz erişim girişimi sayılabilir (Parça 72–73).</p>
+
+<h2 class="s">Kendi makinende dene: arayüzler, rotalar, DNS, boş bir ağ ad alanı ve iki yerel sunucu</h2>
+
+<p>Bu alıştırma yalnız kendi Linux makinende ya da laboratuvar VM'inde, <code>/tmp/yazar/siber-15/lab</code> altında yapılır; root gerekmez, sistemde hiçbir ayar değişmez. Hedefler yalnız <code>127.0.0.1</code>, kendi makinenin <code>eth0</code> adresi, kendi başlattığın iki Python sunucusu ve kendi ağ geçidindir. Çıktılar Windows 11 üstünde WSL2'de çalışan Kali Linux'tan (çekirdek 6.18, iproute2 7.0.0, curl 8.20.0) alındı; MAC adresleri, MAC'ten türeyen IPv6 adresi ve makine adı sadeleştirildi. Senin Debian ya da Ubuntu VM'inde arayüz adları (<code>enp0s3</code> gibi), adresler, ağ geçidi ve DNS düzeni farklı olacaktır; bu farkın kendisi de öğreticidir.</p>
+
+<h3>Adım 1: arayüzlerin kısa listesi</h3>
+
+<pre class="kod" data-ad="bash">mkdir -p /tmp/yazar/siber-15/lab/www; cd /tmp/yazar/siber-15/lab
+ip -br addr
+ip -br link</pre>
+<pre class="cikti">lo               UNKNOWN        127.0.0.1/8 10.255.255.254/32 ::1/128
+eth0             UP             172.29.10.190/20 fe80::215:5dff:fexx:xxxx/64
+dummy0           DOWN
+lo               UNKNOWN        00:00:00:00:00:00 &lt;LOOPBACK,UP,LOWER_UP&gt;
+eth0             UP             00:15:5d:xx:xx:xx &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt;
+dummy0           DOWN           6e:xx:xx:xx:xx:xx &lt;BROADCAST,NOARP&gt; </pre>
+
+<p><code>ip -br link</code> MAC adreslerini ve bayrakları verir. Üçüncü satır sürprizdi: ilk denemede yoktu. <code>ip -d link show dummy0</code> türünün <code>dummy</code> (paket yutan sanal arayüz) olduğunu, <code>/proc/modules</code> <code>dummy</code> modülünün o sırada yüklendiğini gösterdi; modül yüklenince kendiliğinden bir <code>dummy0</code> oluşturur. Kapalı ve adressiz, trafik taşımıyor; modülü kimin yüklettiği doğrulanamadı. Ders: tanımadığın arayüz bir sorudur; türüne, oluşma zamanına (<code>/sys/class/net</code>) ve adresine bakarak cevaplarsın.</p>
+
+<h3>Adım 2: <code>lo</code> ve ana arayüzün ayrıntısı</h3>
+
+<pre class="kod" data-ad="bash">ip addr show lo</pre>
+<pre class="cikti">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 10.255.255.254/32 brd 10.255.255.254 scope global lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host proto kernel_lo
+       valid_lft forever preferred_lft forever</pre>
+
+<p><code>lo</code>'nun MAC adresi sıfırlardan oluşur, çünkü altında gerçek bir bağlantı yok; MTU'su 65536, çünkü paketler hiçbir kablodan geçmeden bellekte kopyalanıyor. <code>127.0.0.1/8</code> ve <code>::1/128</code> <code>scope host</code>: yalnız bu makinede anlamlı. WSL'nin DNS adresi <code>scope global</code> görünüyor ama yalnız <code>lo</code> üstünde durduğu için makine dışından ulaşılamaz. <code>ip addr show eth0</code> çıktısı ve satır satır okunuşu bölüm 1'de.</p>
+
+<h3>Adım 3: rotalar</h3>
+
+<pre class="kod" data-ad="bash">ip route</pre>
+<pre class="cikti">default via 172.29.0.1 dev eth0 proto kernel
+172.29.0.0/20 dev eth0 proto kernel scope link src 172.29.10.190 </pre>
+
+<p>İki satır: bir bağlı rota ve bir varsayılan rota. Üç hedef için <code>ip route get</code> sonuçları Örnek 2'de. IPv6 için <code>ip -6 route</code> bu makinede yalnız <code>fe80::/64</code> bağlantı yerel rotasını gösterdi; varsayılan IPv6 rotası yok, yani bu makine dışarıya IPv6 ile çıkamaz. Laboratuvarında ikisine de bak; IPv6'nın unutulan bir yol olabilmesi Parça 27'de.</p>
+
+<h3>Adım 4: ad çözümleme dosyaları</h3>
+
+<pre class="kod" data-ad="bash">ls -l /etc/resolv.conf; cat /etc/resolv.conf
+grep '^hosts' /etc/nsswitch.conf
+getent hosts localhost; getent ahostsv4 example.com | head -1
+bash -c 'resolvectl status'; systemctl is-active systemd-resolved</pre>
+<pre class="cikti">lrwxrwxrwx 1 root root 20 Oct 16 17:19 /etc/resolv.conf -> /mnt/wsl/resolv.conf
+# This file was automatically generated by WSL. To stop automatic generation of this file, add the following entry to /etc/wsl.conf:
+# [network]
+# generateResolvConf = false
+nameserver 10.255.255.254
+hosts:          files myhostname mdns4_minimal [NOTFOUND=return] dns
+::1             localhost
+172.66.147.243  STREAM example.com
+bash: line 1: resolvectl: command not found
+inactive</pre>
+
+<p><code>resolv.conf</code> ve <code>nsswitch.conf</code> bölüm 3'te okundu; <code>/etc/hosts</code>'un tamamını <code>cat /etc/hosts</code> ile kendin oku. <code>getent hosts localhost</code> <code>::1</code> verdi; oysa <code>/etc/hosts</code>'ta <code>::1</code> satırında <code>localhost</code> adı yok. <code>getent -s files hosts localhost</code> yalnız dosyaya sorup <code>127.0.0.1</code> verdi, <code>getent -s myhostname hosts localhost</code> ise <code>::1</code>: IPv6 cevabı, <code>files</code>'tan sonra gelen <code>myhostname</code> kaynağından geliyor. Hangi kaynağın cevap verdiğini <code>-s</code> ile tek tek sorarak bulabilirsin. <code>example.com</code> satırı DNS'ten geldi. Son iki satır bu makinede systemd-resolved'in olmadığını doğruluyor.</p>
+
+<h3>Adım 5: boş bir ağ ad alanı</h3>
+
+<p>Parça 7'de konteynerlerin "ne gördüğünü" ad alanlarının belirlediğini söylemiştik. <code>network_namespaces(7)</code>'ye göre bir ağ ad alanı ağ aygıtlarını, IPv4 ve IPv6 yığınlarını, yönlendirme tablolarını, güvenlik duvarı kurallarını ve port numaralarını yalıtır. <code>unshare -rn</code> sahte bir root ile yeni, boş bir ağ ad alanı açar; içindeki her şey kabuk bitince yok olur. Bu gerçek root değildir: yalnız bu yeni ad alanının ağını yönetebilirsin. Laboratuvar VM'inde aynı deneyi <code>sudo ip netns add deneme</code> ile de yapabilirsin; o yol burada çalıştırılmadı.</p>
+
+<pre class="kod" data-ad="bash">unshare -rn bash -c '
+id -u
+ip addr
+ip route
+echo "[ip route bos]"
+ping -c 1 -W 1 127.0.0.1; echo "cikis $?"
+ip link set lo up
+ip -br addr
+ping -c 2 127.0.0.1
+ip route get 1.1.1.1; echo "cikis $?"
+python3 -m http.server 8015 --bind 127.0.0.1 &gt;/dev/null 2&gt;&amp;1 &amp; s=$!
+sleep 1
+ss -tlnp
+kill $s
+'
+ss -tln 'sport = :8015'</pre>
+<pre class="cikti">0
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+[ip route bos]
+ping: connect: Network is unreachable
+cikis 2
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.025 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.076 ms
+
+--- 127.0.0.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1006ms
+rtt min/avg/max/mdev = 0.025/0.050/0.076/0.025 ms
+RTNETLINK answers: Network is unreachable
+cikis 2
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      5          127.0.0.1:8015      0.0.0.0:*    users:(("python3",pid=852,fd=3))
+State Recv-Q Send-Q Local Address:Port Peer Address:Port</pre>
+
+<p>Satır satır: <code>id -u</code> 0, ad alanındaki sahte root. Yeni ad alanında <strong>yalnız <code>lo</code></strong> var ve o da kapalı: bayraklarda <code>UP</code> yok, durum <code>DOWN</code>, hiçbir adres yok. <code>eth0</code> yok, çünkü <code>network_namespaces(7)</code>'ye göre fiziksel bir ağ aygıtı aynı anda yalnız bir ad alanında yaşar. Rota tablosu boş. Bu yüzden kendine bile <code>ping</code> atılamadı: <code>Network is unreachable</code>, çıkış kodu 2. <code>ip link set lo up</code> sonrasında çekirdek <code>lo</code>'ya <code>127.0.0.1/8</code> ve <code>::1/128</code>'i kendiliğinden verdi ve <code>ping</code> çalıştı. Ama dışarıya hâlâ yol yok: <code>ip route get 1.1.1.1</code> "ağa ulaşılamıyor" dedi. Ad alanının içinde 8015'i dinleyen bir sunucu başlattık; son komut, ad alanının dışından aynı porta bakıyor ve hiçbir şey bulmuyor. İki ayrı ağ yığını, iki ayrı port tablosu. Konteynerlerin birbirinin portunu görmemesinin altında yatan mekanizma budur.</p>
+
+<h3>Adım 6: yerel sunucu, <code>ss</code> ve bir isteğin satırları</h3>
+
+<pre class="kod" data-ad="bash">cd /tmp/yazar/siber-15/lab/www; echo merhaba &gt; index.html
+python3 -m http.server 8015 --bind 127.0.0.1 &gt; ../s8015.log 2&gt;&amp;1 &amp;
+s1=$!
+sleep 1
+ss -tlnp
+curl -sv http://127.0.0.1:8015/</pre>
+<pre class="cikti">State  Recv-Q Send-Q  Local Address:Port Peer Address:PortProcess
+LISTEN 0      1000   10.255.255.254:53        0.0.0.0:*
+LISTEN 0      5           127.0.0.1:8015      0.0.0.0:*    users:(("python3",pid=768,fd=3))
+*   Trying 127.0.0.1:8015...
+* Established connection to 127.0.0.1 (127.0.0.1 port 8015) from 127.0.0.1 port 53886
+* using HTTP/1.x
+&gt; GET / HTTP/1.1
+&gt; Host: 127.0.0.1:8015
+&gt; User-Agent: curl/8.20.0
+&gt; Accept: */*
+&gt;
+* Request completely sent off
+* HTTP 1.0, assume close after body
+&lt; HTTP/1.0 200 OK
+&lt; Server: SimpleHTTP/0.6 Python/3.13.12
+&lt; Date: Fri, 16 Oct 2026 14:19:41 GMT
+&lt; Content-type: text/html
+&lt; Content-Length: 8
+&lt; Last-Modified: Fri, 16 Oct 2026 14:19:40 GMT
+&lt;
+{ [8 bytes data]
+* shutting down connection #0
+merhaba</pre>
+
+<p>Sunucumuz <code>python3</code>, PID 768, yalnız <code>127.0.0.1</code>'de. curl bağlantıyı <strong>53886</strong> numaralı yerel porttan kurdu; bu portu istemci tarafında çekirdek geçici (ephemeral) olarak atar. <code>&gt;</code> satırları gönderilen istektir: istek satırı (<code>GET / HTTP/1.1</code>), <code>Host</code>, <code>User-Agent</code>, kabul edilen içerik; boş <code>&gt;</code> başlıkların bittiğini gösterir. <code>&lt;</code> satırları yanıttır: <code>200 OK</code>, sunucu yazılımı, tarih, içerik türü, 8 baytlık uzunluk (<code>merhaba</code> ve satır sonu). Sunucu HTTP/1.0 konuştuğu için curl bağlantının kapanacağını not etti. <code>Server</code> başlığı tam sürümü herkese söylüyor: Parça 58'deki bilgi sızıntısının küçük bir örneği.</p>
+
+<h3>Adım 7: kurulu bir bağlantıyı yakalamak</h3>
+
+<p>curl'ün bağlantısı bir saniyeden kısa sürdü; <code>ss</code> ile görmeye fırsat olmadı. Bash'in <code>/dev/tcp</code> özelliğiyle bir bağlantı açıp açık tutalım (kod rafı Parça 13'teki <code>socket.connect</code>'in kabuktaki karşılığı):</p>
+
+<pre class="kod" data-ad="bash">exec 3&lt;&gt;/dev/tcp/127.0.0.1/8015
+sleep 0.5
+ss -tnp '( sport = :8015 or dport = :8015 )'
+exec 3&gt;&amp;-
+sleep 0.5
+ss -tan '( sport = :8015 or dport = :8015 )'</pre>
+<pre class="cikti">State Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+ESTAB 0      0          127.0.0.1:8015     127.0.0.1:53888 users:(("python3",pid=768,fd=4))
+ESTAB 0      0          127.0.0.1:53888    127.0.0.1:8015  users:(("ss",pid=795,fd=3),("bash",pid=744,fd=3))
+State     Recv-Q Send-Q Local Address:Port  Peer Address:Port
+LISTEN    0      5          127.0.0.1:8015       0.0.0.0:*
+TIME-WAIT 0      0          127.0.0.1:53888    127.0.0.1:8015
+TIME-WAIT 0      0          127.0.0.1:8015     127.0.0.1:53886</pre>
+
+<p>Bir bağlantı, aynı makinede iki satır olarak görünür; çünkü iki ucu da bu makinede. Birinci satır sunucu ucu: yerel <code>8015</code>, karşı taraf <code>53888</code>, tutan süreç <code>python3</code>, tanıtıcı 4 (3 dinleyen soketti; kabul edilen her bağlantı yeni bir tanıtıcı alır). İkinci satır istemci ucu: yerel <code>53888</code>, karşı <code>8015</code>. Tutanlar arasında <code>bash</code> beklediğimiz gibi var; ama <code>ss</code>'in kendisi de var. Neden? Bash'in 3 numaralı tanıtıcısı, Parça 5'teki <code>fork</code> mirasıyla çocuk süreç <code>ss</code>'e de geçti. Bir soket bir dosyadır ve açık dosyalar çocuklara miras kalır. Bağlantıyı kapattıktan sonra <code>-a</code> ile baktığımızda iki satır <code>TIME-WAIT</code> durumunda: TCP kapanan bağlantının izini bir süre saklıyor; birinin portu 53886, yani 6. adımdaki curl bağlantısı. Durumların anlamı Parça 28'de. Sunucunun günlüğü (<code>cat ../s8015.log</code>) yalnız curl'ün isteğini kaydetti: <code>127.0.0.1 - - [...] "GET / HTTP/1.1" 200 -</code>; bash bağlantısı istek göndermediği için günlükte iz bırakmadı. Ağ bağlantısı ile uygulama günlüğü aynı şeyi göstermez; savunmada ikisine birden bakılır.</p>
+
+<h3>Adım 8: <code>0.0.0.0</code> ile <code>127.0.0.1</code> farkı</h3>
+
+<pre class="kod" data-ad="bash">python3 -m http.server 8016 --bind 0.0.0.0 &gt; ../s8016.log 2&gt;&amp;1 &amp;
+s2=$!
+sleep 1
+ss -tlnp '( sport = :8015 or sport = :8016 )'
+a=$(ip -4 -o addr show eth0 | awk '{print $4}' | cut -d/ -f1); echo "eth0 adresi: $a"
+curl -sS -o /dev/null -w '8016 eth0 adresinden: %{http_code}\n' "http://$a:8016/"
+curl -sS -o /dev/null -w '8015 eth0 adresinden: %{http_code}\n' "http://$a:8015/"
+curl -sS -o /dev/null -w '8015 127.0.0.1 adresinden: %{http_code}\n' http://127.0.0.1:8015/</pre>
+<pre class="cikti">State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      5            0.0.0.0:8016      0.0.0.0:*    users:(("python3",pid=799,fd=3))
+LISTEN 0      5          127.0.0.1:8015      0.0.0.0:*    users:(("python3",pid=768,fd=3))
+eth0 adresi: 172.29.10.190
+8016 eth0 adresinden: 200
+curl: (7) Failed to connect to 172.29.10.190 port 8015 after 0 ms: Could not connect to server
+8015 eth0 adresinden: 000
+8015 127.0.0.1 adresinden: 200</pre>
+
+<p>Aynı sunucu programı, tek fark <code>--bind</code>. <code>ss</code> iki satırda bunu açıkça yazıyor: <code>0.0.0.0:8016</code> ve <code>127.0.0.1:8015</code>. Sonra makinenin kendi <code>eth0</code> adresine, yani başka bir makinenin bağlanacağı adrese istek attık. 8016 yanıt verdi (200): her adresi dinleyen sunucuya <code>eth0</code>'dan ulaşılıyor. 8015'e aynı adresten bağlanılamadı: curl'ün 7 numaralı hatası, durum kodu yerine <code>000</code>. Çekirdek, <code>172.29.10.190:8015</code> için dinleyen bir soket bulamadı ve bağlantıyı hemen reddetti. Aynı sunucu <code>127.0.0.1</code>'den yine 200 verdi. Şekil 3'teki durum budur. Deneyi aynı makineden yaptık; gerçek bir dış makine olarak Windows tarafından deneme burada yapılmadı, çünkü WSL'nin NAT kipinde Windows'un <code>localhost</code> yönlendirmesi ve Hyper-V güvenlik duvarı sonucu karıştırır.</p>
+
+<h3>Adım 9: <code>ping</code> ve <code>traceroute</code></h3>
+
+<pre class="kod" data-ad="bash">ping -c 3 127.0.0.1; echo "cikis kodu $?"
+gw=$(ip route show default | awk '{print $3}'); echo "ag gecidi: $gw"
+ping -c 3 -W 2 "$gw"; echo "cikis kodu $?"
+traceroute -n 127.0.0.1
+traceroute -n -m 3 -q 2 "$gw"</pre>
+<pre class="cikti">PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.029 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.053 ms
+64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.079 ms
+
+--- 127.0.0.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2006ms
+rtt min/avg/max/mdev = 0.029/0.053/0.079/0.020 ms
+cikis kodu 0
+ag gecidi: 172.29.0.1
+PING 172.29.0.1 (172.29.0.1) 56(84) bytes of data.
+
+--- 172.29.0.1 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2046ms
+
+cikis kodu 1
+traceroute to 127.0.0.1 (127.0.0.1), 30 hops max, 60 byte packets
+ 1  127.0.0.1  0.061 ms  0.023 ms  0.012 ms
+traceroute to 172.29.0.1 (172.29.0.1), 3 hops max, 60 byte packets
+ 1  * *
+ 2  * *
+ 3  * *</pre>
+
+<p>Döngüye üç yankı, üç yanıt; süreler mikrosaniye düzeyinde, çünkü paket hiçbir kablodan geçmiyor. <code>56(84) bytes</code>: 56 baytlık veri, ICMP ve IP başlıklarıyla 84 bayt. Ağ geçidini <code>ip route</code>'tan bir boru hattıyla (Parça 9'daki <code>awk</code>) aldık; Microsoft'un önerdiği yol da budur. Ağ geçidine üç yankı, sıfır yanıt, çıkış kodu 1. <code>traceroute</code> döngüde tek adımda bitti; ağ geçidine giderken her adımda <code>* *</code> yazdı (<code>-q 2</code> adım başına iki deneme, <code>-m 3</code> en çok üç adım). Yorum, bölüm 2'deki sık hatada yaptığımız gibi: Windows ana makinesi ICMP yanıtlarını üretmiyor; bağlantı ise çalışıyor (4. adımdaki DNS cevabı bu ağ geçidinin arkasından geldi). Kendi VM'inde ağ geçidi (VirtualBox ya da VMware'in NAT aracısı) büyük olasılıkla yanıt verecek; vermiyorsa nedenini aynı biçimde düşün.</p>
+
+<h3>Adım 10: temizlik</h3>
+
+<pre class="kod" data-ad="bash">kill $s1 $s2; wait $s1 $s2 2&gt;/dev/null
+ss -tln '( sport = :8015 or sport = :8016 )'
+jobs -l; echo "[is yok]"</pre>
+<pre class="cikti">State Recv-Q Send-Q Local Address:Port Peer Address:Port
+[is yok]</pre>
+
+<p>İki sunucu durduruldu; <code>ss</code> yalnız başlık satırını yazdı, <code>jobs</code> boş. Ad alanlarında yapılan her şey kabukla birlikte zaten yok oldu. İşin sonunda <code>rm -rf /tmp/yazar/siber-15</code> ile klasörü sil. Kendi makinende her deneyden sonra <code>ss -tlnp</code>'yi bir kez daha çalıştırmayı alışkanlık edin: unutulmuş bir deneme sunucusu, unutulmuş açık bir kapıdır.</p>
+
+<h2 class="s">6. Kendi makineni tanımak: ağ bloğuna köprü</h2>
+
+<p>Bu parçanın araçları bir araya gelince, kendi makinen için birkaç dakikada çıkarabileceğin bir ağ envanteri olur. Hepsi salt okurdur. Sonuçlarını Parça 12'deki SUID listesi gibi bir taban dosyasına kaydet ve zaman zaman karşılaştır: yeni bir arayüz, yeni bir rota, değişmiş bir DNS sunucusu ya da yeni bir dinleyen port, açıklaması bulunana kadar bir olaydır.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Komut</th><th>Beklenmeyen ne olabilir?</th></tr>
+<tr><td>Hangi arayüzler, hangi adresler?</td><td><code>ip -br addr</code>, <code>ip -d link</code></td><td>Tanımadığın tünel ya da köprü; beklenmedik global IPv6 adresi</td></tr>
+<tr><td>Trafik nereden çıkıyor?</td><td><code>ip route</code>, <code>ip -6 route</code></td><td>İkinci bir varsayılan rota; tanımadığın ağ geçidi</td></tr>
+<tr><td>Adlar kime soruluyor?</td><td><code>cat /etc/resolv.conf</code>, <code>resolvectl status</code></td><td>Tanımadığın DNS sunucusu</td></tr>
+<tr><td>DNS'i ezen satır var mı?</td><td><code>cat /etc/hosts</code>, <code>getent ahosts</code> ile <code>dig</code> karşılaştırması</td><td>Bilinen bir alan adını başka adrese bağlayan satır</td></tr>
+<tr><td>Kim dinliyor, kime açık?</td><td><code>sudo ss -tulpn</code></td><td><code>0.0.0.0</code> ya da <code>[::]</code>'de gereksiz servis; sahibi belirsiz süreç</td></tr>
+<tr><td>Kim kiminle konuşuyor?</td><td><code>ss -tnp state established</code></td><td>Bilinmeyen bir adrese süren bağlantı (Parça 13)</td></tr>
+</table></div>
+
+<p>Ağ bloğunda her satır derinleşecek: Ethernet ve MAC (21), ARP (23), <code>/20</code>'nin hesabı (25), <code>TIME-WAIT</code> (28), <code>nameserver</code>'ın ardındaki zincir (29), <code>curl -v</code>'deki başlıklar (31), trafiği paket paket görmek (32–33). Bir sonraki parçada ise dinleyen portlara kimin ulaşabileceğini güvenlik duvarıyla kendin belirleyeceksin.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki ikili gösterim ve VE işlemi önek ve maskeyi okumanın temelidir (240 = 11110000). Parça 5'teki <code>fork</code> mirası, açık bir soketin çocuk sürece geçmesini açıkladı. Parça 7'deki ad alanları burada <code>unshare -rn</code> ile boş bir ağ yığınına, <code>unshare -rm</code> ile geçici bir <code>/etc/hosts</code>'a dönüştü. Parça 8'deki bağlama ve <code>/etc</code> yapılandırma dosyalarının yeri, Parça 9'daki boru ve <code>awk</code>, Parça 12'deki sembolik bağ ve SUID envanteri (<code>ping</code>'in artık SUID olmaması), Parça 13'teki <code>ss -tlnp</code> ve <code>/proc/PID/fd</code> bu parçanın araçlarıydı.</p>
+<p><strong>Sonraki parçalara:</strong> Dinleyen portları daraltmak Parça 16'da (güvenlik duvarı); ağ ve servis günlükleri Parça 17'de; SSH servisinin hangi adreste dinlemesi gerektiği Parça 18'de; gereksiz portu kapatmak Parça 19'daki sertleştirme listesinde. Ağ bloğunda: katmanlar 20, Ethernet ve MAC 21, ARP ve <code>ip neigh</code> 23, IP, TTL, <code>ping</code> ve <code>traceroute</code>'un iç işleyişi 24, alt ağ hesabı 25, IPv6 27, TCP durumları 28, DNS zinciri 29, DNS güvenliği 30, HTTP 31, paket yakalama 32–33. <code>127.0.0.1</code>'e güvenmenin sınırı Parça 57'de (SSRF), sürüm bilgisi sızdıran başlıklar Parça 58'de.</p>
+<p><strong>Kod rafına:</strong> Parça 13'teki <code>socket.connect</code>, <code>gethostbyname</code> ve <code>urllib</code> isteği burada çekirdeğin tablolarında görünür oldu; oradaki "basit tarayıcı" projesinin neden yalnız <code>localhost</code>'ta çalıştırıldığını bu parçadaki bağlanma adresi farkı ve Parça 72–73'teki hukuk sınırı açıklar. Parça 15–16'daki kabuk ve boru alışkanlıkları her komutta kullanıldı.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>ip addr çıktısındaki UP ve LOWER_UP bayrakları neyi ayırt eder? lo'nun durumunun UNKNOWN görünmesi bir arıza mıdır?</summary><p>UP arayüzün yönetici tarafından açıldığını, LOWER_UP alttaki fiziksel ya da sanal bağlantının gerçekten var olduğunu gösterir; ikisi birlikte arayüzün çalıştığını söyler. UP olup LOWER_UP olmayan bir kartta kablo yoktur. lo'nun altında kablo olmadığı için çekirdek bağlantı durumunu bildirmez ve ip bunu UNKNOWN yazar; bu arıza değildir, bakılacak yer UP bayrağıdır.</p></details>
+<details><summary>172.29.10.190/20 adresindeki /20 ne anlatır? Maske ve adres sayısı nedir?</summary><p>Adresin soldan ilk 20 biti ağı, kalan 12 biti ağ içindeki makineyi belirtir. Maske soldan 20 biri 1 olan sayıdır: 255.255.240.0. Ağdaki adres sayısı 2 üzeri 12, yani 4.096; ağ 172.29.0.0'dan 172.29.15.255'e uzanır ve sonuncusu yayın adresidir.</p></details>
+<details><summary>Yönlendirme tablosunda hem 172.29.0.0/20 hem default rotası 172.29.5.5'i kapsıyor. Çekirdek hangisini seçer ve paket kime teslim edilir?</summary><p>Çekirdek önek uzunluğu en büyük olan rotayı seçer; /20, default'un /0'ından uzundur. O rotada via olmadığı için paket ağ geçidine değil, doğrudan hedefe eth0'dan teslim edilir. ip route get 172.29.5.5 bunu paket göndermeden gösterir.</p></details>
+<details><summary>/etc/hosts'ta bir alan adına 127.0.0.1 yazılıysa getent ile dig neden farklı cevap verir?</summary><p>getent, sıradan programlar gibi glibc'ye sorar ve nsswitch.conf'taki sırayı izler; files kaynağı önce geldiği için /etc/hosts'taki 127.0.0.1 döner ve DNS'e hiç gidilmez. dig ise DNS protokolünü kendisi konuşur ve doğrudan resolv.conf'taki sunucuya sorar; /etc/hosts'a bakmaz. Programların gerçekte nereye gideceğini getent gösterir.</p></details>
+<details><summary>ss -tlnp çıktısında 0.0.0.0:8016 ile 127.0.0.1:8015 satırları neyi anlatır?</summary><p>İkisi de dinleyen TCP soketidir. 0.0.0.0:8016 makinenin bütün IPv4 adreslerinden, dolayısıyla dışarıdan gelen bağlantıları da kabul eder. 127.0.0.1:8015 yalnız makinenin içinden ulaşılabilir; denemede eth0 adresinden 8015'e bağlanılamadı, 8016'ya bağlanıldı.</p></details>
+<details><summary>unshare -rn ile açılan yeni ağ ad alanında ne vardır ve neden ping 127.0.0.1 ilk anda çalışmaz?</summary><p>Yeni ad alanında yalnız lo arayüzü vardır ve kapalıdır (DOWN); adresi ve rotası yoktur, eth0 gibi aygıtlar asıl ad alanında kalır. Bu yüzden ping "Network is unreachable" der. ip link set lo up sonrasında çekirdek 127.0.0.1/8 ve ::1'i verir ve ping çalışır; ama dışarıya hâlâ yol yoktur.</p></details>
+<details><summary>Ağ geçidin ping'e yanıt vermiyor ama web siteleri açılıyor. Bundan ne çıkarırsın?</summary><p>Ağ geçidi ICMP yankı isteklerini yanıtsız bırakıyor olabilir; Windows Güvenlik Duvarı gibi duvarlar bunu olağan olarak yapar. Yanıt gelmemesi bir gözlemdir, makinenin kapalı ya da yolun kopuk olduğu bir çıkarımdır. Trafiğin ağ geçidinden geçtiğini başka bir sınamayla, örneğin ad çözümlemenin ya da bir curl isteğinin çalışmasıyla görürsün.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Dört soru, dört tablo:</strong> ben kimim (<code>ip addr</code>), nereden çıkarım (<code>ip route</code>), ad kimin (<code>nsswitch.conf</code>, <code>hosts</code>, <code>resolv.conf</code>), kim dinliyor (<code>ss</code>). Sınama: <code>ping</code>, <code>traceroute</code>, <code>curl</code>.</li>
+<li><strong>Arayüz:</strong> <code>lo</code> döngü (127.0.0.1, ::1), <code>eth0</code>/<code>enp0s3</code>, <code>wlan0</code>, tünel ve köprüler. <code>ip -br addr</code>, <code>ip -br link</code>, <code>ip -d link</code>. <code>ifconfig</code> eski.</li>
+<li><strong>Bayraklar:</strong> UP yönetici açtı, LOWER_UP bağlantı var; <code>lo</code> UNKNOWN olağan. <code>link/ether</code> MAC (kişisel iz, Parça 21). <code>fe80::</code> bağlantı yerel, MAC'ten türeyebilir.</li>
+<li><strong>Kapsam:</strong> host yalnız makine, link yalnız bağlantı, global her yer.</li>
+<li><strong>Önek /n:</strong> ilk n bit ağ; 2<sup>32 − n</sup> adres. /8 = 255.0.0.0, /16, /20 = 255.255.240.0 (4.096), /24 = 255.255.255.0 (256), /32 tek adres. Hesap Parça 25; doğrulama <code>ipaddress</code>.</li>
+<li><strong>Rota:</strong> bağlı rota (<code>scope link</code>, doğrudan), <code>default</code> = 0/0, <code>via</code> = ağ geçidi. En uzun önek kazanır; yerel tablo önce. <code>ip route get</code> paket göndermez, kararı gösterir.</li>
+<li><strong>Kalıcılık:</strong> <code>ip</code> ile yapılan değişiklik geçici; kalıcı ayar ifupdown, NetworkManager, systemd-networkd, netplan ya da WSL'de.</li>
+<li><strong>Ad çözümleme:</strong> <code>hosts:</code> satırı soldan sağa; <code>files</code> = <code>/etc/hosts</code> DNS'ten önce. <code>resolv.conf</code>: en çok üç <code>nameserver</code>, <code>search</code>, <code>options</code>. systemd-resolved: 127.0.0.53, <code>resolvectl status</code>.</li>
+<li><strong>getent ≠ dig:</strong> <code>getent ahosts</code> programın yolunu, <code>dig</code> DNS sunucusunu sorar. <code>/etc/hosts</code> ve <code>resolv.conf</code> 644 root, izlenir.</li>
+<li><strong>ss:</strong> <code>-t -u -l -a -n -p -e -s -4 -6</code>; süzgeç <code>'sport = :8015'</code>. Process boşsa süreç başkasının: <code>sudo</code>. Bağlantı aynı makinede iki satır; soket miras kalır.</li>
+<li><strong>Bağlanma adresi:</strong> 127.0.0.1 yalnız içeriden, 0.0.0.0 bütün IPv4 adreslerinden, [::] IPv6. Döngüdeki servise de kimlik doğrulama.</li>
+<li><strong>ping:</strong> ICMP yankı; çıkış 0 yanıt, 1 yanıtsız, 2 ağ yok. SUID değil, <code>ping_group_range</code>. <strong>traceroute:</strong> TTL artırarak UDP 33434+, <code>*</code> yanıtsız deneme. Yanıtsızlık kanıt değil.</li>
+<li><strong>curl -v:</strong> <code>&gt;</code> giden, <code>&lt;</code> gelen başlık, <code>*</code> açıklama; <code>-I</code>, <code>-w</code>; hata 7 bağlanamadı, 6 ad çözülemedi.</li>
+<li><strong>Sorun giderme sırası:</strong> arayüz → rota → ad → ping → port ve uygulama.</li>
+<li><strong>Ad alanı:</strong> <code>unshare -rn</code> → yalnız kapalı <code>lo</code>; ayrı rota ve port tablosu.</li>
+<li><strong>Sınır:</strong> yalnız kendi makinen, kendi ağ geçidin, kendi sunucun (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-15">
+<h3>Quiz 15</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>ip -br addr</code> çıktısında <code>eth0 UP 172.29.10.190/20</code> satırı görülüyor. Buradaki <code>/20</code> için hangisi doğrudur?</p>
+<ul class="sec"><li>Arayüzün 20 numaralı arayüz olduğunu gösterir.</li><li>Adresin ilk 20 biti ağ kısmıdır; maske 255.255.240.0'dır ve ağda 4.096 adres vardır.</li><li>Ağda 20 makine bulunabileceğini gösterir.</li><li>Maske 255.255.255.20'dir.</li><li>Adresin son 20 biti ağ kısmıdır.</li></ul>
+<div class="coz"><p>CIDR gösteriminde <code>/n</code>, 32 bitlik adresin soldan ilk n bitinin ağı belirttiğini söyler. Soldan 20 bit 1 olan maske 255.255.240.0'dır (240 = 11110000); makine kısmı 12 bit olduğu için 2<sup>12</sup> = 4.096 adres vardır. Python'un <code>ipaddress</code> modülü de aynı sonucu verdi. A, arayüz sıra numarasıyla karıştırır; o numara <code>ip addr</code>'da satır başında görünür. C ve D sayıyı adres ya da maske hanesi sanır; E bitlerin yönünü ters çevirir.</p></div></li>
+
+<li data-c="D"><p class="q"><code>ip route</code> çıktısı <code>default via 172.29.0.1 dev eth0</code> ve <code>172.29.0.0/20 dev eth0 scope link</code> satırlarından oluşuyor. <code>1.1.1.1</code> adresine gidecek bir paket için ne olur?</p>
+<ul class="sec"><li>Paket doğrudan 1.1.1.1'e, ağ geçidi kullanılmadan teslim edilir.</li><li>Rota olmadığı için paket gönderilemez.</li><li>Paket <code>lo</code> arayüzüne verilir.</li><li>Yalnız varsayılan rota eşleşir; paket <code>eth0</code>'dan ağ geçidi 172.29.0.1'e teslim edilir.</li><li>Paket önce DNS sunucusuna gönderilir.</li></ul>
+<div class="coz"><p>1.1.1.1, 172.29.0.0/20 ağının dışındadır; onu kapsayan tek rota her adresi kapsayan <code>default</code> (0/0) rotasıdır. Bu rotada <code>via</code> olduğu için paket ağ geçidine verilir; <code>ip route get 1.1.1.1</code> de <code>via 172.29.0.1 dev eth0</code> yazdı. A yalnız bağlı rotada olurdu. B yanlıştır, çünkü varsayılan rota tam bu durum içindir. C yerel adreslere özgüdür. E, ad çözümleme ile yönlendirmeyi karıştırır; adres zaten sayıdır.</p></div></li>
+
+<li data-c="A"><p class="q"><code>ip route get 1.1.1.1</code> komutu için hangisi doğrudur?</p>
+<ul class="sec"><li>Hiçbir paket göndermeden, çekirdeğin o hedef için seçeceği rotayı, arayüzü ve kaynak adresi gösterir.</li><li>Hedefe bir ICMP yankı isteği gönderir ve yanıt süresini ölçer.</li><li>Yönlendirme tablosuna 1.1.1.1 için kalıcı bir rota ekler.</li><li>Hedefe kadar yol üstündeki bütün yönlendiricileri listeler.</li><li>Yalnız root tarafından çalıştırılabilir.</li></ul>
+<div class="coz"><p><code>ip-route(8)</code> belgesine göre <code>ip route get</code> rotayı çekirdeğin gördüğü biçimde yazar ve bu sırada hiçbir paket gönderilmez; tamamen makinenin içinde kalan bir sorudur. B <code>ping</code>'in, D <code>traceroute</code>'un işidir. C, <code>ip route add</code> ile karıştırır; ki o da kalıcı değil, yeniden başlatmaya kadardır. E yanlış: bu parçadaki komut sıradan kullanıcıyla çalıştı ve çıktıda <code>uid 1000</code> göründü.</p></div></li>
+
+<li data-c="C"><p class="q"><code>/etc/nsswitch.conf</code>'ta <code>hosts: files dns</code> satırı var. Bir laboratuvar makinesinin <code>/etc/hosts</code> dosyasına <code>127.0.0.1 example.com</code> satırı eklenmiş. <code>getent ahostsv4 example.com</code> ve <code>dig example.com +short</code> ne yazar?</p>
+<ul class="sec"><li>İkisi de 127.0.0.1 yazar.</li><li>İkisi de DNS'teki gerçek adresleri yazar.</li><li><code>getent</code> 127.0.0.1, <code>dig</code> DNS'teki gerçek adresleri yazar.</li><li><code>getent</code> gerçek adresleri, <code>dig</code> 127.0.0.1 yazar.</li><li>İki komut da hata verir, çünkü aynı ad iki yerde tanımlıdır.</li></ul>
+<div class="coz"><p><code>getent</code> glibc'ye sorar ve <code>nsswitch.conf</code>'taki sırayı izler: <code>files</code> önce geldiği için <code>/etc/hosts</code>'taki 127.0.0.1 döner, DNS'e hiç gidilmez. <code>dig</code> ise DNS protokolünü kendisi konuşur ve doğrudan <code>resolv.conf</code>'taki sunucuya sorar; <code>/etc/hosts</code>'u okumaz. Örnek 3'teki deneyde tam bu görüldü ve <code>curl</code> isteği yerel sunucuya gitti. A ve B iki aracın farkını yok sayar, D farkı tersine çevirir. E yanlış: iki kaynakta tanım olması hata değildir, sıra karar verir.</p></div></li>
+
+<li data-c="E"><p class="q"><code>ss -tlnp</code> çıktısında şu iki satır var: <code>LISTEN … 0.0.0.0:8016</code> ve <code>LISTEN … 127.0.0.1:8015</code>. Güvenlik duvarı olmadığı varsayılırsa aynı ağdaki başka bir makine hangi porta bağlanabilir?</p>
+<ul class="sec"><li>Yalnız 8015'e</li><li>İkisine de</li><li>Hiçbirine; dinleyen portlara dışarıdan bağlanılamaz</li><li>İkisine de, ama yalnız UDP ile</li><li>Yalnız 8016'ya</li></ul>
+<div class="coz"><p><code>0.0.0.0</code> makinenin bütün IPv4 adreslerinden bağlantı kabul eder, dolayısıyla <code>eth0</code> adresine gelen dış bağlantıları da. <code>127.0.0.1</code> yalnız döngü arayüzündedir; dışarıdan gelen bağlantı için o adreste dinleyen soket yoktur. Denemede <code>eth0</code> adresinden 8016'ya 200 yanıtı alındı, 8015'e ise "Could not connect" hatası. A durumu tersine çevirir. B bağlanma adresinin anlamını yok sayar. C dinleyen soketin işlevini inkâr eder. D'deki UDP ilgisizdir; satırlar <code>-t</code> ile alınmış TCP soketleridir.</p></div></li>
+
+<li data-c="B"><p class="q">Sıradan kullanıcıyla çalıştırılan <code>ss -tlnp</code> çıktısında <code>LISTEN 0 1000 10.255.255.254:53 0.0.0.0:*</code> satırının Process sütunu boş. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>Bu soketi hiçbir süreç tutmuyor; çekirdek kendisi açtı ve kapatılamaz.</li><li>Soket başka bir kullanıcının (ör. root'un) sürecine ait; <code>-p</code> bilgisi yalnız okunabilen süreçler için gösterilir, tam bilgi için laboratuvarda <code>sudo ss -tlnp</code> çalıştırılır.</li><li>Süreç kendini gizleyen bir zararlıdır; makine kesinlikle ele geçirilmiştir.</li><li><code>-n</code> seçeneği süreç adlarını sayıya çevirdiği için ad görünmüyor.</li><li>Port 53 olduğu için <code>ss</code> süreç bilgisini bilerek gizler.</li></ul>
+<div class="coz"><p><code>ss</code> süreç bilgisini her sürecin <code>/proc/PID/fd</code> dizininden toplar; sıradan kullanıcı başka kullanıcıların süreçlerinin tanıtıcılarını okuyamaz (Parça 13). Bu yüzden sütun boş kalır; <code>sudo</code> ile ya da <code>ss -tlne</code>'nin sahip bilgisiyle araştırılır. A ve E temelsizdir. C aşırı bir çıkarımdır: boş sütun tek başına bir kanıt değil, sorulacak bir sorudur. D yanlış: <code>-n</code> yalnız port ve adresleri ada çevirmemeyi sağlar.</p></div></li>
+
+<li data-c="D"><p class="q">WSL'de <code>ping -c 3 172.29.0.1</code> (ağ geçidi, Windows ana makinesi) yüzde 100 kayıp veriyor ve çıkış kodu 1. Aynı anda <code>getent ahostsv4 example.com</code> bir adres döndürüyor ve yerel bir <code>curl</code> isteği çalışıyor. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>Ağ geçidi kapalıdır; dış ağa hiçbir trafik çıkamaz.</li><li>Yönlendirme tablosunda varsayılan rota yoktur.</li><li><code>ping</code> bu makinede SUID olmadığı için çalışmıyordur.</li><li>Ağ geçidi ICMP yankı isteklerini yanıtsız bırakıyor olabilir; yanıt gelmemesi tek başına makinenin kapalı ya da yolun kopuk olduğunu göstermez.</li><li><code>ping</code> yalnız IPv6 adreslerine çalışır.</li></ul>
+<div class="coz"><p>Yanıt gelmemesi bir gözlemdir; ad çözümlemenin ağ geçidinin arkasından cevap alması, bağlantının çalıştığını gösterir. Windows Güvenlik Duvarı gibi duvarlar gelen yankı isteklerine olağan olarak yanıt vermeyebilir. A bu yüzden yanlış bir çıkarımdır. B'de rota olmasaydı <code>ping</code> "Network is unreachable" der ve 2 ile çıkardı. C yanlış: aynı <code>ping</code> 127.0.0.1'e çalıştı, çünkü <code>ping_group_range</code> ayrıcalıksız ICMP soketine izin veriyor. E temelsizdir.</p></div></li>
+
+<li data-c="A"><p class="q"><code>unshare -rn bash</code> ile açılan yeni ağ ad alanında <code>ping -c 1 127.0.0.1</code> komutu <code>connect: Network is unreachable</code> hatası veriyor. Neden ve çözüm nedir?</p>
+<ul class="sec"><li>Yeni ad alanında yalnız <code>lo</code> vardır ve kapalıdır (DOWN), adresi ve rotası yoktur; <code>ip link set lo up</code> ile açılınca 127.0.0.1 kullanılabilir.</li><li>Kullanıcı ad alanında <code>ping</code> asla çalışmaz; gerçek root gerekir.</li><li><code>eth0</code> kapalıdır; <code>ip link set eth0 up</code> gerekir.</li><li><code>/etc/hosts</code> dosyası ad alanında okunamaz; önce kopyası bağlanmalıdır.</li><li>Ad alanında DNS sunucusu olmadığı için 127.0.0.1 çözülemez.</li></ul>
+<div class="coz"><p>Yeni ağ ad alanı boş bir ağ yığınıyla başlar: denemede yalnız <code>&lt;LOOPBACK&gt;</code> bayraklı, <code>state DOWN</code>, adressiz bir <code>lo</code> vardı ve rota tablosu boştu. <code>ip link set lo up</code> sonrasında çekirdek 127.0.0.1/8'i verdi ve <code>ping</code> yanıt aldı. B yanlış: aynı ad alanında <code>ping</code> açılıştan sonra çalıştı. C yanlış, çünkü fiziksel aygıt aynı anda tek ad alanındadır ve <code>eth0</code> asıl ad alanında kaldı. D ve E, adres zaten sayı olduğu için ad çözümlemeyle ilgisizdir.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Alt ağ maskesinde sık görülen <code>240</code> değerinin ikili karşılığı hangisidir?</p>
+<ul class="sec"><li><code>11100000</code></li><li><code>00001111</code></li><li><code>11110000</code></li><li><code>11111000</code></li><li><code>10101010</code></li></ul>
+<div class="coz"><p>240 = 128 + 64 + 32 + 16; soldaki dört bit 1, sağdaki dört bit 0: <code>11110000</code>, onaltılık <code>0xF0</code>. Python'da <code>bin(0xF0)</code> → <code>0b11110000</code>. A 224'tür, D 248'dir, B ise 15'tir (yarılar ters). E 170'tir. Bu parçadaki /20 maskesinin üçüncü sekizlisi tam bu 240'tır.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">İşlemcideki program sayacı (x86-64'te <code>rip</code>) neyi tutar?</p>
+<ul class="sec"><li>Programın kaç kez çalıştırıldığını</li><li>Son işlemin sonucunu</li><li>Yığının en üstündeki adresi</li><li>Çalışan süreçlerin sayısını</li><li>Yürütülecek sıradaki komutun adresini</li></ul>
+<div class="coz"><p>Parça 2'deki getir-çöz-yürüt döngüsünde işlemci sıradaki komutu program sayacının gösterdiği adresten getirir; atlama komutları bu yazmaca yeni adres yazar. Onu kim belirlerse programın ne yapacağını o belirler. B, işlem sonuçlarının tutulduğu genel yazmaçlarla (ör. <code>rax</code>) karıştırır. C yığın işaretçisinin (<code>rsp</code>) işidir. A ve D işlemci yazmacıyla ilgisiz sayılardır.</p></div></li>
+
+<li data-c="B" data-k="siber-3"><p class="q">32 bitlik <code>0x12345678</code> değeri little-endian bir x86-64 makinede belleğe yazıldığında, düşük adresten yükseğe baytlar hangi sırada durur?</p>
+<ul class="sec"><li><code>12 34 56 78</code></li><li><code>78 56 34 12</code></li><li><code>87 65 43 21</code></li><li><code>21 43 65 87</code></li><li><code>56 78 12 34</code></li></ul>
+<div class="coz"><p>Little-endian'da en az anlamlı bayt (<code>78</code>) en düşük adrese yazılır; baytların sırası ters döner, bayt içindeki haneler değil. Python'da <code>struct.pack("&lt;I", 0x12345678)</code> → <code>78 56 34 12</code>. A big-endian sırasıdır; ağ bayt sırası da budur (Parça 3), bu yüzden ağ programları dönüşüm yapar. C ve D haneleri ters çevirme yanılgısıdır. E rastgele bir yer değiştirmedir.</p></div></li>
+
+<li data-c="A" data-k="siber-4"><p class="q">"Root kullanıcısıyla çalışan program çekirdek kipinde (halka 0) çalışır." Bu cümle için hangisi doğrudur?</p>
+<ul class="sec"><li>Yanlıştır; root bir kullanıcı kimliğidir, halka ise işlemci kipidir. Root'un programı da halka 3'te çalışır ve çekirdeğe sistem çağrısıyla gider.</li><li>Doğrudur; UID 0 olan her süreç halka 0'a geçer.</li><li>Doğrudur, ama yalnız ARM işlemcilerde.</li><li>Yanlıştır; root programları halka 1'de çalışır.</li><li>Doğrudur; <code>sudo</code> işlemciyi çekirdek kipine alır.</li></ul>
+<div class="coz"><p>Parça 4'ün ayrımı: kullanıcı alanı çekirdek dışındaki her şeydir ve root dahildir. Root'un ayrıcalığı, çekirdeğin izin denetimlerinde ona "evet" demesidir; işlemci kipi yine halka 3'tür ve çekirdeğe tek kapı sistem çağrısıdır. B ve E kimliği kiple karıştırır. C mimariye bağlı bir istisna uydurur. D'deki halka 1 Linux'ta kullanılmaz.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">Adres rastgeleleştirme (ASLR) ne yapar?</p>
+<ul class="sec"><li>Bellekteki verileri şifreler.</li><li>Yazılabilir bellek sayfalarının komut olarak yürütülmesini engeller.</li><li>Süreçlerin aynı fiziksel belleği paylaşmasını sağlar.</li><li>Yığın, öbek, kütüphaneler ve PIE kodun adreslerini her çalıştırmada değiştirir; saldırganın adres tahminini zorlaştırır.</li><li>Program sayacını rastgele değerlere ayarlar.</li></ul>
+<div class="coz"><p>Parça 5'te aynı programı art arda çalıştırıp yığın ve kütüphane adreslerinin her seferinde değiştiğini gördün; sayfa içi konum (son üç hex hane) ise aynı kalır. Amaç, bellek hatalarından yararlanmak isteyenin adresleri önceden bilmesini engellemektir. B NX/DEP'in tanımıdır. A ve C başka kavramlardır. E programı çalışamaz hâle getirir; ASLR yalnız yükleme adreslerini değiştirir.</p></div></li>
+
+<li data-c="C" data-k="siber-7"><p class="q">Konteyneri sanal makineden (VM) ayıran temel özellik hangisidir?</p>
+<ul class="sec"><li>Konteynerin kendi çekirdeği vardır, VM'in yoktur.</li><li>Konteyner yalnız Windows'ta çalışır.</li><li>Konteynerler ana makineyle ortak çekirdeği kullanır; yalıtımı ad alanları ve cgroups sağlar, bu yüzden tam bir güvenlik sınırı sayılmaz.</li><li>Konteyner donanımı yazılımla taklit eder.</li><li>Konteynerde ağ hiç kullanılamaz.</li></ul>
+<div class="coz"><p>Parça 7: VM kendi çekirdeğiyle eksiksiz bir işletim sistemi çalıştırır; konteyner ise ana makinenin çekirdeğini paylaşır ve ne gördüğünü ad alanları, ne kadar kullandığını cgroups belirler. Bu parçada <code>unshare -rn</code> ile bir ağ ad alanının ayrı bir port tablosu verdiğini gördün; ama çekirdek ortak kaldı. A tersidir. D VM'in tanımıdır. B ve E yanlıştır; konteynerlerin kendi ağ ad alanları vardır.</p></div></li>
+
+<li data-c="E" data-k="siber-8"><p class="q"><code>noexec</code> seçeneğiyle bağlanmış bir bölümde duran <code>betik.sh</code> için hangisi doğrudur?</p>
+<ul class="sec"><li>Dosya okunamaz.</li><li>Dosya hem doğrudan hem <code>bash betik.sh</code> ile çalıştırılamaz.</li><li>Dosyanın SUID biti etkili olur.</li><li>Bölüme yeni dosya yazılamaz.</li><li><code>./betik.sh</code> ile doğrudan çalıştırılamaz, ama <code>bash betik.sh</code> ile yorumlayıcıya verilerek çalıştırılabilir.</li></ul>
+<div class="coz"><p>Parça 8'e göre <code>noexec</code> o bölümdeki dosyaların doğrudan çalıştırılmasını engeller; ama yorumlayıcı başka bir bölümden çalışıp dosyayı veri olarak okuduğunda bunu durdurmaz. Bu yüzden <code>noexec</code> tek başına bir duvar değil, katmanlardan biridir. B bu sınırı abartır. A ve D, <code>noexec</code>'in okuma ve yazmaya dokunmadığını gözden kaçırır; salt okunurluk <code>ro</code>'dur. C tersidir: SUID'i yok sayan <code>nosuid</code>'dir.</p></div></li>
+
+<li data-c="B" data-k="siber-9"><p class="q">Bir günlükte yalnız <code>10.0.0.1</code> adresinin geçtiği satırları bulmak istiyorsun. <code>grep '10.0.0.1' g.log</code> neden yanlış sonuç verebilir ve doğrusu nedir?</p>
+<ul class="sec"><li><code>grep</code> sayıları aramaz; <code>awk</code> gerekir.</li><li>Düzenli ifadede nokta her karakterle eşleşir ve desen daha uzun adreslerin içinde de bulunur; <code>grep -F -w '10.0.0.1'</code> düz metin ve tam sözcük olarak arar.</li><li>Tek tırnak deseni bozar; tırnaksız yazılmalıdır.</li><li><code>grep</code> yalnız ilk eşleşmeyi gösterir; <code>-a</code> gerekir.</li><li><code>grep</code> büyük-küçük harf duyarlıdır; <code>-i</code> gerekir.</li></ul>
+<div class="coz"><p>Denemede üç satırlık bir dosyada <code>grep '10.0.0.1'</code> hem <code>10.0.0.10</code>'u hem de <code>10a0b0c1</code>'i yakaladı: nokta "herhangi bir karakter"dir ve desen daha uzun bir adresin içinde de eşleşir. <code>grep -F -w</code> yalnız <code>10.0.0.1</code> satırını verdi. Parça 9'daki kural budur. A yanlış: <code>grep</code> metin arar, sayı da metindir. C tersidir; tek tırnak doğru alışkanlıktır. D ve E sorunla ilgisizdir.</p></div></li>
+
+<li data-c="A" data-k="siber-10"><p class="q">Debian tabanlı bir sistemde <code>apt-get update</code> ile <code>apt-get upgrade</code> arasındaki fark hangisidir?</p>
+<ul class="sec"><li><code>update</code> depolardaki paket listelerini (imzalarını doğrulayarak) tazeler; <code>upgrade</code> kurulu paketleri bu listelere göre yeni sürümlere yükseltir.</li><li>İkisi aynı işi yapar.</li><li><code>update</code> paketleri yükseltir, <code>upgrade</code> yalnız listeleri tazeler.</li><li><code>update</code> çekirdeği, <code>upgrade</code> yalnız kullanıcı programlarını günceller.</li><li><code>upgrade</code> imza denetimi yapmaz.</li></ul>
+<div class="coz"><p>Parça 10'da gördüğün gibi önce <code>update</code> çalışır: depoların imzalı <code>InRelease</code> dosyaları ve paket listeleri indirilir, doğrulanır. Ardından <code>upgrade</code> kurulu paketlerin yeni sürümlerini bu listelerden bulup kurar; <code>full-upgrade</code> gerekirse paket kaldırabilir. C ikisini ters çevirir. B ve D temelsizdir. E yanlış: indirilen her paket listelerdeki özetle doğrulanır.</p></div></li>
+
+<li data-c="D" data-k="siber-11"><p class="q">Bir yönetici bir kullanıcıyı <code>adm</code> grubuna eklemek için <code>usermod -G adm kullanici</code> yazıyor. Bunun riski nedir?</p>
+<ul class="sec"><li>Kullanıcı root olur.</li><li>Kullanıcının parolası silinir.</li><li>Komut hiçbir şey yapmaz; grup adı büyük harfle yazılmalıdır.</li><li><code>-a</code> olmadığı için kullanıcının ek grupları yalnız <code>adm</code> olarak yeniden yazılır, önceki ek gruplarından çıkarılır.</li><li>Kullanıcının birincil grubu <code>adm</code> olur.</li></ul>
+<div class="coz"><p>Parça 11'in uyarısı: <code>usermod -G</code> ek grup listesini verilen listeyle <em>değiştirir</em>; eklemek için <code>-aG</code> gerekir. Unutulursa kullanıcı örneğin <code>sudo</code> grubundan sessizce çıkar. E, birincil grubu değiştiren <code>-g</code> ile karıştırır. A, B ve C komutun yaptığı şeyle ilgisizdir. Grup değişikliği de kullanıcının bir sonraki girişinde etkili olur.</p></div></li>
+
+<li data-c="C" data-k="siber-12"><p class="q">Bir sunucuda umask <code>027</code> olarak ayarlanmış. Yeni oluşturulan sıradan bir dosya ve bir dizin hangi izinle doğar?</p>
+<ul class="sec"><li>Dosya 750, dizin 640</li><li>Dosya 644, dizin 755</li><li>Dosya 640, dizin 750</li><li>Dosya 600, dizin 700</li><li>Dosya 639, dizin 750</li></ul>
+<div class="coz"><p>Sıradan dosyalar 0666, dizinler 0777 ile istenir ve umask'taki bitler kapatılır: <code>0o666 &amp; ~0o027 = 0o640</code>, <code>0o777 &amp; ~0o027 = 0o750</code>; Python ile doğrulandı. A ikisini ters çevirir; dosya x ile istenmediği için 750 olamaz. B umask 022'nin, D umask 077'nin sonucudur. E aritmetik çıkarma yanılgısıdır (666 − 027); umask çıkarma değil bit kapatmadır.</p></div></li>
+
+<li data-c="E" data-k="siber-12"><p class="q">Sahibi root olan ve izni <code>-rwsr-xr-x</code> olan bir program sıradan bir kullanıcı tarafından çalıştırıldığında sürecin kimliği nasıl olur?</p>
+<ul class="sec"><li>Gerçek ve etkin UID ikisi de kullanıcınınkidir; SUID yalnız dizinlerde etkilidir.</li><li>Gerçek UID 0, etkin UID kullanıcınınki olur.</li><li>Süreç root grubuna eklenir ama UID değişmez.</li><li>Program çalışmaz; SUID programları yalnız root çalıştırabilir.</li><li>Gerçek UID kullanıcıda kalır, etkin UID dosyanın sahibi olan root'a (0) çevrilir.</li></ul>
+<div class="coz"><p>Parça 12'ye göre SUID biti açık bir programda, onu çalıştıran sürecin etkin kullanıcı kimliği dosyanın sahibininkine çevrilir; çekirdek dosya erişimlerinde etkin kimliğe bakar. Gerçek kimlik başlatan kullanıcıda kalır ve <code>passwd</code> gibi programlar ona bakarak ne yapılabileceğini sınırlar. B iki kimliği ters çevirir. C SGID ile karıştırır. A ve D SUID'in anlamını inkâr eder. Bu parçada <code>ping</code>'in artık SUID olmadan çalıştığını gördün.</p></div></li>
+
+<li data-c="A" data-k="siber-13"><p class="q">Bir süreç <code>kill PID</code> ile sonlandırılıyor ve kabuk çıkış kodunu <code>143</code> olarak bildiriyor. Bu ne anlama gelir?</p>
+<ul class="sec"><li><code>kill</code>'in varsayılan sinyali SIGTERM'dir (15); sinyalle biten sürecin çıkış kodu 128 + 15 = 143 olur.</li><li>Süreç SIGKILL (9) ile öldürülmüştür.</li><li>Süreç 143 saniye çalışmıştır.</li><li>Süreç hata vermeden kendi isteğiyle 143 döndürmüştür.</li><li>Sinyal hedefe ulaşamamıştır.</li></ul>
+<div class="coz"><p>Parça 13: <code>kill</code> varsayılan olarak SIGTERM gönderir; bir sinyalle sonlanan sürecin kabuktaki çıkış kodu 128 + sinyal numarasıdır. Denemede arka plandaki <code>sleep</code> için <code>wait</code> 143 döndürdü. B'de kod 137 olurdu. C ve D çıkış kodunu yanlış yorumlar. E'de <code>kill</code> bir hata iletisi verir ve süreç çalışmaya devam ederdi.</p></div></li>
+
+<li data-c="B" data-k="siber-13"><p class="q">PID'i 1555 olan bir sürecin yalnız ağ bağlantılarını listelemek için hangi komut doğrudur?</p>
+<ul class="sec"><li><code>lsof -i -p 1555</code></li><li><code>lsof -a -i -P -n -p 1555</code></li><li><code>lsof -p 1555</code></li><li><code>lsof -i</code></li><li><code>ps -p 1555</code></li></ul>
+<div class="coz"><p><code>lsof</code>'ta seçim seçenekleri varsayılan olarak VEYA ile birleşir; <code>-a</code> onları VE yapar ve "bu sürecin ağ dosyaları" anlamı çıkar. Parça 13'teki denemede <code>-a</code>'sız biçim 24 satır, <code>-a</code>'lı biçim tek bir dinleyen soket verdi. A bu hatanın kendisidir. C sürecin bütün dosyalarını, D makinedeki bütün ağ dosyalarını gösterir. E bağlantıları hiç göstermez. Aynı soruyu porttan başlayarak <code>ss -tnp</code> ile de sorabilirsin.</p></div></li>
+
+<li data-c="D" data-k="siber-14"><p class="q"><code>systemctl start</code> ile <code>systemctl enable</code> arasındaki fark hangisidir?</p>
+<ul class="sec"><li>İkisi aynıdır.</li><li><code>start</code> servisi kalıcı olarak kurar, <code>enable</code> yalnız bir kez çalıştırır.</li><li><code>enable</code> servisi hemen başlatır ve açılışta durdurur.</li><li><code>start</code> servisi şimdi başlatır; <code>enable</code> açılışta kendiliğinden başlaması için bağlantıları kurar ve tek başına şimdi başlatmaz.</li><li><code>enable</code> yalnız zamanlayıcılar için kullanılır.</li></ul>
+<div class="coz"><p>Parça 14'ün konusu: başlatma o anki durumdur, etkinleştirme açılıştaki davranıştır. <code>enable</code>, birim dosyasındaki <code>[Install]</code> bölümüne göre bağlantılar oluşturur; ikisini birlikte yapmak için <code>enable --now</code> kullanılır. Otomatik başlayan her servis bir saldırı yüzeyidir; bu parçadaki <code>ss -tlnp</code> envanteri de çoğu zaman etkinleştirilmiş servislerin dinleyen portlarını gösterir. B ikisini ters çevirir; A, C ve E yanlıştır.</p></div></li>
+
+<li data-c="C" data-k="siber-14"><p class="q">Bir savunmacı, makinede zamanlanmış görevler üzerinden kurulmuş bir kalıcılık olup olmadığını araştırıyor. Hangisi en doğru envanter yaklaşımıdır?</p>
+<ul class="sec"><li>Yalnız <code>crontab -l</code> çalıştırmak yeterlidir.</li><li>Zamanlanmış görevler yalnız root tarafından kurulabildiği için kullanıcı hesaplarına bakmaya gerek yoktur.</li><li>Kullanıcı crontab'larını, <code>/etc/crontab</code> ve <code>/etc/cron.*</code> dizinlerini ve systemd zamanlayıcılarını (<code>systemctl list-timers --all</code>) birlikte gözden geçirmek, beklenmeyen girdileri bir tabanla karşılaştırmak.</li><li>Zamanlanmış görevleri bulmak için <code>ss -tlnp</code> çalıştırmak.</li><li>Bütün cron dosyalarını incelemeden silmek.</li></ul>
+<div class="coz"><p>Parça 14'e göre zamanlanmış görevler hem yönetim aracı hem kalıcılık yoludur ve birden çok yerde durur: kullanıcı crontab'ları, sistem crontab'ı ve dizinleri, systemd zamanlayıcıları. A yalnız o anki kullanıcının crontab'ını gösterir. B yanlıştır; her kullanıcı kendi crontab'ını kurabilir. D dinleyen portları gösterir, zamanlanmış görevi değil. E delili yok eder; olay müdahalesinde önce kayıt alınır (Parça 70).</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-14">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-15">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-16">Sonraki parça: Ana makine güvenlik duvarı →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux ip addr ip route explained"</li>
+  <li>"linux ss command listening ports tutorial"</li>
+  <li>"etc hosts resolv.conf nsswitch systemd-resolved explained"</li>
+  <li>"bind 0.0.0.0 vs 127.0.0.1 security"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> <code>ip -br addr</code>, <code>ip -br link</code>, <code>ip addr show lo/eth0</code>, <code>ip -d link show dummy0</code>, <code>ip route</code>, <code>ip -6 route</code>, üç hedef için <code>ip route get</code>, <code>ip route show table local</code> (ad alanında), <code>ipaddress</code> ile önek doğrulaması, <code>/etc/resolv.conf</code>, <code>/etc/hosts</code>, <code>nsswitch.conf</code> okuması, <code>getent</code> (<code>-s files</code>, <code>-s myhostname</code> ile kaynak ayrımı), <code>dig</code>, <code>unshare -rn</code> içinde boş ağ ad alanı, <code>lo</code>'yu açma, ad alanındaki sunucunun dışarıdan görünmemesi, <code>unshare -rm</code> ile <code>/etc/hosts</code> ve <code>/etc/resolv.conf</code> kopyalarının geçici bağlanması, iki Python sunucusu (<code>127.0.0.1:8015</code>, <code>0.0.0.0:8016</code>), <code>ss -tlnp/-tnp/-tan/-ulnp/-tlne/-s</code>, <code>curl -sv/-I/-w</code>, <code>/dev/tcp</code> ile açık bağlantı, <code>ping</code> ve <code>traceroute</code> (<code>127.0.0.1</code> ve kendi ağ geçidi). Quiz'deki <code>bin(0xF0)</code>, little-endian bayt sırası, umask 027, <code>grep</code> ile <code>grep -F -w</code> farkı ve <code>kill</code> sonrası 143 çıkış kodu ayrıca çalıştırılarak doğrulandı. Ortam: Windows 11 üstünde WSL2 (NAT kipi, DNS tünelleme açık), Kali GNU/Linux Rolling, çekirdek 6.18, iproute2 7.0.0, iputils 20250605, traceroute 2.1.6, curl 8.20.0, Python 3.13.</li>
+  <li><strong>Kullanıcı ad alanıyla yapılan:</strong> boş ağ ad alanı (<code>unshare -rn</code>) ve <code>/etc/hosts</code>/<code>/etc/resolv.conf</code>'un geçici olarak kopyalarıyla örtülmesi (<code>unshare -rm</code> + <code>mount --bind</code>). İkisi de gerçek root değildir; gerçek dosyalar ve gerçek ağ ayarları değişmedi, kabuk bitince her şey yok oldu.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> <code>resolvectl status</code> (bu kurulumda <code>resolvectl</code> yok, systemd-resolved etkin değil); <code>sudo ss -tlnp</code> ile root süreçlerinin görülmesi ve <code>sudo ip netns add</code> (şifresiz sudo yok, kullanılmadı); Windows tarafından WSL'deki sunucuya dış bağlantı denemesi (NAT kipinde <code>localhost</code> yönlendirmesi sonucu karıştırır); kalıcı ağ yapılandırması (ifupdown, NetworkManager, networkd, netplan) üzerinde değişiklik.</li>
+  <li><strong>Gizlilik:</strong> Çıktılarda <code>eth0</code> ve <code>dummy0</code>'ın MAC adresleri <code>xx</code> ile, MAC'ten türeyen IPv6 bağlantı yerel adresi <code>fe80::215:5dff:fexx:xxxx</code> biçiminde, makine adı <code>lab</code> olarak sadeleştirildi. <code>172.29.x.x</code> adresleri WSL'nin özel (RFC 1918) sanal ağına aittir. <code>example.com</code> adresleri o anki DNS cevabıdır ve değişebilir.</li>
+  <li><strong>Resmî belgeden:</strong> man7.org <code>ip-route(8)</code> (<code>ip route get</code>'in paket göndermemesi, <code>default</code> = 0/0, <code>via</code>, <code>src</code>, <code>scope</code> varsayılanları, local tablo 255); <code>resolv.conf(5)</code> (MAXNS 3, <code>search</code>, timeout 5, attempts 2, ndots 1); <code>systemd-resolved.service(8)</code> (127.0.0.53/127.0.0.54, dört <code>resolv.conf</code> kipi, <code>resolvectl flush-caches</code>); <code>nsswitch.conf(5)</code> (soldan sağa sıra, <code>[NOTFOUND=return]</code>, <code>files</code>, <code>dns</code>); <code>hosts(5)</code> (satır biçimi, 127.0.1.1 örneği, DNS'in yerini aldığı); <code>ss(8)</code> (seçenekler, süzgeçler); <code>network_namespaces(7)</code> (yalıtılan kaynaklar, fiziksel aygıtın tek ad alanında olması); <code>traceroute(8)</code> (TTL, UDP 33434, üç deneme, 30 adım, <code>*</code>); <code>icmp(7)</code> (<code>ping_group_range</code>, varsayılan "1 0"); yerel <code>curl(1)</code> kılavuz sayfası (<code>-v</code> önekleri). Microsoft Learn "Accessing network applications with WSL" (NAT kipi, ağ geçidinin Windows adresi olması, <code>0.0.0.0</code> uyarısı, DNS tünelleme, Hyper-V güvenlik duvarı).</li>
+  <li><strong>Gözleme dayanan ya da doğrulanamayan:</strong> <code>10.255.255.254</code>'ün WSL DNS tünellemesinin adresi olduğu Microsoft belgesinde açıkça yazmıyor; <code>lo</code>'daki adres ve <code>resolv.conf</code>'taki <code>nameserver</code> satırından çıkarıldı. <code>dummy0</code>'ın, o sırada yüklenen <code>dummy</code> modülünün kendiliğinden oluşturduğu arayüz olduğu (modül varsayılan olarak bir arayüz yaratır) hafızadan ve gözlemden; modülü kimin yüklettiği doğrulanamadı. Windows ağ geçidinin ICMP'yi neden yanıtlamadığı (Windows Güvenlik Duvarı/Hyper-V güvenlik duvarı) bir çıkarımdır. <code>127.0.0.1:323</code>'ün chrony olduğu port numarasından çıkarıldı; süreç adı izin yüzünden görünmedi.</li>
+  <li><strong>Hafızadan:</strong> <code>lo</code>'nun <code>UNKNOWN</code> durumunun nedeni, <code>UP</code>/<code>LOWER_UP</code> anlamları, <code>00:15:5d</code>'nin Hyper-V öneki olduğu, EUI-64 türetmesi, systemd'nin öngörülebilir arayüz adları, <code>ifconfig</code>/<code>net-tools</code>'un eskimesi, ağ yöneticileri tablosundaki yollar, VPN'lerin <code>0.0.0.0/1</code> + <code>128.0.0.0/1</code> rotaları, curl hata kodları 6 ve 7'nin anlamı (denemede 7 görüldü), Ubuntu'da systemd-resolved'in olağan olması. Kod rafı parça numaraları <code>kod.md</code>'den, siber parça numaraları <code>siber.md</code>'den doğrulandı. Tekrar soruları Parça 1–5 ve 7–13'ün metinlerinden, Parça 14'ünkiler (dosya henüz yokken) <code>siber.md</code>'nin 14. satırından kuruldu.</li>
+  <li><strong>Saldırı sınırı:</strong> <code>/etc/hosts</code> ve <code>resolv.conf</code>'un kötüye kullanılabilirliği, gereksiz geniş bağlanma adresi ve tanınmayan arayüz/rota yalnız "neden tehlikeli, nasıl görülür, nasıl kapatılır" düzeyinde anlatıldı. Hiçbir tarama, kaba kuvvet ya da başka bir sisteme yönelik sınama yapılmadı; tek dış istek <code>example.com</code> için olağan ad sorgularıydı. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

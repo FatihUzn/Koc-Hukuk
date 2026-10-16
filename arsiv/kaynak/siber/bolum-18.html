@@ -1,0 +1,744 @@
+<article class="chapter ders" id="c-siber-18">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 18 · SSH ve sır saklama</div>
+<h1>SSH, anahtarlar ve sır saklama: uzaktaki makineye kim olduğunu nasıl kanıtlarsın?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvarına yeni bir sunucu VM'i kurdun ve ilk kez <code>ssh</code> ile bağlanıyorsun. Ekrana "The authenticity of host … can't be established" diye bir soru geliyor ve sen alışkanlıkla <code>yes</code> yazıyorsun. O anda tam olarak neye güvendin? Ertesi gün aynı sunucu "REMOTE HOST IDENTIFICATION HAS CHANGED" diye bağırıyor: bu bir arıza mı, saldırı mı? Ayrıca betiğinin kullandığı bir API belirtecini (token) nerede saklamalısın: komut satırında mı, ortam değişkeninde mi, bir dosyada mı?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 6 (kodlama, Base64 ve hash ayrımı), Parça 11 (kullanıcılar, root, en az yetki), Parça 12 (izinler, <code>umask</code>, <code>chmod 600</code>), Parça 13 (<code>/proc/&lt;pid&gt;/cmdline</code> ve <code>environ</code>), Parça 15 (<code>ss</code> ile dinleyen portlar), Parça 16 (SSH'ye yalnız iç ağdan izin veren kural), Parça 17 (kimlik doğrulama günlükleri). Kod rafından Parça 18 (ortam değişkenleri, <code>.bashrc</code>) ve Parça 34–35 (Git ve depoya sır koymamak). Bütün denemeler kendi makinende ya da laboratuvar VM'inde yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bir sunucuyu yönetmenin en yaygın yolu, ağ üzerinden ona bağlanıp komut yazmaktır. Bu işin iki büyük sorunu vardır. Birincisi <strong>kanal</strong>: aradaki ağ senin değildir; yazdığın her şey (parolan dahil) yol üstündeki biri tarafından okunabilir ya da değiştirilebilir. İkincisi <strong>kimlik</strong>: iki taraf da karşısındakinin gerçekten o olduğunu kanıtlamak zorundadır. Sen sunucunun sahte olmadığından, sunucu da senin gerçekten yetkili kullanıcı olduğundan emin olmalıdır. SSH (Secure Shell) bu iki sorunu birlikte çözen protokoldür.</p>
+
+<p>Parçanın üç ayağı var: <strong>SSH'nin kendisi</strong> (bağlantı, anahtarla giriş, anahtar parolası, <code>ssh-agent</code>), <strong>güvenin başlangıcı</strong> (<code>known_hosts</code>, parmak izi, ilk bağlantıda neye güvendiğin) ve <strong>sertleştirme ile sır saklama</strong> (<code>sshd</code> ayarları; parola, anahtar ve belirteçlerin makinede nerede durduğu).</p>
+
+<p>Sınırlar baştan belli. Anahtar değişiminin ve imzanın matematiği Parça 46'nın, sertifikalar ve açık anahtar altyapısı Parça 47'nin, anahtar yönetimi ve donanım güvenlik modülleri Parça 48'in, bir sırrın Git deposuna ya da günlüğe sızması Parça 58'in konusu.</p>
+
+<h2 class="s">1. SSH nedir: güvensiz ağda güvenli oturum</h2>
+
+<p>SSH'den önceki <code>telnet</code> ve <code>rsh</code> her şeyi, parolayı da, düz metin gönderiyordu; aynı ağdaki biri parolayı okuyabiliyordu (Parça 32). SSH 1990'ların ortasında bu soruna cevap olarak doğdu; bugünkü sürümü SSH-2, en yaygın uygulaması OpenSSH'tir. Bu parçanın çıktıları OpenSSH 10.3p1 ile alındı.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>SSH</strong>, istemci (<code>ssh</code>) ile sunucu (<code>sshd</code>, "SSH daemon") arasında şifreli ve bütünlüğü korunan bir kanal kuran protokoldür; varsayılan olarak TCP 22 numaralı portu dinler. Bir bağlantıda üç iş sırayla yapılır: (1) iki taraf ortak bir oturum anahtarı üzerinde anlaşır ve <strong>sunucu kendi kimliğini</strong> ana makine anahtarı (host key) ile kanıtlar; (2) bu şifreli kanalın içinde <strong>kullanıcı kimliğini</strong> kanıtlar (anahtarla ya da parolayla); (3) kanal açılır ve içinden kabuk, tek komut ya da dosya aktarımı (<code>scp</code>, <code>sftp</code>) taşınır.</p></div>
+
+<p>Bu sıra önemlidir: kullanıcı kimlik doğrulaması <strong>şifreli kanalın içinde</strong> yapılır, yani parola gönderilse bile yol üstünde açıkça görünmez. Ama kanalın karşı ucunun kim olduğu, birinci adımdaki sunucu kimliği doğrulamasına bağlıdır. O adım atlanırsa şifreleme seni korumaz: sahte bir sunucuyla son derece güvenli biçimde konuşuyor olabilirsin. Parçanın ortasındaki <code>known_hosts</code> bölümü bu yüzden en önemli bölümdür.</p>
+
+<figure>
+<svg viewBox="0 0 400 470" role="img" aria-label="Bir SSH bağlantısının adımları: TCP bağlantısı ve sürüm dizgisi, anahtar değişimi, sunucunun ana makine anahtarıyla kendini kanıtlaması ve istemcinin known_hosts ile karşılaştırması, şifreli kanal, kullanıcının açık anahtarla kimlik doğrulaması, oturum kanalı">
+  <rect class="sv-l" x="20" y="10" width="120" height="36" rx="8"/>
+  <text class="sv-b" x="80" y="33" text-anchor="middle">İstemci (ssh)</text>
+  <rect class="sv-m" x="260" y="10" width="120" height="36" rx="8"/>
+  <text class="sv-b" x="320" y="33" text-anchor="middle">Sunucu (sshd)</text>
+  <line class="sv-c" x1="80" y1="46" x2="80" y2="440"/>
+  <line class="sv-c" x1="320" y1="46" x2="320" y2="440"/>
+  <line class="sv-cl" x1="80" y1="75" x2="320" y2="75"/>
+  <text class="sv-s" x="200" y="68" text-anchor="middle">1. TCP 22, sürüm dizgileri</text>
+  <line class="sv-cl" x1="80" y1="115" x2="320" y2="115"/>
+  <line class="sv-cl" x1="320" y1="125" x2="80" y2="125"/>
+  <text class="sv-s" x="200" y="105" text-anchor="middle">2. anahtar değişimi: ortak sır</text>
+  <text class="sv-s" x="200" y="142" text-anchor="middle">ve oturum kimliği (Parça 46)</text>
+  <line class="sv-cl" x1="320" y1="170" x2="80" y2="170"/>
+  <text class="sv-s" x="200" y="163" text-anchor="middle">3. sunucu ana makine anahtarıyla imzalar</text>
+  <rect class="sv-a" x="15" y="180" width="185" height="44" rx="8"/>
+  <text class="sv-t" x="107" y="198" text-anchor="middle">known_hosts ile karşılaştır:</text>
+  <text class="sv-s" x="107" y="215" text-anchor="middle">bu sunucu gerçekten o mu?</text>
+  <rect class="sv-k" x="60" y="240" width="280" height="30" rx="8"/>
+  <text class="sv-b" x="200" y="260" text-anchor="middle">4. Bundan sonrası şifreli kanalda</text>
+  <line class="sv-cl" x1="80" y1="300" x2="320" y2="300"/>
+  <text class="sv-s" x="200" y="293" text-anchor="middle">5a. "şu açık anahtarla girmek istiyorum"</text>
+  <rect class="sv-m" x="215" y="308" width="175" height="30" rx="8"/>
+  <text class="sv-s" x="302" y="327" text-anchor="middle">authorized_keys'te var mı?</text>
+  <line class="sv-cl" x1="80" y1="365" x2="320" y2="365"/>
+  <text class="sv-s" x="200" y="358" text-anchor="middle">5b. oturum kimliğini özel anahtarla imzalar</text>
+  <rect class="sv-m" x="215" y="373" width="175" height="30" rx="8"/>
+  <text class="sv-s" x="302" y="392" text-anchor="middle">imzayı açık anahtarla doğrula</text>
+  <line class="sv-cl" x1="80" y1="425" x2="320" y2="425"/>
+  <line class="sv-cl" x1="320" y1="432" x2="80" y2="432"/>
+  <text class="sv-s" x="200" y="418" text-anchor="middle">6. oturum kanalı: kabuk ya da komut</text>
+  <text class="sv-s" x="200" y="458" text-anchor="middle">Özel anahtar istemciden hiç çıkmaz; yalnız imza gider.</text>
+</svg>
+<figcaption>Bir SSH bağlantısının akışı. Önce iki taraf ortak bir sır kurar ve sunucu kimliğini kanıtlar; istemci bunu <code>known_hosts</code> ile karşılaştırır. Kullanıcı kimlik doğrulaması ancak bundan sonra, şifreli kanalın içinde yapılır.</figcaption>
+</figure>
+
+<h2 class="s">2. Parola yerine anahtar: neden daha güvenli?</h2>
+
+<p>Parolayla girişte sen parolayı (şifreli kanalın içinden de olsa) sunucuya gönderirsin, sunucu da onu kendi saklı özetiyle (Parça 11'deki <code>/etc/shadow</code>) karşılaştırır. Bu düzenin dört zayıf yeri vardır. Parola insan aklında durduğu için tahmin edilebilir ve kaba kuvvetle denenebilir; internete açık her SSH sunucusunun günlüğü saatte yüzlerce otomatik denemeyle dolar (Parça 9'da kendi ürettiğin örnek günlükte saydığın "Failed password" satırları). İnsanlar parolaları tekrar kullanır; bir sitede sızan parola SSH'yi açabilir (Parça 45). Parola her girişte sunucuya ulaştığı için, sunucu ele geçirilmişse ya da sahteyse parola karşı tarafın eline geçer. Son olarak parola paylaşılabilir ve kimin kullandığı belli olmaz.</p>
+
+<p>Anahtarla girişte bir <strong>anahtar çifti</strong> vardır: <strong>özel anahtar</strong> yalnız senin makinende durur; <strong>açık anahtar</strong> ise herkese gösterilebilir ve sunucuda, girmesine izin verilen anahtarların listesine (<code>authorized_keys</code>) yazılır. Giriş sırasında sunucu "bu açık anahtarın sahibi olduğunu kanıtla" der; istemci, o bağlantıya özgü veriyi (oturum kimliğini) özel anahtarıyla <strong>imzalar</strong>; sunucu imzayı açık anahtarla doğrular. Bunun nasıl mümkün olduğu (imzanın matematiği) Parça 46'nın konusu; burada sonucunu bilmen yeter: imzayı yalnız özel anahtarın sahibi üretebilir, ama herkes açık anahtarla doğrulayabilir.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Parolayla giriş</th><th>Anahtarla giriş</th></tr>
+<tr><td>Sunucuya ne ulaşır?</td><td>Parolanın kendisi</td><td>Yalnız bu bağlantıya özgü bir imza</td></tr>
+<tr><td>Sahte ya da ele geçmiş sunucu ne kazanır?</td><td>Parolayı; başka yerde de kullanabilir</td><td>Başka bağlantıda işe yaramayan bir imza</td></tr>
+<tr><td>Tahmin ve kaba kuvvet</td><td>İnsan seçtiği için mümkün</td><td>256 bitlik rastgele anahtar: pratikte imkânsız</td></tr>
+<tr><td>Tekrar kullanım</td><td>Yaygın; bir sızıntı zincirleme kırılma yaratır</td><td>Her makineye aynı açık anahtar verilse de özel anahtar hiç gönderilmez</td></tr>
+<tr><td>Çalınma riski nerede?</td><td>Sunucuda, ağda, insanın kendisinde (oltalama)</td><td>İstemcideki özel anahtar dosyası: parolayla ve izinlerle korunur</td></tr>
+<tr><td>İptal</td><td>Parolayı değiştir (herkese yeniden dağıt)</td><td>O kişinin tek satırını <code>authorized_keys</code>'ten sil</td></tr>
+</table></div>
+
+<p>Tablonun son satırı yönetici için büyük kolaylıktır. Parça 11'de işten ayrılan bir çalışanın hesabını kapatırken "SSH anahtarlarını gözden geçir" demiştik; sebebi buydu: <code>passwd -l</code> yalnız parolayı kilitler, <code>authorized_keys</code>'teki anahtar hâlâ kapıyı açar. Anahtarın zayıf noktası istemcidedir: parolasız özel anahtar dosyası çalınırsa, çalan kişi doğrudan senin yerine geçer.</p>
+
+<h2 class="s">3. Anahtar üretimi ve dosyaları</h2>
+
+<p>Anahtar çifti <code>ssh-keygen</code> ile üretilir. Bugün önerilen tür <strong>Ed25519</strong>'dur: kısa (açık anahtar 32 bayt), hızlı ve tasarımı yaygın uygulama hatalarına dayanıklı bir eliptik eğri imza algoritması. OpenSSH 9.5 sürümünden (Ekim 2023) beri <code>ssh-keygen</code> türü belirtilmezse zaten Ed25519 üretir. Eski sistemlerle uyum gerekiyorsa RSA kullanılır; o zaman en az 3072 bit seçilir. Eski DSA desteği OpenSSH 10.0'da kaldırıldı.</p>
+
+<p>Varsayılan olarak anahtarlar ev dizinindeki <code>~/.ssh/</code> klasörüne yazılır. Bu klasördeki dosyaların her biri farklı bir şey söyler ve her birinin doğru izni farklıdır (Parça 12):</p>
+
+<div class="tablo"><table>
+<tr><th>Dosya</th><th>Nerede</th><th>İçinde ne var</th><th>Doğru izin</th></tr>
+<tr><td><code>~/.ssh/</code></td><td>İstemci ve sunucu</td><td>Bütün SSH dosyalarının klasörü</td><td><code>700</code></td></tr>
+<tr><td><code>id_ed25519</code></td><td>İstemci</td><td>Özel anahtar (parolayla şifrelenmiş olmalı)</td><td><code>600</code>; daha gevşekse <code>ssh</code> kullanmayı reddeder</td></tr>
+<tr><td><code>id_ed25519.pub</code></td><td>İstemci</td><td>Açık anahtar: tür, Base64 gövde, yorum</td><td><code>644</code> (gizli değildir)</td></tr>
+<tr><td><code>known_hosts</code></td><td>İstemci</td><td>Daha önce doğrulanmış sunucuların açık anahtarları</td><td><code>644</code> ya da <code>600</code>; yalnız sahibi yazabilmeli</td></tr>
+<tr><td><code>authorized_keys</code></td><td>Sunucu</td><td>Bu hesaba girmesine izin verilen açık anahtarlar, satır başına bir tane</td><td><code>600</code>; başkası yazabilirse <code>sshd</code> dosyayı yok sayar</td></tr>
+<tr><td><code>/etc/ssh/ssh_host_*_key</code></td><td>Sunucu</td><td>Sunucunun ana makine özel anahtarları (parolasız)</td><td><code>600</code>, sahibi root</td></tr>
+</table></div>
+
+<p>Neden bu kadar katı? <code>authorized_keys</code>'e, <code>~/.ssh</code>'ye ya da ev dizinine yazabilen biri kendi açık anahtarını ekleyip senin hesabına girebilir. Bu yüzden <code>sshd_config(5)</code>'teki <code>StrictModes</code> (varsayılanı <code>yes</code>) girişten önce bu dosyaların izinlerini ve sahipliğini denetler; istemcide de <code>ssh(1)</code>, başkalarının erişebildiği özel anahtarı "basitçe yok sayar". İkisini de aşağıdaki denemede göreceksin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: parmak izi nereden geliyor?</span>
+<p><strong>Soru:</strong> <code>ssh-keygen -lf</code> bir açık anahtar için <code>SHA256:qrIL7M…</code> gibi bir parmak izi yazıyor. Bu dizgi tam olarak nedir ve neden bazen <code>MD5:77:c0:…</code> biçiminde görünür?</p>
+<p><strong>Adım 1.</strong> Açık anahtar dosyası üç alandan oluşur: tür (<code>ssh-ed25519</code>), Base64 ile kodlanmış gövde ve yorum. Parça 6'dan hatırla: Base64 bir <strong>kodlamadır</strong>, gizlemez; gövdeyi çözüp bayt sayısına bakalım.</p>
+<pre class="kod" data-ad="bash">awk '{print $2}' istemci/id_ed25519.pub | base64 -d | wc -c</pre>
+<pre class="cikti">51</pre>
+<p><strong>Adım 2.</strong> 51 bayt: 4 baytlık uzunluk + 11 baytlık <code>ssh-ed25519</code> adı + 4 baytlık uzunluk + 32 baytlık asıl açık anahtar. Şimdi bu baytların SHA-256 özetini al, onaltılık çıktıyı yeniden bayta çevir ve Base64 ile yaz.</p>
+<pre class="kod" data-ad="bash">awk '{print $2}' istemci/id_ed25519.pub | base64 -d | sha256sum | cut -d' ' -f1 | xxd -r -p | base64
+ssh-keygen -lf istemci/id_ed25519.pub
+ssh-keygen -lf istemci/id_ed25519.pub -E md5</pre>
+<pre class="cikti">qrIL7MCXFL+ksfmMMv6KqV+PeyitXfyA5fq9TdlCMkk=
+256 SHA256:qrIL7MCXFL+ksfmMMv6KqV+PeyitXfyA5fq9TdlCMkk lab-deneme (ED25519)
+256 MD5:77:c0:3c:bd:97:21:e1:f8:11:fa:5b:5b:4d:ec:31:d9 lab-deneme (ED25519)</pre>
+<p><strong>Adım 3.</strong> Elle hesapladığımız değer, sondaki <code>=</code> dolgu karakteri dışında <code>ssh-keygen</code>'in yazdığıyla birebir aynı. Yani parmak izi, açık anahtar baytlarının hash'idir (Parça 6: tek yönlü parmak izi). Baştaki 256 anahtarın bit uzunluğu, sondaki parantez türüdür.</p>
+<p><strong>Adım 4.</strong> <code>-E md5</code> aynı anahtarın eski biçimdeki parmak izini verir: MD5 özetinin baytları iki nokta ile ayrılmış onaltılık yazılır. <code>ssh(1)</code> belgesi bunun yalnız elinde eski (MD5) parmak izi olan bir sunucuyla karşılaştırma için kullanılmasını önerir; MD5 artık güvenli sayılmaz (Parça 44).</p>
+<p><strong>Sonuç:</strong> İki dizgi farklı görünse de aynı anahtarı tanımlar; farklı olan hash algoritmasıdır. Karşılaştırırken aynı algoritmayla üretilmiş iki parmak izini yan yana koy.</p></div>
+
+<h2 class="s">4. Anahtara parola ve <code>ssh-agent</code></h2>
+
+<p>Özel anahtar dosyası tek başına bir kimliktir: onu kopyalayan biri, başka hiçbir şey bilmeden senin yerine girebilir. Bu yüzden <code>ssh-keygen</code> anahtar üretirken bir <strong>parola</strong> (passphrase) ister. Bu parola sunucuya hiç gitmez; yalnız diskteki özel anahtarın şifrelenmesinde kullanılır. Deneme dosyasının başlığını onaltılık olarak açtığımda içinde <code>aes256-ctr</code> ve <code>bcrypt</code> adları göründü: anahtar AES ile şifrelenmiş, AES anahtarı da paroladan bilerek yavaş çalışan bir türetme işleviyle (bcrypt tabanlı, varsayılan 16 tur) elde edilmiş. Yavaşlık, çalınmış dosya üstünde parola tahmin etmeyi pahalılaştırır; mantığı Parça 45'teki parola özetleriyle aynıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kullanıcı anahtarına parola koy; ana makine anahtarına koyma.</strong> Parola, dosya çalınsa bile anahtarın hemen kullanılmasını engeller ve sana anahtarı iptal etmek için zaman kazandırır. <code>ssh-keygen(1)</code> belgesinin uyarısını da bil: unutulan parola kurtarılamaz; yeni anahtar üretip açık anahtarını bütün sunuculara yeniden koymak gerekir. Sunucunun ana makine anahtarları ise parolasızdır (belgeye göre öyle olmak zorundadır), çünkü <code>sshd</code> açılışta kimseye soramaz; onları root sahipliği ve <code>600</code> izni korur.</p></div>
+
+<p>Her bağlantıda parola yazmak can sıkıcıdır ve insanları parolasız anahtara iter. Çözüm <strong><code>ssh-agent</code></strong>'tır: oturum boyunca çalışan küçük bir süreç. <code>ssh-add</code> ile anahtarı bir kez yüklersin, parolayı o an girersin; ajan çözülmüş anahtarı <strong>yalnız belleğinde</strong> tutar. <code>ssh</code> bir imzaya ihtiyaç duyunca ajana bir Unix soketi üstünden "şunu imzala" der, ajan imzayı döndürür. <code>ssh_config(5)</code> belgesinin ifadesiyle ajan anahtar malzemesini dışarı vermez, yalnız onunla işlem yapar.</p>
+
+<p>Soketine erişebilen herkes senin adına imza attırabileceği için ajan da korunur. Soketin izni <code>srw-------</code>. Ajan sürecinin <code>/proc</code> dosyaları denemede root sahipliğinde göründü: ajan kendini "döküm alınamaz" işaretleyerek aynı kullanıcının bile belleğine bakmasını zorlaştırır (Parça 13'teki ptrace denetimi). Süre de sınırlanabilir: <code>ssh-add -t 1h</code> anahtarı bir saat sonra ajandan siler, <code>ssh-add -c</code> her kullanımda onay ister, <code>ssh-add -D</code> hepsini boşaltır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Her sunucuya <code>ForwardAgent yes</code> ile girmek.</strong> Ajan yönlendirme, bağlandığın sunucudan bir sonrakine senin ajanınla geçmeni sağlar; kullanışlıdır. Ama <code>ssh_config(5)</code> açıkça uyarır: uzaktaki makinede dosya izinlerini aşabilen biri (o makinenin root'u ya da onu ele geçiren saldırgan) yönlendirilmiş sokete bağlanıp, bağlantın açık kaldıkça, ajanındaki kimliklerle başka sunuculara kimlik doğrulayabilir. Anahtarı çalamaz ama kullanabilir. Doğrusu: yönlendirmeyi varsayılan olarak kapalı bırak (zaten <code>no</code>), yalnız güvendiğin makine için aç; bir sıçrama sunucusundan geçmek için yönlendirme yerine <code>ssh -J</code> (ProxyJump) kullan, böylece imzalar hep senin makinende kalır.</p></div>
+
+<p>Bir adım ötesi, anahtarı FIDO2 donanım anahtarında tutmaktır (<code>ed25519-sk</code>): özel anahtar cihazdan çıkmaz, her imza fiziksel dokunuş ister (Parça 48).</p>
+
+<h2 class="s">5. <code>known_hosts</code> ve ilk bağlantıda neye güvenildiği</h2>
+
+<p>Şimdi en ince noktaya gelelim. Şekildeki üçüncü adımda sunucu, ana makine anahtarıyla bir imza gönderir. İstemci imzayı doğrulayabilir, ama yalnız şunu öğrenir: "karşımdaki, <em>bu</em> açık anahtarın sahibi." Bu açık anahtarın gerçekten bağlanmak istediğin sunucuya ait olup olmadığını imza söyleyemez. Yol üstündeki bir saldırgan kendi anahtar çiftini üretip kendi imzasını gönderirse imza da kusursuz doğrulanır. Bu, Parça 23'te ARP için göreceğin "ortadaki adam" (man-in-the-middle) durumunun SSH'deki karşılığıdır.</p>
+
+<p>Bu yüzden istemci, daha önce gördüğü sunucuların açık anahtarlarını <code>known_hosts</code> dosyasında saklar. Her bağlantıda gelen anahtar bu listeyle karşılaştırılır. Listede yoksa (ilk bağlantı) <code>ssh</code> sana parmak izini gösterip sorar. Bu modelin adı <strong>TOFU</strong>'dur (trust on first use, "ilk kullanımda güven"): ilk karşılaşmada verdiğin karar, ondan sonraki bütün bağlantıların dayanağı olur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İlk bağlantıda <code>yes</code> yazmadan önce parmak izini bağımsız bir kanaldan doğrula.</strong> Bağımsız kanal, SSH bağlantısının kendisi dışında bir yoldur: VM'in konsolunda <code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code> çıktısı, bulut sağlayıcısının konsol günlüğü, yöneticinin sana ayrı bir yoldan ilettiği liste. Bu karşılaştırma yapılmadan yazılan <code>yes</code>, "ilk karşılaştığım kim olursa olsun ona güveniyorum" demektir. Bir kez kabul edilen anahtar <code>known_hosts</code>'a yazılır ve bundan sonra her bağlantıda <strong>kendiliğinden</strong> denetlenir.</p></div>
+
+<p>Kabul edilmiş bir sunucu sonradan farklı bir anahtar gönderirse <code>ssh</code> büyük harflerle "REMOTE HOST IDENTIFICATION HAS CHANGED" der ve bağlanmaz. Bunun meşru nedenleri vardır: sunucu yeniden kuruldu, ana makine anahtarları yeniden üretildi, aynı IP adresine başka bir makine geldi. Ama saldırının görünüşü de tam olarak budur. Bu yüzden uyarı bir engel değil, bir sorudur: "neden değişti?" Cevabı öğrenmeden geçilmez.</p>
+
+<figure>
+<svg viewBox="0 0 400 430" role="img" aria-label="Sunucu anahtarı geldiğinde istemcinin kararı: known_hosts'ta bu ad yoksa parmak izini bağımsız kanaldan doğrulayıp eşleşirse eklemek, eşleşmezse bağlanmamak; varsa ve anahtar aynıysa devam etmek; anahtar farklıysa bağlantı reddedilir, nedeni öğrenilir, yeni parmak izi doğrulanınca eski satır ssh-keygen -R ile silinir">
+  <rect class="sv-l" x="110" y="10" width="180" height="36" rx="8"/>
+  <text class="sv-b" x="200" y="33" text-anchor="middle">Sunucu anahtarı geldi</text>
+  <line class="sv-c" x1="200" y1="46" x2="200" y2="66"/>
+  <rect class="sv-k" x="70" y="66" width="260" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="91" text-anchor="middle">known_hosts'ta bu ad var mı?</text>
+  <line class="sv-cl" x1="130" y1="106" x2="95" y2="140"/>
+  <line class="sv-cl" x1="270" y1="106" x2="305" y2="140"/>
+  <text class="sv-s" x="95" y="126" text-anchor="middle">hayır</text>
+  <text class="sv-s" x="305" y="126" text-anchor="middle">evet</text>
+  <rect class="sv-a" x="5" y="140" width="185" height="56" rx="8"/>
+  <text class="sv-t" x="97" y="162" text-anchor="middle">İlk bağlantı (TOFU):</text>
+  <text class="sv-s" x="97" y="180" text-anchor="middle">parmak izini konsoldan doğrula</text>
+  <rect class="sv-k" x="210" y="140" width="185" height="56" rx="8"/>
+  <text class="sv-t" x="302" y="162" text-anchor="middle">Gelen anahtar</text>
+  <text class="sv-t" x="302" y="180" text-anchor="middle">kayıtlıyla aynı mı?</text>
+  <line class="sv-cl" x1="60" y1="196" x2="45" y2="230"/>
+  <line class="sv-cl" x1="135" y1="196" x2="150" y2="230"/>
+  <text class="sv-s" x="35" y="216">eşleşti</text>
+  <text class="sv-s" x="150" y="216">eşleşmedi</text>
+  <rect class="sv-m" x="5" y="230" width="90" height="44" rx="8"/>
+  <text class="sv-s" x="50" y="248" text-anchor="middle">ekle ve</text>
+  <text class="sv-s" x="50" y="264" text-anchor="middle">bağlan</text>
+  <rect class="sv-a" x="105" y="230" width="90" height="44" rx="8"/>
+  <text class="sv-s" x="150" y="248" text-anchor="middle">bağlanma,</text>
+  <text class="sv-s" x="150" y="264" text-anchor="middle">"no" yaz</text>
+  <line class="sv-cl" x1="260" y1="196" x2="250" y2="230"/>
+  <line class="sv-cl" x1="345" y1="196" x2="355" y2="230"/>
+  <text class="sv-s" x="240" y="216">evet</text>
+  <text class="sv-s" x="365" y="216">hayır</text>
+  <rect class="sv-m" x="205" y="230" width="90" height="44" rx="8"/>
+  <text class="sv-s" x="250" y="248" text-anchor="middle">sessizce</text>
+  <text class="sv-s" x="250" y="264" text-anchor="middle">devam</text>
+  <rect class="sv-a" x="305" y="230" width="90" height="44" rx="8"/>
+  <text class="sv-s" x="350" y="248" text-anchor="middle">HAS CHANGED:</text>
+  <text class="sv-s" x="350" y="264" text-anchor="middle">reddedilir</text>
+  <line class="sv-c" x1="350" y1="274" x2="350" y2="300"/>
+  <rect class="sv-k" x="130" y="300" width="265" height="84" rx="8"/>
+  <text class="sv-t" x="262" y="322" text-anchor="middle">1. Neden değişti? Yöneticiye sor.</text>
+  <text class="sv-t" x="262" y="342" text-anchor="middle">2. Yeni parmak izini konsoldan al.</text>
+  <text class="sv-t" x="262" y="362" text-anchor="middle">3. Eşleşirse: ssh-keygen -R ad</text>
+  <text class="sv-s" x="262" y="378" text-anchor="middle">sonra yeniden bağlan ve ekle</text>
+  <text class="sv-s" x="200" y="415" text-anchor="middle">StrictHostKeyChecking=no bu kutuları atlar: kullanma.</text>
+</svg>
+<figcaption>İstemcinin sunucu anahtarı kararı. İlk bağlantıda güvenin kaynağı senin doğrulamandır; sonraki bağlantılarda <code>known_hosts</code> otomatik denetler. Değişen anahtar, nedeni öğrenilip yeni parmak izi bağımsız kanaldan doğrulanmadan kabul edilmez.</figcaption>
+</figure>
+
+<p>Bu davranış <code>StrictHostKeyChecking</code> seçeneğiyle ayarlanır. <code>ssh_config(5)</code> belgesine göre dört değeri vardır:</p>
+
+<div class="tablo"><table>
+<tr><th>Değer</th><th>Yeni (bilinmeyen) sunucu</th><th>Anahtarı değişmiş sunucu</th><th>Ne zaman</th></tr>
+<tr><td><code>ask</code> (varsayılan)</td><td>Parmak izini gösterir, onay ister</td><td>Reddeder</td><td>Elle bağlanırken</td></tr>
+<tr><td><code>yes</code></td><td>Asla kendiliğinden eklemez; anahtarı önceden elle koymalısın</td><td>Reddeder</td><td>En sıkı; anahtar listesi merkezden dağıtılıyorsa</td></tr>
+<tr><td><code>accept-new</code></td><td>Sormadan ekler</td><td>Reddeder</td><td>Otomasyon; ilk bağlantının güvenli bir ağda yapıldığı bilinirse</td></tr>
+<tr><td><code>no</code></td><td>Sormadan ekler</td><td><strong>Bağlanır</strong>, yalnız bazı kısıtlarla</td><td>Hiçbir zaman (laboratuvar dışında)</td></tr>
+</table></div>
+
+<p>Tablonun son satırını aşağıdaki denemede gözünle göreceksin: sunucu anahtarı değiştikten sonra <code>StrictHostKeyChecking=no</code> ile istemci uyarıyı yazdı, parola ve klavye-etkileşimli girişi "ortadaki adam saldırısını önlemek için" kapattı, ama ajandaki anahtarla <strong>bağlandı</strong> ve komutu çalıştırdı. Gerçek bir saldırıda bu, komutlarını ve aktardığın dosyaları sahte sunucuya teslim etmek demektir.</p>
+
+<p>TOFU'nun zayıflığı ilk adımdır. Onu güvenceye almanın iki yolu var: parmak izlerini DNS'te <code>SSHFP</code> kaydı olarak yayımlamak (<code>ssh(1)</code>; DNSSEC olmadan bu kayda da güvenilmez, Parça 30) ya da ana makine anahtarlarını bir otoriteyle imzalayan SSH sertifikaları (Parça 47). Bir de gizlilik ayarı var: <code>HashKnownHosts yes</code> sunucu adlarını dosyada özet olarak yazar, böylece dosya ele geçerse hangi makinelere bağlandığın açıkça okunmaz. Belgeye göre varsayılanı <code>no</code>'dur; Debian kendi sistem genelindeki <code>ssh_config</code>'inde bunu açar.</p>
+
+<h2 class="s">6. <code>sshd</code> sertleştirme</h2>
+
+<p>Sunucu tarafının ayarları <code>/etc/ssh/sshd_config</code> dosyasındadır (Parça 8'de bu dosyanın yerini FHS'ye göre bulmuştuk). Debian'ın dosyası başında <code>Include /etc/ssh/sshd_config.d/*.conf</code> satırını taşır; ek ayarlar o klasöre ayrı dosyalar olarak konur. Sertleştirmenin amacı saldırı yüzeyini daraltmaktır: kimin, hangi yöntemle, nereden girebileceğini olabildiğince azaltmak.</p>
+
+<div class="tablo"><table>
+<tr><th>Ayar</th><th>OpenSSH varsayılanı</th><th>Önerilen</th><th>Neden</th></tr>
+<tr><td><code>PermitRootLogin</code></td><td><code>prohibit-password</code></td><td><code>no</code></td><td>Herkes "root" adını bilir; yönetici kendi adıyla girip <code>sudo</code> kullanır, böylece kim ne yaptı kayda geçer (Parça 11)</td></tr>
+<tr><td><code>PasswordAuthentication</code></td><td><code>yes</code></td><td><code>no</code></td><td>Kaba kuvveti ve parola sızıntısını konu dışı bırakır; önce anahtarla girişin çalıştığını sına</td></tr>
+<tr><td><code>KbdInteractiveAuthentication</code></td><td><code>yes</code></td><td><code>no</code> (Debian'da zaten <code>no</code>)</td><td>PAM üstünden parola sormanın ikinci kapısıdır; kapatılmazsa parola girişi bu yoldan sürebilir</td></tr>
+<tr><td><code>AllowUsers</code> / <code>AllowGroups</code></td><td>Yok (herkes girebilir)</td><td>Yalnız gereken kullanıcılar ya da bir grup (ör. <code>sshkullanicilari</code>)</td><td>Sistem hesapları ve yeni açılan hesaplar SSH'den kendiliğinden giremez (izin listesi, varsayılan reddet)</td></tr>
+<tr><td><code>MaxAuthTries</code></td><td><code>6</code></td><td><code>3</code>–<code>4</code></td><td>Tek bağlantıdaki deneme sayısını sınırlar</td></tr>
+<tr><td><code>PerSourcePenalties</code></td><td>Açık (OpenSSH 9.8'den beri)</td><td>Açık bırak</td><td>Sürekli başarısız olan adresi bir süre geri çevirir; denemede günlükte <code>activating ipv4 penalty</code> satırı göründü</td></tr>
+<tr><td><code>X11Forwarding</code>, <code>AllowTcpForwarding</code>, <code>AllowAgentForwarding</code></td><td><code>no</code>, <code>yes</code>, <code>yes</code> (Debian <code>X11Forwarding yes</code> koyar)</td><td>Gerekmiyorsa <code>no</code></td><td>Her yönlendirme, oturumun içinden açılan ek bir tüneldir</td></tr>
+</table></div>
+
+<p>Tek başına hiçbiri yetmez: parola girişini kapatmak kaba kuvveti bitirir ama portu açık bırakır; SSH'yi güvenlik duvarıyla yalnız yönetim ağına açmak (Parça 16) ve günlükleri izlemek (Parça 17) öbür katmanlardır. Derinlemesine savunmanın küçük bir örneği (Parça 49).</p>
+
+<p><code>AllowUsers</code> için iki inceliği belgeden ve denemeden öğren. Kalıp <code>kullanici@10.0.0.0/24</code> biçiminde yazılırsa kullanıcı yalnız o ağdan girebilir. Ve <code>sshd_config(5)</code> belgesine göre bu anahtar sözcük dosyada her geçtiğinde listeye <strong>ekler</strong>. İlk denememde sunucuyu <code>-o AllowUsers=yonetici</code> ile başlatıp kendi kullanıcımın reddedileceğini bekledim; bağlantı kabul edildi, çünkü dosyadaki <code>AllowUsers</code> satırı hâlâ listedeydi. Kısıtlamak için listeyi yeniden yazmak gerekti.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: hangi değer gerçekten etkin?</span>
+<p><strong>Soru:</strong> Bir yönetici <code>sshd_config</code>'in en altına <code>PasswordAuthentication no</code> yazıp hizmeti yeniden yüklüyor, ama sunucu hâlâ parola soruyor. Neden?</p>
+<p><strong>Adım 1.</strong> <code>sshd_config(5)</code> belgesinin kuralı: aksi belirtilmedikçe her anahtar sözcük için <strong>ilk elde edilen değer</strong> kullanılır. Sonraki satırlar öncekini ezmez, yok sayılır.</p>
+<p><strong>Adım 2.</strong> Durumu kendi makinende kur: başta bir <code>Include</code>, eklenen klasörde bulut kalıplarının sıkça bıraktığı türden bir dosya, ana dosyanın sonunda yöneticinin satırı.</p>
+<pre class="kod" data-ad="bash">D=/tmp/yazar/siber-18/quiz
+echo "PasswordAuthentication yes" &gt; $D/d/50-bulut.conf
+cat &gt; $D/ana &lt;&lt;EOC
+Include $D/d/*.conf
+HostKey $D/hk
+PasswordAuthentication no
+EOC
+/usr/sbin/sshd -T -f $D/ana | grep passwordauth</pre>
+<pre class="cikti">passwordauthentication yes</pre>
+<p><strong>Adım 3.</strong> <code>sshd -T</code> yapılandırmayı okur, bütün dosyaları birleştirir ve <strong>etkin</strong> değerleri yazar. Etkin değer <code>yes</code>: <code>Include</code> dosyanın başında olduğu için ondaki satır ilk elde edilen değer oldu ve en alttaki <code>no</code> hiç uygulanmadı.</p>
+<p><strong>Adım 4.</strong> Düzeltme: ayarı ya <code>sshd_config.d/</code> içindeki dosyada değiştir ya da kendi dosyanı adı alfabede önce gelecek biçimde (ör. <code>00-sertlestirme.conf</code>) oraya koy. Ardından yeniden <code>sshd -T</code> ile bak.</p>
+<p><strong>Sonuç:</strong> Bir SSH ayarını dosyaya bakarak değil, <code>sshd -T</code> çıktısına bakarak doğrula. Sözdizimini <code>sshd -t</code> denetler, etkin değeri <code>sshd -T</code> söyler.</p></div>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Uzak bir sunucuda SSH ayarını kendini dışarıda bırakmadan değiştirmek.</strong> 1. Anahtarla girişin çalıştığını yeni bir oturumda sına. 2. Değişikliği yaz ve <code>sudo sshd -t</code> ile sözdizimini denetle; hata varsa hizmet yeniden başlatılırken çöker. 3. <code>sudo sshd -T | grep -E 'password|root|allowusers'</code> ile etkin değerleri oku. 4. Açık oturumunu <strong>kapatmadan</strong> hizmeti yeniden yükle (Debian'da <code>sudo systemctl reload ssh</code>; mevcut oturumlar kopmaz). 5. İkinci bir terminalden yeni bağlantı aç ve hem girebildiğini hem de yasaklanan yöntemin reddedildiğini gör. 6. Ancak bundan sonra ilk oturumu kapat. VM'de ya da bulutta bir konsol erişimin olsun. (Bu ortamda gerçek <code>sshd</code> hizmetine dokunulmadı; 2–4. adımlar <strong>burada çalıştırılmadı</strong>, geçici sunucuda aynı denetimler yapıldı.)</p></div>
+
+<h2 class="s">7. Sır saklama: parola, anahtar, belirteç</h2>
+
+<p><strong>Sır</strong>, ele geçince sahibinin yetkisini başkasına veren her bilgidir: parola, özel anahtar, API belirteci, veritabanı bağlantı dizgisi, oturum çerezi. SSH bu parçada sırrın en iyi bilinen örneği oldu, ama aynı kurallar betiklerinin kullandığı her sır için geçerlidir. Bir sır genellikle şifreleme kırılarak değil, <strong>yanlış yerde durduğu için</strong> sızar. Parça 13'te komut satırının herkese açık olduğunu gördük; şimdi geri kalan yerlere bakalım.</p>
+
+<h3>Dosya izinleri</h3>
+
+<p>Bir sır diskte duracaksa onu yalnız sahibinin okuyabileceği bir dosyada tut: dosya <code>600</code>, içinde durduğu klasör <code>700</code> (Parça 12). Dosyayı önce oluşturup sonra <code>chmod</code> yapmak arada kısa bir pencere bırakır; o an <code>umask</code> 022 ise dosya bir an için herkese okunur olur. Doğrusu dosyayı baştan dar izinle doğurmaktır: <code>(umask 077; printf '%s\n' "$SIR" &gt; sir.txt)</code>. Parantez alt kabuk açar, <code>umask</code> değişikliği oturumuna sızmaz. Kod rafı Parça 18'deki <code>mktemp</code> da geçici dosyaları zaten <code>600</code> ile oluşturur.</p>
+
+<h3>Komut geçmişi</h3>
+
+<p>Etkileşimli Bash yazdığın komutları belleğinde tutar ve çıkarken <code>HISTFILE</code> dosyasına (varsayılan <code>~/.bash_history</code>) yazar. <code>mysql -p'Parola123'</code> ya da <code>export API_BELIRTECI=…</code> yazdıysan, sır o dosyada aylarca kalır, yedeklere girer. Bash kılavuzuna göre <code>HISTCONTROL</code> değişkeni <code>ignorespace</code> içeriyorsa <strong>boşlukla başlayan satırlar geçmişe kaydedilmez</strong>; <code>ignoreboth</code>, <code>ignorespace</code> ile <code>ignoredups</code>'ın kısaltmasıdır. Bu ortamın <code>~/.bashrc</code> dosyasında <code>HISTCONTROL=ignoreboth</code> satırı vardı; senin dağıtımında olup olmadığını <code>echo "$HISTCONTROL"</code> ile sına.</p>
+
+<p>Bu bir emniyet kemeridir, çözüm değil: komut çalışırken <code>cmdline</code>'da yine görünür, değişken kabuğun belleğinde kalır. Daha iyisi sırrı hiç yazmamaktır: araç parolayı kendisi sorsun ya da <code>read -rs SIR</code> ile yansıtmadan iste. Yanlışlıkla yazdıysan <code>history -d</code> ile o satırı bellekteki listeden sil, dosyayı denetle ve sırrı yanmış say.</p>
+
+<h3>Ortam değişkeninin sınırları</h3>
+
+<p>Sırrı programa ortam değişkeniyle vermek çok yaygındır ve komut satırından daha iyidir: Parça 13'te gördüğün gibi <code>environ</code> yalnız sahibine açıktır. Ama ortam değişkeninin dört sınırını bilmelisin. (1) <strong>Miras:</strong> ortam her <code>fork</code> ve <code>execve</code> ile çocuklara geçer; programının çağırdığı her yardımcı araç, onun çağırdıkları da sırrı taşır. (2) <strong>Aynı kullanıcı görür:</strong> o kullanıcıyla çalışan başka bir süreç (ya da onu ele geçiren saldırgan) <code>/proc/&lt;pid&gt;/environ</code>'u okuyabilir; root her şeyi okur. (3) <strong>Silmek silmez:</strong> <code>proc_pid_environ(5)</code> belgesine göre bu dosya programın başladığı andaki ortamı gösterir; program sırrı kendi içinde silse bile dosyada kalır. (4) <strong>Sızma yolları:</strong> hata ayıklama sayfaları, çökme dökümleri ve "bütün ortamı yazdır" diyen tanılama komutları değişkenleri günlüğe dökebilir (günlüğe sızan sır Parça 58'de).</p>
+
+<div class="tablo"><table>
+<tr><th>Sırrı programa verme yolu</th><th>Kim görebilir</th><th>Kalıcı iz</th><th>Değerlendirme</th></tr>
+<tr><td>Komut satırı argümanı</td><td>Makinedeki <strong>herkes</strong> (<code>ps</code>, <code>/proc/&lt;pid&gt;/cmdline</code>)</td><td>Kabuk geçmişi, süreç izleme kayıtları</td><td>Kullanma</td></tr>
+<tr><td>Ortam değişkeni</td><td>Aynı kullanıcı ve root; bütün çocuk süreçler</td><td><code>export</code> ile yazıldıysa geçmiş; <code>.bashrc</code>'ye yazıldıysa dosya</td><td>Kabul edilebilir, sınırlarını bilerek; ömrü kısa tut</td></tr>
+<tr><td><code>600</code> izinli dosya ya da standart girdi</td><td>Yalnız sahibi ve root</td><td>Dosyanın kendisi; yedekler</td><td>İyi; dosya depoya ve yedeğe girmesin</td></tr>
+<tr><td>Parola yöneticisi ya da kasa</td><td>Yalnız yetkilendirilmiş kimlik, her erişim kayıtlı</td><td>Şifreli depo; erişim günlüğü</td><td>En iyi; döndürme ve iptal kolay</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: "değişkeni sildim" yetmez</span>
+<p><strong>Soru:</strong> Bir program başlarken ortamdan bir belirteç okuyor ve "güvenlik için" hemen <code>os.environ</code>'dan siliyor. Belirteç artık görünmez mi?</p>
+<pre class="kod" data-ad="bash">export SAHTE_BELIRTEC=sahte-belirtec-7f3a
+python3 -c '
+import os
+os.environ.pop("SAHTE_BELIRTEC")
+print("python icinde:", os.environ.get("SAHTE_BELIRTEC"))
+ham = open("/proc/self/environ", "rb").read().split(b"\0")
+print("environ dosyasinda:", [x for x in ham if b"SAHTE" in x])
+'
+unset SAHTE_BELIRTEC</pre>
+<pre class="cikti">python icinde: None
+environ dosyasinda: [b'SAHTE_BELIRTEC=sahte-belirtec-7f3a']</pre>
+<p><strong>Adım 1.</strong> Programın kendi gözünden değişken gitti: <code>os.environ.get</code> <code>None</code> döndü. Bundan sonra başlatacağı çocuklara da geçmez.</p>
+<p><strong>Adım 2.</strong> Ama çekirdeğin sunduğu <code>/proc/self/environ</code> dosyası, programın başladığı andaki ortamı hâlâ gösteriyor; aynı kullanıcıyla çalışan bir süreç bunu <code>/proc/&lt;pid&gt;/environ</code>'dan okuyabilir.</p>
+<p><strong>Adım 3.</strong> Belirteç sahte; gerçek bir sırla bu denemeyi yapma. Son satırdaki <code>unset</code> kabuğun kendi kopyasını temizler.</p>
+<p><strong>Sonuç:</strong> Ortamdaki sırrı silmek, sızdığı yerleri geri almaz. Daha güvenli yol, sırrı ortamla değil <code>600</code> izinli bir dosyadan ya da standart girdiden vermektir; denemede aynı belirteç <code>program &lt; sir.txt</code> biçiminde verildi ve ne komut satırında ne ortamda göründü.</p></div>
+
+<h3>Parola yöneticisi ve kasa kavramı</h3>
+
+<p>Kişisel düzeyde sırların doğru evi bir <strong>parola yöneticisidir</strong>: her hesap için uzun, rastgele ve benzersiz parola üretir ve hepsini tek bir ana parolayla açılan şifreli bir depoda tutar; tekrar kullanım zinciri kırılır (Parça 45). SSH anahtar parolası da oraya konabilir.</p>
+
+<p>Kurumsal düzeyde aynı fikrin büyüğü <strong>kasa</strong> (vault, sır yönetim hizmeti) kavramıdır. Uygulamalar sırrı yapılandırma dosyasında taşımaz; çalışırken kasaya kendi kimliğiyle sorar. Kasada sırlar şifreli ve tek yerde durur; kimin hangi sırrı okuyacağı merkezden belirlenir (en az yetki, Parça 11); her okuma kayda geçer; sır <strong>döndürülebilir</strong> (rotation), yani düzenli değiştirilip eskisi geçersiz kılınır; bazı kasalar yalnız dakikalarca geçerli sırlar üretir. Sızan sırrın hasarı böylece kısa sürer. Kasaların arkasındaki donanım güvenlik modülleri ve anahtar yaşam döngüsü Parça 48'de, depoya ya da günlüğe sızan sırrın "yanmış" sayılıp döndürülmesi Parça 58'de.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Belirteci <code>~/.bashrc</code>'ye <code>export</code> diye yazmak.</strong> Pratik görünür: her terminalde hazırdır. Ama böylece sır, açtığın <strong>her</strong> kabukta ve o kabuktan başlayan <strong>her</strong> programda ortamda durur (kod rafı Parça 18'deki başlangıç dosyaları); dosya yedeklere, belki bir "dotfiles" deposuna girer ve <code>.bashrc</code> genellikle <code>644</code> izinlidir. Doğrusu: sırrı parola yöneticisinde ya da <code>600</code> izinli ayrı bir dosyada tut, yalnız ona ihtiyaç duyan komuta o an ver ve dosyayı <code>.gitignore</code>'a ekle (kod rafı Parça 34).</p></div>
+
+<p>Rafın sınırını burada da hatırla: bu parçadaki bağlantılar, anahtarlar ve sunucu yalnız kendi makinene ve sahibi olduğun ya da yönetmekle yetkilendirildiğin sistemlere aittir. Başkasının sunucusuna parola ya da anahtar denemek, bulduğun bir anahtarla girmek izinsiz erişimdir ve suçtur; hukuki ve etik çerçeve Parça 72–73'te.</p>
+
+<h2 class="s">Kendi makinende dene: geçici bir SSH sunucusu, anahtarlar ve sırlar</h2>
+
+<p>Bu alıştırma kendi Linux makinende ya da laboratuvar VM'inde yapılır ve <strong>root gerektirmez</strong>. Gerçek <code>~/.ssh</code> klasörüne ve sistemin <code>sshd</code> hizmetine hiç dokunmayız: anahtarlar, yapılandırma, <code>known_hosts</code> ve günlük <code>/tmp/yazar/siber-18</code> altında durur; sunucu senin kullanıcınla, yalnız <code>127.0.0.1</code>'de ve 2218 numaralı portta çalışır. Root olmadan çalışan <code>sshd</code> yalnız kendisini başlatan kullanıcının girişini doğrulayabilir; bu yüzden bütün girişler kendi hesabına yapılır. Çıktılar WSL2 üstündeki Kali Rolling'den, OpenSSH 10.3p1 ile, tek bir betikten alındı; anahtarlar ve parmak izleri rastgele olduğu için seninkiler farklı olacak. Kullanıcı adı çıktılarda <code>kullanici</code> olarak sadeleştirildi.</p>
+
+<h3>Adım 1: istemci anahtarını üret</h3>
+<pre class="kod" data-ad="bash">D=/tmp/yazar/siber-18; mkdir -p $D/istemci $D/sunucu; cd $D
+ssh-keygen -t ed25519 -N 'deneme-parolasi' -C lab-deneme -f istemci/id_ed25519
+ls -l istemci
+head -1 istemci/id_ed25519; tail -1 istemci/id_ed25519
+cat istemci/id_ed25519.pub</pre>
+<pre class="cikti">Generating public/private ed25519 key pair.
+Your identification has been saved in istemci/id_ed25519
+Your public key has been saved in istemci/id_ed25519.pub
+The key fingerprint is:
+SHA256:qrIL7MCXFL+ksfmMMv6KqV+PeyitXfyA5fq9TdlCMkk lab-deneme
+The key's randomart image is:
++--[ED25519 256]--+
+|                 |
+|                 |
+|   .    E        |
+|    o  . .       |
+|   o o. S .      |
+|o . B=.. + o     |
+|oo Boo*   + .    |
+|+=+o**.+ o .     |
+|*=XO**o +..      |
++----[SHA256]-----+
+total 8
+-rw------- 1 kullanici kullanici 444 Oct 16 17:27 id_ed25519
+-rw-r--r-- 1 kullanici kullanici  92 Oct 16 17:27 id_ed25519.pub
+-----BEGIN OPENSSH PRIVATE KEY-----
+-----END OPENSSH PRIVATE KEY-----
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPpf4wdatI5V1b1TD7Uv0I78v1p6TygJzqJ2Ykod9VH8 lab-deneme</pre>
+<p><code>-C</code> yorumu belirler (varsayılanı <code>kullanici@makine</code>; makine adını sızdırmamak için değiştirdim). <code>-N</code> ile parolayı komut satırına yazmak <strong>yalnız bu sahte parola için</strong> kabul edilebilir: komut satırı herkese görünür ve geçmişe düşer (Parça 13); gerçek anahtarda parolayı <code>ssh-keygen</code> sorsun. "randomart" parmak izinin görsel biçimidir. Özel anahtar kendiliğinden <code>600</code>, açık anahtar <code>644</code> yazıldı. Özel anahtarın yalnız ilk ve son satırını gösterdim; gövdeyi, sahte bile olsa, hiçbir yere yapıştırma.</p>
+
+<h3>Adım 2: parola gerçekten koruyor mu?</h3>
+<pre class="kod" data-ad="bash">ssh-keygen -y -P yanlis-parola -f istemci/id_ed25519; echo "cikis kodu: $?"
+sed '1d;$d' istemci/id_ed25519 | base64 -d | head -c 38 | xxd</pre>
+<pre class="cikti">Load key "istemci/id_ed25519": incorrect passphrase supplied to decrypt private key
+cikis kodu: 255
+00000000: 6f70 656e 7373 682d 6b65 792d 7631 0000  openssh-key-v1..
+00000010: 0000 0a61 6573 3235 362d 6374 7200 0000  ...aes256-ctr...
+00000020: 0662 6372 7970                           .bcryp</pre>
+<p><code>-y</code>, özel anahtardan açık anahtarı yeniden türetir; bunun için anahtarı çözmesi gerekir ve yanlış parolayla çözemedi. İkinci komut dosyanın Base64 gövdesini çözüp yalnız ilk 38 baytını, yani biçim başlığını gösteriyor (anahtar malzemesine ulaşmadan durdum): biçim adı <code>openssh-key-v1</code>, şifre <code>aes256-ctr</code>, anahtar türetme işlevi <code>bcrypt</code> (çıktı 38. baytta kesildiği için <code>bcryp</code> görünüyor). Parolasız bir anahtarda burada <code>none</code> yazardı.</p>
+
+<h3>Adım 3: geçici sunucuyu kur ve ayarları oku</h3>
+<pre class="kod" data-ad="bash">S=$D/sunucu
+ssh-keygen -q -t ed25519 -N '' -C lab-sunucu -f $S/host_ed25519
+cp istemci/id_ed25519.pub $S/authorized_keys
+chmod 600 $S/authorized_keys
+cat &gt; $S/sshd_config &lt;&lt;EOC
+ListenAddress 127.0.0.1
+Port 2218
+HostKey $S/host_ed25519
+AuthorizedKeysFile $S/authorized_keys
+PidFile $S/sshd.pid
+UsePAM no
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+AllowUsers $USER
+StrictModes no
+EOC
+/usr/sbin/sshd -t -f $S/sshd_config &amp;&amp; echo "sozdizimi tamam"
+/usr/sbin/sshd -T -f $S/sshd_config | grep -E '^(listenaddress|permitrootlogin|passwordauthentication|kbdinteractiveauthentication|pubkeyauthentication|allowusers|strictmodes|maxauthtries) '
+/usr/sbin/sshd -f $S/sshd_config -E $S/sshd.log
+ss -tlnp | grep 2218</pre>
+<pre class="cikti">sozdizimi tamam
+listenaddress 127.0.0.1:2218
+maxauthtries 6
+permitrootlogin no
+pubkeyauthentication yes
+passwordauthentication no
+kbdinteractiveauthentication no
+strictmodes no
+allowusers kullanici
+LISTEN 0      128         127.0.0.1:2218      0.0.0.0:*    users:(("sshd",pid=95379,fd=7))</pre>
+<p>Ana makine anahtarı parolasız. <code>authorized_keys</code> gerçek hayatta sunucudaki <code>~/.ssh/authorized_keys</code>'tir (çoğu zaman <code>ssh-copy-id</code> ile doldurulur; gerçek ev dizinine yazacağı için <strong>burada çalıştırılmadı</strong>). İki laboratuvar zorunluluğu var. <code>UsePAM no</code>: PAM root ister. <code>StrictModes no</code>: ilk denemede <code>yes</code> bıraktım ve günlüğe <code>Authentication refused: bad ownership or modes for directory /tmp</code> düştü; dosya herkese yazılabilir <code>/tmp</code> altında olduğu için. Gerçek sunucuda bunu <strong>asla</strong> kapatma; anahtar <code>~/.ssh</code>'de durur ve izinleri doğrudur. <code>sshd</code>'yi mutlak yolla çağırmak gerekir: yalnız <code>sshd</code> adıyla başlatmayı denediğimde <code>sshd requires execution with an absolute path</code> deyip başlamadı (<code>-t</code> denetimi ise iki biçimde de çalıştı). <code>-E</code> günlüğü journal yerine dosyaya yönlendirdi; <code>ss</code> yalnız <code>127.0.0.1</code>'de dinlendiğini gösteriyor.</p>
+
+<h3>Adım 4: sunucunun parmak izini bağımsız yoldan al</h3>
+<pre class="kod" data-ad="bash">ssh-keyscan -p 2218 -t ed25519 127.0.0.1 &gt; tarama.txt
+cat tarama.txt
+ssh-keygen -lf tarama.txt
+ssh-keygen -lf $S/host_ed25519.pub</pre>
+<pre class="cikti"># 127.0.0.1:2218 SSH-2.0-OpenSSH_10.3p1 Debian-4
+[127.0.0.1]:2218 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJxEM77LVYp3CRvAZ+aiUicZgudxO9QgfWklHGJCuj7h
+256 SHA256:9O7AOpjxXOFwQxNXCSKrAR/O2vmUMxWdDnVJHRTT0Y8 [127.0.0.1]:2218 (ED25519)
+256 SHA256:9O7AOpjxXOFwQxNXCSKrAR/O2vmUMxWdDnVJHRTT0Y8 lab-sunucu (ED25519)</pre>
+<p><code>ssh-keyscan</code> sunucunun ağdan sunduğu anahtarı <code>known_hosts</code> biçiminde yazar (standart dışı port yüzünden ad <code>[127.0.0.1]:2218</code>). O da ağdan okur, yani kendi başına doğrulama değildir. Doğrulamayı son satır yapıyor: sunucunun <strong>kendi dosyasından</strong> (laboratuvarda konsoldan) alınan parmak izi ağdan gelenle aynı. Bu karşılaştırma TOFU'nun eksik halkasıdır.</p>
+
+<h3>Adım 5: ilk bağlantı sorusu</h3>
+<pre class="kod" data-ad="bash">ISTEMCI="-F /dev/null -o UserKnownHostsFile=$D/known_hosts -o IdentitiesOnly=yes -i $D/istemci/id_ed25519 -p 2218"
+(sleep 2; echo no) | script -q -e -c "ssh $ISTEMCI $USER@127.0.0.1 true" /dev/null | tr -d '\r'
+echo "cikis kodu: ${PIPESTATUS[1]}"
+ls known_hosts</pre>
+<pre class="cikti">The authenticity of host '[127.0.0.1]:2218 ([127.0.0.1]:2218)' can't be established.
+ED25519 key fingerprint is: SHA256:9O7AOpjxXOFwQxNXCSKrAR/O2vmUMxWdDnVJHRTT0Y8
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? no
+Host key verification failed.
+cikis kodu: 255
+ls: cannot access 'known_hosts': No such file or directory</pre>
+<p><code>ISTEMCI</code>: <code>-F /dev/null</code> bütün <code>ssh_config</code> dosyalarını devre dışı bırakır, <code>UserKnownHostsFile</code> deneme dosyasını kullandırır, <code>IdentitiesOnly=yes</code> yalnız deneme anahtarını sundurur. Etkileşimsiz ortamda cevap verebilmek için komutu <code>script</code> ile bir sözde terminalde çalıştırıp iki saniye sonra <code>no</code> gönderdim. Mesaj, Adım 4'te doğruladığın parmak izini gösteriyor: burada <code>yes</code> yazmak yerine <strong>parmak izini yapıştırabilirsin</strong> (soru <code>[fingerprint]</code> diyor), o zaman <code>ssh</code> karşılaştırmayı senin yerine yapar. <code>no</code> dendiği için bağlantı kesildi ve <code>known_hosts</code> oluşmadı.</p>
+
+<h3>Adım 6: ajanla anahtarlı giriş</h3>
+<pre class="kod" data-ad="bash">ssh-agent -a $D/ajan.sock -s &gt; ajan.env
+. ./ajan.env
+ls -l $D/ajan.sock
+printf '#!/bin/sh\necho deneme-parolasi\n' &gt; parola-ver.sh; chmod 700 parola-ver.sh
+SSH_ASKPASS=./parola-ver.sh SSH_ASKPASS_REQUIRE=force ssh-add istemci/id_ed25519 &lt; /dev/null
+ssh-add -l
+ls -l /proc/$SSH_AGENT_PID/environ
+ssh $ISTEMCI -o StrictHostKeyChecking=accept-new $USER@127.0.0.1 'echo baglandi; id -un'
+echo "cikis kodu: $?"
+cat known_hosts
+grep Accepted $S/sshd.log</pre>
+<pre class="cikti">Agent pid 97161
+srw------- 1 kullanici kullanici 0 Oct 16 17:27 /tmp/yazar/siber-18/ajan.sock
+Identity added: istemci/id_ed25519 (lab-deneme)
+256 SHA256:qrIL7MCXFL+ksfmMMv6KqV+PeyitXfyA5fq9TdlCMkk lab-deneme (ED25519)
+-r-------- 1 root root 0 Oct 16 17:27 /proc/97161/environ
+Warning: Permanently added '[127.0.0.1]:2218' (ED25519) to the list of known hosts.
+baglandi
+kullanici
+cikis kodu: 0
+[127.0.0.1]:2218 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJxEM77LVYp3CRvAZ+aiUicZgudxO9QgfWklHGJCuj7h
+Accepted publickey for kullanici from 127.0.0.1 port 54366 ssh2: ED25519 SHA256:qrIL7MCXFL+ksfmMMv6KqV+PeyitXfyA5fq9TdlCMkk</pre>
+<p><code>-a</code> soketin yerini seçer: OpenSSH 10.1'den beri varsayılan yer <code>~/.ssh/agent/</code> olduğu için, gerçek <code>~/.ssh</code>'e dokunmamak adına soketi deneme klasörüne koydum. <code>-s</code> iki değişkeni (<code>SSH_AUTH_SOCK</code>, <code>SSH_AGENT_PID</code>) kabuk biçiminde yazar, nokta komutu onları yükler. Sahte parolayı etkileşimsiz vermek için <code>SSH_ASKPASS</code> betiği ve <code>SSH_ASKPASS_REQUIRE=force</code> kullandım (<code>ssh-add(1)</code>); gerçekte parolayı <code>ssh-add</code> sorar. Ajanın <code>environ</code> dosyası root sahipliğinde: "döküm alınamaz" koruması. <code>accept-new</code> ile sunucu anahtarı listeye eklendi (Adım 4'te doğrulamıştık) ve komut uzakta çalıştı. Sunucu günlüğündeki <code>Accepted publickey</code> satırı, istemci anahtarının parmak izini yazıyor: kimin hangi anahtarla girdiği günlükte izlenebilir (Parça 17).</p>
+
+<h3>Adım 7: parola, root ve izin listesi reddi</h3>
+<pre class="kod" data-ad="bash">ssh $ISTEMCI -o PreferredAuthentications=password -o BatchMode=yes $USER@127.0.0.1 true
+echo "cikis kodu: $?"
+ssh $ISTEMCI -o PreferredAuthentications=password -o BatchMode=yes -v $USER@127.0.0.1 true 2&gt;&amp;1 | grep -E 'Authentications that can continue|No more authentication'
+ssh $ISTEMCI -o BatchMode=yes root@127.0.0.1 true
+echo "cikis kodu: $?"
+kill $(cat $S/sshd.pid)
+sed 's/^AllowUsers .*/AllowUsers yonetici/' $S/sshd_config &gt; $S/sshd_config_dar
+/usr/sbin/sshd -f $S/sshd_config_dar -E $S/sshd.log
+ssh $ISTEMCI -o BatchMode=yes $USER@127.0.0.1 true
+echo "cikis kodu: $?"
+grep -E 'root|AllowUsers|penalt' $S/sshd.log</pre>
+<pre class="cikti">kullanici@127.0.0.1: Permission denied (publickey).
+cikis kodu: 255
+debug1: Authentications that can continue: publickey
+debug1: No more authentication methods to try.
+root@127.0.0.1: Permission denied (publickey).
+cikis kodu: 255
+kullanici@127.0.0.1: Permission denied (publickey).
+cikis kodu: 255
+User root not allowed because account is locked
+Connection closed by invalid user root 127.0.0.1 port 54402 [preauth]
+User kullanici from 127.0.0.1 not allowed because not listed in AllowUsers</pre>
+<p>İstemciye "yalnız parola dene" dedim (<code>BatchMode=yes</code> parola sormasını da engeller). Sunucu reddetti; <code>-v</code> ile ayrıntılı çıktı sunucunun sunduğu tek yöntemi gösteriyor: <code>publickey</code>. Parola kapısı yok. Root denemesinde günlük, root hesabı bu ortamda kilitli olduğu için isteği <code>PermitRootLogin</code>'e sıra gelmeden reddetti; root olmadan çalışan bir <code>sshd</code> zaten başka hesapları doğrulayamaz. <code>PermitRootLogin no</code>'nun kendi günlük satırını görmek root ile çalışan gerçek bir sunucu gerektirir; <strong>burada çalıştırılmadı</strong>, ayarın etkin olduğunu Adım 3'teki <code>sshd -T</code> gösterdi. İzin listesini yalnız <code>yonetici</code> olacak biçimde yeniden yazıp sunucuyu yeniden başlatınca, geçerli anahtarıma rağmen girişim reddedildi ve günlük nedeni açıkça yazdı: <code>not listed in AllowUsers</code>. Daha önceki bir çalıştırmada günlüğe <code>activating ipv4 penalty of 18.028 seconds</code> satırı da düştü: <code>PerSourcePenalties</code>.</p>
+
+<h3>Adım 8: gevşek izinli özel anahtar</h3>
+<pre class="kod" data-ad="bash">kill $(cat $S/sshd.pid); /usr/sbin/sshd -f $S/sshd_config -E $S/sshd.log
+cp istemci/id_ed25519 gevsek_anahtar; chmod 644 gevsek_anahtar
+SSH_AUTH_SOCK= ssh -F /dev/null -o UserKnownHostsFile=$D/known_hosts -o IdentitiesOnly=yes -i gevsek_anahtar -p 2218 -o BatchMode=yes $USER@127.0.0.1 true
+echo "cikis kodu: $?"
+rm -f gevsek_anahtar</pre>
+<pre class="cikti">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+Permissions 0644 for 'gevsek_anahtar' are too open.
+It is required that your private key files are NOT accessible by others.
+This private key will be ignored.
+Load key "gevsek_anahtar": bad permissions
+kullanici@127.0.0.1: Permission denied (publickey).
+cikis kodu: 255</pre>
+<p>Sunucuyu asıl yapılandırmayla yeniden başlattım, anahtarın <code>644</code> bir kopyasını denedim ve <code>SSH_AUTH_SOCK=</code> ile ajanı bu komut için devreden çıkardım. <code>ssh</code> dosyayı yok saydı. Doğru tepki <code>chmod 600</code>'dür; dosya bir süre herkese açık kaldıysa anahtarı yanmış say ve yenisini üret.</p>
+
+<h3>Adım 9: sunucu anahtarı değişince</h3>
+<pre class="kod" data-ad="bash">kill $(cat $S/sshd.pid)
+rm -f $S/host_ed25519 $S/host_ed25519.pub
+ssh-keygen -q -t ed25519 -N '' -C lab-sunucu -f $S/host_ed25519
+/usr/sbin/sshd -f $S/sshd_config -E $S/sshd.log
+ssh $ISTEMCI -o StrictHostKeyChecking=accept-new $USER@127.0.0.1 'echo baglandi'
+echo "cikis kodu: $?"</pre>
+<pre class="cikti">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The fingerprint for the ED25519 key sent by the remote host is
+SHA256:7OXyogBEeT2teXeLOtUHSaj00Q0ADJUrEsOsYHevgCA.
+Please contact your system administrator.
+Add correct host key in /tmp/yazar/siber-18/known_hosts to get rid of this message.
+Offending ED25519 key in /tmp/yazar/siber-18/known_hosts:1
+  remove with:
+  ssh-keygen -f '/tmp/yazar/siber-18/known_hosts' -R '[127.0.0.1]:2218'
+Host key for [127.0.0.1]:2218 has changed and you have requested strict checking.
+Host key verification failed.
+cikis kodu: 255</pre>
+<p>Sunucu "yeniden kuruldu": aynı adres ve port, yeni ana makine anahtarı. İstemci <code>known_hosts</code>'un 1. satırındaki kayıtla gelen anahtarı karşılaştırdı, uyuşmazlığı gördü ve <code>accept-new</code> olmasına rağmen bağlanmadı: <code>accept-new</code> yalnız <strong>yeni</strong> adları kabul eder, değişmiş anahtarı asla. Mesaj iki olasılığı da sayıyor; hangisi olduğunu ancak bağımsız kanal söyler.</p>
+
+<h3>Adım 10: uyarıyı geçmenin bedeli</h3>
+<pre class="kod" data-ad="bash">ssh $ISTEMCI -o StrictHostKeyChecking=no $USER@127.0.0.1 'echo baglandi' 2&gt;&amp;1 | grep -v -E '^(@|IT IS|Someone|It is also|The fingerprint|SHA256|Please|Add correct|Offending|  remove|  ssh-keygen)'
+echo "cikis kodu: ${PIPESTATUS[0]}"</pre>
+<pre class="cikti">Password authentication is disabled to avoid man-in-the-middle attacks.
+Keyboard-interactive authentication is disabled to avoid man-in-the-middle attacks.
+baglandi
+cikis kodu: 0</pre>
+<p>Aynı büyük uyarı yine yazıldı (Adım 9'dakiyle aynı olduğu için <code>grep -v</code> ile süzdüm). Ardından istemci bir önlem aldı, parolalı yöntemleri kapattı, ama ajandaki anahtarla <strong>girdi</strong> ve komutu çalıştırdı: <code>baglandi</code>, çıkış kodu 0. Gerçek bir saldırıda yazacağın her komut ve aktaracağın her dosya sahte sunucuya giderdi.</p>
+
+<h3>Adım 11: doğru yol, doğrula ve güncelle</h3>
+<pre class="kod" data-ad="bash">ssh-keygen -lf $S/host_ed25519.pub
+ssh-keygen -f known_hosts -R '[127.0.0.1]:2218'
+ssh $ISTEMCI -o StrictHostKeyChecking=accept-new $USER@127.0.0.1 'echo baglandi'
+echo "cikis kodu: $?"
+ssh-keygen -lf known_hosts</pre>
+<pre class="cikti">256 SHA256:7OXyogBEeT2teXeLOtUHSaj00Q0ADJUrEsOsYHevgCA lab-sunucu (ED25519)
+# Host [127.0.0.1]:2218 found: line 1
+known_hosts updated.
+Original contents retained as known_hosts.old
+Warning: Permanently added '[127.0.0.1]:2218' (ED25519) to the list of known hosts.
+baglandi
+cikis kodu: 0
+256 SHA256:7OXyogBEeT2teXeLOtUHSaj00Q0ADJUrEsOsYHevgCA [127.0.0.1]:2218 (ED25519)</pre>
+<p>Önce sunucunun <strong>kendi</strong> anahtar dosyasından yeni parmak izini aldım (laboratuvarda VM konsolu); uyarıdaki <code>SHA256:7OXy…</code> ile aynı. Ancak bundan sonra eski kaydı <code>ssh-keygen -R</code> ile sildim; araç eski dosyayı <code>known_hosts.old</code> olarak sakladı. Son satır kayıtlı yeni anahtarın doğruladığım parmak iziyle aynı olduğunu gösteriyor. Sıra: önce doğrula, sonra sil.</p>
+
+<h3>Adım 12: komut geçmişi ve baştaki boşluk</h3>
+<pre class="kod" data-ad="bash">env -u HISTCONTROL HISTFILE=$D/gecmis-1 bash --norc --noprofile -i &lt;&lt;'EOT' 2&gt;/dev/null
+echo merhaba
+ export API_BELIRTECI=sahte-123
+exit
+EOT
+cat gecmis-1
+echo "---"
+HISTCONTROL=ignorespace HISTFILE=$D/gecmis-2 bash --norc --noprofile -i &lt;&lt;'EOT' 2&gt;/dev/null
+echo merhaba
+ export API_BELIRTECI=sahte-123
+exit
+EOT
+cat gecmis-2
+ls -l gecmis-2</pre>
+<pre class="cikti">merhaba
+echo merhaba
+ export API_BELIRTECI=sahte-123
+exit
+---
+merhaba
+echo merhaba
+exit
+-rw------- 1 kullanici kullanici 18 Oct 16 17:27 gecmis-2</pre>
+<p>Gerçek geçmişe dokunmamak için ayrı <code>HISTFILE</code> ve başlangıç dosyası okumayan (<code>--norc --noprofile</code>) etkileşimli Bash kullandım. İlk kabukta <code>HISTCONTROL</code> tanımsız: boşlukla başlayan satır da geçmiş dosyasına yazıldı. İkincisinde <code>ignorespace</code> açık: o satır geçmişe girmedi. Bash geçmiş dosyasını <code>600</code> izinle oluşturdu. Her bloğun ilk satırındaki <code>merhaba</code>, <code>echo</code> komutunun kendi çıktısıdır.</p>
+
+<h3>Adım 13: sır dosyası ve ortam değişkeni</h3>
+<pre class="kod" data-ad="bash">(umask 077; printf '%s\n' 'sahte-belirtec-7f3a' &gt; sir.txt)
+stat -c '%a %A %U %n' sir.txt
+SAHTE_BELIRTEC=sahte-belirtec-7f3a sleep 300 &amp;
+p=$!
+ls -l /proc/$p/environ
+tr '\0' '\n' &lt; /proc/$p/environ | grep SAHTE
+ps eww -p $p | grep -o 'SAHTE_BELIRTEC=[^ ]*'
+SAHTE_BELIRTEC=sahte-belirtec-7f3a bash -c 'bash -c "echo torun goruyor: \$SAHTE_BELIRTEC"'
+kill $p
+python3 -c 'import sys; s = sys.stdin.readline().strip(); print("program aldi, uzunluk", len(s))' &lt; sir.txt
+rm -f sir.txt</pre>
+<pre class="cikti">600 -rw------- kullanici sir.txt
+-r-------- 1 kullanici kullanici 0 Oct 16 17:27 /proc/107958/environ
+SAHTE_BELIRTEC=sahte-belirtec-7f3a
+SAHTE_BELIRTEC=sahte-belirtec-7f3a
+torun goruyor: sahte-belirtec-7f3a
+program aldi, uzunluk 19</pre>
+<p>Alt kabukta <code>umask 077</code> ile doğan dosya hiçbir ara adım olmadan <code>600</code>. Ortamla başlatılan <code>sleep</code>'in <code>environ</code> dosyası <code>-r--------</code>, ama sahibi ben olduğum için sahte belirteci <code>/proc</code>'tan da, <code>ps e</code> ile de okuyabildim: aynı kullanıcının her süreci aynısını yapabilir. Üçüncü satır mirası gösteriyor: değişken bir kabuktan onun çocuğuna, oradan torununa geçti. Son satırda aynı belirteç standart girdiden verildi: ne komut satırında ne ortamda göründü.</p>
+
+<h3>Adım 14: temizlik</h3>
+<pre class="kod" data-ad="bash">ssh-agent -k
+kill $(cat $S/sshd.pid)
+pgrep -u "$USER" -a 'sshd|ssh-agent' || echo "calisan sshd ya da ajan yok"
+ss -tln | grep 2218 || echo "2218 kapali"</pre>
+<pre class="cikti">unset SSH_AUTH_SOCK;
+unset SSH_AGENT_PID;
+echo Agent pid 97161 killed;
+calisan sshd ya da ajan yok
+2218 kapali</pre>
+<p><code>ssh-agent -k</code> ajanı ve soketini kaldırdı; sunucu PID dosyasındaki numarayla durduruldu. Betiğin başında ve sonunda <code>~/.ssh</code> dosyalarının zaman ve boyutlarını karşılaştırdım: değişmemişti. <code>/tmp/yazar/siber-18</code> dışında hiçbir dosya oluşmadı.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 6'daki Base64 ve hash parmak izini çözdü; Parça 11'deki en az yetki <code>PermitRootLogin no</code> ve <code>AllowUsers</code>'ta, Parça 12'deki <code>600</code>/<code>700</code> SSH'nin izin denetimlerinde, Parça 13'teki <code>cmdline</code>/<code>environ</code> sır taşıma yollarında somutlaştı. Parça 15–17 (<code>ss</code>, güvenlik duvarı, günlükler) sertleştirmenin öbür katmanlarıdır.</p>
+<p><strong>Sonraki parçalara:</strong> Bütün Linux sertleştirmesinin kontrol listesi Parça 19'da; SSH trafiğinin yakalamada nasıl göründüğü Parça 32–33'te; parola yöneticisi ve paroladan anahtar türetme Parça 45'te; imza ve Diffie-Hellman'ın matematiği Parça 46'da; sertifika ve güven zinciri Parça 47'de; anahtar yaşam döngüsü, HSM ve kasa Parça 48'de; depoya ya da günlüğe sızan sır Parça 58'de; kimlik doğrulama günlüklerinin merkezde toplanması Parça 66–67'de.</p>
+<p><strong>Kod rafına:</strong> Parça 18'deki ortam değişkenleri ve <code>.bashrc</code> burada sırrın sınırlarıyla, <code>mktemp</code> dar izinle doğan dosyayla birleşti; Parça 34–35'teki <code>.gitignore</code> ve "yanmış anahtar" fikri sır saklamanın depo tarafıdır; Git'in SSH ile uzak depoya bağlanması da bu parçadaki anahtarları kullanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Anahtarla girişte sunucuya ne gönderilir ve bu neden paroladan güvenlidir?</summary><p>Sunucuya yalnız açık anahtar (önceden, authorized_keys'e) ve giriş sırasında o bağlantıya özgü verinin özel anahtarla atılmış imzası gider; özel anahtar istemciden hiç çıkmaz. Sahte ya da ele geçmiş bir sunucu parolayı öğrenip başka yerde kullanabilir, ama bu imzayı başka bir bağlantıda kullanamaz. Ayrıca rastgele bir anahtar tahmin edilemez, kaba kuvvetle denenemez.</p></details>
+<details><summary>TOFU nedir ve ilk bağlantıda yes yazmadan önce ne yapmalısın?</summary><p>TOFU, ilk kullanımda güven demektir: istemci ilk gördüğü sunucu anahtarını known_hosts'a yazar ve sonraki bağlantıları ona göre denetler. Bu yüzden ilk karar sonraki her şeyin dayanağıdır. Yes yazmadan önce ekrandaki parmak izini bağımsız bir kanaldan, örneğin VM konsolunda ssh-keygen -lf ile alınan değerle karşılaştırmalısın; istersen soruya parmak izinin kendisini yapıştırabilirsin.</p></details>
+<details><summary>REMOTE HOST IDENTIFICATION HAS CHANGED uyarısında doğru sıra nedir?</summary><p>Bağlanma. Önce anahtarın neden değiştiğini yöneticiden ya da kayıtlardan öğren (yeniden kurulum, anahtar yenileme). Sonra yeni parmak izini sunucunun konsolundan al ve uyarıdakiyle karşılaştır. Eşleşiyorsa eski satırı ssh-keygen -R ile sil ve yeniden bağlanıp ekle; StrictHostKeyChecking=no ile geçmek sahte sunucuya bağlanmayı mümkün kılar.</p></details>
+<details><summary>Bir sshd ayarının gerçekten etkin olduğunu nasıl doğrularsın ve neden dosyaya bakmak yetmez?</summary><p>sshd -T etkin değerleri bütün dosyaları birleştirerek yazar; sshd -t yalnız sözdizimini denetler. Dosyaya bakmak yetmez, çünkü sshd her anahtar sözcük için ilk elde edilen değeri kullanır: başta Include edilen bir dosyadaki PasswordAuthentication yes, ana dosyanın sonundaki no'yu geçersiz kılar. Değişiklikten sonra ikinci bir terminalden yeni bağlantıyla da sınarsın.</p></details>
+<details><summary>Ortam değişkeniyle verilen bir sırrın dört sınırı nedir?</summary><p>Birincisi bütün çocuk süreçlere miras geçer. İkincisi aynı kullanıcının başka süreçleri ve root /proc/PID/environ'dan okuyabilir. Üçüncüsü program değişkeni kendi içinde silse bile environ dosyası başlangıçtaki değeri göstermeye devam eder. Dördüncüsü hata sayfaları, çökme dökümleri ve tanılama komutları değişkenleri günlüğe dökebilir; bu yüzden 600 izinli dosya, standart girdi ya da kasa daha iyidir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>SSH:</strong> istemci <code>ssh</code>, sunucu <code>sshd</code>, TCP 22. Sıra: anahtar değişimi + sunucu kimliği → şifreli kanal → kullanıcı kimliği → oturum. Sunucu kimliği doğrulanmazsa şifreleme korumaz.</li>
+<li><strong>Anahtar &gt; parola:</strong> özel anahtar istemcide kalır, sunucuya bağlantıya özgü imza gider; iptal = <code>authorized_keys</code>'ten bir satır.</li>
+<li><strong>Üretim:</strong> <code>ssh-keygen -t ed25519 -C yorum</code> (9.5'ten beri varsayılan Ed25519; RSA ise ≥ 3072). Parmak izi = açık anahtar baytlarının SHA-256'sı, Base64; <code>-lf</code>, eski biçim <code>-E md5</code>.</li>
+<li><strong>İzinler:</strong> <code>~/.ssh</code> 700 · özel anahtar 600 (gevşekse ssh yok sayar) · .pub 644 · <code>authorized_keys</code> 600 (<code>StrictModes yes</code> denetler).</li>
+<li><strong>Parola:</strong> özel anahtarı diskte şifreler (aes256-ctr + bcrypt KDF, 16 tur); kurtarılamaz. Ana makine anahtarı parolasız, root ve 600.</li>
+<li><strong>ssh-agent:</strong> çözülmüş anahtar bellekte, soket 600; <code>ssh-add</code>, <code>-l</code>, <code>-t</code>, <code>-c</code>, <code>-D</code>; <code>ssh-agent -k</code>. <code>ForwardAgent</code> dikkat: uzaktaki root ajanını kullanabilir; yerine <code>ssh -J</code>.</li>
+<li><strong>known_hosts ve TOFU:</strong> ilk bağlantıda parmak izini bağımsız kanaldan doğrula. Değişen anahtar: bağlanma, nedeni öğren, doğrula, <code>ssh-keygen -R</code>.</li>
+<li><strong>StrictHostKeyChecking:</strong> ask (varsayılan) · yes (hiç ekleme) · accept-new (yeniyi ekle, değişeni reddet) · no (değişene bile bağlanır: kullanma). SSHFP + DNSSEC, SSH sertifikaları (Parça 47).</li>
+<li><strong>sshd sertleştirme:</strong> <code>PermitRootLogin no</code> · <code>PasswordAuthentication no</code> · <code>KbdInteractiveAuthentication no</code> · <code>AllowUsers</code>/<code>AllowGroups</code> (ekler) · <code>MaxAuthTries</code> · <code>PerSourcePenalties</code> · gereksiz yönlendirme kapalı.</li>
+<li><strong>İlk değer kazanır:</strong> <code>Include</code> baştadır; etkin değer <code>sshd -T</code>, sözdizimi <code>sshd -t</code>. Oturumu kapatmadan <code>reload</code>, ikinci terminalden sına.</li>
+<li><strong>Sır yolları:</strong> komut satırı (herkes görür: kullanma) &lt; ortam değişkeni (miras, aynı kullanıcı, silmek silmez) &lt; 600 dosya / standart girdi &lt; parola yöneticisi / kasa.</li>
+<li><strong>Geçmiş:</strong> <code>HISTCONTROL=ignorespace</code> + baştaki boşluk; daha iyisi <code>read -rs</code>; sızdıysa <code>history -d</code>, sır yanmıştır.</li>
+<li><strong>Kasa:</strong> şifreli merkezî depo, erişim denetimi, kayıt, döndürme (Parça 48, 58). Sınır: yalnız kendi ya da izinli sistemler (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-18">
+<h3>Quiz 18</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Anahtarla SSH girişini kurarken <code>ssh-keygen</code>'in ürettiği iki dosyadan hangisi sunucudaki <code>~/.ssh/authorized_keys</code> dosyasına eklenir?</p>
+<ul class="sec"><li><code>id_ed25519</code> (özel anahtar)</li><li><code>id_ed25519.pub</code> (açık anahtar)</li><li>Her ikisi de</li><li>Hiçbiri; sunucuya yalnız anahtarın parolası yazılır</li><li><code>known_hosts</code></li></ul>
+<div class="coz"><p>Sunucuya yalnız açık anahtar konur; <code>authorized_keys</code> girmesine izin verilen açık anahtarların listesidir ve açık anahtar gizli değildir. Özel anahtar (A, C) istemciden hiç çıkmamalıdır; çıkarsa kimliğin de çıkar. Anahtar parolası (D) yalnız istemcideki dosyayı şifreler, sunucuya hiç gitmez. <code>known_hosts</code> (E) istemcinin tanıdığı <strong>sunucuların</strong> anahtarlarını tutar; yön tam terstir.</p></div></li>
+
+<li data-c="D"><p class="q">Laboratuvarındaki yeni bir VM'e ilk kez bağlanıyorsun ve "The authenticity of host … can't be established. ED25519 key fingerprint is SHA256:…" sorusu geliyor. En doğru davranış hangisidir?</p>
+<ul class="sec"><li>Soru her ilk bağlantıda çıktığı için düşünmeden <code>yes</code> yazmak</li><li>Sorunun bir daha çıkmaması için <code>StrictHostKeyChecking=no</code> ayarlamak</li><li><code>ssh-keyscan</code> ile anahtarı ağdan alıp bunu yeterli doğrulama saymak</li><li>VM konsolunda <code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code> çıktısını alıp ekrandaki parmak iziyle karşılaştırmak, eşleşirse kabul etmek</li><li><code>known_hosts</code> dosyasını silip yeniden bağlanmak</li></ul>
+<div class="coz"><p>TOFU modelinde ilk karar sonraki bütün denetimlerin dayanağıdır; bu yüzden parmak izi SSH bağlantısının dışındaki bir yoldan, burada VM konsolundan doğrulanmalıdır. A tam olarak doğrulamasız güvendir. B, değişmiş anahtara bile bağlanmayı mümkün kılar. C'de <code>ssh-keyscan</code> da ağdan okur; yol üstünde biri varsa onun anahtarını getirir. E hiçbir şeyi doğrulamaz, yalnız eski kayıtları yok eder.</p></div></li>
+
+<li data-c="A"><p class="q">Özel anahtara parola (passphrase) koymanın sağladığı temel koruma hangisidir?</p>
+<ul class="sec"><li>Anahtar dosyası çalınsa bile parola bilinmeden anahtar kullanılamaz.</li><li>Parola her girişte sunucuya gönderilir ve ikinci etken olur.</li><li>Sunucunun kimliğini doğrulamayı sağlar.</li><li>Anahtarın parmak izini değiştirir ve gizler.</li><li>Ağ trafiğinin şifrelenmesini sağlar.</li></ul>
+<div class="coz"><p>Parola, diskteki özel anahtarı şifreler (denemede başlıkta <code>aes256-ctr</code> ve <code>bcrypt</code> göründü); yanlış parolayla <code>ssh-keygen -y</code> anahtarı çözemedi. B yanlıştır: parola sunucuya hiç gitmez. Sunucu kimliği (C) <code>known_hosts</code>'un işidir. Parmak izi (D) açık anahtardan hesaplanır ve parola onu değiştirmez. Trafik şifrelemesi (E) anahtar değişimiyle kurulur, anahtar parolasıyla ilgisi yoktur.</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki komutlar standart girdiden etkileşimli bir Bash'e veriliyor. İkinci satırın başında bir boşluk vardır. Kabuk kapandıktan sonra <code>gecmis</code> dosyasında hangi satırlar bulunur?</p>
+<pre class="kod" data-ad="bash">HISTCONTROL=ignorespace HISTFILE=gecmis bash --norc -i &lt;&lt;'EOT'
+ls
+ export PAROLA=deneme
+echo tamam
+EOT</pre>
+<ul class="sec"><li>Üç satırın üçü de</li><li>Yalnız <code> export PAROLA=deneme</code></li><li><code>ls</code> ve <code>echo tamam</code></li><li>Hiçbiri; standart girdiden gelen komutlar geçmişe yazılmaz</li><li>Yalnız <code>echo tamam</code></li></ul>
+<div class="coz"><p><code>ignorespace</code>, Bash kılavuzuna göre boşlukla başlayan satırları geçmişe kaydetmez; öbür iki satır kaydedilir. Komut çalıştırılınca dosyada <code>ls</code> ve <code>echo tamam</code> çıktı. A, <code>HISTCONTROL</code> tanımsızken olurdu (denemede ilk kabuk). B kuralın tersidir. D yanlıştır: <code>-i</code> kabuğu etkileşimli yapar ve geçmiş tutulur. E, <code>ignoredups</code> ile karıştırmaktır; tekrar eden satır yoktur.</p></div></li>
+
+<li data-c="E"><p class="q"><code>/etc/ssh/sshd_config</code>'in ilk satırı <code>Include /etc/ssh/sshd_config.d/*.conf</code>'tur; o klasördeki bir dosyada <code>PasswordAuthentication yes</code>, ana dosyanın en altında <code>PasswordAuthentication no</code> yazıyor. <code>sshd -T</code> ne gösterir?</p>
+<ul class="sec"><li><code>passwordauthentication no</code>, çünkü en son yazılan geçerlidir</li><li>Sözdizimi hatası, çünkü aynı ayar iki kez yazılamaz</li><li>İkisi birden, çünkü değerler listeye eklenir</li><li><code>passwordauthentication no</code>, çünkü ana dosya her zaman eklenen dosyalardan önceliklidir</li><li><code>passwordauthentication yes</code>, çünkü ilk elde edilen değer kullanılır ve <code>Include</code> dosyanın başındadır</li></ul>
+<div class="coz"><p><code>sshd_config(5)</code>: aksi belirtilmedikçe her anahtar sözcük için ilk elde edilen değer geçerlidir. <code>Include</code> başta olduğu için klasördeki <code>yes</code> önce okunur; denemede <code>sshd -T</code> gerçekten <code>passwordauthentication yes</code> yazdı. A, "son yazan kazanır" alışkanlığıdır. B yanlıştır: tekrar hata değildir, yok sayılır. C, <code>AllowUsers</code> gibi listeye ekleyen sözcükler için doğrudur, bu ayar için değil. D'de böyle bir öncelik yoktur.</p></div></li>
+
+<li data-c="B"><p class="q">Bir sunucunun ana makine anahtarı değişmiştir ve istemcinin <code>known_hosts</code>'unda eski anahtar kayıtlıdır. Hangi <code>StrictHostKeyChecking</code> değeriyle istemci yine de bağlanıp (anahtarla kimlik doğrulayıp) komut çalıştırır?</p>
+<ul class="sec"><li><code>accept-new</code></li><li><code>no</code></li><li><code>ask</code></li><li><code>yes</code></li><li>Hiçbiri; değişmiş anahtarla hiçbir ayarda bağlanılmaz</li></ul>
+<div class="coz"><p><code>ssh_config(5)</code>'e göre <code>no</code>, değişmiş anahtarlı sunucuya "bazı kısıtlarla" bağlanmaya izin verir. Denemede istemci uyarıyı yazdı, parola ve klavye-etkileşimli girişi kapattı ama ajandaki anahtarla girip <code>baglandi</code> yazdırdı. <code>accept-new</code> (A) yalnız yeni adları kabul eder, değişeni reddeder; denemede reddetti. <code>ask</code> (C) ve <code>yes</code> (D) de reddeder. E bu yüzden yanlıştır ve tehlikeli bir güven duygusu verir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir betik API belirtecini ortam değişkeninden okuyor. Bu yöntemle ilgili aşağıdakilerden hangisi <strong>yanlıştır</strong>?</p>
+<ul class="sec"><li>Betiğin başlattığı çocuk süreçler değişkeni miras alır.</li><li>Aynı kullanıcıyla çalışan başka bir süreç <code>/proc/&lt;pid&gt;/environ</code>'dan değeri okuyabilir.</li><li>Komut satırı argümanından daha az görünürdür, çünkü <code>environ</code> yalnız sahibine açıktır.</li><li>Program değişkeni kendi içinde silerse <code>/proc/&lt;pid&gt;/environ</code> da güncellenir ve değer kaybolur.</li><li>Hata sayfaları ya da çökme dökümleri değişkeni günlüğe yazabilir.</li></ul>
+<div class="coz"><p><code>proc_pid_environ(5)</code>'e göre bu dosya programın başladığı andaki ortamı gösterir; Örnek 3'te Python değişkeni sildi ama dosya değeri göstermeye devam etti. Bu yüzden D yanlıştır ve cevaptır. A (miras, denemede torun süreç gördü), B (aynı kullanıcı <code>environ</code>'u okudu), C (<code>cmdline</code> herkese, <code>environ</code> yalnız sahibine açık, Parça 13) ve E (günlüğe sızma, Parça 58) doğrudur.</p></div></li>
+
+<li data-c="A"><p class="q">Bir yönetici ana makinesinden sıçrama sunucusuna <code>ForwardAgent yes</code> ile bağlanıyor. Sıçrama sunucusunda root yetkisi ele geçirmiş biri, bağlantı açıkken ne yapabilir?</p>
+<ul class="sec"><li>Yönlendirilmiş ajan soketini kullanarak, yöneticinin ajanındaki kimliklerle başka sunuculara kimlik doğrulayabilir; ama özel anahtar dosyasını elde edemez.</li><li>Özel anahtarın kendisini ajandan kopyalayıp sonsuza kadar kullanabilir.</li><li>Hiçbir şey; ajan soketi yalnız yöneticinin kendi makinesinde bulunur.</li><li>Yalnız yöneticinin anahtar parolasını görebilir.</li><li>Yalnız <code>known_hosts</code> dosyasını değiştirebilir.</li></ul>
+<div class="coz"><p><code>ssh_config(5)</code> uyarısı: uzak makinede dosya izinlerini aşabilen biri yönlendirilmiş ajan soketine bağlanıp ajandaki kimliklerle kimlik doğrulama işlemleri yaptırabilir, ama anahtar malzemesini alamaz. B bu yüzden yanlıştır: ajan anahtarı dışarı vermez. C yanlıştır: yönlendirme tam olarak uzak tarafta bir soket açar. D'de parola ajana yalnız yükleme anında yerel olarak girilir. E konuyla ilgisizdir. Savunma: yönlendirmeyi kapalı tut, <code>ssh -J</code> kullan.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">8 bitlik bir bayt <code>0xFF</code> değerini taşıyor. Bu bayt ikiye tümleyen gösterimle <strong>işaretli</strong> sayı olarak okunursa değeri nedir?</p>
+<ul class="sec"><li>255</li><li>−127</li><li>−1</li><li>−128</li><li>1</li></ul>
+<div class="coz"><p>İkiye tümleyende en soldaki bitin ağırlığı −2<sup>7</sup> = −128'dir; <code>11111111</code> = −128 + 127 = −1. Parça 1'in özetindeki "−1 = FF" kuralı budur; Python'da <code>int.from_bytes(b'\xff', 'big', signed=True)</code> → −1. 255 (A) aynı bitlerin işaretsiz okunuşudur. −128 (D) <code>0x80</code>'dir. −127 (B) "işaret biti + büyüklük" gösterimiyle karıştırmaktır. 1 (E) bitleri tersleyip 1 eklemeyi yanlış yöne uygulamaktır.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">x86-64'te işlemcinin yürüteceği <strong>sıradaki komutun adresini</strong> tutan yazmaç hangisidir?</p>
+<ul class="sec"><li><code>rax</code></li><li><code>rdi</code></li><li><code>rsi</code></li><li><code>r10</code></li><li><code>rip</code></li></ul>
+<div class="coz"><p>Program sayacı x86-64'te <code>rip</code>'tir; getir-çöz-yürüt döngüsünde işlemci komutu bu adresten getirir, atlama komutları da ona yeni adres yazar. Parça 2'nin vurgusu: onu kim belirlerse programın ne yapacağını o belirler. <code>rax</code> (A) dönüş değerini, <code>rdi</code> (B) ve <code>rsi</code> (C) Linux'ta ilk iki argümanı taşır. <code>r10</code> (D) sistem çağrısının dördüncü argümanıdır (Parça 4).</p></div></li>
+
+<li data-c="A" data-k="siber-4"><p class="q">Bir sistem çağrısı başarısız olduğunda çekirdek −13 döndürüyor. glibc sarmalayıcısı bunu programa nasıl iletir?</p>
+<ul class="sec"><li><code>errno</code>'ya 13 yazar ve −1 döndürür.</li><li>Doğrudan −13 döndürür, <code>errno</code>'ya dokunmaz.</li><li>Programa <code>SIGSEGV</code> gönderir.</li><li>0 döndürür ve hatayı günlüğe yazar.</li><li>Çağrıyı başarılı olana kadar yeniden dener.</li></ul>
+<div class="coz"><p>Parça 4: çekirdek hatayı eksi bir sayıyla bildirir; sarmalayıcı bunu <code>errno</code>'ya pozitif olarak (13, <code>EACCES</code>) yazar ve programa −1 döndürür. B, ham sistem çağrısı düzeyinde doğrudur ama glibc arayüzü böyle değildir. C, geçersiz bellek erişiminde çekirdeğin davranışıdır. D ve E sarmalayıcının yapmadığı şeylerdir.</p></div></li>
+
+<li data-c="B" data-k="siber-5"><p class="q">Bir sürecin <code>/proc/&lt;pid&gt;/maps</code> çıktısında hem yazılabilir hem çalıştırılabilir (<code>rwx</code>) bir bölge görülüyor. Bu hangi bellek koruma ilkesine aykırıdır?</p>
+<ul class="sec"><li>ASLR</li><li>W^X</li><li>Yazınca kopyala (COW)</li><li>seccomp</li><li>En az yetki</li></ul>
+<div class="coz"><p>W^X ilkesi bir sayfanın yazılabilir ya da çalıştırılabilir olmasını, ikisinin birden asla olmamasını ister; Parça 5'in özeti "maps'te rwx olmamalı" der. ASLR (A) adreslerin rastgele yerleşmesidir. COW (C) <code>fork</code> sonrası sayfaların paylaşılmasıdır. seccomp (D) sistem çağrısı kümesini daraltır. En az yetki (E) genel ilkedir ama bu belirli ihlalin adı değildir.</p></div></li>
+
+<li data-c="D" data-k="siber-7"><p class="q">İndirdiğin laboratuvar kalıbı için <code>sha256sum -c</code> "OK" diyor, ama <code>gpg --verify SHA256SUMS.gpg SHA256SUMS</code> "BAD signature" diyor. Ne sonuç çıkarırsın?</p>
+<ul class="sec"><li>Özet tuttuğu için kalıp güvenilirdir; imza hatası önemsizdir.</li><li>İmza hatası yalnız <code>gpg</code> sürümünden kaynaklanır; kalıbı kullanabilirsin.</li><li>Kalıbı yeniden indirip yalnız <code>sha256sum</code> ile yeniden denetlemek yeter.</li><li>Özet listesinin kendisi değiştirilmiş olabilir; "OK" değersizdir, kalıba güvenme.</li><li>Kalıbı VM'de açarsan zararsız olduğu için sorun yoktur.</li></ul>
+<div class="coz"><p>Parça 7'nin sırası: önce imza (özet listesinin gerçekten yayıncıdan geldiği), sonra özet. İmza BAD ise liste değiştirilmiş olabilir; saldırgan hem kalıbı hem listeyi değiştirdiyse özet de "OK" der. A ve C bu yüzden yanlıştır. B dayanaksız bir varsayımdır. E yanlıştır: VM tam bir güvenlik sınırı değildir ve zararlı kalıp laboratuvarı kirletir.</p></div></li>
+
+<li data-c="C" data-k="siber-8"><p class="q"><code>/tmp</code> bölümü <code>noexec</code> ile bağlanmış ve içinde çalıştırma izni olan <code>betik.sh</code> var. Hangisi doğrudur?</p>
+<ul class="sec"><li>Hem <code>./betik.sh</code> hem <code>bash betik.sh</code> reddedilir.</li><li>İkisi de çalışır, çünkü <code>noexec</code> yalnız SUID bitini etkiler.</li><li><code>./betik.sh</code> reddedilir ama <code>bash betik.sh</code> çalışır; <code>noexec</code> yorumlayıcıyı durdurmaz.</li><li><code>./betik.sh</code> çalışır ama <code>bash betik.sh</code> reddedilir.</li><li>Dosya okunamaz hâle gelir.</li></ul>
+<div class="coz"><p><code>noexec</code> o bölümdeki dosyaların doğrudan çalıştırılmasını engeller; ama <code>bash betik.sh</code>'te çalışan program <code>/usr/bin/bash</code>'tir ve dosyayı yalnız okur. Parça 8'in özeti bunu "yorumlayıcıyı durdurmaz" diye yazar. A bu yüzden yanlıştır. B, <code>nosuid</code> ile karıştırmaktır. D tersidir. E yanlıştır: okuma <code>noexec</code>'ten etkilenmez.</p></div></li>
+
+<li data-c="E" data-k="siber-10"><p class="q">Debian güvenlik deposunun imzalı <code>InRelease</code> dosyasındaki <code>Valid-Until</code> alanı hangi tehdide karşıdır?</p>
+<ul class="sec"><li>Paketlerin içine zararlı kod konmasına</li><li>İndirmenin dinlenip içeriğin okunmasına</li><li>İmza anahtarının çalınmasına</li><li>Bağımlılıkların çakışmasına</li><li>Eski ama geçerli imzalı bir listenin yeniden sunularak güvenlik güncellemelerinin gizlenmesine (tekrar saldırısı)</li></ul>
+<div class="coz"><p>İmza "liste gerçek mi" sorusunu, <code>Valid-Until</code> "liste güncel mi" sorusunu cevaplar (Parça 10). Saldırgan eski, imzası hâlâ geçerli bir listeyi sunarsa sistem yeni yamaları göremez; süre dolan liste reddedilir. A'yı imza da önlemez (xz örneği). B gizlilik sorunudur, HTTP'nin kaybettirdiğidir. C ve D bu alanın kapsamı dışındadır.</p></div></li>
+
+<li data-c="A" data-k="siber-11"><p class="q">Bir kullanıcının <code>/etc/uygulama.conf</code> dosyasını root yetkisiyle düzenlemesi gerekiyor. En dar ve doğru <code>sudo</code> yolu hangisidir?</p>
+<ul class="sec"><li><code>sudoedit</code> ile o dosyaya izin vermek</li><li><code>NOPASSWD: ALL</code> kuralı yazmak</li><li><code>/usr/bin/vim</code> komutuna root olarak izin vermek</li><li>Kullanıcıya root parolasını verip <code>su</code> kullandırmak</li><li>Kullanıcıya <code>sudo -i</code> izni vermek</li></ul>
+<div class="coz"><p>Parça 11'deki dar kural ilkesi: editör, sayfalayıcı ya da kabuk gibi kendi içinden başka komut açabilen programlara root izni verilmez; dosya düzenleme için <code>sudoedit</code> kullanılır, böylece editör kullanıcının kendi yetkisiyle çalışır. B sınırsız yetkidir. C editörün bütün gücünü root olarak verir. D hem parolayı paylaştırır hem kaydı zayıflatır. E sınırı ve komut başına kaydı kaybettirir.</p></div></li>
+
+<li data-c="B" data-k="siber-13"><p class="q"><code>kill -0 4242</code> komutu ne yapar?</p>
+<ul class="sec"><li>4242 numaralı süreci hemen sonlandırır.</li><li>Sinyal göndermeden sürecin var olup olmadığını ve ona sinyal gönderme iznin olup olmadığını denetler.</li><li>Sürecin bütün sinyal işleyicilerini sıfırlar.</li><li>Süreci dondurur.</li><li>Sürecin çocuklarını sonlandırır.</li></ul>
+<div class="coz"><p><code>kill(2)</code>'ye göre 0 numaralı sinyal hiçbir şey göndermez, yalnız varlık ve izin denetimini yapar; Parça 13'teki "önce TERM, bekle, <code>kill -0</code>, sonra KILL" sırasındaki ara adım budur. Hemen sonlandırma (A) <code>SIGKILL</code>, dondurma (D) <code>SIGSTOP</code>'tur. C ve E bu komutun yaptığı şeyler değildir; süreç grubunu hedeflemek için eksi PID gerekir.</p></div></li>
+
+<li data-c="D" data-k="siber-14"><p class="q">systemd'de <code>systemctl start</code> ile <code>systemctl enable</code> arasındaki fark nedir?</p>
+<ul class="sec"><li>İkisi aynıdır; <code>enable</code> eski adıdır.</li><li><code>start</code> hizmeti kalıcı olarak kurar, <code>enable</code> bir kez çalıştırır.</li><li><code>enable</code> hizmeti hemen başlatır ve günlüğünü açar.</li><li><code>start</code> hizmeti şimdi başlatır; <code>enable</code> açılışta (ya da ilgili hedefte) kendiliğinden başlaması için etkinleştirir.</li><li><code>enable</code> yalnız zamanlanmış görevler için kullanılır.</li></ul>
+<div class="coz"><p>Başlatma ile etkinleştirme ayrı işlerdir: <code>start</code> o an çalıştırır, <code>enable</code> birimi açılışta otomatik başlayacak biçimde bağlar (ikisini birden yapmak için <code>enable --now</code> vardır). Otomatik başlayan her hizmet saldırı yüzeyine eklendiği için envanterde ikisi ayrı sorulur. A ve B yanlış ya da terstir. C, <code>--now</code>'ı varsaymaktır. E yanlıştır: hizmetler de etkinleştirilir.</p></div></li>
+
+<li data-c="C" data-k="siber-15"><p class="q"><code>ss -tln</code> çıktısında bir hizmet <code>127.0.0.1:2218</code>, başka bir hizmet <code>0.0.0.0:8080</code> adresinde dinliyor. Hangisi doğrudur?</p>
+<ul class="sec"><li>İkisine de ağdaki başka makinelerden erişilebilir.</li><li>İkisine de yalnız makinenin içinden erişilebilir.</li><li>2218'e yalnız makinenin kendisinden, 8080'e makinenin bütün IPv4 arayüzlerinden erişilebilir (güvenlik duvarı izin verirse).</li><li>8080'e yalnız makinenin kendisinden erişilebilir.</li><li>0.0.0.0 geçersiz adres olduğu için 8080 dinlemiyordur.</li></ul>
+<div class="coz"><p><code>127.0.0.1</code> döngü adresidir; oraya bağlanan hizmete yalnız aynı makineden ulaşılır. Bu parçadaki geçici <code>sshd</code> bu yüzden <code>ListenAddress 127.0.0.1</code> ile kuruldu. <code>0.0.0.0</code> "bütün IPv4 adreslerim" demektir; dışarıdan erişimi ancak güvenlik duvarı sınırlar. A ve B ayrımı yok sayar, D tersidir. E yanlıştır: <code>0.0.0.0</code> dinleme için geçerli bir joker adrestir.</p></div></li>
+
+<li data-c="E" data-k="siber-15"><p class="q"><code>ip route</code> çıktısında <code>default via 172.20.0.1 dev eth0</code> satırı neyi gösterir?</p>
+<ul class="sec"><li>Makinenin kendi IP adresinin 172.20.0.1 olduğunu</li><li>DNS sunucusunun 172.20.0.1 olduğunu</li><li>eth0 arayüzünün kapalı olduğunu</li><li>Yalnız 172.20.0.0 ağına gidilebildiğini</li><li>Daha özel bir yol bulunmayan bütün hedefler için paketlerin 172.20.0.1 ağ geçidine gönderileceğini</li></ul>
+<div class="coz"><p><code>default</code> varsayılan yoldur: yönlendirme tablosunda daha özel bir eşleşme yoksa paket <code>via</code> ile belirtilen ağ geçidine, <code>dev</code> ile belirtilen arayüzden gönderilir. Makinenin kendi adresi (A) <code>ip addr</code>'da görünür. DNS sunucusu (B) <code>/etc/resolv.conf</code> ya da systemd-resolved'dan okunur. C ve D satırın söylemediği şeylerdir; tersine bu satır her yere gidilebileceğini söyler.</p></div></li>
+
+<li data-c="A" data-k="siber-16"><p class="q">Bir nftables giriş zincirinde politika <code>drop</code>; yalnız TCP 22'ye izin veren bir kural var, ama <code>ct state established,related accept</code> kuralı unutulmuş. En olası sonuç hangisidir?</p>
+<ul class="sec"><li>Makinenin kendi başlattığı bağlantıların (ör. güncelleme indirme, DNS) dönüş paketleri düşürülür ve bu bağlantılar çalışmaz.</li><li>Hiçbir etkisi olmaz; durum takibi yalnız giden zincirde gerekir.</li><li>SSH dahil bütün gelen bağlantılar reddedilir.</li><li>Güvenlik duvarı kendiliğinden kapanır.</li><li>Yalnız UDP trafiği etkilenir, TCP etkilenmez.</li></ul>
+<div class="coz"><p>Durum takipli güvenlik duvarında makinenin dışarıya açtığı bağlantıların yanıtları giriş zincirinden geri gelir; onlara "kurulu bağlantının dönüşü" diye izin veren kural yoksa varsayılan reddet onları düşürür. B yanlıştır: dönüş paketleri giriş zincirindedir. C yanlıştır: 22'ye gelen yeni bağlantılar kuralla kabul edilir. D olmaz. E yanlıştır: TCP yanıtları da düşer, DNS gibi UDP yanıtları da.</p></div></li>
+
+<li data-c="D" data-k="siber-16"><p class="q">Uzaktaki bir laboratuvar sunucusuna SSH ile bağlıyken yeni bir "varsayılan reddet" güvenlik duvarı kural seti uygulayacaksın. Kendini dışarıda bırakmamak için en doğru alışkanlık hangisidir?</p>
+<ul class="sec"><li>Kuralları uygulayıp hemen oturumu kapatmak ve yeniden bağlanmayı denemek</li><li>Önce bütün trafiği reddeden kuralı yazmak, SSH iznini sonra eklemek</li><li>Güvenlik duvarını yalnız giden trafik için kullanmak</li><li>SSH iznini reddet kuralından önce koymak, açık oturumu kapatmadan ikinci bir bağlantıyla sınamak ve konsol erişimini hazır tutmak</li><li>Kuralları sınamadan kalıcı yapıp sunucuyu yeniden başlatmak</li></ul>
+<div class="coz"><p>Kural sırası önemlidir: SSH izni, gerisini reddeden kuraldan önce gelmelidir. Değişiklikten sonra açık oturum kapatılmadan yeni bir bağlantıyla sınanır; bir şey ters giderse konsol ya da kendiliğinden geri alma planı kurtarır. Bu parçadaki <code>sshd</code> ayarını değiştirme yöntemiyle aynı mantıktır. A ve E riski sona bırakır. B'de kural uygulandığı an bağlantı kopabilir. C ana sorunu çözmez.</p></div></li>
+
+<li data-c="B" data-k="siber-17"><p class="q"><code>logrotate</code> aracının temel görevi hangisidir?</p>
+<ul class="sec"><li>Günlüklerdeki başarısız girişleri tespit edip uyarı göndermek</li><li>Günlük dosyalarını belirli aralıklarla döndürmek, eskileri sıkıştırmak ve saklama süresi dolanları silmek</li><li>Günlükleri şifreleyip değiştirilemez yapmak</li><li>Günlükleri merkezî bir sunucuya göndermek</li><li>Hangi süreçlerin hangi dosyaya eriştiğini kaydetmek</li></ul>
+<div class="coz"><p>Günlük dosyaları sürekli büyür; <code>logrotate</code> onları belirli aralıklarla yeni dosyaya geçirir, eskileri sıkıştırır ve yapılandırılan sayıdan ya da süreden eski olanları siler. Saklama süresinin ayarı hem disk hem soruşturma için önemlidir. A bir izleme ya da SIEM işidir (Parça 67). C ve D başka araçların işidir (D, Parça 66). E denetim alt sisteminin (auditd) işidir.</p></div></li>
+
+<li data-c="C" data-k="siber-17"><p class="q">auditd ile <code>/etc/ssh/sshd_config</code> dosyasına yazma erişimini izleyen bir kural kuruldu. Bu kural ne sağlar?</p>
+<ul class="sec"><li>Dosyaya yazılmasını engeller.</li><li>Dosyayı değiştirilince otomatik olarak eski hâline döndürür.</li><li>Dosyaya kimin, ne zaman, hangi süreçle yazdığını kayda geçirir; engellemez.</li><li>Dosyanın içeriğini şifreler.</li><li>Yalnız root'un yaptığı değişiklikleri kaydeder, öbürlerini yok sayar.</li></ul>
+<div class="coz"><p>Denetim kuralları bir erişim denetimi değil, bir kayıt mekanizmasıdır: olay gerçekleşir ve çekirdek kimlik, zaman ve süreç bilgisiyle bir kayıt üretir. Engellemek (A) izinlerin işidir (Parça 12). Geri yükleme (B) yedek ya da yapılandırma yönetimi işidir; bütünlük izleme değişikliği yalnız fark eder. D ve E kuralın yaptığı şeyler değildir. Bu ortamda auditd bulunmadığı için kural burada çalıştırılmadı; soru kavramı yoklar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-17">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-18">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-19">Sonraki parça: Sertleştirme ve güncelleme disiplini →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"ssh key authentication explained ed25519 ssh-keygen"</li>
+  <li>"ssh known_hosts host key fingerprint trust on first use"</li>
+  <li>"sshd_config hardening PermitRootLogin PasswordAuthentication AllowUsers"</li>
+  <li>"linux secrets management environment variables bash history password manager"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> <code>ssh-keygen</code> ile parolalı istemci anahtarı ve parolasız ana makine anahtarı; dosya izinleri, özel anahtarın yalnız ilk/son satırı ve ilk 38 baytlık biçim başlığı (<code>aes256-ctr</code>, <code>bcrypt</code>); <code>-lf</code>, <code>-E md5</code> ve elle SHA-256 parmak izi; yanlış parolayla <code>-y</code>; root'suz <code>sshd</code> (<code>/usr/sbin/sshd -f … -E …</code>, <code>127.0.0.1:2218</code>), <code>sshd -t</code>, <code>sshd -T</code>, <code>ss -tlnp</code>; <code>ssh-keyscan</code> ve parmak izi karşılaştırması; <code>script</code> ile yakalanan ilk bağlantı sorusu; <code>ssh-agent -a</code>, <code>SSH_ASKPASS</code>/<code>SSH_ASKPASS_REQUIRE=force</code> ile <code>ssh-add</code>, anahtarlı giriş ve <code>Accepted publickey</code> günlük satırı; parola girişinin, root'un ve <code>AllowUsers</code> dışındaki kullanıcının reddi; <code>644</code> özel anahtarın reddi; ana makine anahtarı yeniden üretilince <code>accept-new</code> ile ret, <code>StrictHostKeyChecking=no</code> ile bağlanma, <code>ssh-keygen -R</code> ile düzeltme; <code>HISTCONTROL</code> denemesi; <code>umask 077</code> ile sır dosyası; ortam değişkeninin <code>/proc/&lt;pid&gt;/environ</code>, <code>ps e</code> ve mirasla görünmesi; Python'da silinen değişkenin <code>environ</code>'da kalması; <code>Include</code> önceliği. Quiz'deki geçmiş, <code>Include</code>, <code>0xFF</code> ve <code>umask</code> cevapları çalıştırılarak doğrulandı. Ortam: WSL2 üzerinde Kali Rolling, çekirdek 6.18, OpenSSH 10.3p1 Debian-4, GNU Bash 5.3.9.</li>
+  <li><strong>Ortama özgü ve sadeleştirme:</strong> Çıktılarda kullanıcı adı <code>kullanici</code> olarak değiştirildi (sütun hizası buna göre düzeltildi); makine adı anahtar yorumuna girmesin diye <code>-C</code> kullanıldı. Adımlar tek bir betikten alındı; Adım 7'deki <code>PerSourcePenalties</code> satırı aynı betiğin daha önceki bir çalıştırmasından, <code>StrictModes yes</code> retti ve <code>-o AllowUsers</code> gözlemi ilk denemelerden. Adım 10'da yinelenen uyarı bloğu <code>grep -v</code> ile süzüldü (komut sayfada olduğu gibi). Betikte sunucuyu başlatıp durduran satırların arkasındaki birer saniyelik <code>sleep</code> komutları ve <code>ssh-keyscan</code>'ın standart hata yönlendirmesi sayfada gösterilmedi. Root hesabı bu ortamda kilitli göründüğü için <code>PermitRootLogin no</code>'nun kendi günlük iletisi gözlenemedi; root'suz <code>sshd</code> başka hesapları zaten doğrulayamaz. Laboratuvar gereği <code>UsePAM no</code> ve <code>StrictModes no</code> kullanıldı; gerçek sunucuda ikisi de böyle bırakılmaz.</li>
+  <li><strong>Sisteme kalıcı bir şey yapılmadı:</strong> Gerçek <code>~/.ssh</code>'e, <code>/etc/ssh</code>'ye ve sistem <code>sshd</code> hizmetine dokunulmadı (betiğin başında ve sonunda <code>~/.ssh</code> dosyalarının zaman ve boyutları karşılaştırıldı, değişmedi); ajan soketi <code>-a</code> ile <code>/tmp/yazar/siber-18</code>'e kondu; <code>sshd</code> günlüğü <code>-E</code> ile dosyaya yazıldı, journal'a düşmedi. <code>passwd</code>/<code>useradd</code> çalıştırılmadı. Bütün süreçler durduruldu.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> <code>ssh-copy-id</code> (gerçek ev dizinine yazar); gerçek sunucuda <code>sudo sshd -t</code>, <code>sudo sshd -T</code>, <code>sudo systemctl reload ssh</code> (root gerekir); <code>PermitRootLogin no</code>'nun root ile çalışan sunucudaki günlük satırı; FIDO2 (<code>ed25519-sk</code>) anahtarlar (donanım yok); <code>SSHFP</code> kaydı ve SSH sertifikaları; quiz'deki nftables, <code>logrotate</code>, auditd ve <code>systemctl</code> soruları kavramsaldır (Parça 14–17 dosyaları yazım sırasında yoktu; sorular <code>siber.md</code>'deki konu satırlarından kuruldu).</li>
+  <li><strong>Resmî belgeden:</strong> Ortamdaki OpenSSH 10.3p1 man sayfaları: <code>sshd_config(5)</code> (<code>PermitRootLogin</code> varsayılanı <code>prohibit-password</code>, <code>PasswordAuthentication</code> varsayılanı <code>yes</code>, <code>AllowUsers</code>'ın listeye eklemesi ve <code>USER@HOST</code> biçimi, <code>StrictModes</code>, <code>MaxAuthTries</code> 6, <code>PerSourcePenalties</code>, "ilk elde edilen değer" kuralı, <code>Include</code>), <code>ssh_config(5)</code> (<code>StrictHostKeyChecking</code> değerleri, <code>ForwardAgent</code> uyarısı, <code>HashKnownHosts</code> varsayılanı), <code>ssh(1)</code> (özel anahtar izinleri, parmak izi doğrulama, <code>-E md5</code>, SSHFP), <code>sshd(8)</code> (<code>authorized_keys</code> izinleri, root olmadan <code>-h</code>), <code>ssh-keygen(1)</code> (parola, kurtarılamazlık, ana makine anahtarının parolasız olması, <code>-a</code> varsayılan 16 tur), <code>ssh-agent(1)</code> (<code>-a</code>, <code>-k</code>, <code>-t</code>, varsayılan soket <code>~/.ssh/agent/</code>), <code>ssh-add(1)</code> (<code>SSH_ASKPASS_REQUIRE</code>); <code>bash(1)</code> (<code>HISTCONTROL</code>, <code>HISTFILE</code>); <code>proc_pid_environ(5)</code> Parça 13'ten. OpenSSH sürüm notları (openssh.org): 9.5 (4 Ekim 2023, Ed25519 varsayılan), 9.8 (1 Temmuz 2024, <code>PerSourcePenalties</code>, <code>sshd-session</code>), 10.0 (9 Nisan 2025, <code>mlkem768x25519-sha256</code> varsayılan anahtar değişimi, <code>sshd-auth</code>), 10.1 (6 Ekim 2025, ajan soketlerinin <code>~/.ssh/agent</code> altına taşınması). Debian'ın <code>KbdInteractiveAuthentication no</code>, <code>X11Forwarding yes</code> ve <code>Include</code> satırları ortamdaki <code>/etc/ssh/sshd_config</code>'ten (salt okunarak) görüldü.</li>
+  <li><strong>Hafızadan / tartışmalı:</strong> SSH'nin 1990'ların ortasında doğuşu ve SSH-2'nin standartlaştığı RFC 4251–4254; kullanıcı imzasının oturum kimliğini kapsaması (bu yüzden sahte sunucunun imzayı başka bağlantıda kullanamaması); DSA'nın 10.0'da kaldırılması; ajanın kendini "döküm alınamaz" işaretlemesi (<code>PR_SET_DUMPABLE</code>; denemede yalnız <code>/proc</code> dosyalarının root sahipliği gözlendi); Debian'ın sistem genelindeki <code>ssh_config</code>'inde <code>HashKnownHosts yes</code> olması; Debian/Ubuntu <code>/etc/skel/.bashrc</code>'nin <code>HISTCONTROL=ignoreboth</code> koyması (yalnız bu ortamın <code>~/.bashrc</code>'si görüldü); <code>ssh-keygen -R</code>'nin <code>.old</code> yedeği gözlendi. <code>ssh(1)</code> belgesi parolalı anahtarın "AES-128" ile şifrelendiğini yazıyor; üretilen dosyanın başlığında ise <code>aes256-ctr</code> göründü, metinde gözleme dayanıldı. Kasa özellikleri (dinamik, kısa ömürlü sırlar) kategori düzeyinde, belirli bir ürüne dayanmadan yazıldı. RSA için 3072 bit önerisi yaygın kılavuzlara dayanır, burada kaynakla doğrulanmadı.</li>
+  <li><strong>Saldırı sınırı:</strong> Parola deneme, anahtar kırma, ortadaki adam kurma ya da ajan kötüye kullanımı için hiçbir adım verilmedi; değişen anahtar ve <code>StrictHostKeyChecking=no</code> yalnız kendi <code>127.0.0.1</code> sunucumda, savunmanın neden gerekli olduğunu göstermek için denendi. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

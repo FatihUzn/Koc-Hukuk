@@ -1,0 +1,738 @@
+<article class="chapter ders" id="c-siber-11">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 11 · Kullanıcılar ve sudo</div>
+<h1>Kullanıcılar, gruplar ve <code>sudo</code>: kim, neyi, kimin adına yapabilir</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Linux makinende 64 hesap var ama yalnız biri sensin; çoğunun ne parolası ne de oturum açabileceği bir kabuğu var. Bu hesaplar neden var? Parolan diskte hangi biçimde duruyor da sistem onu doğrulayabiliyor ama dosyayı ele geçiren biri okuyamıyor? Bir hizmeti yeniden başlatmak için neden root parolasını değil kendi parolanı yazıyorsun ve bu nereye kaydediliyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 4 (root bir kimliktir, halka 0 bir işlemci kipi), Parça 5 (süreç kimliği, yetenekler, en az yetki), Parça 6 (hash), Parça 7 (kullanıcı ad alanı), Parça 8–9 (<code>/etc</code>, <code>grep</code>, <code>awk</code>). Kod rafından Bash parçaları (15–18) zemindir. Denemeler gerçek <code>/etc</code>'ye dokunmadan yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 5'te çekirdeğin her süreç için bir UID ve GID tuttuğunu gördük. Açık kalan soru: bu sayılar nereden geliyor, 1000 numaranın "ali" olduğunu kim biliyor, parolası nerede, onu kim kilitleyebilir? Bu parça dört taş kuruyor: <strong>hesaplar ve gruplar</strong> (UID/GID, insan ve sistem hesapları, root); <strong>hesap dosyaları</strong> (<code>/etc/passwd</code>, <code>/etc/group</code> ve parolanın <strong>özet</strong> olarak durduğu <code>/etc/shadow</code>); <strong>hesap yaşam döngüsü</strong> (ekleme, kilitleme, kapatma); <strong>yetki devri</strong> (<code>su</code> ile <code>sudo</code>, <code>sudoers</code>, <code>visudo</code>, kayıtlar). Hepsinin arkasında <strong>en az yetki</strong> ilkesi var. Dosya izinleri Parça 12'nin, SSH Parça 18'in konusu.</p>
+
+<h2 class="s">1. Kullanıcı ve grup: çekirdek ad değil sayı görür</h2>
+
+<p>İşletim sistemi aynı makineyi paylaşan kişileri ve programları ayırmak zorundadır: Ali'nin dosyalarını Ayşe silmemeli, web sunucusu veritabanının dosyalarını okumamalı. Unix bunun için her hesaba bir <strong>sayı</strong> verir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kullanıcı</strong> (user), sistemde işlem yapan bir kimliktir; bir insan olabileceği gibi bir hizmet de olabilir. Her kullanıcının bir <strong>UID</strong>'i (user identifier, kullanıcı kimlik numarası) vardır. <strong>Grup</strong> (group), izinleri birlikte paylaşan kullanıcılar kümesidir ve her grubun bir <strong>GID</strong>'i vardır. Her kullanıcının tam bir <strong>birincil grubu</strong> (ana grup) ve sıfır ya da daha çok <strong>ek grubu</strong> (supplementary group) olur. Yeni oluşturduğun dosya, birincil grubunun GID'ini taşır; ek gruplar sana o grupların izinlerini kazandırır.</p></div>
+
+<p>Çekirdek her dosyaya sahibinin UID'ini ve GID'ini sayı olarak yazar, her süreçte de yalnız sayıları tutar (Parça 5'teki <code>Uid:</code> satırı). Ad insanlar içindir: <code>ls -l</code> sayıyı <code>/etc/passwd</code>'de arayıp ada çevirir; karşılığı yoksa çıplak sayıyı gösterir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İzin kararı adla değil sayıyla verilir.</strong> Çekirdek "bu süreç ali mi?" diye sormaz; "bu sürecin etkin UID'i dosyanın sahibinin UID'iyle aynı mı, GID'lerinden biri dosyanın grubuyla aynı mı?" diye sorar. Bu yüzden iki hesaba aynı UID'i vermek onları çekirdeğin gözünde <strong>aynı kişi</strong> yapar; silinen bir hesabın UID'ini yeni bir hesaba vermek de eski hesabın sahipsiz kalan dosyalarını yeni hesaba devreder. UID'ler bir kez dağıtıldı mı yeniden kullanılmamalıdır.</p></div>
+
+<p>Kimliğini <code>id</code> söyler (kullanıcı adı <code>kullanici</code> olarak sadeleştirildi):</p>
+
+<pre class="kod" data-ad="bash">id</pre>
+<pre class="cikti">uid=1000(kullanici) gid=1000(kullanici) groups=1000(kullanici),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),100(users)</pre>
+
+<p><code>uid=1000</code> kullanıcı numarası, <code>gid=1000</code> birincil grup (Debian her kullanıcıya kendi adında bir grup açar), <code>groups=</code> bütün gruplar. İki ek grup önemli: <code>adm</code> sistem günlüklerini okutur, <code>sudo</code> yönetici komutları çalıştırma hakkı verir. Ek gruplar oturum açılırken yüklenir; birini gruba eklediğinde değişiklik onun bir sonraki girişinde etkili olur.</p>
+
+<h2 class="s">2. UID aralıkları ve sistem kullanıcıları</h2>
+
+<p>Hesapların çoğu insan değildir: web sunucusu, veritabanı, ileti yolu (D-Bus) gibi hizmetlerin her biri kendi hesabıyla çalışır. Bunlara <strong>sistem kullanıcısı</strong> denir. Debian sayıları ilke belgesinde (Debian Policy 9.2.2) sınıflara ayırır; araçlar <code>/etc/login.defs</code>'teki sınırlara uyar.</p>
+
+<div class="tablo"><table>
+<tr><th>UID aralığı</th><th>Debian ilkesine göre anlamı</th><th>Örnek</th></tr>
+<tr><td>0</td><td>Süper kullanıcı</td><td><code>root</code></td></tr>
+<tr><td>1–99</td><td>Debian projesince dağıtılmış, her Debian sisteminde aynı</td><td><code>daemon</code> (1), <code>bin</code> (2), <code>sync</code> (4)</td></tr>
+<tr><td>100–999</td><td>Paket kurulurken dinamik verilen sistem kullanıcıları ve grupları</td><td><code>messagebus</code>, <code>systemd-network</code></td></tr>
+<tr><td>1000–59999</td><td>Dinamik verilen kullanıcı (insan) hesapları</td><td>ilk açılan kullanıcı 1000</td></tr>
+<tr><td>60000–64999</td><td>Debian'ca dağıtılmış ama gerektiğinde açılan</td><td>nadir</td></tr>
+<tr><td>65534</td><td>Kullanıcı <code>nobody</code>, grubu <code>nogroup</code></td><td>hiçbir şeye sahip olmaması gereken kimlik</td></tr>
+<tr><td>65535</td><td>Kullanılmamalı (16 bitlik UID döneminde hata değeriydi)</td><td>yok</td></tr>
+</table></div>
+
+<p>Bu makinenin <code>login.defs</code>'inde <code>UID_MIN 1000</code> ve <code>UID_MAX 60000</code> yazılı: yeni insan hesabı bu aralıktaki ilk boş sayıyı alır. Yorum satırı olarak duran <code>SYS_UID_MIN</code>/<code>SYS_UID_MAX</code> (101 ve 999) sistem hesaplarının aralığıdır ve bu hesaplar <strong>yukarıdan aşağı</strong> (999, 998…) verilir.</p>
+
+<figure>
+<svg viewBox="0 0 400 210" role="img" aria-label="UID sayı doğrusu: 0 root, 1-999 sistem hesapları, 1000-59999 insan hesapları, 65534 nobody; her bölgenin tipik kabuğu">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">UID sayı doğrusu (Debian)</text>
+  <rect class="sv-a" x="10" y="40" width="40" height="44" rx="4"/>
+  <text class="sv-b" x="30" y="67" text-anchor="middle">0</text>
+  <rect class="sv-l" x="54" y="40" width="120" height="44" rx="4"/>
+  <text class="sv-t" x="114" y="60" text-anchor="middle">1–999</text>
+  <text class="sv-s" x="114" y="76" text-anchor="middle">sistem hesapları</text>
+  <rect class="sv-m" x="178" y="40" width="140" height="44" rx="4"/>
+  <text class="sv-t" x="248" y="60" text-anchor="middle">1000–59999</text>
+  <text class="sv-s" x="248" y="76" text-anchor="middle">insan hesapları</text>
+  <rect class="sv-k" x="322" y="40" width="68" height="44" rx="4"/>
+  <text class="sv-t" x="356" y="60" text-anchor="middle">65534</text>
+  <text class="sv-s" x="356" y="76" text-anchor="middle">nobody</text>
+  <line class="sv-c" x1="30" y1="84" x2="30" y2="110"/>
+  <line class="sv-c" x1="114" y1="84" x2="114" y2="110"/>
+  <line class="sv-c" x1="248" y1="84" x2="248" y2="110"/>
+  <line class="sv-c" x1="356" y1="84" x2="356" y2="110"/>
+  <text class="sv-s" x="30" y="126" text-anchor="middle">root</text>
+  <text class="sv-s" x="30" y="142" text-anchor="middle">bash</text>
+  <text class="sv-s" x="114" y="126" text-anchor="middle">hizmetler</text>
+  <text class="sv-s" x="114" y="142" text-anchor="middle">nologin</text>
+  <text class="sv-s" x="248" y="126" text-anchor="middle">kişiler</text>
+  <text class="sv-s" x="248" y="142" text-anchor="middle">bash, zsh</text>
+  <text class="sv-s" x="356" y="126" text-anchor="middle">sahipsiz</text>
+  <text class="sv-s" x="356" y="142" text-anchor="middle">nologin</text>
+  <text class="sv-s" x="200" y="178" text-anchor="middle">Sistem hesapları 999'dan geriye, insan hesapları</text>
+  <text class="sv-s" x="200" y="196" text-anchor="middle">1000'den ileriye doğru verilir. Kutular ölçekli değildir.</text>
+</svg>
+<figcaption>Bir UID'in hangi aralıkta olduğu, hesabın ne olduğunu büyük ölçüde söyler. Savunmacı için ilk soru şudur: insan aralığında tanımadığın bir hesap var mı, sistem aralığında oturum açabilen bir kabuğu olan hesap var mı?</figcaption>
+</figure>
+
+<h3>Sistem kullanıcısı neden var, neden oturum açamaz?</h3>
+
+<p>Hizmetin kendi hesabıyla çalışması iki kazanç getirir: ele geçirilirse saldırgana yalnız o hesabın yetkisi geçer (Parça 5'te <code>systemd-oomd</code> 968 numaralı hesapla çalışıyordu) ve hizmetin dosyaları öbür hizmetlerden ayrılır. Bu hesapların oturum açması gerekmez, açabilmeleri yalnız risktir; kabuklarına <code>/usr/sbin/nologin</code> ya da <code>/bin/false</code> yazılır. <code>nologin</code> "This account is currently not available." basıp 1 ile çıkar. Ev dizinleri çoğunlukla <code>/nonexistent</code>, parolaları kilitlidir.</p>
+
+<h2 class="s">3. root: UID 0'ın anlamı</h2>
+
+<p><strong>root</strong>, UID'i 0 olan hesaptır; onu özel yapan adı değil sayısıdır. Çekirdek etkin UID'i 0 olan sürece izin denetimlerinin çoğunda "evet" der; Parça 5'te bu gücün yeteneklere bölündüğünü ve UID 0'ın hepsini taşıdığını görmüştük. UID'i 0 olan "toor" adlı ikinci bir hesap da tam root'tur. Parça 4'ten hatırla: root bir <strong>kimliktir</strong>, halka 0 bir <strong>işlemci kipidir</strong>; root'un programı da halka 3'tedir. Ama root modül yükleyebilir, her özeti okuyabilir, her günlüğü değiştirebilir; ona giden her yol (parola, <code>sudo</code> kuralı, hatalı hizmet) korunması gereken bir kapıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Gündelik iş root ile yapılmaz.</strong> Üç neden: <strong>hata</strong> (root olarak yazılan yanlış bir <code>rm</code> ya da joker karakter sistem dosyalarını uyarısız siler; sıradan kullanıcıyı çekirdek durdururdu), <strong>kötü kod</strong> (root olarak açtığın her program ve betik bu yetkiyi devralır) ve <strong>hesap verebilirlik</strong> (herkes root olarak girerse günlükte işi kimin yaptığı görünmez). Doğrusu: sıradan hesapla çalış, yalnız gereken komutu kayıt altında yükseltilmiş yetkiyle çalıştır.</p></div>
+
+<h2 class="s">4. <code>/etc/passwd</code> ve <code>/etc/group</code>: herkesin okuduğu kimlik defteri</h2>
+
+<p>Yerel hesaplar <code>/etc/passwd</code>'dedir; adına rağmen içinde parola yoktur. <code>ls</code>, <code>ps</code> gibi araçlar UID'leri ada çevirmek için onu okuduğundan herkes okuyabilir, yalnız root yazabilir. Her satır iki noktayla ayrılmış yedi alandır.</p>
+
+<div class="tablo"><table>
+<tr><th>Alan</th><th>Adı</th><th>Anlamı</th><th>Örnek (<code>daemon</code>)</th></tr>
+<tr><td>1</td><td>Ad</td><td>Oturum açma adı</td><td><code>daemon</code></td></tr>
+<tr><td>2</td><td>Parola</td><td><code>x</code>: özet <code>/etc/shadow</code>'da</td><td><code>x</code></td></tr>
+<tr><td>3</td><td>UID</td><td>Kullanıcı numarası</td><td><code>1</code></td></tr>
+<tr><td>4</td><td>GID</td><td>Birincil grubun numarası</td><td><code>1</code></td></tr>
+<tr><td>5</td><td>GECOS</td><td>Açıklama: tam ad, telefon vb.; boş olabilir</td><td><code>daemon</code></td></tr>
+<tr><td>6</td><td>Ev dizini</td><td>Oturum açınca gidilen dizin</td><td><code>/usr/sbin</code></td></tr>
+<tr><td>7</td><td>Kabuk</td><td>Girişte başlatılan program; boşsa <code>/bin/sh</code></td><td><code>/usr/sbin/nologin</code></td></tr>
+</table></div>
+
+<p>İkinci alanın tarihi öğreticidir. Eskiden özet tam bu alanda, herkesin okuduğu dosyada dururdu; tek yönlü olduğu için zararsız sanılıyordu, ama dosyayı kopyalayan herkes kendi makinesinde sınırsız tahmin deneyip karşılaştırabiliyordu. Özetler bu yüzden yalnız root'un okuyabildiği <strong>gölge</strong> (shadow) dosyaya taşındı; <code>passwd(5)</code>'e göre <code>x</code>, özetin <code>/etc/shadow</code>'da olduğunu söyler.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: bir hesap satırını alan alan okumak</span>
+<p><strong>Soru:</strong> <code>daemon</code> hesabının ve kendi hesabının satırını alanlarına ayır. Hangisi insan, hangisi hizmet hesabı; bunu hangi alanlardan anlarsın?</p>
+<p><strong>Adım 1.</strong> <code>getent passwd ad</code> hesabı sistemin ad hizmetinden (önce <code>/etc/passwd</code>) getirir. <code>awk -F:</code> iki noktayı ayırıcı yapar; döngü her alanı numarasıyla yazar.</p>
+<pre class="kod" data-ad="bash">getent passwd daemon | awk -F: '{for (i = 1; i &lt;= NF; i++) print i ": " $i}'
+getent passwd $(id -un) | awk -F: '{for (i = 1; i &lt;= NF; i++) print i ": " $i}'</pre>
+<pre class="cikti">1: daemon
+2: x
+3: 1
+4: 1
+5: daemon
+6: /usr/sbin
+7: /usr/sbin/nologin
+1: kullanici
+2: x
+3: 1000
+4: 1000
+5:
+6: /home/kullanici
+7: /bin/bash</pre>
+<p><strong>Adım 2.</strong> İkisinde de 2. alan <code>x</code>: özetler gölge dosyada.</p>
+<p><strong>Adım 3.</strong> 3. alan: <code>daemon</code> 1 (Debian'ın sabit dağıttığı aralık), sen 1000 (insan aralığının ilk sayısı).</p>
+<p><strong>Adım 4.</strong> 6. ve 7. alanlar: <code>daemon</code>'un ev dizini bir sistem dizini ve kabuğu <code>nologin</code>; senin ev dizinin <code>/home</code> altında ve kabuğun <code>bash</code>. 5. alan sende boş; zorunlu değil.</p>
+<p><strong>Sonuç:</strong> Bir hesabın insan mı hizmet mi olduğunu UID aralığı, ev dizini ve kabuk birlikte söyler. Kullanıcı adı ve ev dizini çıktıda sadeleştirildi.</p></div>
+
+<h3><code>/etc/group</code> ve <code>/etc/gshadow</code></h3>
+
+<p><code>/etc/group</code>'un her satırı dört alanlıdır: <strong>ad</strong>, <strong>parola</strong> (<code>x</code>; grup parolaları <code>/etc/gshadow</code>'dadır ve pratikte kullanılmaz), <strong>GID</strong>, virgülle ayrılmış <strong>üyeler</strong>. Bu makinedeki <code>sudo:x:27:kullanici</code>, 27 numaralı grubun tek üyesinin sen olduğunu söyler. Birincil grup bu listede görünmez, <code>/etc/passwd</code>'nin 4. alanındadır. Üye eklemek için <code>usermod -aG grup kullanici</code>; <code>usermod(8)</code>'in uyardığı gibi <code>-a</code>'yı unutmak kullanıcıyı listede olmayan bütün ek gruplarından çıkarır.</p>
+
+<h2 class="s">5. <code>/etc/shadow</code>: parolanın kendisi değil özeti</h2>
+
+<p>Parolayı doğrulamak için onu saklamak gerekmez; <strong>özetini</strong> saklamak yeter. Sistem yazdığın parolanın özetini yeniden hesaplar ve kayıtla karşılaştırır. Dosyayı ele geçiren yalnız özeti bulur; Parça 6'dan hatırla, özetten geri dönüş yoktur, yalnız tahmin edip karşılaştırmak vardır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong><code>/etc/shadow</code></strong>, yerel hesapların parola özetlerini ve parola yaşlandırma bilgilerini tutan, yalnız root'un (ve <code>shadow</code> grubunun) okuyabildiği dosyadır. <code>shadow(5)</code> belgesine göre her satır dokuz alanlıdır: oturum adı, şifrelenmiş parola, son parola değişikliği tarihi, en kısa parola yaşı, en uzun parola yaşı, uyarı süresi, hareketsizlik süresi, hesabın son kullanma tarihi ve ayrılmış bir alan. Tarihler 1 Ocak 1970'ten bu yana geçen <strong>gün</strong> sayısıdır.</p></div>
+
+<p>Parola alanının özel biçimleri: <strong>başında <code>!</code></strong> parola kilitli (belgeye göre arkasındaki karakterler kilitlemeden önceki özettir); <strong><code>*</code></strong> hiçbir parola eşleşmez (sistem hesaplarında olağan); <strong>boş</strong> parolasız giriş (savunmacının görmek istemediği şey).</p>
+
+<h3>Özet dizgisinin anatomisi</h3>
+
+<p><code>crypt(5)</code> belgesi parola dizgisini <code>$</code> ile ayrılmış dört bileşen olarak tanımlar: <strong>önek</strong> (yöntem), <strong>ayarlar</strong> (maliyet parametreleri), <strong>tuz</strong> (salt) ve <strong>özet</strong>. Tuz ve özet 64 tabanlı yazılır; içlerinde <code>.</code> ve <code>/</code> görebilirsin.</p>
+
+<div class="tablo"><table>
+<tr><th>Önek</th><th>Yöntem</th><th><code>crypt(5)</code> değerlendirmesi</th></tr>
+<tr><td><code>$y$</code></td><td>yescrypt</td><td>Önerilen; Debian 11'den beri varsayılan</td></tr>
+<tr><td><code>$gy$</code></td><td>gost-yescrypt</td><td>GOST algoritmaları gerektiğinde kabul edilebilir</td></tr>
+<tr><td><code>$2b$</code></td><td>bcrypt</td><td>Yaygın; ayrıntısı Parça 45'te</td></tr>
+<tr><td><code>$6$</code></td><td>sha512crypt</td><td>Kabul edilebilir; eski sistemlerde sık</td></tr>
+<tr><td><code>$5$</code></td><td>sha256crypt</td><td>Kabul edilebilir</td></tr>
+<tr><td><code>$1$</code></td><td>md5crypt</td><td>Eski; yeni parola için kullanılmamalı</td></tr>
+<tr><td>(öneksiz, 13 karakter)</td><td>descrypt</td><td>Eski; yalnız başka bir şey desteklemeyen sistemler için</td></tr>
+</table></div>
+
+<p>Bu makinede <code>login.defs</code>'te <code>ENCRYPT_METHOD YESCRYPT</code> yazıyor. <code>$1$</code> ile başlayan bir özet görürsen o parola yıllardır değişmemiştir. Bu yöntemlerin neden kasıtlı olarak yavaş olduğu ve tuzun kırmayı nasıl pahalılaştırdığı Parça 45'in konusu.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Bir shadow satırının dokuz alanı ve parola alanının önek, ayar, tuz ve özet olarak dört parçaya ayrılışı; başına ünlem eklenince parola kilitlenir">
+  <text class="sv-b" x="320" y="20" text-anchor="middle">Bir /etc/shadow satırı: dokuz alan</text>
+  <rect class="sv-k" x="10" y="36" width="70" height="36" rx="4"/><text class="sv-t" x="45" y="59" text-anchor="middle">deneme</text>
+  <rect class="sv-l" x="84" y="36" width="250" height="36" rx="4"/><text class="sv-t" x="209" y="59" text-anchor="middle">$y$j9T$XMwO…F58/$toi1…IM56</text>
+  <rect class="sv-m" x="338" y="36" width="58" height="36" rx="4"/><text class="sv-t" x="367" y="59" text-anchor="middle">20742</text>
+  <rect class="sv-m" x="400" y="36" width="34" height="36" rx="4"/><text class="sv-t" x="417" y="59" text-anchor="middle">0</text>
+  <rect class="sv-m" x="438" y="36" width="58" height="36" rx="4"/><text class="sv-t" x="467" y="59" text-anchor="middle">99999</text>
+  <rect class="sv-m" x="500" y="36" width="34" height="36" rx="4"/><text class="sv-t" x="517" y="59" text-anchor="middle">7</text>
+  <rect class="sv-k" x="538" y="36" width="28" height="36" rx="4"/>
+  <rect class="sv-a" x="570" y="36" width="34" height="36" rx="4"/>
+  <rect class="sv-k" x="608" y="36" width="24" height="36" rx="4"/>
+  <text class="sv-s" x="45" y="90" text-anchor="middle">1 ad</text>
+  <text class="sv-s" x="209" y="90" text-anchor="middle">2 parola özeti</text>
+  <text class="sv-s" x="367" y="90" text-anchor="middle">3 son değişim</text>
+  <text class="sv-s" x="417" y="106" text-anchor="middle">4 en az</text>
+  <text class="sv-s" x="467" y="90" text-anchor="middle">5 en çok</text>
+  <text class="sv-s" x="517" y="106" text-anchor="middle">6 uyarı</text>
+  <text class="sv-s" x="552" y="124" text-anchor="middle">7</text>
+  <text class="sv-s" x="587" y="90" text-anchor="middle">8 hesap</text>
+  <text class="sv-s" x="587" y="106" text-anchor="middle">bitişi</text>
+  <text class="sv-s" x="620" y="124" text-anchor="middle">9</text>
+  <line class="sv-cl" x1="209" y1="112" x2="209" y2="150"/>
+  <text class="sv-b" x="320" y="168" text-anchor="middle">Parola alanı: $önek$ayar$tuz$özet</text>
+  <rect class="sv-a" x="10" y="184" width="84" height="44" rx="6"/><text class="sv-t" x="52" y="203" text-anchor="middle">y</text><text class="sv-s" x="52" y="220" text-anchor="middle">yescrypt</text>
+  <rect class="sv-l" x="100" y="184" width="84" height="44" rx="6"/><text class="sv-t" x="142" y="203" text-anchor="middle">j9T</text><text class="sv-s" x="142" y="220" text-anchor="middle">maliyet</text>
+  <rect class="sv-m" x="190" y="184" width="230" height="44" rx="6"/><text class="sv-t" x="305" y="203" text-anchor="middle">XMwOv4n47fk2H8LBVkF58/</text><text class="sv-s" x="305" y="220" text-anchor="middle">tuz: hesaba özgü, rastgele</text>
+  <rect class="sv-k" x="426" y="184" width="204" height="44" rx="6"/><text class="sv-t" x="528" y="203" text-anchor="middle">toi1DGt1…IVi4IM56</text><text class="sv-s" x="528" y="220" text-anchor="middle">özet: parola + tuz + ayar</text>
+  <text class="sv-s" x="320" y="256" text-anchor="middle">Başına ! eklenirse (!$y$…) hiçbir parola eşleşmez: parola kilitli, özet saklanıyor.</text>
+  <text class="sv-s" x="320" y="276" text-anchor="middle">8. alana 1 yazılırsa hesap 2 Ocak 1970'te dolmuş sayılır: her türlü giriş kapanır.</text>
+</svg>
+<figcaption>Bu parçanın deneyinde <code>/etc</code> kopyasına eklenen <code>deneme</code> hesabının satırı. Üstte dokuz alan, altta ikinci alanın dört parçası. Tarih alanları gün sayısıdır: 20742, 16 Ekim 2026'dır. 7. (hareketsizlik) ve 9. (ayrılmış) alanlar boş.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: bir gölge satırını çözümlemek</span>
+<p><strong>Soru:</strong> Deneyde kopya dosyaya şu satır yazıldı: <code>deneme:$y$j9T$XMwOv4n47fk2H8LBVkF58/$toi1DGt1fsodDbzTA0ay0rRScVYGrPUEJt/IVi4IM56:20742:0:99999:7:::</code>. Parola hangi yöntemle saklanıyor, tuzu ne, parola ne zaman değişmiş ve ne zaman değiştirilmek zorunda?</p>
+<p><strong>Adım 1.</strong> İkinci alanı <code>$</code> işaretinden böl. Dizgi <code>$</code> ile başladığı için ilk parça boştur; önek 2., ayar 3., tuz 4., özet 5. parçadır.</p>
+<pre class="kod" data-ad="bash">grep '^deneme:' /tmp/yazar/siber-11/kok/etc/shadow | cut -d: -f2 |
+    awk -F'$' '{print "onek  : " $2; print "ayar  : " $3; print "tuz   : " $4; print "ozet  : " $5}'</pre>
+<pre class="cikti">onek  : y
+ayar  : j9T
+tuz   : XMwOv4n47fk2H8LBVkF58/
+ozet  : toi1DGt1fsodDbzTA0ay0rRScVYGrPUEJt/IVi4IM56</pre>
+<p><strong>Adım 2.</strong> Önek <code>y</code>: yescrypt (tablodaki önerilen yöntem). <code>j9T</code>, yescrypt'in maliyet ayarlarını kodlar; aynı ayarla üretilen her özette aynıdır.</p>
+<p><strong>Adım 3.</strong> 3. alan 20742 gün. 1 Ocak 1970'e 20742 gün ekle:</p>
+<pre class="kod" data-ad="bash">date -u -d @$((20742*86400)) +%F
+python3 -c 'import datetime; print(datetime.date(1970,1,1)+datetime.timedelta(days=20742))'</pre>
+<pre class="cikti">2026-10-16
+2026-10-16</pre>
+<p><strong>Adım 4.</strong> 4. alan 0: istediği an değiştirebilir. 5. alan 99999 (yaklaşık 273 yıl): pratikte zorunlu değişim yok. 6. alan 7: süre dolmadan 7 gün önce uyarı. 7. ve 8. alanlar boş: hareketsizlik süresi ve son kullanma tarihi yok.</p>
+<p><strong>Sonuç:</strong> Parola 16 Ekim 2026'da yescrypt ile, hesaba özgü bir tuzla saklanmış; 99999 Debian varsayılanıdır.</p></div>
+
+<p>Kayıttaki dizgi yöntemi, ayarı ve tuzu içerdiği için doğrulayıcı bunları kayıttan alır, yazılan parolayı aynı biçimde özetler ve karşılaştırır. Bunu elle yapabilirsin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: girişte parolayı doğrulamanın mantığını elle kurmak</span>
+<p><strong>Soru:</strong> Kopya dosyadaki <code>deneme</code> kaydına iki aday parola deneyen bir betik yaz. Doğru parola "Gizli-Parola-2026". Kilit işareti (<code>!</code>) varsa karşılaştırmadan önce atılmalı; neden?</p>
+<p><strong>Adım 1.</strong> Kaydı oku, başındaki olası <code>!</code>'i at, ilk dört <code>$</code> parçasını (boş, önek, ayar, tuz) ayar dizgisi olarak ayır. <code>mkpasswd -S</code> verilen ayar ve tuzla özet üretir.</p>
+<pre class="kod" data-ad="dogrula.sh">K=/tmp/yazar/siber-11/kok
+kayit=$(grep '^deneme:' "$K/etc/shadow" | cut -d: -f2)
+kayit=${kayit#!}                       # kilit isaretini at
+ayar=$(printf '%s' "$kayit" | cut -d'$' -f1-4)'$'
+for deneme in 'Gizli-Parola-2026' 'Gizli-Parola-2025'; do
+    yeni=$(printf '%s' "$deneme" | mkpasswd -s -S "$ayar")
+    if [ "$yeni" = "$kayit" ]; then sonuc=ESLESTI; else sonuc=ESLESMEDI; fi
+    printf '%-18s -> %s\n' "$deneme" "$sonuc"
+done</pre>
+<pre class="kod" data-ad="bash">bash dogrula.sh</pre>
+<pre class="cikti">Gizli-Parola-2026  -> ESLESTI
+Gizli-Parola-2025  -> ESLESMEDI</pre>
+<p><strong>Adım 2.</strong> Doğru parola kayıttaki özetin birebir aynısını verdi; tek karakteri farklı parola bambaşka bir özet (çığ etkisi, Parça 6).</p>
+<p><strong>Adım 3.</strong> Gerçek doğrulayıcı <code>!</code>'i atmaz: <code>!$y$…</code> hiçbir özet hesabının sonucu olamayacağından hiçbir parola eşleşmez. <code>!</code> silinince eski parola aynen geri gelir.</p>
+<p><strong>Sonuç:</strong> Sistem parolayı bilmez, "bu parola bu tuzla bu özeti verir mi?" diye sorar; gerçek sistemde bunu PAM'in <code>pam_unix</code> modülü yapar (PAM ayrıntısı bu parçanın konusu değil). <code>mkpasswd</code> <code>whois</code> paketindendir; Python'un <code>crypt</code> modülü 3.13'te kaldırıldığı için bu makinede "No module named 'crypt'" hatası verdi.</p></div>
+
+<h2 class="s">6. Kullanıcı eklemek, kilitlemek, kapatmak</h2>
+
+<p>Hesap dosyalarını editörle değiştirmek tehlikelidir: eksik bir alan girişleri bozar, eşzamanlı yazma dosyayı karıştırır. İşi kilit dosyası kullanan ve yedek alan araçlar yapar: düşük düzeyli <code>useradd</code>, <code>usermod</code>, <code>userdel</code>, <code>groupadd</code> ve Debian'a özgü, soru sorarak çalışan <code>adduser</code>. Hepsi root ister.</p>
+
+<p><code>useradd -m -s /bin/bash ali</code>; <code>passwd</code>'ye ilk boş insan UID'iyle bir satır, <code>group</code>'a aynı adlı grup, <code>shadow</code>'a parola alanı <code>!</code> (henüz parola yok) olan bir satır ekler ve <code>-m</code> ile ev dizinini açar; parolayı sonra <code>passwd ali</code> ile verirsin. <code>--system</code> sistem aralığından UID verir. Deneyde bunları <code>--prefix</code> ile bir kopyaya uygulayacaksın; <code>usermod(8)</code>'e göre bu seçenek <code>chroot</code> yapmaz, verilen dizinin altındaki <code>/etc</code> dosyalarını kullanır.</p>
+
+<h3>Kilitlemek ile kapatmak aynı şey değil</h3>
+
+<p>Ayrılan ya da ele geçtiğinden şüphelendiğin bir hesap için araçlar farklı katmanlara dokunur:</p>
+
+<div class="tablo"><table>
+<tr><th>Komut</th><th>Neyi değiştirir</th><th>Neyi engeller</th><th>Neyi engellemez</th></tr>
+<tr><td><code>usermod -L</code> / <code>passwd -l</code></td><td>Parola özetinin başına <code>!</code></td><td>Parolayla giriş</td><td>SSH anahtarı gibi başka kimlik doğrulama yolları</td></tr>
+<tr><td><code>usermod -e 1</code></td><td>Gölge satırın 8. alanı: hesap 1970-01-02'de dolmuş</td><td>Hesap üzerinden her türlü giriş</td><td>Zaten çalışan süreçler</td></tr>
+<tr><td><code>usermod -s /usr/sbin/nologin</code></td><td><code>/etc/passwd</code>'nin 7. alanı</td><td>Etkileşimli kabuk</td><td>Kabuk istemeyen hizmetler (ör. dosya aktarımı)</td></tr>
+<tr><td><code>pkill -u ali</code> (gözden geçirerek)</td><td>Hiçbir dosya</td><td>Açık oturumlar ve süreçler</td><td>Yeniden giriş</td></tr>
+<tr><td><code>userdel ali</code></td><td>Hesap satırlarını siler</td><td>Her şey</td><td>Sahipsiz kalan dosyalar; UID'in yeniden verilmesi riski</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>passwd -l</code> ile hesabı kapattım."</strong> Yalnız parolayı kilitledin. <code>passwd(1)</code>: kilitleme hesabı devre dışı bırakmaz, kullanıcı başka bir belirteçle (ör. SSH anahtarı) hâlâ girebilir; devre dışı bırakmak için <code>usermod --expiredate 1</code> kullanılmalıdır. <strong>Doğrusu:</strong> parolayı kilitle, son kullanma tarihini 1 yap, açık oturumları sonlandır, SSH anahtarlarını (Parça 18) ve <code>sudo</code> kurallarını gözden geçir; silmeyi sona bırak, önce dosyaları ve günlükleri incele (Parça 70).</p></div>
+
+<h2 class="s">7. <code>su</code> ile <code>sudo</code>: iki ayrı yetki modeli</h2>
+
+<p>Paket kurmak (Parça 10) ya da bir hizmeti yeniden başlatmak yönetici yetkisi ister. Linux'un iki aracı çok farklı güven modellerine dayanır.</p>
+
+<p><strong><code>su</code></strong>, <code>su(1)</code>'e göre komutları başka bir kullanıcının kimliğiyle çalıştırır; kullanıcı verilmezse root kabuğu açar. Doğrulama hedef hesabın parolasıyladır: root olmak için <strong>root'un parolasını</strong> bilmelisin. <code>su -</code> gerçek bir girişe benzer: ortamı temizler, <code>HOME</code>, <code>PATH</code> gibi değerleri hedefe göre kurar. Tiresiz <code>su</code> senin ortamını korur; root'un senin <code>PATH</code>'ini kullanması gibi sürprizler doğurabilir. Debian'da util-linux paketindendir.</p>
+
+<p><strong><code>sudo</code></strong> tek bir komutu başka kimlikle çalıştırır ve <strong>senin kendi parolanı</strong> sorar. Kimin neyi kimin adına çalıştırabileceğine root'un yazdığı <code>/etc/sudoers</code> karar verir; her çağrı kim, nerede, hangi komut bilgisiyle kaydedilir. Doğrulamadan sonra kısa bir süre yeniden sormaz; <code>sudoers(5)</code>'e göre bu süre (<code>timestamp_timeout</code>) varsayılan 5 dakikadır.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 330" role="img" aria-label="su ile sudo karşılaştırması: su root parolasını ister ve root kabuğu açar; sudo kendi parolanı ister, sudoers kuralına bakar, yalnız izin verilen komutu çalıştırır ve kaydeder">
+  <text class="sv-b" x="160" y="22" text-anchor="middle">su -</text>
+  <text class="sv-b" x="480" y="22" text-anchor="middle">sudo komut</text>
+  <line class="sv-c" x1="320" y1="34" x2="320" y2="320"/>
+  <rect class="sv-m" x="60" y="40" width="200" height="40" rx="8"/><text class="sv-t" x="160" y="65" text-anchor="middle">sıradan kullanıcı</text>
+  <rect class="sv-a" x="60" y="104" width="200" height="40" rx="8"/><text class="sv-t" x="160" y="122" text-anchor="middle">ROOT'UN parolası</text><text class="sv-s" x="160" y="138" text-anchor="middle">herkes aynı sırrı bilir</text>
+  <rect class="sv-k" x="60" y="168" width="200" height="40" rx="8"/><text class="sv-t" x="160" y="186" text-anchor="middle">kural yok</text><text class="sv-s" x="160" y="202" text-anchor="middle">parolayı bilen her şeyi yapar</text>
+  <rect class="sv-a" x="60" y="232" width="200" height="40" rx="8"/><text class="sv-t" x="160" y="250" text-anchor="middle">root kabuğu</text><text class="sv-s" x="160" y="266" text-anchor="middle">bundan sonraki her komut root</text>
+  <text class="sv-s" x="160" y="296" text-anchor="middle">Kayıt: "oturum açıldı" satırı;</text>
+  <text class="sv-s" x="160" y="312" text-anchor="middle">tek tek komutlar yazılmaz.</text>
+  <line class="sv-cl" x1="160" y1="80" x2="160" y2="104"/>
+  <line class="sv-cl" x1="160" y1="144" x2="160" y2="168"/>
+  <line class="sv-cl" x1="160" y1="208" x2="160" y2="232"/>
+  <rect class="sv-m" x="380" y="40" width="200" height="40" rx="8"/><text class="sv-t" x="480" y="65" text-anchor="middle">sıradan kullanıcı</text>
+  <rect class="sv-m" x="380" y="104" width="200" height="40" rx="8"/><text class="sv-t" x="480" y="122" text-anchor="middle">KENDİ parolan</text><text class="sv-s" x="480" y="138" text-anchor="middle">root sırrı paylaşılmaz</text>
+  <rect class="sv-l" x="380" y="168" width="200" height="40" rx="8"/><text class="sv-t" x="480" y="186" text-anchor="middle">sudoers kuralı</text><text class="sv-s" x="480" y="202" text-anchor="middle">bu kişiye bu komut izinli mi?</text>
+  <rect class="sv-l" x="380" y="232" width="200" height="40" rx="8"/><text class="sv-t" x="480" y="250" text-anchor="middle">yalnız o komut</text><text class="sv-s" x="480" y="266" text-anchor="middle">bitince yetki biter</text>
+  <text class="sv-s" x="480" y="296" text-anchor="middle">Kayıt: kim, hangi terminal, hangi dizin,</text>
+  <text class="sv-s" x="480" y="312" text-anchor="middle">hangi kullanıcı adına, hangi komut.</text>
+  <line class="sv-cl" x1="480" y1="80" x2="480" y2="104"/>
+  <line class="sv-cl" x1="480" y1="144" x2="480" y2="168"/>
+  <line class="sv-cl" x1="480" y1="208" x2="480" y2="232"/>
+</svg>
+<figcaption>İki yetki modeli. <code>su</code>'da güven bir sırrın (root parolasının) bilinmesine dayanır ve sınırı yoktur. <code>sudo</code>'da güven kişiye bağlıdır, kurallarla daraltılabilir, her komut ayrı kaydedilir ve bir kişinin yetkisi parolalar değişmeden geri alınabilir.</figcaption>
+</figure>
+
+<p><code>sudo</code>'da root parolası hiç gerekmediği için root kilitli kalabilir. Debian kurulumunda root parolası boş bırakılırsa kurucu root'u kilitler ve ilk kullanıcıyı <code>sudo</code> grubuna ekler; Ubuntu bunu varsayılan yapar, Kali de 2020.1'den beri ayrıcalıksız bir varsayılan kullanıcıyla gelir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sürekli <code>sudo</code> yazmaktansa <code>sudo -i</code> ya da <code>sudo su -</code> ile root kabuğunda çalışayım."</strong> Bu, <code>sudo</code>'nun kazandırdığını geri verir: her komut root olur ve günlükte yalnız kabuğun açıldığı görünür. <strong>Doğrusu:</strong> komutları tek tek <code>sudo</code> ile çalıştır; dosya düzenlemek için editörü root yapmak yerine <code>sudoedit dosya</code> kullan. <code>sudoers(5)</code> editörler için <code>sudoedit</code>'i daha iyi çözüm sayar: geçici kopya senin yetkinle açılır, yalnız kaydederken yerine yazılır.</p></div>
+
+<h2 class="s">8. <code>sudoers</code> ve <code>visudo</code>: kuralı yazmak ve sınamak</h2>
+
+<p><code>sudo</code>'nun kararları <code>/etc/sudoers</code> ve <code>/etc/sudoers.d/</code> altındaki dosyalardan gelir; bunları yalnız root okur (bu makinede <code>-r--r----- root root</code>). Paketle gelen varsayılanı görmek için paketi <code>apt-get download sudo</code> ile indirip kurmadan <code>/tmp</code> altına açtık; yorum dışı içerik:</p>
+
+<pre class="kod" data-ad="bash">grep -v '^#' araclar/kok/etc/sudoers | grep -v '^$'</pre>
+<pre class="cikti">Defaults!/usr/sbin/visudo env_keep += "SUDO_EDITOR EDITOR VISUAL"
+Defaults secure_path="/usr/sbin:/usr/bin:/sbin:/bin"
+root ALL=(ALL:ALL) ALL
+Defaults:%wheel !targetpw
+%sudo ALL=(ALL:ALL) ALL
+@includedir /etc/sudoers.d</pre>
+
+<p><code>Defaults</code> satırları genel ayarlardır. <code>secure_path</code>, komutların kullanıcının <code>PATH</code>'ini değil bu listeyi kullanmasını sağlar; belgeye göre yoksa yetkisi sınırlı bir kullanıcı <code>PATH</code>'i değiştirerek tam yolsuz çağrılan komutların yerine kendi programını çalıştırtabilirdi. <code>@includedir</code>, <code>/etc/sudoers.d/</code>'deki dosyaları da okutur. İki kural satırı aynı kalıptadır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Bir <code>sudoers</code> kuralının biçimi, belgenin ifadesiyle <strong>"kim, nerede = (kimin adına) ne"</strong>dir: <code>kullanici  makine=(hedef_kullanici:hedef_grup)  komutlar</code>. Başında <code>%</code> olan ad bir gruptur. <code>%sudo ALL=(ALL:ALL) ALL</code> şöyle okunur: <code>sudo</code> grubunun her üyesi, her makinede, her kullanıcı ve grup adına, her komutu çalıştırabilir. Komutlar <strong>tam yolla</strong> yazılmalıdır (<code>/usr/bin/systemctl</code>, <code>systemctl</code> değil). Komutla birlikte argümanlar da yazılmışsa kullanıcının yazdığı argümanlar onlarla birebir eşleşmek zorundadır. Komutun önüne <code>NOPASSWD:</code> etiketi konursa parola sorulmaz.</p></div>
+
+<p>Bu dosyadaki bir yazım hatası <code>sudo</code>'yu çalışmaz hâle getirebilir; root'u kilitli bir makinede yönetici yetkisine giden tek yol kapanır. Bu yüzden dosya editörle değil <strong><code>visudo</code></strong> ile açılır. <code>visudo(8)</code>'e göre araç dosyayı eşzamanlı düzenlemeye karşı kilitler, geçici kopyada düzenletir, söz dizimini denetler ve hata varsa yerine yazmaz, "What now?" diye sorar. <code>sudoers.d</code> dosyası için <code>visudo -f /etc/sudoers.d/ad</code> kullanılır. <code>-c</code> yalnız denetler (başarıda 0, hatada 1); root olmadan, istediğin dosyada denenebilir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: visudo'nun yakaladığı iki ince hata</span>
+<p><strong>Soru:</strong> Bir yönetici, <code>deneme</code> kullanıcısına nginx'i yeniden yükleme yetkisi vermek için iki taslak yazıyor. Birinde komutu yolsuz yazmış, öbüründe bir komut takma adını (alias) tanımlamadan kullanmış. <code>visudo</code> bunlara ne der ve <code>-s</code> (katı denetim) neyi değiştirir?</p>
+<p><strong>Adım 1.</strong> Yolsuz komut içeren taslağı denetle.</p>
+<pre class="kod" data-ad="bash">printf 'deneme  ALL=(root) systemctl reload nginx.service\n' &gt; sudoers.goreli
+visudo -c -f /tmp/yazar/siber-11/sudoers.goreli; echo "cikis kodu: $?"</pre>
+<pre class="cikti">/tmp/yazar/siber-11/sudoers.goreli:1:20: expected a fully-qualified path name
+deneme  ALL=(root) systemctl reload nginx.service
+                   ^~~~~~~~~
+cikis kodu: 1</pre>
+<p><strong>Adım 2.</strong> Hata 20. sütunda: <code>systemctl</code> tam yol değil. Neden <code>secure_path</code> ile aynı: yetkiyle çalışacak program kullanıcının <code>PATH</code>'ine bırakılamaz.</p>
+<p><strong>Adım 3.</strong> Tanımsız takma ad içeren taslağı önce olağan, sonra katı kipte denetle.</p>
+<pre class="kod" data-ad="bash">printf 'deneme  ALL=(root) WEB\n' &gt; sudoers.takma
+visudo -c -f /tmp/yazar/siber-11/sudoers.takma; echo "cikis kodu: $?"
+visudo -c -s -f /tmp/yazar/siber-11/sudoers.takma; echo "cikis kodu: $?"</pre>
+<pre class="cikti">/tmp/yazar/siber-11/sudoers.takma:1:23: Cmnd_Alias "WEB" referenced but not defined
+/tmp/yazar/siber-11/sudoers.takma: parsed OK
+cikis kodu: 0
+/tmp/yazar/siber-11/sudoers.takma:1:23: Cmnd_Alias "WEB" referenced but not defined
+cikis kodu: 1</pre>
+<p><strong>Adım 4.</strong> Olağan kipte yalnız uyarı: "parsed OK", çıkış kodu 0; ama kural hiçbir komuta izin vermeyecekti. <code>-s</code> ile tanımsız takma ad hata olur, çıkış kodu 1.</p>
+<p><strong>Sonuç:</strong> <code>visudo -c</code> söz dizimini denetler, kuralın akıllıca olup olmadığını değil. Otomasyonda <code>visudo -c -s</code>'nin çıkış kodunu denetlemek, bozuk bir kuralın sunuculara dağılmasını önler.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kuralı <code>/etc/sudoers.d/web.conf</code>'a yazıp çalışmasını beklemek.</strong> <code>sudoers(5)</code>'e göre <code>@includedir</code>, adı <code>~</code> ile biten ya da nokta içeren dosyaları atlar (paket ve editör yedekleri kural sanılmasın diye); kural sessizce yok sayılır. <strong>Doğrusu:</strong> noktasız ad (<code>/etc/sudoers.d/web</code>), <code>visudo -f</code> ile oluşturma, sonra <code>visudo -c</code>. Dosya root'a ait ve 0440 kipinde olmalı (izinler Parça 12'de).</p></div>
+
+<h2 class="s">9. Dar <code>sudo</code> kuralları: neyi verdiğini bil</h2>
+
+<p><code>%sudo ALL=(ALL:ALL) ALL</code> tek yöneticili bir laboratuvar için makuldür; ama "nginx'i yeniden başlatsın" denen her ekip üyesine bütün sistemi vermek en az yetkiye aykırıdır: onun oturumunu ele geçiren her şeyi alır. Kural işin kendisi kadar dar yazılır. İncelik şu: <code>sudo</code> yalnız <em>başlattığı</em> komutu denetler; o program başka programlar çalıştırabiliyorsa kural yalnız kâğıt üzerinde dardır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Dar bir <code>sudo</code> kuralı yazmanın adımları.</strong> <strong>1.</strong> İşi tek cümleyle yaz: "deneme, nginx hizmetini yeniden başlatabilmeli ve yeniden yükleyebilmeli." <strong>2.</strong> Komutu <strong>tam yolla</strong> ve <strong>argümanlarıyla birlikte</strong> yaz; argümansız komut her argümana izin verir. <strong>3.</strong> Hedef kimliği daralt: iş root gerektirmiyorsa <code>(root)</code> yerine o hizmetin hesabını yaz. <strong>4.</strong> Kabuğa kaçışa izin veren programları (kabuklar, editörler, sayfalayıcılar, betik yorumlayıcıları) kurala koyma; dosya düzenlemek için <code>sudoedit</code> kullan. <strong>5.</strong> Kullanıcının yazabildiği bir betiği ya da yazabildiği bir dizindeki programı kurala koyma; betik root'a ait ve yalnız root'un yazabildiği bir yerde olmalı. <strong>6.</strong> <code>NOPASSWD</code>'yi yalnız otomasyonun gerçekten gerektirdiği, tek ve dar komutta kullan. <strong>7.</strong> Joker karakterden (<code>*</code>) argümanlarda kaçın; belge bunların dikkatle kullanılması gerektiğini söyler. <strong>8.</strong> <code>visudo</code> ile yaz, <code>visudo -c -s</code> ile denetle, kuralı kimin, ne zaman, neden istediğini yorum satırına not et.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Kural</th><th>Kâğıt üzerinde</th><th>Neden riskli</th><th>Daha dar karşılığı</th></tr>
+<tr><td><code>ali ALL=(ALL) NOPASSWD: ALL</code></td><td>Parolasız her şey</td><td>Ali'nin oturumunu ele geçiren, parola bile bilmeden root olur</td><td>Kaldır; gerekiyorsa tek komutla sınırla</td></tr>
+<tr><td><code>ali ALL=(root) /usr/bin/vim</code></td><td>Yalnız bir editör</td><td>Editörün içinden kabuk açılabilir; kabuk root olur</td><td><code>sudoedit /etc/nginx/nginx.conf</code> izni</td></tr>
+<tr><td><code>ali ALL=(root) /home/ali/bakim.sh</code></td><td>Yalnız bir betik</td><td>Betiği Ali değiştirebilir; içine ne yazarsa root çalıştırır</td><td>Betik <code>/usr/local/sbin</code> altında, root'a ait</td></tr>
+<tr><td><code>ali ALL=(root) /usr/bin/systemctl</code></td><td>Yalnız systemctl</td><td>Argümansız: her hizmeti durdurur, maskeler, yeni birimleri çalıştırır</td><td>Argümanları sabitle</td></tr>
+<tr><td><code>ali ALL=(root) /usr/bin/systemctl restart nginx.service</code></td><td>Tek bir iş</td><td>Dar; risk nginx'in kendisiyle sınırlı</td><td>Bu zaten hedef</td></tr>
+</table></div>
+
+<p>Bu tablo yanlış yapılandırmayı <strong>bulmak ve kapatmak</strong> içindir; kötüye kullanım bu rafın konusu değildir. Envanter yolları: <code>sudo -l</code> (kendi hakların), root olarak <code>sudo -l -U kullanici</code>, <code>sudoers</code> ve <code>sudoers.d</code> dosyalarını okuyup <code>NOPASSWD</code>, <code>ALL</code> ve kullanıcının yazabildiği yolları aramak. Bunu yalnız kendi ya da yönetmeye yetkili olduğun sistemde yap; başkasının sisteminde yetki aramak izinsiz erişimdir ve suçtur (Parça 72–73). <code>sudo -l</code> burada çalıştırılmadı (bu ortamda <code>sudo</code> kullanılmadı); laboratuvar VM'inde dene.</p>
+
+<h2 class="s">10. <code>sudo</code> kayıtları: kim, ne zaman, ne yaptı</h2>
+
+<p><code>sudoers(5)</code>'e göre <code>sudo</code> varsayılan olarak sistem günlüğüne (syslog) yazar. Klasik Debian'da bu kayıtlar <code>/var/log/auth.log</code>'a düşer; bu makinede rsyslog yok, kayıtlar journal'da. Günlüklerin ayrıntısı Parça 17'de.</p>
+
+<p>Her başarılı çağrı tek satırdır: çağıran, <code>TTY</code> (terminal), <code>PWD</code> (dizin), <code>USER</code> (kimin adına), <code>COMMAND</code> (tam yollu komut ve argümanlar); ardından PAM'in oturum açıldı/kapandı satırları gelir. Başarısızlıklar da yazılır: yanlış parola, "user NOT in sudoers", etkileşimsiz çağrıda "a password is required". Kısa sürede çok sayıda başarısız deneme, Parça 66–67'de uyarı kuralı yazılacak klasik bir işarettir.</p>
+
+<p>Sınır: <code>sudo</code> başlattığı komutu yazar, içinde olanı yazmaz; editöre izin verilmişse günlükte yalnız editörün adı görünür. Belge bunun için <code>log_input</code>/<code>log_output</code> (terminal girdi/çıktı kaydı) ve <code>log_subcmds</code> seçeneklerini sunar. root olabilen biri yerel günlüğü değiştirebileceği için kurumsal ortamda günlükler anında başka makineye gönderilir (Parça 66).</p>
+
+<h2 class="s">11. En az yetki: her hizmete ayrı kullanıcı</h2>
+
+<p>İnsanlar için en az yetki: gündelik işi sıradan hesapla yap, yönetici komutlarını tek tek <code>sudo</code> ile çalıştır, herkese yalnız işinin gerektirdiği kuralı ver. Günlük okuyacak birine <code>sudo</code> değil grup yeter: <code>journalctl(1)</code>'e göre <code>systemd-journal</code> ve <code>adm</code> üyeleri sistem günlüğünün tamamını okur.</p>
+
+<p>Hizmetler için: her hizmet kendi sistem kullanıcısıyla, <code>nologin</code> kabukla, kilitli parolayla çalışır ve yalnız kendi dosyalarına yazar. Root ile başlaması gerekenler (ör. 80. porta bağlanan web sunucusu) ayrıcalıklı işi yapıp kendi hesabına geçer; Debian'da nginx ve Apache işçileri <code>www-data</code> ile çalışır. systemd'de <code>User=</code> belirli bir hesap, <code>DynamicUser=yes</code> hizmet süresince yaşayan geçici bir hesap verir (Parça 14).</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Her hizmet kendi hesabıyla, paylaşmadan çalışmalıdır.</strong> Aynı hesabı paylaşan iki hizmetten birinin ele geçmesi öbürünün dosyalarını da açar; hepsi root ise bütün sistemi. Savunmacının soruları: root ile çalışan süreç gerçekten root olmalı mı, sistem aralığında açık kabuklu hesap var mı, <code>nobody</code> bir hizmete ortak kimlik olarak verilmiş mi?</p></div>
+
+<h2 class="s">Kendi makinende dene: kimlik defterini oku, kopyada hesap aç ve kilitle</h2>
+
+<p>Alıştırma kendi makinende ya da laboratuvar VM'inde yapılır ve <strong>gerçek <code>/etc</code>'ye hiç yazmaz</strong>. Root isteyen hesap adımları <code>/tmp/yazar/siber-11/kok</code> altındaki bir <code>/etc</code> kopyasında, <code>unshare -r</code> ile açılan kullanıcı ad alanında çalışır. Parça 7'den hatırla: bu, dışarıda hiçbir ayrıcalık taşımayan sahte bir root'tur. VM'inde aynı komutları <code>sudo</code> ile ve <code>--prefix</code>'siz çalıştırırsan gerçek hesaplar değişir; bunu yalnız geri alabileceğin bir VM'de yap. Çıktılar WSL2 üzerindeki Kali Rolling'den; Debian/Ubuntu'da sayılar ve adlar farklı çıkar.</p>
+
+<h3>Adım 1: kimliğin</h3>
+
+<pre class="kod" data-ad="bash">id -u; id -g; id -G</pre>
+<pre class="cikti">1000
+1000
+1000 4 24 27 30 46 100</pre>
+
+<p><code>id</code>'nin yalnız sayılı hâli: etkin UID, birincil GID, bütün GID'ler. Çekirdeğin gördüğü yalnız budur; 27 (<code>sudo</code>) ve 4 (<code>adm</code>) listede.</p>
+
+<h3>Adım 2: hesapları UID aralıklarına göre sınıflandır</h3>
+
+<p>Küçük bir <code>awk</code> programı hesapları 3. alana (UID) göre, kabuğu kapalı olanları 7. alana göre sayar.</p>
+
+<pre class="kod" data-ad="siniflar.awk">BEGIN { FS = ":" }
+$3 == 0                    { root++ }
+$3 &gt;= 1 &amp;&amp; $3 &lt;= 999       { sistem++ }
+$3 &gt;= 1000 &amp;&amp; $3 &lt;= 59999  { insan++ }
+$3 == 65534                { nobody++ }
+$7 ~ /(nologin|false)$/    { kapali++ }
+END {
+    printf "root (UID 0)          : %d\n", root
+    printf "sistem (1-999)        : %d\n", sistem
+    printf "insan (1000-59999)    : %d\n", insan
+    printf "nobody (65534)        : %d\n", nobody
+    printf "toplam                : %d\n", NR
+    printf "kabugu nologin/false  : %d\n", kapali
+}</pre>
+<pre class="kod" data-ad="bash">getent passwd | awk -f siniflar.awk
+getent passwd | awk -F: '$3 &gt;= 1000 &amp;&amp; $3 != 65534 {print $1, $3, $6, $7}'
+getent passwd | awk -F: '$3 &gt; 0 &amp;&amp; $3 &lt; 1000 &amp;&amp; $7 !~ /(nologin|false)$/ {print $1, $3, $7}'</pre>
+<pre class="cikti">root (UID 0)          : 1
+sistem (1-999)        : 61
+insan (1000-59999)    : 1
+nobody (65534)        : 1
+toplam                : 64
+kabugu nologin/false  : 60
+kullanici 1000 /home/kullanici /bin/bash
+sync 4 /bin/sync
+postgres 102 /bin/bash</pre>
+
+<p>64 hesabın 61'i sistem hesabı, biri insan, UID 0 tek (ikinci bir UID 0 en önemli bulgu olurdu); 60'ının kabuğu kapalı. Kali çok sayıda araç için hesap açtığından sayı yüksek; düz Debian'da 20–30 civarı beklenir. İnsan aralığında yalnız sen varsın; tanımadığın bir ad ilk soruşturma konusu olurdu.</p>
+
+<p>Son iki satır, sistem aralığında kabuğu kapalı olmayan hesaplar. <code>sync</code>'in kabuğu <code>/bin/sync</code>: Debian'da olağan bir tarihsel kalıntı. <code>postgres</code>'in kabuğu <code>/bin/bash</code>; PostgreSQL paketi bunu yöneticinin <code>sudo -u postgres</code> ile geçmesi için bilerek yapar. Soru şudur: parolası kilitli mi, uzaktan girişe kapalı mı? Öyleyse kabul edilebilir, değilse kapatılmalı.</p>
+
+<h3>Adım 3: gölge dosyaya erişmeyi dene</h3>
+
+<pre class="kod" data-ad="bash">ls -l /etc/passwd /etc/group /etc/shadow /etc/gshadow
+cat /etc/shadow
+passwd -S</pre>
+<pre class="cikti">-rw-r--r-- 1 root root   1374 Aug 21 20:34 /etc/group
+-rw-r----- 1 root shadow 1168 Aug 21 20:34 /etc/gshadow
+-rw-r--r-- 1 root root   3727 Aug 21 20:34 /etc/passwd
+-rw-r----- 1 root shadow 1631 Aug 21 20:34 /etc/shadow
+cat: /etc/shadow: Permission denied
+kullanici P 2026-08-20 0 99999 7 -1</pre>
+
+<p><code>passwd</code> ve <code>group</code> herkese okunur; <code>shadow</code> ve <code>gshadow</code>'u yalnız root ve <code>shadow</code> grubu okur, "diğerleri"nin üçlüsü <code>---</code> (harflerin anlamı Parça 12'de). <code>cat</code> bu yüzden Parça 4'teki <code>EACCES</code>'i aldı. <code>passwd -S</code> ise kendi kaydını okuyabildi: program SUID bitiyle root yetkisinde çalışır ve yalnız çağıranın kaydını gösterir (bit ve riski Parça 12'de). Alanlar: ad, durum (<code>P</code> kullanılabilir, <code>L</code> kilitli, <code>NP</code> parolasız), son değişim, en kısa yaş, en uzun yaş, uyarı, hareketsizlik (-1 yok).</p>
+
+<p>Uyarı: burada <code>getent shadow root</code> bir satır döndürür (<code>root:!*:::::::</code>) ama bu gerçek kayıt değildir. <code>nsswitch.conf</code>'ta <code>shadow: files systemd</code> yazıyor; dosya okunamayınca arama systemd modülüne geçiyor, o da belgesine göre root ve nobody için kendi kayıtlarını üretiyor. Çıktının hangi kaynaktan geldiğini bil.</p>
+
+<h3>Adım 4: <code>/etc</code>'nin kopyasında hesap aç, parola ver, kilitle</h3>
+
+<p>Kopya: gerçek <code>passwd</code>'den üç satır, elle yazılmış küçük <code>group</code>, <code>shadow</code> (gerçeği okunamadığı için <code>*</code>'lı) ve <code>gshadow</code>, bir de <code>login.defs</code>.</p>
+
+<pre class="kod" data-ad="kopya-hazirla.sh">K=/tmp/yazar/siber-11/kok
+rm -rf "$K"; mkdir -p "$K/etc" "$K/home"
+grep -E '^(root|daemon|nobody):' /etc/passwd &gt; "$K/etc/passwd"
+printf 'root:x:0:\ndaemon:x:1:\nsudo:x:27:\nusers:x:100:\nnogroup:x:65534:\n' &gt; "$K/etc/group"
+printf 'root:*:20000:0:99999:7:::\ndaemon:*:20000:0:99999:7:::\nnobody:*:20000:0:99999:7:::\n' &gt; "$K/etc/shadow"
+printf 'root:*::\ndaemon:*::\nsudo:*::\nusers:*::\nnogroup:*::\n' &gt; "$K/etc/gshadow"
+cp /etc/login.defs "$K/etc/"
+ls "$K/etc"</pre>
+<pre class="kod" data-ad="bash">bash kopya-hazirla.sh</pre>
+<pre class="cikti">group
+gshadow
+login.defs
+passwd
+shadow</pre>
+
+<p>Şimdi bir insan hesabı ve bir sistem hesabı ekle. <code>K</code> değişkenini kabuğunda da <code>K=/tmp/yazar/siber-11/kok</code> diye tanımla.</p>
+
+<pre class="kod" data-ad="bash">unshare -r useradd --prefix $K -m -s /bin/bash deneme
+unshare -r useradd --prefix $K --system -s /usr/sbin/nologin hizmet
+tail -n 2 $K/etc/passwd; tail -n 2 $K/etc/shadow</pre>
+<pre class="cikti">deneme:x:1000:1000::/home/deneme:/bin/bash
+hizmet:x:999:999::/home/hizmet:/usr/sbin/nologin
+deneme:!:20742:0:99999:7:::
+hizmet:!:20742::::::</pre>
+
+<p>İki komut sessizce başarılı oldu. <code>deneme</code> insan aralığının ilk sayısını (1000), <code>hizmet</code> sistem aralığının tepesini (999) aldı. Parola alanları <code>!</code>: hesaplar kilitli doğdu. Sistem hesabında yaşlandırma alanları boş; parolayla girmesi beklenmiyor. Ev dizini yalnız <code>-m</code> verilen <code>deneme</code> için açıldı.</p>
+
+<pre class="kod" data-ad="bash">printf 'deneme:Gizli-Parola-2026\n' | unshare -r chpasswd --prefix $K
+grep '^deneme:' $K/etc/shadow; unshare -r passwd --prefix $K -S deneme</pre>
+<pre class="cikti">deneme:$y$j9T$XMwOv4n47fk2H8LBVkF58/$toi1DGt1fsodDbzTA0ay0rRScVYGrPUEJt/IVi4IM56:20742:0:99999:7:::
+deneme P 2026-10-16 0 99999 7 -1</pre>
+
+<p><code>chpasswd</code> "ad:parola" satırlarını standart girdiden okur; parola atılacak kopya için uydurmadır. Gerçek parolayı komut satırına yazma, komut geçmişine düşer (Parça 18); <code>passwd</code> onu ekrana yansıtmadan sorar. Alan artık bir yescrypt özeti, durum <code>P</code>.</p>
+
+<pre class="kod" data-ad="bash">unshare -r usermod --prefix $K -L deneme
+grep '^deneme:' $K/etc/shadow; unshare -r passwd --prefix $K -S deneme
+unshare -r usermod --prefix $K -e 1 deneme
+grep '^deneme:' $K/etc/shadow | cut -d: -f1,8</pre>
+<pre class="cikti">deneme:!$y$j9T$XMwOv4n47fk2H8LBVkF58/$toi1DGt1fsodDbzTA0ay0rRScVYGrPUEJt/IVi4IM56:20742:0:99999:7:::
+deneme L 2026-10-16 0 99999 7 -1
+deneme:1</pre>
+
+<p>Kilidin kendisi: özetin önüne tek bir <code>!</code> eklendi, gerisi aynı; durum <code>L</code>. <code>usermod -U</code> <code>!</code>'i siler, eski parola geri gelir. <code>-e 1</code> ise 8. alana 1 yazdı: hesap 2 Ocak 1970'te dolmuş sayılır, parola dışı yollar da kapanır.</p>
+
+<pre class="kod" data-ad="bash">journalctl -q -o short-iso _COMM=useradd _COMM=usermod _COMM=chpasswd --since '-2 min' --no-pager
+journalctl -q -o verbose _COMM=usermod -n 1 --no-pager | grep -E '^ *(_UID|_COMM|MESSAGE)='</pre>
+<pre class="cikti">2026-10-16T16:57:18+03:00 lab useradd[2216]: new group: name=deneme, GID=1000
+2026-10-16T16:57:18+03:00 lab useradd[2216]: new user: name=deneme, UID=1000, GID=1000, home=/home/deneme, shell=/bin/bash, from=none
+2026-10-16T16:57:18+03:00 lab useradd[2221]: new group: name=hizmet, GID=999
+2026-10-16T16:57:18+03:00 lab useradd[2221]: new user: name=hizmet, UID=999, GID=999, home=/home/hizmet, shell=/usr/sbin/nologin, from=none
+2026-10-16T16:57:19+03:00 lab usermod[2237]: lock user 'deneme' password
+2026-10-16T16:57:19+03:00 lab usermod[2244]: change user 'deneme' expiration from 'never' to '1970-01-02'
+    _UID=1000
+    _COMM=usermod
+    MESSAGE=change user 'deneme' expiration from 'never' to '1970-01-02'</pre>
+
+<p>Öğretici bir yan sonuç: araçlar kopya üzerinde çalışsa da her işi sistem günlüğüne yazdı. Gerçek sistemde hesap açma ve kilitleme böyle kayda geçer; gizlice açılan bir hesap da kural olarak bu satırları bırakır. İkinci komut journal'ın kendi eklediği alanı gösterdi: <code>_UID=1000</code>. Araç kendini root sanıyordu, çekirdeğe göre kimlik 1000'di. Ders: iletinin metnine değil, günlük sisteminin doldurduğu kimlik alanlarına güven.</p>
+
+<h3>Adım 5: aynı parola, farklı tuz, farklı özet</h3>
+
+<pre class="kod" data-ad="bash">for i in 1 2 3; do openssl passwd -6 'Gizli-Parola-2026'; done
+for i in 1 2; do openssl passwd -6 -salt Tuz12345 'Gizli-Parola-2026'; done
+for i in 1 2; do printf 'Gizli-Parola-2026' | mkpasswd -m yescrypt -s; done</pre>
+<pre class="cikti">$6$d2PTCiU9l6UihTAh$sBzVQ1t44cmBu53CInO5kSxfnCGP9nbTjYvOpbrJ9SHbZzWSupZb0mjHCQTPuqoKmHSiefmxpEc4lashlWkaL.
+$6$t/hLbSuIEzyszc53$I7k.0YKw4BbgbLBVno7aaTP9SQTRMnsOPN6FUmE81Dp.tffE3PdUmjIAk/3iD7aF7kj.UMSE.zm1P6bgqemec0
+$6$9T7bGAWv9GDKxwVq$omRE61Jr0no3p4hjPnO7Al41ML2A9O8TL1eeDFfW58RYHYUvEWU.GxEBANP0StKnDoN1xcY.u/BgrPjkSykn/1
+$6$Tuz12345$VWiFii0Us9XsC9YMSu3nq2jvfHhpKBsl7g.3Uan2v2AEQkNJKQTCWpZSD509R4FWzcp6f3jf9neuOWWMNUAsY/
+$6$Tuz12345$VWiFii0Us9XsC9YMSu3nq2jvfHhpKBsl7g.3Uan2v2AEQkNJKQTCWpZSD509R4FWzcp6f3jf9neuOWWMNUAsY/
+$y$j9T$UGAVYSk8qm09i./6pCK.E.$v42QtAEYu4MEQfbkotvoJWl0rpHT8zIeXdoDWDwCFzB
+$y$j9T$cSEfQPZNLkZd4fBxr05LE/$Jykziipy5Z6/ddFsDD3C/W9Ki0G27qXkGduQbBaEGE1</pre>
+
+<p>İlk üç satır: aynı parola <code>$6$</code> ile üç kez; 16 karakterlik tuz her seferinde farklı, özet de. Sonraki iki satır: tuz sabitlenince çıktılar birebir aynı; farkı yaratan yalnız tuz. Son ikisi yescrypt: ayar aynı, tuz ve özet farklı. Tuz sayesinde aynı parolayı kullanan iki kişinin kaydı aynı görünmez ve bir özet bir kez hesaplanıp herkesin kaydıyla karşılaştırılamaz. Tuzsuz <code>sha256sum</code> ise aynı parolaya hep aynı 64 haneyi verir. Ayrıntı Parça 45'te.</p>
+
+<h3>Adım 6: kopya bir <code>sudoers</code> dosyasına dar bir kural yaz ve sına</h3>
+
+<p><code>Cmnd_Alias</code>, komutlara bir ad verir; <code>\</code> satırı sürdürür. Bu dosya gerçek <code>/etc/sudoers.d</code>'ye konmayacak, yalnız sözdizimi denetlenecek.</p>
+
+<pre class="kod" data-ad="sudoers.test"># Laboratuvar denemesi: gercek /etc/sudoers degil
+Cmnd_Alias WEB = /usr/bin/systemctl restart nginx.service, \
+                 /usr/bin/systemctl reload nginx.service
+deneme      ALL=(root) WEB
+%yedekciler ALL=(yedek) NOPASSWD: /usr/local/bin/yedek-al</pre>
+<pre class="kod" data-ad="bash">visudo -c -f /tmp/yazar/siber-11/sudoers.test; echo "cikis kodu: $?"</pre>
+<pre class="cikti">/tmp/yazar/siber-11/sudoers.test: parsed OK
+cikis kodu: 0</pre>
+
+<p><code>deneme</code> yalnız iki komutu, tam bu argümanlarla, root adına ve kendi parolasıyla çalıştırabilir. <code>yedekciler</code> grubu tek bir betiği, root değil <code>yedek</code> hesabı adına, parolasız çalıştırabilir: otomasyon için parolasız ama dar. Şimdi bilerek iki hata yapalım.</p>
+
+<pre class="kod" data-ad="bash">cat -n sudoers.hatali
+visudo -c -f /tmp/yazar/siber-11/sudoers.hatali; echo "cikis kodu: $?"</pre>
+<pre class="cikti">     1	deneme  ALL=(root) /usr/bin/systemctl restart nginx.service,
+     2	deneme  ALL=(root  /usr/bin/systemctl reload nginx.service
+/tmp/yazar/siber-11/sudoers.hatali:1:61: syntax error
+deneme  ALL=(root) /usr/bin/systemctl restart nginx.service,
+                                                            ^
+/tmp/yazar/siber-11/sudoers.hatali:2:39: syntax error
+deneme  ALL=(root  /usr/bin/systemctl reload nginx.service
+                                      ^
+cikis kodu: 1</pre>
+
+<p>Birinci satırda virgülden sonra komut yok; <code>visudo</code> satır sonunu (61. sütun) gösterdi. İkinci satırda parantez kapanmamış; araç 39. sütunda durdu. Gerçek düzenlemede <code>visudo</code> bu dosyayı yerine yazmazdı; aynı satırı editörle yazan yönetici <code>sudo</code>'yu bozmuş olurdu.</p>
+
+<h3>Adım 7: kendi makinendeki <code>sudo</code> kayıtları</h3>
+
+<pre class="kod" data-ad="bash">journalctl -q _COMM=sudo -o short-iso --no-pager | grep 'COMMAND=' | tail -n 2
+journalctl -q _COMM=sudo -o short-iso --no-pager | grep -E 'session (opened|closed)' | tail -n 2
+journalctl -q _COMM=sudo -o verbose -n 1 --no-pager | grep -E '^ *(_UID|PRIORITY|SYSLOG_FACILITY|SYSLOG_IDENTIFIER)='</pre>
+<pre class="cikti">2026-08-22T10:34:42+03:00 lab sudo[16055]:      kullanici : TTY=pts/0 ; PWD=/home/kullanici ; USER=root ; COMMAND=/usr/bin/apt install -y fonts-jetbrains-mono
+2026-10-16T15:39:41+03:00 lab sudo[692]:      kullanici : a password is required ; TTY=pts/0 ; PWD=/home/kullanici/proje ; USER=root ; COMMAND=/usr/bin/true
+2026-08-22T10:34:42+03:00 lab sudo[16055]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+2026-08-22T10:34:43+03:00 lab sudo[16055]: pam_unix(sudo:session): session closed for user root
+    _UID=1000
+    PRIORITY=1
+    SYSLOG_FACILITY=10
+    SYSLOG_IDENTIFIER=sudo</pre>
+
+<p>Birinci satır Ağustos'taki bir paket kurulumu: kim, hangi terminal, hangi dizin, kimin adına, tam yoluyla hangi komut. İkincisi başarısız bir deneme: etkileşimsiz çağrı parola isteyen kurala takıldı. Sonraki iki satır başarılı çağrının PAM oturum kayıtları. Son blok meta alanlar: gerçek UID 1000, öncelik 1 (alert), olanak 10 (authpriv). <code>sudoers(5)</code> varsayılan olanağı <code>auth</code> verir; bu paket <code>authpriv</code> kullanıyor. Günlükte 75 <code>COMMAND=</code> satırı vardı. Makine adı, kullanıcı adı ve dizin sadeleştirildi.</p>
+
+<h3>Adım 8: hizmetler hangi kullanıcıyla çalışıyor?</h3>
+
+<pre class="kod" data-ad="bash">ps -eo user --no-headers | sort | uniq -c | sort -rn
+ps -eo user:14,comm --no-headers | sort -u | grep -v -E "^($(id -un)|root) "
+getent passwd messagebus polkitd rtkit systemd-oom</pre>
+<pre class="cikti">     24 root
+     17 kullanici
+      1 systemd-oom
+      1 rtkit
+      1 polkitd
+      1 messagebus
+messagebus     dbus-daemon
+polkitd        polkitd
+rtkit          rtkit-daemon
+systemd-oom    systemd-oomd
+messagebus:x:989:989:System Message Bus:/nonexistent:/usr/sbin/nologin
+polkitd:x:979:979:User for polkitd:/:/usr/sbin/nologin
+rtkit:x:976:976:RealtimeKit:/proc:/usr/sbin/nologin
+systemd-oom:x:968:968:systemd Userspace OOM Killer:/:/usr/sbin/nologin</pre>
+
+<p>24 süreç root, 17 senin; dört hizmetin her biri ayrı hesapla: D-Bus (<code>messagebus</code>), yetki aracısı (<code>polkitd</code>), <code>rtkit</code>, bellek bekçisi (<code>systemd-oomd</code>). Hepsi sistem aralığında (968–989), kabukları <code>nologin</code>: Bölüm 11'deki kuralın canlı örnekleri. Root süreçleri systemd, <code>journald</code>, <code>logind</code>, <code>cron</code> gibi bileşenler ve WSL'nin kendi süreçleri. VM'inde her root sürecine "root olması gerekiyor mu?" diye sor (Parça 13, 14, 19). Temizlik: <code>rm -rf /tmp/yazar/siber-11</code>.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 5'teki süreç UID/GID'i hesaplara ve dosyalara bağlandı, en az yetki insanlar ve hizmetler için somutlaştı; Parça 4'teki root–halka ayrımı tamamlandı; Parça 6'daki hash tuzlu parola özeti oldu; Parça 7'deki kullanıcı ad alanı deney aracı oldu; Parça 9'daki <code>awk</code> envantere, Parça 10'daki <code>apt</code> varsayılan <code>sudoers</code>'ı okumaya yaradı.</p>
+<p><strong>Sonraki parçalara:</strong> izinler ve SUID biti Parça 12'de, süreç kimlikleri Parça 13'te, <code>User=</code>/<code>DynamicUser=</code> Parça 14'te, kimlik günlükleri Parça 17'de, SSH ve root girişini kapatmak Parça 18'de, parola özetlerinin iç yapısı Parça 45'te, Windows kullanıcı modeli Parça 61'de.</p>
+<p><strong>Kod rafına:</strong> Bash parçalarındaki (15–18) tırnaklama ve boru alışkanlıkları betiklerde kullanıldı; bir betiğe <code>sudo</code> yetkisi vermeden önce onu kimin yazabildiğini sormak her otomasyon için geçerlidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>/etc/passwd neden herkes tarafından okunabilir, parola özetleri neden ayrı bir dosyada?</summary><p>ls ve ps gibi sıradan araçlar UID'leri ada çevirmek için /etc/passwd'yi okumak zorundadır. Eskiden özetler de bu dosyadaydı ve herkes onları kopyalayıp kendi makinesinde sınırsız tahmin deneyebiliyordu. Bu yüzden özetler yalnız root ve shadow grubunun okuyabildiği /etc/shadow'a taşındı; /etc/passwd'nin parola alanında yalnız x kaldı.</p></details>
+<details><summary>Bir gölge satırında parola alanının başındaki ! ne anlama gelir ve neden hesabı tamamen kapatmaz?</summary><p>Parolanın kilitli olduğunu gösterir; ! eklenmiş dizgi hiçbir özet hesabının sonucu olamayacağı için hiçbir parola eşleşmez, ama eski özet olduğu gibi durur ve kilit kaldırılınca geri gelir. Yalnız parolayla girişi engeller; SSH anahtarı gibi başka yollar açık kalabilir. Hesabı kapatmak için son kullanma tarihi 1'e çekilir (usermod -e 1).</p></details>
+<details><summary>Aynı parola iki kez özetlendiğinde neden farklı sonuç çıkar, sistem buna rağmen girişte parolayı nasıl doğrular?</summary><p>Her özetleme rastgele yeni bir tuz kullanır ve tuz özete katıldığı için sonuç değişir. Tuz, yöntem ve ayar kayıtta açıkça saklanır; doğrulayıcı bunları kayıttan alır, yazılan parolayı aynı tuz ve ayarla özetler ve kayıtla karşılaştırır. Tuz sabitlenince aynı parola her zaman aynı özeti verir.</p></details>
+<details><summary>su ile sudo arasındaki üç temel farkı say.</summary><p>su hedef hesabın (çoğunlukla root'un) parolasını ister, sudo çağıranın kendi parolasını. su sınırsız bir kabuk verir, sudo yalnız sudoers kuralının izin verdiği komutları çalıştırır. su yalnız oturumun açıldığını kaydeder, sudo her komutu kimin adına, hangi dizinde, hangi terminalden çalıştırıldığıyla kaydeder; ayrıca bir kişinin sudo yetkisi parolalar değişmeden geri alınabilir.</p></details>
+<details><summary>Bir kullanıcıya editör çalıştırma sudo yetkisi vermek neden kâğıt üzerinde göründüğünden geniştir, doğrusu nedir?</summary><p>sudo yalnız başlattığı programı denetler; editörler, sayfalayıcılar ve kabuklar kendi içlerinden başka programlar çalıştırabildiği için o programlar da root yetkisiyle çalışır ve sudo kaydında yalnız editörün adı görünür. Dosya düzenletmek için sudoedit kullanılır: dosyanın geçici kopyası kullanıcının yetkisiyle açılır, yalnız kaydederken yerine yazılır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Kullanıcı / grup:</strong> UID ve GID sayıları; bir birincil grup, sıfır ya da çok ek grup. Çekirdek ada değil sayıya bakar; UID yeniden kullanılmaz. Grup değişikliği bir sonraki girişte etkili olur.</li>
+<li><strong>Aralıklar (Debian):</strong> 0 root · 1–99 sabit · 100–999 sistem (999'dan geriye) · 1000–59999 insan · 65534 nobody/nogroup. Kaynak: <code>/etc/login.defs</code>.</li>
+<li><strong>Sistem hesabı:</strong> her hizmete ayrı; kabuk <code>nologin</code>/<code>false</code>, parola kilitli, ev dizini yok.</li>
+<li><strong>root = UID 0:</strong> izin denetimlerinin çoğunu geçer; ad değil sayı önemli. Halka 0 değildir. Gündelik iş root ile yapılmaz.</li>
+<li><strong><code>/etc/passwd</code></strong> (herkes okur): ad:x:UID:GID:GECOS:ev:kabuk. <strong><code>/etc/group</code></strong>: ad:x:GID:üyeler.</li>
+<li><strong><code>/etc/shadow</code></strong> (root + shadow): ad:özet:son değişim:en az:en çok:uyarı:hareketsizlik:hesap bitişi:ayrılmış; tarihler 1970'ten gün.</li>
+<li><strong>Özet:</strong> <code>$önek$ayar$tuz$özet</code>; <code>$y$</code> yescrypt (önerilen, varsayılan), <code>$6$</code> sha512crypt (kabul edilebilir), <code>$1$</code> md5crypt (eski). Tuz her seferinde rastgele; doğrulama aynı tuzla yeniden özetleyip karşılaştırmaktır (Parça 45).</li>
+<li><strong>Özel değerler:</strong> <code>!</code> önde: kilitli · <code>*</code>: parolayla giriş yok · boş: parolasız giriş (tehlike).</li>
+<li><strong>Araçlar:</strong> <code>useradd</code>/<code>adduser</code>, <code>usermod -aG</code> (<code>-a</code>'yı unutma), <code>passwd</code>, <code>chpasswd</code>, <code>userdel</code>; denemede <code>--prefix</code> + <code>unshare -r</code>.</li>
+<li><strong>Kilitle ≠ kapat:</strong> <code>usermod -L</code>/<code>passwd -l</code> yalnız parolayı; <code>usermod -e 1</code> hesabı kapatır; kabuk <code>nologin</code>; oturumları sonlandır; SSH anahtarlarını ve sudo kurallarını gözden geçir.</li>
+<li><strong>su:</strong> hedefin parolası, sınırsız kabuk, az kayıt. <code>su -</code> oturum ortamı. <strong>sudo:</strong> kendi parolan, sudoers kuralı, komut başına kayıt; zaman damgası varsayılan 5 dk.</li>
+<li><strong>sudoers:</strong> "kim makine=(kimin adına) ne"; tam yol; argüman yazılırsa birebir eşleşme; <code>NOPASSWD</code> dar kullan; <code>secure_path</code>; <code>@includedir</code> noktalı ve ~ ile biten adları atlar.</li>
+<li><strong>visudo:</strong> kilitler, denetler, bozuğu yazmaz; <code>-c</code> denetim, <code>-f</code> dosya, <code>-s</code> katı (tanımsız takma ad hata).</li>
+<li><strong>Dar kural:</strong> tam yol + sabit argüman + dar hedef kimlik; editör/sayfalayıcı/kabuk/yazılabilir betik yok; dosya için <code>sudoedit</code>. <code>sudo -i</code>/<code>sudo su -</code> kaydı ve sınırı kaybettirir.</li>
+<li><strong>Kayıt:</strong> TTY, PWD, USER, COMMAND; başarısız denemeler (yanlış parola, NOT in sudoers); journal'da <code>_COMM=sudo</code>, Debian'da <code>/var/log/auth.log</code>. Komutun içini görmez (<code>log_input</code>/<code>log_output</code>).</li>
+<li><strong>Envanter soruları:</strong> ikinci UID 0 var mı, insan aralığında yabancı var mı, sistem hesabında açık kabuk var mı, root ile çalışan süreç gerçekten root olmalı mı?</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-11">
+<h3>Quiz 11</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on üç tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir süreç bir dosyayı açmak istediğinde çekirdek, sürecin "kim" olduğunu neye bakarak belirler?</p>
+<ul class="sec"><li>Sürecin çalıştığı kullanıcının adına</li><li>Sürecin taşıdığı UID ve GID sayılarına</li><li>Kullanıcının ev dizininin yoluna</li><li><code>/etc/passwd</code>'deki kabuk alanına</li><li>Sürecin bağlı olduğu terminalin adına</li></ul>
+<div class="coz"><p>Çekirdek her süreçte yalnız sayısal kimlikleri tutar ve izin denetiminde etkin UID ile GID'leri dosyanın sahip ve grup numaralarıyla karşılaştırır. Adlar (A) yalnız insanların okuması içindir ve <code>/etc/passwd</code>'de sayılara eşlenir. Ev dizini (C) ve kabuk (D) giriş anında kullanılan hesap bilgileridir, izin kararına girmez. Terminal adı (E) kimlik değildir. Bu yüzden aynı UID'i taşıyan iki hesap çekirdeğin gözünde aynı kişidir.</p></div></li>
+
+<li data-c="D"><p class="q"><code>/etc/passwd</code> dosyasındaki <code>ali:x:1001:1001::/home/ali:/bin/bash</code> satırında ikinci alanın <code>x</code> olması ne anlama gelir?</p>
+<ul class="sec"><li>Hesap kilitlidir.</li><li>Kullanıcı parolasız giriş yapabilir.</li><li>Hesap bir sistem hesabıdır.</li><li>Parola özeti <code>/etc/shadow</code> dosyasında tutulmaktadır.</li><li>Kullanıcının parolası "x" harfidir.</li></ul>
+<div class="coz"><p><code>passwd(5)</code> belgesine göre <code>x</code>, şifrelenmiş parolanın bu dosyada değil yalnız root'un okuyabildiği <code>/etc/shadow</code>'da saklandığını gösterir. Kilit (A) gölge dosyada özetin önündeki <code>!</code> ile gösterilir. Parolasız giriş (B) gölge dosyada boş parola alanı demektir. Sistem hesabı olup olmadığı (C) UID aralığından ve kabuktan anlaşılır; 1001 insan aralığındadır. <code>x</code> bir yer tutucudur, parola değildir (E).</p></div></li>
+
+<li data-c="A"><p class="q">Bir gölge dosyada şu satır var: <code>deneme:!$y$j9T$XMwOv4n47fk2H8LBVkF58/$toi1DGt1fsodDbzTA0ay0rRScVYGrPUEJt/IVi4IM56:20742:0:99999:7:::</code>. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Parola kilitlidir; <code>!</code> kaldırılırsa eski parola yeniden çalışır.</li><li>Parola düz metin olarak saklanmaktadır.</li><li>Hesabın son kullanma tarihi 20742. gündür.</li><li>Kullanıcı parolasını 99999 gün boyunca değiştiremez.</li><li><code>$y$</code> öneki parolanın SHA-512 ile özetlendiğini gösterir.</li></ul>
+<div class="coz"><p>Parola alanının başındaki <code>!</code> kilittir: belgeye göre arkasındaki karakterler kilitlemeden önceki özettir ve <code>usermod -U</code> ile <code>!</code> silinince eski parola aynen geri gelir. B yanlış: <code>$y$…</code> bir yescrypt özetidir. C yanlış: 20742 üçüncü alandır, yani son parola değişikliği (16 Ekim 2026); son kullanma tarihi sekizinci alandır ve burada boştur. D yanlış: 99999 en uzun parola yaşıdır, en kısa yaş (dördüncü alan) 0'dır. E yanlış: SHA-512'nin öneki <code>$6$</code>'dır, <code>$y$</code> yescrypt'tir.</p></div></li>
+
+<li data-c="C"><p class="q"><code>openssl passwd -6 'Gizli-Parola-2026'</code> komutu art arda iki kez çalıştırıldığında iki farklı dizgi çıkıyor; <code>-salt Tuz12345</code> eklenince iki çıktı aynı oluyor. Bunun açıklaması hangisidir?</p>
+<ul class="sec"><li><code>openssl</code> rastgele hata yapmaktadır; doğru olan aynı çıktıdır.</li><li>Parola her çalıştırmada gizlice değiştirilmektedir.</li><li>Her çalıştırmada rastgele yeni bir tuz seçilir ve özete katılır; tuz sabitlenince aynı parola aynı özeti verir.</li><li><code>$6$</code> bir şifrelemedir ve her seferinde farklı anahtar kullanılır.</li><li>Çıktı, o anın saatini içeren bir zaman damgası taşır.</li></ul>
+<div class="coz"><p>Parola özetleme belirlenimlidir: aynı yöntem, aynı ayar, aynı tuz ve aynı parola hep aynı özeti verir. Farkı yaratan, tuzun her seferinde rastgele seçilmesidir; tuz dizginin içinde açıkça yazılı olduğu için doğrulayıcı onu kayıttan alıp aynı hesabı yapabilir. A ve B, deneyde tuz sabitlenince çıktının birebir aynı olmasıyla çürür. D yanlış: <code>$6$</code> sha512crypt bir özettir, anahtarı ve geri dönüşü yoktur. E yanlış: dizgide zaman damgası yoktur; önek, tuz ve özet vardır.</p></div></li>
+
+<li data-c="E"><p class="q">İşten ayrılan bir çalışanın hesabı <code>passwd -l</code> ile kilitlendi, ama kişi SSH anahtarıyla hâlâ girebiliyor. Hem durumun açıklaması hem doğru adım için en uygun seçenek hangisidir?</p>
+<ul class="sec"><li><code>passwd -l</code> bozuk çalışmıştır; komutu bir kez daha çalıştırmak yeter.</li><li><code>/etc/passwd</code>'den satırı bir editörle hemen silmek en güvenli yoldur.</li><li>Hesabın kabuğunu <code>/bin/bash</code> yapmak girişi engeller.</li><li>Hesabı <code>sudo</code> grubundan çıkarmak girişi engeller.</li><li><code>passwd -l</code> yalnız parolayı kilitler; hesabı kapatmak için <code>usermod --expiredate 1</code> kullanılmalı, oturumlar ve SSH anahtarları da gözden geçirilmelidir.</li></ul>
+<div class="coz"><p><code>passwd(1)</code> belgesi kilitlemenin hesabı devre dışı bırakmadığını, kullanıcının SSH anahtarı gibi başka bir yolla girebileceğini ve hesabı kapatmak için <code>usermod --expiredate 1</code> kullanılması gerektiğini açıkça yazar. A yanlış: komut doğru çalışmıştır, yalnız kapsamı dardır. B tehlikelidir: dosyayı elle düzenlemek bozulma riski taşır, dosyalar sahipsiz kalır ve günlükler incelenmeden iz kaybolur. C tersidir; kapatmak için kabuk <code>nologin</code> yapılır. D yalnız yönetici yetkisini alır, girişi engellemez.</p></div></li>
+
+<li data-c="B"><p class="q"><code>su</code> ile <code>sudo</code> için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li><code>su</code> çağıranın kendi parolasını, <code>sudo</code> root'un parolasını ister.</li><li><code>sudo</code> çağıranın kendi parolasını ister, <code>sudoers</code> kuralına göre izin verir ve her komutu kaydeder; <code>su</code> hedef hesabın parolasını ister.</li><li>İkisi aynı programdır; <code>sudo</code> yalnız yeni adıdır.</li><li><code>sudo</code> yalnız Kali Linux'ta bulunur.</li><li><code>su -</code> ile açılan kabukta yazılan her komut, <code>sudo</code>'daki gibi tek tek günlüğe yazılır.</li></ul>
+<div class="coz"><p><code>sudo</code> kimliği çağıranın kendi parolasıyla doğrular, <code>sudoers</code>'taki kurala bakar ve her çağrıyı TTY, PWD, USER ve COMMAND alanlarıyla kaydeder; <code>su</code> ise hedef hesabın, çoğunlukla root'un parolasını ister. A iki aracı ters çevirir. C yanlış: <code>su</code> util-linux'tan, <code>sudo</code> ayrı bir paketten gelen farklı programlardır. D yanlış: <code>sudo</code> Debian, Ubuntu ve diğer dağıtımlarda yaygındır. E yanlış: <code>su</code> yalnız oturumun açılıp kapandığını kaydeder; içerideki komutlar tek tek yazılmaz.</p></div></li>
+
+<li data-c="A"><p class="q"><code>sudoers</code>'ta <code>deneme ALL=(root) /usr/bin/systemctl restart nginx.service</code> kuralı var. <code>deneme</code> için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Kendi parolasıyla yalnız bu komutu, tam bu argümanlarla root adına çalıştırabilir.</li><li><code>systemctl</code>'in bütün alt komutlarını root adına çalıştırabilir.</li><li>Bu kuralla root kabuğu açabilir.</li><li>Parola sorulmadan bu komutu çalıştırabilir.</li><li>Komutu yalnız nginx hesabı adına çalıştırabilir.</li></ul>
+<div class="coz"><p>Kuralda komut argümanlarıyla birlikte yazıldığı için <code>sudoers(5)</code>'e göre kullanıcının argümanları onlarla birebir eşleşmelidir; <code>systemctl stop</code> ya da başka bir hizmet kurala uymaz (B). Kural kabuk ya da kabuğa kaçışlı bir program içermez (C). <code>NOPASSWD:</code> etiketi olmadığı için kendi parolası sorulur (D). Parantez içindeki <code>(root)</code> hedef kimliktir; komut root adına çalışır, nginx hesabı adına değil (E).</p></div></li>
+
+<li data-c="D"><p class="q">Bir ekip üyesinin yalnız sistem günlüklerini okuyabilmesi gerekiyor. En az yetki ilkesine en uygun çözüm hangisidir?</p>
+<ul class="sec"><li><code>%sudo ALL=(ALL:ALL) ALL</code> kuralı kapsamına almak</li><li><code>NOPASSWD: /usr/bin/less /var/log/*</code> kuralı vermek</li><li>Root parolasını kendisiyle paylaşmak</li><li>Kişiyi <code>adm</code> ya da <code>systemd-journal</code> grubuna eklemek</li><li><code>/etc/shadow</code> dahil bütün <code>/etc</code>'yi herkese okunur yapmak</li></ul>
+<div class="coz"><p>Günlük okumak yönetici yetkisi gerektirmez: Debian'da <code>adm</code> grubu günlük dosyalarını, <code>journalctl(1)</code> belgesine göre <code>systemd-journal</code> ve <code>adm</code> grupları sistem günlüğünün tamamını okutur; bu parçanın makinesindeki hesap da <code>adm</code> üyeliğiyle journal'ı okudu. A ve C bütün sistemi verir. B iki kez geniştir: <code>less</code> kabuğa kaçışa izin veren bir sayfalayıcıdır ve argümandaki joker beklenmedik dosyalarla eşleşebilir; üstelik parolasızdır. E parola özetlerini herkese açar, Bölüm 4'teki tarihsel hatayı geri getirir.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q"><code>0xAC</code> baytının alt dört bitini olduğu gibi koruyup üst dört bitini sıfırlamak istiyorsun. Hangi işlem bunu yapar ve sonucu nedir?</p>
+<ul class="sec"><li><code>0xAC | 0x0F</code> → <code>0xAF</code></li><li><code>0xAC ^ 0x0F</code> → <code>0xA3</code></li><li><code>0xAC &amp; 0x0F</code> → <code>0x0C</code></li><li><code>0xAC &gt;&gt; 4</code> → <code>0x0A</code></li><li><code>0xAC &amp; 0xF0</code> → <code>0xA0</code></li></ul>
+<div class="coz"><p>VE işlemi maske ile seçer: maskenin 1 olduğu bitler korunur, 0 olduğu bitler sıfırlanır. <code>0x0F</code> = 0000 1111 olduğu için üst dört bit sıfırlanır, alt dört bit (<code>C</code>) kalır: <code>0x0C</code>. A'daki VEYA alt bitleri 1'e zorlar; B'deki XOR alt bitleri çevirir; D sağa kaydırıp üst dört biti alt yarıya taşır; E tersini yapar, üst yarıyı korur. Python'da <code>hex(0xAC &amp; 0x0F)</code> → <code>0xc</code>.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir geliştirici veritabanı parolasını C kaynak koduna yazıp yalnız derlenmiş programı dağıtıyor. Bu yaklaşım için en doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Program derlendiği için parola artık okunamaz.</li><li>Makine kodunu yalnız işlemci okuyabildiği için parola güvendedir.</li><li><code>-O2</code> ile derlenirse derleyici parolayı dosyadan siler.</li><li>Makine kodu assembly'ye çevrilemediği için risk yoktur.</li><li>Derleme bir gizleme yöntemi değildir; metinler çoğu zaman dosyada olduğu gibi durur, sır programa gömülmemelidir.</li></ul>
+<div class="coz"><p>Parça 2'de gördüğün gibi makine kodu herkesin kurabileceği araçlarla assembly'ye çevrilip okunabilir ve programdaki metin sabitleri çoğu zaman dosyada aynen durur. Bu yüzden A, B ve D yanlıştır. C'deki iyileştirme, sonucu okunmayan yazmaları silebilir ama programın kullandığı bir metin sabitini silmez. Doğrusu sırrı programın dışında, korunan bir yerde tutmaktır; bu parçadaki gölge dosya gibi, erişimi yalnız gereken hesaba açık bir yer.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Bir C programı parolayı <code>malloc</code> ile ayrılmış bir tamponda tutuyor ve işi bitince yalnız <code>free</code> çağırıyor. Parolanın baytları için hangisi doğrudur?</p>
+<ul class="sec"><li><code>free</code> veriyi silmez; alan yeniden kullanılmak üzere ayırıcıya döner ve içerik orada kalabilir.</li><li><code>free</code> alanı her zaman sıfırlar.</li><li><code>free</code> çağrılınca baytlar diske yazılır.</li><li>Çekirdek serbest bırakılan alanı hemen şifreler.</li><li><code>malloc</code> da her alanı sıfırlayarak verdiği için sorun olmaz.</li></ul>
+<div class="coz"><p>Parça 3'teki hata kutusunda gördüğün gibi <code>free</code> veriyi silmez, alanı yeniden kullanılmak üzere geri verir; <code>malloc</code> da döndürdüğü alanı başlatmaz, yani önceki verinin kalıntısını içerebilir. Bu yüzden B ve E yanlıştır; C ve D'deki mekanizmalar yoktur. Sırlar işi bitince, derleyicinin "gereksiz" diye atamayacağı bir işlevle bilinçli olarak silinmelidir.</p></div></li>
+
+<li data-c="B" data-k="siber-4"><p class="q"><code>sudo</code> ile root olarak başlatılan bir program x86-64'te hangi halkada çalışır?</p>
+<ul class="sec"><li>Halka 0; root olduğu için çekirdek kipine geçer.</li><li>Halka 3; root bir kullanıcı kimliğidir, halka ise işlemcinin çalışma kipidir.</li><li>Halka 1; yönetici programları için ayrılmıştır.</li><li>Halka −1; hipervizörle aynı düzeydedir.</li><li>Halka 2; sürücülerle aynı düzeydedir.</li></ul>
+<div class="coz"><p>Parça 4'teki ayrım: root kimliği çekirdeğin isteklerine "evet" deme olasılığını değiştirir, işlemcinin kipini değiştirmez. root olarak çalışan program da halka 3'tedir ve her ayrıcalıklı işi sistem çağrısıyla ister. Linux halka 1 ve 2'yi kullanmaz (C, E). Halka −1 hipervizör için kullanılan bir benzetmedir (D). Bu parçada UID 0'ın anlamı da bu ayrım üzerine kuruldu.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">Bir sürecin <code>/proc/self/status</code> dosyasında <code>Uid:	1000	1000	1000	1000</code> satırı var. Dört sayı sırasıyla neyi gösterir?</p>
+<ul class="sec"><li>Kullanıcı, birincil grup, ek grup ve oturum numarası</li><li>Aynı makinedeki dört farklı kullanıcının UID'i</li><li>PID, ana sürecin PID'i, UID ve GID</li><li>Gerçek, etkin, saklanmış ve dosya sistemi UID'i</li><li>En küçük, en büyük, ortalama ve son UID</li></ul>
+<div class="coz"><p>Parça 5'e göre her sürecin birkaç kullanıcı kimliği vardır ve <code>Uid:</code> satırı bunları sırayla yazar: gerçek (süreci kim başlattı), etkin (izin denetiminde kullanılan), saklanmış ve dosya sistemi UID'i. Sıradan bir kabukta dördü de aynıdır. Grup bilgileri ayrı <code>Gid:</code> satırındadır (A); satır başka kullanıcıları (B) ya da PID'leri (C) göstermez; E anlamsızdır. <code>sudo</code> gibi SUID programlarda gerçek ve etkin UID'in farklılaşması Parça 12–13'te.</p></div></li>
+
+<li data-c="C" data-k="siber-6"><p class="q">"Bir parola özeti kırıldı" denince gerçekte ne olmuştur?</p>
+<ul class="sec"><li>Özetin anahtarı bulunmuş ve özet çözülmüştür.</li><li>Özetin Base64 kodlaması geri çevrilmiştir.</li><li>Olası parolalar denenip özetleri hesaplanmış ve kayıtla eşleşen bulunmuştur.</li><li>SHA-256 fonksiyonu tersine çalıştırılmıştır.</li><li>Özet aslında sıkıştırılmış parolaydı ve açılmıştır.</li></ul>
+<div class="coz"><p>Parça 6'da gördüğün gibi hash'in anahtarı ve geri dönüşü yoktur; "hash çözmek" diye bir işlem yoktur, tahmin edip karşılaştırmak vardır. Bu parçadaki <code>dogrula.sh</code> tam bu karşılaştırmanın tekil örneğiydi. A ve D hash'i şifreleme gibi düşünür. B ve E onu kodlama ya da sıkıştırmayla karıştırır. Tuz ve yavaş özet yöntemleri bu tahmin etme işini pahalılaştırmak içindir (Parça 45).</p></div></li>
+
+<li data-c="E" data-k="siber-7"><p class="q">Sıradan bir kullanıcı <code>unshare -r</code> ile açtığı kabukta <code>id</code> yazınca <code>uid=0(root)</code> görüyor. Hangisi doğrudur?</p>
+<ul class="sec"><li>Kullanıcı gerçek root yetkisi kazanmıştır ve sistemdeki her dosyayı değiştirebilir.</li><li>Bu kabuktan gerçek <code>/etc/shadow</code> okunabilir.</li><li>Kabuk ana makineden ayrı bir çekirdekle çalışan bir sanal makinededir.</li><li>Kullanıcı ad alanı, konteynerin tam bir güvenlik sınırı olduğunu kanıtlar.</li><li>Bu, kullanıcı ad alanının içindeki sahte bir root'tur; dışarıda kullanıcının sıradan yetkisinden fazlasını taşımaz.</li></ul>
+<div class="coz"><p>Parça 7'de gördüğün gibi kullanıcı ad alanı içeride seni UID 0'a eşler ama içerideki root dışarıda hiçbir ayrıcalık taşımaz; bu parçadaki deneylerde de araçlar kendini root sandı, journal ise gerçek kimliği 1000 olarak kaydetti. Bu yüzden A ve B yanlıştır; kopya dosyalar bu nedenle kullanıldı. C yanlış: ad alanları çekirdeği paylaşır, ayrı çekirdek sanal makinenin özelliğidir. D yanlış: Parça 7 konteynerin tam bir güvenlik sınırı sayılmadığını anlatır.</p></div></li>
+
+<li data-c="A" data-k="siber-8"><p class="q">Dosya sistemi hiyerarşisine göre sistem genelindeki yapılandırma dosyaları (ör. <code>passwd</code>, <code>sudoers</code>) çoğunlukla hangi dizindedir?</p>
+<ul class="sec"><li><code>/etc</code></li><li><code>/var</code></li><li><code>/proc</code></li><li><code>/tmp</code></li><li><code>/dev</code></li></ul>
+<div class="coz"><p><code>/etc</code> sistem genelindeki yapılandırma dosyalarının yeridir; bu parçanın bütün hesap dosyaları oradadır. <code>/var</code> değişken veriyi (günlükler, kuyruklar, önbellekler) tutar. <code>/proc</code> çekirdeğin süreçler ve sistem hakkında sunduğu sanal dosya sistemidir. <code>/tmp</code> geçici dosyalar içindir ve herkes yazabilir. <code>/dev</code> aygıt dosyalarını tutar ("her şey dosyadır" ilkesi).</p></div></li>
+
+<li data-c="B" data-k="siber-8"><p class="q">Bir bölümü <code>nosuid</code> seçeneğiyle bağlamanın (mount) güvenlikteki amacı hangisidir?</p>
+<ul class="sec"><li>O bölümdeki hiçbir programın çalıştırılamaması</li><li>O bölümdeki programlar çalıştırılırken SUID/SGID bitlerinin dikkate alınmaması</li><li>Bölümün salt okunur olması</li><li>Bölümdeki dosyaların şifrelenmesi</li><li>Gizli dosyaların listelenmemesi</li></ul>
+<div class="coz"><p><code>nosuid</code>, o bölümden çalıştırılan programların set-user-ID ve set-group-ID bitlerinin yok sayılmasını sağlar; böylece örneğin <code>/tmp</code> ya da takılabilir bir diskteki bir dosya, sahibinin (ör. root) yetkisiyle çalışamaz. Bu parçada <code>passwd</code> ve <code>sudo</code>'nun böyle bir bitle çalıştığını gördün; ayrıntısı Parça 12'de. Programların hiç çalıştırılmaması <code>noexec</code>'tir (A). Salt okunurluk <code>ro</code>'dur (C). Şifreleme (D) ve gizli dosyalar (E) bağlama seçenekleriyle ilgili değildir.</p></div></li>
+
+<li data-c="D" data-k="siber-9"><p class="q"><code>giris.log</code> dosyasında sırasıyla şu dört satır var: <code>Failed password for ali from 10.0.0.5</code>, <code>Accepted password for ayse from 10.0.0.7</code>, <code>Failed password for ali from 10.0.0.5</code>, <code>Failed password for root from 10.0.0.9</code>. <code>grep 'Failed' giris.log | awk '{print $4}' | sort | uniq -c | sort -rn | head -n 1</code> komutunun çıktısı nedir?</p>
+<ul class="sec"><li><code>3 Failed</code></li><li><code>1 root</code></li><li><code>2 10.0.0.5</code></li><li><code>2 ali</code> (sayının önünde boşluklarla)</li><li><code>ali</code></li></ul>
+<div class="coz"><p><code>grep</code> üç "Failed" satırını seçer; <code>awk '{print $4}'</code> boşlukla ayrılmış dördüncü sözcüğü, yani kullanıcı adını yazar: ali, ali, root. <code>sort</code> aynıları yan yana getirir, <code>uniq -c</code> sayar, <code>sort -rn</code> sayıya göre büyükten küçüğe dizer, <code>head -n 1</code> ilkini alır: <code>      2 ali</code> (uniq -c sayıyı sağa yaslı yazar). A, satırları sözcük olarak saymak, C IP alanını ($6) seçmekle karışır; B en az deneneni, E sayısız çıktıyı gösterir. Komut çalıştırılarak doğrulandı.</p></div></li>
+
+<li data-c="C" data-k="siber-9"><p class="q">Bash'te <code>f="rapor 2026.txt"; printf '[%s]\n' $f</code> komutunun çıktısı nedir?</p>
+<ul class="sec"><li><code>[rapor 2026.txt]</code></li><li><code>[$f]</code></li><li>İki satır: <code>[rapor]</code> ve <code>[2026.txt]</code></li><li><code>[]</code></li><li><code>[rapor_2026.txt]</code></li></ul>
+<div class="coz"><p>Tırnaksız <code>$f</code>, kabuk tarafından boşluktan bölünür ve <code>printf</code>'e iki ayrı argüman gider; biçim her argüman için yinelenir. Tek satırlık <code>[rapor 2026.txt]</code> (A) ancak <code>"$f"</code> yazılınca çıkar; deneyde ikisi de çalıştırılarak doğrulandı. B tek tırnak içindeki gibi genişletilmemiş bir değişken varsayar; D boş değişken varsayar; E kabuğun yapmadığı bir dönüşümdür. Aynı bölünme <code>rm $f</code>'de yanlış dosyaları hedefler; bu yüzden değişkenler her zaman tırnaklanır.</p></div></li>
+
+<li data-c="E" data-k="siber-10"><p class="q">APT, indirdiği bir paketin depoda yayımlanandan farklı olmadığına nasıl güvenir?</p>
+<ul class="sec"><li>Bağlantı HTTPS olduğu için başka denetime gerek yoktur.</li><li>Paketin adı ve sürüm numarası doğruysa paket doğrudur.</li><li>Her paketin boyutu depodaki boyutla karşılaştırılır, başka bir şey yapılmaz.</li><li>Paketi yükleyen kişinin e-posta adresi doğrulanır.</li><li>Deponun imzalı Release (InRelease) dosyası paket listelerinin özetlerini, paket listeleri de her paketin özetini taşır; zincir imzadan pakete kadar doğrulanır.</li></ul>
+<div class="coz"><p>APT güven zinciri imzayla başlar: dağıtımın anahtarıyla imzalı Release dosyası, Packages listelerinin özetlerini içerir; Packages listesi her paketin özetini içerir; indirilen paketin özeti bu zincirle karşılaştırılır. Böylece ayna sunucusu ya da bağlantı güvenilmez olsa bile değiştirilmiş paket fark edilir. A yalnız taşıma kanalını korur, depodaki içeriğin doğruluğunu değil. B ve C sahtelenebilir bilgilerdir. D'deki bir mekanizma yoktur.</p></div></li>
+
+<li data-c="B" data-k="siber-10"><p class="q">Bir kurulum sayfası <code>curl -fsSL https://ornek.test/kur.sh | sudo bash</code> komutunu öneriyor. Bu yöntemin temel riski ve daha güvenli yol hangisidir?</p>
+<ul class="sec"><li>Risk yoktur; HTTPS kullanıldığı için betik her zaman güvenlidir.</li><li>Betik incelenmeden ve özeti/imzası doğrulanmadan root yetkisiyle çalışır; önce indirip incelemek, doğrulamak ve mümkünse dağıtımın paketini kullanmak gerekir.</li><li>Tek sorun yöntemin yavaş olmasıdır.</li><li><code>curl</code> betiği önce derlediği için hatalar yakalanır.</li><li>Boruyla çalışan betiğin dosya izinleri otomatik denetlenir.</li></ul>
+<div class="coz"><p>Bu kalıpta sunucudan gelen her bayt, okunmadan ve bütünlüğü doğrulanmadan doğrudan root yetkisiyle çalıştırılır; sunucu ele geçerse ya da betik değişirse fark etmezsin. Parça 10'un dersi dağıtımın imzalı paketlerini tercih etmek, dışarıdan gelen dosyayı indirip okumak ve özetini/imzasını doğrulamaktır. Bu parçanın diliyle: kime root yetkisi verdiğini bil. A, HTTPS'in kaynağın güvenilirliğini değil kanalı koruduğunu gözden kaçırır. C, D ve E yanlış mekanizmalar uydurur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-10">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-11">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-12">Sonraki parça: Dosya izinleri →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux users groups uid gid explained"</li>
+  <li>"/etc/shadow file format password hash salt"</li>
+  <li>"su vs sudo difference sudoers visudo"</li>
+  <li>"principle of least privilege linux service accounts"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> <code>id</code>, <code>getent passwd</code> + <code>siniflar.awk</code> ve iki <code>awk</code> süzgeci, alan alan <code>awk</code> dökümü, <code>/etc/login.defs</code> okuma, <code>ls -l</code> ile hesap dosyalarının kipleri, <code>cat /etc/shadow</code> (Permission denied), <code>getent shadow root</code> ve <code>getent -s files</code>/<code>-s systemd</code> karşılaştırması, <code>passwd -S</code>, <code>kopya-hazirla.sh</code>, <code>useradd</code>/<code>chpasswd</code>/<code>usermod -L</code>/<code>usermod -e 1</code>/<code>passwd -S</code> (hepsi <code>--prefix</code> ile kopyada ve <code>unshare -r</code> içinde), gölge satırı çözümleme ve <code>date</code>/Python ile gün hesabı, <code>openssl passwd -6</code>, <code>mkpasswd -m yescrypt</code>, <code>dogrula.sh</code>, <code>sha256sum</code>, <code>python3 -c 'import crypt'</code> (Python 3.13.12'de modül yok), <code>visudo -c</code> (doğru, hatalı, yolsuz, tanımsız takma ad, <code>-s</code>), <code>journalctl _COMM=sudo</code>/<code>_COMM=useradd</code> ve <code>-o verbose</code>, <code>ps -eo user,comm</code>. Ortam: WSL2 üzerinde Kali Rolling, çekirdek 6.18; sudo 1.9.17p2, passwd (shadow) 4.19.3, util-linux 2.42, OpenSSL 3.6.2. Quiz'deki <code>uniq -c</code> boru hattı, tırnaksız <code>$f</code>, bit işlemleri ve tarih hesapları çalıştırılarak doğrulandı.</li>
+  <li><strong>Kullanıcı ad alanı ve /tmp:</strong> Hesap ekleme, parola verme, kilitleme ve son kullanma adımları gerçek <code>/etc</code>'ye değil, <code>/tmp/yazar/siber-11/kok/etc</code> altındaki elle hazırlanmış kopyaya, <code>unshare -r</code> (sahte root) içinde uygulandı. Varsayılan <code>sudoers</code> içeriği, <code>apt-get download sudo</code> ile indirilen paketin <code>dpkg-deb -x</code> ile <code>/tmp/yazar/siber-11/araclar</code> altına açılmasıyla okundu; paket kurulmadı. Yan etki olarak <code>useradd</code>/<code>usermod</code>/<code>chpasswd</code> sistem günlüğüne kayıt düştü (metinde gösterildi); başka kalıcı değişiklik yok.</li>
+  <li><strong>Çıktı düzenlemeleri:</strong> Kullanıcı adı <code>kullanici</code>, makine adı <code>lab</code>, ev dizini <code>/home/kullanici</code>, bir <code>sudo</code> kaydındaki çalışma dizini <code>/home/kullanici/proje</code> olarak sadeleştirildi. Birden çok komutlu kutulardaki çıktılar aynı betik çalıştırmasında art arda alınan komutların çıktılarıdır; yalnız Adım 8'in ikinci komutu, kullanıcı adını <code>$(id -un)</code> ile alacak biçimde ayrıca yeniden çalıştırıldı (çıktı aynı). <code>journalctl</code>'ün "Hint" satırları <code>-q</code> ile bastırıldı.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> <code>sudo</code>, <code>su</code>, <code>sudo -l</code>, <code>sudoedit</code>, gerçek <code>visudo</code> düzenlemesi ve gerçek <code>/etc</code>'de <code>useradd</code>/<code>usermod</code>/<code>userdel</code> (root gerekir, bu ortamda şifresiz sudo yok ve kural gereği kullanılmadı); <code>visudo -c</code> gerçek <code>/etc/sudoers</code> için "Permission denied" verdi. SSH anahtarıyla girişin kilitli parolaya rağmen çalışması burada sınanmadı; belgeye (passwd(1)) dayanır.</li>
+  <li><strong>Resmî belgeden:</strong> man7.org <code>passwd(5)</code>, <code>shadow(5)</code>, <code>passwd(1)</code>, <code>usermod(8)</code>, <code>su(1)</code>, <code>visudo(8)</code>, <code>nss-systemd(8)</code>; Debian <code>crypt(5)</code> (libxcrypt: önek tablosu ve "önerilen/kabul edilebilir/eski" değerlendirmesi); sudo.ws <code>sudoers(5)</code> ("kim nerede = (kimin adına) ne" biçimi, tam yol, <code>NOPASSWD</code>, <code>@includedir</code>'in noktalı ve ~ ile biten adları atlaması, <code>timestamp_timeout</code> 5 dakika, <code>secure_path</code>, kabuğa kaçış ve <code>sudoedit</code> önerisi, <code>log_input</code>/<code>log_output</code>, varsayılan syslog olanağı <code>auth</code>); Debian Policy 9.2.2 (UID/GID sınıfları); kali.org 2020.1 sürüm notu ve sudo belgesi.</li>
+  <li><strong>İkincil kaynaktan ya da hafızadan:</strong> Debian kurucusunun boş root parolasında root'u kilitleyip ilk kullanıcıyı <code>sudo</code> grubuna eklemesi (LWN'de aktarılan kurucu metni ve forumlar; kurucu kılavuzunu doğrudan açmadım). yescrypt'in Debian 11'den beri varsayılan olması (sürüm notlarının içindekiler bölümü ve ikincil kaynak; bölüm metni okunmadı). <code>journalctl(1)</code>'de <code>systemd-journal</code>, <code>adm</code> ve <code>wheel</code> gruplarının bütün günlüğü okuyabildiği bilgisi hafızadandır; bu makinede <code>adm</code> üyeliğiyle sistem kayıtlarının okunabildiği gözlendi. <code>nobody</code> için "hiçbir şeye sahip olmaması gereken kimlik", nginx/Apache işçilerinin <code>www-data</code> ile çalışması, PostgreSQL paketinin <code>postgres</code> hesabına bilerek kabuk vermesi, <code>sync</code> hesabının tarihçesi ve Python <code>crypt</code> modülünün 3.13'te kaldırılması (PEP 594) yerleşik bilgi olarak yazıldı; sonuncusu çıktıyla örtüşüyor. <code>sudo</code>'nun bu pakette <code>authpriv</code> (10) olanağını kullanması yalnız gözlemdir; derleme ayarı doğrulanmadı.</li>
+  <li><strong>Saldırı sınırı:</strong> Hiçbir yetki yükseltme yöntemi, sömürü adımı ya da günlük gizleme yolu yoktur. Riskli <code>sudoers</code> kuralları yalnız "neden tehlikeli, nasıl bulunur, nasıl daraltılır" düzeyinde anlatıldı; bütün pratik kendi makinende ve kopya dosyalarda. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

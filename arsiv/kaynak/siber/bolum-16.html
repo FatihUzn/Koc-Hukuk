@@ -1,0 +1,822 @@
+<article class="chapter ders" id="c-siber-16">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 16 · Ana makine güvenlik duvarı</div>
+<h1>Ana makine güvenlik duvarı: hangi paket içeri girer, hangisi kapıda kalır?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvar VM'inde SSH sunucusu çalışıyor; bir de geçen hafta denemek için açıp unuttuğun bir geliştirme sunucusu 8080 numaralı portta bütün arayüzlerde dinliyor. SSH'ye yalnız kendi iç ağından bağlanılsın, geri kalan her şey kapıda kalsın istiyorsun. Bunu hangi kurallarla, hangi sırayla yazarsın? Kuralı SSH üzerinden yüklerken kendi oturumunu kesersen ne olur, bunu nasıl önlersin? Ve makinenin kendisi dışarıya istediği yere bağlanabilmeli mi?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 7 (laboratuvar VM'i, ağ kipleri ve <code>unshare -r</code> ile açılan kullanıcı ad alanı), Parça 11 (root ve <code>sudo</code>), Parça 13 (bir portu hangi sürecin tuttuğu), Parça 14 (<code>systemctl enable</code>), Parça 15 (<code>ip addr</code>, <code>ss -tln</code>, <code>ping</code>, <code>curl</code>). Kod rafından Parça 13 (soket, istemci ve sunucu). Bütün denemeler kendi makinende ya da laboratuvar VM'inde yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 15'te makinenin ağ kimliğini okudun: hangi arayüzde hangi adres var, hangi yoldan dışarı çıkılıyor, hangi port hangi süreç tarafından dinleniyor. Orada bir şeyi gözlemledin ama değiştirmedin: <code>ss -tln</code> çıktısında <code>0.0.0.0:8080</code> gördüğünde, o port makineye ulaşabilen herkese açıktır. Bu parça o kapının önüne bir bekçi koyuyor: <strong>ana makine güvenlik duvarı</strong> (host firewall). Ağın girişindeki ayrı bir cihaz değil, korumak istediğin makinenin kendi çekirdeğinde çalışan ve her paketi bir kural listesine göre geçiren ya da durduran bir süzgeç.</p>
+
+<p>Sırayla: güvenlik duvarının ne yaptığı ve ne yapmadığı; paketlerin çekirdekte hangi noktalardan geçtiği; kural sırası; <strong>durum takibi</strong>; <strong>varsayılan reddet</strong>; aynı politikanın <code>nftables</code> ve <code>ufw</code> ile yazılışı; kendini dışarıda bırakmamak; giden trafiğin denetlenmesi.</p>
+
+<p>Sınırlar baştan belli. IP başlığı, TCP el sıkışması ve port durumlarının iç işleyişi Parça 24 ve 28'de; ağın bölgelere ayrılması ve DMZ Parça 26'da; adres çevirisi (NAT) Parça 27'de; güvenlik duvarı türlerinin karşılaştırması ve saldırı tespit sistemleri Parça 68'de. Burada yalnız kendi makineni koruyan süzgeci kuruyoruz.</p>
+
+<h2 class="s">1. Güvenlik duvarı ne yapar, ne yapmaz?</h2>
+
+<p>Bir paket makineye ulaştığında başında birkaç soruya cevap veren bilgiler taşır: nereden geliyor (kaynak adres), nereye gidiyor (hedef adres), hangi taşıma protokolü (TCP, UDP, ICMP), hangi porta, hangi arayüzden girdi. Güvenlik duvarı bu bilgilere bakıp karar verir. Kararını paketin <strong>başlığına</strong> ve bağlantının geçmişine göre verir; paketin içindeki SSH oturumunun ne yaptığını, HTTP isteğinin kötü niyetli olup olmadığını anlamaz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Paket filtreleme</strong>, çekirdeğin her ağ paketini sıralı bir kural listesiyle karşılaştırıp paketi geçirmesi (accept), sessizce atması (drop) ya da reddedip göndericiye bildirmesi (reject) işidir. <strong>Ana makine güvenlik duvarı</strong>, bu filtrelemenin korunan makinenin kendisinde, kendi trafiği için yapılmasıdır. Ağ güvenlik duvarı ise bölgeler arasındaki trafiği bir yönlendirici üstünde süzer (Parça 26).</p></div>
+
+<div class="tablo"><table>
+<tr><th>Yapar</th><th>Yapmaz</th></tr>
+<tr><td>Hiç açılmaması gereken bir porta gelen bağlantıyı durdurur (unutulmuş 8080)</td><td>İzin verdiğin porttaki hizmetin kendi açığını kapatmaz: SSH'ye izin varsa zayıf parola yine zayıftır (Parça 18)</td></tr>
+<tr><td>Bir hizmete yalnız belirli kaynak adreslerden erişim bırakır</td><td>Kaynak adresin gerçekten o makineden geldiğini kanıtlamaz; adres kimlik değil konumdur ve sahtelenebilir (Parça 24)</td></tr>
+<tr><td>Makinenin dışarıya hangi hedeflere bağlanabileceğini sınırlar</td><td>Şifreli bir bağlantının içinde ne taşındığını görmez (Parça 33)</td></tr>
+<tr><td>Kural sayaçlarıyla hangi trafiğin geldiğini sayar</td><td>Güncellemenin, güçlü kimlik doğrulamanın, en az yetkinin yerini tutmaz</td></tr>
+<tr><td>Yanlış yapılandırılmış bir hizmetin yanlışlıkla dışarı açılmasına karşı ikinci bir duvar olur</td><td>Makineye zaten girmiş, root olmuş birini durdurmaz: o kişi kuralları da değiştirebilir</td></tr>
+</table></div>
+
+<p>Güvenlik duvarı derinlemesine savunmanın bir katmanıdır: erişimi daraltır, unuttuğun şeyi kapalı tutar. Ama en iyi kural, gerekmeyen hizmeti hiç çalıştırmamaktır (Parça 14 ve 19).</p>
+
+<h2 class="s">2. Paket çekirdeğin içinde nereden geçer?</h2>
+
+<p>Linux'ta paket filtrelemenin altyapısının adı <strong>netfilter</strong>'dır. Çekirdeğin ağ yığını, paketin yolculuğunda belirli noktalarda durup "burada çalıştırılacak bir kural var mı?" diye sorar. Bu noktalara <strong>kanca</strong> (hook) denir. Kuralları yazdığın araç bugün çoğu dağıtımda <code>nft</code> komutudur (nftables). Eski araç <code>iptables</code> da hâlâ yaygındır; bugünkü dağıtımlarda çoğunlukla <code>iptables-nft</code> biçiminde gelir ve kurallarını aynı nftables altyapısına yazar. Bu ortamda <code>iptables -V</code> çıktısı <code>iptables v1.8.13 (nf_tables)</code> idi.</p>
+
+<figure>
+<svg viewBox="0 0 400 470" role="img" aria-label="Netfilter kancaları: ağdan gelen paket prerouting kancasından geçer, yönlendirme kararında hedef bu makineyse input kancasına ve yerel sürece gider, değilse forward kancasına gider; yerel sürecin gönderdiği paket output kancasından geçer; dışarı çıkan her paket postrouting kancasından geçer">
+  <rect class="sv-k" x="120" y="10" width="160" height="34" rx="8"/>
+  <text class="sv-t" x="200" y="32" text-anchor="middle">Ağdan gelen paket</text>
+  <line class="sv-c" x1="200" y1="44" x2="200" y2="62"/>
+  <rect class="sv-l" x="130" y="62" width="140" height="34" rx="8"/>
+  <text class="sv-b" x="200" y="84" text-anchor="middle">prerouting</text>
+  <line class="sv-c" x1="200" y1="96" x2="200" y2="114"/>
+  <rect class="sv-k" x="70" y="114" width="260" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="132" text-anchor="middle">Yönlendirme kararı:</text>
+  <text class="sv-s" x="200" y="147" text-anchor="middle">hedef bu makinenin adresi mi?</text>
+  <line class="sv-cl" x1="130" y1="154" x2="100" y2="182"/>
+  <line class="sv-cl" x1="270" y1="154" x2="300" y2="182"/>
+  <text class="sv-s" x="95" y="172" text-anchor="middle">evet</text>
+  <text class="sv-s" x="308" y="172" text-anchor="middle">hayır</text>
+  <rect class="sv-m" x="30" y="182" width="140" height="40" rx="8"/>
+  <text class="sv-b" x="100" y="200" text-anchor="middle">input</text>
+  <text class="sv-s" x="100" y="215" text-anchor="middle">bu parçanın asıl yeri</text>
+  <rect class="sv-a" x="230" y="182" width="140" height="40" rx="8"/>
+  <text class="sv-b" x="300" y="200" text-anchor="middle">forward</text>
+  <text class="sv-s" x="300" y="215" text-anchor="middle">yönlendirici işi</text>
+  <line class="sv-c" x1="100" y1="222" x2="100" y2="242"/>
+  <rect class="sv-k" x="20" y="242" width="160" height="40" rx="8"/>
+  <text class="sv-t" x="100" y="260" text-anchor="middle">Yerel süreç</text>
+  <text class="sv-s" x="100" y="275" text-anchor="middle">sshd, http.server…</text>
+  <line class="sv-c" x1="100" y1="282" x2="100" y2="302"/>
+  <rect class="sv-m" x="30" y="302" width="140" height="40" rx="8"/>
+  <text class="sv-b" x="100" y="320" text-anchor="middle">output</text>
+  <text class="sv-s" x="100" y="335" text-anchor="middle">giden trafik</text>
+  <line class="sv-c" x1="100" y1="342" x2="170" y2="372"/>
+  <line class="sv-c" x1="300" y1="222" x2="230" y2="372"/>
+  <rect class="sv-l" x="130" y="372" width="140" height="34" rx="8"/>
+  <text class="sv-b" x="200" y="394" text-anchor="middle">postrouting</text>
+  <line class="sv-c" x1="200" y1="406" x2="200" y2="424"/>
+  <rect class="sv-k" x="120" y="424" width="160" height="34" rx="8"/>
+  <text class="sv-t" x="200" y="446" text-anchor="middle">Ağa çıkan paket</text>
+</svg>
+<figcaption>Netfilter'ın beş kancası. Makineye gelen ve makine için olan paket <code>input</code>'tan, makinenin kendi süreçlerinin gönderdiği paket <code>output</code>'tan geçer. <code>forward</code> yalnız makine yönlendirici gibi çalışıyorsa kullanılır. Ana makine güvenlik duvarı en çok <code>input</code> ve <code>output</code> ile ilgilenir.</figcaption>
+</figure>
+
+<p>nftables'ta kurallar üç katmanlı bir yapıda durur. <strong>Tablo</strong> (table) bir kaptır ve bir <strong>aileye</strong> (family) aittir: <code>ip</code> yalnız IPv4, <code>ip6</code> yalnız IPv6, <code>inet</code> ikisi birden. Tablonun içinde <strong>zincirler</strong> (chain) olur. Bir zincir <code>type filter hook input priority filter;</code> gibi bir satırla bir kancaya asılırsa <strong>taban zincir</strong> (base chain) olur: çekirdek o kancaya gelen her paketi bu zincirden geçirir. Kancaya asılmamış zincirler yalnız atlama (<code>jump</code>) ile çağrılır. Zincirin içinde de <strong>kurallar</strong> (rule) sıralanır. Her kural bir ya da birkaç eşleşme koşulu (<code>ip saddr 10.16.0.0/24</code>, <code>tcp dport 2222</code>) ve bir eylem taşır.</p>
+
+<h2 class="s">3. Kural sırası ve hüküm</h2>
+
+<p>Bir paket taban zincire girdiğinde kurallar <strong>yukarıdan aşağı</strong> sırayla denenir. Bir kuralın bütün koşulları pakete uyuyorsa kuralın eylemi uygulanır. Eylem bir <strong>hüküm</strong> (verdict) ise, yani "kabul et" ya da "at" diyorsa, bu zincirde başka kurala bakılmaz. <code>counter</code> gibi hüküm vermeyen eylemler yalnız sayar ve değerlendirme bir sonraki kuralla sürer. Hiçbir kural hüküm vermeden paket zincirin sonuna ulaşırsa zincirin <strong>politikası</strong> (policy) uygulanır. <code>nft(8)</code> belgesine göre politika <code>accept</code> ya da <code>drop</code> olabilir ve yazılmazsa <code>accept</code>'tir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İlk eşleşen hüküm kazanır.</strong> Bunun nedeni basittir: çekirdek her paket için hızlı karar vermek zorundadır ve listeyi baştan sona tarayıp kuralları tartmaz; ilk kesin cevapta durur. Sonuç olarak <strong>özel kural genel kuraldan önce</strong> gelir. "10.16.0.2'yi engelle" kuralını "10.16.0.0/24'ten SSH'ye izin ver" kuralının arkasına yazarsan hiç çalışmaz, çünkü paket ondan önce kabul edilmiştir. ufw belgesi de aynı şeyi söyler: kural sırası önemlidir ve ilk eşleşme kazanır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 420" role="img" aria-label="Bir paketin input zincirinde yolculuğu: kurallar yukarıdan aşağı denenir; kurulu bağlantı, döngü arayüzü ve iç ağdan SSH kurallarından biri eşleşirse paket kabul edilir; hiçbiri eşleşmezse zincirin politikası olan drop uygulanır">
+  <rect class="sv-k" x="20" y="10" width="220" height="34" rx="8"/>
+  <text class="sv-b" x="130" y="32" text-anchor="middle">Paket input zincirine girer</text>
+  <line class="sv-c" x1="130" y1="44" x2="130" y2="62"/>
+  <rect class="sv-k" x="20" y="62" width="220" height="44" rx="8"/>
+  <text class="sv-t" x="130" y="81" text-anchor="middle">1. Kurulu bağlantının</text>
+  <text class="sv-t" x="130" y="98" text-anchor="middle">parçası mı? (ct state)</text>
+  <rect class="sv-k" x="20" y="134" width="220" height="44" rx="8"/>
+  <text class="sv-t" x="130" y="153" text-anchor="middle">2. Durumu geçersiz mi?</text>
+  <text class="sv-s" x="130" y="170" text-anchor="middle">(ct state invalid)</text>
+  <rect class="sv-k" x="20" y="206" width="220" height="44" rx="8"/>
+  <text class="sv-t" x="130" y="225" text-anchor="middle">3. lo arayüzünden mi?</text>
+  <text class="sv-s" x="130" y="242" text-anchor="middle">(makine kendi kendine)</text>
+  <rect class="sv-k" x="20" y="278" width="220" height="44" rx="8"/>
+  <text class="sv-t" x="130" y="297" text-anchor="middle">4. Kaynak 10.16.0.0/24 ve</text>
+  <text class="sv-t" x="130" y="314" text-anchor="middle">hedef port 2222 mi?</text>
+  <rect class="sv-a" x="20" y="350" width="220" height="44" rx="8"/>
+  <text class="sv-b" x="130" y="369" text-anchor="middle">Zincirin sonu:</text>
+  <text class="sv-t" x="130" y="386" text-anchor="middle">politika drop</text>
+  <line class="sv-c" x1="130" y1="106" x2="130" y2="134"/>
+  <line class="sv-c" x1="130" y1="178" x2="130" y2="206"/>
+  <line class="sv-c" x1="130" y1="250" x2="130" y2="278"/>
+  <line class="sv-c" x1="130" y1="322" x2="130" y2="350"/>
+  <text class="sv-s" x="145" y="124">hayır</text>
+  <text class="sv-s" x="145" y="196">hayır</text>
+  <text class="sv-s" x="145" y="268">hayır</text>
+  <text class="sv-s" x="145" y="340">hayır</text>
+  <line class="sv-cl" x1="240" y1="84" x2="290" y2="84"/>
+  <line class="sv-cl" x1="240" y1="156" x2="290" y2="156"/>
+  <line class="sv-cl" x1="240" y1="228" x2="290" y2="228"/>
+  <line class="sv-cl" x1="240" y1="300" x2="290" y2="300"/>
+  <text class="sv-s" x="265" y="77" text-anchor="middle">evet</text>
+  <text class="sv-s" x="265" y="149" text-anchor="middle">evet</text>
+  <text class="sv-s" x="265" y="221" text-anchor="middle">evet</text>
+  <text class="sv-s" x="265" y="293" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="290" y="66" width="100" height="36" rx="8"/>
+  <text class="sv-b" x="340" y="89" text-anchor="middle">accept</text>
+  <rect class="sv-a" x="290" y="138" width="100" height="36" rx="8"/>
+  <text class="sv-b" x="340" y="161" text-anchor="middle">drop</text>
+  <rect class="sv-m" x="290" y="210" width="100" height="36" rx="8"/>
+  <text class="sv-b" x="340" y="233" text-anchor="middle">accept</text>
+  <rect class="sv-m" x="290" y="282" width="100" height="36" rx="8"/>
+  <text class="sv-b" x="340" y="305" text-anchor="middle">accept</text>
+  <text class="sv-s" x="200" y="414" text-anchor="middle">İlk hüküm verilince zincirde başka kurala bakılmaz.</text>
+</svg>
+<figcaption>Bu parçada kuracağımız <code>input</code> zincirinin karar akışı (ICMP kuralları sadelik için çıkarıldı). Kurallar sırayla denenir, ilk hüküm kesindir; hiçbir kural kabul etmezse paket politikaya, yani <code>drop</code>'a düşer.</figcaption>
+</figure>
+
+<p>Hüküm verenlerin en sık kullanılanları aşağıda. Atmak ile reddetmek arasındaki fark, karşı tarafın ne gördüğündedir.</p>
+
+<div class="tablo"><table>
+<tr><th>Eylem</th><th>Pakete ne olur</th><th>İstemci ne görür</th><th>Ne zaman</th></tr>
+<tr><td><code>accept</code></td><td>Bu zincirden geçer</td><td>Bağlantı kurulur</td><td>İzin verilen trafik</td></tr>
+<tr><td><code>drop</code></td><td>Sessizce atılır</td><td>Hiç yanıt yok; istemci yeniden dener ve sonunda zaman aşımına düşer</td><td>Varsayılan politika; dışarıdan gelen istenmeyen trafik</td></tr>
+<tr><td><code>reject</code></td><td>Atılır ve göndericiye hata gönderilir (TCP için sıfırlama, öbürleri için ICMP)</td><td>Hemen "Connection refused" ya da "unreachable"</td><td>İç ağda, kendi kullanıcılarının uzun beklememesi için</td></tr>
+<tr><td><code>counter</code></td><td>Hüküm değildir; sayaç artar, değerlendirme sürer</td><td>Etkisi yok</td><td>Hangi kuralın eşleştiğini görmek</td></tr>
+<tr><td><code>jump</code> / <code>return</code></td><td>Başka bir zincire gider / çağıran zincire döner</td><td>Etkisi yok</td><td>Kuralları düzenlemek (ufw'nin <code>ufw-user-input</code> zinciri gibi)</td></tr>
+</table></div>
+
+<p><code>nft(8)</code> belgesinin söylediği bir incelik daha var: <code>reject</code> önce hata paketini gönderir, sonra içeride yine <code>drop</code> hükmü verir; yani sonuç açısından o da kesin bir rettir. Hangisini seçeceğin bir ödünleşimdir. <code>drop</code> taramayı yavaşlatır ve dışarıya "burada bir şey var" bilgisini vermez; <code>reject</code> ise meşru kullanıcıya hızlı ve anlaşılır bir hata verir. Port durumlarının (açık, kapalı, filtreli) bu iki eylemle nasıl göründüğü Parça 28'in konusu.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: yanlış yere eklenen engelleme kuralı</span>
+<p><strong>Soru:</strong> Kural setinde "10.16.0.0/24'ten 2222'ye izin" kuralı var. İç ağdaki 10.16.0.2 adresli makinenin ele geçirildiğinden şüpheleniyorsun ve onu SSH'den kesmek istiyorsun. <code>nft add rule</code> ile bir engelleme kuralı ekliyorsun. Neden işe yaramaz, doğrusu nedir?</p>
+<p><strong>Adım 1.</strong> <code>add</code> kuralı zincirin <strong>sonuna</strong> ekler. Ekle ve sına; aşağıdaki bütün komutlar kullanıcı ve ağ ad alanında çalıştırıldı (kurgu "Kendi makinende dene" bölümünde).</p>
+<pre class="kod" data-ad="bash">nft add rule inet lab input ip saddr 10.16.0.2 counter drop
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft -a list chain inet lab input | grep -E '2222|10.16.0.2 counter'</pre>
+<pre class="cikti">10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept # handle 8
+		ip saddr 10.16.0.2 counter packets 0 bytes 0 drop # handle 10</pre>
+<p><strong>Adım 2.</strong> Bağlantı kuruldu. Sayaçlar nedenini söylüyor: bağlantının ilk paketi 8 numaralı tanıtıcıdaki (handle) izin kuralına uydu ve kabul edildi; yeni kural 0 paket gördü, çünkü paket oraya hiç ulaşmadı. <code>-a</code> seçeneği her kuralın tanıtıcısını gösterir; kuralı silmek ya da bir kuralın önüne eklemek için bu numara kullanılır.</p>
+<pre class="kod" data-ad="bash">nft delete rule inet lab input handle 10
+nft insert rule inet lab input position 8 ip saddr 10.16.0.2 counter drop
+nft -a list chain inet lab input | grep -E '2222|10.16.0.2 counter'
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft -a list chain inet lab input | grep -E '2222|10.16.0.2 counter'</pre>
+<pre class="cikti">		ip saddr 10.16.0.2 counter packets 0 bytes 0 drop # handle 11
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept # handle 8
+10.16.0.2 -&gt; 10.16.0.1:2222  ZAMAN ASIMI  (2.00 s)
+		ip saddr 10.16.0.2 counter packets 2 bytes 120 drop # handle 11
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept # handle 8</pre>
+<p><strong>Adım 3.</strong> <code>insert … position 8</code> kuralı 8 numaralı tanıtıcının <strong>önüne</strong> koydu (yeni kural 11 numarayı aldı); liste bunu sırasıyla gösteriyor. Artık bağlantı zaman aşımına düştü ve engelleme kuralının sayacı 0'dan 2 pakete çıktı: ilk deneme ve istemcinin bir saniye sonraki yeniden denemesi. İzin kuralının sayacı yerinde saydı.</p>
+<p><strong>Adım 4.</strong> Kural bilinçli olarak durum takibi kuralının <em>arkasına</em> kondu: o makineden zaten açık olan oturumlar sürer, yalnız yenileri kesilir. Açık oturumları da kesmek istiyorsan kuralı zincirin en başına (<code>insert</code>, konum vermeden) koyarsın; bunun sonucunu bilerek seç.</p>
+<p><strong>Sonuç:</strong> Engelleme işe yaramadı, çünkü sıra yanlıştı. Sayaçlar hangi kuralın eşleştiğini gösteren en hızlı tanıktır: beklediğin kuralın sayacı sıfırsa paket ondan önce bir yerde karara bağlanmıştır.</p></div>
+
+<h2 class="s">4. Durum takibi: kurulu bağlantının dönüşüne izin</h2>
+
+<p>Bir bağlantı iki yönlüdür. Sen VM'den bir paket deposuna bağlandığında senin paketlerin dışarı çıkar, deponun yanıtları içeri girer. İçeri giren yanıtlar <code>input</code> zincirinden geçer. Eski tip, durumsuz (stateless) bir filtre her paketi tek başına değerlendirir; o zaman yanıtların geçmesi için "kaynak portu 443 olan her şeyi içeri al" gibi kaba ve tehlikeli kurallar yazmak gerekir. Bu kural, kaynak portunu 443 yapan herkese kapıyı açar.</p>
+
+<p>Netfilter'ın <strong>bağlantı izleyicisi</strong> (connection tracking, kısaca conntrack) bu sorunu çözer. Çekirdek her bağlantıyı bir tabloda tutar: kaynak, hedef, portlar, protokol ve bağlantının o anki durumu. Bir paket geldiğinde önce bu tabloya bakılır ve pakete bir durum etiketi verilir. Kurallar bu etikete <code>ct state</code> ile bakabilir. Durumların tanımı nftables wiki'sinden:</p>
+
+<div class="tablo"><table>
+<tr><th>Durum</th><th>Anlamı</th><th>Tipik örnek</th></tr>
+<tr><td><code>new</code></td><td>Bu iki uç arasında şimdiye kadar yalnız bir yönde paket görüldü; paket geçerli bir başlangıç</td><td>Bağlantı açan ilk TCP SYN</td></tr>
+<tr><td><code>established</code></td><td>Her iki yönde de geçerli paket görüldü</td><td>El sıkışması tamamlanmış SSH oturumunun paketleri, senin başlattığın bağlantının yanıtları</td></tr>
+<tr><td><code>related</code></td><td>Kurulu bir bağlantıyla ilişkili yeni bağlantı ya da mesaj</td><td>Bir bağlantıya dönen ICMP hata iletisi; FTP'nin veri kanalı</td></tr>
+<tr><td><code>invalid</code></td><td>Bağlantının beklenen davranışına uymayan paket</td><td>Hiçbir bağlantıya ait olmayan, sırası bozuk paket</td></tr>
+<tr><td><code>untracked</code></td><td>İzlemeden bilerek çıkarılmış paket</td><td><code>notrack</code> ile işaretlenmiş trafik</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Taban zincirin ilk kuralı genellikle <code>ct state established,related accept</code> olur. Nedeni iki katlıdır. Birincisi doğruluk: senin başlattığın her bağlantının yanıtı ve izin verdiğin her gelen bağlantının devamı, port ve adres ayrıntısı yazmadan geçer. İkincisi verim: bir bağlantının paketlerinin çok büyük çoğunluğu <code>established</code>'dır ve ilk kuralda karara bağlanır; uzun listeyi yalnız yeni bağlantının ilk paketi dolaşır. Böylece asıl izin kuralların yalnız <strong>yeni bağlantıların</strong> kime açık olduğunu anlatır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 380" role="img" aria-label="Durum takibi: istemcinin SYN paketi new durumunda izin kuralına uyar; sunucunun SYN-ACK yanıtı ve sonraki paketler established olarak ilk kuralda geçer; dışarıdan kendiliğinden gelen yeni bağlantı hiçbir izin kuralına uymaz ve düşer">
+  <rect class="sv-k" x="10" y="10" width="140" height="36" rx="8"/>
+  <text class="sv-b" x="80" y="33" text-anchor="middle">İstemci 10.16.0.2</text>
+  <rect class="sv-l" x="250" y="10" width="140" height="36" rx="8"/>
+  <text class="sv-b" x="320" y="33" text-anchor="middle">Sunucu 10.16.0.1</text>
+  <line class="sv-c" x1="80" y1="46" x2="80" y2="300"/>
+  <line class="sv-c" x1="320" y1="46" x2="320" y2="300"/>
+  <line class="sv-cl" x1="80" y1="80" x2="320" y2="95"/>
+  <text class="sv-t" x="200" y="76" text-anchor="middle">SYN → 2222</text>
+  <text class="sv-s" x="200" y="112" text-anchor="middle">new: izin kuralına (iç ağ, 2222) uyar</text>
+  <line class="sv-cl" x1="320" y1="135" x2="80" y2="150"/>
+  <text class="sv-t" x="200" y="132" text-anchor="middle">SYN-ACK</text>
+  <text class="sv-s" x="200" y="166" text-anchor="middle">conntrack yanıtı tanır: established</text>
+  <line class="sv-cl" x1="80" y1="190" x2="320" y2="205"/>
+  <text class="sv-t" x="200" y="187" text-anchor="middle">ACK, veri, veri…</text>
+  <text class="sv-s" x="200" y="222" text-anchor="middle">established: 1. kuralda kabul</text>
+  <rect class="sv-a" x="10" y="250" width="140" height="36" rx="8"/>
+  <text class="sv-t" x="80" y="273" text-anchor="middle">Dış 198.51.100.2</text>
+  <line class="sv-cl" x1="150" y1="268" x2="300" y2="268"/>
+  <text class="sv-t" x="225" y="260" text-anchor="middle">SYN → 2222</text>
+  <text class="sv-b" x="315" y="273">✕</text>
+  <text class="sv-s" x="200" y="320" text-anchor="middle">new, ama hiçbir izin kuralına uymuyor:</text>
+  <text class="sv-s" x="200" y="337" text-anchor="middle">politika drop; istemci yeniden dener,</text>
+  <text class="sv-s" x="200" y="354" text-anchor="middle">sonunda zaman aşımı.</text>
+</svg>
+<figcaption>Durum takibiyle izin kuralı yalnız bağlantının ilk paketine bakar; sonraki paketleri bağlantı izleyicisi tanır. Dış adresten gelen yeni bağlantı ise hiçbir kurala uymaz ve politikaya düşer.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: durum takibi kuralını çıkarınca ne bozulur?</span>
+<p><strong>Soru:</strong> Kural setinden <code>ct state established,related accept</code> satırını çıkarırsan iki şey olur. Hangileri? Sınamak için istemci makinede 8081'de bir "güncelleme deposu" çalışıyor; sunucu ona bağlanacak.</p>
+<p><strong>Adım 1.</strong> Önce satır yerindeyken iki yönü de sına: sunucudan dışarıya (depoya) ve içeriden sunucuya (SSH).</p>
+<pre class="kod" data-ad="bash">nft -f kurallar.nft
+python3 istemci.py 10.16.0.2 8081 10.16.0.1
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft list chain inet lab input | grep -E 'established|2222|comment'</pre>
+<pre class="cikti">10.16.0.1 -&gt; 10.16.0.2:8081  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+		ct state established,related counter packets 7 bytes 391 accept
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept
+		counter packets 0 bytes 0 comment "buraya kadar gelen paket politikaya (drop) dusecek"</pre>
+<p><strong>Adım 2.</strong> İkisi de çalıştı. İzin kuralı yalnız 1 paket (SSH bağlantısının SYN'i) gördü; deponun yanıtları dahil geri kalan 7 paket ilk kuralda geçti. (Depo da aynı küçük sunucu programıyla çalıştığı için karşılama satırı aynı.)</p>
+<p><strong>Adım 3.</strong> Şimdi satırı çıkar ve aynı iki sınamayı yinele.</p>
+<pre class="kod" data-ad="bash">grep -v 'ct state established' kurallar.nft &gt; durumsuz.nft
+nft -f durumsuz.nft
+python3 istemci.py 10.16.0.2 8081 10.16.0.1
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft list chain inet lab input | grep -E '2222|comment'</pre>
+<pre class="cikti">10.16.0.1 -&gt; 10.16.0.2:8081  ZAMAN ASIMI  (2.00 s)
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 5 bytes 268 accept
+		counter packets 3 bytes 180 comment "buraya kadar gelen paket politikaya (drop) dusecek"</pre>
+<p><strong>Adım 4.</strong> Sunucunun dışarı açtığı bağlantı bozuldu: deponun yanıtları kaynak portu 8081 olan paketlerdir ve hiçbir izin kuralına uymaz; son sayaçtaki 3 paket, deponun yeniden denediği SYN-ACK'ler. SSH ise hâlâ çalışıyor, çünkü istemciden gelen her paket (SYN, ACK, veri, kapanış) "kaynak iç ağ, hedef 2222" koşuluna uyuyor; izin kuralı bu kez 5 paket saydı.</p>
+<p><strong>Sonuç:</strong> Durum takibi olmayınca gelen bağlantılar kabaca çalışır ama makinenin kendi başlattığı her şey (güncelleme, DNS, saat eşitleme) bozulur.</p></div>
+
+<h2 class="s">5. Varsayılan reddet</h2>
+
+<p>Bir kural setini iki biçimde kurabilirsin. <strong>Yasak listesi</strong>nde her şey açıktır ve bildiğin kötüleri kapatırsın: "8080'i kapat, 3306'yı kapat". <strong>İzin listesi</strong>nde her şey kapalıdır ve yalnız gerekenleri açarsın: "iç ağdan 2222'ye izin". İkincisine <strong>varsayılan reddet</strong> (default deny) denir ve nftables'ta zincirin <code>policy drop;</code> satırıyla kurulur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Varsayılan reddet: açıkça izin verilmeyen her şey kapalıdır.</strong> Nedeni, yasak listesinin bilmediğin şeye karşı savunmasız olmasıdır. Yarın biri bir paket kurar, paket yeni bir portta dinlemeye başlar; yasak listesi bunu bilmez ve port açık kalır. İzin listesinde yeni hizmet, sen bilinçli olarak kural yazana kadar dışarıdan görünmez. Bu, Parça 11'deki en az yetki ilkesinin ağdaki karşılığıdır ve web bloğunda (Parça 38) yetkilendirme için de aynı adla karşına çıkacak.</p></div>
+
+<p>Varsayılan reddetle çalışan bir zincirde birkaç şeye bilinçli izin vermen gerekir, yoksa makine kendi kendini bozar:</p>
+
+<p><strong>Döngü arayüzü (<code>lo</code>).</strong> Makinenin kendi içindeki konuşmalar <code>lo</code> üzerinden akar; nftables wiki'sindeki örnek kural setleri de <code>iif lo accept</code> içerir.</p>
+
+<p><strong>ICMP ve özellikle ICMPv6.</strong> IPv4'te ICMP'yi tamamen kapatmak <code>ping</code>'i ve bazı hata iletilerini bozar. IPv6'da komşu keşfi ICMPv6 ile yapılır; wiki'nin uyardığı gibi bu iletiler kapanırsa IPv6 bağlantısı kopar.</p>
+
+<p><strong>IPv6'nın kendisi.</strong> <code>table ip</code> yalnız IPv4'ü görür; kural setin yalnız IPv4 içinse IPv6 kapısı kuralsız kalır. Bu yüzden <code>inet</code> ailesi kullanılır (IPv6'nın unutulan yüzeyi Parça 27'de).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: yalnız IPv4'e yazılmış kural seti</span>
+<p><strong>Soru:</strong> Kural setinin aynısını <code>table ip lab</code> olarak yüklüyorsun. Dış adresten SSH'ye IPv4 ile bağlanılamıyor; peki IPv6 ile?</p>
+<p><strong>Adım 1.</strong> Kural dosyasını aileyi değiştirerek kopyala (IPv4 tablosunda ICMPv6 satırı anlamsız olduğu için çıkarıldı), yükle ve iki protokolden dene. Sunucu ve istemcinin ayrıca <code>fd16::1</code> ve <code>fd16::2</code> IPv6 adresleri var.</p>
+<pre class="kod" data-ad="bash">sed -e 's/^table inet lab/table ip lab/' -e '/icmpv6/d' kurallar.nft &gt; yalniz4.nft
+nft -f yalniz4.nft
+nft list tables
+ist python3 istemci.py 198.51.100.1 2222 198.51.100.2
+ist python3 istemci.py fd16::1 2222 fd16::2</pre>
+<pre class="cikti">table ip lab
+198.51.100.2 -&gt; 198.51.100.1:2222  ZAMAN ASIMI  (2.00 s)
+fd16::2 -&gt; fd16::1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)</pre>
+<p><strong>Adım 2.</strong> IPv4 kapısı kapalı, IPv6 kapısı ardına kadar açık. Sunucu programı <code>::</code> üzerinde de dinlediği için IPv6 bağlantısı doğrudan hizmete ulaştı ve sunucu günlüğüne <code>baglanti: fd16::2</code> düştü.</p>
+<p><strong>Adım 3.</strong> Aynı kuralları <code>inet</code> tablosuyla yükle.</p>
+<pre class="kod" data-ad="bash">nft -f kurallar.nft
+nft list tables
+ist python3 istemci.py 198.51.100.1 2222 198.51.100.2
+ist python3 istemci.py fd16::1 2222 fd16::2
+ist ping -6 -c 1 -W 1 fd16::1 | grep -E 'packet'</pre>
+<pre class="cikti">table inet lab
+198.51.100.2 -&gt; 198.51.100.1:2222  ZAMAN ASIMI  (2.00 s)
+fd16::2 -&gt; fd16::1:2222  ZAMAN ASIMI  (2.00 s)
+1 packets transmitted, 1 received, 0% packet loss, time 0ms</pre>
+<p><strong>Adım 4.</strong> İki kapı da kapandı. İzin kuralındaki <code>ip saddr 10.16.0.0/24</code> yalnız IPv4 paketine uyar; IPv6 paketi hiçbir izin kuralına uymaz ve politikaya düşer. IPv6 <code>ping</code>'i ise ICMPv6 kuralı sayesinde geçti: komşu keşfi ve yankı isteği izinli.</p>
+<p><strong>Sonuç:</strong> Varsayılan reddet, ancak bütün kapıları kapsıyorsa varsayılandır. <code>inet</code> tablosu kullan; IPv6'dan iç ağa izin vereceksen bunu <code>ip6 saddr</code> ile ayrıca yaz.</p></div>
+
+<h2 class="s">6. nftables ile kural seti</h2>
+
+<p>Kuralları tek tek komutla da ekleyebilirsin, ama gerçek bir makinede kural seti bir <strong>dosyada</strong> durur. Bunun iki nedeni var. Birincisi, dosya okunabilir, sürüm denetimine konabilir ve gözden geçirilebilir (Parça 19'daki değişiklik kaydı). İkincisi, <code>nft -f dosya</code> dosyayı <strong>tek bir işlem</strong> olarak yükler: ya hepsi uygulanır ya hiçbiri. Yarım yüklenmiş bir kural seti, "politika drop oldu ama izin kuralı henüz eklenmedi" gibi tehlikeli bir ara durum yaratabilir; dosya bunu önler. Denemede kullandığımız dosya şu:</p>
+
+<pre class="kod" data-ad="kurallar.nft">#!/usr/sbin/nft -f
+# Laboratuvar VM'i: SSH (burada 2222) yalniz ic agdan, gerisi reddedilir.
+flush ruleset
+
+table inet lab {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        ct state established,related counter accept
+        ct state invalid counter drop
+        iif "lo" counter accept
+        ip protocol icmp icmp type echo-request counter accept
+        icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-advert, echo-request } counter accept
+        ip saddr 10.16.0.0/24 tcp dport 2222 counter accept
+        counter comment "buraya kadar gelen paket politikaya (drop) dusecek"
+    }
+}</pre>
+
+<p>Satır satır: <code>flush ruleset</code> eski bütün kuralları siler, böylece dosya her yüklendiğinde aynı sonucu verir; ama dikkat, başka araçların (ufw, konteyner yazılımları) kurallarını da siler. <code>table inet lab</code> IPv4 ve IPv6'yı birlikte kapsayan bir tablo açar; adı serbesttir. <code>type filter hook input priority filter; policy drop;</code> zinciri <code>input</code> kancasına asar, öncelik olarak standart <code>filter</code> (0) değerini alır ve politikayı <code>drop</code> yapar. Sonra sırasıyla: kurulu bağlantılar, geçersiz paketler, döngü arayüzü, ping, IPv6 komşu keşfi ve asıl izin kuralı. En sondaki hükümsüz <code>counter</code> yalnız sayar: politikaya düşen paket sayısını görmek için konur. Bu dosyada gerçek SSH portu 22 yerine 2222 kullanıldı, çünkü denemede SSH'nin yerine 2222'de dinleyen küçük bir sunucu kullandık; laboratuvar VM'inde <code>tcp dport 22</code> yazarsın.</p>
+
+<p>Debian ve türevlerinde kalıcı kural dosyası <code>/etc/nftables.conf</code>'tur. Debian Yönetici El Kitabı'na göre kurallar bu dosyaya yazılır ve <code>systemctl enable nftables</code> ile açılışta yüklenir; <code>nft flush ruleset</code> güvenlik duvarını durdurur. Bu ortamda dosya vardı ama içinde politikasız (yani kabul eden) boş zincirler duruyordu ve hizmet <code>disabled</code> idi: kurulu olmak, çalışmak demek değil.</p>
+
+<pre class="kod" data-ad="laboratuvar VM'inde (burada çalıştırılmadı)">sudo apt install nftables
+sudo nft -c -f /etc/nftables.conf      # once yalniz denetle
+sudo nft -f /etc/nftables.conf         # yukle (asagidaki guvenli yontemle)
+sudo nft list ruleset
+sudo systemctl enable nftables         # acilista yuklensin</pre>
+
+<p>Bu komutlar gerçek root ister; burada <strong>çalıştırılmadı</strong>. Aynı kurallar aşağıda yalıtık bir ağ ad alanında sınandı.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Bir zincirde kabul ettim, öbür araç ne yaparsa yapsın paket geçer."</strong> Aynı kancaya asılmış birden fazla taban zincir olabilir: senin elle yazdığın tablo, ufw'nin tabloları, bir konteyner aracının tabloları. <code>nft(8)</code> belgesine göre <code>accept</code> yalnız o taban zincirin değerlendirmesini bitirir ve paket sıradaki taban zincire geçer; <code>drop</code> ise bütün değerlendirmeyi hemen bitirir. Yani bir paket ancak <strong>hiçbir</strong> taban zincir onu atmıyorsa geçer. Denemede <code>inet lab</code> tablosu 2222'ye izin verirken, ikinci bir tabloda <code>priority filter + 10; policy drop;</code> olan bir zincir eklendi ve iç ağdan bağlantı zaman aşımına düştü; ikinci tablo silinince bağlantı yeniden kuruldu. Doğrusu: bir makinede güvenlik duvarını tek bir araçla yönet ve <code>nft list ruleset</code> ile bütün tabloları düzenli gözden geçir.</p></div>
+
+<h2 class="s">7. ufw: aynı politika, daha kısa komutlarla</h2>
+
+<p><strong>ufw</strong> (Uncomplicated Firewall), Ubuntu'nun varsayılan güvenlik duvarı ön yüzüdür; Debian'da da paket olarak gelir. Kendisi paket süzmez: senin kısa komutlarını iptables kurallarına çevirir ve kendi zincirlerine yerleştirir. Belgesi bunu açıkça söyler: ufw tam bir güvenlik duvarı arayüzü olmayı değil, basit kuralları kolayca ekleyip çıkarmayı amaçlar. Hazır kural dosyalarında kurulu bağlantılara, döngü arayüzüne ve gerekli ICMP türlerine izin zaten vardır; sen yalnız politikayı ve istisnaları söylersin.</p>
+
+<div class="tablo"><table>
+<tr><th>İstek</th><th>nftables</th><th>ufw</th></tr>
+<tr><td>Gelen trafiğe varsayılan reddet</td><td><code>policy drop;</code> (input zinciri)</td><td><code>ufw default deny incoming</code></td></tr>
+<tr><td>SSH'ye yalnız iç ağdan izin</td><td><code>ip saddr 10.16.0.0/24 tcp dport 22 accept</code></td><td><code>ufw allow from 10.16.0.0/24 to any port 22 proto tcp</code></td></tr>
+<tr><td>Kurulu bağlantıların dönüşü</td><td><code>ct state established,related accept</code></td><td>Hazır kurallarda var</td></tr>
+<tr><td>Kuralları sırasıyla görmek</td><td><code>nft -a list ruleset</code></td><td><code>ufw status numbered</code></td></tr>
+<tr><td>Belirli bir yere kural koymak</td><td><code>nft insert rule … position N</code></td><td><code>ufw insert N …</code></td></tr>
+<tr><td>Kural silmek</td><td><code>nft delete rule … handle N</code></td><td><code>ufw delete N</code></td></tr>
+<tr><td>Giden trafiğe varsayılan reddet</td><td>output zincirinde <code>policy drop;</code></td><td><code>ufw default deny outgoing</code></td></tr>
+<tr><td>Kısa sürede çok bağlantı açanı durdurmak</td><td>Hız sınırlayıcı kurallar (Parça 53)</td><td><code>ufw limit 22/tcp</code></td></tr>
+</table></div>
+
+<p>Son satırdaki <code>limit</code> için ufw belgesi şunu söyler: bir IP adresi 30 saniye içinde 6 ya da daha fazla bağlantı başlatmaya çalışırsa bağlantıları reddedilir; kaba kuvvetle parola denemesine karşı kullanışlıdır. Kaba kuvvetin kendisi ve savunmaları Parça 53'te.</p>
+
+<p>ufw belgesinin "uzaktan yönetim" uyarısı bir sonraki bölüme köprüdür: <code>ufw enable</code> kendi zincirlerini boşaltıp yeniden kurar ve açık SSH bağlantılarını düşürebilir. Bu yüzden SSH izni <strong>etkinleştirmeden önce</strong> eklenir; SSH altında ufw ayrıca onay ister (<code>--force</code> bu soruyu atlar).</p>
+
+<h2 class="s">8. Kuralı sınamak ve kendini dışarıda bırakmamak</h2>
+
+<p>Laboratuvar VM'ine çoğu zaman SSH ile bağlanırsın. Güvenlik duvarı kuralını da o SSH oturumunun içinden yazarsın. Burada tuhaf bir tehlike var: yazdığın kural, üzerinde oturduğun dalı kesebilir. Bir alt ağı yanlış yazarsan, politikayı izin kuralından önce <code>drop</code> yaparsan ya da (bir sonraki bölümde göreceğin gibi) <code>output</code> zincirinde durum takibini unutursan, yeni SSH bağlantıları kurulamaz. Fiziksel olarak başında olmadığın bir makinede bu, makineye gidip konsoldan düzeltmek demektir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Uzaktaki bir makineye güvenlik duvarı kuralı yüklemenin güvenli sırası.</strong> 1. Konsol erişimini önceden doğrula: VM'nin yönetim arayüzündeki konsol penceresi ağdan bağımsızdır ve en son çaredir. Kural işinden önce bir anlık görüntü al (Parça 7). 2. Kuralı dosyada yaz; SSH izni dosyada politikadan önce değil, <strong>aynı dosyada</strong> olsun ki tek işlemde yüklensin. 3. <code>nft -c -f</code> ile söz dizimini denetle. 4. Çalışan kural setinin yedeğini al. 5. <strong>Zamanlı geri alma</strong> kur: birkaç dakika sonra yedeği kendiliğinden geri yükleyecek bir zamanlayıcı. 6. Yeni kuralı yükle. 7. Açık oturumunu kapatmadan, <strong>ikinci bir terminalden yeni</strong> bir SSH bağlantısı aç. 8. Yeni bağlantı kuruluyorsa zamanlayıcıyı iptal et ve kuralı kalıcı yap; kurulamıyorsa hiçbir şey yapma, zamanlayıcı seni kurtarır.</p></div>
+
+<p>Yedinci adımda açık oturumu korumak işe yarar, çünkü kural yeni bağlantıları kesse bile mevcut oturumun paketleri <code>established</code> olarak geçmeye devam eder. Ama bu bir tuzaktır da: eski oturumun çalışması kuralın doğru olduğunu kanıtlamaz. Sınama her zaman <strong>yeni</strong> bir bağlantıyla yapılır (6. adımda göreceksin).</p>
+
+<p>Laboratuvar VM'inde zamanlı geri alma için systemd'nin geçici zamanlayıcısını kullanabilirsin (Parça 14). <code>systemd-run(1)</code> belgesine göre <code>--on-active=</code> geçici bir <code>.timer</code> birimi oluşturur ve süre dolunca komutu çalıştırır.</p>
+
+<pre class="kod" data-ad="laboratuvar VM'inde (burada çalıştırılmadı)">sudo sh -c '{ echo "flush ruleset"; nft list ruleset; } &gt; /root/nft-yedek.nft'
+sudo nft -c -f /etc/nftables.conf
+sudo systemd-run --on-active=5min --unit=fw-geri-al nft -f /root/nft-yedek.nft
+sudo nft -f /etc/nftables.conf
+# ikinci terminalden: ssh ile YENI baglanti dene. Kuruluyorsa:
+sudo systemctl stop fw-geri-al.timer
+sudo systemctl enable nftables</pre>
+
+<p>Bu blok root ister; burada <strong>çalıştırılmadı</strong>. Aynı mantığın <code>sleep</code> tabanlı zamanlayıcıyla sınanmış hâli 6. adımda. iptables için hazır bir araç da var: <code>iptables-apply(8)</code> kuralları uygular, onay ister ve onay gelmezse (varsayılan 10 saniye) eski kurallara döner; bağlantın kesildiyse onay veremeyeceğin için geri dönüş kendiliğinden olur.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Önce politikayı değiştirip sonra izin kuralını eklemek.</strong> Komut komut çalışırken <code>nft add chain inet lab input '{ type filter hook input priority filter; policy drop; }'</code> yazıp Enter'a bastığın anda yeni SSH bağlantıları kesilir; bir sonraki komutta yazım hatası yaparsan bir daha giremezsin. Açık oturum durum takibi yüzünden bir süre yaşar ve seni yanıltır. Doğrusu: bütün kural setini dosyada hazırla, <code>nft -c</code> ile denetle, zamanlı geri alma kur ve <code>nft -f</code> ile tek işlemde yükle.</p></div>
+
+<h2 class="s">9. Giden trafiğin de denetlenmesi</h2>
+
+<p>Çoğu ana makine güvenlik duvarı yalnız gelen trafiğe bakar; ufw'nin varsayılanı da "gelene reddet, gidene izin ver"dir. Bu makul bir başlangıçtır, çünkü saldırıların kapısı çoğunlukla dışarıdan açılan bağlantılardır. Ama bir şeyi atlar: makinedeki bir süreç ele geçirilirse, saldırgan genellikle içeriden dışarıya bağlanır. Dışarıdaki bir sunucudan komut almak, veri sızdırmak, ek araç indirmek için. Gelen kurallar buna hiç dokunmaz, çünkü bu bağlantıyı makinenin kendisi başlatır ve yanıtları <code>established</code> olarak geçer.</p>
+
+<p>Giden trafiği denetlemek, Parça 13'teki savunmacı sorusunu ("bu süreç bilinmeyen bir adrese neden bağlanıyor?") bir kurala dönüştürür. Bir sunucunun dışarıda konuşması gereken yerler çoğu zaman azdır ve bilinir: DNS çözücüsü, saat sunucusu (NTP), paket deposu, belki bir günlük toplayıcı. Gerisini kapatmak hem ele geçirmenin işini zorlaştırır hem de reddedilen giden bağlantıları sayarak bir uyarı işareti üretir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Giden trafiği kısıtlıyorsan <code>output</code> zincirinin de ilk kuralı durum takibidir.</strong> Gelen bir SSH bağlantısını kabul ettiğinde sunucunun yanıtları (SYN-ACK ve sonrası) <code>output</code> zincirinden çıkar. Orada <code>ct state established,related accept</code> yoksa ve politika <code>drop</code> ise, <code>input</code>'ta izin verdiğin her bağlantı yanıtsız kalır. Ayrıca DNS'e izin verirken yalnız kendi çözücüne izin ver; "53'e her yere izin" kuralı, DNS'i bir kaçış kanalına çevirebilir (Parça 30).</p></div>
+
+<p>Pratik bir zorluk: güvenlik duvarı adlarla değil adreslerle çalışır ve bir depo adının arkasındaki adresler zamanla değişir. Kurumlar bu yüzden güncellemeleri kendi ayna ya da vekil sunucularından çeker ve giden kuralı o tek adrese yazar (Parça 33).</p>
+
+<p>Bu parçadaki her deney kendi makinendeki yalıtık ad alanlarında yapıldı; başkasına ait bir sisteme bağlantı denemek ya da port taramak izinsiz erişimdir ve suç oluşturabilir (Parça 72 ve 73).</p>
+
+<h2 class="s">Kendi makinende dene: nftables ve ufw ile kural seti, sınama, giden trafik ve güvenli geri alma</h2>
+
+<p>Bu alıştırma gerçek sistemin güvenlik duvarına <strong>hiç dokunmadan</strong> yapılır. Bütün kurallar <code>unshare -rn</code> ile açılan bir kullanıcı ve ağ ad alanında yazılır. Parça 7'de gördüğün gibi <code>unshare -r</code> seni ad alanının içinde UID 0 yapar, ama bu gerçek root değildir: yalnız o ad alanının kendi nesneleri üzerinde yetkin vardır. <code>-n</code> ise boş, yalıtık bir ağ ad alanı açar: kendi arayüzleri, kendi yönlendirme tablosu ve kendi netfilter kuralları olan ayrı bir ağ yığını. Süreç bitince bunların hepsi yok olur. Laboratuvar VM'inde aynı <code>nft</code> komutlarını <code>sudo</code> ile, gerçek arayüzler üzerinde çalıştırırsın.</p>
+
+<p>Gereken araçlar: <code>unshare</code>, <code>nsenter</code>, <code>ip</code>, <code>nft</code>, <code>python3</code>. Çalışma klasörü <code>/tmp/yazar/siber-16</code>; sen kendine bir geçici klasör seç. Çıktılar WSL2 üstündeki Kali Rolling'den, nftables 1.1.6 ile alındı; sendeki sayaç değerleri ve tanıtıcı numaraları biraz farklı olabilir.</p>
+
+<h3>Adım 1: iki makinelik bir laboratuvar kur</h3>
+
+<p>İçine girdiğin ad alanı "sunucu" (koruduğumuz VM) olacak. İçinde ikinci bir ağ ad alanı açıp "istemci" yapacağız ve ikisini sanal bir kabloyla, bir <strong>veth çifti</strong>yle bağlayacağız. İç ağ <code>10.16.0.0/24</code>; "dışarıyı" temsil etmek için aynı kabloya belgelere ayrılmış <code>198.51.100.0/24</code> (RFC 5737) aralığından da adres veriyoruz. Sunucuda 2222'de SSH'nin yerine karşılama satırı gönderen küçük bir TCP sunucusu (<code>sunucu.py</code>) ve 8080'de "unutulmuş" bir <code>http.server</code> dinliyor. <code>istemci.py</code> bağlantıyı belirli bir kaynak adresten dener (ikisi de kod rafı Parça 13'teki soketlerle yazıldı; aynı işi <code>curl --interface</code> ile de yapabilirsin).</p>
+
+<pre class="kod" data-ad="kurgu.sh (dosya kopyalama satırları çıkarıldı)">cd /tmp/yazar/siber-16
+ip link set lo up
+unshare -n sleep 900 &amp;              # istemci: ic ice ikinci ag ad alani
+IC=$!
+sleep 0.3
+ist() { nsenter -t "$IC" -n "$@"; }  # komutu istemci ad alaninda calistir
+ip link add v0 type veth peer name v1 netns "$IC"
+ip addr add 10.16.0.1/24 dev v0
+ip addr add 198.51.100.1/24 dev v0
+ip -6 addr add fd16::1/64 dev v0 nodad
+ip link set v0 up
+ist ip link set lo up
+ist ip addr add 10.16.0.2/24 dev v1
+ist ip addr add 198.51.100.2/24 dev v1
+ist ip -6 addr add fd16::2/64 dev v1 nodad
+ist ip link set v1 up
+python3 sunucu.py 2222 &gt; sunucu.log 2&gt;&amp;1 &amp;
+python3 -m http.server 8080 --bind 0.0.0.0 &gt; /dev/null 2&gt;&amp;1 &amp;
+sleep 1</pre>
+
+<pre class="kod" data-ad="bash">unshare -rn bash   # sonra: source kurgu.sh
+id
+ip -br addr show dev v0
+ist ip -br addr show dev v1
+ss -tln</pre>
+<pre class="cikti">uid=0(root) gid=0(root) groups=0(root),65534(nogroup)
+v0@if2           UP             10.16.0.1/24 198.51.100.1/24 fd16::1/64 fe80::xxxx:xxxx:xxxx:xxxx/64
+v1@if2           UP             10.16.0.2/24 198.51.100.2/24 fd16::2/64 fe80::xxxx:xxxx:xxxx:xxxx/64
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port
+LISTEN 0      5            0.0.0.0:2222      0.0.0.0:*
+LISTEN 0      5            0.0.0.0:8080      0.0.0.0:*
+LISTEN 0      5               [::]:2222         [::]:*</pre>
+
+<p><code>id</code> UID 0 diyor, ama gruplardaki <code>65534(nogroup)</code> bir ipucu: dışarıdaki gerçek root'un grubu buraya eşlenmediği için "hiç kimse" görünüyor; bu sahte bir root. <code>fe80::</code> adresleri çekirdeğin kendiliğinden verdiği bağlantı yerel IPv6 adresleri (sadeleştirildi). <code>ss -tln</code> iki hizmetin de <code>0.0.0.0</code>'da, yani bütün arayüzlerde dinlediğini gösteriyor (Parça 15).</p>
+
+<h3>Adım 2: kural yokken</h3>
+<pre class="kod" data-ad="bash">nft list ruleset | wc -l
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+ist python3 istemci.py 198.51.100.1 2222 198.51.100.2
+ist python3 istemci.py 10.16.0.1 8080 10.16.0.2
+ist python3 istemci.py 10.16.0.1 8090 10.16.0.2</pre>
+<pre class="cikti">0
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+198.51.100.2 -&gt; 198.51.100.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+10.16.0.2 -&gt; 10.16.0.1:8080  BAGLANDI: (karsilama yok)  (0.00 s)
+10.16.0.2 -&gt; 10.16.0.1:8090  REDDEDILDI: Connection refused  (0.00 s)</pre>
+<p>Kural seti boş (0 satır). İç ağdan da "dışarıdan" da SSH'ye ulaşılıyor; 8080 de açık (HTTP sunucusu istek beklediği için karşılama göndermiyor). Hiçbir şeyin dinlemediği 8090'a bağlanmak hemen "Connection refused" verdi: çekirdek kapalı porta TCP sıfırlamasıyla yanıt verir. Bu satırı aklında tut; güvenlik duvarından sonra aynı port farklı davranacak.</p>
+
+<h3>Adım 3: kural setini denetle ve yükle</h3>
+<pre class="kod" data-ad="bash">nft -c -f kurallar.nft &amp;&amp; echo "sozdizimi tamam"
+nft -f kurallar.nft
+nft -a list ruleset</pre>
+<pre class="cikti">sozdizimi tamam
+table inet lab { # handle 2
+	chain input { # handle 1
+		type filter hook input priority filter; policy drop;
+		ct state established,related counter packets 0 bytes 0 accept # handle 2
+		ct state invalid counter packets 0 bytes 0 drop # handle 3
+		iif "lo" counter packets 0 bytes 0 accept # handle 4
+		ip protocol icmp icmp type echo-request counter packets 0 bytes 0 accept # handle 5
+		icmpv6 type { echo-request, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } counter packets 0 bytes 0 accept # handle 7
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 0 bytes 0 accept # handle 8
+		counter packets 0 bytes 0 comment "buraya kadar gelen paket politikaya (drop) dusecek" # handle 9
+	}
+}</pre>
+<p><code>-c</code> kuralları çekirdeğe uygulamadan denetler. Liste, dosyadaki sırayı ve her kuralın tanıtıcısını gösteriyor. Küme içindeki ICMPv6 türlerinin sırası değişmiş: <code>nft</code> kümeyi kendi düzeniyle yazar; anlamı aynıdır. Tanıtıcı 6'nın görünmemesi de olağan: o numarayı kümenin kendisi aldı.</p>
+
+<h3>Adım 4: sına ve sayaçları oku</h3>
+<pre class="kod" data-ad="bash">ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+ist python3 istemci.py 198.51.100.1 2222 198.51.100.2
+ist python3 istemci.py 10.16.0.1 8080 10.16.0.2
+python3 istemci.py 127.0.0.1 8080
+ist ping -c 1 -W 1 10.16.0.1 | grep -E 'bytes from|packet'
+nft list chain inet lab input</pre>
+<pre class="cikti">10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+198.51.100.2 -&gt; 198.51.100.1:2222  ZAMAN ASIMI  (2.00 s)
+10.16.0.2 -&gt; 10.16.0.1:8080  ZAMAN ASIMI  (2.00 s)
+otomatik -&gt; 127.0.0.1:8080  BAGLANDI: (karsilama yok)  (0.00 s)
+64 bytes from 10.16.0.1: icmp_seq=1 ttl=64 time=0.050 ms
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+table inet lab {
+	chain input {
+		type filter hook input priority filter; policy drop;
+		ct state established,related counter packets 9 bytes 476 accept
+		ct state invalid counter packets 0 bytes 0 drop
+		iif "lo" counter packets 1 bytes 60 accept
+		ip protocol icmp icmp type echo-request counter packets 1 bytes 84 accept
+		icmpv6 type { echo-request, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } counter packets 0 bytes 0 accept
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept
+		counter packets 4 bytes 240 comment "buraya kadar gelen paket politikaya (drop) dusecek"
+	}
+}</pre>
+<p>Satır satır: iç ağdan SSH geçti; dış adresten SSH ve iç ağdan 8080 zaman aşımına düştü, çünkü <code>drop</code> hiçbir yanıt göndermez. Makinenin kendisi <code>127.0.0.1:8080</code>'e ulaşabildi (<code>lo</code> kuralı 1 paket) ve <code>ping</code> geçti. İzin kuralı yalnız SSH bağlantısının ilk paketini gördü; geri kalan kabul edilen paketler ilk kuralda geçti (9 paket). En alttaki sayaç 4 paket ve 240 bayt: reddedilen iki bağlantının her birinden 60 baytlık iki SYN (ilk deneme ve bir saniye sonraki yeniden deneme).</p>
+
+<h3>Adım 5: giden trafiği sınırla</h3>
+<p>İstemci makinede iki hizmet çalıştır: 8081'de "güncelleme deposu" ve 8082'de "bilinmeyen bir sunucu". Sunucunun yalnız depoya bağlanabilmesini istiyoruz. <code>cikis.nft</code> aynı tabloya bir <code>output</code> zinciri ekler; dosyada <code>flush</code> olmadığı için <code>input</code> zinciri yerinde kalır.</p>
+<pre class="kod" data-ad="cikis.nft">table inet lab {
+    chain output {
+        type filter hook output priority filter; policy drop;
+
+        ct state established,related counter accept
+        oif "lo" counter accept
+        meta l4proto { icmp, ipv6-icmp } counter accept
+        ip daddr 10.16.0.2 tcp dport 8081 counter accept comment "guncelleme deposu"
+        counter comment "izinsiz giden baglanti"
+    }
+}</pre>
+<pre class="kod" data-ad="bash">ist python3 sunucu.py 8081 &gt; depo.log 2&gt;&amp;1 &amp;
+ist python3 sunucu.py 8082 &gt; yabanci.log 2&gt;&amp;1 &amp;
+nft -f kurallar.nft
+python3 istemci.py 10.16.0.2 8081 10.16.0.1
+python3 istemci.py 10.16.0.2 8082 10.16.0.1
+nft -f cikis.nft
+nft list table inet lab | grep -c hook
+python3 istemci.py 10.16.0.2 8081 10.16.0.1
+python3 istemci.py 10.16.0.2 8082 10.16.0.1
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft list chain inet lab output</pre>
+<pre class="cikti">10.16.0.1 -&gt; 10.16.0.2:8081  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+10.16.0.1 -&gt; 10.16.0.2:8082  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+2
+10.16.0.1 -&gt; 10.16.0.2:8081  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+10.16.0.1 -&gt; 10.16.0.2:8082  ZAMAN ASIMI  (2.00 s)
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+table inet lab {
+	chain output {
+		type filter hook output priority filter; policy drop;
+		ct state established,related counter packets 7 bytes 391 accept
+		oif "lo" counter packets 0 bytes 0 accept
+		meta l4proto { icmp, ipv6-icmp } counter packets 1 bytes 96 accept
+		ip daddr 10.16.0.2 tcp dport 8081 counter packets 1 bytes 60 accept comment "guncelleme deposu"
+		counter packets 2 bytes 120 comment "izinsiz giden baglanti"
+	}
+}</pre>
+<p>Yalnız <code>input</code> varken sunucu iki hedefe de çıkabiliyordu. <code>output</code> eklenince tabloda iki kancalı zincir oldu (<code>grep -c hook</code> → 2); depo hâlâ açık, bilinmeyen sunucu kapalı ve gelen SSH çalışmaya devam ediyor. Sayaçlar: depoya izin kuralı tek paket gördü (giden SYN), izinsiz sayaç iki SYN gördü. ICMP satırındaki 96 baytlık paket, çekirdeğin kendiliğinden gönderdiği bir ICMPv6 iletisi; bu satır olmasaydı IPv6 komşu keşfi de giden yönde kesilirdi.</p>
+
+<p>Şimdi bilerek hata yap: <code>output</code> zincirini durum takibi olmadan yeniden kur ve gelen SSH'yi dene.</p>
+<pre class="kod" data-ad="bash">nft flush chain inet lab output
+nft add rule inet lab output oif lo accept
+nft add rule inet lab output ip daddr 10.16.0.2 tcp dport 8081 accept
+nft add rule inet lab output counter comment '"izinsiz giden"'
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+nft list chain inet lab output
+nft list chain inet lab input | grep 2222</pre>
+<pre class="cikti">10.16.0.2 -&gt; 10.16.0.1:2222  ZAMAN ASIMI  (2.00 s)
+table inet lab {
+	chain output {
+		type filter hook output priority filter; policy drop;
+		oif "lo" accept
+		ip daddr 10.16.0.2 tcp dport 8081 accept
+		counter packets 4 bytes 236 comment "izinsiz giden"
+	}
+}
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 2 bytes 120 accept</pre>
+<p><code>input</code> tarafında her şey doğru: izin kuralı istemcinin iki SYN'ini kabul etti. Ama sunucunun yanıtları (SYN-ACK) <code>output</code>'ta hiçbir kurala uymadı ve atıldı; istemci yanıt alamadığı için zaman aşımına düştü. Bu, uzaktaki bir makinede seni dışarıda bırakan klasik hatadır: içeri giriş izni var, ama makine sana cevap veremiyor.</p>
+
+<h3>Adım 6: kendini dışarıda bırakma provası ve zamanlı geri alma</h3>
+<p>Senaryo: kural dosyasını düzenlerken iç ağın adresini <code>10.16.0.0/24</code> yerine <code>10.61.0.0/24</code> yazdın. Bu sırada iç ağdan açık bir oturumun var. Önce çalışan kural setinin yedeğini al, sonra altı saniye sonra yedeği geri yükleyecek bir zamanlayıcı kur, sonra hatalı dosyayı yükle.</p>
+<pre class="kod" data-ad="bash">sed 's#10.16.0.0/24#10.61.0.0/24#' kurallar.nft &gt; hatali.nft
+nft -f kurallar.nft
+{ echo 'flush ruleset'; nft list ruleset; } &gt; yedek.nft
+head -3 yedek.nft
+diff kurallar.nft hatali.nft
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2 6 &amp;     # acik oturum: 6 s sonra veri gonderecek
+OTURUM=$!
+sleep 1
+( sleep 6; nft -f yedek.nft; echo "[zamanlayici] $(date +%T) yedek geri yuklendi" ) &amp;
+date +%T
+nft -f hatali.nft
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2         # YENI baglanti
+wait $OTURUM
+sleep 4
+date +%T
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2</pre>
+<pre class="cikti">flush ruleset
+table inet lab {
+	chain input {
+14c14
+&lt;         ip saddr 10.16.0.0/24 tcp dport 2222 counter accept
+---
+&gt;         ip saddr 10.61.0.0/24 tcp dport 2222 counter accept
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+17:25:15
+10.16.0.2 -&gt; 10.16.0.1:2222  ZAMAN ASIMI  (2.00 s)
+10.16.0.2 -&gt; 10.16.0.1:2222  6 s sonra yanit: yanki: merhaba
+[zamanlayici] 17:25:21 yedek geri yuklendi
+17:25:24
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)</pre>
+<p>Satır satır: yedek <code>flush ruleset</code> ile başlıyor, böylece geri yükleme atomik ve eksiksiz olur. <code>diff</code> tek karakterlik yazım hatasını gösteriyor. Hatalı kural 17:25:15'te yüklendi ve <strong>yeni</strong> bağlantı zaman aşımına düştü: dışarıda kaldın. Ama açık oturum altı saniye sonra veri gönderip yanıtını aldı; durum takibi onu korudu. Ona bakıp "kural çalışıyor" deseydin yanılırdın. 17:25:21'de zamanlayıcı yedeği geri yükledi ve yeni bağlantı yeniden kuruldu. Gerçek VM'de bu işi bölüm 8'deki <code>systemd-run --on-active</code> yapar; süreyi sınamaya yetecek kadar uzun seç.</p>
+
+<h3>Adım 7: aynı politika ufw ile</h3>
+<p>Bu ortamda ufw yoktu ve paket (ufw 0.36.2-10) indirilip <code>dpkg-deb -x</code> ile <code>/tmp</code> altına açıldı ve kendi <code>--rootdir</code>/<code>--datadir</code> seçenekleriyle yine <code>unshare -rn</code> içinde çalıştırıldı (ayrıntı "Kaynak ve doğrulama"da). Laboratuvar VM'inde normal yol <code>sudo apt install ufw</code> ve aşağıdaki komutların <code>sudo</code> ile çalıştırılmasıdır.</p>
+<pre class="kod" data-ad="bash">ufw status
+ufw default deny incoming
+ufw allow from 10.16.0.0/24 to any port 2222 proto tcp
+ufw enable
+ufw status verbose
+ist python3 istemci.py 10.16.0.1 2222 10.16.0.2
+ist python3 istemci.py 198.51.100.1 2222 198.51.100.2
+ist python3 istemci.py 10.16.0.1 8080 10.16.0.2
+python3 istemci.py 10.16.0.2 8081 10.16.0.1</pre>
+<pre class="cikti">Status: inactive
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Rules updated
+Firewall is active and enabled on system startup
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+2222/tcp                   ALLOW IN    10.16.0.0/24
+
+10.16.0.2 -&gt; 10.16.0.1:2222  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+198.51.100.2 -&gt; 198.51.100.1:2222  ZAMAN ASIMI  (2.00 s)
+10.16.0.2 -&gt; 10.16.0.1:8080  ZAMAN ASIMI  (2.00 s)
+10.16.0.1 -&gt; 10.16.0.2:8081  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)</pre>
+<p>Dört komutla nftables bölümündeki sonucun aynısı: iç ağdan SSH açık, dışarıdan SSH ve 8080 kapalı, giden trafik serbest. İzin kuralı <code>ufw enable</code>'dan <strong>önce</strong> eklendi; bölüm 7'deki sıra. "enabled on system startup" ifadesi burada yalnız <code>/tmp</code> altındaki <code>ufw.conf</code> dosyasına <code>ENABLED=yes</code> yazıldığı anlamına geliyor; hiçbir systemd birimi etkinleştirilmedi.</p>
+<pre class="kod" data-ad="bash">nft list tables
+iptables -S ufw-user-input
+nft list chain ip filter ufw-user-input
+nft list ruleset | grep -c .</pre>
+<pre class="cikti">table ip filter
+table ip6 filter
+-N ufw-user-input
+-A ufw-user-input -s 10.16.0.0/24 -p tcp -m tcp --dport 2222 -j ACCEPT
+table ip filter {
+	chain ufw-user-input {
+		ip saddr 10.16.0.0/24 tcp dport 2222 counter packets 1 bytes 60 accept
+	}
+}
+# Warning: table ip filter is managed by iptables-nft, do not touch!
+# Warning: table ip6 filter is managed by iptables-nft, do not touch!
+317</pre>
+<p>Perdenin arkası: ufw iki tablo kurdu (<code>ip filter</code> ve <code>ip6 filter</code>; IPv6'yı da kapsıyor). Kuralın iptables biçiminde <code>ufw-user-input</code> zincirine girdi; <code>nft</code> aynı kuralı kendi söz dizimiyle ve sayacıyla gösteriyor, bu tablolara elle dokunmaman için de uyarıyor. Toplam 317 satır: ufw'nin hazır kuralları (durum takibi, döngü, ICMP, DHCP istemcisi, günlükleme) senin tek satırını sarıyor.</p>
+<pre class="kod" data-ad="bash">ufw default deny outgoing
+ufw allow out to 10.16.0.2 port 8081 proto tcp
+python3 istemci.py 10.16.0.2 8081 10.16.0.1
+python3 istemci.py 10.16.0.2 8082 10.16.0.1
+ufw status numbered
+ufw --force delete 1
+ufw status numbered
+ufw disable</pre>
+<pre class="cikti">Default outgoing policy changed to 'deny'
+(be sure to update your rules accordingly)
+Rule added
+10.16.0.1 -&gt; 10.16.0.2:8081  BAGLANDI: SSH-2.0-Deneme_16  (0.00 s)
+10.16.0.1 -&gt; 10.16.0.2:8082  ZAMAN ASIMI  (2.00 s)
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 2222/tcp                   ALLOW IN    10.16.0.0/24
+[ 2] 10.16.0.2 8081/tcp         ALLOW OUT   Anywhere                   (out)
+
+Rule deleted
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 10.16.0.2 8081/tcp         ALLOW OUT   Anywhere                   (out)
+
+Firewall stopped and disabled on system startup</pre>
+<p>Giden trafik ufw'de iki komut: politika ve tek istisna. <code>delete 1</code> bir numaralı kuralı, yani SSH iznini sildi (<code>--force</code> etkileşimsiz ortam için onayı atlar). VM'de SSH üzerinden bunu yapmak kendini dışarıda bırakmanın bir başka yoludur: silmeden önce yeniden listele, çünkü her silmeden sonra numaralar kayar.</p>
+
+<h3>Adım 8: temizlik</h3>
+<p><code>exit</code> ile ad alanından çıktığında içindeki arayüzler, adresler ve bütün kurallar yok olur; arka plandaki sunucuları ve istemci ad alanını tutan <code>sleep</code>'i önce <code>kill</code> ile durdur. Bu alıştırmada her deney ayrı bir ad alanında koştu ve sonunda <code>ps</code> ile hiçbir deney sürecinin kalmadığı doğrulandı. Gerçek ağ ad alanındaki kural seti baştan sona hiç değişmedi; dosyalar yalnız <code>/tmp/yazar/siber-16</code> altına yazıldı.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 15'te <code>ss -tln</code> ile gördüğün <code>0.0.0.0</code>'da dinleyen hizmetler burada kurala bağlandı; Parça 13'teki "beklenmeyen ağ bağlantısı" sorusu giden trafik kuralına dönüştü. Parça 7'deki kullanıcı ad alanı ve anlık görüntü alışkanlığı güvenli deneyin ve güvenli yüklemenin temeli oldu; Parça 11'deki en az yetki ilkesi ağda varsayılan reddet adını aldı; Parça 14'teki <code>systemctl enable</code> ve <code>systemd-run</code> kalıcı yükleme ve zamanlı geri almada kullanıldı.</p>
+<p><strong>Sonraki parçalara:</strong> Reddedilen paketlerin ve giriş denemelerinin günlüklerde izlenmesi Parça 17'de; SSH'nin kendisinin sertleştirilmesi Parça 18'de; bütün bunların kontrol listesine girmesi Parça 19'da. IP adresleri ve yönlendirme Parça 24'te, ağ bölümleme ve bölgeler arası güvenlik duvarı Parça 26'da, NAT ve IPv6 Parça 27'de, TCP durumları ve port durumları Parça 28'de, güvenlik duvarı türleri ve saldırı tespit sistemleri Parça 68'de.</p>
+<p><strong>Kod rafına:</strong> Denemedeki sunucu ve istemci Parça 13'teki <code>socket</code> modülüyle, sunucunun iki adreste birden dinlemesi Parça 14'teki iş parçacıklarıyla yazıldı.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Ana makine güvenlik duvarı neyi yapamaz? İki örnek ver.</summary><p>İzin verdiği porttaki hizmetin kendi açığını kapatamaz; SSH'ye izin varsa zayıf parola yine zayıftır. Kaynak adresin gerçekten iddia ettiği makineden geldiğini kanıtlayamaz, şifreli bir bağlantının içinde ne taşındığını göremez ve makineye zaten root olarak girmiş birini durduramaz, çünkü o kişi kuralları da değiştirebilir.</p></details>
+<details><summary>Bir zincirde "ilk eşleşen hüküm kazanır" ne demektir ve kural yazarken neye yol açar?</summary><p>Kurallar yukarıdan aşağı denenir; bir kural accept, drop ya da reject gibi bir hüküm verdiğinde o zincirde başka kurala bakılmaz. counter gibi hüküm vermeyen eylemler değerlendirmeyi durdurmaz. Bu yüzden özel kurallar genel kurallardan önce yazılır; bir engelleme kuralı, aynı paketi kabul eden bir kuralın arkasına konursa hiç çalışmaz.</p></details>
+<details><summary>ct state established,related accept kuralı neden genellikle ilk sıradadır?</summary><p>Bağlantı izleyicisi, iki yönde de paket görülmüş bağlantıları established, onlarla ilişkili iletileri related olarak işaretler. Bu kural, makinenin kendi başlattığı bağlantıların yanıtlarını ve izin verilmiş bağlantıların devamını port ayrıntısı yazmadan geçirir. Paketlerin çoğu bu kuralda karara bağlandığı için hızlıdır ve geri kalan kurallar yalnız yeni bağlantıların kime açık olduğunu anlatır.</p></details>
+<details><summary>Uzaktaki bir VM'e güvenlik duvarı kuralı yüklerken kendini dışarıda bırakmamak için hangi adımları izlersin?</summary><p>Konsol erişimini ve anlık görüntüyü önceden hazırlarsın. Kuralları SSH izniyle birlikte tek dosyada yazar, nft -c ile denetler, çalışan kural setinin yedeğini alırsın. Birkaç dakika sonra yedeği geri yükleyecek bir zamanlayıcı kurup kuralı nft -f ile tek işlemde yüklersin. Açık oturumu kapatmadan ikinci terminalden yeni bir bağlantı denersin; kuruluyorsa zamanlayıcıyı iptal edip kuralı kalıcı yaparsın, kurulmuyorsa zamanlayıcı eski kuralları geri getirir.</p></details>
+<details><summary>Giden trafiği neden denetlersin ve output zincirinde unutulmaması gereken kural hangisidir?</summary><p>Ele geçirilmiş bir süreç çoğu zaman içeriden dışarıya bağlanır: komut almak, veri sızdırmak, araç indirmek için. Gelen kurallar buna dokunmaz. Giden trafiği yalnız bilinen hedeflere (DNS çözücüsü, saat sunucusu, paket deposu) açmak bunu zorlaştırır. output zincirinin ilk kuralı da ct state established,related accept olmalıdır; yoksa izin verilen gelen bağlantıların yanıtları atılır ve SSH kurulamaz.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Güvenlik duvarı:</strong> paket başlığına (kaynak, hedef, protokol, port, arayüz) ve bağlantı durumuna göre geçir / at / reddet. Hizmetin açığını, sahte kaynak adresi, şifreli içeriği, root olmuş saldırganı çözmez. En iyi kural: gereksiz hizmeti çalıştırma.</li>
+<li><strong>Kancalar:</strong> prerouting → input → yerel süreç → output → postrouting; başkası içinse forward.</li>
+<li><strong>nftables yapısı:</strong> tablo (aile: ip, ip6, inet) → zincir (taban zincir: <code>type filter hook input priority filter; policy drop;</code>) → kural (koşullar + eylem).</li>
+<li><strong>Sıra:</strong> yukarıdan aşağı, ilk hüküm kesin; counter hüküm değildir; sona gelen paket politikaya düşer (yazılmazsa accept). Özel kural genelden önce. <code>add</code> sona, <code>insert</code> başa ya da <code>position N</code> önüne; <code>-a</code> tanıtıcıları gösterir, <code>delete … handle N</code>.</li>
+<li><strong>Birden çok taban zincir:</strong> accept yalnız o zinciri bitirir, drop her şeyi bitirir. Paket ancak hiçbir zincir atmazsa geçer. Tek araçla yönet.</li>
+<li><strong>Hükümler:</strong> accept; drop (yanıt yok → zaman aşımı); reject (TCP sıfırlaması / ICMP → hemen "refused"); jump / return.</li>
+<li><strong>Durum takibi:</strong> new, established, related, invalid, untracked. İlk kural <code>ct state established,related accept</code>; ardından <code>ct state invalid drop</code>. Durumsuz kural setinde makinenin kendi başlattığı bağlantıların yanıtı düşer.</li>
+<li><strong>Varsayılan reddet:</strong> izin listesi; bilmediğin yeni hizmet de kapalı kalır. Bilinçli izinler: <code>iif lo</code>, gerekli ICMP, ICMPv6 komşu keşfi. <code>inet</code> kullan, IPv6'yı unutma.</li>
+<li><strong>Dosya:</strong> <code>/etc/nftables.conf</code>; <code>nft -c -f</code> denetle, <code>nft -f</code> atomik yükle, <code>flush ruleset</code> başta (başka araçların kurallarını da siler), <code>systemctl enable nftables</code>.</li>
+<li><strong>ufw:</strong> <code>default deny incoming</code>, <code>allow from 10.16.0.0/24 to any port 22 proto tcp</code>, <code>enable</code> (izinden sonra), <code>status numbered</code>, <code>insert N</code>, <code>delete N</code>, <code>limit</code>, <code>default deny outgoing</code>. Arkada iptables-nft tabloları.</li>
+<li><strong>Dışarıda kalmamak:</strong> konsol + anlık görüntü → tek dosya → <code>nft -c</code> → yedek → zamanlı geri alma (<code>systemd-run --on-active=5min</code>, <code>iptables-apply</code>) → yükle → yeni bağlantıyla sına → zamanlayıcıyı iptal et. Açık oturumun çalışması kanıt değildir.</li>
+<li><strong>Giden trafik:</strong> output'ta politika drop + established + lo + ICMP + bilinen hedefler. established unutulursa gelen SSH'nin yanıtı atılır.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-16">
+<h3>Quiz 16</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on altı tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Laboratuvar VM'inde güvenlik duvarı yalnız iç ağdan SSH'ye izin veriyor. Aşağıdakilerden hangisi bu güvenlik duvarının <strong>sağlayamayacağı</strong> bir korumadır?</p>
+<ul class="sec"><li>Dış adreslerden SSH'ye gelen yeni bağlantıları durdurmak</li><li>8080'de unutulmuş bir geliştirme sunucusuna dışarıdan erişimi kesmek</li><li>İç ağdaki bir makinenin zayıf bir parolayı tahmin ederek SSH ile girmesini engellemek</li><li>Reddedilen paketleri bir sayaçla saymak</li><li>IPv6 üzerinden gelen izinsiz bağlantıları durdurmak (kural seti inet ise)</li></ul>
+<div class="coz"><p>Güvenlik duvarı paket başlığına bakar: iç ağdan 22'ye gelen bağlantı izinlidir ve içinde doğru ya da tahmin edilmiş bir parola olması güvenlik duvarını ilgilendirmez. Parolayla girişin korunması SSH'nin kendi sertleştirmesinin işidir (Parça 18). A, B ve E varsayılan reddetle sağlanır; E için tablonun inet olması gerekir. D sayaçlarla (counter) yapılır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir input zincirinin ilk kuralı <code>ct state established,related accept</code>. Bu kural olmadan yalnız <code>policy drop</code> ve "iç ağdan 22'ye izin" kuralı kalırsa en önce ne bozulur?</p>
+<ul class="sec"><li>Makinenin kendi başlattığı bağlantılar (paket deposu, DNS) yanıt alamaz.</li><li>İç ağdan SSH bağlantısı hiç kurulamaz.</li><li>Döngü arayüzündeki trafik durur.</li><li>Kural seti söz dizimi hatası verip yüklenmez.</li><li>Hiçbir şey bozulmaz; o kural yalnız hız içindir.</li></ul>
+<div class="coz"><p>Durum takibi kuralı, makinenin dışarıya başlattığı bağlantıların yanıtlarını geçirir; o olmayınca deponun yanıtları (kaynak portu 8081) hiçbir izin kuralına uymadı ve denemede bağlantı zaman aşımına düştü. B yanlıştır: istemciden gelen bütün SSH paketleri "kaynak iç ağ, hedef port" kuralına uyduğu için SSH çalışmaya devam etti. C'yi <code>iif lo</code> kuralı belirler. D yanlıştır, kuralın olmaması söz dizimi hatası değildir. E yanlıştır: kural hız kadar doğruluk için de gereklidir.</p></div></li>
+
+<li data-c="D"><p class="q">Politikası <code>drop</code> olan input zincirinde kurallar şu sırada: 1) <code>ct state established,related accept</code> 2) <code>iif "lo" accept</code> 3) <code>ip saddr 10.16.0.0/24 tcp dport 2222 accept</code> 4) <code>ip saddr 10.16.0.0/16 drop</code> 5) <code>tcp dport 80 accept</code>. v0 arayüzünden, 10.16.5.9 adresinden 80 numaralı porta yeni bir TCP bağlantısının ilk paketi geliyor. Ne olur?</p>
+<ul class="sec"><li>1. kural kabul eder, çünkü TCP paketleri kurulu bağlantı sayılır.</li><li>5. kural kabul eder, çünkü 80 numaralı port izinlidir.</li><li>Hiçbir kural eşleşmez, politika düşürür.</li><li>4. kural düşürür; 5. kurala hiç bakılmaz.</li><li>3. kural kabul eder, çünkü kaynak iç ağdadır.</li></ul>
+<div class="coz"><p>Paket yeni (new) olduğu için 1. kurala, v0'dan geldiği için 2. kurala uymaz. 10.16.5.9, 10.16.0.0/24 içinde değildir (üçüncü sekizli 5) ve port 80'dir; 3. kural da uymaz (E yanlış). 10.16.0.0/16 ise 10.16.5.9'u kapsar: 4. kural drop hükmü verir ve ilk hüküm kesin olduğu için 5. kurala bakılmaz (B, sıranın önemini unutmaktır). C yanlıştır, çünkü 4. kural eşleşmiştir. Python'da <code>ip_address('10.16.5.9') in ip_network('10.16.0.0/16')</code> → True, /24 için False.</p></div></li>
+
+<li data-c="B"><p class="q">8080 numaralı porta gelen bağlantılar için bir kuralda <code>drop</code>, öbüründe <code>reject with tcp reset</code> kullanılıyor. İstemci tarafında beklenen davranış hangisidir?</p>
+<ul class="sec"><li>İkisinde de istemci hemen "Connection refused" görür.</li><li>drop'ta istemci yanıt alamayıp zaman aşımına düşer; reject'te hemen "Connection refused" görür.</li><li>drop'ta hemen "Connection refused" görür; reject'te zaman aşımına düşer.</li><li>reject paketi kabul eder ama günlüğe yazar.</li><li>İkisinde de bağlantı kurulur, yalnız veri iletilmez.</li></ul>
+<div class="coz"><p>drop paketi sessizce atar; istemci SYN'ini yeniden gönderir ve sonunda zaman aşımına düşer. Denemede 8080'e drop altında 2 saniyelik zaman aşımı, reject altında 0,00 saniyede "Connection refused" alındı. C bu ikisini ters çevirir. D yanlıştır: reject de sonunda içeride drop hükmü verir, paketi kabul etmez. A ve E iki eylemin farkını yok sayar.</p></div></li>
+
+<li data-c="E"><p class="q">Bir yönetici kural setini <code>table ip filter</code> içinde, <code>policy drop</code> ve "yalnız iç ağdan SSH" kuralıyla yazıyor. Makinenin hem IPv4 hem IPv6 adresi var. Dışarıdan IPv6 ile SSH'ye bağlanılmak istenirse ne olur?</p>
+<ul class="sec"><li>Bağlantı düşer, çünkü policy drop her aileye uygulanır.</li><li>Bağlantı reddedilir, çünkü IPv6 paketleri ip tablosunda geçersiz sayılır.</li><li>Bağlantı düşer, çünkü IPv6 adresleri iç ağda değildir.</li><li>Çekirdek IPv6'yı kendiliğinden kapatır.</li><li>Bağlantı kurulur, çünkü ip ailesindeki tablo IPv6 paketlerini hiç görmez.</li></ul>
+<div class="coz"><p>ip ailesi yalnız IPv4'ü kapsar; IPv6 paketleri bu tablonun zincirine hiç girmez, bu yüzden politikası da onlara uygulanmaz (A, C yanlış). Denemede <code>table ip lab</code> altında IPv4 ile zaman aşımı, IPv6 ile <code>BAGLANDI</code> alındı. B ve D uydurmadır: ne geçersiz sayma ne kendiliğinden kapatma vardır. Çözüm inet tablosu ve IPv6 için de açık kurallardır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir sunucuda output zincirine <code>policy drop</code>, <code>oif lo accept</code> ve "depoya giden 8081'e izin" kuralları yazıldı; input zinciri doğru ve iç ağdan SSH'ye izin veriyor. İç ağdan SSH bağlantısı artık kurulamıyor. En olası neden hangisidir?</p>
+<ul class="sec"><li>output'ta <code>ct state established,related accept</code> olmadığı için sunucunun SYN-ACK yanıtları atılıyor.</li><li>input zincirindeki izin kuralı output kuralları yüzünden siliniyor.</li><li>output zinciri gelen SYN paketlerini atıyor.</li><li>SSH yalnız lo üzerinden çalıştığı için <code>oif lo</code> kuralı onu engelliyor.</li><li>İki taban zincir aynı tabloda olamaz, input devre dışı kalıyor.</li></ul>
+<div class="coz"><p>Gelen SYN input'ta kabul edilir (denemede izin kuralı 2 SYN saydı), ama yanıt sunucunun gönderdiği bir pakettir ve output'tan çıkar; orada durum takibi kuralı yoksa ve hedef depo değilse politikaya düşer. Denemede output'taki izinsiz sayacı yeniden gönderilen SYN-ACK'leri saydı. B yanlıştır, kurallar birbirini silmez. C yanlıştır, gelen paketler output'tan geçmez. D'de SSH v0 üzerindendir. E yanlıştır: denemede input ve output aynı tabloda birlikte çalıştı.</p></div></li>
+
+<li data-c="D"><p class="q">Uzaktaki laboratuvar VM'ine SSH ile bağlısın ve yeni bir nftables kural seti yükleyeceksin. Aşağıdaki sıralardan hangisi kendini dışarıda bırakma riskini en iyi yönetir?</p>
+<ul class="sec"><li>Önce <code>policy drop</code>'u komutla ayarla, sonra izin kurallarını tek tek ekle, açık oturum çalışıyorsa bitir.</li><li>Kural dosyasını yükle, açık oturumun hâlâ çalıştığını görünce <code>systemctl enable nftables</code> çalıştır.</li><li><code>ufw --force enable</code> ile onay sorusunu atlayıp sonra SSH iznini ekle.</li><li>Dosyayı <code>nft -c</code> ile denetle, mevcut kuralların yedeğini al, birkaç dakika sonra yedeği geri yükleyecek zamanlayıcı kur, dosyayı yükle, ikinci terminalden yeni bağlantı dene, kuruluyorsa zamanlayıcıyı iptal et.</li><li>Kural dosyasının başındaki <code>flush ruleset</code> satırını sil ki eski kurallar korunsun.</li></ul>
+<div class="coz"><p>D bölüm 8'deki yöntemdir: söz dizimi denetimi, yedek, zamanlı geri alma, atomik yükleme ve yeni bağlantıyla sınama. 6. adımdaki provada hatalı kural yeni bağlantıyı kesti ama açık oturum durum takibi sayesinde yaşadı; bu yüzden B'deki "açık oturum çalışıyor" gözlemi kanıt değildir. A, politikayı izinlerden önce değiştirerek tam tehlikeli ara durumu yaratır. C ufw belgesinin önerdiği sıranın tersidir. E eski kurallarla yenilerini karıştırır ve sonucu öngörülemez kılar.</p></div></li>
+
+<li data-c="B"><p class="q">Bir makinede input kancasına iki taban zincir asılı: <code>inet lab</code> tablosundaki zincir (öncelik <code>filter</code>) iç ağdan 2222'ye <code>accept</code> diyor; <code>inet baska</code> tablosundaki zincir (öncelik <code>filter + 10</code>) yalnız durum takibi ve <code>lo</code> kuralı içeriyor, politikası <code>drop</code>. İç ağdan 2222'ye yeni bağlantı ne olur?</p>
+<ul class="sec"><li>Kabul edilir, çünkü önce çalışan zincir accept dedi ve accept bütün değerlendirmeyi bitirir.</li><li>Düşer, çünkü accept yalnız o taban zinciri bitirir; paket ikinci zincirde hiçbir kurala uymaz ve politika drop uygulanır.</li><li>Kabul edilir, çünkü aynı önceliğe sahip olmayan zincirlerden yalnız ilki çalışır.</li><li>Düşer, çünkü iki tabloda aynı kanca kullanılamaz ve ikisi de devre dışı kalır.</li><li>Kabul edilir, çünkü inet ailesi her zaman ip ailesinden önce gelir.</li></ul>
+<div class="coz"><p><code>nft(8)</code> belgesine göre accept yalnız o taban zincirin değerlendirmesini bitirir ve paket sıradaki taban zincire geçer; drop ise her şeyi bitirir. Paket ancak hiçbir taban zincir onu atmıyorsa geçer. Denemede <code>inet baska</code> eklenince iç ağdan bağlantı zaman aşımına düştü, tablo silinince yeniden kuruldu. A bu farkı bilmemektir; C ve E uydurma kurallardır; D yanlıştır, birden çok zincir aynı kancaya asılabilir.</p></div></li>
+
+<li data-c="E" data-k="siber-1"><p class="q">İşaretsiz 8 bitlik bir sayının alabileceği en büyük değer ve onaltılık gösterimi hangisidir?</p>
+<ul class="sec"><li>256, <code>0x100</code></li><li>127, <code>0x7F</code></li><li>128, <code>0x80</code></li><li>65.535, <code>0xFFFF</code></li><li>255, <code>0xFF</code></li></ul>
+<div class="coz"><p>n bit işaretsizde değerler 0 ile 2<sup>n</sup> − 1 arasındadır: 2<sup>8</sup> − 1 = 255. Bir bayt iki hex haneyle yazılır ve en büyüğü <code>FF</code>'dir. A, 2<sup>8</sup>'i en büyük değer sanmaktır; 256 sekiz bite sığmaz. B ve C işaretli sayının sınırlarıyla karışır (127 en büyük işaretli değer, 0x80 = −128). D 16 bitin sınırıdır.</p></div></li>
+
+<li data-c="C" data-k="siber-2"><p class="q">x86-64 ve AArch64 komut kümeleri için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>İkisinde de her komut tam 4 bayttır.</li><li>x86-64 komutları sabit 4 bayt, AArch64 komutları 1–15 bayt arasında değişir.</li><li>x86-64 komutları 1–15 bayt arasında değişir; AArch64 komutları sabit 4 bayttır.</li><li>İki küme aynı makine kodunu kullanır, yalnız assembly yazımları farklıdır.</li><li>Komut uzunluğu derleyicinin en iyileştirme düzeyine göre değişir.</li></ul>
+<div class="coz"><p>Parça 2'deki karşılaştırma: x86-64 değişken uzunluklu komutlarla CISC geleneğini, AArch64 sabit 4 baytlık komutlarla RISC geleneğini sürdürür. B bu ikisini ters çevirir, A biri için doğrudur. D yanlıştır: komut kümesi bir sözleşmedir ve iki küme birbirinin makine kodunu çalıştıramaz. E'de en iyileştirme hangi komutların seçileceğini değiştirir, komut kümesinin kodlama kuralını değil.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">x86-64 Linux'ta bir sürecin yığını (stack) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Yüksek adreslerden düşük adreslere doğru büyür ve olağan sınırı yaklaşık 8 MiB'tır.</li><li>Düşük adreslerden yükseğe doğru büyür ve sınırı yoktur.</li><li><code>malloc</code> ile ayrılan bellek yığından gelir.</li><li>Yığın bölgesinin izni olağan durumda <code>rwx</code>'tir.</li><li>Yığın programın kod bölgesinin içindedir.</li></ul>
+<div class="coz"><p>Parça 3'ün özeti: yığın aşağı büyür ve olağan sınırı yaklaşık 8 MiB'tır; her fonksiyon çağrısı yeni bir çerçeveyi daha düşük adrese koyar. B yönü ve sınırı yanlış verir. C öbekle (heap) karıştırır. D yanlıştır: yığın <code>rw-</code>'dir; <code>rwx</code> W^X ilkesine aykırı olurdu (Parça 5). E yanlıştır, kod ayrı ve <code>r-x</code> izinli bir bölgedir.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">Bir tarayıcı, farklı siteleri aynı sürecin ayrı iş parçacıklarında çalıştırmak yerine ayrı süreçlerde çalıştırıyor. Bunun güvenlik açısından temel gerekçesi hangisidir?</p>
+<ul class="sec"><li>İş parçacıkları ayrı sanal adres uzaylarına sahip olduğu için daha yavaştır.</li><li>Süreçler aynı belleği paylaştığı için veri alışverişi kolaylaşır.</li><li>İş parçacıkları ASLR'den yararlanamaz.</li><li>Güvenlik sınırı süreçtir: iş parçacıkları belleği paylaşır, ayrı süreçlerin sanal adres uzayları birbirinden yalıtıktır.</li><li>Ayrı süreçler seccomp kullanamaz, iş parçacıkları kullanabilir.</li></ul>
+<div class="coz"><p>Parça 5'in kuralı: aynı süreçteki iş parçacıkları belleği paylaşır, ayrı süreçlerin her biri kendi sanal adres uzayını görür ve sayfa tablolarını yalnız çekirdek yazar. Bu yüzden bir sitenin kodundaki hata öbür sitenin belleğine ulaşamaz. A ve B süreç ile iş parçacığını ters anlatır. C yanlıştır, ASLR süreç genelinde uygulanır. E de terstir: seccomp süreçlere uygulanabilir.</p></div></li>
+
+<li data-c="B" data-k="siber-6"><p class="q">"ş" harfi bir URL'de URL kodlamasıyla (UTF-8 baytlarıyla) nasıl yazılır?</p>
+<ul class="sec"><li><code>%15F</code></li><li><code>%C5%9F</code></li><li><code>%FE</code></li><li><code>xYQ=</code></li><li><code>&amp;scedil;</code></li></ul>
+<div class="coz"><p>URL kodlaması, ayrılmamış karakterler dışındaki her baytı <code>%HH</code> biçiminde yazar. "ş" (U+015F) UTF-8'de iki bayttır: C5 9F; sonuç <code>%C5%9F</code>. Python'da <code>urllib.parse.quote('ş')</code> → <code>%C5%9F</code>. A kod noktasını doğrudan yazmaya çalışır, C tek baytlık kod sayfası (Latin-5) karşılığıdır, D Base64'e benzer, E HTML varlığıdır. Hiçbiri gizlilik sağlamaz.</p></div></li>
+
+<li data-c="E" data-k="siber-7"><p class="q">Yalnız iç ağ kipinde çalışan laboratuvar VM'ine bir paket güncellemesi indirmen gerekiyor. Parça 7'deki plana en uygun davranış hangisidir?</p>
+<ul class="sec"><li>VM'i kalıcı olarak köprü (bridged) kipine almak</li><li>Güncellemeyi hiç yapmamak, laboratuvar zaten yalıtık</li><li>VM'e ev ağından herkesin erişebilmesi için port yönlendirmek</li><li>Ana makinenin güvenlik duvarını kapatıp VM'i ev ağına bağlamak</li><li>NAT kipini yalnız güncelleme süresince geçici açmak, iş bitince yeniden kapatmak</li></ul>
+<div class="coz"><p>Parça 7'nin planı: host-only ya da iç ağ varsayılandır; NAT yalnız güncelleme için ve geçici açılır, köprü kipinden kaçınılır. A ve D VM'i ev ağının bir üyesi yapar; içindeki bilerek zafiyetli bir sistem ev ağına açılır. C aynı riski dışarıya taşır. B ise güncel olmayan yazılımı bilerek bırakmaktır.</p></div></li>
+
+<li data-c="C" data-k="siber-8"><p class="q"><code>noexec</code> ile bağlanmış bir bölümde <code>./betik.sh</code> "Permission denied" veriyor, ama <code>bash betik.sh</code> çalışıyor. Bunun açıklaması hangisidir?</p>
+<ul class="sec"><li>Betiğin çalıştırma (x) izni yoktur; <code>bash</code> izinleri atlar.</li><li><code>noexec</code> yalnız ikili dosyaları engeller, betikleri hiç etkilemez.</li><li><code>noexec</code> o bölümden doğrudan çalıştırmayı engeller, ama başka yerden çalışan bir yorumlayıcının dosyayı okumasını durdurmaz.</li><li><code>bash</code> SUID bitli olduğu için kısıtları aşar.</li><li><code>noexec</code> yalnız root için geçerlidir.</li></ul>
+<div class="coz"><p>Parça 8'deki not: <code>noexec</code> o dosya sisteminden doğrudan çalıştırmayı yasaklar, yorumlayıcıyı durdurmaz. <code>bash betik.sh</code>'te çalışan program <code>/usr/bin/bash</code>'tir ve betiği yalnız veri olarak okur. A yanlıştır; dosyanın izni <code>rwx</code> olsa da aynı ret gelir. B yanlıştır, doğrudan çalıştırılan betik de engellendi. D ve E temelsizdir; <code>bash</code> SUID değildir.</p></div></li>
+
+<li data-c="A" data-k="siber-10"><p class="q">APT depo meta verisindeki <code>Valid-Until</code> alanı hangi tehdide karşı konmuştur?</p>
+<ul class="sec"><li>Eski ama geçerli imzalı depo dosyalarının sunulmaya devam edilerek güvenlik güncellemelerinin gizlenmesine (tekrar saldırısı)</li><li>Paketlerin indirilirken şifrelenmemesine</li><li>Paketlerin içinde açık bulunmasına</li><li>Depo anahtarının çok kısa olmasına</li><li>Kurulu dosyaların sonradan değiştirilmesine</li></ul>
+<div class="coz"><p>Parça 10'un ayrımı: imza "gerçek mi"yi, <code>Valid-Until</code> "güncel mi"yi cevaplar. Kötü niyetli bir ayna eski ama gerçek imzalı listeleri sunarsa imza tutar, ama süresi geçmiş listeyi APT kabul etmez; Debian güvenlik deposunda bu süre bir haftadır. B taşıma gizliliğidir, C imzanın da kapsamı dışındadır, D anahtar seçimidir, E kurulu dosya bütünlüğüdür (<code>dpkg -V</code>).</p></div></li>
+
+<li data-c="D" data-k="siber-11"><p class="q"><code>ali</code> kullanıcısı <code>sudo</code> ve <code>adm</code> gruplarının ek üyesi. Bir yönetici <code>usermod -G docker ali</code> komutunu çalıştırıyor. Sonuç ne olur?</p>
+<ul class="sec"><li><code>ali</code> docker grubuna eklenir, öbür ek grupları korunur.</li><li><code>ali</code>'nin birincil grubu docker olur.</li><li>Komut hata verir, çünkü <code>-a</code> zorunludur.</li><li><code>ali</code>'nin ek grupları yalnız docker olarak yeniden yazılır; sudo ve adm üyeliği gider.</li><li>docker grubu silinip yeniden oluşturulur.</li></ul>
+<div class="coz"><p>Parça 11'in uyarısı: <code>usermod -G</code> ek grup listesini verilenle değiştirir; mevcut listeye eklemek için <code>-a</code> (<code>-aG</code>) gerekir. A, <code>-aG</code>'nin sonucudur. B birincil grubu değiştiren <code>-g</code>'dir. C yanlıştır, komut hata vermeden çalışır ve tehlikesi de budur. E'de grup dosyasındaki docker grubu silinmez. Değişiklik bir sonraki girişte etkili olur.</p></div></li>
+
+<li data-c="B" data-k="siber-12"><p class="q">Sekizlik izni <code>4755</code> olan bir dosya <code>ls -l</code> çıktısında nasıl görünür?</p>
+<ul class="sec"><li><code>-rwxr-sr-x</code></li><li><code>-rwsr-xr-x</code></li><li><code>-rwxr-xr-t</code></li><li><code>-rwSr-xr-x</code></li><li><code>-rwxrwxr-x</code></li></ul>
+<div class="coz"><p>Dört haneli sekizlikte ilk hane özel bitlerdir: 4 SUID, 2 SGID, 1 sticky. 755 <code>rwxr-xr-x</code>'tir; SUID sahibin x yerine küçük <code>s</code> koyar: <code>-rwsr-xr-x</code>. Python'da <code>stat.filemode(0o104755)</code> → <code>-rwsr-xr-x</code>. A SGID'dir (2755), C sticky'dir (1755). D'deki büyük S, sahibin x biti kapalıyken SUID'dir (4655). E 775'tir.</p></div></li>
+
+<li data-c="E" data-k="siber-13"><p class="q"><code>ss -tlnp</code> çıktısında <code>LISTEN 0 5 0.0.0.0:8080 0.0.0.0:* users:(("python3",pid=1555,fd=3))</code> satırı var. Bu satır için hangisi doğrudur?</p>
+<ul class="sec"><li>1555 numaralı süreç 8080'e dışarıdan bağlanmış bir istemcidir.</li><li>8080 yalnız makinenin kendi içinden erişilebilir.</li><li>fd=3, portun üçüncü kez açıldığını gösterir.</li><li>Port bir UDP soketidir.</li><li>PID'i 1555 olan <code>python3</code> süreci 8080'i bütün arayüzlerde dinliyor ve soketi 3 numaralı tanıtıcısında tutuyor.</li></ul>
+<div class="coz"><p>Parça 13'te gördüğün gibi <code>-t</code> TCP, <code>-l</code> yalnız dinleyenler, <code>-p</code> soketi tutan süreçtir; <code>users:</code> kısmı süreç adını, PID'i ve dosya tanıtıcısı numarasını verir. <code>0.0.0.0</code> bütün IPv4 adresleri demektir; bu parçada güvenlik duvarının kapatması gereken türden bir dinleyicidir (B, <code>127.0.0.1</code> olsaydı doğruydu). A yanlıştır, LISTEN bir dinleyendir. C tanıtıcıyı sayaç sanır. D yanlıştır, <code>-t</code> TCP'dir.</p></div></li>
+
+<li data-c="C" data-k="siber-13"><p class="q">Bir sunucuda <code>/tmp</code> altındaki gizli bir dizinden çalışan ve bilinmeyen bir adrese bağlı bir süreç buldun. Parça 13'teki yönteme göre doğru sıra hangisidir?</p>
+<ul class="sec"><li>Hemen <code>kill -9</code> ile öldürmek, sonra dosyasını aramak</li><li>Makineyi yeniden başlatıp süreç geri gelir mi diye beklemek</li><li>Önce soru listesiyle bakıp not almak ve program dosyasının özetini almak, gerekirse <code>SIGSTOP</code> ile dondurmak, kanıttan sonra sonlandırmak ve kökü bulmak</li><li>Süreci yeniden adlandırmak için komut satırını değiştirmek</li><li>Yalnız <code>top</code>'ta işlemci kullanımına bakıp düşükse bırakmak</li></ul>
+<div class="coz"><p>"Önce bak, sonra dondur, en son öldür": ölü süreçten <code>/proc</code> kaydı okunamaz, dondurulmuş süreçten okunur; <code>/proc/PID/exe</code> üzerinden özet ve kopya alınır. A kanıtı yok eder ve süreci geri getirecek kökü bulmaz. B hem kanıtı siler hem de belleği kaybettirir. D anlamsızdır. E tek bir göstergeye dayanır; bir süreç tek özelliğiyle değil, cevapların birlikte okunmasıyla değerlendirilir. Giden bağlantı kuralları (bu parça) böyle bir sürecin dışarı konuşmasını baştan zorlaştırır.</p></div></li>
+
+<li data-c="A" data-k="siber-14"><p class="q"><code>systemctl start nftables</code> ile <code>systemctl enable nftables</code> arasındaki fark hangisidir?</p>
+<ul class="sec"><li>start hizmeti şimdi başlatır; enable onu açılışta kendiliğinden başlayacak biçimde bağlar, şimdi başlatmaz (birlikte istenirse <code>enable --now</code>).</li><li>İkisi aynıdır, enable eski adıdır.</li><li>enable hizmeti şimdi başlatır, start açılışta başlatır.</li><li>start hizmeti kalıcı olarak etkinleştirir, enable yalnız yapılandırmayı denetler.</li><li>enable hizmetin birim dosyasını siler ve yeniden yazar.</li></ul>
+<div class="coz"><p>systemd'de başlatmak ile etkinleştirmek ayrı işlerdir: start birimi o anda çalıştırır; enable birimi açılışta çalışacak hedefe bağlar ve şimdiki durumu değiştirmez. Bu parçadaki ortamda nftables kuruluydu ama <code>is-enabled</code> <code>disabled</code> diyordu. B, C ve D bu ayrımı karıştırır. E yanlıştır, enable birim dosyasını değiştirmez, ona bağ oluşturur.</p></div></li>
+
+<li data-c="D" data-k="siber-14"><p class="q">Bir savunmacı, makinedeki cron görevlerini ve systemd zamanlayıcılarını düzenli olarak envantere alıyor. Bunun en önemli güvenlik gerekçesi hangisidir?</p>
+<ul class="sec"><li>Zamanlanmış görevler işlemciyi her zaman yorduğu için hepsini kapatmak</li><li>Zamanlayıcıların saat dilimini düzeltmek</li><li>cron'un systemd'den daha güvenli olduğunu göstermek</li><li>Zamanlanmış görevler hem yönetim aracı hem de saldırganın kalıcılık (persistence) yöntemi olabileceği için beklenmeyen bir görevi fark etmek</li><li>Zamanlanmış görevlerin günlük üretmesini engellemek</li></ul>
+<div class="coz"><p>Parça 14'ün konusu: zamanlanmış görevler meşru yönetimin parçasıdır, ama makineye bir kez giren biri yeniden başlatmalardan sonra da geri gelmek için aynı mekanizmayı kullanabilir. Bilinen görevlerin listesi olunca yeni ve açıklanamayan bir görev göze batar. A gereksiz ve zararlıdır, B ve C konuyla ilgisizdir. E tam tersidir: görevlerin günlükleri izleme için değerlidir (Parça 17).</p></div></li>
+
+<li data-c="B" data-k="siber-15"><p class="q"><code>ip route</code> çıktısında <code>default via 192.168.56.1 dev enp0s8</code> satırı ne anlatır?</p>
+<ul class="sec"><li>Makinenin kendi IP adresi 192.168.56.1'dir.</li><li>Daha özel bir yol bulunmayan bütün hedefler için paketler enp0s8 arayüzünden 192.168.56.1 ağ geçidine gönderilir.</li><li>192.168.56.1, makinenin DNS çözücüsüdür.</li><li>enp0s8 arayüzü yalnız 192.168.56.1 ile konuşabilir.</li><li>Bu satır güvenlik duvarının varsayılan politikasını gösterir.</li></ul>
+<div class="coz"><p>Parça 15'te gördüğün varsayılan yol satırıdır: yönlendirme tablosunda daha özel bir girdisi olmayan her hedef bu ağ geçidine gider. Makinenin kendi adresi <code>ip addr</code>'da görünür (A), DNS çözücüsü <code>/etc/resolv.conf</code> ya da systemd-resolved'dadır (C). D yanlıştır, aynı alt ağdaki öbür makinelerle de doğrudan konuşulur. E yönlendirme ile süzmeyi karıştırır; güvenlik duvarı ayrı bir katmandır.</p></div></li>
+
+<li data-c="E" data-k="siber-15"><p class="q"><code>ss -tln</code> çıktısında <code>127.0.0.1:631</code> ve <code>0.0.0.0:22</code> dinleyicileri görünüyor. Hangisi doğrudur?</p>
+<ul class="sec"><li>İki port da yalnız makinenin içinden erişilebilir.</li><li>631 bütün arayüzlerde, 22 yalnız döngü arayüzünde dinlemektedir.</li><li>İki port da dışarıya açıktır, adreslerin anlamı yoktur.</li><li><code>0.0.0.0</code> portun kapalı olduğunu gösterir.</li><li>631 yalnız makinenin kendi içinden, 22 ise makinenin bütün IPv4 adreslerinden erişilebilir; ağdan erişimi bundan sonra güvenlik duvarı belirler.</li></ul>
+<div class="coz"><p><code>127.0.0.1</code>'e bağlı soket yalnız döngü arayüzünden ulaşılabilir; <code>0.0.0.0</code> ise "bütün IPv4 adresleri" demektir (Parça 15). B bu ikisini ters çevirir; A ve C dinleme adresinin anlamını yok sayar; D yanlıştır, LISTEN açık bir dinleyendir. Bu parçanın dersi: <code>0.0.0.0</code>'da dinleyen bir hizmete kimin ulaşabileceğini güvenlik duvarı daraltır, ama ilk tercih gerekmiyorsa hizmeti yalnız <code>127.0.0.1</code>'e bağlamaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-15">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-16">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-17">Sonraki parça: Günlükler ve izleme →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"nftables tutorial input chain policy drop ct state established"</li>
+  <li>"linux netfilter hooks prerouting input forward output postrouting"</li>
+  <li>"ufw default deny incoming allow ssh from subnet"</li>
+  <li>"firewall stateful vs stateless explained"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> Bütün kural denemeleri <code>unshare -rn</code> ile açılan kullanıcı ve ağ ad alanında, içinde <code>unshare -n</code> ile açılan ikinci bir ağ ad alanı ve veth çiftiyle kuruldu; istemci komutları <code>nsenter -t PID -n</code> ile çalıştırıldı. Kural yokken ve varken bağlantılar, <code>nft -c -f</code>, <code>nft -f</code>, <code>nft -a list</code>, sayaçlar, <code>add</code>/<code>insert … position</code>/<code>delete … handle</code>, <code>reject with tcp reset</code>, ikinci taban zincir (<code>priority filter + 10</code>), durum takibi kuralının çıkarılması, <code>table ip</code> ile <code>table inet</code> karşılaştırması (IPv6 ile), <code>output</code> zinciri ve durum takibi unutulmuş <code>output</code>, yedek ve <code>sleep</code> tabanlı zamanlı geri alma, ufw ile aynı politika (gelen ve giden) gerçekten çalıştırıldı ve çıktıları birebir alındı. Quiz'deki IP aralığı, URL kodlaması, <code>4755</code> gösterimi ve 255/0xFF Python ile doğrulandı. Ortam: WSL2 üzerinde Kali Rolling, çekirdek 6.18, nftables 1.1.6, iptables 1.8.13 (nf_tables), Python 3.</li>
+  <li><strong>Kullanıcı ad alanı ve /tmp'ye açılmış araç:</strong> Ad alanındaki UID 0 gerçek root değildir; kurallar yalnız o yalıtık ağ yığınına uygulandı ve süreç bitince yok oldu. ufw ortamda yoktu; yerel APT listeleri eski olduğu için <code>apt-get download ufw</code> 404 verdi, aynı sürüm (0.36.2-10) Kali ve Debian havuzlarından <code>curl</code> ile indirildi, iki dosyanın SHA-256 özeti aynıydı (APT imza zinciriyle doğrulanmadı). Paket <code>dpkg-deb -x</code> ile <code>/tmp/yazar/siber-16/araclar/kok</code>'a açıldı; ufw'nin <code>--rootdir</code>/<code>--datadir</code> seçenekleri, ufw-init'in bu iki dizini farklı biçimde kullanması nedeniyle tek bir <code>/tmp</code> dizinine (bağlantılı <code>usr</code> ve <code>lib</code>) yöneltildi. ufw'nin <code>/tmp</code> ve <code>/</code> sahipliğiyle ilgili "WARN" satırları çıktılardan süzüldü. Okurun normal kurulumu <code>sudo apt install ufw</code> ya da <code>sudo apt install nftables</code>'tır.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> Gerçek sistemde <code>apt install</code>, <code>/etc/nftables.conf</code>'un yüklenmesi, <code>systemctl enable nftables</code>, <code>systemd-run --on-active=5min</code> ile zamanlı geri alma, <code>systemctl stop fw-geri-al.timer</code>, <code>iptables-apply</code> ve laboratuvar VM'indeki gerçek SSH (port 22) sınaması; hepsi root ister ve gerçek ağ ad alanını değiştirir. Yalnız salt okunur olarak <code>/etc/nftables.conf</code> okundu ve <code>systemctl is-enabled nftables</code> (<code>disabled</code>) sorgulandı. Denemede SSH yerine 2222'de dinleyen küçük bir Python sunucusu kullanıldı. <code>nft … log</code> kuralları kullanılmadı (günlükler Parça 17'de).</li>
+  <li><strong>Resmî belgeden:</strong> <code>nft(8)</code> (ortamdaki man sayfası: <code>-c</code>, <code>-a</code>, politikanın varsayılanı accept, accept/drop'un birden çok taban zincirdeki anlamı, öncelik sırası, <code>reject</code>'in içeride drop vermesi); nftables wiki: "Simple ruleset for a workstation" (<code>iif lo accept</code>, <code>ct state established,related accept</code>, ICMPv6 komşu keşfi uyarısı), "Configuring chains" (politika, öncelik, aynı öncelikte sıranın tanımsızlığı), "Matching connection tracking stateful metainformation" (new, established, related, invalid, untracked tanımları); <code>ufw(8)</code> (paketle gelen man sayfası: <code>limit</code> için 30 saniyede 6 bağlantı, uzaktan yönetim ve <code>enable</code>'ın zincirleri boşaltması, SSH altında onay, <code>--force</code>, ilk eşleşme kazanır, <code>insert</code>, <code>status numbered</code>, "tam güvenlik duvarı arayüzü değil"); <code>iptables-apply(8)</code> (onay yoksa geri dönüş, varsayılan 10 saniye); <code>systemd-run(1)</code> (<code>--on-active</code>, geçici <code>.timer</code>); Debian Yönetici El Kitabı güvenlik duvarı bölümü (<code>/etc/nftables.conf</code>, <code>systemctl enable nftables</code>, <code>nft flush ruleset</code>). RFC 5737 belge adres aralığı (198.51.100.0/24) yerleşik bilgiden.</li>
+  <li><strong>Ortama özgü ve sadeleştirmeler:</strong> veth arayüzlerinin rastgele MAC adreslerinden türeyen <code>fe80::</code> adresleri <code>fe80::xxxx:xxxx:xxxx:xxxx</code> olarak sadeleştirildi. Kullanıcı adı, makine adı ve ev dizini hiçbir çıktıda yok. Örnekler ayrı ad alanlarında ve ayrı çalıştırmalarda alındı; tanıtıcı numaraları ve sayaç değerleri çalıştırmadan çalıştırmaya biraz değişebilir (ör. çekirdeğin kendiliğinden gönderdiği ICMPv6 iletileri bazı çalıştırmalarda sayaçlara bir iki paket ekledi). Çıktılardaki <code>###</code> ile başlayan bölüm başlıkları ve <code>diff</code> gibi yardımcı satırlar, sarmalayıcı betiğin çıktısından yalnız ilgili komutun çıktısı bırakılarak ayıklandı; gösterilen satırların kendisi değiştirilmedi.</li>
+  <li><strong>Hafızadan / tartışmalı:</strong> TCP'de output'ta atılan SYN için istemcinin hemen hata değil zaman aşımı görmesi bu ortamda gözlendi; başka çekirdek sürümlerinde davranış ayrıntısı doğrulanmadı. Ubuntu'da ufw'nin varsayılan ön yüz olması ve ufw'nin hazır kurallarının içeriği (DHCP istemcisi, mDNS, UPnP) paket dosyalarından ve belgeden; dağıtımdan dağıtıma değişebilir. "Saldırgan çoğunlukla içeriden dışarıya bağlanır" yaygın savunma bilgisidir, tek bir kaynaktan alınmadı. Parça 14'ün dosyası yazım sırasında yoktu; onun tekrar soruları yalnız <code>siber.md</code>'deki konu satırından kuruldu. Parça 15 yazımın sonunda yayımlandı; tekrar soruları ve metindeki göndermeler (bağlanma adresi <code>127.0.0.1</code>/<code>0.0.0.0</code>, varsayılan yol, <code>unshare -rn</code>'de kapalı <code>lo</code>) onun özetiyle karşılaştırıldı.</li>
+  <li><strong>Saldırı sınırı:</strong> Kural sınaması yalnız kendi makinedeki yalıtık ad alanlarında, belge aralığı adresleriyle yapıldı; hiçbir dış sisteme bağlantı, tarama ya da güvenlik duvarı atlatma yöntemi anlatılmadı. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

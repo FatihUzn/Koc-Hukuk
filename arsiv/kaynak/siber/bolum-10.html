@@ -1,0 +1,734 @@
+<article class="chapter ders" id="c-siber-10">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 10 · Paket yönetimi</div>
+<h1>Yazılım nereden geliyor? Paket yönetimi ve tedarik güveni</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Laboratuvar makinene <code>sudo apt install</code> yazıp bir program kurduğunda, dünyanın bir yerindeki bir sunucudan birkaç megabayt iner ve root yetkisiyle sistemine yerleşir. O baytları kim üretti? Yolda kimse değiştirmedi mi? İndirdiğin sunucu bir gönüllünün aynası ve o ayna ele geçirilmişse ne olur? Bir proje sitesinin "kurmak için bu satırı yapıştır" dediği <code>curl … | bash</code> komutu neden bundan farklı? Kurduktan aylar sonra sistemdeki bir dosyanın hâlâ paketten çıktığı gibi olup olmadığını nasıl anlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 6 (hash tek yönlü bir parmak izidir; kodlama ve şifreleme değildir), Parça 7 (indirilen kalıbın iki halkalı doğrulaması: önce listenin imzası, sonra kalıbın özeti), Parça 8 (<code>/etc</code>, <code>/usr</code>, <code>/var</code> dizinlerinin işi) ve Parça 9 (<code>grep</code>, <code>awk</code>, boru). Kod rafından: Parça 9 (<code>pip</code> ve tanımadık paket uyarısı), Parça 18 (<code>sha256sum -c</code> ve bütünlük izleyicisi).</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bir Linux sistemindeki dosyaların neredeyse hepsi senin yazmadığın, başkalarının derleyip paketlediği yazılımdır. Saldırgan açısından en kârlı hedef çoğu zaman tek bir makine değil, binlerce makinenin güvenle yazılım çektiği yerdir: depo, ayna sunucusu, imza anahtarı, kurulum betiği. Buna <strong>yazılım tedarik zinciri</strong> denir. Bu parça zincirin senin makinene değen ucunu ele alıyor: paket yöneticisi ne yapar, depoya neden güvenilir, güven hangi dosyada başlar ve hangi özetle pakete kadar iner, güncellemeler nasıl gelir ve otomatikleşir, dağıtım dışından yazılım kurmanın riski nedir, kurulu dosyaların bütünlüğü nasıl sorgulanır ve bir dağıtımın "destek süresi" ne demektir.</p>
+
+<p>Ana fikir Parça 7'deki iki halkalı doğrulamanın büyütülmüş hâlidir: <strong>tek bir imza, bir özet zinciri aracılığıyla binlerce dosyayı korur.</strong> Zincirin her halkasını kendi makinende tek tek izleyeceksin. Hash ve imzanın matematiği Parça 44 ve 46'da, xz ve SolarWinds gibi büyük tedarik zinciri olayları Parça 59'da; burada yalnız bağlantı kuruyoruz.</p>
+
+<h2 class="s">Paket yöneticisi ne yapar?</h2>
+
+<p>Windows'ta bir programı çoğu zaman üreticinin sitesinden indirdiğin bir kurulum dosyasıyla kurarsın; her programın kendi güncelleyicisi vardır. Linux dağıtımlarında yazılımın neredeyse tamamı dağıtımın kendi ekibince derlenir, standart biçimde paketlenir ve dağıtımın sunucularından dağıtılır. Üç kazanç: <strong>tutarlılık</strong> (aynı kitaplık sürümleri, aynı dizin düzeni, Parça 8), <strong>tek kapı</strong> (bütün sistemi tek komutla güncellersin) ve <strong>güven</strong> (yüzlerce siteye değil, tek bir imza anahtarına güvenirsin).</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Paket</strong>: Bir yazılımın kurulacak dosyalarını ve onları tarif eden üst veriyi (ad, sürüm, mimari, bağımlılıklar, bakımcı, kurulum öncesi ve sonrası betikleri) taşıyan tek dosya. Debian ailesinde <code>.deb</code>, Red Hat ailesinde (Fedora, RHEL, Rocky, AlmaLinux) <code>.rpm</code>.</p>
+<p><strong>Depo</strong> (repository): Paketlerin ve onların listesinin durduğu, belirli bir düzende yayımlanan sunucu dizini. Aynı deponun birebir kopyalarını tutan sunuculara <strong>ayna</strong> (mirror) denir.</p>
+<p><strong>Bağımlılık</strong>: Bir paketin çalışmak için kurulu olmasını istediği başka paket ya da sürüm aralığı (ör. "libc6, 2.34 ya da daha yeni"). Paket yöneticisi bağımlılık ağacını çözer: neyin kurulacağını, neyin yükseltileceğini, neyin çakıştığını hesaplar.</p></div>
+
+<p>Debian ailesinde iki katman vardır. Alttaki <strong><code>dpkg</code></strong> yalnız elindeki bir <code>.deb</code> dosyasını açar, dosyaları yerleştirir, kayıt tutar; internete çıkmaz, bağımlılık indirmez. Üstteki <strong>APT</strong> (<code>apt</code>, <code>apt-get</code>, <code>apt-cache</code>) depoların listesini çeker, imzaları doğrular, bağımlılıkları çözer, gereken paketleri indirir ve kurulumu <code>dpkg</code>'ye yaptırır. Red Hat ailesinde aynı ikili <code>rpm</code> (alt katman) ve <code>dnf</code> (üst katman) arasındadır. Komutlar farklı, fikir aynıdır:</p>
+
+<div class="tablo"><table>
+<tr><th>İş</th><th>Debian / Ubuntu / Kali</th><th>Fedora / RHEL ailesi</th></tr>
+<tr><td>Depo listesini tazele</td><td><code>sudo apt update</code></td><td><code>sudo dnf check-update</code> (dnf üst veriyi kendiliğinden de tazeler)</td></tr>
+<tr><td>Paket kur</td><td><code>sudo apt install paket</code></td><td><code>sudo dnf install paket</code></td></tr>
+<tr><td>Kuruluları yükselt</td><td><code>sudo apt upgrade</code> (ya da <code>full-upgrade</code>)</td><td><code>sudo dnf upgrade</code></td></tr>
+<tr><td>Hangi sürüm, hangi depodan?</td><td><code>apt-cache policy paket</code></td><td><code>dnf info paket</code>, <code>dnf list --showduplicates paket</code></td></tr>
+<tr><td>Kurmadan indir</td><td><code>apt-get download paket</code></td><td><code>dnf download paket</code></td></tr>
+<tr><td>Bu dosya hangi paketin?</td><td><code>dpkg -S /yol</code></td><td><code>rpm -qf /yol</code></td></tr>
+<tr><td>Paketin dosyaları</td><td><code>dpkg -L paket</code></td><td><code>rpm -ql paket</code></td></tr>
+<tr><td>Kurulu dosyaları denetle</td><td><code>dpkg -V paket</code></td><td><code>rpm -V paket</code></td></tr>
+</table></div>
+
+<p>Fedora sütunu kılavuzlardan ve hafızadan yazıldı, burada denenmedi.</p>
+
+<h2 class="s">Depo kaynakları: APT nereye bakıyor?</h2>
+
+<p>APT'nin hangi depolara bakacağı <code>/etc/apt/sources.list.d/</code> altındaki dosyalarda yazılıdır. Eski sistemlerde tek satırlık <code>/etc/apt/sources.list</code> biçimini görürsün (<code>deb http://deb.debian.org/debian trixie main</code>). sources.list(5) kılavuzuna göre bu tek satırlık biçim artık "deprecated" sayılıyor, 2029'dan önce kaldırılmayacak; yerine alan adlı <code>.sources</code> (deb822) biçimi öneriliyor. Bir <code>.sources</code> kaydının alanları:</p>
+
+<ul>
+<li><strong>Types</strong>: <code>deb</code> derlenmiş paketler, <code>deb-src</code> kaynak kod.</li>
+<li><strong>URIs</strong>: deponun adresi.</li>
+<li><strong>Suites</strong>: dağıtımın hangi dalı. Debian'da <code>trixie</code> (sürümün adı), <code>trixie-updates</code>, güvenlik için <code>trixie-security</code>; Kali'de <code>kali-rolling</code> ya da <code>kali-last-snapshot</code>.</li>
+<li><strong>Components</strong>: lisansa göre bölümler: <code>main</code> (özgür yazılım), <code>contrib</code>, <code>non-free</code>, <code>non-free-firmware</code>.</li>
+<li><strong>Signed-By</strong>: bu deponun imzasını doğrulamakta kullanılacak anahtar halkası dosyası.</li>
+</ul>
+
+<p>Aynı paket birden çok depoda bulunabilir. APT her sürüme bir <strong>öncelik</strong> (pin priority) verir ve en yükseğini <strong>aday</strong> (candidate) seçer. Varsayılan olarak normal depolar 500, zaten kurulu sürümün kaydı 100 alır. <code>apt-cache policy</code> bu hesabı gösterir; ne kurulacağını ve nereden geleceğini kurmadan öğrenmenin yoludur.</p>
+
+<h2 class="s">APT güven zinciri: tek imza, binlerce dosya</h2>
+
+<p>APT her <code>.deb</code>'i indirip olduğu gibi kursaydı, ağı ya da bir aynayı denetleyen biri istediği dosyayı "paket" diye sunabilirdi. Her pakete ayrı imza koymak bir çözümdür (RPM dünyası bunu yapar). Debian wiki'deki SecureApt sayfasının anlattığı Debian yolu ise şudur: depo <strong>tek bir dosyayı</strong> imzalar, öbür her şeyi o dosyadan başlayan bir <strong>özet zinciriyle</strong> bağlar.</p>
+
+<ol>
+<li><strong>InRelease</strong> (ya da eski düzende <code>Release</code> + ayrık imza <code>Release.gpg</code>): deponun "içindekiler" dosyasıdır. Deponun adı, dalı, tarihi ve <strong>her <code>Packages</code> dosyasının boyutu ile özetleri</strong> (MD5Sum, SHA1, SHA256 bölümleri) yazar. InRelease, metnin içine gömülü (clearsign) bir OpenPGP imzası taşır.</li>
+<li><strong>Packages</strong>: bir bileşenin ve mimarinin (ör. <code>main/binary-amd64</code>) bütün paketlerinin listesidir. Her paket için ad, sürüm, bağımlılıklar, depodaki yol (<code>Filename</code>), boyut ve <strong><code>.deb</code> dosyasının SHA256 özeti</strong> yazar.</li>
+<li><strong>.deb</strong>: paketin kendisi. APT indirdiği dosyanın özetini hesaplar, <code>Packages</code>'taki değerle karşılaştırır; tutmazsa kurmaz.</li>
+</ol>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="APT güven zinciri: anahtar halkası InRelease imzasını doğrular, InRelease Packages dosyasının özetini taşır, Packages her deb dosyasının özetini taşır">
+  <rect class="sv-a" x="110" y="10" width="180" height="50" rx="6"/>
+  <text class="sv-b" x="200" y="32" text-anchor="middle">anahtar halkası</text>
+  <text class="sv-s" x="200" y="50" text-anchor="middle">/usr/share/keyrings/…gpg</text>
+  <line class="sv-cl" x1="200" y1="60" x2="200" y2="95"/>
+  <text class="sv-s" x="210" y="82">imzayı doğrular</text>
+  <rect class="sv-l" x="70" y="95" width="260" height="70" rx="6"/>
+  <text class="sv-b" x="200" y="117" text-anchor="middle">InRelease (imzalı)</text>
+  <text class="sv-t" x="200" y="137" text-anchor="middle">Date, Valid-Until, …</text>
+  <text class="sv-s" x="200" y="155" text-anchor="middle">SHA256: 0a83…64b3d main/binary-amd64/Packages</text>
+  <line class="sv-cl" x1="200" y1="165" x2="200" y2="200"/>
+  <text class="sv-s" x="210" y="187">özet tutmalı</text>
+  <rect class="sv-m" x="70" y="200" width="260" height="70" rx="6"/>
+  <text class="sv-b" x="200" y="222" text-anchor="middle">Packages (imzasız)</text>
+  <text class="sv-t" x="200" y="242" text-anchor="middle">Package: hello · Version: 2.12.3-1</text>
+  <text class="sv-s" x="200" y="260" text-anchor="middle">SHA256: fcd5…7458e</text>
+  <line class="sv-cl" x1="200" y1="270" x2="200" y2="305"/>
+  <text class="sv-s" x="210" y="292">özet tutmalı</text>
+  <rect class="sv-k" x="70" y="305" width="260" height="50" rx="6"/>
+  <text class="sv-b" x="200" y="327" text-anchor="middle">hello_2.12.3-1_amd64.deb</text>
+  <text class="sv-s" x="200" y="345" text-anchor="middle">(imzasız; özeti Packages'ta)</text>
+  <text class="sv-s" x="200" y="380" text-anchor="middle">bir halka koparsa APT dur der; zincirin kökü anahtardır</text>
+</svg>
+<figcaption>APT güven zinciri. Yalnız InRelease imzalıdır. Packages dosyası, özeti imzalı InRelease'te yazdığı için güvenilir; .deb dosyası, özeti güvenilir Packages'ta yazdığı için güvenilir. Şekildeki özetler bu parçada gerçekten görülen değerlerin kısaltmasıdır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Güven, imzalı tek dosyadan özetlerle aşağı iner.</strong> Neden böyle: Bir saldırgan <code>.deb</code>'i değiştirirse özeti <code>Packages</code>'takiyle tutmaz. <code>Packages</code>'taki özeti de değiştirirse <code>Packages</code>'ın özeti InRelease'tekiyle tutmaz. InRelease'teki özeti değiştirirse imza bozulur; geçerli imzayı ise yalnız deponun özel anahtarı üretebilir. Sonuç: aynalara, ağa, HTTP'ye güvenmen gerekmez; yalnız <strong>anahtara</strong> güvenmen gerekir. sources.list(5) kılavuzu bunu "APT'nin veri güvenliği modeli taşıma yönteminden bağımsızdır" diye söyler.</p></div>
+
+<p>Bu, bu makinedeki deponun neden <code>https</code> değil <code>http</code> ile çalıştığını da açıklar. Bütünlüğü imza sağlar. HTTP'nin kaybettirdiği <strong>gizliliktir</strong>: aradaki biri hangi paketleri indirdiğini görebilir. HTTPS bunu da kapatır, ama hangi sunucuya bağlandığın yine görünür.</p>
+
+<h3>Anahtarlar nerede durur, neden <code>Signed-By</code>?</h3>
+
+<p>Anahtar halkası (keyring), açık anahtarları tutan dosyadır. apt-secure(8)'e göre paketlerle gelen anahtarlar <code>/usr/share/keyrings/</code>, yöneticinin eklediği anahtarlar <code>/etc/apt/keyrings/</code> altında durur. Eskiden bütün anahtarlar ortak bir havuza (<code>/etc/apt/trusted.gpg</code>, <code>trusted.gpg.d/</code>) konurdu ve havuzdaki <strong>her</strong> anahtar <strong>her</strong> depo için geçerliydi: bir üçüncü taraf deposunun anahtarı, Debian deposu adına imzalanmış sahte bir InRelease'i de geçirebilirdi. Bu düzeni yöneten <code>apt-key</code> Debian 13 "trixie" ile kaldırıldı.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Her depo yalnız kendi anahtarıyla doğrulansın: <code>Signed-By</code>.</strong> Neden: bir anahtar sızarsa ya da üçüncü taraf kötü niyetliyse zarar yalnız o depoyla sınırlı kalır (en az yetki ilkesi, Parça 5, anahtarlara uygulanmış hâli). Üçüncü taraf deposu eklerken anahtarı <code>/etc/apt/keyrings/</code>'e koyar, <code>.sources</code> dosyasına <code>Signed-By:</code> ile o dosyayı yazarsın. Anahtarın parmak izini üreticinin resmî sayfasıyla karşılaştırmadan eklemezsin.</p></div>
+
+<h3>Eski ama geçerli imza: tekrar saldırısı ve <code>Valid-Until</code></h3>
+
+<p>İmza zinciri "bu dosya gerçek mi?" sorusunu cevaplar, "bu dosya güncel mi?" sorusunu cevaplamaz. Kötü niyetli bir ayna, geçen ayın gerçek ve geçerli imzalı InRelease'ini sana sonsuza kadar sunabilir. Her şey doğrulanır, ama arada çıkan güvenlik güncellemelerini hiç görmezsin; makine yamasız kalır. Buna <strong>tekrar</strong> (replay) ya da <strong>dondurma</strong> saldırısı denir. Savunması InRelease'teki <code>Valid-Until</code> alanıdır: depo, verinin hangi tarihe kadar geçerli sayılacağını imzanın içine yazar; o tarih geçtiği hâlde yeni veri gelmezse APT hata verir (sources.list(5), <code>Check-Valid-Until</code>). Aşağıda Debian güvenlik deposunun bu alanı bir haftalık taşıdığını, bu makinedeki Kali deposunun ise hiç taşımadığını göreceksin.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"İmza uyarısını <code>[trusted=yes]</code> ile susturdum, artık çalışıyor."</strong> sources.list(5)'e göre <code>Trusted: yes</code> APT'nin kimlik doğrulaması başarısız olsa bile depoya güvenmesini sağlar ve apt-secure'un bir bölümünü kapatır; kılavuz bunu yalnız yerel, güvenilir bir bağlamda, o da gerekirse kullanmayı söyler. apt-secure(8)'e göre güncel APT imzasız depodan veri indirmeyi zaten varsayılan olarak reddeder. Doğrusu: uyarının nedenini bul (anahtar eksik mi, süresi mi dolmuş, depo adresi mi yanlış), doğru anahtarı parmak izini doğrulayarak <code>Signed-By</code> ile ekle.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Depo imzalı, demek ki içindeki paket zararsız."</strong> İmza yalnız iki şeyi söyler: dosya o anahtarın sahibinden geldi ve yolda değişmedi. apt-secure(8) açıkça yazar: bir arşive güvenmek, paketlerinin kötü niyetli kod içermediğine güvenmek demek değildir; imzalayan ana sunucunun ya da imza anahtarının ele geçirilmesine karşı da koruma sağlamaz. Zararlı kod paketlemeden <em>önce</em>, kaynak kodun ya da derleme ortamının içine sokulmuşsa imza onu da mühürler. 2024'teki xz olayı tam olarak böyle bir örnektir; ayrıntısı Parça 59'da. Doğrusu: imza gerekli ama yeterli değil; az paket kur, güvendiğin kaynaklardan kur, güncel tut, izle.</p></div>
+
+<h2 class="s">Güncelleme ve güvenlik güncellemesi</h2>
+
+<p>Üç komut sık karıştırılır. <code>apt update</code> hiçbir yazılımı değiştirmez; yalnız depoların InRelease ve Packages dosyalarını tazeler (bu dosyalar <code>/var/lib/apt/lists/</code> altında durur). <code>apt upgrade</code> kurulu paketleri yeni sürümlerine yükseltir, ama bir paketi kaldırmayı gerektiren yükseltmeleri yapmaz. <code>apt full-upgrade</code> (eski adı <code>dist-upgrade</code>) gerekirse paket kaldırarak da yükseltir. Yükseltmeden önce ne olacağını görmek için <code>apt-get -s upgrade</code> (simülasyon) root istemeden çalışır.</p>
+
+<p>Debian'ın kararlı (stable) sürümünde bir açık çıktığında ne olur? Debian güvenlik SSS'sine göre ekip programı yeni bir üst akış (upstream) sürümüne yükseltmez; <strong>düzeltmeyi, sürümde gelen eski sürüme geri taşır</strong> (backport). Amaç, bir sürümün olabildiğince az değişmesidir. Bu yüzden bir tarayıcının "programın 1.2 sürümü eski, açıklı" uyarısı Debian'da yanlış alarm olabilir: sürüm numarası eski görünür ama yama içindedir. Doğru yol paketin değişiklik günlüğüne (<code>changelog.Debian.gz</code>) ya da Debian Güvenlik Danışmasındaki (DSA) tam sürüm numarasına bakmaktır. Güvenlik düzeltmeleri ayrı bir depodan gelir (Debian 13 için <code>trixie-security</code>); bu deponun <code>.sources</code> dosyanda olması şarttır.</p>
+
+<h3>Otomatik güncelleme: <code>unattended-upgrades</code></h3>
+
+<p>Güvenlik güncellemesinin değeri hızındadır: açık duyurulunca yamasız makineler aranmaya başlar, elle güncelleme ise unutulur. Debian ve Ubuntu'da bu işi <strong><code>unattended-upgrades</code></strong> paketi yapar. Debian wiki'ye göre varsayılan yapılandırma güvenlik güncellemelerini kendiliğinden kurar, yeni özellik getiren güncellemeleri kurmaz; zamanlamayı iki systemd zamanlayıcısı yapar: <code>apt-daily.timer</code> indirir, <code>apt-daily-upgrade.timer</code> kurar (zamanlayıcılar Parça 14'te). Ubuntu'nun sunucu belgesine göre paket Ubuntu'da varsayılan olarak kuruludur ve açıp kapatan dosya şudur:</p>
+
+<pre class="kod" data-ad="/etc/apt/apt.conf.d/20auto-upgrades (Ubuntu belgesinden, burada çalıştırılmadı)">APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";</pre>
+
+<p>Hangi depolardan otomatik kurulum yapılacağı <code>/etc/apt/apt.conf.d/50unattended-upgrades</code> içindeki izinli kaynaklar listesindedir; otomatik yeniden başlatma (<code>Automatic-Reboot</code>) varsayılan olarak kapalıdır; kayıtlar <code>/var/log/unattended-upgrades/</code> altında tutulur; <code>sudo unattended-upgrade -v --dry-run</code> hiçbir şey değiştirmeden ne yapacağını gösterir. Debian'da açmak için wiki <code>sudo dpkg-reconfigure unattended-upgrades</code> komutunu önerir. Bu makinede (Kali) paket kurulu değil, kurmak da bu parçanın kuralı gereği yapılmadı; bu komutlar <strong>burada çalıştırılmadı</strong>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Güvenlik güncellemeleri otomatik gelsin, ama otomatik olan da izlensin.</strong> Neden: Elle güncelleme unutulur, unutulan yama en sık sömürülen açıktır. Ama otomatik sistem de sessizce bozulabilir: süresi dolmuş bir anahtar, dolu bir disk, kilitli bir dpkg. Üç alışkanlık: (1) laboratuvar sunucusunda <code>unattended-upgrades</code>'i yalnız güvenlik deposu için aç; (2) kayıtlara ve <code>systemctl list-timers</code>'a ara sıra bak; (3) çekirdek ve C kitaplığı gibi güncellemeler ancak yeniden başlatınca ya da servis yeniden başlayınca etkili olur; <code>/var/run/reboot-required</code> dosyası (Ubuntu) ya da bekleyen yeniden başlatma uyarısı varsa planla. Ayrıntılı güncelleme disiplini Parça 19'da.</p></div>
+
+<h2 class="s">Sürüm numarası ve destek süresi</h2>
+
+<p>Bir Debian paketinin sürümü üç parçalıdır: <code>[dönem:]üst_akış_sürümü[-debian_revizyonu]</code>. <code>2.12.3-1</code>'de <code>2.12.3</code> GNU projesinin sürümü, <code>-1</code> Debian'daki ilk paketlemedir; <code>+b1</code> gibi ekler kaynak değişmeden yeniden derlemeyi gösterir. Baştaki <code>1:</code> gibi bir <strong>dönem</strong> (epoch), numaralandırma değiştiğinde eski sürümlerin yenisinden "büyük" görünmesini önler; <code>~</code> "her şeyden önce" sıralanır. Sıralamayı <code>dpkg --compare-versions</code>'a sor (Çözümlü örnek 1).</p>
+
+<p>Destek süresi dağıtımın sözüdür: bu sürüm için kaç yıl güvenlik yaması çıkacak? <strong>LTS</strong> (Long Term Support, uzun süreli destek) bu sürenin uzun tutulduğu sürümlerdir. Destek bitince sistem çalışmaya devam eder, ama yeni açıklar artık kapanmaz.</p>
+
+<div class="tablo"><table>
+<tr><th>Dağıtım ve sürüm</th><th>Çıkış</th><th>Olağan güvenlik desteği</th><th>Uzatılmış destek</th></tr>
+<tr><td>Debian 12 "bookworm"</td><td>10 Haziran 2023</td><td>12 Temmuz 2026'da bitti</td><td>LTS: 30 Haziran 2028'e kadar</td></tr>
+<tr><td>Debian 13 "trixie"</td><td>9 Ağustos 2025</td><td>Debian kuralına göre çıkıştan 3 yıl (Ağustos 2028 dolayı)</td><td>LTS: 30 Haziran 2030'a kadar (Debian LTS wiki)</td></tr>
+<tr><td>Ubuntu 22.04 LTS</td><td>Nisan 2022</td><td>Mayıs 2027</td><td>ESM (Ubuntu Pro) Mayıs 2032; Legacy eki Mayıs 2037</td></tr>
+<tr><td>Ubuntu 24.04 LTS</td><td>Nisan 2024</td><td>Mayıs 2029</td><td>ESM Mayıs 2034; Legacy eki Mayıs 2039</td></tr>
+<tr><td>Ubuntu 26.04 LTS</td><td>Nisan 2026</td><td>Mayıs 2031</td><td>ESM Mayıs 2036; Legacy eki Mayıs 2041</td></tr>
+<tr><td>Kali Linux Rolling</td><td>sürekli</td><td>Sürüm kavramı yok; yamalar sürekli akan güncellemeyle gelir</td><td>LTS yok</td></tr>
+</table></div>
+
+<p>Tablo 16 Ekim 2026'da Debian'ın duyurusu ve LTS wiki sayfası ile Ubuntu'nun sürüm döngüsü sayfasından derlendi. Debian'ın genel kuralı: üç yıl olağan güvenlik desteği, ardından iki yıl gönüllüler ve şirketlerce yürütülen LTS; toplam en az beş yıl. Ubuntu her iki yılda bir LTS çıkarır; beş yıl standart güvenlik bakımı verir, Ubuntu Pro aboneliğiyle (ESM) on yıla, Legacy ekiyle on beş yıla uzar. Ara sürümler (ör. 25.10) yalnız dokuz ay desteklenir.</p>
+
+<p><strong>Kali neden bu tabloda farklı?</strong> Kali'nin belgesine göre varsayılan dal <code>kali-rolling</code> sürekli güncellenir ve Debian'ın test (testing) dalından beslenir. "Kali 2026.2" gibi numaralar yalnız kalıp (ISO) yayın tarihleridir; o numaraya yıllarca yama çıkmaz. Daha temkinli bir dal olarak <code>kali-last-snapshot</code> vardır: her yeni sürümde dondurulup birleştirilir, güncellemeler yalnız sürümler arasında gelir. Bu parçanın çıktılarının alındığı makine bu daldadır. İki durumda da Kali'yi güncel tutmanın tek yolu düzenli güncellemektir.</p>
+
+<p>Laboratuvarına sonucu: Kali, sık güncellediğin "araçlar" VM'i için uygundur (Parça 7). Linux bloğu boyunca sertleştireceğin ve uzun süre aynı kalmasını isteyeceğin hedef sunucu için <strong>Debian stable</strong> (bugün 13) ya da <strong>Ubuntu LTS</strong> (24.04 ya da 26.04) seç; kurumlardaki sunucular da bu tür sürümlerde çalışır.</p>
+
+<h2 class="s">Dağıtım dışından yazılım: risk merdiveni</h2>
+
+<p>Her şey dağıtımın deposunda yoktur ya da depodaki sürüm eskidir. O zaman başka yollara bakarsın. Bu yolların her biri güven zincirinden bir halka eksiltir:</p>
+
+<div class="tablo"><table>
+<tr><th>Yol</th><th>Kime güveniyorsun?</th><th>İmza ve özet</th><th>Güncelleme</th><th><code>dpkg -V</code> görür mü?</th></tr>
+<tr><td>Dağıtımın kendi deposu</td><td>Dağıtım ekibi</td><td>InRelease zinciri, otomatik</td><td>Otomatik, güvenlik deposuyla</td><td>Evet</td></tr>
+<tr><td>Üçüncü taraf APT deposu (<code>Signed-By</code> ile)</td><td>Dağıtım + o üretici</td><td>Üreticinin anahtarıyla, otomatik</td><td>Otomatik, ama üreticinin hızında</td><td>Evet</td></tr>
+<tr><td>Siteden indirilen tek <code>.deb</code></td><td>Siteye ve indirme anına</td><td>Ancak sen elle doğrularsan</td><td>Yok; elle takip</td><td>Evet</td></tr>
+<tr><td>Kaynak koddan derleme</td><td>Kaynağa ve derleme ortamına</td><td>Ancak sen elle doğrularsan</td><td>Yok</td><td>Hayır</td></tr>
+<tr><td><code>curl … | bash</code></td><td>O anda sunucunun gönderdiği her bayta</td><td>Yok</td><td>Betik ne yaptıysa</td><td>Hayır</td></tr>
+</table></div>
+
+<p><code>curl https://ornek.invalid/kur.sh | bash</code> kalıbının sorunu, bir dosyayı ağdan alıp <strong>görmeden</strong> ve <strong>doğrulamadan</strong> doğrudan bir yorumlayıcıya vermesidir. Kurulum betikleri çoğu zaman <code>sudo</code> ister; o zaman bu, bir web sunucusuna makinende root komut yazdırmaktır. Dört somut sorun var. (1) Okumadın: betik yazanı mı yapıyor, fazlasını mı, bilmiyorsun. (2) Doğrulamadın: HTTPS yalnız <em>yolu</em> korur; sunucu ele geçirilmişse değiştirilmiş betik kusursuz bir TLS bağlantısıyla gelir. (3) İz yok: dosya diskte kalmaz, sonradan neyin çalıştığını inceleyemezsin; sunucu başka zaman başka içerik verebilir. (4) Yarım indirme: bağlantı koparsa kabuk o ana kadar gelen satırları çalıştırmış olur. Ayrıca bu yolla kurulan dosyaları ne <code>dpkg -S</code> ne <code>dpkg -V</code> bilir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Adres HTTPS, proje de tanınmış; <code>curl | sudo bash</code> güvenlidir."</strong> HTTPS bağlantının gizli ve bütün olduğunu, sertifikanın o alan adına ait olduğunu söyler; sunucudaki dosyanın yazarın niyet ettiği dosya olduğunu söylemez. Tanınmış projelerin indirme sunucularının ya da sitelerinin ele geçirilmesi gerçek bir olay sınıfıdır (Parça 59). Doğrusu: önce dosyayı indir, oku, yayıncının ayrı bir kanaldan doğrulanabilen imzası ya da özetiyle doğrula, ancak sonra çalıştır; mümkünse betiğin yerine dağıtımın paketini ya da üreticinin imzalı APT deposunu kullan.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Solda curl bash akışı: ağdan doğrudan kabuğa; sağda güvenli akış: indir, oku, imzayı doğrula, özeti doğrula, sonra çalıştır">
+  <text class="sv-b" x="95" y="20" text-anchor="middle">curl … | bash</text>
+  <text class="sv-b" x="295" y="20" text-anchor="middle">güvenli yol</text>
+  <rect class="sv-k" x="20" y="35" width="150" height="40" rx="6"/>
+  <text class="sv-t" x="95" y="60" text-anchor="middle">sunucu</text>
+  <line class="sv-cl" x1="95" y1="75" x2="95" y2="215"/>
+  <text class="sv-s" x="100" y="120">görülmedi</text>
+  <text class="sv-s" x="100" y="140">doğrulanmadı</text>
+  <text class="sv-s" x="100" y="160">diskte iz yok</text>
+  <text class="sv-s" x="100" y="180">yarım inerse</text>
+  <text class="sv-s" x="100" y="196">yarım çalışır</text>
+  <rect class="sv-a" x="20" y="215" width="150" height="40" rx="6"/>
+  <text class="sv-b" x="95" y="240" text-anchor="middle">kabuk (çoğu zaman root)</text>
+  <rect class="sv-k" x="220" y="35" width="150" height="34" rx="6"/>
+  <text class="sv-t" x="295" y="57" text-anchor="middle">1. diske indir</text>
+  <rect class="sv-k" x="220" y="80" width="150" height="34" rx="6"/>
+  <text class="sv-t" x="295" y="102" text-anchor="middle">2. oku</text>
+  <rect class="sv-l" x="220" y="125" width="150" height="34" rx="6"/>
+  <text class="sv-t" x="295" y="147" text-anchor="middle">3. imza: Good?</text>
+  <rect class="sv-l" x="220" y="170" width="150" height="34" rx="6"/>
+  <text class="sv-t" x="295" y="192" text-anchor="middle">4. özet: OK?</text>
+  <rect class="sv-m" x="220" y="215" width="150" height="40" rx="6"/>
+  <text class="sv-b" x="295" y="240" text-anchor="middle">5. çalıştır</text>
+  <line class="sv-c" x1="295" y1="69" x2="295" y2="80"/>
+  <line class="sv-c" x1="295" y1="114" x2="295" y2="125"/>
+  <line class="sv-c" x1="295" y1="159" x2="295" y2="170"/>
+  <line class="sv-c" x1="295" y1="204" x2="295" y2="215"/>
+  <text class="sv-s" x="200" y="285" text-anchor="middle">herhangi bir adım tutmazsa dur; dosyayı sil, kaynağı sorgula</text>
+  <text class="sv-s" x="200" y="305" text-anchor="middle">anahtarın parmak izi ayrı bir kanaldan (resmî site) doğrulanır</text>
+</svg>
+<figcaption>Aynı betik, iki yol. Solda ağdan gelen baytlar hiçbir denetimden geçmeden kabuğa akar. Sağda her adım bir kapıdır; 3. ve 4. adım Parça 7'deki iki halkalı doğrulamanın aynısıdır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Dağıtım dışından bir şey kurmadan önce dört soru.</strong> (1) <strong>Depoda var mı?</strong> <code>apt-cache policy ad</code>; varsa onu kullan. (2) <strong>Üreticinin imzalı bir APT deposu var mı?</strong> Varsa anahtarı parmak izini doğrulayarak <code>/etc/apt/keyrings/</code>'e koy, <code>Signed-By</code> ile ekle; güncellemeler zincirle gelsin. (3) <strong>Yalnız dosya varsa:</strong> indir, oku, imzasını ve özetini doğrula (Parça 7'deki sıra), sonra kur. (4) <strong>Güncellemesini kim takip edecek?</strong> Paket yöneticisinin dışındaki her yazılım senin takvimine bir iş daha ekler; yazılım envanterine yaz. Aynı sorular <code>pip</code> gibi dil paket yöneticileri için de geçerlidir (kod rafı Parça 9'daki ad benzerliği uyarısı; bağımlılık zincirleri Parça 59'da).</p></div>
+
+<h2 class="s">Kurulu dosyaların bütünlüğü: <code>dpkg</code> ve <code>rpm</code> ne bilir?</h2>
+
+<p>Kurulumdan aylar sonra sorulan üç soru: Bu dosya hangi paketten geldi? Paket hangi dosyaları kurdu? Dosyalar hâlâ paketten çıktığı gibi mi? <code>dpkg</code>'nin veritabanı <code>/var/lib/dpkg/</code> altındadır: <code>status</code> dosyası kurulu paketleri, <code>info/PAKET.list</code> her paketin dosya listesini, <code>info/PAKET.md5sums</code> her dosyanın paketlendiği andaki MD5 özetini tutar.</p>
+
+<ul>
+<li><code>dpkg -S /yol</code>: dosyanın sahibi olan paketi bulur. "no path found" cevabı, dosyayı hiçbir paketin kurmadığını söyler: yönetici, kurulum aracı ya da başka bir şey yaratmıştır. Savunmacı için <code>/usr/bin</code> altında sahipsiz bir program her zaman soru işaretidir.</li>
+<li><code>dpkg -L paket</code>: paketin kurduğu dosya ve dizinlerin listesi.</li>
+<li><code>dpkg -V [paket]</code> (<code>--verify</code>): kurulu dosyaları veritabanındaki bilgiyle karşılaştırır. Paket adı verilmezse bütün sistemi tarar. Sorunsuz dosya için hiçbir şey yazmaz; yalnız sorunlu satırları gösterir.</li>
+</ul>
+
+<p>dpkg(1) kılavuzuna göre çıktı biçimi RPM'den alınmıştır: her sorunlu yol için dokuz karakterlik bir sonuç alanı, ardından yapılandırma dosyalarında <code>c</code> işareti, sonra yol gelir. Dosya yoksa ya da bilgisine ulaşılamıyorsa satır <code>missing</code> diye başlar. Her karakter bir denetimdir: <code>.</code> geçti, bir harf başarısız oldu, <code>?</code> denetim yapılamadı. Kılavuz önemli bir sınırı açıkça yazar: şu an <code>dpkg</code>'nin yaptığı tek işleyen denetim dosya içeriğinin MD5 özetidir (üçüncü konum, <code>5</code>); öbür konumlar her zaman <code>?</code> çıkar. <code>rpm -V</code> ise dokuz konumun hepsini doldurur: boyut (S), kip ve tür (M), özet (5), aygıt (D), bağlantı (L), sahip (U), grup (G), değiştirilme zamanı (T), yetenekler (P). Örneğin RHEL'de <code>S.5....T.  c /etc/ssh/sshd_config</code> satırı, yapılandırma dosyasının boyutunun, içeriğinin ve zamanının paketten farklı olduğunu söyler.</p>
+
+<div class="tablo"><table>
+<tr><th>Çıktı (dpkg -V)</th><th>Anlamı</th><th>Ne yaparsın?</th></tr>
+<tr><td>(boş çıktı)</td><td>Denetlenebilen bütün dosyaların özeti tutuyor</td><td>Bir şey yapmazsın, ama sınırları aşağıda</td></tr>
+<tr><td><code>??5?????? c /etc/…</code></td><td>Yapılandırma dosyasının içeriği paketteki değerden farklı</td><td>Çoğu zaman meşru düzenlemedir; kim, ne zaman, neden değiştirdi diye bak</td></tr>
+<tr><td><code>??5??????   /usr/bin/…</code></td><td>Çalıştırılabilir dosyanın içeriği paketteki değerden farklı</td><td>Ciddi: paketlerin dosyaları elle değişmez. Makineyi şüpheli say, olay müdahalesine geç (Parça 70)</td></tr>
+<tr><td><code>?????????</code></td><td>Denetim yapılamadı; çoğu zaman dosyayı okuma iznin yok</td><td>Laboratuvarda <code>sudo dpkg -V</code> ile yinele</td></tr>
+<tr><td><code>missing</code></td><td>Dosya yok ya da (parantezde yazıyorsa) erişilemedi</td><td>Silinmiş mi, başka paket mi taşımış (<code>dpkg-divert</code>), izin mi yok, ayırt et</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong><code>dpkg -V</code> bir bütünlük denetimidir, güvenlik doğrulaması değildir.</strong> Bunu dpkg(1) kılavuzu kendisi söyler. Neden: karşılaştırma ölçütü (<code>md5sums</code> dosyaları) denetlenen makinenin kendi diskinde durur. Root yetkisi ele geçirmiş biri bir programı değiştirip yanındaki <code>md5sums</code> satırını da değiştirebilir; Parça 7'deki "özet kalıpla aynı yerden geliyorsa yalnız kazara bozulmayı yakalar" dersinin aynısıdır. Üstelik MD5 artık çakışmaya dayanıklı sayılmaz (kod rafı Parça 18, ayrıntı Parça 44). Gerçek bir inceleme için ölçütü makinenin dışından alırsın: depodan indirilen ve imza zinciriyle doğrulanan paketin içeriğini, ya da önceden çevrimdışı saklanmış bir taban çizgisini kullanırsın; dosya bütünlüğü izleme Parça 17'de.</p></div>
+
+<h2 class="s">Kendi makinende dene: depodan pakete güven zincirini adım adım izlemek</h2>
+
+<p>Her komut gerçekten çalıştırıldı, çıktılar birebir aktarıldı. Ortam: Windows 11 üstünde WSL 2, Kali Rolling (apt 3.2, dpkg 1.23), <code>kali-last-snapshot</code> dalı. Hiçbir adım <strong>bir şey kurmaz</strong>, root istemez, <code>/etc</code>, <code>/var</code>, <code>/usr</code> altında bir şey değiştirmez; çalışma klasörü <code>/tmp/paket-dene</code>. Debian ya da Ubuntu VM'inde dosya adları ve sayılar farklı olacaktır. Bunu da yalnız kendi makinende ya da izinli laboratuvarında yap (Parça 72–73).</p>
+
+<h3>Adım 1. Depo kaynağı ve aday sürüm</h3>
+
+<pre class="kod" data-ad="bash">cat /etc/apt/sources.list.d/kali.sources
+apt-cache policy hello tree</pre>
+<pre class="cikti">Types: deb
+URIs: http://kali.download/kali/
+Suites: kali-last-snapshot
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/kali-archive-keyring.gpg
+hello:
+  Installed: (none)
+  Candidate: 2.12.3-1
+  Version table:
+     2.12.3-1 500
+        500 http://kali.download/kali kali-last-snapshot/main amd64 Packages
+tree:
+  Installed: 2.3.2-1
+  Candidate: 2.3.2-1
+  Version table:
+ *** 2.3.2-1 500
+        500 http://kali.download/kali kali-last-snapshot/main amd64 Packages
+        100 /var/lib/dpkg/status</pre>
+
+<p>Kaynak dosyası deb822 biçiminde; en önemli satır <code>Signed-By</code>: bu depo yalnız o anahtar halkasıyla doğrulanacak. Adres <code>http</code>; bütünlüğü imza sağlar. <code>hello</code> (GNU'nun örnek paketi) kurulu değil, aday 2.12.3-1, depodan 500 öncelikle. <code>tree</code> kurulu: <code>***</code> kurulu sürümü işaretler, <code>100 /var/lib/dpkg/status</code> bu sürümün kurulu paketler kaydında olduğunu söyler. Aday ile kurulu aynı; yükseltilecek bir şey yok.</p>
+
+<h3>Adım 2. InRelease: zincirin imzalı başı</h3>
+
+<pre class="kod" data-ad="bash">cd /var/lib/apt/lists
+head -11 kali.download_kali_dists_kali-last-snapshot_InRelease
+grep -E ' main/binary-amd64/Packages$' kali.download_kali_dists_kali-last-snapshot_InRelease</pre>
+<pre class="cikti">-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: Kali
+Suite: kali-last-snapshot
+Codename: kali-last-snapshot
+Date: Tue, 16 Jun 2026 10:43:36 UTC
+Architectures: i386 amd64 armhf arm64
+Components: main contrib non-free non-free-firmware
+Description: Snapshot of Kali's last ISO release
+MD5Sum:
+ 09047f31d2b1356ade2bce1d53b191cd 83283585 main/binary-amd64/Packages
+ fcfa98abe7df1dfd5745be4b2c739f75199695ce 83283585 main/binary-amd64/Packages
+ 0a836c397db62e7ea9ada6b57d6637580ac9b6c8c524d92b0c96eedf82464b3d 83283585 main/binary-amd64/Packages</pre>
+
+<p>İlk satır bunun içine imza gömülmüş metin olduğunu, <code>Hash: SHA512</code> imzanın özet algoritmasını söyler. <code>Date</code>'e göre liste 16 Haziran 2026'da üretilmiş; bu makinede o tarihten beri <code>apt update</code> yapılmamış. <code>Valid-Until</code> satırı <strong>yok</strong>: tekrar saldırısına karşı tarih sınırı konmamış. <code>grep</code>'in üç satırı aynı <code>Packages</code> dosyasının MD5, SHA1 ve SHA256 kayıtlarıdır: özet, boyut, yol. APT bugün SHA256'yı kullanır; 64 onaltılık hane 32 bayttır (Parça 1).</p>
+
+<pre class="kod" data-ad="bash">gpgv --keyring /usr/share/keyrings/kali-archive-keyring.gpg \
+     kali.download_kali_dists_kali-last-snapshot_InRelease; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">gpgv: Signature made Tue 16 Jun 2026 01:43:36 PM +03
+gpgv:                using RSA key 827C8569F2518CC677FECA1AED65462EC8D5E4C5
+gpgv: Good signature from "Kali Linux Archive Automatic Signing Key (2025) &lt;devel@kali.org>"
+(cikis kodu 0)</pre>
+
+<p><code>gpgv</code>, <code>gpg</code>'nin yalnız doğrulama yapan küçük kardeşidir: kişisel anahtarlığa bakmaz, yalnız verdiğin halkadaki anahtarlarla imzayı sınar. Sonuç <code>Good signature</code>, çıkış kodu 0. Anahtarın parmak izi <code>827C…E4C5</code>, Kali'nin resmî indirme belgesindeki değerle birebir aynı (Parça 7'deki kural). Not: bu makinedeki apt 3.2 paketi imza doğrulaması için <code>sqv</code> (Sequoia) aracına bağımlı (<code>dpkg -s apt</code>); biz elle izlemek için yaygın olan <code>gpgv</code>'yi kullanıyoruz.</p>
+
+<h3>Adım 3. Tek bayt değişirse imza ne der?</h3>
+
+<p>Gerçek dosyaya dokunmuyoruz; kopyasını çalışma klasörüne alıp açıklama satırındaki bir harfi değiştiriyoruz:</p>
+
+<pre class="kod" data-ad="bash">mkdir -p /tmp/paket-dene &amp;&amp; cd /tmp/paket-dene
+cp /var/lib/apt/lists/kali.download_kali_dists_kali-last-snapshot_InRelease InRelease.kopya
+sed -i 's/^Description: Snapshot/Description: Snapsh0t/' InRelease.kopya
+grep '^Description' InRelease.kopya
+gpgv --keyring /usr/share/keyrings/kali-archive-keyring.gpg InRelease.kopya; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">Description: Snapsh0t of Kali's last ISO release
+gpgv: Signature made Tue 16 Jun 2026 01:43:36 PM +03
+gpgv:                using RSA key 827C8569F2518CC677FECA1AED65462EC8D5E4C5
+gpgv: BAD signature from "Kali Linux Archive Automatic Signing Key (2025) &lt;devel@kali.org>"
+(cikis kodu 1)</pre>
+
+<p>Otuz dört kilobaytlık dosyada, önemsiz bir açıklama satırında tek bir <code>o</code> harfi <code>0</code> oldu: <code>BAD signature</code>, çıkış kodu 1. Özet satırlarından biri değişseydi de aynısı olurdu; APT böyle bir dosyayı reddeder.</p>
+
+<p>Anahtar halkasında ne olduğunu görmek için kendi anahtarlığına dokunmadan geçici bir <code>GNUPGHOME</code> ile bakabilirsin:</p>
+
+<pre class="kod" data-ad="bash">export GNUPGHOME=/tmp/paket-dene/gnupg; mkdir -p -m 700 "$GNUPGHOME"
+gpg --show-keys --with-fingerprint /usr/share/keyrings/kali-archive-keyring.gpg</pre>
+<pre class="cikti">gpg: keybox '/tmp/paket-dene/gnupg/pubring.kbx' created
+gpg: /tmp/paket-dene/gnupg/trustdb.gpg: trustdb created
+pub   rsa4096 2025-04-17 [SC] [expires: 2028-04-17]
+      827C 8569 F251 8CC6 77FE  CA1A ED65 462E C8D5 E4C5
+uid                      Kali Linux Archive Automatic Signing Key (2025) &lt;devel@kali.org>
+
+pub   rsa4096 2012-03-05 [SC] [expires: 2027-02-04]
+      44C6 513A 8E4F B3D3 0875  F758 ED44 4FF0 7D8D 0BF6
+uid                      Kali Linux Repository &lt;devel@kali.org>
+sub   rsa4096 2012-03-05 [E] [expires: 2027-02-04]</pre>
+
+<p>Halkada iki anahtar var: 2025'te üretilen, 2028'de süresi dolacak imza anahtarı ve 2012'den kalan eskisi. Bitiş tarihi bilinçlidir: hiçbir anahtar sonsuza dek geçerli kalmaz, dağıtım yenisini önceden halkaya koyar. Halka dosyası da bir paketle (<code>kali-archive-keyring</code>) gelir ve aynı zincirden güncellenir.</p>
+
+<h3>Adım 4. Güncel bir InRelease: <code>Valid-Until</code> ve iki imza</h3>
+
+<p>Karşılaştırma için Debian 13'ün güvenlik deposunun InRelease dosyasını tek bir sıradan istekle indirdik (yalnız okuma; sistemdeki listelere dokunmaz):</p>
+
+<pre class="kod" data-ad="bash">curl -s https://deb.debian.org/debian-security/dists/trixie-security/InRelease -o trixie-security-InRelease
+grep -E '^(Suite|Codename|Date|Valid-Until):' trixie-security-InRelease
+gpgv --keyring /usr/share/keyrings/debian-archive-keyring.gpg trixie-security-InRelease; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">Suite: stable-security
+Codename: trixie-security
+Date: Fri, 16 Oct 2026 13:37:38 UTC
+Valid-Until: Fri, 23 Oct 2026 13:37:38 UTC
+gpgv: Signature made Fri 16 Oct 2026 04:37:39 PM +03
+gpgv:                using RSA key B0CAB9266E8C3929798B3EEEBDE6D2B9216EC7A8
+gpgv: Good signature from "Debian Security Archive Automatic Signing Key (12/bookworm) &lt;ftpmaster@debian.org>"
+gpgv: Signature made Fri 16 Oct 2026 04:37:39 PM +03
+gpgv:                using RSA key 89C87ACEA5DD6B8E6A7068808E9F831205B4BA95
+gpgv: Good signature from "Debian Security Archive Automatic Signing Key (13/trixie) &lt;ftpmaster@debian.org>"
+(cikis kodu 0)</pre>
+
+<p>İki fark var. Birincisi <code>Valid-Until</code>: dosya bugün üretilmiş ve bir hafta geçerli; 23 Ekim'den sonra hâlâ bu dosya sunulursa APT reddeder. Güvenlik deposu için bu şarttır, çünkü yamanın gecikmesi saldırgana kazandırır. İkincisi dosya <strong>iki anahtarla</strong> imzalanmış (bookworm ve trixie güvenlik anahtarları); anahtar geçişlerinde hangi anahtara güvenen sistem olursa olsun imzalardan biri geçer. İkisi de <code>Good</code>. (Debian'ın anahtar halkası bu makinede de kurulu.)</p>
+
+<h3>Adım 5. İkinci halka: Packages dosyası InRelease'le tutuyor mu?</h3>
+
+<pre class="kod" data-ad="bash">sha256sum /var/lib/apt/lists/kali.download_kali_dists_kali-last-snapshot_main_binary-amd64_Packages</pre>
+<pre class="cikti">0a836c397db62e7ea9ada6b57d6637580ac9b6c8c524d92b0c96eedf82464b3d  /var/lib/apt/lists/kali.download_kali_dists_kali-last-snapshot_main_binary-amd64_Packages</pre>
+
+<p>Özet, Adım 2'de InRelease'te gördüğün <code>0a836c39…64b3d</code> ile birebir aynı: 83 MB'lık liste, imzalı dosyanın söylediği listedir. APT bu karşılaştırmayı <code>apt update</code> sırasında kendisi yapar; biz elle yineledik.</p>
+
+<h3>Adım 6. Üçüncü halka: paketin kendisi</h3>
+
+<pre class="kod" data-ad="bash">cd /tmp/paket-dene
+awk -v RS= '/^Package: hello\n/' \
+  /var/lib/apt/lists/kali.download_kali_dists_kali-last-snapshot_main_binary-amd64_Packages \
+  | grep -E '^(Package|Version|Filename|Size|SHA256):'
+apt-get download hello
+ls -l hello_2.12.3-1_amd64.deb | awk '{print $5, $9}'
+sha256sum hello_2.12.3-1_amd64.deb</pre>
+<pre class="cikti">Package: hello
+Version: 2.12.3-1
+Size: 77364
+SHA256: fcd5f5b2169b376ce84d2b541e1e1c2bf5b855eb5e322dd623a88395e2e7458e
+Filename: pool/main/h/hello/hello_2.12.3-1_amd64.deb
+Get:1 http://kali.download/kali kali-last-snapshot/main amd64 hello amd64 2.12.3-1 [77.4 kB]
+Fetched 77.4 kB in 0s (714 kB/s)
+77364 hello_2.12.3-1_amd64.deb
+fcd5f5b2169b376ce84d2b541e1e1c2bf5b855eb5e322dd623a88395e2e7458e  hello_2.12.3-1_amd64.deb</pre>
+
+<p><code>awk -v RS=</code> "paragraf kipi"dir: boş satırla ayrılmış her paket kaydını tek kayıt sayar (Parça 9'daki <code>awk</code>'ın bir adım ötesi). <code>apt-get download</code> paketi <strong>kurmadan</strong> bulunduğun klasöre indirir, root istemez. Boyut 77.364 bayt, özet <code>fcd5…7458e</code>: ikisi de listedekiyle aynı. Zincir tamam: anahtar → InRelease (imza) → Packages (özet) → <code>.deb</code> (özet).</p>
+
+<h3>Adım 7. <code>.deb</code>'in içine bakmak</h3>
+
+<pre class="kod" data-ad="bash">ar t hello_2.12.3-1_amd64.deb
+dpkg-deb -I hello_2.12.3-1_amd64.deb | head -10
+dpkg-deb -c hello_2.12.3-1_amd64.deb 2>/dev/null | head -4
+dpkg-deb -c hello_2.12.3-1_amd64.deb | wc -l</pre>
+<pre class="cikti">debian-binary
+control.tar.xz
+data.tar.xz
+ new Debian package, version 2.0.
+ size 77364 bytes: control archive=1980 bytes.
+     779 bytes,    21 lines      control
+    3903 bytes,    53 lines      md5sums
+ Package: hello
+ Version: 2.12.3-1
+ Architecture: amd64
+ Maintainer: Santiago Vila &lt;sanvila@debian.org>
+ Installed-Size: 368
+ Depends: libc6 (>= 2.34)
+drwxr-xr-x root/root         0 2026-05-14 11:15 ./
+drwxr-xr-x root/root         0 2026-05-14 11:15 ./usr/
+drwxr-xr-x root/root         0 2026-05-14 11:15 ./usr/bin/
+-rwxr-xr-x root/root     56056 2026-05-14 11:15 ./usr/bin/hello
+155</pre>
+
+<p>Bir <code>.deb</code> aslında <code>ar</code> arşividir ve üç üye taşır: biçim sürümü (<code>debian-binary</code>), üst veri (<code>control.tar.xz</code>) ve kurulacak dosyalar (<code>data.tar.xz</code>). <code>dpkg-deb -I</code> üst veriyi gösterir: <code>control</code> dosyası (ad, sürüm, mimari, bakımcı, bağımlılık) ve 53 satırlık <code>md5sums</code>; bu, kurulumdan sonra <code>dpkg -V</code>'nin kullanacağı ölçüttür. <code>Depends: libc6 (>= 2.34)</code> bağımlılığın sürüm aralığıyla yazılışıdır. <code>dpkg-deb -c</code> 155 girdiyi listeler; ilk dördünü gösterdik. Bu paketin kurulum betiği yok, ama birçok pakette <code>preinst</code>/<code>postinst</code> betikleri bulunur ve kurulumda <strong>root olarak</strong> çalışır. Bir pakete güvenmek bu betiklere de güvenmektir.</p>
+
+<h3>Adım 8. Kurulu dosyalara soru sormak: <code>dpkg -S</code>, <code>-L</code>, <code>-V</code></h3>
+
+<pre class="kod" data-ad="bash">dpkg -S /usr/bin/tree
+dpkg -S /etc/apt/sources.list.d/kali.sources; echo "(cikis kodu $?)"
+dpkg -S /usr/bin/gpgv /etc/os-release
+cat /var/lib/dpkg/info/tree.md5sums | head -2
+dpkg -V tree; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">tree: /usr/bin/tree
+dpkg-query: no path found matching pattern /etc/apt/sources.list.d/kali.sources
+(cikis kodu 1)
+gpgv: /usr/bin/gpgv
+base-files: /etc/os-release
+b4a3d8b1a0d157a9738fe86ddf5fae80  usr/bin/tree
+237c50fb183590c1168b6aa413b92afb  usr/share/doc/tree/README.gz
+(cikis kodu 0)</pre>
+
+<p>Depo kaynağı dosyası <strong>hiçbir paketin değil</strong>: kurulum sırasında yaratılmış. Sorun değil, ama sınırdır: <code>dpkg -V</code> onu asla denetlemez, bütünlüğünü sen izlersin. <code>dpkg -V tree</code> hiçbir şey yazmadı ve 0 ile döndü: bütün dosyaların özeti tutuyor.</p>
+
+<p>Paket adı vermeden bütün sistemi taramak bu makinede yaklaşık beş dakika sürdü. Root olmadan çalıştırılan taramanın tam çıktısı:</p>
+
+<pre class="kod" data-ad="bash">dpkg -V</pre>
+<pre class="cikti">missing     /etc/plymouth/plymouthd.conf.original
+missing   c /etc/vpnc/default.conf (Permission denied)
+??5?????? c /etc/strongswan.d/charon/openssl.conf
+????????? c /etc/snmp/snmpd.conf
+missing   c /etc/redis/redis-openvas.conf (Permission denied)
+missing   c /etc/redis/redis.conf (Permission denied)
+????????? c /etc/sudoers.d/kali-win-kex
+missing     /usr/lib/mysql/plugin/auth_pam_tool_dir/auth_pam_tool (Permission denied)
+????????? c /etc/ipsec.secrets
+missing     /etc/xdg/kcm-about-distrorc.original
+????????? c /etc/sudoers.d/kali-grant-root
+????????? c /etc/sudoers
+?????????   /usr/libexec/samba/smbspool_krb5_wrapper
+????????? c /etc/gophish/config.json
+missing     /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml.original
+????????? c /etc/default/cacerts
+????????? c /etc/sudoers.d/ospd-openvas</pre>
+
+<p>On yedi satırı Çözümlü örnek 3'te ayıklayacağız. Laboratuvar VM'inde <code>sudo dpkg -V</code> ile tarayınca izin kaynaklı satırlar kaybolur.</p>
+
+<h3>Adım 9. <code>dpkg -V</code> ne yapıyor? Mekanizmayı kopya üzerinde görmek</h3>
+
+<p>Kurulu bir dosyayı değiştirip denemek sisteme dokunmak olur. Onun yerine indirdiğimiz paketi kurmadan bir klasöre açıyor, <code>dpkg</code>'nin yaptığını elle yapıyoruz:</p>
+
+<pre class="kod" data-ad="bash">mkdir kok
+dpkg-deb -x hello_2.12.3-1_amd64.deb kok
+dpkg-deb -e hello_2.12.3-1_amd64.deb kok/DEBIAN
+cd kok
+md5sum -c --quiet DEBIAN/md5sums; echo "(cikis kodu $?)"
+./usr/bin/hello
+printf 'X' | dd of=usr/bin/hello bs=1 seek=20000 conv=notrunc status=none
+md5sum -c --quiet DEBIAN/md5sums; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">(cikis kodu 0)
+Hello, world!
+usr/bin/hello: FAILED
+md5sum: WARNING: 1 computed checksum did NOT match
+(cikis kodu 1)</pre>
+
+<p><code>dpkg-deb -x</code> dosyaları, <code>-e</code> üst veriyi açar. <code>md5sum -c --quiet</code> yalnız tutmayanları yazar; ilk çalıştırmada sessiz kaldı. Kopyadaki programın 20.000. baytına bir <code>X</code> yazınca <code>FAILED</code> dedi. <code>dpkg -V</code>'nin yaptığı budur, ölçütü <code>/var/lib/dpkg/info/</code>'dan alır. Zayıflık da görünüyor: <code>md5sums</code> programın yanında duruyor; ikisini birlikte değiştiren denetimi geçer.</p>
+
+<h3>Adım 10. Güncellemeleri kurmadan görmek</h3>
+
+<pre class="kod" data-ad="bash">apt-get -s upgrade | head -4
+apt-get -s upgrade | tail -1
+systemctl list-timers 'apt-daily*' --all --no-pager</pre>
+<pre class="cikti">NOTE: This is only a simulation!
+      apt-get needs root privileges for real execution.
+      Keep also in mind that locking is deactivated,
+      so don't depend on the relevance to the real current situation!
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+NEXT                         LEFT LAST                        PASSED UNIT                    ACTIVATES
+Fri 2026-10-16 17:17:35 +03 17min Sat 2026-08-22 10:19:33 +03      - apt-daily-upgrade.timer apt-daily-upgrade.service
+Sat 2026-10-17 00:04:57 +03    7h Thu 2026-08-20 10:14:42 +03      - apt-daily.timer         apt-daily.service
+
+2 timers listed.</pre>
+
+<p>Simülasyon yükseltilecek paket görmüyor, ama listeler Haziran'dan kalma; gerçek durum için önce <code>sudo apt update</code> gerekir (root istediği için <strong>burada çalıştırılmadı</strong>). Zamanlayıcılar var ama son çalışmaları Ağustos'ta; WSL kapalıyken onlar da çalışmaz ve <code>unattended-upgrades</code> kurulu olmadığı için kendi başlarına yükseltmezler. "Zamanlayıcı var" demek "makine güncel" demek değildir; tarihlere bak.</p>
+
+<h3>Adım 11. <code>curl | bash</code> yerine: indir, oku, doğrula, çalıştır</h3>
+
+<p><code>curl … | bash</code> burada <strong>çalıştırılmadı</strong> ve çalıştırılmayacak. Onun yerine güvenli yolu yerelde gösteriyoruz. Önce yayıncı rolündeyiz: zararsız bir kurulum betiği yazıyor (yalnız <code>/tmp</code> altına bir dosya yazar), özetini çıkarıyor, geçici bir anahtarla listeyi imzalıyor ve açık anahtarı dışa aktarıyoruz. Sonra dosyaları yalnız <code>127.0.0.1</code>'de dinleyen bir yerel sunucudan sunuyoruz.</p>
+
+<pre class="kod" data-ad="bash (yayıncı rolü)">mkdir -p /tmp/paket-dene/yayinci &amp;&amp; cd /tmp/paket-dene/yayinci
+cat > kur.sh &lt;&lt;'S'
+#!/bin/sh
+# lab-arac kurulum betigi (zararsiz deneme): yalniz /tmp altina yazar
+set -eu
+hedef=/tmp/lab-arac
+mkdir -p "$hedef"
+printf 'lab-arac 1.0\n' > "$hedef/SURUM"
+echo "kuruldu: $hedef/SURUM"
+S
+sha256sum kur.sh > SHA256SUMS
+export GNUPGHOME=/tmp/paket-dene/gnupg-y; mkdir -m 700 "$GNUPGHOME"
+gpg --batch --passphrase '' --quick-gen-key 'Lab Arac Yayinci &lt;yayinci@example.invalid>' ed25519 sign 1d
+gpg --batch --yes --detach-sign --output SHA256SUMS.sig SHA256SUMS
+gpg --export --output yayinci.gpg
+python3 -m http.server 8710 --bind 127.0.0.1 &amp;</pre>
+
+<p>Şimdi kullanıcı rolündeyiz. Gerçek hayatta açık anahtarı ve parmak izini yayıncının resmî sitesinden, ayrı bir kanaldan alırsın; burada dosyayı kopyalıyoruz:</p>
+
+<pre class="kod" data-ad="bash (kullanıcı rolü)">mkdir -p /tmp/paket-dene/indir &amp;&amp; cd /tmp/paket-dene/indir
+cp ../yayinci/yayinci.gpg .
+for f in kur.sh SHA256SUMS SHA256SUMS.sig; do curl -fsS -o "$f" "http://127.0.0.1:8710/$f"; done
+cat kur.sh
+gpgv --keyring ./yayinci.gpg SHA256SUMS.sig SHA256SUMS; echo "(cikis kodu $?)"
+sha256sum -c SHA256SUMS; echo "(cikis kodu $?)"
+sh kur.sh; cat /tmp/lab-arac/SURUM</pre>
+<pre class="cikti">#!/bin/sh
+# lab-arac kurulum betigi (zararsiz deneme): yalniz /tmp altina yazar
+set -eu
+hedef=/tmp/lab-arac
+mkdir -p "$hedef"
+printf 'lab-arac 1.0\n' > "$hedef/SURUM"
+echo "kuruldu: $hedef/SURUM"
+gpgv: Signature made Fri 16 Oct 2026 05:01:05 PM +03
+gpgv:                using EDDSA key E440414AC76A901B7C352514C634A1A528A14BEA
+gpgv: Good signature from "Lab Arac Yayinci &lt;yayinci@example.invalid>"
+(cikis kodu 0)
+kur.sh: OK
+(cikis kodu 0)
+kuruldu: /tmp/lab-arac/SURUM
+lab-arac 1.0</pre>
+
+<p>Önce betiği <strong>okuduk</strong> (yalnız <code>/tmp/lab-arac</code>'a bir dosya yazıyor), sonra <strong>imzayı</strong>, sonra <strong>özeti</strong> doğruladık, ancak sonra çalıştırdık. Şimdi sunucu ele geçirilmiş olsun; saldırgan betiği değiştiriyor, ama özel anahtar olmadan imzalı listeye dokunamıyor:</p>
+
+<pre class="kod" data-ad="bash">sed -i 's/lab-arac 1.0/lab-arac 1.0 DEGISTI/' ../yayinci/kur.sh
+curl -fsS -o kur.sh http://127.0.0.1:8710/kur.sh
+sha256sum -c SHA256SUMS; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">kur.sh: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+(cikis kodu 1)</pre>
+
+<p>Değişen betik <code>FAILED</code> verdi ve çalıştırılmadı; <code>curl | bash</code> onu sorgusuz çalıştırırdı. Liste de değişseydi <code>gpgv</code> <code>BAD signature</code> derdi (Adım 3). Bitince sunucuyu durdur (<code>kill %1</code>), <code>gpgconf --kill gpg-agent</code> çalıştır, <code>/tmp/lab-arac</code> ve <code>/tmp/paket-dene</code> klasörlerini sil.</p>
+
+<h2 class="s">Çözümlü örnekler</h2>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir zafiyet bülteni, <code>hello</code> paketindeki bir açığın Debian'da <code>2.12.3-1+b1</code> sürümüyle kapandığını söylesin (sürüm numaraları örnek için). Senin makinende <code>2.12.3-1</code> kurulu, bir arkadaşının makinesinde <code>2.12.10-1</code>, üçüncü bir makinede <code>1:1.0-1</code>. Hangi makineler düzeltilmiş sürümde ya da daha yenisinde?</p>
+<p><strong>Adım 1.</strong> Sürümleri metin gibi karşılaştırma; <code>2.12.10</code> metin olarak <code>2.12.3</code>'ten "küçük" görünür. Debian'ın kendi sıralama kuralını kullanan <code>dpkg --compare-versions</code>'a sor:</p>
+<pre class="kod" data-ad="bash">for p in "2.12.3-1 2.12.3-1+b1" "2.12.3-1+b1 2.12.10-1" "1:1.0-1 9.9-1" "3.0~rc1-1 3.0-1"; do
+  set -- $p
+  if dpkg --compare-versions "$1" lt "$2"; then echo "$1 &lt; $2"; else echo "$1 >= $2"; fi
+done</pre>
+<pre class="cikti">2.12.3-1 &lt; 2.12.3-1+b1
+2.12.3-1+b1 &lt; 2.12.10-1
+1:1.0-1 >= 9.9-1
+3.0~rc1-1 &lt; 3.0-1</pre>
+<p><strong>Adım 2.</strong> Senin makinen: <code>2.12.3-1 &lt; 2.12.3-1+b1</code>; düzeltmeden önceki sürüm, güncellenmeli.</p>
+<p><strong>Adım 3.</strong> Arkadaşının makinesi: sayı parçaları sayı olarak karşılaştırılır, 10 &gt; 3; <code>2.12.10-1</code> düzeltilmiş sürümden büyüktür.</p>
+<p><strong>Adım 4.</strong> Üçüncü makine: <code>1:</code> dönemi her şeyden önce karşılaştırılır; dönemi olmayan sürümün dönemi 0 sayılır. Bu yüzden <code>1:1.0-1</code>, <code>9.9-1</code>'den bile büyüktür. Ama bu, açığın kapandığını kanıtlamaz: dönem yalnız numaralandırma değişikliğidir; o sürümün changelog'unda düzeltme var mı, ona bakmak gerekir. Son satır da <code>~</code>'nin "önce" sıralandığını gösteriyor: sürüm adayı, son sürümden küçüktür.</p>
+<p><strong>Sonuç:</strong> Arkadaşının makinesi sıralamada güvenli tarafta; seninki güncellenmeli; üçüncüsü için sıralama yetmez, değişiklik günlüğüne bakılır. Geri taşıma (backport) yapan dağıtımlarda asıl ölçüt, danışmadaki tam sürüm numarası ile changelog'dur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir aynayı ele geçiren saldırgan, <code>hello_2.12.3-1_amd64.deb</code>'in yerine kendi dosyasını koyuyor. APT'nin bunu hangi adımda yakaladığını, saldırganın elindeki üç olası hamle için ayrı ayrı bul: (a) yalnız <code>.deb</code>'i değiştirir; (b) <code>.deb</code>'le birlikte <code>Packages</code>'taki özeti de değiştirir; (c) bunlara ek olarak InRelease'teki <code>Packages</code> özetini de değiştirir.</p>
+<p><strong>Adım 1.</strong> Zinciri yaz: anahtar → InRelease (imza) → Packages (SHA256) → <code>.deb</code> (SHA256). Her ok bir denetimdir.</p>
+<p><strong>Adım 2.</strong> (a) InRelease ve Packages sağlam. APT <code>.deb</code>'i indirir, özetini hesaplar, Packages'taki <code>fcd5…7458e</code> ile karşılaştırır. Tutmaz (Adım 6'da gerçek dosyanın tuttuğunu, Adım 9'da tek baytın özeti bozduğunu gördün). Kurulum yapılmaz.</p>
+<p><strong>Adım 3.</strong> (b) Bu kez <code>.deb</code> ile Packages kendi aralarında tutarlı. Ama APT Packages'ı <code>apt update</code> sırasında indirirken onun özetini InRelease'teki <code>0a836c39…</code> ile karşılaştırır (Adım 5). Tutmaz; yeni liste kabul edilmez, sahte <code>.deb</code>'e hiç sıra gelmez.</p>
+<p><strong>Adım 4.</strong> (c) Şimdi üç dosya kendi aralarında tutarlı, ama InRelease'in metni değişti. İmza, eski metin üzerinden atılmıştı; <code>gpgv</code> Adım 3'teki gibi <code>BAD signature</code> der. Yeni geçerli imza için Kali'nin özel anahtarı gerekir.</p>
+<p><strong>Adım 5.</strong> Saldırganın kalan seçeneği eski, gerçek ve geçerli bir InRelease'i sunmaktır (tekrar saldırısı). Bu, sahte paket sokmaz ama yeni yamaları gizler; savunması <code>Valid-Until</code>'dir. Adım 2'de bu makinedeki Kali deposunda alanın olmadığını, Adım 4'te Debian güvenlik deposunda bir haftalık olduğunu gördün.</p>
+<p><strong>Sonuç:</strong> (a) <code>.deb</code> özetinde, (b) Packages özetinde, (c) InRelease imzasında yakalanır. Saldırganın asıl hedefi bu yüzden aynalar değil, imza anahtarı ya da paketlemeden önceki kaynak koddur; ikisine karşı imza zinciri koruma sağlamaz (Parça 59).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Adım 8'deki on yedi satırlık <code>dpkg -V</code> çıktısını ayıkla: hangileri gürültü, hangileri incelenmeli?</p>
+<p><strong>Adım 1.</strong> İzin kaynaklı satırları ayır. Dokuz satır <code>?????????</code> (özet hesaplanamadı) ve dört satır "(Permission denied)" ile biten <code>missing</code>. Bunların hepsi <code>/etc/sudoers</code>, <code>/etc/ipsec.secrets</code> gibi yalnız root'un okuyabildiği dosyalar ya da dizinler. Sıradan kullanıcı dosyayı okuyamadığı için özetini çıkaramaz. Bunlar bulgu değil, ölçüm eksiğidir; <code>sudo dpkg -V</code> ile yinelenir (laboratuvar VM'inde).</p>
+<p><strong>Adım 2.</strong> <code>.original</code> ile biten üç <code>missing</code> satırına bak. Bu dosyalardan birini sorgula:</p>
+<pre class="kod" data-ad="bash">dpkg-divert --list | grep plymouthd
+ls /etc/plymouth/</pre>
+<pre class="cikti">diversion of /etc/plymouth/plymouthd.conf to /etc/plymouth/plymouthd.conf.original by kali-themes
+plymouthd.conf
+plymouthd.conf.dpkg-new</pre>
+<p><code>dpkg-divert</code>, bir paketin başka bir paketin dosyasını kendi sürümüyle değiştirebilmesi için dpkg'ye kaydedilen yer değiştirmedir. Burada <code>kali-themes</code> paketi asıl dosyayı <code>.original</code> adına yönlendirmiş; o ad diskte yok. Bilinçli bir dağıtım tercihidir, gürültüdür.</p>
+<p><strong>Adım 3.</strong> Kalan tek gerçek bulgu: <code>??5?????? c /etc/strongswan.d/charon/openssl.conf</code>. İçerik farklı, yapılandırma dosyası. Kimin dosyası ve kayıtlarda ne yazıyor?</p>
+<pre class="kod" data-ad="bash">dpkg -S /etc/strongswan.d/charon/openssl.conf
+md5sum /etc/strongswan.d/charon/openssl.conf
+dpkg-query -W -f='${Package} ${Conffiles}\n' | grep 'charon/openssl.conf '</pre>
+<pre class="cikti">libstrongswan: /etc/strongswan.d/charon/openssl.conf
+c7ff48a2a9a32589e28090b601c8f92b  /etc/strongswan.d/charon/openssl.conf
+ /etc/strongswan.d/charon/openssl.conf c7ff48a2a9a32589e28090b601c8f92b
+libstrongswan-standard-plugins  /etc/strongswan.d/charon/openssl.conf newconffile remove-on-upgrade</pre>
+<p>Bugünkü sahibi <code>libstrongswan</code> ve özet onun kaydıyla birebir aynı. Ama eski sahibi <code>libstrongswan-standard-plugins</code>'in kaydında özet yerine <code>newconffile remove-on-upgrade</code> yazıyor: dosya paketler arasında taşınmış, eski kayıt geçiş durumunda kalmış ve <code>dpkg -V</code> onunla karşılaştırıyor. Dosya değişmemiş; bulgu yanlış pozitif.</p>
+<p><strong>Sonuç:</strong> On yedi satırın hiçbiri değiştirilmiş bir programı göstermiyor: on üçü izin, üçü bilinçli yer değiştirme, biri paket taşınmasının izi. Yöntem: her satırı "izin mi, dağıtım tercihi mi, meşru düzenleme mi, açıklanamayan değişiklik mi?" diye sınıfla. <code>/usr/bin</code> altında açıklanamayan bir <code>??5</code> çıksaydı makineyi şüpheli sayar, ölçütü imzalı depodaki paketten alarak doğrulardın; yalnız kendi ya da izinli sistemlerinde.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 6 ve 7'ye:</strong> İki halkalı doğrulama üç halkalı bir zincire dönüştü; "ölçüt aynı yerden gelirse yalnız kazayı yakalar" dersi <code>dpkg -V</code>'nin sınırını açıkladı.</p>
+<p><strong>Parça 8, 9 ve 11'e:</strong> Paketler Parça 8'deki dizin düzenine yerleşir; <code>awk</code> paragraf kipi Parça 9'un devamıdır; <code>sudo</code>'nun neden dar tutulduğu Parça 11'de.</p>
+<p><strong>Parça 14, 17 ve 19'a:</strong> <code>apt-daily</code> zamanlayıcıları Parça 14'te, dosya bütünlüğü izleme Parça 17'de, güncelleme disiplini ve gereksiz paketleri kaldırma Parça 19'da.</p>
+<p><strong>Parça 44, 46 ve 47'ye:</strong> SHA-256'nın ve MD5'in özellikleri Parça 44'te, imzanın matematiği Parça 46'da, HTTPS'in neyi koruduğu Parça 47'de.</p>
+<p><strong>Parça 59 ve 70'e:</strong> Tedarik zinciri olayları (xz, SolarWinds), SBOM ve bağımlılık tarama Parça 59'da; açıklanamayan bir dosya değişikliğinden sonra ne yapılacağı Parça 70'te. Yasal ve etik çerçeve Parça 72–73'te.</p>
+<p><strong>Kod rafına:</strong> <code>pip</code> ve ad benzerliği uyarısı (kod rafı Parça 9), <code>sha256sum -c</code> ve bütünlük izleyicisi (kod rafı Parça 18).</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>APT güven zincirinin üç halkası nedir ve imzalı olan hangisidir?</summary><p>İmzalı olan yalnız InRelease'tir (ya da Release + Release.gpg). InRelease her Packages dosyasının boyutunu ve özetini taşır; Packages her <code>.deb</code>'in boyutunu ve SHA256 özetini taşır. Böylece tek imza, özetler aracılığıyla binlerce paketi korur ve aynalara ya da HTTP'ye güvenmek gerekmez.</p></details>
+<details><summary><code>Signed-By</code> neden önemlidir ve eski ortak anahtar havuzunun sorunu neydi?</summary><p>Ortak havuzda her anahtar her depo için geçerliydi; üçüncü taraf bir deponun anahtarı, Debian'ın deposu adına imzalanmış sahte bir dosyayı da geçirebilirdi. <code>Signed-By</code> her depoyu yalnız kendi anahtar halkasıyla doğrular; bir anahtar sızarsa zarar o depoyla sınırlı kalır. Anahtar eklerken parmak izi resmî sayfayla karşılaştırılır.</p></details>
+<details><summary><code>Valid-Until</code> hangi saldırıya karşı korur?</summary><p>Tekrar (dondurma) saldırısına: kötü niyetli bir ayna ya da ağ, eski ama gerçek ve geçerli imzalı bir InRelease'i sunmaya devam ederek yeni güvenlik güncellemelerini gizler. İmza bunu yakalamaz, çünkü dosya gerçektir. <code>Valid-Until</code> verinin geçerlilik süresini imzanın içine yazar; süre geçtiği hâlde yeni veri gelmezse APT hata verir.</p></details>
+<details><summary><code>curl … | bash</code> kalıbının dört sorunu nedir ve güvenli karşılığı ne?</summary><p>Betik okunmadan çalışır; doğrulanmaz (HTTPS yalnız yolu korur); diske iz bırakmaz; bağlantı koparsa yarım betik çalışabilir. Güvenli karşılığı: diske indir, oku, imzayı ve özeti doğrula, sonra çalıştır; mümkünse dağıtımın paketini ya da üreticinin imzalı deposunu kullan.</p></details>
+<details><summary><code>dpkg -V</code> neden bir güvenlik doğrulaması sayılmaz?</summary><p>Ölçüt (<code>md5sums</code> dosyaları) denetlenen makinenin kendi diskindedir; root yetkisini ele geçiren biri programla birlikte özet kaydını da değiştirebilir. Üstelik ölçüt MD5'tir. Gerçek inceleme için ölçüt makinenin dışından, imzalı depodan ya da çevrimdışı bir taban çizgisinden alınır.</p></details>
+<details><summary>Kali'nin LTS'si neden yoktur ve laboratuvarın hedef sunucusu için ne seçersin?</summary><p><code>kali-rolling</code> sürekli güncellenen bir daldır; "2026.2" gibi numaralar yalnız kalıp yayınlarıdır. Uzun süre aynı kalacak bir hedef sunucu için Debian stable (13; LTS ile 30 Haziran 2030'a kadar) ya da Ubuntu LTS (24.04 ya da 26.04) seçilir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Paket</strong> = dosyalar + üst veri. <strong>Depo</strong> = paketler + listeleri; <strong>ayna</strong> = kopyası. Katmanlar: <code>dpkg</code>/APT, <code>rpm</code>/<code>dnf</code>.</li>
+<li>Kaynaklar: <code>/etc/apt/sources.list.d/*.sources</code> (deb822): Types, URIs, Suites, Components, <strong>Signed-By</strong>. <code>apt-cache policy</code>: aday, öncelik (500 depo, 100 kurulu).</li>
+<li><strong>Zincir:</strong> anahtar → <strong>InRelease</strong> (tek imzalı dosya) → <strong>Packages</strong> (SHA256 InRelease'te) → <strong>.deb</strong> (SHA256 Packages'ta). Bütünlük taşımaya değil imzaya dayanır; HTTP gizliliği kaybettirir.</li>
+<li>Anahtarlar: paketle gelenler <code>/usr/share/keyrings/</code>, elle eklenenler <code>/etc/apt/keyrings/</code>; her depoya <code>Signed-By</code>; <code>apt-key</code> trixie'de kaldırıldı; <code>Trusted: yes</code> güvenliği kapatır.</li>
+<li><strong>Valid-Until</strong> tekrar saldırısına karşı (Debian güvenlik deposu: bir hafta). İmza "gerçek mi"yi, Valid-Until "güncel mi"yi cevaplar.</li>
+<li><code>update</code> listeleri tazeler, <code>upgrade</code> yükseltir, <code>full-upgrade</code> gerekirse kaldırır; <code>apt-get -s</code> simülasyon. Debian stable yamaları geri taşır: sürüm eski görünür, yama içindedir.</li>
+<li><strong>unattended-upgrades</strong>: güvenlik güncellemelerini otomatik kurar; <code>20auto-upgrades</code>, <code>50unattended-upgrades</code>, <code>apt-daily(-upgrade).timer</code>, <code>/var/log/unattended-upgrades/</code>, <code>--dry-run</code>. Otomatik olanı da izle.</li>
+<li>Sürüm: <code>[dönem:]üst_akış-revizyon</code>; <code>~</code> önce sıralanır; <code>dpkg --compare-versions</code>.</li>
+<li><strong>Destek (16 Ekim 2026):</strong> Debian 3 yıl + LTS 2 yıl (12: 30.06.2028, 13: 30.06.2030); Ubuntu LTS 5 yıl, ESM 10, Legacy 15 (24.04: Mayıs 2029; 26.04: Mayıs 2031); Kali rolling: LTS yok.</li>
+<li><strong>curl | bash yerine:</strong> indir → oku → imza (Good) → özet (OK) → çalıştır. Dağıtım deposu &gt; imzalı üretici deposu &gt; tek dosya &gt; boru.</li>
+<li><code>dpkg -S</code> sahibi, <code>-L</code> dosyaları, <code>-V</code> bütünlüğü (yalnız MD5 içerik; <code>??5??????</code>, <code>c</code>, <code>missing</code>, <code>?</code>). <code>rpm -V</code>: S M 5 D L U G T P. <strong>Bütünlük denetimi, güvenlik doğrulaması değil</strong>; ölçüt dışarıdan.</li>
+<li><strong>Sınır:</strong> imza paketin zararsız olduğunu kanıtlamaz (xz, Parça 59). Pratik yalnız kendi makinende ya da izinli laboratuvarda (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-10">
+<h3>Quiz 10</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on iki tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Kali Linux Rolling için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her iki yılda bir LTS sürümü çıkar ve beş yıl desteklenir.</li><li>Sürekli güncellenen bir dağıtımdır; LTS sürümü yoktur, bu yüzden düzenli güncellenmesi gerekir ve uzun süre aynı kalacak bir hedef sunucu için Debian stable ya da Ubuntu LTS daha uygundur.</li><li>"2026.2" gibi her sürüm numarası üç yıl boyunca ayrı güvenlik yaması alır.</li><li>Debian'ın kararlı (stable) dalının birebir aynısıdır.</li><li>Güncelleme almaz; her yeni sürümde yeniden kurulması gerekir.</li></ul>
+<div class="coz"><p>Kali'nin belgesine göre varsayılan <code>kali-rolling</code> dalı sürekli güncellenir ve Debian'ın test dalından beslenir; LTS kavramı yoktur, sürüm numaraları yalnız kalıp yayın tarihleridir. Bu yüzden C yanlıştır. A Ubuntu LTS'yi tarif ediyor. D yanlış: kararlı dala yakın olan, Kali'nin daha temkinli <code>kali-last-snapshot</code> dalıdır, o da Debian stable'ın kendisi değildir. E yanlış: rolling dağıtım tam da yeniden kurulmadan, sürekli güncellemeyle yaşar.</p></div></li>
+
+<li data-c="D"><p class="q">Debian'ın APT güven zincirinde deponun imza anahtarıyla doğrudan imzalanan dosya hangisidir?</p>
+<ul class="sec"><li>Her <code>.deb</code> paketi tek tek imzalanır; liste dosyaları imzasızdır.</li><li>Yalnız <code>Packages</code> dosyası imzalanır.</li><li>Anahtar halkası dosyası bir sertifika otoritesince imzalanır; geri kalanını HTTPS korur.</li><li>InRelease (ya da Release ile ayrık imzası Release.gpg); Packages ve <code>.deb</code> dosyaları bu imzalı dosyadan başlayan özet zinciriyle doğrulanır.</li><li>Hiçbiri; bütünlüğü yalnız HTTPS bağlantısı sağlar.</li></ul>
+<div class="coz"><p>Depo yalnız InRelease'i imzalar; InRelease her Packages dosyasının özetini, Packages da her <code>.deb</code>'in SHA256 özetini taşır. A yanlış: Debian wiki'ye göre paket içi imza (debsig-verify) yaygın kullanılmaz; secure apt kullanılır (paket başına imza RPM dünyasının yöntemidir). B, Packages'ın imzasız olduğunu ve güvenini InRelease'teki özetten aldığını gözden kaçırıyor. C ve E yanlış: bu parçadaki depo düz HTTP ile çalışıyordu ve bütünlüğü yine de imza sağlıyordu.</p></div></li>
+
+<li data-c="A"><p class="q"><code>apt-cache policy tree</code> şu çıktıyı veriyor: <code>Installed: 2.3.2-1</code>, <code>Candidate: 2.3.2-1</code>, sürüm tablosunda <code>*** 2.3.2-1 500</code> ve altında <code>500 http://… Packages</code> ile <code>100 /var/lib/dpkg/status</code>. Hangisi doğrudur?</p>
+<ul class="sec"><li>Paket kurulu; kurulu sürüm depodaki adayla aynı olduğu için yükseltilecek bir şey yok; 100 satırı bu sürümün kurulu paketler kaydında (dpkg durum dosyası) bulunduğunu gösterir.</li><li>Paket kurulu değil; <code>***</code> işareti adayın bir sonraki güncellemede indirileceğini gösterir.</li><li>500 ve 100 indirme hızlarıdır (kB/s).</li><li>Makinede iki ayrı sürüm kurulu; 100 öncelikli olan eskisidir.</li><li>Paket imzasız bir depodan geldiği için 100 önceliği almıştır.</li></ul>
+<div class="coz"><p><code>***</code> kurulu sürümü işaretler; kurulu ve aday aynı olduğu için yükseltme yoktur. Normal depolar 500, kurulu sürümün kaydı (<code>/var/lib/dpkg/status</code>) 100 öncelik alır; ikisi de aynı sürümün iki kaynağıdır. B, <code>Installed</code> satırını okumamış. C yanlış: sayılar öncelik (pin priority) değerleridir. D yanlış: tabloda tek sürüm var, iki ayrı kaynak satırıyla. E yanlış: 100 öncelik imzayla değil, kayıt türüyle ilgilidir; güncel APT imzasız depodan zaten veri indirmez.</p></div></li>
+
+<li data-c="C"><p class="q"><code>dpkg -S /etc/apt/sources.list.d/kali.sources</code> komutu "no path found matching pattern" yazıp 1 koduyla dönüyor. Bu ne anlama gelir?</p>
+<ul class="sec"><li>Dosya silinmiştir; APT artık hiçbir depoya bakamaz.</li><li>Dosya bozuktur; <code>dpkg -V</code> onu hemen onarır.</li><li>Dosyayı kurulu hiçbir paket kurmamıştır (kurulum aracı ya da yönetici yaratmış olabilir); bu yüzden <code>dpkg -V</code> de onu denetlemez, bütünlüğünü ayrıca izlemek gerekir.</li><li>Dosya bir saldırganın eklediği kesin bir zararlıdır.</li><li><code>dpkg -S</code> yalnız <code>/usr</code> altındaki dosyalarda çalışır.</li></ul>
+<div class="coz"><p><code>dpkg -S</code> dosyanın hangi kurulu paketin dosya listesinde olduğunu arar; "no path found", hiçbir paketin listesinde olmadığını söyler. Dosya var ve APT onu okuyor (Adım 1'de içeriğini gördün), yani A yanlış. B yanlış: <code>dpkg -V</code> onarmaz, yalnız raporlar ve paketsiz dosyayı hiç tanımaz. D aşırı bir sonuçtur: sahipsiz dosya soru işaretidir, kanıt değildir; burada kurulum sırasında yaratılmıştır. E yanlış: aynı komut <code>/etc/os-release</code> için <code>base-files</code> cevabını verdi.</p></div></li>
+
+<li data-c="E"><p class="q">Bir projenin sitesi kurulum için <code>curl -fsSL https://ornek.invalid/kur.sh | sudo bash</code> öneriyor. Aşağıdakilerden hangisi en doğru savunmacı yaklaşımdır?</p>
+<ul class="sec"><li>Adres HTTPS olduğu için komutu olduğu gibi çalıştırmak</li><li><code>sudo</code>'yu çıkarıp aynı boruyu sıradan kullanıcıyla çalıştırmak; böylece betik hiçbir zarar veremez</li><li>Komutu iki kez çalıştırıp iki sonucun aynı olup olmadığına bakmak</li><li>Betiği indirip <code>chmod 777</code> ile çalıştırılabilir yapmak</li><li>Önce dağıtımın deposunda ya da üreticinin imzalı APT deposunda aramak; yoksa betiği diske indirip okumak, yayıncının ayrı kanaldan doğrulanan imzası ve özetiyle doğrulamak, ancak sonra çalıştırmak</li></ul>
+<div class="coz"><p>Doğru sıra, güven zincirinin en uzun olduğu yoldan başlamaktır: depo, sonra imzalı üretici deposu, sonra indir-oku-doğrula-çalıştır. A yanlış: HTTPS yalnız yolu korur; sunucunun kendisi ele geçirildiyse değiştirilmiş betik kusursuz bir TLS bağlantısıyla gelir. B zararı azaltır ama okumadan ve doğrulamadan çalıştırma sorununu çözmez; kullanıcının kendi dosyaları ve oturumları da değerlidir. C hiçbir şey kanıtlamaz; sunucu iki kez aynı sahte içeriği verebilir. D, okumadan çalıştırmanın üstüne herkese yazma izni ekleyerek durumu kötüleştirir.</p></div></li>
+
+<li data-c="B"><p class="q">Laboratuvar VM'inde <code>sudo dpkg -V</code> çıktısında <code>??5?????? c /etc/ssh/sshd_config</code> satırı görünüyor. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>Dosya silinmiştir; SSH çalışmaz.</li><li>Bu bir yapılandırma dosyasıdır (<code>c</code>) ve içeriği paketteki özetten farklıdır (<code>5</code>); çoğu zaman meşru bir düzenlemedir, ama kimin, ne zaman, neden değiştirdiği denetlenmelidir.</li><li>Dosyanın sahibi ve grubu değişmiştir; içerik aynıdır.</li><li>Soru işaretleri dosyanın şifrelendiğini gösterir.</li><li>Dosya kesinlikle bir saldırgan tarafından değiştirilmiştir; makine yeniden kurulmalıdır.</li></ul>
+<div class="coz"><p>dpkg(1)'e göre üçüncü konumdaki <code>5</code> içerik özetinin tutmadığını, <code>c</code> yapılandırma dosyası olduğunu söyler; <code>?</code> konumlar dpkg'nin henüz yapamadığı denetimlerdir. Yöneticiler <code>sshd_config</code>'i sertleştirme için bilerek düzenler (Parça 18), bu yüzden E aşırıdır; ama değişikliğin bilinip bilinmediği sorulmalıdır. A <code>missing</code> satırını tarif ediyor. C yanlış: dpkg sahip ve grubu denetlemez, o konumlar <code>?</code>'dir. D yanlış: <code>?</code> "denetlenemedi" demektir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir aynayı ele geçiren saldırgan <code>hello</code> paketinin <code>.deb</code> dosyasını değiştiriyor ve Packages dosyasındaki SHA256 değerini de yeni dosyaya göre güncelliyor; InRelease'e dokunmuyor. Kurban <code>sudo apt update</code> ve <code>sudo apt install hello</code> çalıştırıyor. Ne olur?</p>
+<ul class="sec"><li>Packages ile <code>.deb</code> tutarlı olduğu için sahte paket kurulur.</li><li>APT yalnız <code>.deb</code>'in boyutuna bakar; boyut aynıysa paket kurulur.</li><li>InRelease'in imzası bozulur ve <code>gpgv</code> BAD signature der.</li><li>Değiştirilmiş Packages dosyasının özeti imzalı InRelease'teki değerle tutmaz; APT yeni listeyi reddeder ve sahte <code>.deb</code>'e hiç sıra gelmez.</li><li>APT bunu fark edemez; ancak kurulumdan sonra <code>dpkg -V</code> fark eder.</li></ul>
+<div class="coz"><p>APT <code>apt update</code> sırasında indirdiği Packages dosyasının özetini InRelease'te yazan değerle karşılaştırır (Adım 5'te bu karşılaştırmayı elle yaptın). Saldırgan Packages'ı değiştirdiği için özet tutmaz. C yanlış: InRelease'e dokunulmadı, imzası geçerlidir; sorun bir alt halkadadır. A, zincirin Packages'ta bitmediğini unutuyor. B yanlış: APT özeti de denetler. E yanlış: hem kurulumdan önce yakalanır hem de <code>dpkg -V</code> sahte paketin kendi <code>md5sums</code>'ı ile karşılaştıracağı için bir şey göstermezdi.</p></div></li>
+
+<li data-c="A"><p class="q">Kötü niyetli bir ayna, güvenlik deposunun üç hafta önceki gerçek ve geçerli imzalı InRelease ile Packages dosyalarını sunmaya devam ediyor; böylece kurbanlar yeni güvenlik güncellemelerini görmüyor. Bu saldırıya karşı koruyan mekanizma hangisidir?</p>
+<ul class="sec"><li>InRelease'teki <code>Valid-Until</code> alanı ve APT'nin bu süre geçince veriyi reddetmesi</li><li>InRelease imzasının <code>gpgv</code> ile doğrulanması</li><li><code>.deb</code> dosyalarının SHA256 özetlerinin denetlenmesi</li><li>Kurulumdan sonra <code>dpkg -V</code> çalıştırılması</li><li>Depoya <code>Signed-By</code> ile tek anahtar atanması</li></ul>
+<div class="coz"><p>Bu bir tekrar (replay) saldırısıdır: dosyalar gerçektir, imzaları ve özetleri geçerlidir, yalnız eskidir. sources.list(5)'e göre depo verinin hangi tarihe kadar geçerli olduğunu bildirir; süre dolduğu hâlde yeni veri gelmezse APT hata verir. Debian güvenlik deposunda bu süre bir haftaydı. B, C ve E gerçek ama eski dosyaları geçirir, çünkü hepsi "bu dosya o anahtardan mı geldi" sorusunu cevaplar. D kurulu dosyaların paket kaydıyla uyuşup uyuşmadığına bakar; eksik güncellemeyi görmez.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Bir Packages kaydındaki SHA256 özeti 64 onaltılık haneden oluşuyor. Bu özet kaç bayttır?</p>
+<ul class="sec"><li>64 bayt</li><li>16 bayt</li><li>32 bayt, yani 256 bit</li><li>128 bayt</li><li>8 bayt</li></ul>
+<div class="coz"><p>Parça 1'deki kural: bir bayt iki onaltılık haneyle gösterilir (00–FF). 64 hane ÷ 2 = 32 bayt; 32 × 8 = 256 bit, SHA-256 adının kaynağı. A haneyi bayt sanıyor. B ve E hane sayısını yanlış bölüyor. D, her haneyi iki bayt sayarak ters yönde çarpıyor; bir hane aslında yarım bayttır (4 bit).</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir geliştirici, bir API anahtarını C programının içine gömüp derliyor ve "derlendi, artık kimse göremez" diyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Derleyici sabit dizgileri her zaman şifreler, anahtar güvendedir.</li><li>Makine kodu yalnız işlemci tarafından okunabilir, insanlar okuyamaz.</li><li>Anahtarı korumak için <code>-O2</code> ile derlemek yeterlidir.</li><li>Yalnız yorumlanan dillerde (Python gibi) kod okunabilir; derlenen dillerde okunamaz.</li><li>Derleme bir gizleme yöntemi değildir; makine kodu ve içindeki dizgiler okunabilir, bu yüzden sır programa gömülmez.</li></ul>
+<div class="coz"><p>Parça 2'nin dersi: makine kodu bayttır ve <code>objdump</code> gibi araçlarla okunur; sabit dizgiler genellikle dosyanın içinde olduğu gibi durur. A yanlış: derleyici şifreleme yapmaz. B yanlış: assembly makine kodunun bire bir metin karşılığıdır, insanlar okur. C yanlış: eniyileme kodu yeniden düzenler, sırrı gizlemez. D yanlış: derlenmiş kod da okunur; fark yalnız okumanın zahmetindedir.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Bir C programında <code>malloc</code> ile ayrılan bellek, sürecin bellek düzeninde hangi bölgeye düşer?</p>
+<ul class="sec"><li>Öbek (heap)</li><li>Yığın (stack)</li><li>Kod (text) bölgesi</li><li>Salt okunur veri bölgesi</li><li>İşlemcinin yazmaçları</li></ul>
+<div class="coz"><p>Parça 3'e göre çalışma anında istenen ve <code>free</code> ile geri verilen bellek öbekten gelir (küçük istekler <code>[heap]</code> bölgesinden, büyükler <code>mmap</code> ile ayrı eşlemelerden; ikisi de öbek yönetimidir). B, fonksiyonların yerel değişkenlerinin ve dönüş adresinin durduğu yerdir. C ve D yazılabilir değildir (<code>r-x</code>, <code>r--</code>). E bellek değil, işlemcinin içindeki birkaç değerlik çalışma alanıdır.</p></div></li>
+
+<li data-c="D" data-k="siber-4"><p class="q">Root kullanıcısıyla çalışan bir program x86 işlemcide hangi halkada (ring) çalışır?</p>
+<ul class="sec"><li>Halka 0, çünkü root çekirdeğin kendisidir.</li><li>Halka 1, çünkü root yarı ayrıcalıklıdır.</li><li>Halka 2, çünkü sürücülerle aynı düzeydedir.</li><li>Halka 3; root bir kullanıcı kimliğidir, işlemci kipi değildir; çekirdekten iş yine sistem çağrısıyla istenir.</li><li>Root'un programları hiçbir halkada çalışmaz, doğrudan donanımda çalışır.</li></ul>
+<div class="coz"><p>Parça 4'ün ayrımı: halka bir işlemci kipidir, root ise çekirdeğin tanıdığı bir kimliktir (UID 0). Root'un programı da kullanıcı alanında, halka 3'te çalışır; çekirdek ona daha çok izin verir, ama iş yine sistem çağrısıyla istenir. A bu iki kavramı karıştırıyor. B ve C yanlış: Linux x86'da yalnız halka 0 ve 3 kullanılır. E anlamsızdır; her program bir halkada çalışır. Bu ayrım, paketlerin <code>postinst</code> betiklerinin root olarak çalışmasının neden yine de büyük bir güven olduğunu da açıklar.</p></div></li>
+
+<li data-c="B" data-k="siber-5"><p class="q">Yürütülemez bellek (NX/DEP) korumasının engellediği şey aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Bir sürecin başka bir sürecin belleğini okuması</li><li>Veri için ayrılmış (yığın, öbek gibi) bir sayfadaki baytların işlemci tarafından komut olarak yürütülmesi</li><li>Programın her çalıştırmada aynı adrese yüklenmesi</li><li>Bir sürecin <code>fork</code> ile çocuk oluşturması</li><li>Dosyaların diske yazılması</li></ul>
+<div class="coz"><p>Parça 5'e göre NX/DEP, sayfa tablosu girdisindeki bayrakla veri sayfalarının yürütülmesini yasaklar; W^X ilkesiyle bir sayfa ya yazılabilir ya çalıştırılabilir olur. A sanal bellek yalıtımının işidir. C'yi ASLR değiştirir, NX değil. D ve E bu korumayla ilgisizdir.</p></div></li>
+
+<li data-c="C" data-k="siber-6"><p class="q">"güneş" sözcüğü UTF-8 ile kaç bayt tutar?</p>
+<ul class="sec"><li>5</li><li>6</li><li>7</li><li>10</li><li>20</li></ul>
+<div class="coz"><p>UTF-8'de ASCII karakterleri (g, n, e) birer bayt, ü ve ş ikişer bayt tutar: 3 + 2 + 2 = 7. Python'da <code>len("güneş")</code> 5, <code>len("güneş".encode("utf-8"))</code> 7 verir. A karakter sayısını bayt sanıyor (Parça 6'daki "karakter sayısı ≠ bayt sayısı" dersi). B yalnız bir harfi iki bayt saymış. D UTF-16 (5 × 2), E UTF-32 (5 × 4) uzunluğudur.</p></div></li>
+
+<li data-c="E" data-k="siber-7"><p class="q">Laboratuvar VM'ini kurarken aşağıdaki sıralamalardan hangisi Parça 7'deki plana uygundur?</p>
+<ul class="sec"><li>Kur, ilk anlık görüntüyü al, sonra kalıbın özetini doğrula.</li><li>İlk anlık görüntüyü al, sonra kalıbı indir ve kur.</li><li>Kalıbın yalnız özetini doğrula, imzaya gerek yok; sonra kur.</li><li>Kur, güncelle, NAT kartını köprüye çevir, sonra görüntü al.</li><li>Kalıbın önce listesinin imzasını, sonra özetini doğrula; sonra kur ve güncelle; ancak ondan sonra "temiz-kurulum" görüntüsünü al.</li></ul>
+<div class="coz"><p>Parça 7'nin ilkesi: önce doğrula, sonra kur, sonra mühürle. Doğrulanmamış kalıptan kurulan VM'in görüntüsünü almak, belki bozuk bir başlangıcı "temiz" diye mühürlemektir; A ve B bu sırayı bozuyor. C iki halkalı doğrulamanın ilk halkasını atıyor; özet kalıpla aynı yerden geliyorsa kasıtlı değişikliği yakalamaz. D köprü kipine geçerek laboratuvarın yalıtımını kaldırıyor.</p></div></li>
+
+<li data-c="A" data-k="siber-7"><p class="q">"VM'imin her hafta yedeğini alıyorum ama hiç geri yüklemeyi denemedim." Parça 7'deki alışkanlıklara göre en doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Hiç geri yüklenmemiş yedek ancak var olduğu umulan bir yedektir; ilkini yeni bir adla içe aktarıp açılıyor mu denemek gerekir.</li><li>Yedek alındıysa geri yükleme testine gerek yoktur.</li><li>Geri yükleme testi yalnız konteynerlerde yapılabilir.</li><li>Anlık görüntü varsa yedek de geri yükleme testi de gereksizdir.</li><li>Yedeği asıl VM ile aynı diskte tutmak testi gereksiz kılar.</li></ul>
+<div class="coz"><p>Parça 7'nin üç alışkanlığından biri geri yükleme testidir: yedeğin işe yaradığını ancak geri yükleyerek öğrenirsin. B bu alışkanlığı atlıyor. C yanlış: VM yedekleri (OVF/OVA, <code>wsl --export</code>) içe aktarılarak sınanır. D yanlış: anlık görüntü aynı diskteki fark dosyasıdır, yedek değildir. E tersini söylüyor: yedek asıl veriyle aynı diskte durmamalıdır.</p></div></li>
+
+<li data-c="D" data-k="siber-8"><p class="q">Linux dosya sistemi hiyerarşisinde sistem genelindeki yapılandırma dosyalarının (ör. APT kaynakları, SSH sunucusu ayarları) durduğu dizin hangisidir?</p>
+<ul class="sec"><li><code>/var</code></li><li><code>/home</code></li><li><code>/proc</code></li><li><code>/etc</code></li><li><code>/tmp</code></li></ul>
+<div class="coz"><p>Sistem genelindeki yapılandırma dosyaları <code>/etc</code> altında durur; bu parçada APT kaynakları <code>/etc/apt/sources.list.d/</code>'de, sertleştireceğin <code>sshd_config</code> <code>/etc/ssh/</code>'dedir. A değişken veriyi (günlükler, önbellekler, <code>/var/lib/apt/lists/</code> ve <code>/var/lib/dpkg/</code> gibi durum dosyaları) tutar. B kullanıcıların ev dizinleridir. C çekirdeğin süreç bilgilerini dosya gibi sunduğu sanal dosya sistemidir. E geçici dosyalar içindir.</p></div></li>
+
+<li data-c="B" data-k="siber-8"><p class="q">Bir dosya sistemi <code>nosuid</code> seçeneğiyle bağlandığında (mount) ne olur?</p>
+<ul class="sec"><li>O dosya sistemindeki hiçbir dosya okunamaz.</li><li>O dosya sistemindeki dosyaların SUID ve SGID bitleri yok sayılır; böyle bir program çalışsa da sahibinin yetkisini kazandırmaz.</li><li>O dosya sistemine yalnız root yazabilir.</li><li>O dosya sistemindeki programlar hiç çalıştırılamaz.</li><li>Dosyalar otomatik olarak şifrelenir.</li></ul>
+<div class="coz"><p><code>nosuid</code>, o bağlama noktasındaki programlarda set-user-ID ve set-group-ID bitlerini (ve dosya yeteneklerini) dikkate almaz; <code>/tmp</code> gibi herkesin yazabildiği yerlerde yetki kazandıran bir programın işe yaramaması için kullanılır (SUID'in ayrıntısı Parça 12'de). D <code>noexec</code>'i tarif ediyor; ikisi ayrı seçeneklerdir. A, C ve E bağlama seçeneklerinin bu ikisiyle ilgisi olmayan sonuçlarıdır.</p></div></li>
+
+<li data-c="C" data-k="siber-9"><p class="q">Başarısız girişleri IP adresine göre saymak için <code>grep fail giris.log | cut -d' ' -f2 | uniq -c</code> yazılıyor; ama aynı adres çıktıda iki ayrı satırda görünüyor. Neden ve doğrusu ne?</p>
+<ul class="sec"><li><code>grep</code> büyük-küçük harf ayırdığı için; <code>grep -i</code> kullanılmalı.</li><li><code>cut</code> alanları yanlış saydığı için; <code>-f1</code> yazılmalı.</li><li><code>uniq</code> yalnız art arda gelen aynı satırları birleştirir; önce <code>sort</code> ile sıralanmalı: <code>… | sort | uniq -c | sort -rn</code>.</li><li><code>uniq -c</code> yalnız sayıları sayar, metinleri sayamaz.</li><li>Boru yalnız iki komut arasında çalışır; komutlar ayrı ayrı çalıştırılmalı.</li></ul>
+<div class="coz"><p><code>uniq</code> yalnız komşu satırları karşılaştırır. Bu parçanın ortamında dört satırlık örnek günlükle denendi: sırasız girişte <code>10.0.0.5</code> iki ayrı "1" satırı verdi; araya <code>sort</code> konunca "2 10.0.0.5" ve "1 10.0.0.9" çıktı, son <code>sort -rn</code> en çok deneyeni üste aldı. A ve B bu belirtiyi açıklamaz; adresler doğru seçiliyor. D yanlış: <code>uniq -c</code> her türlü satırı sayar. E yanlış: boru istenen kadar komutu zincirler.</p></div></li>
+
+<li data-c="E" data-k="siber-9"><p class="q">Bir betikte <code>rm -rf $DIZIN/*</code> satırı var ve bir hata yüzünden <code>DIZIN</code> değişkeni boş kalıyor. Ne olur ve doğru alışkanlık nedir?</p>
+<ul class="sec"><li>Hiçbir şey olmaz; boş değişkenle <code>rm</code> çalışmaz.</li><li>Yalnız bulunduğun dizindeki dosyalar silinir.</li><li><code>rm</code> her zaman onay sorar, kullanıcı hayır diyebilir.</li><li>Yalnız gizli dosyalar silinir.</li><li>Komut <code>rm -rf /*</code> hâline gelir ve kök dizindeki her şeyi silmeye çalışır; değişken tırnaklanmalı ve boş olmadığı denetlenmeli (ör. <code>"${DIZIN:?}"/*</code>).</li></ul>
+<div class="coz"><p>Kabuk boş değişkeni hiçliğe genişletir; geriye <code>/*</code> kalır ve joker kök dizindeki bütün adlara açılır. Bu ortamda <code>echo</code> ile güvenle denendi: genişleme <code>rm -rf /bin /boot /dev /etc …</code> verdi. <code>${DIZIN:?}</code> değişken boşsa betiği hata vererek durdurur (denemede çıkış kodu 1). Parça 9'daki uyarıyı unutma: yalnız tırnak yetmez, <code>"$DIZIN"/*</code> da boşken <code>/*</code> olur; boşluk denetimi şarttır. A ve B yanlış: komut çalışır ve kökten başlar. C yanlış: <code>-f</code> onayı kapatır. D yanlış: <code>*</code> gizli dosyaları değil, görünür adları kapsar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-9">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-10">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-11">Sonraki parça: Kullanıcılar, gruplar ve sudo →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"apt güven zinciri InRelease Packages imza nasıl çalışır"</li>
+  <li>"linux paket yöneticisi apt dpkg farkı bağımlılık"</li>
+  <li>"curl pipe bash neden tehlikeli güvenli kurulum"</li>
+  <li>"unattended-upgrades otomatik güvenlik güncellemesi debian ubuntu"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılanlar (16 Ekim 2026; Windows 11 üstünde WSL 2, Kali Rolling 2026.2, apt 3.2.0+kali1, dpkg 1.23.7, <code>kali-last-snapshot</code> dalı):</strong> "Kendi makinende dene"deki on bir adımın ve üç çözümlü örneğin bütün komutları; tekrar soruları için <code>uniq -c</code>/<code>sort</code>, boş değişkenin <code>echo</code> ile genişletilmesi, <code>${DIZIN:?}</code> ve Python ile UTF-8 uzunluğu. Hepsi gerçekten koştu, çıktılar birebir aktarıldı; quiz'deki çıktıya dayalı yanıtlar bu çıktılarla denetlendi. Tek dış istek, Debian güvenlik deposunun herkese açık InRelease dosyasının <code>curl</code> ile indirilmesiydi; yerel sunucu yalnız 127.0.0.1'de dinledi ve iş bitince durduruldu.</li>
+  <li><strong>Sadeleştirmeler ve gizlilik:</strong> Komutlar gerçekte <code>/tmp/yazar/siber-10/</code> altında çalıştırıldı; metinde <code>/tmp/paket-dene</code> diye gösterildi, <code>gpg</code> çıktısındaki iki yol buna göre değiştirildi. Etiket satırlı betiklerde çalıştırıldı, etiketler atıldı. <code>ls -l</code> çıktıları kullanıcı adı görünmesin diye <code>awk</code> ile boyut ve ada indirildi. <code>dpkg-deb -c | head</code>'in "Broken pipe" stderr satırı yüzünden komut metinde <code>2>/dev/null</code> ile gösterildi; Adım 7 ve 10'da çıktıların yalnız baş ve son satırları gösterildi; Adım 11'de anahtar üretme çıktısı gösterilmedi (gerçekte <code>/dev/null</code>'a yönlendirilmişti). Adım 8'deki 17 satırlık <code>dpkg -V</code> çıktısı eksiksizdir. Parmak izleri, zaman damgaları ve "+03" o çalıştırmaya özgüdür.</li>
+  <li><strong>Burada çalıştırılmayanlar:</strong> <code>apt update/install/upgrade</code>, <code>dpkg -i</code>, <code>sudo dpkg -V</code>, <code>unattended-upgrades</code> kurulum ve yapılandırması, <code>--dry-run</code>, <code>20auto-upgrades</code>, <code>/var/run/reboot-required</code>: root ister ya da sistemi değiştirir. <code>curl … | bash</code> hiçbir biçimde çalıştırılmadı. <code>dnf</code> ve <code>rpm -V/-qf/-ql</code> RPM veritabanı olmadığı için denenmedi.</li>
+  <li><strong>Web'den doğrulananlar:</strong> Debian wiki SecureApt (zincir, debsig-verify'ın yaygın olmaması, <code>apt-key</code>'in trixie'de kaldırılması); apt-secure(8), sources.list(5) ve dpkg(1) trixie kılavuzları (imzasız deponun reddi, arşive güvenin paketin zararsızlığı olmadığı, anahtar dizinleri, Signed-By, Check-Valid-Until, Trusted uyarısı, tek satırlık biçimin deprecated oluşu, <code>--verify</code>'ın yalnız MD5 denetimi ve "güvenlik doğrulaması değildir" uyarısı); DNF yapılandırma başvurusu (gpgcheck ve benzerleri); Debian güvenlik SSS (geri taşıma, üç yıl destek); Debian duyurusu 12 Temmuz 2026 ve LTS wiki (bookworm ve trixie tarihleri; wiki bookworm LTS başlangıcını 11 Haziran 2026 yazıyor, duyuru olağan desteğin 12 Temmuz'da bittiğini söylüyor, tabloda duyuru esas alındı); Ubuntu sürüm döngüsü sayfası ve "Automatic updates" belgesi; Debian wiki UnattendedUpgrades; Kali "Kali Branches" ve "Downloading Kali Linux" (parmak izi 827C…E4C5). apt'nin <code>sqv</code>'ye bağımlılığı yerelde <code>dpkg -s apt</code> ile görüldü; apt'nin sqv'yi ne zamandan beri kullandığını resmî belgede bulamadım.</li>
+  <li><strong>Hafızadan ya da tartışmalı:</strong> Fedora sütunundaki <code>dnf</code> komutları ve Fedora/RHEL depo dosyalarında gpgcheck'in açık gelmesi; <code>rpm -V</code> harfleri (Fedora tartışmasındaki kılavuz alıntısından, rpm.org'da okunmadı); Ubuntu 22.04 ve 24.04'ün çıkış ayı; <code>upgrade</code>/<code>full-upgrade</code> ayrıntısı; <code>+b1</code>'in yeniden derleme anlamı (sıralama denemeyle doğrulandı); <code>preinst</code>/<code>postinst</code>'in root olarak çalışması; APT'nin sıkıştırılmış liste özetini de denetlemesi; ortak anahtar havuzunun riski; çift imzanın anahtar geçişi amacı (iki imza gözlendi); <code>curl | bash</code>'in dört sorunu (yaygın güvenlik pratiği, tek bir resmî kaynağa dayanmıyor). xz (2024) yalnız bağlantı olarak anıldı, ayrıntısı Parça 59'da.</li>
+  <li><strong>Saldırı sınırı ve sistem:</strong> Ayna ele geçirme, tekrar saldırısı ve değiştirilmiş betik yalnız "neden mümkün, hangi denetim yakalar" düzeyinde anlatıldı; araç, yük ya da kaçınma yöntemi verilmedi. "Saldırgan rolü" yerel, zararsız bir betikte bir dizgiyi değiştirmekten ibaretti. Hiçbir paket kurulmadı; <code>/etc</code>, <code>/var</code>, <code>/usr</code> ve ev dizinine yazılmadı; <code>/tmp/lab-arac</code> denemeden sonra silindi. Yasal çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

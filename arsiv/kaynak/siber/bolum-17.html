@@ -1,0 +1,852 @@
+<article class="chapter ders" id="c-siber-17">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 17 · Günlükler ve izleme</div>
+<h1>Makinenin hafızası: günlükler nerede durur, nasıl süzülür, ne kadar saklanır ve değişen dosya nasıl yakalanır</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Parça 9'da kendi ürettiğin bir metin dosyasında başarısız SSH girişlerini saydın. Şimdi gerçek bir laboratuvar sunucusuna bakıyorsun ve <code>/var/log/auth.log</code> diye bir dosya <strong>yok</strong>. Kimlik doğrulama kayıtları nereye gitti? Bulduğunda bir satırın gerçekten SSH sunucusundan mı, yoksa "sshd" etiketiyle yazan herhangi bir kullanıcıdan mı geldiğini nasıl ayırırsın? Kayıtlar ne kadar geriye gider? Ve biri <code>/etc</code> altındaki bir dosyayı sessizce değiştirip dosyanın tarihini eski hâline getirdiyse bunu neyle fark edersin?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 8 (<code>/var</code>, <code>/var/log</code>, FHS), Parça 9 (<code>grep</code>, <code>awk</code>, <code>sort | uniq -c</code>, <code>tail -F</code>; günlükten başarısız girişleri saymak), Parça 10 (<code>dpkg -V</code> ile paket dosyalarının bütünlüğü), Parça 11–13 (kullanıcı, <code>sudo</code>, izinler, süreç kimliği), Parça 14 (systemd birimleri ve zamanlayıcılar). Kod rafından: Parça 14 (Python dosya bütünlüğü izleyici) ve Parça 18 (kabuk sürümü, <code>sha256sum -c</code>).</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bir saldırı ya da arızada elindeki tek tanık çoğu zaman <strong>günlüklerdir</strong> (log): "ne oldu, ne zaman, kim yaptı" sorularının yazılı cevapları. Savunmacının günlükle üç işi vardır: <strong>bulmak</strong> (hangi kayıt nerede tutuluyor), <strong>süzmek</strong> (binlerce satırdan sorunun cevabı olan beşini çıkarmak) ve <strong>korumak</strong> (kayıt yeterince uzun saklansın, diski doldurmasın, değiştirilirse fark edilsin). Bu parça bu üçünü tek bir Linux makinesi için kurar.</p>
+
+<p>Sıra şöyle: <strong>syslog</strong> modeli ve <code>/var/log</code>; bugünkü Debian ve Kali'nin asıl kaynağı <strong>systemd günlüğü</strong> (journal) ve <code>journalctl</code>; kimlik doğrulama izleri; <strong>logrotate</strong> ile saklama; <strong>auditd</strong> kavramı ve <strong>dosya bütünlüğü izleme</strong>. "Kendi makinende dene"de hepsini kendi dosyalarınla deneyeceksin.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Debian/Ubuntu (rsyslog kuruluysa)</th><th>RHEL/Fedora ailesi</th><th>systemd journal (her ikisinde)</th></tr>
+<tr><td>Kimlik doğrulama, <code>sudo</code>, SSH</td><td><code>/var/log/auth.log</code></td><td><code>/var/log/secure</code></td><td><code>journalctl --facility=auth,authpriv</code>, <code>-u ssh.service</code></td></tr>
+<tr><td>Genel sistem iletileri</td><td><code>/var/log/syslog</code></td><td><code>/var/log/messages</code></td><td><code>journalctl</code></td></tr>
+<tr><td>Çekirdek</td><td><code>/var/log/kern.log</code></td><td><code>/var/log/messages</code> içinde</td><td><code>journalctl -k</code></td></tr>
+<tr><td>Paket kurulumları</td><td><code>/var/log/dpkg.log</code>, <code>/var/log/apt/</code></td><td><code>/var/log/dnf.log</code></td><td>(paket araçları kendi dosyalarına yazar)</td></tr>
+<tr><td>Oturum açma/kapama kaydı</td><td colspan="2"><code>wtmp</code> (başarılı), <code>btmp</code> (başarısız), <code>lastlog</code>: ikili dosyalar, <code>last</code>/<code>lastb</code> ile okunur</td><td>(ayrı tutulur)</td></tr>
+</table></div>
+
+<p>Tablodaki dosyaların bir kısmı senin makinende olmayabilir; nedenini birazdan göreceksin. Bu parça <strong>tek makineyi</strong> anlatır; günlükleri merkezde toplamak ve korelasyon savunma bloğunun işidir (Parça 66–67).</p>
+
+<h2 class="s">Syslog modeli: tesis, öncelik ve satırın yapısı</h2>
+
+<p>Unix'te uzun süre her program günlüğünü kendi bildiği yere yazdı. Bunu düzene sokan <strong>syslog</strong> fikri basittir: program iletiyi kendisi dosyaya yazmaz, <code>syslog(3)</code> işleviyle bir <strong>günlük hizmetine</strong> verir; hizmet de iletiyi kurallara göre dosyalara dağıtır. Her iletiye iki etiket eşlik eder: <strong>tesis</strong> (facility, iletiyi kimin türünden geldiği) ve <strong>öncelik</strong> (priority ya da severity, ne kadar önemli olduğu).</p>
+
+<div class="tablo"><table>
+<tr><th>Öncelik</th><th>Ad</th><th>Anlamı (örnek)</th></tr>
+<tr><td>0</td><td><code>emerg</code></td><td>Sistem kullanılamaz</td></tr>
+<tr><td>1</td><td><code>alert</code></td><td>Hemen müdahale gerekir (<code>sudo</code>'nun başarısız parola kaydı varsayılan olarak bu düzeydedir)</td></tr>
+<tr><td>2</td><td><code>crit</code></td><td>Kritik durum</td></tr>
+<tr><td>3</td><td><code>err</code></td><td>Hata (SSH'de "maximum authentication attempts exceeded")</td></tr>
+<tr><td>4</td><td><code>warning</code></td><td>Uyarı (bir servisin başarısız bitmesi)</td></tr>
+<tr><td>5</td><td><code>notice</code></td><td>Olağan ama dikkate değer (PAM'in "authentication failure" satırı, başarılı <code>sudo</code>)</td></tr>
+<tr><td>6</td><td><code>info</code></td><td>Bilgi (SSH'nin "Failed password" ve "Accepted" satırları)</td></tr>
+<tr><td>7</td><td><code>debug</code></td><td>Hata ayıklama ayrıntısı</td></tr>
+</table></div>
+
+<p>Sayı küçüldükçe önem artar. Tesisler arasında savunmacı için en önemlileri <code>auth</code> (4) ve <code>authpriv</code> (10)'dur: kimlik doğrulama iletileri. <code>authpriv</code> geleneksel olarak yalnız yetkililerin okuyabildiği bir dosyaya gider, çünkü içinde kullanıcı adları ve kimin nereden girdiği gibi hassas bilgiler vardır. Ayrıca <code>kern</code> (0), <code>user</code> (1), <code>daemon</code> (3), <code>cron</code> (9) ve yerel kullanım için <code>local0</code>–<code>local7</code> vardır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önceliğe göre süzmek "bu düzey ve daha önemlisi" demektir; ama bir güvenlik olayının satırları çoğu zaman düşük öncelikli <code>info</code> ve <code>notice</code> satırlarıdır.</strong> Neden: öncelik, programı yazanın "bu ileti ne kadar acil" tahminidir, güvenlik önemi değil. OpenSSH tek bir yanlış parolayı <code>info</code> düzeyinde yazar; yüz yanlış parola da tek tek <code>info</code>'dur. Yalnız <code>-p warning</code> ile bakan biri parola tahmin saldırısının neredeyse hiçbir satırını görmez. Öncelik, gürültüyü azaltmak için kullanılır; kimlik olaylarını tesis, birim ve süreçle ararsın.</p></div>
+
+<p>Geleneksel bir syslog satırı şöyle okunur: <code>Oct 16 10:20:30 lab sshd-session[2450]: Accepted password for deniz from 198.51.100.23 port 43004 ssh2</code>. Sırasıyla zaman, makine adı, programın kendine verdiği <strong>etiket</strong>, süreç numarası ve ileti (Parça 9). Metin dosyasında tesis ve öncelik <strong>görünmez</strong>; günlük hizmeti onları yalnız dosyayı seçmek için kullanır.</p>
+
+<h2 class="s">/var/log: geleneksel günlük dosyaları</h2>
+
+<p>FHS'ye göre çalışırken değişen veriler <code>/var</code>'da, günlükler <code>/var/log</code>'da durur (Parça 8). Debian ve Ubuntu'da klasik düzeni <strong>rsyslog</strong> kurar: <code>auth</code> ve <code>authpriv</code> iletileri <code>auth.log</code>'a, çekirdek iletileri <code>kern.log</code>'a, geri kalanı <code>syslog</code>'a gider. RHEL ailesinde aynı içerik <code>secure</code> ve <code>messages</code> adlarını taşır. Programların kendi yazdığı dosyalar da vardır: <code>dpkg.log</code>, <code>apt/history.log</code> (Parça 10), web sunucularının <code>nginx/</code> ya da <code>apache2/</code> altındaki günlükleri.</p>
+
+<p>Üç dosya metin değil, ikili kayıttır: <code>wtmp</code> başarılı oturum açma ve kapamaları, <code>btmp</code> başarısız giriş denemelerini, <code>lastlog</code> her kullanıcının son girişini tutar. <code>last</code> ve <code>lastb</code> bunları okur; <code>btmp</code> yalnız root ve <code>utmp</code> grubuna açıktır, çünkü kullanıcılar bazen parolayı kullanıcı adı kutusuna yazar. Yeni Debian sürümleri bunlardan <code>wtmpdb</code> veritabanına geçiyor; bu makinede <code>last</code> kurulu değildi.</p>
+
+<p>Bu parçanın ortamında <code>ls -l /var/log</code> çıktısından birkaç satır (aradaki satırlar atlandı):</p>
+
+<pre class="cikti">-rw-r--r-- 1 root              root              79204 Aug 21 20:34 alternatives.log
+drwxr-x--- 2 root              adm                4096 Aug 20 14:18 apache2
+drwxr-xr-x 2 root              root               4096 Aug 22 10:13 apt
+-rw-rw---- 1 root              utmp                  0 Jul  2 15:48 btmp
+-rw-r--r-- 1 root              root            1474027 Aug 22 10:13 dpkg.log
+drwxr-sr-x 3 root              systemd-journal    4096 Aug 20 10:14 journal</pre>
+
+<p>İzinlere bak (Parça 12): <code>apache2</code> dizini <code>root:adm</code> ve 750; sıradan kullanıcı içine giremez, <code>adm</code> grubundakiler girer. Debian'da <code>adm</code> "günlükleri okuyabilen" gruptur; bir izleme hesabını <code>sudo</code>'ya değil bu gruba alırsın (en az yetki, Parça 11). <code>journal</code> dizini <code>systemd-journal</code> grubuna ait ve SGID biti açık (<code>s</code>): içinde açılan her dosya bu grubu miras alır.</p>
+
+<p>Ve eksik olanlar: bu listede <code>auth.log</code> ve <code>syslog</code> <strong>yok</strong>. Debian 12'nin (bookworm) sürüm notları bunu açıkça söyler: "bookworm'dan itibaren rsyslog varsayılan olarak kurulmuyor"; iletiler <code>/var/log/journal</code> altında ikili biçimde tutulur ve <code>journalctl</code> ile okunur. Bu Kali kurulumunda da <code>rsyslog</code> paketi yoktu. <code>auth.log</code> görüyorsan makine eski bir sürümden yükseltilmiş ya da rsyslog bilerek kurulmuştur; göremiyorsan kayıtlar yalnız başka yerdedir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>/var/log/auth.log</code> yok ya da boş; demek ki bu makineye kimse giriş denemiyor."</strong> Dosyanın yokluğu bir bilgi değil, bir yapılandırma durumudur. rsyslog yoksa iletiler journal'dadır; dosya boşsa yeni döndürülmüş (eskisi <code>auth.log.1</code>) ya da günlük hizmeti durmuş olabilir. Doğrusu: önce kaydın <strong>nerede</strong> tutulduğunu doğrula (<code>dpkg-query -W rsyslog</code>, <code>journalctl --disk-usage</code>, <code>ls -l /var/log</code>), sonra "kayıt yok" de. Boş ya da beklenmedik biçimde kısalmış bir günlük, kendi başına incelenmesi gereken bir bulgudur.</p></div>
+
+<h2 class="s">systemd journal: alanlı, ikili, sorgulanabilir günlük</h2>
+
+<p>systemd ile gelen <strong>systemd-journald</strong>, bütün günlük kaynaklarını tek yerde toplar: çekirdeğin iletileri, <code>syslog(3)</code> ile yazanlar, systemd'nin başlattığı servislerin standart çıktı ve hata akışları ve kendi programlama arayüzü. Her kaydı tek satırlık metin olarak değil, <strong>alanlardan oluşan bir kayıt</strong> olarak saklar: <code>MESSAGE</code>, <code>PRIORITY</code>, <code>SYSLOG_FACILITY</code>, <code>SYSLOG_IDENTIFIER</code>, <code>_PID</code>, <code>_UID</code>, <code>_COMM</code>, <code>_EXE</code>, <code>_SYSTEMD_UNIT</code> ve daha fazlası.</p>
+
+<figure>
+<svg viewBox="0 0 400 420" role="img" aria-label="Günlük akışı: çekirdek, syslog ile yazan programlar ve servislerin çıktısı journald'a gider; journald kayıtları /run/log/journal ya da /var/log/journal altına yazar; journalctl okur; isteğe bağlı olarak iletiler rsyslog'a aktarılır ve /var/log/auth.log gibi metin dosyalarına yazılır; ileride bir merkeze gönderilir">
+  <rect class="sv-k" x="10" y="10" width="115" height="50" rx="6"/>
+  <text class="sv-b" x="67" y="32" text-anchor="middle">çekirdek</text>
+  <text class="sv-s" x="67" y="50" text-anchor="middle">/dev/kmsg</text>
+  <rect class="sv-k" x="142" y="10" width="115" height="50" rx="6"/>
+  <text class="sv-b" x="200" y="32" text-anchor="middle">syslog(3)</text>
+  <text class="sv-s" x="200" y="50" text-anchor="middle">sshd, sudo, logger</text>
+  <rect class="sv-k" x="275" y="10" width="115" height="50" rx="6"/>
+  <text class="sv-b" x="332" y="32" text-anchor="middle">servis çıktısı</text>
+  <text class="sv-s" x="332" y="50" text-anchor="middle">stdout / stderr</text>
+  <line class="sv-c" x1="67" y1="60" x2="160" y2="100"/>
+  <line class="sv-c" x1="200" y1="60" x2="200" y2="100"/>
+  <line class="sv-c" x1="332" y1="60" x2="240" y2="100"/>
+  <rect class="sv-l" x="100" y="100" width="200" height="60" rx="6"/>
+  <text class="sv-b" x="200" y="124" text-anchor="middle">systemd-journald</text>
+  <text class="sv-s" x="200" y="144" text-anchor="middle">_PID, _UID, _COMM… ekler</text>
+  <line class="sv-cl" x1="150" y1="160" x2="100" y2="200"/>
+  <line class="sv-c" x1="250" y1="160" x2="300" y2="200"/>
+  <rect class="sv-m" x="10" y="200" width="185" height="60" rx="6"/>
+  <text class="sv-b" x="102" y="222" text-anchor="middle">/var/log/journal</text>
+  <text class="sv-s" x="102" y="242" text-anchor="middle">kalıcı · /run: geçici</text>
+  <rect class="sv-a" x="210" y="200" width="180" height="60" rx="6"/>
+  <text class="sv-b" x="300" y="222" text-anchor="middle">rsyslog (varsa)</text>
+  <text class="sv-s" x="300" y="242" text-anchor="middle">ForwardToSyslog</text>
+  <line class="sv-cl" x1="102" y1="260" x2="102" y2="300"/>
+  <line class="sv-c" x1="300" y1="260" x2="300" y2="300"/>
+  <rect class="sv-m" x="10" y="300" width="185" height="50" rx="6"/>
+  <text class="sv-b" x="102" y="322" text-anchor="middle">journalctl</text>
+  <text class="sv-s" x="102" y="340" text-anchor="middle">alanlarla süzer</text>
+  <rect class="sv-a" x="210" y="300" width="180" height="50" rx="6"/>
+  <text class="sv-b" x="300" y="322" text-anchor="middle">auth.log, syslog</text>
+  <text class="sv-s" x="300" y="340" text-anchor="middle">metin, tesis/öncelik yok</text>
+  <line class="sv-c" x1="102" y1="350" x2="200" y2="375"/>
+  <line class="sv-c" x1="300" y1="350" x2="200" y2="375"/>
+  <rect class="sv-k" x="80" y="375" width="240" height="40" rx="6"/>
+  <text class="sv-b" x="200" y="400" text-anchor="middle">merkezî toplama (Parça 66–67)</text>
+</svg>
+<figcaption>Bugünkü Debian ve Kali'de kalın yol tek yoldur: bütün kaynaklar journald'a gider, journald kayıtları alanlarıyla saklar, sen <code>journalctl</code> ile okursun. Turuncu yol yalnız rsyslog kuruluysa vardır; o zaman aynı ileti bir de düz metin olarak <code>/var/log/auth.log</code>'a düşer. Her iki yol da ileride bir merkeze gönderilebilir.</figcaption>
+</figure>
+
+<p>Journal'ın nerede durduğunu <code>journald.conf</code>'taki <code>Storage=</code> belirler. Belgeye göre <code>volatile</code> yalnız bellekte (<code>/run/log/journal</code>, yeniden başlatınca silinir), <code>persistent</code> diskte (<code>/var/log/journal</code>), <code>auto</code> ise dizin varsa diskte, yoksa bellekte tutar; bu makinedeki systemd 260'ın belgesi varsayılanı <code>persistent</code> olarak veriyor (eski sürümlerde <code>auto</code>'ydu). Yeniden başlatmada kaybolan günlük "o gece ne oldu" sorusunu cevapsız bırakır; <code>journalctl --list-boots</code>'un önceki açılışları gösterdiğini doğrula.</p>
+
+<p>Kim okuyabilir? <code>journalctl</code> belgesi: her kullanıcı kendi kullanıcı günlüğünü okur; sistem günlüğünü ve başkalarının günlüklerini yalnız root ile <code>systemd-journal</code>, <code>adm</code> ve <code>wheel</code> gruplarının üyeleri okur. <code>adm</code> için bu izin bir <code>tmpfiles.d</code> kuralıyla verilen ACL'dir (Parça 12). Bu ortamda kullanıcı <code>adm</code> grubundaydı ama ACL dosyaya uygulanmamıştı ve <code>journalctl</code> "not seeing messages from other users and the system" uyarısını verdi. Bu yüzden gerçek çıktılar yalnız kendi kullanıcı günlüğümden, sistem günlüğü örnekleri sentetik bir dosyadan (Adım 4). Ders: <strong>izni sandığın değil, dosyanın gerçekte taşıdığı izin belirler</strong>.</p>
+
+<h2 class="s">journalctl ile süzme</h2>
+
+<p><code>journalctl</code> tek başına bütün günlüğü en eskiden başlayarak sayfalayıcıda açar; işe yarar olması süzgeçlerle başlar. Süzgeçler birbirine <strong>VE</strong> ile bağlanır; aynı alana iki değer verirsen (<code>_COMM=sshd _COMM=sshd-session</code>) o ikisi arasında <strong>VEYA</strong> olur.</p>
+
+<div class="tablo"><table>
+<tr><th>Süzgeç</th><th>Ne seçer?</th><th>Savunmada örnek soru</th></tr>
+<tr><td><code>-b</code>, <code>-b -1</code>, <code>--list-boots</code></td><td>Bu açılış, bir önceki açılış; açılışların listesi</td><td>Yeniden başlatmadan önce ne oldu?</td></tr>
+<tr><td><code>-p warning</code>, <code>-p 3..4</code></td><td>Bu öncelik ve daha önemlisi; bir aralık</td><td>Hatalar ve uyarılar neler?</td></tr>
+<tr><td><code>-u ssh.service</code></td><td>Birimin süreçlerinin yazdıkları (<code>_SYSTEMD_UNIT</code>)</td><td>SSH sunucusu ne dedi?</td></tr>
+<tr><td><code>--since "1 hour ago"</code>, <code>--until</code></td><td>Zaman aralığı; <code>"2026-10-16 10:20"</code>, <code>today</code>, <code>yesterday</code></td><td>Olay saatinin çevresinde ne var?</td></tr>
+<tr><td><code>_COMM=</code>, <code>_EXE=</code>, <code>_UID=</code>, <code>_PID=</code></td><td>Kaydı yazan sürecin adı, yolu, kullanıcısı, numarası</td><td>Bu satırı gerçekte kim yazdı?</td></tr>
+<tr><td><code>-t etiket</code></td><td><code>SYSLOG_IDENTIFIER</code>, programın <strong>kendi beyan ettiği</strong> ad</td><td>(dikkatle; aşağıya bak)</td></tr>
+<tr><td><code>--facility=auth,authpriv</code></td><td>Tesis</td><td>Bütün kimlik iletileri</td></tr>
+<tr><td><code>-g 'Failed password'</code></td><td>İletinin içinde düzenli ifade (<code>--grep</code>)</td><td>Başarısız parolalar</td></tr>
+<tr><td><code>-k</code>, <code>-f</code>, <code>-n 20</code>, <code>-r</code>, <code>-e</code></td><td>Çekirdek; canlı izleme; son 20; ters sıra; sona git</td><td>Şu an ne oluyor?</td></tr>
+<tr><td><code>-F alan</code></td><td>Bir alanın günlükte geçen bütün değerleri</td><td>Hangi programlar yazmış?</td></tr>
+<tr><td><code>-o short-iso</code>, <code>verbose</code>, <code>json</code>, <code>json-pretty</code>, <code>cat</code></td><td>Çıktı biçimi; <code>cat</code> yalnız iletiyi verir</td><td>Bütün alanları görmek, boruya vermek</td></tr>
+</table></div>
+
+<p><code>-o cat</code> ile çıktı düz metne döner ve Parça 9'daki boru hatları aynen çalışır; sayma tekniklerini yeniden anlatmıyoruz. Yeni olan, satırı metin deseniyle değil <strong>alanlarla seçmek</strong>tir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Alt çizgiyle başlayan alanlar (<code>_PID</code>, <code>_UID</code>, <code>_COMM</code>, <code>_EXE</code>, <code>_SYSTEMD_UNIT</code>) güvenilir alanlardır; <code>SYSLOG_IDENTIFIER</code> ve <code>MESSAGE</code> ise kaydı yazan programın beyanıdır.</strong> Neden: <code>systemd.journal-fields</code> belgesine göre alt çizgili alanları journald, iletiyi gönderen sürecin çekirdekten öğrendiği kimliğinden kendisi ekler ve "istemci kodu bunları değiştiremez". Etiketi ise program istediği gibi seçer: <code>logger -t</code> herkese açık bir komuttur ve makinedeki her kullanıcı her etiketle syslog'a ileti gönderebilir. Düz metin <code>auth.log</code>'da etiket ile gerçek kaynak arasındaki fark görünmez; journal'da görünür. "Bu satır gerçekten SSH sunucusundan mı?" sorusunu <code>_COMM</code>, <code>_EXE</code>, <code>_UID</code> ve <code>_SYSTEMD_UNIT</code> cevaplar.</p></div>
+
+<p>Bunu sentetik journal'daki bir kayıtla gör (Adım 4). <code>-t sshd</code> iki satır getiriyor; ikincisi root'un parolayla girdiğini söylüyor:</p>
+
+<pre class="kod" data-ad="bash">journalctl --file ornek.journal -t sshd --no-pager
+journalctl --file ornek.journal _UID=1002 -o verbose --no-pager</pre>
+<pre class="cikti">Oct 16 08:00:05 lab sshd[612]: Server listening on 0.0.0.0 port 22.
+Oct 16 10:31:00 lab sshd[2700]: Accepted password for root from 192.0.2.99 port 50000 ssh2
+Fri 2026-10-16 10:31:00.000038 +03 [s=685a18f1b191482788101677c03f1b51;i=27;b=0123456789abcdef0123456789abcdef;m=21c9d37a6;t=65df025531526;x=1a9096988b7dd892]
+    _BOOT_ID=0123456789abcdef0123456789abcdef
+    _MACHINE_ID=fedcba9876543210fedcba9876543210
+    _HOSTNAME=lab
+    PRIORITY=6
+    _TRANSPORT=syslog
+    SYSLOG_IDENTIFIER=sshd
+    SYSLOG_FACILITY=1
+    _PID=2700
+    _UID=1002
+    _GID=1002
+    _COMM=logger
+    _EXE=/usr/bin/logger
+    MESSAGE=Accepted password for root from 192.0.2.99 port 50000 ssh2
+    _SYSTEMD_UNIT=session-9.scope</pre>
+
+<p>Metin görünümünde iki satır aynı programdan gelmiş gibi duruyor. Ayrıntılı görünüm gerçeği söylüyor: ikinci satırı UID 1002'nin çalıştırdığı <code>logger</code> yazmış, bir kullanıcı oturumunun içinden, <code>user</code> tesisinde. Gerçek bir SSH girişi <code>ssh.service</code> biriminden, UID 0 ile ve <code>sshd-session</code>'dan gelir. Bu sahte bir giriş iddiasıdır; asıl soru UID 1002'nin neden böyle bir satır yazdığıdır. (Sentetik dosyada alt çizgili alanları üretici betik yazdı; canlı sistemde onları yalnız journald koyar.)</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"SSH kayıtlarına bakmak için <code>journalctl -t sshd</code> ya da <code>_COMM=sshd</code> yeter."</strong> İki ayrı sorun var. Birincisi yukarıdaki: <code>-t</code> beyan edilen etikete bakar ve sahte satırı da getirir. İkincisi daha sinsidir: OpenSSH 9.8 (2024) sunucuyu ikiye böldü; dinleyen <code>sshd</code> yalnız bağlantıyı kabul eder, kimlik doğrulamayı her bağlantı için ayrı bir <code>sshd-session</code> süreci yapar ve sürüm notlarına göre bazı iletiler artık "sshd-session" adıyla etiketlenir. Sentetik dosyada <code>_COMM=sshd</code> yalnız "Server listening" satırını verdi, oturum sürecinin yazdığı 28 satırın (girişler, denemeler, PAM satırları) hiçbirini vermedi. Bu makinedeki OpenSSH 10.3'te de <code>/usr/lib/openssh/sshd-session</code> vardı. Doğrusu: birime göre süz (<code>-u ssh.service</code>; ikisi de bu birimin içinde çalışır) ve gerekiyorsa iki süreç adını birlikte ver. Hazır araçların süzgeçleri de sürüm değişince sessizce körleşebilir; kuralı bilinen bir satırla sınamadan ona güvenme.</p></div>
+
+<h2 class="s">Kimlik doğrulama günlükleri ve başarısız giriş izleri</h2>
+
+<p>Bir Linux makinesinde kimlikle ilgili kayıtları birkaç katman bırakır ve aynı olay çoğu zaman birden çok satır üretir (Parça 9'da "aynı denemenin iki kaydı" demiştik):</p>
+
+<div class="tablo"><table>
+<tr><th>Satır (ileti başı)</th><th>Yazan</th><th>Anlamı</th></tr>
+<tr><td><code>Invalid user admin from …</code></td><td>SSH (<code>sshd-session</code>)</td><td>Var olmayan bir hesap adı denendi; tahmin saldırısının tipik izi</td></tr>
+<tr><td><code>Failed password for [invalid user] … from …</code></td><td>SSH</td><td>Parola yanlış; bir deneme = bir satır</td></tr>
+<tr><td><code>pam_unix(sshd:auth): authentication failure; … rhost=… user=…</code></td><td>PAM (parola modülü)</td><td>Aynı başarısızlığın PAM katmanındaki kaydı; ayrıca saymazsın</td></tr>
+<tr><td><code>error: maximum authentication attempts exceeded …</code></td><td>SSH</td><td>Tek bağlantıda deneme sınırı aşıldı, bağlantı kesildi</td></tr>
+<tr><td><code>Accepted password|publickey for … from …</code></td><td>SSH</td><td>Giriş başarılı; yöntem önemli</td></tr>
+<tr><td><code>pam_unix(sshd:session): session opened for user …</code></td><td>PAM</td><td>Oturum açıldı (giriş başarılı olunca)</td></tr>
+<tr><td><code>deniz : TTY=… ; PWD=… ; USER=root ; COMMAND=…</code></td><td><code>sudo</code></td><td>Kim, hangi dizinden, kimin adına, hangi komutu çalıştırdı (Parça 11)</td></tr>
+<tr><td><code>deniz : 3 incorrect password attempts ; … COMMAND=…</code></td><td><code>sudo</code></td><td>Yetki yükseltme denemesi başarısız; <code>alert</code> önceliğinde</td></tr>
+</table></div>
+
+<p>Savunmacı bu satırlara dört soru sorar. <strong>Kim?</strong> Var olan mı, olmayan mı, ayrıcalıklı bir hesap mı? <strong>Nereden?</strong> Alışılmış adres mi? <strong>Nasıl?</strong> Parola mı, anahtar mı? <strong>Ne kadar ve ardından ne?</strong> Kaç deneme, sonunda başarı, ardından <code>sudo</code>? En önemli örüntü, Parça 9'da <code>awk</code> ile yakaladığın "çok başarısızlık, ardından başarı"dır; Parça 67'de bunu bir SIEM korelasyon kuralına çevireceksin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Sentetik günlükte (Adım 4) SSH'ye karşı ne olduğunu, "başarısızlıktan sonra başarı" olup olmadığını ve girişten sonra ne yapıldığını bul.</p>
+<p><strong>Adım 1.</strong> Kaynağı birimle seç, iletiyle süz: <code>journalctl --file ornek.journal -u ssh.service -o cat --grep 'Failed password' | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn</code>. Çıktı: 203.0.113.45'ten 6, 198.51.100.7'den 4, 198.51.100.23'ten 3 başarısız deneme.</p>
+<p><strong>Adım 2.</strong> Başarılı girişleri gör: <code>journalctl --file ornek.journal -u ssh.service --grep Accepted</code>. İki satır: 09:12'de <code>deniz</code> 192.0.2.10'dan <strong>açık anahtarla</strong>; 10:20:30'da <code>deniz</code> 198.51.100.23'ten <strong>parolayla</strong>. Birimsiz arama yukarıdaki sahte root satırını da getirirdi; birim süzgeci onu dışarıda bıraktı.</p>
+<p><strong>Adım 3.</strong> İkinci girişin adresi Adım 1'in listesinde var: önce üç başarısızlık, sonra başarı. Olayın çevresine zaman penceresiyle bak: <code>--since "2026-10-16 10:20" --until "2026-10-16 10:26"</code>. Yedi satır çıkıyor: 10:20:06, 12 ve 18'de üç "Failed password", 10:20:30'da "Accepted password" ve oturumun açılması, 10:24:51'de <code>sudo</code> için PAM "authentication failure", 10:25:09'da <code>deniz : 3 incorrect password attempts … COMMAND=/usr/bin/cat /etc/shadow</code>.</p>
+<p><strong>Adım 4.</strong> Örüntüyü oku. Kullanıcı her zamanki adresinden anahtarla giriyordu; bu kez yabancı bir adresten, parola tahmin örüntüsünden sonra, parolayla girdi; dört dakika sonra parola özetlerinin durduğu dosyayı (Parça 11) okumak için <code>sudo</code> denedi ve üç kez yanlış parola girdi.</p>
+<p><strong>Adım 5.</strong> Önceliğe bak: <code>-p warning</code> bu olayın yalnız <code>sudo</code> satırını gösterdi (öncelik 1); SSH tarafındaki bütün başarısızlıklar <code>info</code> olduğu için listede yoktu. İlk kuralın sonucu budur.</p>
+<p><strong>Sonuç:</strong> Birim + ileti + zaman penceresiyle kurulan üç sorgu, bir hesabın ele geçirilmiş olabileceğini ve ardından yetki yükseltme denendiğini gösteriyor. Sonraki adımlar bu parçanın dışında: hesabı kilitle, parolayla girişi kapat (Parça 18), olay müdahalesini başlat (Parça 70).</p></div>
+
+<h2 class="s">Döndürme ve saklama: logrotate ve journald'ın sınırları</h2>
+
+<p>Günlük, kendi hâline bırakılırsa büyür. Bir parola tahmin saldırısı ya da hata döngüsündeki bir servis saatte gigabaytlar yazabilir; <code>/var</code> dolunca yalnız yeni kayıtlar değil, dosya yazmaya çalışan her servis durur. Öte yandan günlüğü erken silmek de bir risktir: olaylar çoğu zaman haftalar sonra fark edilir ve inceleme geriye bakar. <strong>Saklama</strong> (retention) bu iki baskı arasında verilen bir karardır: ne kadar süre, ne kadar alan, sıkıştırılmış mı, sonra nereye. Kişisel veri içeren kayıtların süresi ayrıca hukuki bir sorudur (Parça 66, 72).</p>
+
+<p>Metin günlükleri için Debian'daki araç <strong>logrotate</strong>'tir. Bu makinede <code>logrotate.timer</code> her gün (<code>OnCalendar=daily</code>) <code>logrotate.service</code>'i çalıştırıyor (Parça 14'teki zamanlayıcılardan biri); servis <code>/etc/logrotate.conf</code>'u okur, o da paketlerin <code>/etc/logrotate.d/</code> altına bıraktığı parçaları içerir. Bu makinedeki genel ayar <code>weekly</code>, <code>rotate 4</code>, <code>create</code>'ti. Bir parça, örneğin <code>dpkg</code>'ınki, şöyle görünüyordu:</p>
+
+<pre class="kod" data-ad="/etc/logrotate.d/dpkg">/var/log/dpkg.log {
+	monthly
+	rotate 12
+	compress
+	delaycompress
+	missingok
+	notifempty
+	create 644 root root
+}</pre>
+
+<div class="tablo"><table>
+<tr><th>Yönerge</th><th>logrotate belgesine göre anlamı</th></tr>
+<tr><td><code>daily</code> / <code>weekly</code> / <code>monthly</code></td><td>Ne sıklıkla döndürülür</td></tr>
+<tr><td><code>size 100k</code>, <code>maxsize</code></td><td>Boyuta göre; <code>maxsize</code> süre dolmadan da döndürür</td></tr>
+<tr><td><code>rotate 12</code></td><td>Kaç eski kopya tutulur; fazlası silinir</td></tr>
+<tr><td><code>compress</code>, <code>delaycompress</code></td><td>gzip'le sıkıştır; en yeni eski kopyayı bir tur beklet</td></tr>
+<tr><td><code>maxage 30</code></td><td>30 günden eski kopyaları sil (döndürme sırasında)</td></tr>
+<tr><td><code>missingok</code>, <code>notifempty</code>, <code>create 0640</code></td><td>Dosya yoksa hata verme; boşsa döndürme; döndürmeden sonra bu izinle yeni dosya aç</td></tr>
+<tr><td><code>copytruncate</code></td><td>Kopyala, sonra özgününü sıfırla; dosyayı kapatamayan programlar için (arada kayıp olabilir)</td></tr>
+<tr><td><code>postrotate … endscript</code></td><td>Döndürmeden sonraki komut; çoğunlukla "dosyanı yeniden aç" sinyali (Parça 13)</td></tr>
+</table></div>
+
+<p>Varsayılan yöntemde döndürme bir <strong>ad değiştirmedir</strong>: <code>uygulama.log</code>, <code>.1</code> olur, yerine boş dosya açılır. Programın dosya tanımlayıcısı hâlâ eski dosyayı gösterdiği için (Parça 13) uyarılmazsa <code>.1</code>'e yazmayı sürdürür; <code>postrotate</code> sinyali, <code>copytruncate</code> ve <code>delaycompress</code> bu yüzden vardır. Parça 9'daki <code>tail -F</code> ihtiyacı da buradan doğar.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="rotate 3, compress ve delaycompress ile dört döndürme turunda dosyaların kayışı: canlı günlük .1 olur, .1 sıkıştırılıp .2.gz olur, .2.gz .3.gz olur, .3.gz silinir; maxage eski kopyayı süreden önce siler">
+  <text class="sv-b" x="10" y="20">rotate 3 · compress · delaycompress</text>
+  <text class="sv-s" x="10" y="48">tur</text>
+  <text class="sv-s" x="80" y="48" text-anchor="middle">.log</text>
+  <text class="sv-s" x="160" y="48" text-anchor="middle">.log.1</text>
+  <text class="sv-s" x="245" y="48" text-anchor="middle">.log.2.gz</text>
+  <text class="sv-s" x="335" y="48" text-anchor="middle">.log.3.gz</text>
+  <text class="sv-t" x="10" y="80">1</text>
+  <rect class="sv-m" x="50" y="62" width="60" height="26" rx="4"/><text class="sv-s" x="80" y="80" text-anchor="middle">yeni</text>
+  <rect class="sv-l" x="130" y="62" width="60" height="26" rx="4"/><text class="sv-s" x="160" y="80" text-anchor="middle">A</text>
+  <text class="sv-t" x="10" y="120">2</text>
+  <rect class="sv-m" x="50" y="102" width="60" height="26" rx="4"/><text class="sv-s" x="80" y="120" text-anchor="middle">yeni</text>
+  <rect class="sv-l" x="130" y="102" width="60" height="26" rx="4"/><text class="sv-s" x="160" y="120" text-anchor="middle">B</text>
+  <rect class="sv-k" x="215" y="102" width="60" height="26" rx="4"/><text class="sv-s" x="245" y="120" text-anchor="middle">A</text>
+  <text class="sv-t" x="10" y="160">3</text>
+  <rect class="sv-m" x="50" y="142" width="60" height="26" rx="4"/><text class="sv-s" x="80" y="160" text-anchor="middle">yeni</text>
+  <rect class="sv-l" x="130" y="142" width="60" height="26" rx="4"/><text class="sv-s" x="160" y="160" text-anchor="middle">C</text>
+  <rect class="sv-k" x="215" y="142" width="60" height="26" rx="4"/><text class="sv-s" x="245" y="160" text-anchor="middle">B</text>
+  <rect class="sv-k" x="305" y="142" width="60" height="26" rx="4"/><text class="sv-s" x="335" y="160" text-anchor="middle">A</text>
+  <text class="sv-t" x="10" y="200">4</text>
+  <rect class="sv-m" x="50" y="182" width="60" height="26" rx="4"/><text class="sv-s" x="80" y="200" text-anchor="middle">yeni</text>
+  <rect class="sv-l" x="130" y="182" width="60" height="26" rx="4"/><text class="sv-s" x="160" y="200" text-anchor="middle">D</text>
+  <rect class="sv-k" x="215" y="182" width="60" height="26" rx="4"/><text class="sv-s" x="245" y="200" text-anchor="middle">C</text>
+  <rect class="sv-k" x="305" y="182" width="60" height="26" rx="4"/><text class="sv-s" x="335" y="200" text-anchor="middle">B</text>
+  <rect class="sv-a" x="305" y="222" width="85" height="26" rx="4"/><text class="sv-s" x="347" y="240" text-anchor="middle">A silindi</text>
+  <line class="sv-c" x1="335" y1="208" x2="335" y2="222"/>
+  <text class="sv-s" x="10" y="275">Yeşil: program yazıyor</text>
+  <text class="sv-s" x="200" y="275">Mor: henüz sıkıştırılmamış</text>
+  <text class="sv-s" x="10" y="298">Gri: sıkıştırılmış</text>
+  <text class="sv-s" x="200" y="298">Turuncu: silinen kopya</text>
+</svg>
+<figcaption>Harfler birer haftalık günlüktür. Her turda kopyalar bir basamak kayar; <code>.1</code> bir tur sıkıştırılmadan bekler. Dördüncü turda A, <code>rotate 3</code> yüzünden silinir; <code>maxage</code> süresi geçmiş kopyayı daha önce siler. Gerçek çıktı Adım 5'te.</figcaption>
+</figure>
+
+<p>journald kendi dosyalarını kendisi döndürür; logrotate'e ihtiyacı yoktur. <code>journald.conf</code> belgesine göre <code>SystemMaxUse=</code> journal'ın diskte kaplayacağı en büyük alandır ve varsayılanı dosya sisteminin %10'u, en çok 4 GB'tır; <code>SystemKeepFree=</code> boş bırakılacak alan (varsayılan %15, en çok 4 GB); <code>MaxRetentionSec=</code> ise süreye göre silme (varsayılan 0, yani kapalı; belge, saklama ilkesi gerekiyorsa açılabileceğini söyler). Yani varsayılan journal "ne kadar eskiye" değil "ne kadar yere" göre saklar: gürültülü bir hafta, eski kayıtları beklediğinden erken siler.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Saklama süresini bir karar olarak yaz ve günlüğün gerçekten o kadar geriye gittiğini ölç: <code>rotate</code> × döndürme sıklığı, <code>maxage</code>, <code>SystemMaxUse</code> ve <code>journalctl --list-boots</code>'un ilk satırı.</strong> Neden: saklama süresi tek bir ayardan değil, birbirini kesen birkaç sınırdan çıkar ve en kısası kazanır. <code>weekly</code> + <code>rotate 4</code> dört hafta verir; <code>maxage 7</code> varsa bir haftaya iner. Uzun saklama ve değiştirilemezlik merkezde sağlanır (Parça 66). Günlük yalnız belgelenmiş ilkeye göre silinir; olay incelemesi sürerken hiçbir şey silinmez.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir uygulama günde 2 MB günlük yazıyor ve dosyasını kapatamıyor. En az 30 günlük geçmiş ve disk tasarrufu için logrotate bloğunu kur.</p>
+<p><strong>Adım 1.</strong> Sıklık ve sayı: <code>daily</code> + <code>rotate 30</code> otuz eski kopya, yani bugünle birlikte 31 günlük geçmiş verir.</p>
+<p><strong>Adım 2.</strong> Alan: <code>compress</code>. Tekrarlı metin iyi sıkışır.</p>
+<p><strong>Adım 3.</strong> Uygulama dosyayı kapatamıyor: ya <code>copytruncate</code> (kopyala, sonra özgün dosyayı sıfırla; belge, arada birkaç satır kaybolabileceğini söyler) ya da uygulama bir sinyalle dosyayı yeniden açabiliyorsa <code>postrotate</code>. Kapatamadığı için <code>copytruncate</code>; kayıp riskini not et. <code>delaycompress</code> ekle ki bir önceki kopya hemen sıkıştırılmasın.</p>
+<p><strong>Adım 4.</strong> Güvenlik: <code>create</code>'in izni <code>copytruncate</code> ile anlamsızdır (dosya yerinde kalır); dosyanın iznini 640 ve grubunu <code>adm</code> yap. Günlükte kullanıcı adları ve adresler varsa herkesin okuması gerekmez.</p>
+<p><strong>Adım 5.</strong> Sına: önce <code>logrotate -d</code> ile kuru çalıştır, sonra kendi durum dosyanla <code>-f</code> ile birkaç tur zorla ve <code>ls</code> ile sonucu say (Adım 5'te yaptığın gibi).</p>
+<p><strong>Sonuç:</strong> <code>daily</code>, <code>rotate 30</code>, <code>compress</code>, <code>delaycompress</code>, <code>copytruncate</code>, <code>missingok</code>, <code>notifempty</code>; dosya 640 ve <code>adm</code> grubunda.</p></div>
+
+<h2 class="s">auditd: çekirdekten "kim, neye, nasıl dokundu"</h2>
+
+<p>Şimdiye kadarki günlükleri programlar kendileri yazıyordu: SSH "giriş oldu" diyorsa vardır. Peki hiçbir programın kayıt düşmediği bir şeyi, örneğin <code>/etc/passwd</code> dosyasına bir metin düzenleyiciyle yazılmasını, kim kaydeder? Linux çekirdeğinin <strong>denetim alt sistemi</strong> (audit) bunun içindir: çekirdek, kurallara uyan sistem çağrılarını (Parça 4) ve dosya erişimlerini kendisi kaydeder; kaydı kullanıcı alanındaki <strong>auditd</strong> hizmeti alır ve <code>/var/log/audit/audit.log</code>'a yazar. İşi yapan programın iş birliği gerekmez.</p>
+
+<p>Kuralları <code>auditctl</code> yükler; kalıcı kurallar Debian ve RHEL'de <code>/etc/audit/rules.d/*.rules</code> dosyalarına yazılır ve açılışta <code>augenrules</code> ile yüklenir. Bu parçanın konusu olan "dosya erişimini izleme" kuralı, <code>auditctl(8)</code> belgesindeki biçimle şudur:</p>
+
+<pre class="kod" data-ad="/etc/audit/rules.d/kimlik.rules (burada çalıştırılmadı)">-w /etc/passwd -p wa -k kimlik
+-a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -k kimlik</pre>
+
+<p>Birinci satır: <code>-w</code> izlenecek yol, <code>-p wa</code> hangi erişimde tetikleneceği (<code>r</code> okuma, <code>w</code> yazma, <code>x</code> çalıştırma, <code>a</code> öznitelik değişikliği; yani burada yazma ve izin/sahiplik değişikliği), <code>-k kimlik</code> kurala verilen <strong>anahtar</strong>: sonra <code>ausearch -k kimlik</code> ile bu kuralın ürettiği bütün kayıtları çekersin, <code>aureport</code> özet çıkarır. İkinci satır aynı işin sistem çağrısı biçimidir: "64 bitlik her sistem çağrısının çıkışında, yol <code>/etc/shadow</code> ve erişim yazma ya da öznitelikse kaydet". Güncel <code>auditctl</code> belgesi <code>-w</code> biçiminin geriye uyumluluk için durduğunu, başarım nedeniyle <strong>eskimiş</strong> (deprecated) sayıldığını ve sistem çağrısı biçimine geçilmesini önerdiğini söylüyor; kılavuzlarda <code>-w</code>'yi hâlâ sık göreceksin. Kayıttaki <code>auid</code> alanı oturumu ilk açan kullanıcıyı gösterir; biri <code>sudo</code> ile root olsa bile asıl kişi görünür.</p>
+
+<p><strong>Burada çalıştırılmadı:</strong> <code>auditctl</code>, <code>ausearch</code> ve auditd bu ortamda kurulu değildi ve kural yüklemek çekirdekte genel bir ayar değiştirdiği için gerçek root ister; kullanıcı ad alanındaki sahte root bunu yapamaz. Laboratuvar VM'inde <code>sudo apt install auditd</code>, kural dosyası, <code>sudo augenrules --load</code>, <code>sudo auditctl -l</code> ve bir değişiklikten sonra <code>sudo ausearch -i -k kimlik</code>. Çıktıyı uydurmamak için göstermiyorum. Belge izlemenin sistemi yavaşlattığını not ediyor; birkaç kritik dosyayla başla.</p>
+
+<h2 class="s">Dosya bütünlüğü izleme: taban çizgisi ve karşılaştırma</h2>
+
+<p>auditd değişikliği <strong>olduğu anda</strong> kaydeder, ama yalnız kuralı önceden yazılmışsa. Dosya bütünlüğü izleme (FIM) başka bir soru sorar: <strong>bilinen iyi bir andan bu yana hangi dosya değişti?</strong> Yöntem: güvendiğin bir anda izlenecek dosyaların özetini (hash) ve özniteliklerini kaydedersin; bu <strong>taban çizgisi</strong>dir (baseline). Sonra düzenli aralıklarla aynı ölçümü yapıp karşılaştırırsın. Fark üç türdür: <strong>değişti</strong>, <strong>eklendi</strong>, <strong>silindi</strong>.</p>
+
+<p>Kod rafında bunu iki kez yazdın: Parça 14'te Python ile (dizini gez, her dosyanın SHA-256 özetini havuzla eşzamanlı hesapla, JSON taban çizgisi yaz, ikinci çalıştırmada değişen, eklenen ve silinenleri bildir) ve Parça 18'de kabukla (<code>find</code> + <code>sha256sum</code> ile taban dosyası, sonra <code>sha256sum -c</code> ve <code>diff</code>). Neden zaman damgasına değil içeriğe bakıyoruz? Parça 9'da gördüğün gibi <code>touch</code> değişiklik zamanını istenen değere ayarlar; Adım 6'da içeriği değişmiş ama tarihi geri alınmış bir dosyayı <code>find -newer</code>'ın kaçırdığını, özetin yakaladığını göreceksin. Özet fonksiyonunun içi ve neden SHA-256'nın seçildiği Parça 44'ün konusu; burada yalnız şunu kullanıyoruz: içerikte tek bit değişse özet tamamen değişir (Parça 6).</p>
+
+<p>Sistem çapında bunu yapan araçlar vardır; açık kaynakta en bilineni <strong>AIDE</strong>'dir (bu ortamda kurulu değildi, kavram olarak anlatıyorum). AIDE belgesine göre yapılandırma dosyasındaki kurallarla seçilen dosyaların veritabanını <code>aide --init</code> ile kurar, <code>aide --check</code> ile diskteki durumu bu veritabanıyla karşılaştırır, <code>aide --update</code> ile karşılaştırıp yeni veritabanı yazar. İçerik özetinin yanında izin, sahip, grup, boyut ve zamanlara da bakar. Parça 10'daki <code>dpkg -V</code>'nin ölçütü ise paketin kendi listesidir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Taban çizgisini izlediğim makinede, izlediğim dosyaların yanında tutuyorum."</strong> Makineyi ele geçiren biri dosyayı değiştirdikten sonra taban dosyasını da yeniden üretirse karşılaştırma "her şey aynı" der. Bu, Parça 7'deki "özet de aynı yerden geliyorsa" sorununun aynısıdır: ölçüt ile ölçülen aynı elde olmamalı. Doğrusu: taban çizgisini (ve olabildiğince denetleme programının kendisini) salt okunur bir ortamda ya da başka bir makinede tut; AIDE belgesi de veritabanını, yapılandırmayı ve programı salt okunur bir ortama taşımayı ve o ortamı yalnız denetim sırasında bağlamayı önerir. Taban dosyasını imzalamak ya da merkeze göndermek de aynı amaca hizmet eder (Parça 44 ve 66).</p></div>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Bütünlük izlemesini dört soruyla kur:</strong> (1) <em>Ne?</em> Değişmemesi gerekenler: <code>/etc</code>'deki kimlik ve servis dosyaları, <code>/usr/bin</code>, <code>/usr/sbin</code>, SUID envanteri (Parça 12), birim ve zamanlayıcı dosyaları (Parça 14). Sürekli değişenleri (<code>/var/log</code>) dışarıda bırak, yoksa gürültüde boğulursun. (2) <em>Ne zaman?</em> Taban çizgisini temiz kurulumdan hemen sonra al; her meşru güncellemeden sonra bilerek yenile. (3) <em>Nerede?</em> Taban çizgisi izlenen makinenin dışında ya da salt okunur. (4) <em>Sonra ne?</em> Açıklanamayan her fark olay müdahalesine gider (Parça 70).</p></div>
+
+<p>Bu rafta saldırılar yalnız kavram ve savunma düzeyinde anlatılır: bu parçadaki her araç günlüğü <strong>okumak, korumak ve değişikliği fark etmek</strong> içindir. Günlüklere ve sistemlere yalnız kendi makinende ya da açıkça izinli laboratuvarında bakarsın; başkasının sistemine izinsiz erişmek suçtur (Parça 72–73).</p>
+
+<h2 class="s">Kendi makinende dene: kendi journal'ın, sentetik bir laboratuvar günlüğü, döndürme ve bütünlük</h2>
+
+<p>Bu bölümdeki her komut gerçekten çalıştırıldı ve çıktılar birebir aktarıldı (ortam: Windows 11 üstünde WSL 2, Kali GNU/Linux Rolling 2026.2, systemd 260, logrotate 3.22.0, OpenSSH 10.3; makine adı, makine ve açılış kimlikleri, kullanıcı adı ve ev dizini genel adlarla değiştirildi). Hiçbir adım yönetici yetkisi istemez; sistem dosyalarına yazılan tek şey Adım 3'teki etiketli tek bir journal satırıdır; geri kalan her şey <code>~/lab17</code> içindedir. Kendi Debian ya da Ubuntu laboratuvar VM'inde dosya adları, servisler ve sayılar farklı olacaktır.</p>
+
+<h3>Adım 1. Günlükler nerede?</h3>
+
+<pre class="kod" data-ad="bash">ls -l /var/log/auth.log /var/log/syslog
+dpkg-query -W rsyslog
+ls -ld /var/log/journal /var/log/journal/*
+journalctl --disk-usage
+getfacl -p /var/log/journal/*/system.journal</pre>
+<pre class="cikti">ls: cannot access '/var/log/auth.log': No such file or directory
+ls: cannot access '/var/log/syslog': No such file or directory
+dpkg-query: no packages found matching rsyslog
+drwxr-sr-x 3 root systemd-journal  4096 Aug 20 10:14 /var/log/journal
+drwxr-sr-x 2 root systemd-journal 12288 Oct 16 17:18 /var/log/journal/&lt;makine-kimliği&gt;
+Hint: You are currently not seeing messages from other users and the system.
+      Users in the 'systemd-journal' group can see all messages. Pass -q to
+      turn off this notice.
+Archived and active journals take up 392.5M in the file system.
+# file: /var/log/journal/&lt;makine-kimliği&gt;/system.journal
+# owner: root
+# group: systemd-journal
+user::rw-
+group::r--
+other::---
+</pre>
+
+<p>Metin dosyaları yok, rsyslog kurulu değil; journal kalıcı ve diskte (<code>/var/log/journal</code> var). Alt dizinin adı makinenin kimliğidir (<code>/etc/machine-id</code>); her makinede farklı ve kişiye özgü sayılabilecek bir değer olduğu için gizledim. <code>getfacl</code>, dosyada <code>adm</code> için bir ACL girdisi olmadığını gösteriyor; uyarı satırı da bu yüzden çıktı. Sende <code>group:adm:r--</code> satırı varsa sistem günlüğünü okuyabilirsin; laboratuvar VM'inde sorun olursa okuma için <code>sudo journalctl</code> kullan.</p>
+
+<h3>Adım 2. Kendi günlüğünü süz</h3>
+
+<pre class="kod" data-ad="bash">journalctl -q -b -p warning --no-pager | head -n 3
+journalctl -q --since "1 hour ago" --no-pager | wc -l
+journalctl -q -b -F _COMM | wc -l
+journalctl -q -b _COMM=pipewire-pulse --no-pager | wc -l
+journalctl -q -b --user-unit pipewire-pulse.service --no-pager | tail -n 2</pre>
+<pre class="cikti">Oct 16 17:09:13 lab pipewire-pulse[511]: mod.protocol-pulse: failed to open pid file: No such file or directory
+Oct 16 17:09:13 lab pipewire-pulse[511]: mod.protocol-pulse: 0x6260b74bda80: can't create pid file: No such file or directory
+Oct 16 17:10:33 lab pipewire-pulse[471]: mod.protocol-pulse: failed to open pid file: No such file or directory
+1579
+40
+18
+Oct 16 17:18:57 lab pipewire-pulse[474]: mod.protocol-pulse: failed to open pid file: No such file or directory
+Oct 16 17:18:57 lab pipewire-pulse[474]: mod.protocol-pulse: 0x5834b0636b30: can't create pid file: No such file or directory</pre>
+
+<p><code>-q</code> erişim uyarısını susturur. Uyarılar, WSL'deki ses hizmetinin zararsız bir yakınması: gürültünün tipik görünüşü. Son bir saatte 1.579 satır var; <code>-F _COMM</code> bu açılışta 40 farklı program adının yazdığını söylüyor; <code>_COMM=</code> süzgeci tek bir programın 18 satırını seçti. Kullanıcı servisleri için <code>-u</code> yerine <code>--user-unit</code> kullanılır. Sende programlar ve sayılar başka olacak.</p>
+
+<h3>Adım 3. Journal'a etiketli tek bir satır yaz ve alanlarına bak</h3>
+
+<pre class="kod" data-ad="bash">logger -t siber17-deneme "Parca 17 deneme satiri: journal'a etiketli tek satir"
+journalctl -q -t siber17-deneme --no-pager
+journalctl -q -t siber17-deneme -o json-pretty --no-pager</pre>
+<pre class="cikti">Oct 16 17:23:47 lab siber17-deneme[62497]: Parca 17 deneme satiri: journal'a etiketli tek satir
+{
+	"SYSLOG_IDENTIFIER" : "siber17-deneme",
+	"_MACHINE_ID" : "…",
+	"_RUNTIME_SCOPE" : "system",
+	"_SOURCE_REALTIME_TIMESTAMP" : "1792160627544877",
+	"_COMM" : "logger",
+	"SYSLOG_FACILITY" : "1",
+	"_BOOT_ID" : "…",
+	"SYSLOG_TIMESTAMP" : "Oct 16 17:23:47 ",
+	"__SEQNUM" : "70548",
+	"MESSAGE" : "Parca 17 deneme satiri: journal'a etiketli tek satir",
+	"_HOSTNAME" : "lab",
+	"_CAP_EFFECTIVE" : "0",
+	"__CURSOR" : "…",
+	"PRIORITY" : "5",
+	"_UID" : "1000",
+	"__SEQNUM_ID" : "…",
+	"__REALTIME_TIMESTAMP" : "1792160627544953",
+	"_PID" : "62497",
+	"_GID" : "1000",
+	"__MONOTONIC_TIMESTAMP" : "881244521",
+	"_TRANSPORT" : "syslog"
+}</pre>
+
+<p><code>logger</code>, syslog'a ileti gönderen standart komuttur; <code>-t</code> etiketi verir. Satırı kendine özgü bir etiketle yazdığın için <code>-t</code> ile geri bulmak kolay. Alanları oku: <code>SYSLOG_IDENTIFIER</code> senin seçtiğin ad; <code>_COMM</code> ise gerçekte yazan program (<code>logger</code>), <code>_UID</code> 1000 (sen), <code>_TRANSPORT</code> syslog yolu, <code>SYSLOG_FACILITY</code> 1 (<code>user</code>), <code>PRIORITY</code> 5 (<code>notice</code>, <code>logger</code>'ın varsayılanı). <code>__REALTIME_TIMESTAMP</code> 1970'ten beri geçen mikrosaniye; <code>_CAP_EFFECTIVE</code> 0: sürecin hiç yeteneği yok (Parça 5). Yalnız bu bir satırı yaz; journal'ı deneme satırlarıyla doldurma.</p>
+
+<h3>Adım 4. Sentetik bir laboratuvar günlüğü üret ve süz</h3>
+
+<p>Gerçek bir sunucunun kimlik günlüğünde gerçek kişilerin adları ve adresleri olur; onu kullanmıyoruz. Betik, journal'ın dışa aktarma (export) biçiminde 39 kayıt üretir: açılış, normal girişler, tahmin denemeleri, bir ele geçirme örüntüsü ve <code>logger</code> ile yazılmış sahte bir satır. IP adresleri RFC 5737'nin belgeleme aralıklarındandır, kullanıcı adları uydurmadır. <code>systemd-journal-remote</code> bu metni gerçek bir journal dosyasına çevirir; <code>journalctl --file</code> onu sistem günlüğüne dokunmadan okur. Laboratuvar VM'inde aracı <code>sudo apt install systemd-journal-remote</code> ile kurarsın; burada paket yalnız <code>/tmp</code> altına açılıp oradan çalıştırıldı (Kaynak ve doğrulama).</p>
+
+<pre class="kod" data-ad="ornek_gunluk.py">#!/usr/bin/env python3
+# Sentetik journal kayitlari (export bicimi). IP'ler yalniz RFC 5737 belgeleme araliklarindan.
+import sys
+from datetime import datetime, timezone, timedelta
+
+TR = timezone(timedelta(hours=3))
+BOOT = "0123456789abcdef0123456789abcdef"
+MAKINE = "fedcba9876543210fedcba9876543210"
+kayitlar = []
+ACILIS = int(datetime(2026, 10, 16, 7, 59, 50, tzinfo=TR).timestamp() * 1_000_000)
+
+def yaz(saat, kimlik, pid, mesaj, oncelik=6, tesis=4, birim="ssh.service",
+        comm=None, exe=None, uid=0, tasima="syslog", ek=None):
+    t = datetime.fromisoformat("2026-10-16T" + saat).replace(tzinfo=TR)
+    us = int(t.timestamp() * 1_000_000) + len(kayitlar)
+    k = {
+        "__REALTIME_TIMESTAMP": str(us),
+        "__MONOTONIC_TIMESTAMP": str(us - ACILIS),
+        "_BOOT_ID": BOOT, "_MACHINE_ID": MAKINE, "_HOSTNAME": "lab",
+        "PRIORITY": str(oncelik), "SYSLOG_FACILITY": str(tesis),
+        "SYSLOG_IDENTIFIER": kimlik, "_PID": str(pid),
+        "_UID": str(uid), "_GID": str(uid),
+        "_COMM": comm or kimlik, "_EXE": exe or "/usr/sbin/" + kimlik,
+        "_TRANSPORT": tasima, "MESSAGE": mesaj,
+    }
+    if birim:
+        k["_SYSTEMD_UNIT"] = birim
+    if ek:
+        k.update(ek)
+    kayitlar.append(k)
+
+S = "sshd-session"
+SX = "/usr/lib/openssh/sshd-session"
+yaz("08:00:04", "kernel", 0, "EXT4-fs (vda1): mounted filesystem with ordered data mode.",
+    tesis=0, birim=None, comm="kernel", exe="", tasima="kernel")
+yaz("08:00:05", "systemd", 1, "Starting ssh.service - OpenBSD Secure Shell server...",
+    tesis=3, birim="init.scope", exe="/usr/lib/systemd/systemd", ek={"UNIT": "ssh.service"})
+yaz("08:00:05", "sshd", 612, "Server listening on 0.0.0.0 port 22.")
+yaz("08:00:05", "systemd", 1, "Started ssh.service - OpenBSD Secure Shell server.",
+    tesis=3, birim="init.scope", exe="/usr/lib/systemd/systemd", ek={"UNIT": "ssh.service"})
+yaz("09:12:40", S, 1830, "Accepted publickey for deniz from 192.0.2.10 port 50110 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI", comm=S, exe=SX)
+yaz("09:12:40", S, 1830, "pam_unix(sshd:session): session opened for user deniz(uid=1001) by deniz(uid=0)", tesis=10, comm=S, exe=SX)
+yaz("09:30:01", "CRON", 1900, "pam_unix(cron:session): session opened for user root(uid=0) by root(uid=0)",
+    tesis=10, birim="cron.service", comm="cron", exe="/usr/sbin/cron")
+yaz("09:41:10", "sudo", 1950, "   deniz : TTY=pts/0 ; PWD=/home/deniz ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx",
+    oncelik=5, tesis=10, birim="session-3.scope", exe="/usr/bin/sudo")
+port = 40039
+for n, k in enumerate(["admin", "test", "oracle", "admin", "guest", "test"]):
+    s = "10:05:%02d" % (n * 7)
+    yaz(s, S, 2210, "Invalid user %s from 203.0.113.45 port %d" % (k, port), comm=S, exe=SX)
+    yaz(s, S, 2210, "Failed password for invalid user %s from 203.0.113.45 port %d ssh2" % (k, port), comm=S, exe=SX)
+    port += 1
+for i in range(1, 5):
+    s = "10:07:%02d" % (i * 4)
+    yaz(s, S, 2305, "pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=198.51.100.7  user=root",
+        oncelik=5, tesis=10, comm=S, exe=SX)
+    yaz(s, S, 2305, "Failed password for root from 198.51.100.7 port %d ssh2" % (41000 + i), comm=S, exe=SX)
+yaz("10:07:20", S, 2305, "error: maximum authentication attempts exceeded for root from 198.51.100.7 port 41004 ssh2 [preauth]",
+    oncelik=3, comm=S, exe=SX)
+yaz("10:12:00", "systemd", 1, "yedek.service: Main process exited, code=exited, status=1/FAILURE",
+    oncelik=5, tesis=3, birim="init.scope", exe="/usr/lib/systemd/systemd", ek={"UNIT": "yedek.service"})
+yaz("10:12:00", "systemd", 1, "yedek.service: Failed with result 'exit-code'.",
+    oncelik=4, tesis=3, birim="init.scope", exe="/usr/lib/systemd/systemd", ek={"UNIT": "yedek.service"})
+for i in range(1, 4):
+    yaz("10:20:%02d" % (i * 6), S, 2450, "Failed password for deniz from 198.51.100.23 port %d ssh2" % (43000 + i), comm=S, exe=SX)
+yaz("10:20:30", S, 2450, "Accepted password for deniz from 198.51.100.23 port 43004 ssh2", comm=S, exe=SX)
+yaz("10:20:30", S, 2450, "pam_unix(sshd:session): session opened for user deniz(uid=1001) by deniz(uid=0)", tesis=10, comm=S, exe=SX)
+yaz("10:24:51", "sudo", 2600, "pam_unix(sudo:auth): authentication failure; logname=deniz uid=1001 euid=0 tty=/dev/pts/1 ruser=deniz rhost=  user=deniz",
+    oncelik=5, tesis=10, birim="session-7.scope", exe="/usr/bin/sudo")
+yaz("10:25:09", "sudo", 2600, "   deniz : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/deniz ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow",
+    oncelik=1, tesis=10, birim="session-7.scope", exe="/usr/bin/sudo")
+yaz("10:31:00", "sshd", 2700, "Accepted password for root from 192.0.2.99 port 50000 ssh2",
+    tesis=1, birim="session-9.scope", comm="logger", exe="/usr/bin/logger", uid=1002)
+
+for k in kayitlar:
+    for a, d in k.items():
+        sys.stdout.write("%s=%s\n" % (a, d))
+    sys.stdout.write("\n")</pre>
+
+<pre class="kod" data-ad="bash">mkdir -p ~/lab17 &amp;&amp; cd ~/lab17      # ornek_gunluk.py'yi buraya kaydet
+python3 ornek_gunluk.py | /usr/lib/systemd/systemd-journal-remote -o ornek.journal -
+journalctl --file ornek.journal --no-pager | head -n 6
+journalctl --file ornek.journal --no-pager | wc -l
+journalctl --file ornek.journal -u ssh.service --no-pager | wc -l
+journalctl --file ornek.journal _COMM=sshd --no-pager
+journalctl --file ornek.journal _COMM=sshd-session --no-pager | wc -l</pre>
+<pre class="cikti">Finishing after writing 39 entries
+Oct 16 08:00:04 lab kernel[0]: EXT4-fs (vda1): mounted filesystem with ordered data mode.
+Oct 16 08:00:05 lab systemd[1]: Starting ssh.service - OpenBSD Secure Shell server...
+Oct 16 08:00:05 lab sshd[612]: Server listening on 0.0.0.0 port 22.
+Oct 16 08:00:05 lab systemd[1]: Started ssh.service - OpenBSD Secure Shell server.
+Oct 16 09:12:40 lab sshd-session[1830]: Accepted publickey for deniz from 192.0.2.10 port 50110 ssh2: ED25519 SHA256:ORNEK-PARMAK-IZI
+Oct 16 09:12:40 lab sshd-session[1830]: pam_unix(sshd:session): session opened for user deniz(uid=1001) by deniz(uid=0)
+39
+29
+Oct 16 08:00:05 lab sshd[612]: Server listening on 0.0.0.0 port 22.
+28</pre>
+
+<p>39 kaydın 29'u <code>ssh.service</code> biriminin süreçlerinden: 1'i dinleyen <code>sshd</code>'den, 28'i <code>sshd-session</code>'dan. <code>_COMM=sshd</code> yalnız açılış satırını buldu; "Sık yapılan hata" kutusundaki körlük budur. Zamanlar makinenin saat dilimiyle gösterilir; raporda dilimi de yazan <code>-o short-iso</code> kullan (Parça 66).</p>
+
+<pre class="kod" data-ad="bash">journalctl --file ornek.journal -p warning --no-pager
+journalctl --file ornek.journal --facility=auth,authpriv --no-pager | wc -l
+journalctl --file ornek.journal -u ssh.service -o cat --grep 'Failed password' --no-pager | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn
+journalctl --file ornek.journal -F _COMM | sort
+journalctl --file ornek.journal --verify</pre>
+<pre class="cikti">Oct 16 10:07:20 lab sshd-session[2305]: error: maximum authentication attempts exceeded for root from 198.51.100.7 port 41004 ssh2 [preauth]
+Oct 16 10:12:00 lab systemd[1]: yedek.service: Failed with result 'exit-code'.
+Oct 16 10:25:09 lab sudo[2600]:    deniz : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/deniz ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+33
+      6 203.0.113.45
+      4 198.51.100.7
+      3 198.51.100.23
+cron
+kernel
+logger
+sshd
+sshd-session
+sudo
+systemd
+PASS: /home/kullanici/lab17/ornek.journal</pre>
+
+<p><code>-p warning</code> 0–4 arası üç kayıt verdi: bir SSH hatası (3), bir servis uyarısı (4) ve <code>sudo</code>'nun başarısız parola kaydı (1); yirmiye yakın başarısız SSH parolasının hiçbiri listede yok. Tesis süzgeci 33 kimlik kaydı buldu (sahte satır <code>user</code> tesisinde). Sayım hattı Parça 9'dakinin aynısı. <code>-F _COMM</code> dosyaya yazan yedi programın listesini verdi ve <code>logger</code>'ın bu listede bulunması tek başına bir soru işaretidir. <code>--verify</code> dosyanın iç tutarlılığını denetledi. Mühürleme (Forward Secure Sealing) açıksa belgeye göre sonradan değiştirilen kayıtlar da fark edilir; bu Parça 66'nın konusu.</p>
+
+<h3>Adım 5. logrotate: kendi günlüğünü döndür</h3>
+
+<pre class="kod" data-ad="bash">mkdir -p ~/lab17/lr &amp;&amp; cd ~/lab17/lr
+cat > deneme.conf &lt;&lt;EOF
+$PWD/uygulama.log {
+    weekly
+    rotate 3
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640
+    maxage 30
+}
+EOF
+for i in 1 2 3; do echo "2026-10-16T10:0$i:00+03:00 uygulama[900]: istek $i tamam" >> uygulama.log; done
+logrotate -d -s durum deneme.conf</pre>
+<pre class="cikti">warning: logrotate in debug mode does nothing except printing debug messages!  Consider using verbose mode (-v) instead if this is not what you want.
+
+reading config file deneme.conf
+Reading state from file: durum
+state file durum does not exist
+Allocating hash table for state file, size 64 entries
+
+Handling 1 logs
+
+rotating pattern: /home/kullanici/lab17/lr/uygulama.log weekly empty log files are not rotated, (3 rotations), old logs are removed after 30 days
+considering log /home/kullanici/lab17/lr/uygulama.log
+Creating new state
+  Now: 2026-10-16 17:24
+  Last rotated at 2026-10-16 17:00
+  log does not need rotating (log has already been rotated)</pre>
+
+<p>Yapılandırmada yol tam olmalı; <code>$PWD</code>'yi kabuk, dosyayı yazarken genişletir (Parça 9). <code>-d</code> (debug) belgeye göre hiçbir değişiklik yapmaz ve durum dosyasını güncellemez; yalnız ne düşündüğünü söyler. <code>-s durum</code> sistemin <code>/var/lib/logrotate/status</code> dosyası yerine kendi durum dosyanı kullandırır; root olmadan çalıştırmanın ve sistemin kaydına dokunmamanın yolu budur. Dosyayı ilk kez gördüğü için "son döndürme"yi şimdi sayıyor ve döndürmüyor; zorlamak için <code>-f</code>:</p>
+
+<pre class="kod" data-ad="bash">logrotate -d -f -s durum deneme.conf 2>&amp;1 | tail -n 10
+for tur in 1 2 3 4 5; do
+  logrotate -f -s durum deneme.conf
+  ls -1 | grep -v -e deneme.conf -e durum | tr '\n' ' '; echo
+  echo "2026-10-16T11:0$tur:00+03:00 uygulama[900]: tur $tur sonrasi satir" >> uygulama.log
+done
+ls -l</pre>
+<pre class="cikti">rotating log /home/kullanici/lab17/lr/uygulama.log, log->rotateCount is 3
+dateext suffix '-20261016'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+previous log /home/kullanici/lab17/lr/uygulama.log.1 does not exist
+old log /home/kullanici/lab17/lr/uygulama.log.3.gz does not exist
+old log /home/kullanici/lab17/lr/uygulama.log.2.gz does not exist
+old log /home/kullanici/lab17/lr/uygulama.log.1.gz does not exist
+log /home/kullanici/lab17/lr/uygulama.log.4.gz doesn't exist -- won't try to dispose of it
+renaming /home/kullanici/lab17/lr/uygulama.log to /home/kullanici/lab17/lr/uygulama.log.1
+creating new /home/kullanici/lab17/lr/uygulama.log mode = 0640 uid = 1000 gid = 1000
+uygulama.log uygulama.log.1
+uygulama.log uygulama.log.1 uygulama.log.2.gz
+uygulama.log uygulama.log.1 uygulama.log.2.gz uygulama.log.3.gz
+uygulama.log uygulama.log.1 uygulama.log.2.gz uygulama.log.3.gz
+uygulama.log uygulama.log.1 uygulama.log.2.gz uygulama.log.3.gz
+total 24
+-rw-r--r-- 1 kullanici kullanici 163 Oct 16 17:24 deneme.conf
+-rw-r----- 1 kullanici kullanici  96 Oct 16 17:24 durum
+-rw-r----- 1 kullanici kullanici  61 Oct 16 17:24 uygulama.log
+-rw-r----- 1 kullanici kullanici  61 Oct 16 17:24 uygulama.log.1
+-rw-r----- 1 kullanici kullanici  77 Oct 16 17:24 uygulama.log.2.gz
+-rw-r----- 1 kullanici kullanici  79 Oct 16 17:24 uygulama.log.3.gz</pre>
+
+<p>Kuru çalıştırma planı adım adım söylüyor: eski kopyaları sondan başa kaydır, dördüncüyü at, canlı dosyanın adını <code>.1</code> yap, aynı adla 0640 izinli yeni bir dosya aç. Gerçek turlarda kayış şekildeki gibi: ikinci turda <code>.2.gz</code> (delaycompress yüzünden <code>.1</code> sıkıştırılmadan bekliyor), üçüncüde <code>.3.gz</code>, dördüncü ve beşincide dosya sayısı sabit kalıyor: <code>rotate 3</code> fazlasını sildi. İlk üç satırlık günlük artık hiçbir dosyada yok. Yeni dosyalar <code>create 0640</code> yüzünden <code>-rw-r-----</code>. Tek satırlık dosyada gzip başlığı kazançtan büyük olduğu için <code>.gz</code>'ler daha büyük; gerçek günlüklerde tersi olur.</p>
+
+<pre class="kod" data-ad="bash">touch -d '45 days ago' uygulama.log.2.gz
+ls -l --time-style=+%F uygulama.log*
+logrotate -f -s durum deneme.conf
+ls -1 | grep -v -e deneme.conf -e durum | tr '\n' ' '; echo
+: > uygulama.log
+logrotate -v -f -s durum deneme.conf 2>&amp;1 | grep -i -E 'empty|rotating|log does not need'</pre>
+<pre class="cikti">-rw-r----- 1 kullanici kullanici 61 2026-10-16 uygulama.log
+-rw-r----- 1 kullanici kullanici 61 2026-10-16 uygulama.log.1
+-rw-r----- 1 kullanici kullanici 77 2026-09-01 uygulama.log.2.gz
+-rw-r----- 1 kullanici kullanici 79 2026-10-16 uygulama.log.3.gz
+uygulama.log uygulama.log.1 uygulama.log.2.gz
+rotating pattern: /home/kullanici/lab17/lr/uygulama.log forced from command line empty log files are not rotated, (3 rotations), old logs are removed after 30 days
+  log does not need rotating (log is empty)</pre>
+
+<p>Bir kopyayı 45 gün eskiymiş gibi gösterdik. Döndürmede o kopya <code>.3.gz</code>'ye kaydı ve <code>maxage 30</code> onu sildi: geriye üç değil iki eski kopya kaldı. Belgenin dediği gibi yaş yalnız döndürme sırasında denetlenir. Son komutta günlüğü boşalttık (yalnız kendi deneme dosyanda yap); <code>-f</code>'ye rağmen <code>notifempty</code> boş dosyayı döndürmedi. Sistem günlükleri için laboratuvar VM'inde yalnız <code>sudo logrotate -d /etc/logrotate.conf</code> ile kuru çalıştır.</p>
+
+<h3>Adım 6. Dosya bütünlüğü: taban çizgisi, üç değişiklik, iki yöntem</h3>
+
+<pre class="kod" data-ad="bash">cd ~/lab17 &amp;&amp; mkdir izlenen
+printf 'Port 22\nPasswordAuthentication no\n' > izlenen/ayar.conf
+printf '#!/bin/sh\necho yedek\n' > izlenen/yedekle.sh
+printf 'kurulum notlari\n' > izlenen/notlar.txt
+find izlenen -type f -print0 | sort -z | xargs -0 sha256sum > taban.sha256
+cat taban.sha256
+sha256sum -c taban.sha256; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">e5cd8e6aee256a0983943cecb130df5d3e4fcfda2424f7902cc4d379503d2ea0  izlenen/ayar.conf
+83d728195c2de156d9b30d63b61765c89fab096c1977206b2a8e617e9ea87f43  izlenen/notlar.txt
+06680fc4d614dd8dc68165e4308ca8540a172447d041e2b32c3d9666841aa9c6  izlenen/yedekle.sh
+izlenen/ayar.conf: OK
+izlenen/notlar.txt: OK
+izlenen/yedekle.sh: OK
+(cikis kodu 0)</pre>
+
+<p>Taban çizgisi her dosya için bir satır: 64 onaltılık hanelik SHA-256 özeti (32 bayt, Parça 1), iki boşluk, yol. NUL ayırıcı ve sıralama (Parça 9) tuhaf adlarda yanılmayı önler. Şimdi üç değişiklik yapalım: <code>ayar.conf</code>'ta parolayla girişi aç ve dosyanın değişiklik zamanını eski değerine geri al, yeni bir betik ekle, notları sil.</p>
+
+<pre class="kod" data-ad="bash">touch -r izlenen/ayar.conf referans-zaman
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' izlenen/ayar.conf
+touch -r referans-zaman izlenen/ayar.conf
+printf '#!/bin/sh\necho merhaba\n' > izlenen/yeni.sh
+rm izlenen/notlar.txt
+find izlenen -type f -newer taban.sha256
+sha256sum -c taban.sha256; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">izlenen/yeni.sh
+izlenen/ayar.conf: FAILED
+sha256sum: izlenen/notlar.txt: No such file or directory
+izlenen/notlar.txt: FAILED open or read
+izlenen/yedekle.sh: OK
+sha256sum: WARNING: 1 listed file could not be read
+sha256sum: WARNING: 1 computed checksum did NOT match
+(cikis kodu 1)</pre>
+
+<p>Zamana bakan <code>find -newer</code> yalnız yeni dosyayı buldu; içeriği değişen <code>ayar.conf</code>'u kaçırdı, çünkü tarihi geri alınmıştı. <code>sha256sum -c</code> içeriğe baktığı için <code>ayar.conf</code>'u (FAILED) ve silinen dosyayı (FAILED open or read) yakaladı ve sıfırdan farklı çıkış koduyla bitti; zamanlayıcıdaki bir betik bu koda bakıp uyarabilir. Ama <code>yeni.sh</code>'den hiç söz etmedi: <code>-c</code> yalnız listedeki dosyaları denetler, listede olmayanı göremez. Saldırganın bıraktığı yeni bir dosya, bütünlük izlemesinin en önemli bulgularından biridir. Eksik parçayı kod rafı Parça 14'teki gibi bir karşılaştırma tamamlar:</p>
+
+<pre class="kod" data-ad="karsilastir.py">#!/usr/bin/env python3
+# Kullanim: python3 karsilastir.py taban.sha256 dizin
+import hashlib, os, sys
+
+def oku_taban(yol):
+    taban = {}
+    with open(yol, encoding="utf-8") as f:
+        for satir in f:
+            ozet, ad = satir.rstrip("\n").split("  ", 1)
+            taban[ad] = ozet
+    return taban
+
+def simdiki(dizin):
+    durum = {}
+    for kok, _, dosyalar in os.walk(dizin):
+        for d in dosyalar:
+            yol = os.path.join(kok, d)
+            with open(yol, "rb") as f:
+                durum[yol] = hashlib.sha256(f.read()).hexdigest()
+    return durum
+
+taban = oku_taban(sys.argv[1])
+simdi = simdiki(sys.argv[2])
+for ad in sorted(taban.keys() | simdi.keys()):
+    if ad not in simdi:
+        print("SILINDI  ", ad)
+    elif ad not in taban:
+        print("EKLENDI  ", ad)
+    elif taban[ad] != simdi[ad]:
+        print("DEGISTI  ", ad)</pre>
+
+<pre class="kod" data-ad="bash">python3 karsilastir.py taban.sha256 izlenen
+comm -13 &lt;(cut -c 67- taban.sha256 | sort) &lt;(find izlenen -type f | sort)</pre>
+<pre class="cikti">DEGISTI   izlenen/ayar.conf
+SILINDI   izlenen/notlar.txt
+EKLENDI   izlenen/yeni.sh
+izlenen/yeni.sh</pre>
+
+<p>Betik taban dosyasını okuyup bir sözlüğe koyar, dizini yeniden gezip her dosyanın özetini hesaplar ve iki anahtar kümesinin birleşimi üzerinde dolaşır: yalnız tabanda olan silinmiş, yalnız şimdide olan eklenmiş, ikisinde olup özeti farklı olan değişmiştir. Üç değişikliğin üçünü de yakaladı. Kabuktaki karşılığı ikinci satırdır: <code>comm -13</code>, taban listesinde olmayıp şimdi var olan adları basar; <code>sha256sum -c</code> ile birlikte kullanınca kabuk sürümü de eksiksiz olur (kod rafı Parça 18). Betik öğretim amaçlıdır: dosyayı tek seferde belleğe okur ve izinleri izlemez; AIDE bunları da yapar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Laboratuvar sunucunda gece çalışan bütünlük denetimi şu üç satırı bildirdi: <code>DEGISTI /etc/ssh/sshd_config</code>, <code>EKLENDI /etc/systemd/system/guncelle.timer</code>, <code>DEGISTI /usr/bin/ls</code>. Aynı gece paket güncellemesi yapılmamış. Her satırı nasıl ele alırsın?</p>
+<p><strong>Adım 1.</strong> Öncelik sırası kur. <code>/usr/bin/ls</code> paketin dosyasıdır ve elle değişmez; Parça 10'daki tabloya göre içerik farkı "ciddi"dir. <code>sshd_config</code> meşru biçimde değişebilir. Yeni zamanlayıcı, Parça 14'teki kalıcılık (persistence) yollarındandır.</p>
+<p><strong>Adım 2.</strong> İkinci ölçütle doğrula: <code>dpkg -S /usr/bin/ls</code> paketi (<code>coreutils</code>) verir; <code>dpkg -V coreutils</code> <code>??5??????</code> gösterirse iki bağımsız ölçüt aynı şeyi söylüyor. Güncelleme olmadığına göre makineyi şüpheli say.</p>
+<p><strong>Adım 3.</strong> Değişikliğin ne zaman ve kim tarafından yapıldığını günlüklerden ara: <code>journalctl --since</code> ile gecenin penceresine bak; SSH girişleri, <code>sudo</code> satırları ve auditd kuruluysa <code>ausearch -k</code> ile ilgili dosyanın kayıtları.</p>
+<p><strong>Adım 4.</strong> <code>sshd_config</code>'te neyin değiştiğini taban kopyasıyla <code>diff</code> ederek gör; <code>guncelle.timer</code>'ın neyi çalıştırdığını <code>systemctl cat</code> ile oku, ama hiçbir şeyi silme ya da çalıştırma: kanıtı koru.</p>
+<p><strong>Sonuç:</strong> Üç bulgu birlikte bir olay örüntüsü: yapılandırma değişikliği, kalıcılık ve sistem programının değiştirilmesi. Doğru hamle olay müdahalesini başlatmaktır (Parça 70).</p></div>
+
+<p>İş bitince <code>~/lab17</code>'yi silebilirsin (önce <code>echo rm -rf -- ~/lab17</code> ile bak, Parça 9). Adım 3'te yazdığın satır journal'da kalır; kendi saklama süresi dolunca journald onu diğerleriyle birlikte siler.</p>
+
+<h2 class="s">Tek makineden merkeze</h2>
+
+<p>Bu parçadaki her şey tek makinede oldu; zayıflık da buradan gelir: makineyi ele geçiren, günlüklerine ve taban çizgisine de erişir. Bu yüzden kurumlarda günlükler oluştuğu anda başka bir makineye gönderilir; saklama, erişim denetimi ve değiştirilemezlik orada sağlanır. Neyin loglanacağı, iyi bir kaydın alanları, saat eşitleme ve merkezî toplama Parça 66'da; korelasyon kuralları ve SIEM Parça 67'de.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 8 ve 9'a:</strong> <code>/var/log</code> FHS'nin değişken veri dalıdır; <code>journalctl -o cat</code> Parça 9'daki boru hatlarına aynen girer; <code>tail -F</code>'nin gerekçesi döndürmedir.</p>
+<p><strong>Parça 10–14'e:</strong> <code>dpkg -V</code> (10), <code>adm</code> ve <code>sudo</code> kayıtları (11), ACL (12), dosya tanımlayıcısı (13), <code>logrotate.timer</code> ve kalıcılık (14).</p>
+<p><strong>Parça 18, 19 ve ileriye:</strong> Parolayla girişi kapatmak Parça 18'de; günlük ayarlarını sertleştirme listesine koymak Parça 19'da; özet fonksiyonunun içi Parça 44'te; merkezî günlük, günlük bütünlüğü ve SIEM Parça 66–67'de; Windows'taki karşılığı (olay günlükleri) Parça 62'de; olay müdahalesi ve adli zaman çizelgesi Parça 70–71'de. Yalnız kendi ya da izinli sistemlerde çalışmanın hukuki dayanağı Parça 72–73'te.</p>
+<p><strong>Kod rafına:</strong> Parça 14 (Python dosya bütünlüğü izleyici) ve Parça 18 (kabuk sürümü, <code>sha256sum -c</code>) bu parçadaki FIM'in programlama tarafıdır;</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Debian 12 ya da yeni bir Kali'de /var/log/auth.log neden yoktur ve kimlik kayıtlarını nerede bulursun?</summary><p>Debian 12'den beri rsyslog varsayılan olarak kurulmuyor; metin dosyalarını o üretiyordu. İletiler systemd-journald tarafından /var/log/journal altında ikili biçimde tutulur. journalctl --facility=auth,authpriv, journalctl -u ssh.service ya da _COMM gibi alan süzgeçleriyle okunur.</p></details>
+<details><summary>journalctl -p warning hangi kayıtları gösterir ve neden bir parola tahmin saldırısını gözden kaçırır?</summary><p>0 (emerg) ile 4 (warning) arasındaki, yani uyarı ve daha önemli kayıtları gösterir. OpenSSH tek tek başarısız parolaları info (6) düzeyinde yazar; yüzlerce deneme de info olduğu için listede görünmez. Kimlik olayları öncelikle değil, birim, süreç ya da tesisle aranır.</p></details>
+<details><summary>Journal'da SYSLOG_IDENTIFIER ile _COMM arasındaki fark nedir?</summary><p>SYSLOG_IDENTIFIER, iletiyi gönderen programın kendi beyan ettiği etikettir; logger -t ile herkes istediğini yazabilir. _COMM ve diğer alt çizgili alanları journald, gönderen sürecin çekirdekteki kimliğinden kendisi ekler ve istemci değiştiremez. Bir satırın gerçek kaynağını _COMM, _EXE, _UID ve _SYSTEMD_UNIT söyler.</p></details>
+<details><summary>rotate 3, compress ve delaycompress ile beş kez döndürülen bir günlükte hangi dosyalar kalır?</summary><p>Canlı uygulama.log, sıkıştırılmamış uygulama.log.1, uygulama.log.2.gz ve uygulama.log.3.gz. delaycompress en yeni eski kopyayı bir tur bekletir; rotate 3 üçten fazla eski kopyayı siler.</p></details>
+<details><summary>auditctl -w /etc/passwd -p wa -k kimlik kuralı ne yapar?</summary><p>Çekirdeğin denetim alt sistemine /etc/passwd dosyasına yazma (w) ve öznitelik değişikliği (a; izin, sahip) erişimlerini kaydetmesini söyler; kayıtlar kimlik anahtarıyla etiketlenir ve ausearch -k kimlik ile çekilir. Belge -w biçimini eskimiş sayar; kural yüklemek root ister.</p></details>
+<details><summary>sha256sum -c bir taban çizgisinde hangi değişikliği göremez ve neden?</summary><p>Yeni eklenen dosyayı göremez, çünkü yalnız listedeki dosyaların özetini yeniden hesaplayıp karşılaştırır. Değişen içerik FAILED, silinen dosya FAILED open or read olarak görünür. Yeni dosyalar için adlar ayrıca karşılaştırılır (comm ya da Python'da küme farkı).</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Syslog:</strong> ileti + tesis (auth 4, authpriv 10, kern 0, user 1…) + öncelik (0 emerg … 3 err, 4 warning, 5 notice, 6 info, 7 debug). Metin satırında tesis/öncelik görünmez.</li>
+<li><strong>Dosyalar:</strong> Debian <code>auth.log</code>, <code>syslog</code>; RHEL <code>secure</code>, <code>messages</code>; ikili <code>wtmp</code>/<code>btmp</code>/<code>lastlog</code>. <code>adm</code> grubu günlük okur.</li>
+<li><strong>Debian 12+:</strong> rsyslog varsayılan değil → <code>auth.log</code> yok; kayıtlar <code>/var/log/journal</code>'da. Yokluk bilgi değil, yapılandırmadır.</li>
+<li><strong>journald:</strong> alanlı kayıt; <code>Storage=</code> volatile/persistent/auto; okuma: kendi günlüğün herkese, sistem günlüğü root + <code>systemd-journal</code>/<code>adm</code>/<code>wheel</code>.</li>
+<li><strong>journalctl:</strong> <code>-b</code>, <code>-p warning</code>, <code>-u birim</code>, <code>--since/--until</code>, <code>_COMM=</code>, <code>_UID=</code>, <code>--facility=</code>, <code>-g</code>, <code>-k</code>, <code>-f</code>, <code>-F alan</code>, <code>-o cat|short-iso|verbose|json-pretty</code>, <code>--file</code>.</li>
+<li><strong>Güven:</strong> alt çizgili alanlar journald'dan (güvenilir); <code>SYSLOG_IDENTIFIER</code>/<code>-t</code> beyandır. OpenSSH 9.8+: <code>sshd-session</code> → <code>-u ssh.service</code> ile süz.</li>
+<li><strong>Kimlik izleri:</strong> Invalid user, Failed password, pam_unix (aynı olayın ikinci kaydı), Accepted (yöntem), <code>sudo</code>. Soru: kim, nereden, nasıl, kaç kez, ardından ne?</li>
+<li><strong>logrotate:</strong> <code>rotate</code>, <code>daily/weekly</code>, <code>compress</code>, <code>delaycompress</code>, <code>maxage</code> (döndürmede), <code>notifempty</code>, <code>create</code>, <code>copytruncate</code>, <code>postrotate</code>. Sına: <code>-d</code>, <code>-f -s durum</code>.</li>
+<li><strong>journald saklama:</strong> <code>SystemMaxUse</code> %10 (en çok 4 GB), <code>MaxRetentionSec</code> 0 = kapalı. Saklama = en kısa sınır.</li>
+<li><strong>auditd:</strong> çekirdek kaydeder; <code>-w /etc/passwd -p wa -k kimlik</code> (eskimiş) ≈ <code>-a always,exit -F path=… -F perm=wa</code>; <code>ausearch -k</code>. Root ister.</li>
+<li><strong>FIM:</strong> taban çizgisi → karşılaştırma → değişti/eklendi/silindi. İçerik özeti, tarih değil. <code>sha256sum -c</code> yeni dosyayı görmez. AIDE <code>--init/--check/--update</code>. Taban çizgisi makine dışında/salt okunur.</li>
+<li><strong>Sınır:</strong> yalnız kendi ya da izinli sistemlerin günlükleri (Parça 72–73); merkezde toplama Parça 66–67.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-17">
+<h3>Quiz 17</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on altı tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Yeni kurulmuş bir Debian 13 laboratuvar sunucusunda <code>/var/log/auth.log</code> yok. SSH giriş denemelerini görmek için en doğru ilk adım hangisidir?</p>
+<ul class="sec"><li>Kayıt tutulmadığı için SSH sunucusunu yeniden kurmak</li><li>Kayıtların systemd günlüğünde olduğunu bilip <code>journalctl -u ssh.service</code> ile bakmak</li><li><code>/var/log/auth.log</code> dosyasını <code>touch</code> ile oluşturup beklemek</li><li><code>cat /var/log/journal/*/system.journal</code> ile dosyayı metin olarak okumak</li><li>Denemelerin yalnız <code>/var/log/dpkg.log</code>'a yazıldığını varsayıp oraya bakmak</li></ul>
+<div class="coz"><p>Debian 12'den beri rsyslog varsayılan olarak kurulmadığı için metin dosyası üretilmez; kayıtlar journald tarafından <code>/var/log/journal</code> altında tutulur ve <code>journalctl</code> ile, burada SSH biriminin süzgeciyle okunur. A, yokluğu arıza sanmaktır. C hiçbir şeyi değiştirmez: dosyaya yazacak bir günlük hizmeti yoktur. D yanlış: journal ikili bir biçimdir, <code>cat</code> okunur bir çıktı vermez ve izin de gerekir. E'deki <code>dpkg.log</code> yalnız paket işlemlerini tutar.</p></div></li>
+
+<li data-c="D"><p class="q"><code>journalctl -p warning</code> komutu hangi öncelikteki kayıtları gösterir?</p>
+<ul class="sec"><li>Yalnız tam olarak <code>warning</code> (4) düzeyindekileri</li><li><code>warning</code> ve daha az önemli olanları (4–7)</li><li>Yalnız <code>err</code> ve <code>crit</code> düzeyindekileri</li><li><code>emerg</code>'den <code>warning</code>'e kadar olanları (0–4)</li><li>Önceliği olmayan bütün kayıtları</li></ul>
+<div class="coz"><p><code>journalctl</code> belgesine göre tek bir düzey verildiğinde o düzey ve ondan <strong>daha önemli</strong> (sayıca küçük) olanlar gösterilir: 0 emerg, 1 alert, 2 crit, 3 err, 4 warning. Sentetik günlükte bu süzgeç öncelikleri 1, 3 ve 4 olan üç kaydı getirdi. A, aralık sözdizimiyle (<code>-p warning..warning</code>) alınan sonuçtur. B yönü ters çeviriyor. C ve E'nin dayanağı yoktur; her journal kaydının bir önceliği vardır.</p></div></li>
+
+<li data-c="A"><p class="q"><code>-w /etc/passwd -p wa -k kimlik</code> denetim kuralı ne yapar?</p>
+<ul class="sec"><li><code>/etc/passwd</code>'ye yazma ve öznitelik (izin, sahip) değişikliği erişimlerini çekirdeğin denetim kaydına geçirir ve kayıtları <code>kimlik</code> anahtarıyla etiketler</li><li><code>/etc/passwd</code>'yi yazmaya karşı kilitler, değişiklikleri engeller</li><li><code>/etc/passwd</code>'nin SHA-256 özetini her gün hesaplayıp taban çizgisiyle karşılaştırır</li><li><code>/etc/passwd</code>'yi okuyan her süreci öldürür</li><li><code>kimlik</code> adlı kullanıcının <code>/etc/passwd</code>'ye yazmasına izin verir</li></ul>
+<div class="coz"><p><code>-w</code> izlenecek yolu, <code>-p wa</code> hangi erişimlerin kayda geçeceğini (w yazma, a öznitelik), <code>-k</code> ise <code>ausearch -k kimlik</code> ile aramak için anahtarı verir. Denetim kaydeder, engellemez; bu yüzden B yanlıştır. C, dosya bütünlüğü izlemenin (AIDE gibi) işidir. D'nin dayanağı yoktur. E, <code>-k</code>'yi kullanıcı adı sanmaktır. Güncel belge bu <code>-w</code> biçimini eskimiş sayar ve sistem çağrısı biçimini önerir.</p></div></li>
+
+<li data-c="C"><p class="q">Bir günlüğün logrotate bloğunda <code>rotate 3</code>, <code>compress</code>, <code>delaycompress</code> ve <code>create</code> var; <code>maxage</code> yok. Her turdan önce dosyaya satır eklenerek <code>logrotate -f</code> beş kez çalıştırıldıktan sonra dizinde hangi günlük dosyaları bulunur?</p>
+<ul class="sec"><li><code>uygulama.log</code>, <code>uygulama.log.1.gz</code> … <code>uygulama.log.5.gz</code></li><li><code>uygulama.log.1</code>, <code>uygulama.log.2</code>, <code>uygulama.log.3</code> (canlı dosya olmadan)</li><li><code>uygulama.log</code>, <code>uygulama.log.1</code>, <code>uygulama.log.2.gz</code>, <code>uygulama.log.3.gz</code></li><li><code>uygulama.log</code>, <code>uygulama.log.1.gz</code>, <code>uygulama.log.2.gz</code>, <code>uygulama.log.3.gz</code></li><li>Yalnız <code>uygulama.log</code>; eski kopyalar her turda silinir</li></ul>
+<div class="coz"><p>Bu parçadaki denemede tam bu liste çıktı. Döndürmede eski kopyalar bir basamak kayar, <code>rotate 3</code> üçten fazlasını siler; <code>delaycompress</code> en yeni eski kopyayı (<code>.1</code>) bir tur sıkıştırmadan bekletir; <code>create</code> canlı dosyayı yeniden açar. A, <code>rotate</code> sınırını ve <code>delaycompress</code>'i yok sayıyor. B, döndürmeden sonra yeni dosya açılmadığını varsayıyor. D, <code>delaycompress</code> olmasaydı alınacak sonuçtur. E, <code>rotate 0</code>'ın davranışıdır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir journal kaydında <code>SYSLOG_IDENTIFIER=sshd</code>, <code>MESSAGE=Accepted password for root from 192.0.2.99 …</code>, <code>_COMM=logger</code>, <code>_UID=1002</code> ve <code>_SYSTEMD_UNIT=session-9.scope</code> alanları var. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>root 192.0.2.99'dan SSH ile parolayla girmiştir; hemen root parolası değiştirilmelidir.</li><li>Kayıt bozuktur; journal dosyası <code>--verify</code> ile onarılmalıdır.</li><li>SSH sunucusu <code>logger</code> adlı bir yardımcıyla günlük yazar; kayıt olağandır.</li><li>UID 1002 aslında root'tur, çünkü kayıt <code>authpriv</code> tesisindedir.</li><li>Satırı SSH sunucusu değil, UID 1002'nin çalıştırdığı <code>logger</code> yazmıştır; etiket bir beyandır ve asıl soru bu kullanıcının neden böyle bir satır yazdığıdır.</li></ul>
+<div class="coz"><p>Alt çizgili alanları journald gönderen sürecin kimliğinden kendisi ekler; <code>_COMM=logger</code> ve <code>_UID=1002</code> satırı yazanın sıradan bir kullanıcının <code>logger</code> komutu olduğunu söyler. <code>SYSLOG_IDENTIFIER</code> ise <code>logger -t</code> ile herkesin seçebildiği bir etikettir. A, beyanı gerçek sanmaktır; gerçek bir SSH girişi <code>ssh.service</code> biriminden ve UID 0 ile gelir. B'de bozulma belirtisi yoktur. C yanlış: SSH <code>logger</code> kullanmaz. D'nin dayanağı yoktur; bu kayıt <code>user</code> tesisindedir.</p></div></li>
+
+<li data-c="B"><p class="q">Bir dizin için <code>sha256sum</code> taban çizgisi alındı. Sonra bir dosyanın içeriği değiştirildi, bir dosya silindi ve yeni bir dosya eklendi. <code>sha256sum -c taban.sha256</code> ne raporlar?</p>
+<ul class="sec"><li>Üç değişikliğin üçünü de</li><li>Değişen dosyayı (FAILED) ve silineni (FAILED open or read); yeni dosyadan hiç söz etmez</li><li>Yalnız yeni eklenen dosyayı</li><li>Hiçbirini; <code>-c</code> yalnız dosya tarihlerine bakar</li><li>Yalnız silinen dosyayı; içerik değişikliği için <code>-v</code> gerekir</li></ul>
+<div class="coz"><p><code>-c</code>, listedeki her dosyanın özetini yeniden hesaplar: içeriği değişmişse FAILED, açılamıyorsa FAILED open or read der; listede olmayan bir dosyayı ise hiç görmez. Bu parçadaki denemede çıktı tam böyleydi ve çıkış kodu 1'di. A, eklenen dosyanın da yakalandığını sanıyor; bunun için ayrı bir ad karşılaştırması gerekir. C tersini söylüyor. D yanlış: <code>sha256sum</code> içeriğe bakar, tarihi geri alınmış dosyayı da yakaladı. E'deki seçenek gerekmez.</p></div></li>
+
+<li data-c="D"><p class="q">OpenSSH 10 çalışan bir sunucuda <code>journalctl _COMM=sshd --grep 'Failed password'</code> hiçbir şey döndürmüyor, ama saldırı olduğunu biliyorsun. En olası neden ve düzeltme hangisidir?</p>
+<ul class="sec"><li>OpenSSH başarısız girişleri hiç kaydetmez; auditd kurulmalıdır.</li><li><code>--grep</code> yalnız büyük harfle çalışır; desen <code>FAILED</code> olmalıdır.</li><li>Kayıtlar yalnız <code>/var/log/btmp</code>'ye gider; <code>journalctl</code> onu okuyamaz.</li><li>OpenSSH 9.8'den beri kimlik doğrulamayı ayrı bir <code>sshd-session</code> süreci yapar ve kayıtlar bu adla gelir; birimle (<code>-u ssh.service</code>) ya da iki süreç adıyla süzmek gerekir.</li><li>Başarısız girişler <code>debug</code> önceliğinde yazıldığı için varsayılan olarak gizlenir.</li></ul>
+<div class="coz"><p>OpenSSH 9.8 sunucuyu dinleyen <code>sshd</code> ve oturum başına <code>sshd-session</code> olarak böldü; sürüm notlarına göre bazı iletiler artık "sshd-session" adıyla etiketlenir. Sentetik günlükte <code>_COMM=sshd</code> yalnız "Server listening" satırını verdi, <code>_COMM=sshd-session</code> 28 satır. İkisi de <code>ssh.service</code> biriminde çalıştığı için birim süzgeci ikisini de kapsar. A ve C yanlış: OpenSSH başarısız parolaları kaydeder; <code>btmp</code> ayrı, ek bir kayıttır. B'nin dayanağı yoktur. E yanlış: bu satırlar <code>info</code> düzeyindedir ve <code>journalctl</code> varsayılan olarak öncelikle süzmez.</p></div></li>
+
+<li data-c="A"><p class="q">Bir yönetici, AIDE taban veritabanını izlenen sunucunun kendi diskinde, yazılabilir bir dizinde tutuyor ve her gece <code>aide --check</code> çalıştırıyor. Bu düzenin en önemli zayıflığı ve düzeltmesi hangisidir?</p>
+<ul class="sec"><li>Sunucuyu ele geçiren biri değişiklikten sonra veritabanını da yeniden üretebilir; veritabanı (ve mümkünse program ile yapılandırma) salt okunur bir ortamda ya da başka bir makinede tutulmalıdır.</li><li>Gece çalıştırmak çok sıktır; denetim ayda bir yapılmalıdır.</li><li>AIDE yalnız dosya tarihlerine baktığı için <code>touch</code> ile atlatılır; <code>find -newer</code> kullanılmalıdır.</li><li>Veritabanı şifrelenmezse AIDE çalışmaz.</li><li>Zayıflık yoktur; aynı makinede tutmak karşılaştırmayı hızlandırır.</li></ul>
+<div class="coz"><p>Ölçüt ile ölçülen aynı yerdeyse, ölçüleni değiştiren ölçütü de değiştirebilir: karşılaştırma "değişiklik yok" der. AIDE belgesi yeni veritabanının salt okunur bir ortama taşınmasını, yapılandırma ve programın da orada tutulmasını önerir; Parça 7'deki "özet de aynı yerden geliyorsa" sorununun aynısıdır. B ters yöndedir; sıklık sorun değildir. C yanlış: AIDE içerik özetlerine de bakar, <code>find -newer</code> ise tarihi geri alınmış dosyayı kaçırır (Adım 6). D'nin dayanağı yoktur. E, güvenliği hızla takas etmektir.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">C'de <code>uint8_t</code> türündeki bir değişkenin değeri 255 iken 1 eklendiğinde sonuç ne olur?</p>
+<ul class="sec"><li>256 olur, çünkü değişken genişler</li><li>Program her zaman çöker</li><li>0 olur; işaretsiz sayıda sarma tanımlıdır ve hesap 2<sup>8</sup>'e göre yapılır</li><li>−1 olur</li><li>255'te kalır, çünkü değer doymuştur</li></ul>
+<div class="coz"><p>Sabit genişlikli işaretsiz sayılarda aritmetik mod 2<sup>n</sup> yapılır: 8 bitte 255 + 1 = 256'dır ve 256 mod 256 = 0. Parça 1'deki kilometre sayacı benzetmesindeki gibi sayaç başa döner. A yanlış: değişkenin genişliği sabittir. B yanlış: C'de işaretsiz sarma tanımlı davranıştır; tanımsız olan işaretli taşmadır. D, aynı bit deseninin işaretli okunuşuyla karıştırmaktır (11111111 işaretliyken −1'dir, ama burada sonuç 00000000). E, bazı işlemcilerdeki doygun aritmetiktir; C'nin olağan kuralı değildir.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Spectre ve Meltdown gibi spekülatif yürütme açıklarına karşı sıradan bir kullanıcının ya da yöneticinin yapabileceği en doğru şey hangisidir?</p>
+<ul class="sec"><li>Önbelleği BIOS'tan tamamen kapatmak</li><li>Programları yalnız yorumlanan dillerde yazmak</li><li>İşlemciyi tek çekirdekli bir modelle değiştirmek</li><li>Açık yalnız sunucuları etkilediği için hiçbir şey yapmamak</li><li>Mikrokodu, işletim sistemini ve tarayıcı gibi yazılımları güncel tutmak</li></ul>
+<div class="coz"><p>Parça 2'de gördüğün gibi bu açıklar donanımın da açık verebileceğini gösterdi ve savunma katmanlıydı: işlemci üreticisinin mikrokodu, işletim sistemi ve derleyici yamaları, zamanla yeni donanım. Kullanıcının payı güncel tutmaktır. A pratik değildir ve makineyi çok yavaşlatır. B yanlış: yorumlayıcı da makine kodunda çalışır. C'nin dayanağı yoktur; açık çekirdek sayısıyla ilgili değildir. D yanlış: kişisel bilgisayarlar ve tarayıcılar da etkilendi.</p></div></li>
+
+<li data-c="A" data-k="siber-4"><p class="q">Bir program okuma izni olmayan bir dosyayı <code>open</code> ile açmaya çalışıyor. Linux'ta çekirdek ve glibc sarmalayıcısı bu hatayı programa nasıl bildirir?</p>
+<ul class="sec"><li>Çekirdek negatif bir hata numarası (−13) döndürür; sarmalayıcı <code>errno</code>'ya 13'ü (EACCES) yazar ve programa −1 döndürür.</li><li>Çekirdek programı SIGKILL ile hemen sonlandırır.</li><li>Sarmalayıcı 0 döndürür ve dosya boş açılır.</li><li>Çekirdek hatayı yalnız günlüğe yazar, programa bir şey bildirmez.</li><li>Program otomatik olarak halka 0'a geçip dosyayı okur.</li></ul>
+<div class="coz"><p>Parça 4'teki kural: sistem çağrısı başarısız olunca çekirdek eksi işaretli hata numarasını döndürür, glibc sarmalayıcısı bunu <code>errno</code>'ya yazar ve sonuç olarak −1 verir; program <code>errno</code>'ya bakarak nedeni öğrenir (13 = izin yok). B yanlış: izin hatası bir sinyal değildir. C yanlış: 0 geçerli bir dosya tanımlayıcısı olurdu. D yanlış: hata programa döner. E, halka ayrımının tam tersidir.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">W^X (yazılabilir ya da çalıştırılabilir, ikisi birden asla) ilkesine uyan bir süreçte <code>/proc/PID/maps</code> çıktısında aşağıdakilerden hangisi <strong>bulunmamalıdır</strong>?</p>
+<ul class="sec"><li><code>r--p</code> izinli bir bölge</li><li><code>r-xp</code> izinli kod bölgesi</li><li><code>rw-p</code> izinli yığın bölgesi</li><li><code>rwxp</code> izinli bir bölge</li><li><code>---p</code> izinli koruma sayfası</li></ul>
+<div class="coz"><p>W^X'e göre bir sayfa aynı anda hem yazılabilir hem çalıştırılabilir olmamalıdır; <code>rwxp</code> tam olarak bunu gösterir ve Parça 5'te "maps'te rwx olmamalı" diye geçti. Salt okunur veri (A), okunur ve çalıştırılır kod (B) ve okunur-yazılır ama çalıştırılamaz yığın (C) ilkeye uygundur; yürütülemez bellek (NX) C'yi sağlar. E'deki hiçbir izni olmayan sayfa, taşmaları yakalamak için kullanılan bir korumadır.</p></div></li>
+
+<li data-c="B" data-k="siber-6"><p class="q">Döndürülmüş bir günlük dosyasının adı <code>uygulama.log.2.gz</code>. <code>xxd</code> ile bakıldığında dosyanın ilk iki baytı hangisi olmalıdır?</p>
+<ul class="sec"><li><code>50 4B</code></li><li><code>1F 8B</code></li><li><code>7F 45</code></li><li><code>25 50</code></li><li><code>89 50</code></li></ul>
+<div class="coz"><p>gzip biçiminin sihirli baytları <code>1F 8B</code>'dir (Parça 6); logrotate'in <code>compress</code> yönergesi varsayılan olarak gzip kullanır. <code>50 4B</code> ("PK") ZIP'in, <code>7F 45</code> ELF'in (<code>7F 45 4C 46</code>), <code>25 50</code> PDF'in (<code>%PDF-</code>), <code>89 50</code> PNG'nin başlangıcıdır. Uzantı yalnız bir addır; asıl biçimi baytlar söyler.</p></div></li>
+
+<li data-c="C" data-k="siber-8"><p class="q">FHS'ye göre yeniden başlatmadan sonra da korunması beklenen geçici dosyalar hangi dizinde tutulur?</p>
+<ul class="sec"><li><code>/tmp</code></li><li><code>/run</code></li><li><code>/var/tmp</code></li><li><code>/dev/shm</code></li><li><code>/proc</code></li></ul>
+<div class="coz"><p>Parça 8'deki ayrım: programlar <code>/tmp</code>'deki dosyaların korunacağını varsayamaz (Debian 13'te <code>/tmp</code> bellekte duran bir tmpfs), <code>/var/tmp</code> ise yeniden başlatmalar arasında korunan geçici dosyalar içindir. <code>/run</code> ve <code>/dev/shm</code> bellekte durur ve açılışta boşalır; <code>/proc</code> çekirdeğin sanal dosya sistemidir. Bu parçadaki journal da aynı mantıkla <code>/run/log/journal</code>'da geçici, <code>/var/log/journal</code>'da kalıcıdır.</p></div></li>
+
+<li data-c="E" data-k="siber-9"><p class="q">Bir günlüğü <code>tail -f /var/log/uygulama.log</code> ile izliyorsun. Gece logrotate dosyanın adını <code>uygulama.log.1</code> yapıp yerine yeni bir <code>uygulama.log</code> açıyor. Sabah ne görürsün ve doğru seçenek hangisidir?</p>
+<ul class="sec"><li><code>tail -f</code> yeni dosyaya kendiliğinden geçer; bir şey yapmaya gerek yoktur.</li><li><code>tail</code> hata verip çıkar; <code>tail -n 0</code> kullanılmalıdır.</li><li>Yeni satırlar iki kez görünür; <code>uniq</code> ile süzülmelidir.</li><li><code>tail</code> eski dosyanın içeriğini siler; <code>less</code> kullanılmalıdır.</li><li><code>tail -f</code> dosya tanımlayıcısını izlediği için eski (artık <code>.1</code> adlı) dosyada kalır ve yeni satırları göstermez; adı izleyen <code>tail -F</code> kullanılmalıdır.</li></ul>
+<div class="coz"><p>Parça 9'a göre GNU <code>tail -f</code> varsayılan olarak açtığı dosyanın tanımlayıcısını izler; ad değişse de o dosyaya bağlı kalır. <code>tail -F</code> (<code>--follow=name --retry</code>) adı izler ve yeni dosyayı açar. Bu parçada gördüğün gibi logrotate'in varsayılan yöntemi bir ad değiştirmedir. A tam bu ayrımı atlıyor. B, C ve D'nin dayanağı yoktur; <code>tail</code> salt okur.</p></div></li>
+
+<li data-c="B" data-k="siber-10"><p class="q"><code>dpkg -V</code> çıktısında <code>??5??????   /usr/bin/ls</code> satırı görünüyor (yapılandırma dosyası işareti <code>c</code> yok). Bu ne anlama gelir?</p>
+<ul class="sec"><li>Dosyanın yalnız izinleri değişmiştir; olağandır.</li><li>Paketteki çalıştırılabilir dosyanın içeriği paketin kaydındaki özetten farklıdır; ciddi bir bulgudur ve makine şüpheli sayılmalıdır.</li><li>Dosya silinmiştir.</li><li>Paket güncel değildir; <code>apt upgrade</code> yeterlidir.</li><li><code>dpkg</code> dosyayı okuyamamıştır; root ile yeniden denenmelidir.</li></ul>
+<div class="coz"><p>Parça 10'daki tabloya göre üçüncü sütundaki <code>5</code> içerik özetinin (MD5) uyuşmadığını söyler; <code>c</code> olmadığı için bu bir yapılandırma dosyası değil, paketin programıdır ve programlar elle değişmez. A, izin sütununun işaretidir, burada yok. C, <code>missing</code> satırıyla gösterilir. D'nin bu çıktıyla ilgisi yoktur. E, okunamayan dosyalarda <code>?</code> işaretleriyle görünür; burada <code>5</code> kesin bir uyuşmazlıktır. Bu parçadaki AIDE, aynı soruyu paketten bağımsız bir ölçütle sorar.</p></div></li>
+
+<li data-c="A" data-k="siber-12"><p class="q"><code>/tmp</code> dizininin izni <code>drwxrwxrwt</code> (1777). Sondaki <code>t</code> (sticky biti) ne sağlar?</p>
+<ul class="sec"><li>Herkes dizinde dosya oluşturabilir, ama bir dosyayı yalnız sahibi, dizinin sahibi ya da ayrıcalıklı süreç silebilir veya adını değiştirebilir.</li><li>Dizindeki dosyalar yeniden başlatmada silinmez.</li><li>Dizindeki programlar sahibinin yetkisiyle çalışır.</li><li>Dizine yalnız root yazabilir.</li><li>Dizindeki dosyalar otomatik olarak şifrelenir.</li></ul>
+<div class="coz"><p>Parça 12: normalde bir dosyayı silme yetkisi dizinin yazma izninden gelir; herkese yazılabilir bir dizinde herkes başkasının dosyasını da silebilirdi. Sticky biti bunu sahiple sınırlar. B, <code>/var/tmp</code>'nin işlevidir ve izinle ilgili değildir. C, SUID'in dosyalardaki etkisidir. D, <code>rwxrwxrwt</code>'deki "diğer" için <code>w</code> ile çelişir. E'nin dayanağı yoktur.</p></div></li>
+
+<li data-c="D" data-k="siber-13"><p class="q">Bir yedekleme betiği veritabanı parolasını komut satırı argümanı olarak alıyor: <code>yedekle --parola Gizli123</code>. Bunun Linux'taki temel riski hangisidir?</p>
+<ul class="sec"><li>Parola betiğin çıktısında şifrelenir ve kaybolur.</li><li>Komut satırları yalnız root'a görünür; risk yoktur.</li><li>Argümanlar 8 karakterle sınırlıdır, parola kesilir.</li><li>Komut satırı <code>/proc/PID/cmdline</code> üzerinden makinedeki her kullanıcıya görünür, kabuk geçmişine ve süreç izleme kayıtlarına düşebilir.</li><li>Parola <code>/proc/PID/environ</code>'a yazılır ve yalnız oradan okunur.</li></ul>
+<div class="coz"><p>Parça 13'teki tabloya göre <code>cmdline</code> herkese açıktır (<code>-r--r--r--</code>); <code>ps</code> başkalarının komut satırlarını bu yüzden gösterebilir. Komut satırı kabuk geçmişine de yazılır ve süreçleri izleyen araçların (bu parçadaki auditd gibi) kayıtlarına düşebilir. B tam bu yanılgıdır. A ve C'nin dayanağı yoktur. E karıştırıyor: <code>environ</code> ortam değişkenlerini tutar ve yalnız sahibine açıktır; argüman oraya yazılmaz.</p></div></li>
+
+<li data-c="C" data-k="siber-14"><p class="q">systemd'de bir servis için <code>systemctl start</code> ile <code>systemctl enable</code> arasındaki fark hangisidir?</p>
+<ul class="sec"><li>İkisi aynıdır; <code>enable</code> yalnız eski bir addır.</li><li><code>start</code> servisi kalıcı olarak kurar, <code>enable</code> yalnız bu oturum için çalıştırır.</li><li><code>start</code> servisi şimdi başlatır; <code>enable</code> açılışta otomatik başlaması için bağlar, ama şimdi başlatmaz (<code>--now</code> verilmedikçe).</li><li><code>enable</code> servisi siler, <code>start</code> yeniden kurar.</li><li><code>start</code> yalnız root'un, <code>enable</code> her kullanıcının servislerini etkiler.</li></ul>
+<div class="coz"><p>Parça 14'ün konusu: başlatmak anlık bir işlemdir, etkinleştirmek ise birimi bir hedefe (ör. <code>multi-user.target</code>) bağlayıp açılışta başlamasını sağlar. Otomatik başlayan her servis saldırı yüzeyine eklenir; bu yüzden gereksizler devre dışı bırakılır. B yönü ters çeviriyor. A, D ve E'nin dayanağı yoktur. Bu parçadaki <code>logrotate.timer</code> da etkinleştirilmiş bir zamanlayıcı olduğu için her gün kendiliğinden çalışıyordu.</p></div></li>
+
+<li data-c="E" data-k="siber-14"><p class="q">Bir savunmacı, bir sunucuda saldırganın bıraktığı kalıcılık (persistence) izlerini arıyor. Hangi envanter en uygundur?</p>
+<ul class="sec"><li>Yalnız <code>ps</code> ile şu an çalışan süreçlere bakmak</li><li>Yalnız <code>/etc/crontab</code>'a bakmak</li><li>Yalnız <code>/var/log</code>'daki dosya boyutlarını karşılaştırmak</li><li>Bütün servisleri durdurup hangisinin eksik kaldığını görmek</li><li>Etkin birimleri ve zamanlayıcıları (<code>systemctl list-unit-files --state=enabled</code>, <code>systemctl list-timers</code>), sistem ve kullanıcı crontab'larını listeleyip bilinen iyi bir listeyle karşılaştırmak</li></ul>
+<div class="coz"><p>Parça 14'e göre servisler ve zamanlanmış görevler hem yönetimin hem kalıcılığın yollarıdır; savunmacı her iki türü de, sistem ve kullanıcı düzeyinde envanterler ve taban çizgisiyle karşılaştırır. A yalnız şu anı gösterir; bir zamanlayıcı gece çalışıp biter. B tek bir yoldur; <code>/etc/cron.d</code>, kullanıcı crontab'ları ve systemd zamanlayıcıları dışarıda kalır. C hiçbir şey söylemez. D hizmeti keser ve kanıtı bozar. Bu parçadaki bütünlük izlemesi, yeni bir birim dosyasının eklendiğini de yakalar.</p></div></li>
+
+<li data-c="B" data-k="siber-15"><p class="q">Kendi laboratuvar makinende hangi süreçlerin hangi TCP portlarında dinlediğini görmek için hangi komut uygundur?</p>
+<ul class="sec"><li><code>ip route</code></li><li><code>ss -tlnp</code></li><li><code>cat /etc/hosts</code></li><li><code>ping 127.0.0.1</code></li><li><code>journalctl -p warning</code></li></ul>
+<div class="coz"><p><code>ss</code>'nin <code>-t</code> seçeneği TCP'yi, <code>-l</code> dinleyen soketleri, <code>-n</code> sayısal adresleri, <code>-p</code> portu tutan süreci gösterir (başka kullanıcıların süreçleri için yetki gerekir). A yönlendirme tablosunu verir. C yerel ad çözümleme dosyasıdır. D yalnız erişilebilirliği sınar. E günlük süzer; dinleyen portları listelemez.</p></div></li>
+
+<li data-c="A" data-k="siber-15"><p class="q"><code>ip route</code> çıktısında <code>default via 192.0.2.1 dev eth0</code> satırı var. Bu satır ne söyler?</p>
+<ul class="sec"><li>Daha özel bir yolu olmayan bütün hedeflere giden paketler <code>eth0</code> üzerinden 192.0.2.1 adresli varsayılan ağ geçidine gönderilir.</li><li>Makinenin kendi IP adresi 192.0.2.1'dir.</li><li>DNS sunucusu 192.0.2.1'dir.</li><li>192.0.2.1'e giden paketler engellenir.</li><li><code>eth0</code> arayüzü kapalıdır.</li></ul>
+<div class="coz"><p>Yönlendirme tablosunda <code>default</code>, eşleşen daha özel bir yol yoksa kullanılacak yoldur; <code>via</code> paketlerin teslim edileceği ağ geçidini, <code>dev</code> çıkış arayüzünü söyler. B'deki makinenin kendi adresi <code>ip addr</code> ile görülür. C'deki DNS sunucusu <code>/etc/resolv.conf</code> ya da systemd-resolved'dan okunur. D, güvenlik duvarının işidir. E'nin dayanağı yoktur; kapalı bir arayüzün yolu kullanılmaz.</p></div></li>
+
+<li data-c="D" data-k="siber-16"><p class="q">Varsayılan ilkesi "reddet" olan bir giriş zincirinde, kurulmuş bağlantıların dönüş paketlerine izin veren bir kural (<code>ct state established,related accept</code>) neden gerekir?</p>
+<ul class="sec"><li>Bu kural olmadan makine hiçbir porttan dinleyemez.</li><li>Bu kural bütün gelen bağlantılara izin verir; varsayılan reddet ilkesini kapatır.</li><li>Yalnız UDP için gereklidir; TCP kendini korur.</li><li>Durum takipli güvenlik duvarı, makinenin kendi başlattığı bağlantılara gelen cevapları bu sayede tanıyıp geçirir; yoksa dışarıya açılan her bağlantının cevabı reddedilir.</li><li>Güvenlik duvarını kapatmadan günlük tutmak için gereklidir.</li></ul>
+<div class="coz"><p>Parça 16'daki durum takibi: güvenlik duvarı bağlantıları izler ve kurulmuş bir bağlantının paketlerini tanır. Varsayılan reddet ilkesinde, senin başlattığın bir güncelleme isteğinin cevabı da "gelen paket"tir; bu kural olmazsa reddedilir. B yanlış: kural yalnız zaten kurulmuş bağlantıları kapsar, yeni bağlantıya izin vermez. A ve C'nin dayanağı yoktur. E'nin günlüklemeyle ilgisi yoktur.</p></div></li>
+
+<li data-c="C" data-k="siber-16"><p class="q">Bir giriş zincirinde varsayılan ilke reddettir ve kurallar sırayla şunlardır: (1) <code>ip saddr 192.0.2.0/24 tcp dport 22 accept</code>, (2) <code>tcp dport 22 drop</code>. 198.51.100.7 adresinden 22. porta yeni bir bağlantı ve 192.0.2.5 adresinden 22. porta yeni bir bağlantı geliyor. Sonuç hangisidir?</p>
+<ul class="sec"><li>İkisi de kabul edilir.</li><li>İkisi de reddedilir, çünkü ikinci kural 22. portu kapatıyor.</li><li>192.0.2.5 kabul edilir, 198.51.100.7 reddedilir.</li><li>198.51.100.7 kabul edilir, 192.0.2.5 reddedilir.</li><li>Sonuç kuralların yazıldığı dosyanın adına bağlıdır.</li></ul>
+<div class="coz"><p>Kurallar sırayla denenir ve kabul ya da reddetme gibi kesin bir karar veren ilk eşleşme işi bitirir (Parça 16'daki kural sırası). 192.0.2.5 birinci kuralın ağında olduğu için orada kabul edilir ve ikinci kurala hiç gelmez. 198.51.100.7 birinci kurala uymaz, ikinci kurala uyar ve düşürülür. B, sırayı yok sayıp son kuralı geçerli sanmaktır. A ve D eşleşmeleri karıştırıyor. E'nin dayanağı yoktur. "SSH'ye yalnız iç ağdan izin" kurgusu tam budur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-16">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-17">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-18">Sonraki parça: SSH, anahtarlar ve sır saklama →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"journalctl tutorial filter unit priority since"</li>
+  <li>"linux log files var log auth.log journald rsyslog"</li>
+  <li>"logrotate configuration rotate compress delaycompress"</li>
+  <li>"auditd file watch rules ausearch aide file integrity monitoring"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılanlar (16 Ekim 2026; WSL 2 üstünde Kali Rolling 2026.2, systemd 260.1, logrotate 3.22.0, OpenSSH 10.3p1):</strong> metindeki bütün komutlar, <code>ornek_gunluk.py</code> ve <code>karsilastir.py</code> gerçekten çalıştırıldı, çıktılar birebir aktarıldı. Quiz'deki logrotate listesi, <code>-p warning</code>, <code>sha256sum -c</code>, <code>_COMM=sshd</code>/<code>sshd-session</code> ve sahte <code>logger</code> kaydı soruları aynı denemelerden.</li>
+  <li><strong>Sadeleştirmeler:</strong> Çalışma dizini gerçekte <code>/tmp/yazar/siber-17/</code> idi (<code>HOME</code> oraya yönlendirildi); çıktılarda <code>/home/kullanici/lab17</code> gösterildi. Makine adı her journal satırında <code>lab</code>, kullanıcı adı <code>kullanici</code> yapıldı; makine kimliği, açılış kimliği, imleç ve sıra kimliği "…" ya da <code>&lt;makine-kimliği&gt;</code> ile gizlendi. Adım 1 iki komutun çıktısını birleştirir; <code>ls -l /var/log</code> alıntısı kısaltıldı. Sentetik günlükteki kimlikler, adlar ve adresler (RFC 5737) uydurmadır.</li>
+  <li><strong>Erişim:</strong> Kullanıcı <code>adm</code> grubundaydı, ama <code>tmpfiles.d</code>'deki <code>group:adm:r--</code> ACL'i journal dosyalarına uygulanmamıştı (nedeni araştırılmadı); sistem günlüğü okunamadı, gerçek çıktılar yalnız kullanıcı günlüğünden. Journal'a yazılan tek şey Adım 3'teki etiketli satırdır; başka denemelerden kalan hesap satırları örnek olarak kullanılmadı.</li>
+  <li><strong>systemd-journal-remote:</strong> Yerel paket listesi eski olduğu için <code>apt-get download</code> 404 verdi; Kali <code>InRelease</code> dosyası <code>gpgv</code> ile arşiv anahtarına karşı doğrulandı ("Good signature"), <code>Packages.gz</code> ve <code>systemd-journal-remote</code>/<code>libsystemd-shared</code> 262-1 paketleri SHA-256 zinciriyle doğrulandı (Parça 10), yalnız <code>/tmp</code> altına <code>dpkg-deb -x</code> ile açılıp <code>LD_LIBRARY_PATH</code> ile çalıştırıldı.</li>
+  <li><strong>Belgeler:</strong> Debian 12 sürüm notları 5.1.7 (rsyslog'un varsayılan kurulmaması, journal). Kurulu man sayfaları: <code>journald.conf(5)</code> (<code>Storage=</code>, 260'ta varsayılan <code>persistent</code>, %10/%15 ve 4 GB, <code>MaxRetentionSec</code>, <code>Seal=</code>), <code>journalctl(1)</code> (erişim grupları, <code>-p</code>, <code>--since</code>, <code>-t</code>, <code>-u</code>), <code>systemd.journal-fields(7)</code> (güvenilir alanlar), <code>logrotate(8)</code>, <code>logger(1)</code>, <code>sudoers(5)</code> (<code>syslog_badpri</code> alert, <code>syslog_goodpri</code> notice); çevrimiçi freedesktop sayfası 403 verdi. <code>auditctl(8)</code> man7.org'dan (<code>-w</code>'nin eskimiş sayılması ve sistem çağrısı örneği). AIDE belgesi aide.github.io'dan.</li>
+  <li><strong>İkincil ya da hafızadan:</strong> OpenSSH 9.8'deki <code>sshd-session</code> bölünmesi sürüm notunu aktaran ikincil kaynaklardan (FreeBSD, IPFire, fail2ban kayıtları); bu makinede <code>sshd-session</code>'ın varlığı doğrulandı. RHEL'in <code>secure</code>/<code>messages</code> adları, rsyslog'un Debian'daki dağıtım kuralları, <code>btmp</code>'nin gizlilik gerekçesi, <code>wtmpdb</code> geçişi, <code>auid</code>, <code>augenrules</code> ve <code>/etc/audit/rules.d/</code>, <code>pam_unix</code>/<code>sudo</code> satır biçimleri ve "maximum authentication attempts" iletisinin önceliği hafızadandır. Belgeye göre <code>-u</code> systemd'nin birim hakkındaki iletilerini de eşler; sentetik dosyada bu iki satır eşlenmedi (nedeni doğrulanmadı, metinde kullanılmadı).</li>
+  <li><strong>Burada çalıştırılmadı:</strong> auditd araçları ve AIDE (kurulu değil, root ister), <code>last</code>/<code>lastb</code>, <code>sudo</code> gerektiren her komut.</li>
+  <li><strong>Tekrar soruları:</strong> Parça 1, 2, 4, 5, 6, 8, 9, 10, 12 ve 13'ün metinlerine göre; Parça 14–16'nın dosyaları henüz olmadığından o altı soru yalnız <code>siber.md</code> satırlarından.</li>
+  <li><strong>Sınır ve sisteme etki:</strong> Saldırı tekniği, araç ya da günlük silme/gizleme yöntemi verilmedi; root, kurulum ya da sistem dosyası değişikliği yapılmadı; tek etiketli journal satırı dışında <code>/tmp/yazar/siber-17/</code> dışına bir şey yazılmadı.</li>
+</ul>
+</div>
+</div>
+</article>

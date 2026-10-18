@@ -1,0 +1,727 @@
+<article class="chapter ders" id="c-siber-12">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 12 · Dosya izinleri</div>
+<h1>Dosya izinleri: kim okur, kim yazar, kim siler?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Herkes <code>/etc/passwd</code> dosyasını okuyabiliyor ama <code>/etc/shadow</code> dosyasını okuyamıyor. Öyleyse sıradan bir kullanıcı parolasını değiştirdiğinde, okuyamadığı bir dosyaya yeni parola özetini nasıl yazdırıyor? Bir dosyayı salt okunur yaptığında onu kimse silemez mi? Ve herkesin yazabildiği <code>/tmp</code> klasöründe başkası neden senin dosyanı silemiyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (ikili ve sekizli gösterim, bit işlemleri VE/DEĞİL), Parça 5 (süreç kimliği: gerçek ve etkin UID, yetenekler, <code>no_new_privs</code>), Parça 8 (dosya sistemi hiyerarşisi, bağlama seçenekleri <code>nosuid</code>), Parça 9 (<code>find</code>, boru, yönlendirme), Parça 11 (kullanıcı, grup, UID/GID, <code>root</code>, <code>sudo</code>). Kod rafından Parça 15 (<code>ls -l</code> çıktısını okumaya giriş) ve Parça 17 (<code>chmod +x</code>). Bütün denemeler kendi Linux makinende ya da laboratuvar VM'inde, yalnız <code>/tmp</code> altındaki kendi dosyalarınla yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 11'de Linux'un insanları ve hizmetleri <strong>kullanıcı</strong> ve <strong>grup</strong> kimlikleriyle ayırdığını gördük. Parça 5'te de çekirdeğin her sistem çağrısında sürecin kimliğine baktığını söylemiştik. Bu parça o iki parçayı birleştiriyor: çekirdek bir süreç bir dosyayı açmak, değiştirmek ya da silmek istediğinde <em>neye bakarak</em> evet ya da hayır diyor?</p>
+
+<p>Cevap, her dosyanın yanında saklanan birkaç küçük bilgidir: dosyanın <strong>sahibi</strong> (bir UID), <strong>grubu</strong> (bir GID) ve 12 bitlik bir <strong>izin kipi</strong> (mode). Bu parçada sırasıyla şunları kuracağız: okuma, yazma, çalıştırma izinleri ve üç sınıf (sahip, grup, diğer); izinlerin simgesel ve sekizlik gösterimi; <code>chmod</code>, <code>chown</code>, <code>chgrp</code>; dizinlerde izinlerin ne anlama geldiği ve silme yetkisinin neden dosyadan değil dizinden geldiği; yeni dosyanın iznini belirleyen <code>umask</code>; özel bitler SUID, SGID ve sticky; erişim denetim listeleri (ACL); en sonda da kendi makinende uygulayacağın bir yanlış izin kontrol listesi.</p>
+
+<p>Bu konu güvenliğin en sıradan ama en sık kırılan katmanıdır: herkese açık bir yedek ya da yeri olmayan bir SUID programı, karmaşık bir açığa gerek bırakmadan zarar doğurur.</p>
+
+<h2 class="s">1. Üç izin, üç sınıf</h2>
+
+<p>Bir dosya üzerinde yapılabilecek işler üç temel türe ayrılır: içeriğini <strong>okumak</strong> (r, read), içeriğini <strong>değiştirmek</strong> (w, write) ve onu bir program olarak <strong>çalıştırmak</strong> (x, execute). Bir çalışma ortamında bu üç hakkı herkese aynı biçimde vermek ya da herkesten almak işe yaramaz: maaş tablosunu muhasebe okumalı, ama yalnız sorumlusu değiştirebilmeli; geri kalanlar hiç görmemeli. Unix bu ihtiyacı en basit biçimde karşılamak için dünyayı her dosyaya göre üç sınıfa böler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Her dosyanın üç <strong>izin sınıfı</strong> vardır. <strong>Sahip</strong> (u, user): dosyanın sahibi olan kullanıcı. <strong>Grup</strong> (g, group): dosyanın grubuna üye olan kullanıcılar. <strong>Diğer</strong> (o, others): bu ikisine girmeyen herkes. Her sınıf için ayrı ayrı r, w ve x bitleri tutulur; böylece dokuz temel izin biti olur. <code>a</code> (all) üç sınıfın hepsi demektir.</p></div>
+
+<p><code>ls -l</code> çıktısının ilk sütunu bu dokuz biti, başında dosya türünü gösteren bir harfle birlikte yazar. <code>-rw-r-----</code> dizisini parçalara ayır: ilk karakter türdür (<code>-</code> sıradan dosya, <code>d</code> dizin, <code>l</code> sembolik bağ); sonra üçer karakterlik üç grup gelir: sahip <code>rw-</code>, grup <code>r--</code>, diğer <code>---</code>. Tire, o yerdeki iznin olmadığını gösterir. Öyleyse bu dosyayı sahibi okuyup yazabilir, grup üyeleri yalnız okuyabilir, geri kalanlar hiçbir şey yapamaz.</p>
+
+<h3>Çekirdek hangi üçlüye bakar?</h3>
+
+<p>Burada çok önemli ve az bilinen bir ayrıntı var. Çekirdek üç sınıfın izinlerini <strong>toplamaz</strong>; süreç için <strong>tek bir sınıf seçer</strong> ve yalnız onun üçlüsüne bakar. <code>path_resolution(7)</code> belgesine göre sürecin etkin kullanıcı kimliği dosyanın sahibine eşitse birinci üçlü kullanılır; değilse ve sürecin etkin grubu ya da ek gruplarından biri dosyanın grubuna eşitse ikinci üçlü; hiçbiri değilse üçüncü üçlü. Seçilen üçlü izin vermiyorsa erişim reddedilir; "belki grup izni verir" diye bir sonraki üçlüye geçilmez.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 350" role="img" aria-label="Erişim kararı akışı: önce ayrıcalık, sonra sahip, sonra grup, en son diğer sınıfı denetlenir; yalnız seçilen sınıfın izinleri kullanılır">
+  <rect class="sv-k" x="140" y="10" width="200" height="34" rx="8"/>
+  <text class="sv-t" x="240" y="32" text-anchor="middle">Süreç dosyaya erişmek istiyor</text>
+  <line class="sv-c" x1="240" y1="44" x2="240" y2="66"/>
+  <rect class="sv-l" x="40" y="66" width="320" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="91" text-anchor="middle">Ayrıcalıklı mı? (root, CAP_DAC_OVERRIDE)</text>
+  <line class="sv-cl" x1="360" y1="86" x2="400" y2="86"/>
+  <text class="sv-s" x="380" y="80" text-anchor="middle">evet</text>
+  <rect class="sv-a" x="400" y="62" width="220" height="48" rx="8"/>
+  <text class="sv-t" x="510" y="82" text-anchor="middle">İzin bitleri atlanır</text>
+  <text class="sv-s" x="510" y="100" text-anchor="middle">(x için en az bir x biti gerekir)</text>
+  <line class="sv-c" x1="200" y1="106" x2="200" y2="136"/>
+  <text class="sv-s" x="225" y="125" text-anchor="middle">hayır</text>
+  <rect class="sv-l" x="40" y="136" width="320" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="161" text-anchor="middle">Etkin UID = dosyanın sahibi mi?</text>
+  <line class="sv-cl" x1="360" y1="156" x2="400" y2="156"/>
+  <text class="sv-s" x="380" y="150" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="400" y="136" width="220" height="40" rx="8"/>
+  <text class="sv-t" x="510" y="161" text-anchor="middle">Yalnız sahip üçlüsü (u)</text>
+  <line class="sv-c" x1="200" y1="176" x2="200" y2="206"/>
+  <text class="sv-s" x="225" y="195" text-anchor="middle">hayır</text>
+  <rect class="sv-l" x="40" y="206" width="320" height="40" rx="8"/>
+  <text class="sv-t" x="200" y="231" text-anchor="middle">Gruplarından biri = dosyanın grubu mu?</text>
+  <line class="sv-cl" x1="360" y1="226" x2="400" y2="226"/>
+  <text class="sv-s" x="380" y="220" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="400" y="206" width="220" height="40" rx="8"/>
+  <text class="sv-t" x="510" y="231" text-anchor="middle">Yalnız grup üçlüsü (g)</text>
+  <line class="sv-c" x1="200" y1="246" x2="200" y2="276"/>
+  <text class="sv-s" x="225" y="265" text-anchor="middle">hayır</text>
+  <rect class="sv-m" x="100" y="276" width="200" height="36" rx="8"/>
+  <text class="sv-t" x="200" y="299" text-anchor="middle">Diğer üçlüsü (o)</text>
+  <text class="sv-s" x="320" y="336" text-anchor="middle">Seçilen üçlü yetmezse erişim reddedilir; sonraki üçlüye geçilmez.</text>
+</svg>
+<figcaption>Çekirdeğin erişim kararı. Ayrıcalıklı olmayan bir süreç için tek bir sınıf seçilir. Sahip, kendi üçlüsü boşsa grup ya da diğer izinlerinden yararlanamaz. ACL varsa sahip ile diğer arasına adlı kullanıcı ve grup girdileri eklenir (bölüm 8).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: sahibi okuyamayan, başkalarının okuyabildiği dosya</span>
+<p><strong>Soru:</strong> Bir dosyanın izni <code>-rw----r--</code> ya da <code>----r-----</code> olursa sahibi onu okuyabilir mi?</p>
+<p><strong>Adım 1.</strong> Kendi dosyanı oluştur ve izni ver. <code>chmod 0604</code>: sahip rw, grup hiçbir şey, diğer r.</p>
+<pre class="kod" data-ad="bash">cp not.txt ters.txt; chmod 0604 ters.txt; stat -c '%A %a %U %G %n' ters.txt
+cat ters.txt</pre>
+<pre class="cikti">-rw----r-- 604 kullanici kullanici ters.txt
+merhaba</pre>
+<p><strong>Adım 2.</strong> Sahibin üçlüsünde r var, okuma başarılı. Şimdi grubu <code>adm</code> yap (kullanıcı bu grubun üyesi) ve yalnız gruba okuma ver: <code>0040</code>.</p>
+<pre class="kod" data-ad="bash">chgrp adm ters.txt; chmod 0040 ters.txt; stat -c '%A %a %U %G %n' ters.txt
+cat ters.txt</pre>
+<pre class="cikti">----r----- 40 kullanici adm ters.txt
+cat: ters.txt: Permission denied</pre>
+<p><strong>Adım 3.</strong> Kullanıcı <code>adm</code> grubunda olduğu ve grup üçlüsü <code>r</code> içerdiği hâlde okuma reddedildi. Neden: etkin UID dosyanın sahibine eşit, çekirdek sahip üçlüsünü seçti (<code>---</code>) ve orada durdu.</p>
+<p><strong>Adım 4.</strong> İzni olağan değere döndür: <code>chmod 0640 ters.txt; cat ters.txt</code> yine <code>merhaba</code> yazdırdı.</p>
+<p><strong>Sonuç:</strong> İzinler bir "en geniş hak" toplamı değil, bir <strong>sınıf seçimi</strong>dir. Sahip dosyanın iznini her zaman geri değiştirebilir (çünkü <code>chmod</code> hakkı izin bitlerinden değil sahiplikten gelir), ama izin bitleri o anda ne diyorsa ona tabidir.</p></div>
+
+<h2 class="s">2. İki gösterim: simgesel ve sekizlik</h2>
+
+<p>Dokuz izin biti ve üç özel bit (bölüm 6) birlikte 12 bit eder. Bu 12 biti yazmanın iki yolu vardır. <strong>Simgesel</strong> gösterim <code>ls -l</code>'deki harflerdir: insan gözü için okunaklı. <strong>Sekizlik</strong> (octal) gösterim ise sayıdır: kısa, kesin ve betiklerde kullanışlı.</p>
+
+<p>Sekizliğin seçilmesinin nedeni Parça 1'den tanıdık: bir sekizlik hane tam <strong>üç bite</strong> karşılık gelir, her sınıfın da tam üç biti vardır. Öyleyse her sınıf tek bir haneyle yazılır. Bir üçlüde r'nin ağırlığı 4, w'nin 2, x'in 1'dir; hane, açık olan bitlerin ağırlıklarının toplamıdır. <code>rwx</code> = 4 + 2 + 1 = 7, <code>r-x</code> = 4 + 1 = 5, <code>rw-</code> = 6, <code>r--</code> = 4, <code>---</code> = 0.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Sekizlik izin</strong> soldan sağa dört hanedir: özel bitler, sahip, grup, diğer. Her hanede <strong>r = 4, w = 2, x = 1</strong>; özel hanede <strong>SUID = 4, SGID = 2, sticky = 1</strong>. Üç hane yazıldığında (ör. <code>755</code>) özel hane 0 sayılır. <code>stat -c '%a'</code> sekizlik, <code>stat -c '%A'</code> simgesel biçimi yazar; ikisi aynı bitlerin iki görünüşüdür.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 230" role="img" aria-label="12 bitlik izin kipi: özel bitler, sahip, grup ve diğer üçlüleri; 4755 örneğinde bitler 100 111 101 101 ve simgesel gösterim rwsr-xr-x">
+  <text class="sv-b" x="94" y="24" text-anchor="middle">özel</text>
+  <text class="sv-b" x="242" y="24" text-anchor="middle">sahip (u)</text>
+  <text class="sv-b" x="390" y="24" text-anchor="middle">grup (g)</text>
+  <text class="sv-b" x="538" y="24" text-anchor="middle">diğer (o)</text>
+  <rect class="sv-a" x="30" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="50" y="57" text-anchor="middle">SUID</text>
+  <rect class="sv-a" x="74" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="94" y="57" text-anchor="middle">SGID</text>
+  <rect class="sv-a" x="118" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="138" y="57" text-anchor="middle">t</text>
+  <rect class="sv-l" x="178" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="198" y="57" text-anchor="middle">r</text>
+  <rect class="sv-l" x="222" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="242" y="57" text-anchor="middle">w</text>
+  <rect class="sv-l" x="266" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="286" y="57" text-anchor="middle">x</text>
+  <rect class="sv-m" x="326" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="346" y="57" text-anchor="middle">r</text>
+  <rect class="sv-m" x="370" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="390" y="57" text-anchor="middle">w</text>
+  <rect class="sv-m" x="414" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="434" y="57" text-anchor="middle">x</text>
+  <rect class="sv-k" x="474" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="494" y="57" text-anchor="middle">r</text>
+  <rect class="sv-k" x="518" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="538" y="57" text-anchor="middle">w</text>
+  <rect class="sv-k" x="562" y="36" width="40" height="32" rx="4"/><text class="sv-t" x="582" y="57" text-anchor="middle">x</text>
+  <text class="sv-s" x="50" y="86" text-anchor="middle">4</text><text class="sv-s" x="94" y="86" text-anchor="middle">2</text><text class="sv-s" x="138" y="86" text-anchor="middle">1</text>
+  <text class="sv-s" x="198" y="86" text-anchor="middle">4</text><text class="sv-s" x="242" y="86" text-anchor="middle">2</text><text class="sv-s" x="286" y="86" text-anchor="middle">1</text>
+  <text class="sv-s" x="346" y="86" text-anchor="middle">4</text><text class="sv-s" x="390" y="86" text-anchor="middle">2</text><text class="sv-s" x="434" y="86" text-anchor="middle">1</text>
+  <text class="sv-s" x="494" y="86" text-anchor="middle">4</text><text class="sv-s" x="538" y="86" text-anchor="middle">2</text><text class="sv-s" x="582" y="86" text-anchor="middle">1</text>
+  <text class="sv-s" x="10" y="122" text-anchor="start">4755</text>
+  <rect class="sv-k" x="30" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="50" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="74" y="100" width="40" height="30" rx="4"/><text class="sv-t" x="94" y="120" text-anchor="middle">0</text>
+  <rect class="sv-k" x="118" y="100" width="40" height="30" rx="4"/><text class="sv-t" x="138" y="120" text-anchor="middle">0</text>
+  <rect class="sv-k" x="178" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="198" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="222" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="242" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="266" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="286" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="326" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="346" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="370" y="100" width="40" height="30" rx="4"/><text class="sv-t" x="390" y="120" text-anchor="middle">0</text>
+  <rect class="sv-k" x="414" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="434" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="474" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="494" y="120" text-anchor="middle">1</text>
+  <rect class="sv-k" x="518" y="100" width="40" height="30" rx="4"/><text class="sv-t" x="538" y="120" text-anchor="middle">0</text>
+  <rect class="sv-k" x="562" y="100" width="40" height="30" rx="4"/><text class="sv-b" x="582" y="120" text-anchor="middle">1</text>
+  <text class="sv-b" x="94" y="156" text-anchor="middle">4</text>
+  <text class="sv-b" x="242" y="156" text-anchor="middle">7</text>
+  <text class="sv-b" x="390" y="156" text-anchor="middle">5</text>
+  <text class="sv-b" x="538" y="156" text-anchor="middle">5</text>
+  <text class="sv-t" x="94" y="182" text-anchor="middle">(sahibin x'ine s)</text>
+  <text class="sv-t" x="242" y="182" text-anchor="middle">rws</text>
+  <text class="sv-t" x="390" y="182" text-anchor="middle">r-x</text>
+  <text class="sv-t" x="538" y="182" text-anchor="middle">r-x</text>
+  <text class="sv-s" x="320" y="216" text-anchor="middle">/usr/bin/passwd: 4755 = -rwsr-xr-x (her hane, üç bitin ağırlık toplamı)</text>
+</svg>
+<figcaption>12 bitlik izin kipi. Her üçlü bir sekizlik haneye karşılık gelir. Özel bitlerin kendi harf yeri yoktur; simgesel gösterimde ilgili sınıfın x yerine yazılır: SUID sahibin, SGID grubun, sticky diğerin x yerine.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Sekizlik</th><th>Simgesel</th><th>Tipik kullanım</th></tr>
+<tr><td><code>644</code></td><td><code>-rw-r--r--</code></td><td>Herkesin okuyabileceği sıradan dosya (ör. <code>/etc/passwd</code>)</td></tr>
+<tr><td><code>640</code></td><td><code>-rw-r-----</code></td><td>Yalnız sahip ve grubun okuyabileceği dosya (ör. <code>/etc/shadow</code>: root ve <code>shadow</code> grubu)</td></tr>
+<tr><td><code>600</code></td><td><code>-rw-------</code></td><td>Kişisel sır: özel anahtar, parola dosyası (Parça 18)</td></tr>
+<tr><td><code>755</code></td><td><code>-rwxr-xr-x</code> / <code>drwxr-xr-x</code></td><td>Herkesin çalıştırabileceği program; herkesin girebileceği dizin</td></tr>
+<tr><td><code>700</code></td><td><code>drwx------</code></td><td>Yalnız sahibin girebileceği dizin (ör. ev dizini, <code>/root</code>)</td></tr>
+<tr><td><code>4755</code></td><td><code>-rwsr-xr-x</code></td><td>SUID program (ör. <code>/usr/bin/passwd</code>)</td></tr>
+<tr><td><code>1777</code></td><td><code>drwxrwxrwt</code></td><td>Herkesin yazabildiği ama başkasının dosyasını silemediği dizin (<code>/tmp</code>)</td></tr>
+<tr><td><code>666</code> / <code>777</code></td><td><code>-rw-rw-rw-</code> / <code>drwxrwxrwx</code></td><td>Herkese yazılabilir: neredeyse her zaman yanlış</td></tr>
+</table></div>
+
+<h3><code>chmod</code>: izin kipini değiştirmek</h3>
+
+<p><code>chmod</code> iki dili de konuşur. Sekizlik verirsen kipin tamamını yeniden yazar: <code>chmod 640 dosya</code>. Simgesel verirsen yalnız söylediğin bitlere dokunur: <code>chmod g+w dosya</code> gruba yazma ekler, <code>chmod o-r</code> diğerden okumayı kaldırır, <code>chmod u=rw,g=r,o=</code> her sınıfı tam olarak ayarlar, <code>chmod a-w</code> herkesten yazmayı alır. Sekizlik, "sonuç tam olarak şu olsun" dediğin yerde; simgesel, "yalnız şunu değiştir, gerisi kalsın" dediğin yerde güvenlidir. Büyük <code>X</code> ise "yalnız dizinlere ya da zaten bir x biti olan dosyalara x ver" demektir; bir ağacın tamamına izin verirken düz dosyaları çalıştırılabilir yapmamak için kullanılır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: simgesel değişikliklerin sekizlik karşılığı</span>
+<p><strong>Soru:</strong> <code>not.txt</code> dosyasına art arda <code>u=rw,g=r,o=</code>, <code>g+w,o+r</code>, <code>a-w</code> ve son olarak <code>640</code> uygulanırsa her adımda izin ne olur?</p>
+<pre class="kod" data-ad="bash">chmod u=rw,g=r,o= not.txt; stat -c '%A %a %n' not.txt
+chmod g+w,o+r not.txt; stat -c '%A %a %n' not.txt
+chmod a-w not.txt; stat -c '%A %a %n' not.txt
+chmod 640 not.txt; stat -c '%A %a %n' not.txt</pre>
+<pre class="cikti">-rw-r----- 640 not.txt
+-rw-rw-r-- 664 not.txt
+-r--r--r-- 444 not.txt
+-rw-r----- 640 not.txt</pre>
+<p><strong>Adım 1.</strong> <code>u=rw</code> → 4 + 2 = 6; <code>g=r</code> → 4; <code>o=</code> → 0. Sonuç 640, çıktıyla aynı.</p>
+<p><strong>Adım 2.</strong> <code>g+w</code> grup hanesine 2 ekler: 4 → 6. <code>o+r</code> diğer hanesine 4 ekler: 0 → 4. Sahip dokunulmadan kalır. Sonuç 664.</p>
+<p><strong>Adım 3.</strong> <code>a-w</code> üç hanenin her birinden 2'yi (varsa) siler: 6 → 4, 6 → 4, 4 → 4. Sonuç 444. Bu, bit düzeyinde Parça 1'deki "VE DEĞİL" işlemidir: <code>0o664 &amp; ~0o222 = 0o444</code>.</p>
+<p><strong>Adım 4.</strong> Sekizlik <code>640</code> eski durumdan bağımsız olarak kipin tamamını yazar.</p>
+<p><strong>Sonuç:</strong> Simgesel değişiklik bitleri açıp kapatır (VEYA ve VE DEĞİL), sekizlik değişiklik kipi baştan atar. Python'daki <code>stat.filemode()</code> işlevi aynı dönüşümü yapar; <code>0o100750</code> için <code>-rwxr-x---</code> döndürdüğünü kontrol ettik.</p></div>
+
+<h2 class="s">3. Sahiplik: <code>chown</code> ve <code>chgrp</code></h2>
+
+<p>İzin bitleri "sahip ne yapabilir, grup ne yapabilir" der; ama sahibin ve grubun <em>kim</em> olduğu ayrı bir bilgidir. <code>chown kullanici:grup dosya</code> ikisini birden, <code>chgrp grup dosya</code> yalnız grubu değiştirir. Bu iki komutun kurallarını anlamak, kimlik sisteminin neden kandırılamadığını anlamaktır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>chown(2)</code> belgesine göre bir dosyanın <strong>sahibini</strong> yalnız ayrıcalıklı bir süreç (Linux'ta <code>CAP_CHOWN</code> yeteneği olan) değiştirebilir. Dosyanın sahibi ise <strong>grubu</strong>, kendisinin <strong>üyesi olduğu</strong> herhangi bir gruba çevirebilir. Ayrıcalıksız bir kullanıcı çalıştırılabilir bir dosyanın sahibini ya da grubunu değiştirdiğinde SUID ve SGID bitleri temizlenir; Linux 2.2.13'ten beri root da bu konuda öbür kullanıcılar gibi işlem görür.</p></div>
+
+<p>Neden sıradan kullanıcı dosyasını başkasına "hediye" edemiyor? İki nedeni var. Birincisi kotalar: dosyanı başkasının üstüne yazarsan diski onun hakkından doldurursun. İkincisi daha tehlikeli: kendi yazdığın bir programın sahibini root yapıp SUID bitini açabilseydin, o program herkes için root olarak çalışırdı. Grup değiştirmede "üye olmak" şartı da aynı mantıktır: üyesi olmadığın bir grubun haklarını dosyalarına taşıyamazsın.</p>
+
+<pre class="kod" data-ad="bash">chgrp adm not.txt; stat -c '%A %a %U %G %n' not.txt
+chgrp shadow not.txt
+chown root not.txt</pre>
+<pre class="cikti">-rw-r----- 640 kullanici adm not.txt
+chgrp: changing group of 'not.txt': Operation not permitted
+chown: changing ownership of 'not.txt': Operation not permitted</pre>
+
+<p>Kullanıcı <code>adm</code> grubunun üyesi olduğu için ilk komut başarılı oldu. <code>shadow</code> grubuna üye değil, ikinci komut reddedildi. Üçüncü komut, sahibi root yapmaya çalıştı ve <code>CAP_CHOWN</code> olmadığı için reddedildi. <code>chgrp</code> ile seçebileceğin gruplar, Parça 11'deki <code>id</code> çıktısının grup listesidir.</p>
+
+<h3>Root izin bitlerine takılmaz</h3>
+
+<p>Parça 5'te root'un gücünün yeteneklere bölündüğünü görmüştük. Dosya izinleri açısından belirleyici olan <code>CAP_DAC_OVERRIDE</code>'dır: <code>path_resolution(7)</code> belgesine göre bu yetenek bütün izin denetimini atlar, yalnız çalıştırma için dosyanın üç x bitinden en az birinin açık olmasını ister. Bunu gerçek root olmadan, Parça 7'deki kullanıcı ad alanıyla gördük: <code>unshare -r</code> içinde süreç kendini UID 0 görür ve yalnız kendi dosyalarına karşı bu yeteneği taşır.</p>
+
+<pre class="kod" data-ad="bash">echo kilitli > kasa.txt; chmod 000 kasa.txt; stat -c '%A %a %U %G %n' kasa.txt; cat kasa.txt
+unshare -r bash -c 'id -u; stat -c "%A %a %U %G %n" kasa.txt; cat kasa.txt'</pre>
+<pre class="cikti">---------- 0 kullanici kullanici kasa.txt
+cat: kasa.txt: Permission denied
+0
+---------- 0 root root kasa.txt
+kilitli</pre>
+
+<p>Dışarıda sahibi bile <code>000</code> izinli dosyayı okuyamadı. Ad alanının içinde aynı dosya "root'a ait" görünüyor ve okunuyor. Bu gerçek root değildir: ad alanındaki 0, dışarıdaki senin UID'ine eşlenmiştir ve bu güç yalnız o eşlemenin kapsadığı dosyalara uzanır. Nitekim deneyde grubu <code>adm</code> olan bir dosyayı ad alanı root'u da okuyamadı; çekirdek, dosyanın sahibi <em>ve</em> grubu ad alanında eşlenmiş değilse bu yeteneği tanımıyor. Ders şudur: dosya izinleri sıradan kullanıcılar arasındaki duvardır; <strong>root'a karşı koruma sağlamaz</strong>. Root'tan korumak gereken veri için şifreleme (kripto bloğu) gerekir.</p>
+
+<h2 class="s">4. Dizin izinleri: bir dizin de bir dosyadır</h2>
+
+<p>Parça 8'deki "her şey dosyadır" ilkesi burada somutlaşır. Bir dizin, içinde <strong>ad → düğüm numarası</strong> (inode) eşleşmeleri tutan özel bir dosyadır. Dosyanın içeriği, sahibi ve izinleri düğümde (inode) durur; adı ise dizinin içindeki bir satırdır. Bu ayrımı kavrayınca dizin izinlerinin hepsi kendiliğinden anlaşılır, çünkü r, w, x dizinde de yine "bu dosyayı oku, yaz, çalıştır" demektir; yalnız o dosya bir ad listesidir.</p>
+
+<div class="tablo"><table>
+<tr><th>Bit</th><th>Sıradan dosyada</th><th>Dizinde</th></tr>
+<tr><td><code>r</code></td><td>İçeriği okumak</td><td>Ad listesini okumak (<code>ls</code> adları görür)</td></tr>
+<tr><td><code>w</code></td><td>İçeriği değiştirmek</td><td>Ad listesini değiştirmek: dosya <strong>oluşturmak, silmek, yeniden adlandırmak</strong> (x ile birlikte)</td></tr>
+<tr><td><code>x</code></td><td>Program olarak çalıştırmak</td><td>"Arama" izni: dizine girmek (<code>cd</code>), içindeki bir ada ulaşıp onun düğümüne geçmek</td></tr>
+</table></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 270" role="img" aria-label="Dizin, ad ile düğüm numarası eşleşmelerini tutar; dosyanın izinleri ve içeriği düğümdedir. Silmek dizine yazmaktır, içeriği değiştirmek dosyaya yazmaktır">
+  <rect class="sv-l" x="20" y="20" width="250" height="130" rx="10"/>
+  <text class="sv-b" x="145" y="44" text-anchor="middle">dizin kutu/  dr-xr-xr-x</text>
+  <rect class="sv-k" x="40" y="60" width="210" height="32" rx="4"/>
+  <text class="sv-t" x="145" y="81" text-anchor="middle">"belge" → düğüm 1201</text>
+  <rect class="sv-k" x="40" y="100" width="210" height="32" rx="4"/>
+  <text class="sv-t" x="145" y="121" text-anchor="middle">"rapor" → düğüm 1202</text>
+  <rect class="sv-m" x="380" y="40" width="240" height="96" rx="10"/>
+  <text class="sv-b" x="500" y="64" text-anchor="middle">düğüm 1201 (örnek)</text>
+  <text class="sv-t" x="500" y="86" text-anchor="middle">sahip, grup, -rw-r--r--</text>
+  <text class="sv-t" x="500" y="108" text-anchor="middle">boyut, zamanlar</text>
+  <text class="sv-s" x="500" y="126" text-anchor="middle">veri blokları: "veri"</text>
+  <line class="sv-cl" x1="250" y1="76" x2="380" y2="88"/>
+  <text class="sv-b" x="145" y="180" text-anchor="middle">Silmek, adlandırmak, oluşturmak</text>
+  <text class="sv-t" x="145" y="200" text-anchor="middle">= dizinin listesini yazmak</text>
+  <text class="sv-t" x="145" y="220" text-anchor="middle">→ dizinde w ve x gerekir</text>
+  <text class="sv-b" x="500" y="180" text-anchor="middle">İçeriği değiştirmek</text>
+  <text class="sv-t" x="500" y="200" text-anchor="middle">= düğümün verisini yazmak</text>
+  <text class="sv-t" x="500" y="220" text-anchor="middle">→ dosyada w gerekir</text>
+  <text class="sv-s" x="320" y="256" text-anchor="middle">Bu örnekte dizinde w yok: belge değiştirilebilir ama silinemez.</text>
+</svg>
+<figcaption>Dosyanın adı dizinde, izinleri ve içeriği düğümde durur. Bir dosyayı silmek onun içeriğine değil, dizinin listesine dokunmaktır. Bu yüzden silme yetkisi dosyanın izninden değil, dizinin izninden gelir. Düğüm numaraları örnektir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Silme yetkisi dizinden gelir.</strong> Bir dosyayı silmek ya da yeniden adlandırmak için o dosyanın bulunduğu dizinde <strong>w ve x</strong> izni gerekir; dosyanın kendi izni bu kararda rol oynamaz (tek istisna sticky bitli dizinlerdir, bölüm 6). Tersine, bir dosyanın içeriğini değiştirmek için dosyada w gerekir, dizinin w'si gerekmez. Bir yol üzerindeki <strong>her dizinde x</strong> olmadan o yolun sonundaki dosyaya ulaşılamaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: salt okunur dosya silinir, salt okunur dizindeki dosya silinmez</span>
+<p><strong>Soru:</strong> Dosyadan w'yi kaldırmak mı, dizinden w'yi kaldırmak mı silmeyi engeller?</p>
+<p><strong>Adım 1.</strong> Dizin yazılabilir, dosya salt okunur (444). Sil:</p>
+<pre class="kod" data-ad="bash">mkdir kutu; echo veri > kutu/belge; chmod a-w kutu/belge; stat -c '%A %a %n' kutu kutu/belge
+rm -f kutu/belge; ls kutu</pre>
+<pre class="cikti">drwxr-xr-x 755 kutu
+-r--r--r-- 444 kutu/belge</pre>
+<p><strong>Adım 2.</strong> <code>rm</code> hata vermedi ve <code>ls kutu</code> boş liste döndürdü (çıktıda satır yok): dosya silindi. <code>-f</code> olmasaydı <code>rm</code> yalnız "yazmaya karşı korumalı dosyayı silmek istiyor musun?" diye sorardı; bu bir nezaket sorusudur, çekirdek kuralı değil.</p>
+<p><strong>Adım 3.</strong> Şimdi tersini yap: dosya yazılabilir (644), dizinden sahibin w'si kaldırılmış (555).</p>
+<pre class="kod" data-ad="bash">echo veri > kutu/belge; chmod u-w kutu; stat -c '%A %a %n' kutu kutu/belge
+rm -f kutu/belge
+mv kutu/belge kutu/yeni-ad
+echo ek >> kutu/belge; cat kutu/belge</pre>
+<pre class="cikti">dr-xr-xr-x 555 kutu
+-rw-r--r-- 644 kutu/belge
+rm: cannot remove 'kutu/belge': Permission denied
+mv: cannot move 'kutu/belge' to 'kutu/yeni-ad': Permission denied
+veri
+ek</pre>
+<p><strong>Adım 4.</strong> Silme ve yeniden adlandırma reddedildi; ikisi de dizinin listesini değiştirir. Ama içeriğe ekleme yapılabildi, çünkü bu düğümün verisine yazmaktır ve dosyada w var.</p>
+<p><strong>Sonuç:</strong> "Dosyamı salt okunur yaptım, artık silinemez" yanlıştır; silinmesini engellemek istiyorsan dizine bakmalısın. Tersine, içeriğini korumak istediğin dosyanın w izni kapalı olmalı; dizinin izni içeriği korumaz.</p></div>
+
+<h3>r ile x dizinde ayrı şeylerdir</h3>
+
+<p>Dizinde <strong>r var x yok</strong> ise süreç ad listesini okuyabilir ama hiçbir ada "geçemez": <code>ls</code> adları yazar, <code>ls -l</code> ise düğümlere ulaşamadığı için izinleri, boyutu, tarihi soru işaretiyle doldurur; <code>cd</code> ve dosyayı okumak reddedilir. Dizinde <strong>x var r yok</strong> ise tersi olur: içeriği listeleyemezsin, ama adını bildiğin dosyaya ulaşabilirsin. Bu ikinci düzen bazen "adını bilen girer" türü dizinlerde bilerek kullanılır; ama ad tahmin edilebiliyorsa bir güvenlik önlemi sayılmaz. Bu davranışların ikisini de Kendi makinende dene bölümünde çalıştıracaksın.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Bir dosyayı gizli tutmak için dosyaya 600 vermek yeter" sanıp üst dizinleri unutmak, ya da tersine "üst dizin 700, içerik ne olursa olsun güvende" sanmak.</strong> Dosyaya ulaşmak için yoldaki her dizinde x gerekir; üst dizin 700 ise başkaları dosyaya ulaşamaz, 600 kontrolü ikinci duvardır. Ama dizin izni sonradan genişletilir, dosya bir yedekle başka yere kopyalanır ya da arşivlenirken izinler korunur. Doğrusu iki duvarı birden kurmaktır: sır taşıyan dosya 600, onu tutan dizin 700. Yolun tamamını <code>namei -l /yol/dosya</code> ile tek komutta okuyabilirsin.</p></div>
+
+<h2 class="s">5. <code>umask</code>: yeni dosya hangi izinle doğar?</h2>
+
+<p>Her yeni dosyaya tek tek <code>chmod</code> yapmak hem yorucu hem unutulmaya açıktır. Bu yüzden her sürecin bir <strong>umask</strong>'ı (kullanıcı dosya oluşturma maskesi) vardır: yeni dosyalardan ve dizinlerden <strong>kaldırılacak</strong> izinlerin listesi. Program dosyayı oluştururken bir "istenen kip" verir; olağan programlar dosya için <code>0666</code>, dizin için <code>0777</code> ister. Çekirdek bu istekten umask'taki bitleri siler.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Yeni kip = istenen kip VE (DEĞİL umask)</strong>, yani <code>mode &amp; ~umask</code>. <code>umask(2)</code> belgesinin örneği: <code>0666 &amp; ~022 = 0644</code>, yani <code>rw-r--r--</code>. Belgeye göre tipik varsayılan <code>022</code>'dir (grup ve diğerden yazma kaldırılır). Dosyalar 0666 ile istendiği için umask ne olursa olsun yeni sıradan dosya <strong>çalıştırılabilir doğmaz</strong>; x'i sonradan <code>chmod +x</code> ile verirsin. Üst dizinde <strong>varsayılan ACL</strong> varsa umask yok sayılır ve izin o ACL'den gelir (bölüm 7).</p></div>
+
+<p>umask bir süreç özelliğidir: kabuk onu tutar, kabuğun başlattığı her program miras alır (Parça 5'teki <code>fork</code> mirası). Linux 4.7'den beri herhangi bir sürecin umask'ını <code>/proc/&lt;pid&gt;/status</code> dosyasındaki <code>Umask:</code> satırında görebilirsin. Debian tabanlı sistemlerde oturum açılırken varsayılanı <code>pam_umask</code> modülü ve <code>/etc/login.defs</code> belirler; kullanıcı başına özel grup kullanan yapılandırmalarda <code>002</code> da görebilirsin. systemd hizmetleri ise birim dosyasındaki <code>UMask=</code> ayarıyla kendi değerlerini alır (Parça 14).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: dört umask, dört sonuç ve bir tuzak</span>
+<p><strong>Soru:</strong> umask 022, 077, 027 ve 002 iken yeni dosya ve dizin hangi izinle doğar? Hesap neden çıkarma ile yapılmaz?</p>
+<p><strong>Adım 1.</strong> Her umask'ı alt kabukta (parantez içinde) dene; böylece ana kabuğun umask'ı değişmez.</p>
+<pre class="kod" data-ad="bash">for m in 022 077 027 002; do
+  (umask $m; touch dosya-$m; mkdir dizin-$m; stat -c '%A %a %n' dosya-$m dizin-$m)
+done</pre>
+<pre class="cikti">-rw-r--r-- 644 dosya-022
+drwxr-xr-x 755 dizin-022
+-rw------- 600 dosya-077
+drwx------ 700 dizin-077
+-rw-r----- 640 dosya-027
+drwxr-x--- 750 dizin-027
+-rw-rw-r-- 664 dosya-002
+drwxrwxr-x 775 dizin-002</pre>
+<p><strong>Adım 2.</strong> Aynı hesabı Python ile bit işlemi olarak yap.</p>
+<pre class="kod" data-ad="python3">for m in (0o022, 0o077, 0o027, 0o002):
+    print(f'umask {m:03o}: dosya {0o666 &amp; ~m:03o}  dizin {0o777 &amp; ~m:03o}')
+print('cikarma ile 0o666-0o077 =', oct(0o666-0o077), ' VE ile =', oct(0o666 &amp; ~0o077))</pre>
+<pre class="cikti">umask 022: dosya 644  dizin 755
+umask 077: dosya 600  dizin 700
+umask 027: dosya 640  dizin 750
+umask 002: dosya 664  dizin 775
+cikarma ile 0o666-0o077 = 0o567  VE ile = 0o600</pre>
+<p><strong>Adım 3.</strong> Python'un dört satırı kabuğun gerçek sonuçlarıyla birebir aynı. 027 en ilginç olanı: grup yazamaz, diğer hiçbir şey yapamaz; sunucularda sık önerilen değerdir.</p>
+<p><strong>Adım 4.</strong> Son satır tuzağı gösteriyor: 666 − 077 aritmetik olarak <code>567</code> eder (<code>-r-xrw-rwx</code>, saçma bir izin), oysa doğru sonuç <code>600</code>. umask "çıkar" değil "bu bitleri kapat" der; dosyada zaten kapalı olan x bitlerini kapatmak hiçbir şey değiştirmez, çıkarma ise bunu yanlışlıkla ödünç alarak yapar.</p>
+<p><strong>Sonuç:</strong> Hesabı her zaman hane hane "maskede açık olan biti sil" diye yap ya da <code>mode &amp; ~umask</code> ile Python'da doğrula. 022 ve 002 gibi değerlerde çıkarma tesadüfen doğru çıkar, bu yüzden hata uzun süre fark edilmez.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Bir betikte sır içeren dosyayı önce oluşturup sonra <code>chmod 600</code> yapmak.</strong> Dosya umask 022 ile 644 doğar ve <code>chmod</code> gelene kadar geçen kısa sürede herkes okuyabilir; dosyayı o anda açan bir süreç, izin sonradan değişse de açtığı tanıtıcıyla okumayı sürdürür. Doğrusu dosyayı baştan dar izinle doğurmaktır: betikte <code>umask 077</code> ile başlamak ya da alt kabukta <code>(umask 077; komut &gt; sir.txt)</code>, geçici dosyalar için <code>mktemp</code> kullanmak (kod rafı Parça 18); <code>mktemp</code> dosyayı zaten 600 ile oluşturur.</p></div>
+
+<h2 class="s">6. Özel bitler: SUID, SGID ve sticky</h2>
+
+<p>Parçanın sorusuna dönelim: <code>/etc/shadow</code> izni <code>-rw-r-----</code>, sahibi root, grubu <code>shadow</code>. Sıradan kullanıcı onu okuyamaz bile. Ama <code>passwd</code> komutuyla parolasını değiştirebiliyor. Bu nasıl oluyor? Cevap <code>/usr/bin/passwd</code>'nin izninde: <code>-rwsr-xr-x</code>. Sahibin x yerinde bir <code>s</code> var.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>SUID</strong> (set-user-ID, 4000): Çalıştırılabilir bir dosyada bu bit açıksa, <code>execve(2)</code> belgesinin ifadesiyle onu çalıştıran sürecin <strong>etkin kullanıcı kimliği dosyanın sahibininkine çevrilir</strong>. <strong>SGID</strong> (set-group-ID, 2000): dosyada etkin grup kimliği dosyanın grubuna çevrilir; <strong>dizinde</strong> ise <code>inode(7)</code>'ye göre o dizinde oluşturulan dosyalar grubu, oluşturan süreçten değil dizinden alır ve alt dizinler SGID bitini miras alır. <strong>Sticky</strong> (1000): dizinde, içindeki bir dosyayı yalnız <strong>dosyanın sahibi, dizinin sahibi ya da ayrıcalıklı bir süreç</strong> silebilir veya yeniden adlandırabilir.</p></div>
+
+<p>Parça 5'teki kimlik ayrımı burada işe yarıyor. Sen <code>passwd</code> çalıştırdığında sürecin <strong>gerçek</strong> UID'i senin numaran olarak kalır, <strong>etkin</strong> UID'i 0 olur. Çekirdek dosya erişimlerinde etkin kimliğe baktığı için program <code>/etc/shadow</code>'a yazabilir; program da gerçek kimliğe bakarak "bu kişi yalnız kendi parolasını değiştirebilir" kuralını kendi uygular. Yani SUID, "bu işi yapmak için root gücünü ödünç ver, ama yalnız bu programın denetimi altında" demektir. Bütün güvenlik o programın kusursuz yazılmış olmasına dayanır.</p>
+
+<p>Simgesel gösterimde özel bitlerin kendi yeri yoktur; ilgili sınıfın x yerine yazılırlar. Küçük harf, altında x de var demektir; büyük harf x yok demektir. Büyük harf çoğu zaman bir yanlışlığın işaretidir: çalıştırılamayan bir dosyada SUID'in anlamı yoktur.</p>
+
+<div class="tablo"><table>
+<tr><th>Bit</th><th>Sekizlik</th><th>Nerede yazılır</th><th>x varken / yokken</th><th>Sistemdeki örnek</th></tr>
+<tr><td>SUID</td><td>4000</td><td>Sahibin x yeri</td><td><code>s</code> / <code>S</code></td><td><code>/usr/bin/passwd</code>, <code>/usr/bin/sudo</code> (4755)</td></tr>
+<tr><td>SGID</td><td>2000</td><td>Grubun x yeri</td><td><code>s</code> / <code>S</code></td><td><code>/usr/bin/crontab</code> (grup <code>crontab</code>), <code>/var/log/journal</code> dizini (2755)</td></tr>
+<tr><td>Sticky</td><td>1000</td><td>Diğerin x yeri</td><td><code>t</code> / <code>T</code></td><td><code>/tmp</code> (1777)</td></tr>
+</table></div>
+
+<p>SGID programlar SUID'den daha dar bir ödünç verir: root'un değil bir grubun hakkını. Bu makinede <code>chage</code> ve <code>unix_chkpwd</code> <code>shadow</code> grubuyla SGID'dir: <code>/etc/shadow</code>'u okumaları gerekir, root olmaları gerekmez: en az yetki ilkesi (Parça 11). Dizinlerdeki SGID ortak klasörlerde işe yarar: ekibin dosyaları ekibin grubuyla doğar.</p>
+
+<h3>Çekirdeğin SUID'e koyduğu frenler</h3>
+
+<p>SUID bu kadar güçlü olduğu için çekirdek onu birkaç yerde kendiliğinden devre dışı bırakır. Bunları bilmek, savunmanın hangi düğmelerle yapıldığını bilmektir:</p>
+
+<p><strong>Değişince silinir.</strong> <code>chown(2)</code>'ye göre ayrıcalıksız bir süreç dosyanın sahibini ya da grubunu değiştirirse SUID ve SGID temizlenir. POSIX <code>write()</code> tanımı da başarılı bir yazmadan sonra bu bitlerin temizlenebileceğini söyler; Linux bunu yapar. Böylece SUID bir programın içeriği değiştirilip bit korunamaz. <strong>Betiklerde yok sayılır.</strong> <code>execve(2)</code>'ye göre Linux, yorumlanan betiklerdeki SUID ve SGID bitlerini yok sayar. <strong>Bazı koşullarda yok sayılır.</strong> Aynı belgeye göre dosya sistemi <code>nosuid</code> seçeneğiyle bağlanmışsa (Parça 8), süreçte <code>no_new_privs</code> açıksa (Parça 5) ya da süreç <code>ptrace</code> ile izleniyorsa bitler etkisizdir.</p>
+
+<p>İlk freni kendi dosyanda gözle gördük. <code>/usr/bin/true</code>'nun bir kopyasını <code>/tmp</code> altına aldık; kopya bizim olduğu için SUID biti bize hiçbir ek güç vermez (etkin kimlik zaten bizim kimliğimize çevrilir), yani deney zararsızdır:</p>
+
+<pre class="kod" data-ad="bash">cp /usr/bin/true benim-true; chmod 4755 benim-true; stat -c '%A %a %U %G %n' benim-true
+chmod u-x benim-true; stat -c '%A %a %n' benim-true
+chmod 4755 benim-true; chgrp adm benim-true; stat -c '%A %a %U %G %n' benim-true
+chmod 4755 benim-true; echo >> benim-true; stat -c '%A %a %n' benim-true</pre>
+<pre class="cikti">-rwsr-xr-x 4755 kullanici kullanici benim-true
+-rwSr-xr-x 4655 benim-true
+-rwxr-xr-x 755 kullanici adm benim-true
+-rwxr-xr-x 755 benim-true</pre>
+
+<p>Birinci satır küçük <code>s</code>: SUID ve x birlikte. İkinci satır büyük <code>S</code>: sahibin x'i kaldırılınca SUID kaldı ama çalıştırma yok; sekizlikte 4655. Üçüncü satırda yalnız grubu değiştirdik ve SUID kendiliğinden düştü: kip 755. Dördüncü satırda dosyaya bir bayt ekledik, SUID yine düştü.</p>
+
+<h3>Yanlış SUID neden kritik, nasıl bulunur, nasıl kapatılır?</h3>
+
+<p>Bir SUID root programı, onu çalıştıran herkesin eline birkaç saniyeliğine root kimliği verir. Programın kendi denetimleri dışında hiçbir duvar yoktur. Bu yüzden şu durumların her biri ciddi bir yanlış yapılandırmadır: <strong>gereksiz SUID</strong> (bir dosya yöneticisi, kabuk, metin düzenleyici ya da yorumlayıcı gibi kullanıcıya genel komut çalıştırma ya da dosya yazma imkânı veren bir programın SUID root yapılması); <strong>yazılabilir SUID</strong> (sahibinden başkasının değiştirebildiği SUID dosya ya da onu tutan yazılabilir dizin); <strong>paketsiz SUID</strong> (hiçbir paketin kurmadığı, el ile ya da bilinmeyen biçimde konmuş SUID dosya). Bu tür bir dosyanın kötüye nasıl kullanılacağı bu rafın konusu değildir; savunmacı için bilmesi gereken, onu <em>bulmak</em> ve <em>kapatmaktır</em>.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>SUID/SGID envanteri ve savunma.</strong> <strong>1.</strong> Listeyi çıkar: <code>find / -xdev -perm -4000 -type f</code> (SUID) ve <code>-perm -2000</code> (SGID); <code>-xdev</code> başka dosya sistemlerine geçmez. <strong>2.</strong> Her dosyayı bir pakete eşle: <code>dpkg -S /yol</code> (RPM tabanlı sistemde <code>rpm -qf</code>). Paketsiz çıkan her SUID soruşturulur. <strong>3.</strong> Paketli olanların içeriğini Parça 10'daki bütünlük denetimiyle (<code>dpkg --verify</code>) doğrula. <strong>4.</strong> Gerekmeyeni kapat: kullanılmayan paketi kaldır ya da bitini kaldır (<code>chmod u-s</code>); Debian'da kalıcı olması için <code>dpkg-statoverride</code> kullanılır. <strong>5.</strong> Kullanıcıların yazabildiği bölümleri (<code>/tmp</code>, <code>/home</code>, çıkarılabilir diskler) <code>nosuid</code> ile bağla (Parça 8). <strong>6.</strong> Listeyi bir taban dosyası olarak sakla ve düzenli karşılaştır (kod rafı Parça 18'deki bütünlük izleyicisi mantığı); yeni bir SUID dosya bir olaydır.</p></div>
+
+<p>SUID'in modern bir alternatifi de var: Parça 5'teki <strong>dosya yetenekleri</strong>. Bir programa root'un tamamı yerine yalnız gereken tek parça verilir. Bu makinede <code>getcap -r /usr/bin /usr/sbin</code> yalnız <code>/usr/bin/fping cap_net_raw=ep</code> satırını yazdı: ağ tanılama aracı ham soket açabilmek için root değil, yalnız <code>CAP_NET_RAW</code> taşıyor. Envantere yetenekli dosyaları da ekle; aşırı geniş bir yetenek (ör. <code>cap_dac_override</code> ya da <code>cap_setuid</code>) yanlış SUID kadar tehlikelidir.</p>
+
+<h3>Sticky bit: <code>/tmp</code> neden çalışıyor?</h3>
+
+<p><code>/tmp</code> herkesin dosya bırakabileceği bir yer olmalı; bu yüzden diğer sınıfında w ve x var. Ama bölüm 4'teki kurala göre dizinde w olan herkes, içindeki <em>her</em> dosyayı silebilir. Sticky bit tam bu deliği kapatır: <code>drwxrwxrwt</code>. Herkes dosya oluşturur, ama yalnız kendi dosyasını (ya da dizinin sahibi root, ya da ayrıcalıklı süreç) siler. CIS kıyaslamalarının Debian için önerdiği denetimlerden biri de herkese yazılabilir bütün dizinlerde sticky bitin açık olmasıdır. Sticky bitin dosyalardaki eski anlamı Linux'ta kullanılmaz.</p>
+
+<h2 class="s">7. Erişim denetim listeleri (ACL)</h2>
+
+<p>Üç sınıflı model basittir ama bir yerde tıkanır: dosyanın tek bir grubu vardır. Muhasebe grubu okusun, denetçi Ayşe de okusun, ama Ayşe muhasebe grubuna girmesin istiyorsan klasik izinlerle bunu yapamazsın. <strong>Erişim denetim listesi</strong> (ACL, access control list) dosyaya adlı ek girdiler ekler: "şu kullanıcıya şu izin", "şu gruba şu izin". Linux'ta bu POSIX ACL'dir ve <code>setfacl</code> ile yazılıp <code>getfacl</code> ile okunur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><code>acl(5)</code>'e göre bir ACL'de altı tür girdi olabilir: sahip (<code>user::</code>), adlı kullanıcı (<code>user:ad:</code>), dosyanın grubu (<code>group::</code>), adlı grup (<code>group:ad:</code>), <strong>maske</strong> (<code>mask::</code>) ve diğer (<code>other::</code>). Maske, adlı kullanıcılara, dosyanın grubuna ve adlı gruplara verilebilecek <strong>en geniş hakkı</strong> sınırlar; sahip ve diğer maskeden etkilenmez. ACL'de maske varsa <code>ls -l</code>'deki grup üçlüsü artık maskeyi gösterir ve <code>chmod g…</code> maskeyi değiştirir. Denetim sırası: sahip, adlı kullanıcı, gruplar, diğer; ilk eşleşen sınıf karar verir (Şekil 1'deki mantığın genişlemesi).</p></div>
+
+<p>Kendi dosyanda bir sistem grubuna (<code>adm</code>) okuma izni verelim:</p>
+
+<pre class="kod" data-ad="bash">echo gizli > rapor.txt; chmod 600 rapor.txt; ls -l rapor.txt
+setfacl -m g:adm:r rapor.txt; ls -l rapor.txt
+getfacl rapor.txt</pre>
+<pre class="cikti">-rw------- 1 kullanici kullanici 6 Oct 16 16:52 rapor.txt
+-rw-r-----+ 1 kullanici kullanici 6 Oct 16 16:52 rapor.txt
+# file: rapor.txt
+# owner: kullanici
+# group: kullanici
+user::rw-
+group::---
+group:adm:r--
+mask::r--
+other::---
+</pre>
+
+<p>İzin sütununun sonundaki <code>+</code>, dosyada klasik bitlerin ötesinde bir ACL olduğunun işaretidir; bunu görmeyen bir yönetici dosyanın gerçek erişim listesini kaçırır. Grup üçlüsü artık <code>r--</code> görünüyor, ama bu dosyanın grubu (<code>group::---</code>) değil, <strong>maskedir</strong>. Şimdi maskenin gücünü gör:</p>
+
+<pre class="kod" data-ad="bash">chmod g-r rapor.txt; getfacl rapor.txt
+setfacl -b rapor.txt; ls -l rapor.txt</pre>
+<pre class="cikti"># file: rapor.txt
+# owner: kullanici
+# group: kullanici
+user::rw-
+group::---
+group:adm:r--	#effective:---
+mask::---
+other::---
+
+-rw------- 1 kullanici kullanici 6 Oct 16 16:52 rapor.txt</pre>
+
+<p><code>chmod g-r</code> maskeyi <code>---</code> yaptı. <code>adm</code> girdisi hâlâ <code>r--</code> yazıyor ama yanında <code>#effective:---</code> var: maske onu sıfırladı. Bu tasarım bilinçlidir; ACL'den habersiz bir program ya da yönetici <code>chmod go-rwx</code> yaptığında, ek girdiler de gerçekten etkisiz kalsın diye. <code>setfacl -b</code> bütün ek girdileri sildi ve <code>+</code> kayboldu.</p>
+
+<p>Dizinlere <strong>varsayılan ACL</strong> (<code>d:</code> önekli girdiler) de konabilir: dizinde oluşturulan her yeni dosya bu listeyi miras alır ve <code>umask(2)</code>'ye göre umask yok sayılır. Ortak klasörlerde SGID dizinin daha esnek bir karşılığıdır. ACL'yi destekleyen dosya sistemi gerekir; ext4 ve XFS'te olağan olarak açıktır. Windows'taki NTFS izinleri de bir ACL modelidir ama ayrıntıları farklıdır (Parça 61).</p>
+
+<h2 class="s">Kendi makinende dene: izinleri okumak, umask, dizin, SUID envanteri ve ACL</h2>
+
+<p>Bu alıştırma yalnız kendi Linux makinende ya da laboratuvar VM'inde, yalnız <code>/tmp/yazar/siber-12/lab</code> altındaki kendi dosyalarınla yapılır; root gerekmez ve hiçbir sistem dosyası değişmez. Sistem dosyalarına yalnız <strong>okuyarak</strong> bakılır. Çıktılar Windows 11 üstünde WSL2'de çalışan Kali Linux'tan alındı; kabuğun umask'ı 022 idi. Senin Debian ya da Ubuntu VM'inde kullanıcı adları, SUID listesi ve paket adları farklı olacaktır. Sınırı bir kez daha hatırla: başkasına ait bir sistemde izin envanteri çıkarmak ya da bulduğun bir yanlış yapılandırmayı denemek izinsiz erişimdir; yasal çerçeve Parça 72 ve 73'te.</p>
+
+<h3>Adım 1: izinleri iki gösterimde oku</h3>
+
+<pre class="kod" data-ad="bash">mkdir -p /tmp/yazar/siber-12/lab; cd /tmp/yazar/siber-12/lab
+echo merhaba > not.txt
+mkdir klasor
+stat -c '%A %a %U %G %n' not.txt klasor /tmp /etc/passwd /etc/shadow /usr/bin/passwd</pre>
+<pre class="cikti">-rw-r--r-- 644 kullanici kullanici not.txt
+drwxr-xr-x 755 kullanici kullanici klasor
+drwxrwxrwt 1777 root root /tmp
+-rw-r--r-- 644 root root /etc/passwd
+-rw-r----- 640 root shadow /etc/shadow
+-rwsr-xr-x 4755 root root /usr/bin/passwd</pre>
+
+<p>Satır satır oku. <code>stat</code> biçim dizgesinde <code>%A</code> simgesel kip, <code>%a</code> sekizlik kip, <code>%U</code> sahip, <code>%G</code> grup, <code>%n</code> addır. <code>not.txt</code> umask 022 ile 644 doğdu, <code>klasor</code> 755. <code>/tmp</code> 1777: baştaki 1 sticky, simgesel sonda <code>t</code>. <code>/etc/passwd</code> 644: herkes okur, çünkü kullanıcı adlarını programlar sürekli okumak zorundadır; içinde parola özeti yoktur (Parça 11). <code>/etc/shadow</code> 640, grubu <code>shadow</code>: diğer sınıfına hiçbir şey yok. <code>/usr/bin/passwd</code> 4755: parçanın sorusunun cevabı burada.</p>
+
+<h3>Adım 2: umask'ı oku ve değiştirmeden dene</h3>
+
+<pre class="kod" data-ad="bash">(umask 077; umask; umask -S)
+grep -E '^Umask' /proc/self/status</pre>
+<pre class="cikti">0077
+u=rwx,g=,o=
+0022</pre>
+
+<p>Alt kabuk içinde umask 077 oldu; <code>umask -S</code> aynı değeri "kalanlar" biçiminde yazdı: sahip her şeyi tutar, grup ve diğer hiçbir şey. Parantez kapanınca ana kabuk 022'ye geri döndü; <code>grep</code> kendi sürecinin <code>Umask:</code> satırında 0022 gördü, çünkü ana kabuktan miras aldı. Dört umask değerinin dosya ve dizin sonuçları ile Python doğrulaması Örnek 4'teydi.</p>
+
+<h3>Adım 3: dizinden w'yi kaldır, dosyayı silmeyi dene</h3>
+
+<p>Komutlar ve çıktılar Örnek 3'te. Deneyi bitirince <code>chmod u+w kutu</code> ile dizini eski hâline getir.</p>
+
+<h3>Adım 4: dizinde x olmadan içeri girememek</h3>
+
+<pre class="kod" data-ad="bash">chmod u=rw kutu; stat -c '%A %a %n' kutu
+ls kutu
+ls -l kutu
+cat kutu/belge
+bash -c 'cd kutu'</pre>
+<pre class="cikti">drw-r-xr-x 655 kutu
+belge
+ls: cannot access 'kutu/belge': Permission denied
+total 0
+-????????? ? ? ? ?            ? belge
+cat: kutu/belge: Permission denied
+bash: line 1: cd: kutu: Permission denied</pre>
+
+<p>Sahibin üçlüsü <code>rw-</code>: okuma var, arama yok. <code>ls kutu</code> ad listesini okudu ve <code>belge</code> yazdı. <code>ls -l</code> her ad için düğüme ulaşmak ister; x olmadığı için ulaşamadı ve izin, sahip, boyut, tarih alanlarını soru işaretiyle doldurdu. <code>cat</code> ve <code>cd</code> reddedildi. Dikkat: grup ve diğer sınıflarında x var, ama sahip olduğun için onlara bakılmadı (bölüm 1). Şimdi tersini dene:</p>
+
+<pre class="kod" data-ad="bash">chmod u=wx kutu; stat -c '%A %a %n' kutu
+ls kutu
+cat kutu/belge
+chmod 755 kutu
+namei -l /tmp/yazar/siber-12/lab/kutu/belge</pre>
+<pre class="cikti">d-wxr-xr-x 355 kutu
+ls: cannot open directory 'kutu': Permission denied
+veri
+ek
+f: /tmp/yazar/siber-12/lab/kutu/belge
+drwxr-xr-x root      root      /
+drwxrwxrwt root      root      tmp
+drwxr-xr-x kullanici kullanici yazar
+drwxr-xr-x kullanici kullanici siber-12
+drwxr-xr-x kullanici kullanici lab
+drwxr-xr-x kullanici kullanici kutu
+-rw-r--r-- kullanici kullanici belge</pre>
+
+<p>r yok, x var: liste okunamadı ama adı bilinen <code>belge</code> okundu. Sonra dizini 755'e döndürdük; <code>chmod</code> başarılı olunca hiçbir şey yazmaz. <code>namei -l</code> yolun her parçasının izinlerini kökten başlayarak tek tek yazdı: dosyaya ulaşmak için bu yedi satırın ilk altısında arama izni (x) gerekir. Bir dosyanın neden okunamadığını araştırırken ilk bakılacak araç budur.</p>
+
+<h3>Adım 5: sticky bit ve özel bitlerin harfleri</h3>
+
+<pre class="kod" data-ad="bash">mkdir yapisma; chmod 1777 yapisma; stat -c '%A %a %n' yapisma /tmp; chmod 1770 yapisma; stat -c '%A %a %n' yapisma
+mkdir ortak; chgrp adm ortak; chmod 2775 ortak; touch ortak/rapor; mkdir ortak/alt
+stat -c '%A %a %U %G %n' ortak ortak/rapor ortak/alt</pre>
+<pre class="cikti">drwxrwxrwt 1777 yapisma
+drwxrwxrwt 1777 /tmp
+drwxrwx--T 1770 yapisma
+drwxrwsr-x 2775 kullanici adm ortak
+-rw-r--r-- 644 kullanici adm ortak/rapor
+drwxr-sr-x 2755 kullanici adm ortak/alt</pre>
+
+<p>Kendi dizinimiz 1777 ile <code>/tmp</code>'nin birebir aynısı oldu: <code>t</code>. Diğerden x'i kaldırınca (1770) harf büyük <code>T</code> oldu: sticky var, ama diğer sınıfı dizine giremiyor. İkinci komut grubu bölümünde SGID dizini kurdu: <code>ortak</code> 2775, grup üçlüsünde <code>s</code>. İçinde oluşturulan <code>rapor</code> dosyası grubunu kullanıcının birincil grubundan değil dizinden (<code>adm</code>) aldı; <code>alt</code> dizini hem grubu hem SGID bitini (2755) miras aldı. Sticky bitin asıl etkisini, yani <em>başka bir kullanıcının</em> dosyanı silememesini görmek ikinci bir kullanıcı ister; bu ortamda ikinci kullanıcı oluşturulmadığı için o deney burada çalıştırılmadı. Laboratuvar VM'inde iki kullanıcıyla aynı dizinde deneyebilirsin.</p>
+
+<h3>Adım 6: kendi sisteminin SUID envanteri</h3>
+
+<pre class="kod" data-ad="bash">cd /tmp/yazar/siber-12
+find / -xdev -perm -4000 -type f 2>/dev/null | sort > suid-liste.txt; wc -l suid-liste.txt
+while read -r f; do dpkg -S "$f" 2>/dev/null || echo "PAKETSIZ: $f"; done &lt; suid-liste.txt</pre>
+<pre class="cikti">31 suid-liste.txt
+passwd: /usr/bin/chfn
+passwd: /usr/bin/chsh
+fuse3: /usr/bin/fusermount3
+passwd: /usr/bin/gpasswd
+kismet-capture-hak5-wifi-coconut: /usr/bin/kismet_cap_hak5_wifi_coconut
+kismet-capture-linux-bluetooth: /usr/bin/kismet_cap_linux_bluetooth
+kismet-capture-linux-wifi: /usr/bin/kismet_cap_linux_wifi
+kismet-capture-nrf-51822: /usr/bin/kismet_cap_nrf_51822
+kismet-capture-nrf-52840: /usr/bin/kismet_cap_nrf_52840
+kismet-capture-nrf-mousejack: /usr/bin/kismet_cap_nrf_mousejack
+kismet-capture-nxp-kw41z: /usr/bin/kismet_cap_nxp_kw41z
+kismet-capture-rz-killerbee: /usr/bin/kismet_cap_rz_killerbee
+kismet-capture-ti-cc-2531: /usr/bin/kismet_cap_ti_cc_2531
+kismet-capture-ti-cc-2540: /usr/bin/kismet_cap_ti_cc_2540
+kismet-capture-ubertooth-one: /usr/bin/kismet_cap_ubertooth_one
+mount: /usr/bin/mount
+ntfs-3g: /usr/bin/ntfs-3g
+passwd: /usr/bin/passwd
+pkexec: /usr/bin/pkexec
+rsh-redone-client: /usr/bin/rsh-redone-rlogin
+rsh-redone-client: /usr/bin/rsh-redone-rsh
+util-linux: /usr/bin/su
+sudo: /usr/bin/sudo
+mount: /usr/bin/umount
+chromium-sandbox: /usr/lib/chromium/chrome-sandbox
+dbus: /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+openssh-client: /usr/lib/openssh/ssh-keysign
+xserver-xorg-legacy: /usr/lib/xorg/Xorg.wrap
+cifs-utils: /usr/sbin/mount.cifs
+nfs-common: /usr/sbin/mount.nfs
+ppp: /usr/sbin/pppd</pre>
+
+<p>Birinci komut kök dosya sisteminde SUID biti açık 31 sıradan dosya buldu; erişemediği dizinlerin hata iletileri <code>2&gt;/dev/null</code> ile atıldı (Parça 9). <code>-perm -4000</code>'deki eksi işareti "en az bu bitler açık" demektir; eksisiz <code>-perm 4000</code> yalnız kipi tam olarak 4000 olan dosyayı bulurdu ve 4755'lerin hiçbirini göstermezdi. İkinci komut her yolu <code>dpkg -S</code> ile bir pakete eşledi; eşlenemeyen olsaydı <code>PAKETSIZ:</code> satırı çıkardı, hiç çıkmadı.</p>
+
+<p>Listeyi savunmacı gözüyle oku. Beklenen çekirdek: kullanıcı veritabanı (<code>passwd</code>, <code>chfn</code>, <code>chsh</code>, <code>gpasswd</code>), kimlik değiştirme (<code>su</code>, <code>sudo</code>, <code>pkexec</code>), bağlama (<code>mount</code>, <code>umount</code>, <code>fusermount3</code>). Kali'ye özgü on bir <code>kismet_cap_*</code> yardımcısı donanıma doğrudan erişmek için SUID'dir ve çoğu laboratuvarda hiç kullanılmaz. <code>rsh-redone-*</code> şifresiz eski uzak kabuk istemcileridir; ihtiyaç yoksa paket kaldırılır. Hiçbiri paketsiz değil: soruşturulacak "beklenmeyen SUID" yok, ama azaltılacak gereksiz SUID var. Envanteri <code>suid-liste.txt</code> olarak sakladın; ileride <code>diff</code> ile karşılaştırırsın. Paketsiz bir dosyanın <code>dpkg -S</code> yanıtı şöyledir:</p>
+
+<pre class="kod" data-ad="bash">dpkg -S /tmp/yazar/siber-12/lab/benim-true</pre>
+<pre class="cikti">dpkg-query: no path found matching pattern /tmp/yazar/siber-12/lab/benim-true</pre>
+
+<h3>Adım 7: ACL ve <code>+</code> işareti</h3>
+
+<p>Komutlar ve çıktılar bölüm 7'de. Kendi makinende adlı girdi olarak <code>u:kullanici:r</code> (kendi kullanıcı adın) ya da <code>adm</code> gibi bir sistem grubu kullan; başka bir kişinin hesabını kullanma.</p>
+
+<h3>Adım 8: herkese yazılabilir dosya ve dizinleri ara</h3>
+
+<pre class="kod" data-ad="bash">cd /tmp/yazar/siber-12/lab
+touch acik.txt; chmod 666 acik.txt; mkdir acikdizin; chmod 777 acikdizin
+find /tmp/yazar/siber-12/lab -perm -o+w
+find /tmp/yazar/siber-12/lab -type d -perm -0002 ! -perm -1000</pre>
+<pre class="cikti">/tmp/yazar/siber-12/lab/acikdizin
+/tmp/yazar/siber-12/lab/acik.txt
+/tmp/yazar/siber-12/lab/acikdizin</pre>
+
+<p>Bilerek iki yanlış bıraktık: herkese yazılabilir bir dosya (666) ve sticky biti olmayan herkese yazılabilir bir dizin (777). <code>-perm -o+w</code> diğer sınıfında w olan her şeyi buldu: ikisi. <code>yapisma</code> dizini o sırada 755'e döndürülmüş olduğu için listede yok. İkinci komut daha keskin bir soru sordu: "herkese yazılabilir <em>ve</em> sticky biti <em>olmayan</em> dizin" (<code>!</code> değillemedir); yalnız <code>acikdizin</code> çıktı. Aynı aramayı bütün sistemde yaptığımızda (<code>find / -xdev -type d -perm -0002 ! -perm -1000</code>) <code>/mnt/c</code> gibi satırlar da çıktı: WSL'nin Windows sürücülerini bağladığı noktalar; izinleri Windows tarafında yönetilir. Bir Linux VM'inde böyle satırı incelemen gerekir. Deney bitince <code>rm -rf /tmp/yazar/siber-12</code> ile her şeyi temizle.</p>
+
+<h2 class="s">8. Yanlış izin kontrol listesi</h2>
+
+<p>Bu parçadaki her kavramı, kendi makinende düzenli çalıştırabileceğin bir denetime çevirelim. Komutların hepsi salt okurdur; düzeltme kararını her bulgu için ayrıca verirsin. CIS kıyaslamalarının Linux bölümlerinde de benzer maddeler vardır (herkese yazılabilir dosya, sahipsiz dosya, sticky bit, SUID/SGID gözden geçirme).</p>
+
+<div class="tablo"><table>
+<tr><th>Denetim</th><th>Komut (salt okur)</th><th>Neden önemli, ne yapılır</th></tr>
+<tr><td>SUID/SGID envanteri</td><td><code>find / -xdev -perm /6000 -type f</code> + <code>dpkg -S</code></td><td>Her biri root ya da grup gücü ödünç verir. Paketsiz olanı soruştur, gereksizi kaldır, listeyi tabana kaydet.</td></tr>
+<tr><td>Dosya yetenekleri</td><td><code>getcap -r / 2&gt;/dev/null</code></td><td>SUID'in dar biçimi; geniş yetenek (<code>cap_setuid</code>, <code>cap_dac_override</code>) SUID kadar tehlikeli (Parça 5).</td></tr>
+<tr><td>Herkese yazılabilir dosya</td><td><code>find / -xdev -type f -perm -0002</code></td><td>Herkes içeriği değiştirebilir; yapılandırma ya da betikse çok ciddi. <code>chmod o-w</code>.</td></tr>
+<tr><td>Sticky'siz herkese yazılabilir dizin</td><td><code>find / -xdev -type d -perm -0002 ! -perm -1000</code></td><td>Herkes başkasının dosyasını silip yerine kendisininkini koyabilir. <code>chmod +t</code> ya da o-w.</td></tr>
+<tr><td>Sahipsiz dosya</td><td><code>find / -xdev \( -nouser -o -nogroup \)</code></td><td>Silinmiş bir hesabın dosyası; aynı UID yeni bir hesaba verilirse ona geçer.</td></tr>
+<tr><td>Sırlar</td><td><code>stat -c '%a %U %n'</code> ile özel anahtar, <code>.env</code>, yedek</td><td>600 ve doğru sahip; dizini 700 (Parça 18, 57).</td></tr>
+<tr><td>Kritik sistem dosyaları</td><td><code>stat</code> ile <code>/etc/shadow</code>, <code>/etc/sudoers</code>, <code>/root</code></td><td>Bu makinede 640 root:shadow, 440, 700; farklıysa nedenini bul.</td></tr>
+<tr><td>Ev dizinleri</td><td><code>stat -c '%a %U %n' /home/*</code></td><td>Başkasının okuyabildiği ev dizini sırları açar; 700 ya da 750.</td></tr>
+<tr><td>ACL'ler</td><td><code>getfacl -R -s /yol</code> (yalnız ACL'li olanlar), <code>ls -l</code>'de <code>+</code></td><td>Klasik bitlerde görünmeyen erişimler; unutulmuş adlı girdileri temizle.</td></tr>
+<tr><td>umask</td><td><code>umask</code>, <code>/proc/&lt;pid&gt;/status</code>, birimlerde <code>UMask=</code></td><td>Gevşek umask her yeni dosyayı gevşek doğurur; sunucuda 027 ya da 077 düşün.</td></tr>
+<tr><td>Bağlama seçenekleri</td><td><code>findmnt -o TARGET,OPTIONS</code></td><td>Kullanıcıların yazdığı bölümlerde <code>nosuid</code>, <code>nodev</code>, uygunsa <code>noexec</code> (Parça 8).</td></tr>
+</table></div>
+
+<p>Bu makinede kritik dosyalara bakınca şu çıktı alındı: <code>/etc/sudoers</code> <code>-r--r----- 440 root root</code>, <code>/etc/sudoers.d</code> 755, <code>/root</code> <code>drwx------ 700</code>, <code>/var/log/journal</code> <code>drwxr-sr-x 2755 root systemd-journal</code> (SGID dizin: günlükler bu grupla doğar), ev dizini <code>drwx------ 700</code>. Sahipsiz dosya araması <code>/home</code> ve <code>/etc</code> altında sonuç vermedi. Bulgular değiştirilmeden önce <strong>kaydedilir</strong>; olay müdahalesinde (Parça 70) izinler ve zaman damgaları delildir.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki sekizlik gösterim ve VE/DEĞİL işlemleri burada izin hanelerine ve umask hesabına dönüştü. Parça 5'teki gerçek/etkin kimlik ayrımı SUID'in, <code>CAP_DAC_OVERRIDE</code> ve <code>CAP_CHOWN</code> root'un dosyalar karşısındaki gücünün temelidir; <code>no_new_privs</code> SUID'i etkisiz kılar. Parça 7'deki kullanıcı ad alanı ile sahte root'u gördük. Parça 8'deki "her şey dosyadır" dizin izinlerini, <code>nosuid</code> SUID savunmasını açıkladı. Parça 9'daki <code>find</code> ve yönlendirme envanterin aracıydı. Parça 10'daki <code>dpkg</code> SUID dosyalarını paketlere eşledi. Parça 11'deki kullanıcı ve gruplar izin sınıflarının kendisidir.</p>
+<p><strong>Sonraki parçalara:</strong> Süreçlerin etkin kimliğini <code>ps</code> ve <code>/proc</code> ile izlemek Parça 13'te; hizmetlerin <code>UMask=</code> ve dosya sistemi kısıtları Parça 14'te; dosya erişimini denetim kurallarıyla izlemek Parça 17'de; SSH anahtar dosyalarının izinleri Parça 18'de; sertleştirme listesi Parça 19'da; web uygulamalarında yükleme klasörü izinleri Parça 39'da; yanlış yapılandırma ve sır sızıntısı Parça 57'de; Windows'taki ACL modeli Parça 61'de.</p>
+<p><strong>Kod rafına:</strong> Parça 15'teki <code>ls -l</code> okuması ve Parça 17'deki <code>chmod +x</code> burada tamamlandı; Parça 18'deki <code>mktemp</code> ve bütünlük izleyicisi SUID envanterinin taban çizgisi oldu.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Çekirdek, ayrıcalıksız bir süreç için dosyanın hangi izin üçlüsüne bakacağını nasıl seçer? Sahibin üçlüsü boşken grubun üçlüsü sahibe yardım eder mi?</summary><p>Etkin UID dosyanın sahibine eşitse yalnız sahip üçlüsü, değilse ve süreç dosyanın grubundaysa yalnız grup üçlüsü, hiçbiri değilse diğer üçlüsü kullanılır. Tek bir sınıf seçilir ve orada durulur. Bu yüzden sahibin üçlüsü boşsa, sahip grubun üyesi olsa bile grup izni ona yardım etmez; Örnek 1'deki 0040 izinli dosya sahibine okuma vermedi.</p></details>
+<details><summary>umask 027 iken yeni bir dosya ve yeni bir dizin hangi izinle doğar? Hesabı nasıl yaparsın?</summary><p>Dosya 0666, dizin 0777 ile istenir ve umask'taki bitler silinir: 0666 VE DEĞİL 027 = 640, 0777 VE DEĞİL 027 = 750. Hesap çıkarma değil bit kapatmadır; çıkarma 077 gibi değerlerde yanlış sonuç verir.</p></details>
+<details><summary>Bir dosyayı silmek için hangi izin gerekir ve neden?</summary><p>Dosyanın bulunduğu dizinde w ve x gerekir, çünkü silmek dizindeki ad listesinden bir satırı kaldırmaktır; dosyanın içeriğine dokunulmaz. Dosyanın kendi izni karar vermez. Sticky bitli bir dizinde ek olarak dosyanın sahibi, dizinin sahibi ya da ayrıcalıklı süreç olmak gerekir.</p></details>
+<details><summary>passwd programı neden SUID root'tur ve SUID çalıştıran sürecin kimliğinde ne değişir?</summary><p>Parola özetleri yalnız root'un yazabildiği /etc/shadow dosyasında durur; sıradan kullanıcının kendi parolasını değiştirebilmesi için programın bu dosyaya yazması gerekir. SUID ile sürecin etkin UID'i dosyanın sahibi olan root'a çevrilir, gerçek UID kullanıcıda kalır; program gerçek UID'e bakarak yalnız o kullanıcının parolasını değiştirmeye izin verir.</p></details>
+<details><summary>Bir sistemdeki SUID dosyaların envanterini nasıl çıkarır ve beklenmeyen olanı nasıl ayırt edersin?</summary><p>find / -xdev -perm -4000 -type f ile listeyi çıkarırsın; SGID için -perm -2000. Her yolu dpkg -S ile bir pakete eşlersin; hiçbir pakete ait olmayan SUID soruşturulur, paketli ama gereksiz olan kaldırılır ya da biti kapatılır. Listeyi bir taban olarak saklayıp düzenli karşılaştırırsın.</p></details>
+<details><summary>ls -l çıktısında izinlerin sonundaki + işareti ne anlatır ve chmod g-r bir ACL'yi nasıl etkiler?</summary><p>+ dosyada klasik izin bitlerinin ötesinde bir ACL bulunduğunu gösterir. ACL'de maske varsa ls -l'deki grup üçlüsü maskedir ve chmod g-r maskeden okumayı kaldırır; maske adlı kullanıcı ve grup girdilerinin üst sınırı olduğu için onların etkin izni de düşer, getfacl bunu #effective ile gösterir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Üç izin:</strong> r okuma, w yazma, x çalıştırma. <strong>Üç sınıf:</strong> sahip (u), grup (g), diğer (o); a hepsi.</li>
+<li><strong>Tek sınıf seçilir:</strong> sahipse sahip üçlüsü, gruptaysa grup üçlüsü, değilse diğer. İzinler toplanmaz. Root (<code>CAP_DAC_OVERRIDE</code>) izin bitlerini atlar; x için en az bir x biti ister.</li>
+<li><strong>Sekizlik:</strong> r = 4, w = 2, x = 1; dört hane özel-sahip-grup-diğer. 644, 640, 600, 755, 700, 4755, 1777. <code>stat -c '%A %a %U %G %n'</code>.</li>
+<li><strong>chmod:</strong> sekizlik kipi baştan yazar; simgesel (<code>u+x</code>, <code>g-w</code>, <code>o=</code>, <code>a-w</code>, <code>X</code>) yalnız söylenen bitlere dokunur.</li>
+<li><strong>chown:</strong> sahibi yalnız ayrıcalıklı süreç değiştirir (<code>CAP_CHOWN</code>). <strong>chgrp:</strong> sahip, üyesi olduğu gruba çevirebilir. Sahip/grup değişince SUID/SGID düşer.</li>
+<li><strong>Dizin:</strong> ad → düğüm listesi. r listeyi okur, w oluşturur/siler/adlandırır, x içeri geçer. <strong>Silme yetkisi dizinden gelir.</strong> Yoldaki her dizinde x gerekir; <code>namei -l</code>.</li>
+<li><strong>umask:</strong> yeni kip = <code>mode &amp; ~umask</code> (dosya 0666, dizin 0777 istenir). 022 → 644/755, 027 → 640/750, 077 → 600/700. Çıkarma değil. Varsayılan ACL varsa umask yok sayılır.</li>
+<li><strong>SUID</strong> (4000, sahibin x yerinde s/S): etkin UID = dosyanın sahibi. <strong>SGID</strong> (2000): dosyada etkin GID; dizinde grup mirası. <strong>Sticky</strong> (1000, t/T): yalnız dosyanın sahibi, dizinin sahibi ya da ayrıcalıklı süreç siler.</li>
+<li><strong>SUID frenleri:</strong> betiklerde yok sayılır; <code>nosuid</code>, <code>no_new_privs</code>, ptrace altında etkisiz; yazma ve sahiplik değişikliği biti siler.</li>
+<li><strong>Envanter:</strong> <code>find / -xdev -perm -4000 -type f</code> (<code>-perm -</code> "en az", <code>/</code> "herhangi biri", eksiz "tam"). <code>dpkg -S</code> ile pakete eşle; paketsiz = soruştur; gereksiz = kaldır; taban dosyası tut. <code>getcap -r</code>.</li>
+<li><strong>ACL:</strong> <code>setfacl -m g:grup:r</code>, <code>getfacl</code>, <code>setfacl -b</code>; <code>+</code> işareti; maske adlı girdilerin ve dosya grubunun üst sınırı, <code>chmod g…</code> maskeyi değiştirir.</li>
+<li><strong>Kontrol listesi:</strong> SUID/SGID, yetenek, herkese yazılabilir dosya, sticky'siz açık dizin, sahipsiz dosya, sırlar 600/700, kritik dosyalar, ev dizinleri, ACL'ler, umask, bağlama seçenekleri.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-12">
+<h3>Quiz 12</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on dört tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q"><code>ls -l</code> çıktısında izinleri <code>-rwxr-x---</code> görünen bir dosyanın sekizlik izni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><code>754</code></li><li><code>750</code></li><li><code>760</code></li><li><code>570</code></li><li><code>075</code></li></ul>
+<div class="coz"><p>İlk karakter türdür, sonra üçer harf: sahip <code>rwx</code> = 4 + 2 + 1 = 7, grup <code>r-x</code> = 4 + 1 = 5, diğer <code>---</code> = 0; sonuç 750. A, diğer sınıfına r (4) verilmiş gibi okur. C, grup üçlüsünü <code>rw-</code> sanmanın sonucudur. D ve E haneleri ters ya da kaydırılmış dizer; sıra her zaman sahip, grup, diğerdir. Python'da <code>stat.filemode(0o100750)</code> → <code>-rwxr-x---</code>.</p></div></li>
+
+<li data-c="D"><p class="q">Kabuğun umask değeri <code>077</code> iken <code>touch yeni.txt</code> ile oluşturulan dosyanın izni ne olur?</p>
+<ul class="sec"><li><code>0567</code></li><li><code>0700</code></li><li><code>0711</code></li><li><code>0600</code></li><li><code>0644</code></li></ul>
+<div class="coz"><p>Sıradan dosyalar 0666 ile istenir ve umask'taki bitler kapatılır: <code>0o666 &amp; ~0o077 = 0o600</code>; Örnek 4'te <code>dosya-077</code> gerçekten <code>-rw-------</code> doğdu. A, 666 − 077 aritmetik çıkarmasının yanlış sonucudur. B, dizinin sonucudur (0777'den); dosya x ile istenmediği için çalıştırılabilir doğmaz. C ve E başka umask değerlerine (066 ya da 022) karşılık gelir.</p></div></li>
+
+<li data-c="A"><p class="q">Sahibi olduğun <code>kutu</code> dizininin izni <code>dr-xr-xr-x</code>, içindeki kendi dosyan <code>kutu/belge</code> ise <code>-rw-r--r--</code>. <code>rm -f kutu/belge</code> komutunun sonucu ne olur?</p>
+<ul class="sec"><li>Silme reddedilir; silmek dizinin ad listesini değiştirmektir ve dizinde w yoktur.</li><li>Dosya silinir, çünkü dosyada w izni vardır.</li><li>Dosya silinir, çünkü sahibi her zaman silebilir.</li><li>Dosya silinmez ama içeriği boşaltılır.</li><li><code>rm</code> onay sorar, onay verilince silinir.</li></ul>
+<div class="coz"><p>Silmek ya da yeniden adlandırmak dizine yazmaktır; bunun için dizinde w ve x gerekir. Burada dizinde w yoktur, Örnek 3'teki gibi <code>Permission denied</code> alınır. B, silme yetkisini dosyanın izninden geliyor sanmaktır; dosyadaki w yalnız içeriği değiştirmeye izin verir. C yanlış: sahiplik izin bitlerini aşmaz. D'deki gibi bir yarım işlem yoktur. E'deki onay sorusu yalnız dosya yazmaya karşı korumalıyken ve <code>-f</code> yokken sorulur, çekirdek kuralını değiştirmez.</p></div></li>
+
+<li data-c="C"><p class="q"><code>ters.txt</code> dosyasının sahibi <code>kullanici</code>, grubu <code>adm</code>, izni <code>----r-----</code> (0040). <code>kullanici</code>, <code>adm</code> grubunun üyesidir. <code>kullanici</code> <code>cat ters.txt</code> çalıştırırsa ne olur ve neden?</p>
+<ul class="sec"><li>Okur, çünkü grup üyesidir ve grup üçlüsünde r vardır.</li><li>Okur, çünkü bir dosyanın sahibi izinlerden bağımsız olarak her zaman okuyabilir.</li><li>Okuyamaz, çünkü sahip olduğu için çekirdek sahip üçlüsünü seçer ve orada r yoktur.</li><li>Okuyamaz, çünkü dosyanın grubu sahibin birincil grubuyla aynı değildir.</li><li>Okur, çünkü üç sınıfın izinleri toplanır.</li></ul>
+<div class="coz"><p>Çekirdek tek bir sınıf seçer: etkin UID dosyanın sahibine eşit olduğu için sahip üçlüsü (<code>---</code>) kullanılır ve orada durulur; grup üçlüsüne hiç bakılmaz. Örnek 1'de bu durum gerçekten <code>Permission denied</code> verdi. A ve E izinlerin toplandığını varsayar. B, sahibin <code>chmod</code> yapabilmesini okuma hakkıyla karıştırır. D, birincil grup ile dosya grubu arasında böyle bir şart olmadığını gözden kaçırır; ek gruplar da sayılır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir dosyanın izni <code>-rwSr-xr-x</code> olarak görünüyor. Büyük <code>S</code> neyi gösterir?</p>
+<ul class="sec"><li>Sticky bit açıktır.</li><li>SUID açıktır ve sahip dosyayı çalıştırabilir.</li><li>SGID açıktır.</li><li>Dosyada bir ACL bulunmaktadır.</li><li>SUID açıktır ama sahibin çalıştırma (x) izni yoktur.</li></ul>
+<div class="coz"><p>Özel bitler ilgili sınıfın x yerine yazılır; SUID sahibin x yerindedir. Küçük <code>s</code> "SUID ve x", büyük <code>S</code> "SUID var, x yok" demektir; parçadaki deneyde <code>chmod u-x</code> sonrası 4655 = <code>-rwSr-xr-x</code> görüldü. B küçük harfin anlamıdır. Sticky (A) diğerin x yerinde <code>t</code>/<code>T</code>, SGID (C) grubun x yerinde görünür. ACL (D) satırın sonundaki <code>+</code> ile gösterilir.</p></div></li>
+
+<li data-c="B"><p class="q"><code>/tmp</code> dizininin izni <code>drwxrwxrwt</code>, sahibi root. Başka bir kullanıcıya ait <code>/tmp/rapor</code> dosyasını aşağıdakilerden hangisi silebilir?</p>
+<ul class="sec"><li>Dizin herkese yazılabilir olduğu için her kullanıcı</li><li>Yalnız dosyanın sahibi, dizinin sahibi (root) ya da ayrıcalıklı bir süreç</li><li>Yalnız root</li><li>Yalnız root grubunun üyeleri</li><li>Hiç kimse; sticky bit silmeyi tamamen engeller</li></ul>
+<div class="coz"><p>Sondaki <code>t</code> sticky bittir. <code>inode(7)</code>'ye göre sticky bitli bir dizindeki dosyayı yalnız dosyanın sahibi, dizinin sahibi ya da ayrıcalıklı bir süreç silebilir veya yeniden adlandırabilir. A sticky biti yok sayar; o, bitin kapattığı açıktır. C dosyanın sahibini unutur; herkes kendi dosyasını silebilir. D'de grup üyeliği bir ölçüt değildir. E aşırıdır: sticky yalnız başkalarının silmesini sınırlar.</p></div></li>
+
+<li data-c="A"><p class="q">Diğer izin bitleri ne olursa olsun SUID biti açık olan bütün sıradan dosyaları bulmak için hangi komut doğrudur?</p>
+<ul class="sec"><li><code>find / -xdev -perm -4000 -type f</code></li><li><code>find / -xdev -perm 4000 -type f</code></li><li><code>find / -xdev -perm -6000 -type f</code></li><li><code>find / -xdev -perm -0002 -type f</code></li><li><code>find / -xdev -perm 4755 -type f</code></li></ul>
+<div class="coz"><p><code>-perm -kip</code> "en az bu bitler açık" demektir; <code>-4000</code> SUID'i olan her dosyayı yakalar. Eksisiz <code>-perm 4000</code> (B) kipin tam olarak 4000 olmasını ister ve 4755 dosyaları bulmaz; doğrulama denemesinde hiçbir sonuç vermedi. C yalnız SUID ve SGID'in ikisi birden açık olanları bulur (denemede 6755 dosya tek başına çıktı). D herkese yazılabilir dosyaları arar. E yalnız tam 4755 olanları bulur; 4711 gibi dosyaları kaçırır.</p></div></li>
+
+<li data-c="D"><p class="q"><code>setfacl -m g:adm:r rapor.txt</code> komutundan sonra <code>chmod g-r rapor.txt</code> çalıştırılıyor ve <code>getfacl</code> çıktısında <code>group:adm:r--	#effective:---</code> satırı görülüyor. Bunun nedeni nedir?</p>
+<ul class="sec"><li><code>chmod</code> ACL girdisini sildi ama <code>getfacl</code> eski değeri önbellekten gösteriyor.</li><li><code>adm</code> grubu dosyanın grubu olmadığı için ACL girdisi hiçbir zaman çalışmaz.</li><li><code>chmod</code> ACL'li dosyalarda etkisizdir; etkisizlik başka bir nedenden gelir.</li><li>ACL'de maske varken <code>chmod</code>'un grup üçlüsü maskeyi değiştirir; maske adlı girdilerin üst sınırı olduğu için <code>adm</code>'nin etkin izni düştü.</li><li>Diğer (<code>other::</code>) girdisi <code>---</code> olduğu için adlı grup girdilerini ezer.</li></ul>
+<div class="coz"><p><code>acl(5)</code>'e göre maske varsa izin bitlerindeki grup üçlüsü maskeye karşılık gelir; <code>chmod g-r</code> maskeyi <code>---</code> yaptı. Maske adlı kullanıcı, dosya grubu ve adlı grup girdilerinin verebileceği en geniş hakkı sınırladığı için <code>adm</code> girdisi yazılı olarak <code>r--</code> kalsa da etkin izni <code>---</code> oldu. A yanlış: girdi silinmedi, yalnız etkisizleşti. B, adlı grup girdilerinin varlık nedenini yok sayar. C tersidir: <code>chmod</code> etkili oldu. E'de diğer girdisi yalnız hiçbir sınıfa girmeyenler için kullanılır.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">İkili <code>11010110</code> baytının onaltılık (hex) karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><code>0xB6</code></li><li><code>0x6D</code></li><li><code>0xD6</code></li><li><code>0xD5</code></li><li><code>0xE6</code></li></ul>
+<div class="coz"><p>İkiliden onaltılığa geçerken sağdan dörderli gruplanır: <code>1101</code> = 13 = D, <code>0110</code> = 6; sonuç <code>0xD6</code>. Python'da <code>hex(0b11010110)</code> → <code>0xd6</code>. B, iki yarıyı ters sıraya koyar. A ve E soldaki dörtlüyü yanlış hesaplar (1011 ya da 1110 gibi), D sağdaki dörtlüyü 0101 sanar. Bu parçada sekizlikte üçerli gruplamanın da aynı mantıkla yapıldığını gördün.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir geliştirici, programına bir API anahtarını gömüp derliyor ve "derlendi, artık makine kodu, kimse okuyamaz" diyor. Bu düşünce hakkında hangisi doğrudur?</p>
+<ul class="sec"><li>Doğrudur; makine kodu geri okunamaz.</li><li>Doğrudur; yalnız <code>-O2</code> ile derlenirse.</li><li>Yalnız ARM işlemcilerde yanlıştır.</li><li>Doğrudur; anahtar derleme sırasında şifrelenir.</li><li>Yanlıştır; derleme gizleme değildir, makine kodu ve içindeki sabit metinler okunabilir.</li></ul>
+<div class="coz"><p>Parça 2'de <code>objdump</code> ile makine kodunun assembly olarak okunabildiğini gördün; programın içindeki sabit dizgeler de dosyada olduğu gibi durur. Derleme bir çeviridir, şifreleme değildir (D). İyileştirme düzeyi (B) kodu yeniden düzenler ama sırrı saklamaz. Komut kümesinin (C) bununla ilgisi yoktur. Doğrusu sırrı programa gömmemek, çalışma anında güvenli bir kaynaktan ve dar izinli bir dosyadan (bu parçadaki 600) okumaktır.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Aşağıdaki sıralamalardan hangisi bellek hiyerarşisini en hızlıdan en yavaşa doğru doğru verir?</p>
+<ul class="sec"><li>Yazmaç → L1 önbellek → RAM → SSD</li><li>L1 önbellek → yazmaç → RAM → SSD</li><li>RAM → yazmaç → L1 önbellek → SSD</li><li>Yazmaç → RAM → L1 önbellek → SSD</li><li>SSD → RAM → L1 önbellek → yazmaç</li></ul>
+<div class="coz"><p>Yazmaçlar işlemcinin içindedir ve en hızlıdır; sonra çekirdeğe yakın küçük L1 önbellek, sonra çok daha büyük ama yaklaşık 100 ns süren RAM, en sonda kalıcı ama mikrosaniyeler süren SSD gelir. B yazmaç ile önbelleği, D önbellek ile RAM'i yer değiştirir. C RAM'i en hızlı sanar. E sıralamayı tersine çevirir. Hiyerarşide yukarı çıktıkça hız artar, boyut küçülür.</p></div></li>
+
+<li data-c="B" data-k="siber-4"><p class="q">Bir C programında yalnız <code>printf("merhaba\n");</code> var. Program <code>strace</code> ile izlendiğinde ekrana yazma hangi sistem çağrısı olarak görünür?</p>
+<ul class="sec"><li><code>printf</code></li><li><code>write</code></li><li><code>openat</code></li><li><code>execve</code></li><li><code>exit_group</code></li></ul>
+<div class="coz"><p><code>printf</code> bir sistem çağrısı değil, glibc'nin bir işlevidir; metni tampona koyar ve sonunda çekirdeğe <code>write</code> çağrısıyla verir. Parça 4'te <code>strace</code> çıktısında bu dönüşümü görmüştün. A bu yüzden yanlıştır; <code>strace</code> kütüphane işlevlerini değil sistem çağrılarını gösterir. <code>openat</code> dosya açar, <code>execve</code> programı yükler, <code>exit_group</code> süreci bitirir; hiçbiri yazmayı yapmaz.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q"><code>fork()</code> çağrısı başarılı olduğunda ana süreç ve çocuk süreç hangi dönüş değerlerini alır?</p>
+<ul class="sec"><li>İkisi de 0 alır.</li><li>Ana süreç 0, çocuk süreç ananın PID'ini alır.</li><li>İkisi de çocuğun PID'ini alır.</li><li>Ana süreç çocuğun PID'ini, çocuk süreç 0 alır.</li><li>Ana süreç −1, çocuk süreç 0 alır.</li></ul>
+<div class="coz"><p><code>fork</code> bir kez çağrılır, iki kez döner: ana süreçte çocuğun PID'i, çocukta 0 döner; program bu değere bakarak hangisi olduğunu anlar. B iki değeri ters çevirir. A ve C iki süreci ayırt etmeyi imkânsız kılar. E'deki −1 yalnız <code>fork</code> başarısız olduğunda ana sürece döner ve o durumda çocuk hiç doğmaz. Bu parçada gördüğün umask da <code>fork</code> ile çocuğa miras geçen özelliklerdendir.</p></div></li>
+
+<li data-c="C" data-k="siber-6"><p class="q">Bir yapılandırma dosyasında parola <code>cGFyb2xh</code> biçiminde Base64 ile kodlanmış duruyor. Bu durum için hangisi doğrudur?</p>
+<ul class="sec"><li>Base64 şifreleme olduğu için anahtarı bilmeyen parolayı okuyamaz.</li><li>Base64 tek yönlü bir hash'tir; parola geri elde edilemez.</li><li>Base64 kodlamadır; anahtar gerektirmez, dosyayı okuyabilen herkes parolayı çözebilir.</li><li>Base64 yalnız ikili verilerde çözülebilir, metinde çözülemez.</li><li>Base64 sıkıştırma olduğu için parola dosyada daha az yer kaplar ve gizlenir.</li></ul>
+<div class="coz"><p>Parça 6'nın ana dersi: kodlama gizlilik sağlamaz. Base64 anahtarsız, herkesin bildiği bir dönüşümdür; <code>cGFyb2xh</code> çözülünce <code>parola</code> çıkar. A ve B onu şifreleme ve hash ile karıştırır. D temelsizdir. E yanlıştır: Base64 veriyi yaklaşık üçte bir büyütür. Böyle bir dosyayı korumanın ilk adımı bu parçadaki dar izin (600) ve sırrı ayrı bir kasada tutmaktır.</p></div></li>
+
+<li data-c="E" data-k="siber-7"><p class="q">Kendi bilgisayarında kurduğun güvenlik laboratuvarı VM'i için olağan durumda önerilen ağ kipi hangisidir?</p>
+<ul class="sec"><li>Köprü (bridged), böylece VM ev ağındaki cihazlarla doğrudan konuşur</li><li>NAT, sürekli açık</li><li>Ana makinenin ağ kartını VM'e doğrudan vermek</li><li>VM'i ev ağına kablosuz olarak bağlamak</li><li>Host-only (ya da iç ağ); NAT yalnız güncelleme için geçici olarak</li></ul>
+<div class="coz"><p>Parça 7'deki plan: laboratuvar varsayılan olarak host-only ya da iç ağda çalışır, internet yalnız güncelleme gerektiğinde ve geçici olarak NAT ile açılır. Köprü kipi (A) ve D, VM'i ev ağındaki gerçek cihazların yanına koyar; deneyler başkalarına taşabilir. B'deki sürekli açık NAT gereksiz bir kapı bırakır. C yalıtımı tamamen ortadan kaldırır. Yalıtılmış laboratuvar bu parçadaki deneylerin de ön koşuludur.</p></div></li>
+
+<li data-c="A" data-k="siber-8"><p class="q"><code>/proc</code> dizini için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Çekirdeğin süreçler ve sistem hakkındaki bilgileri dosya gibi sunduğu sözde (sanal) bir dosya sistemidir; içeriği diskte durmaz.</li><li>Kurulan programların ikili dosyalarının tutulduğu yerdir.</li><li>Kullanıcıların ev dizinlerinin bulunduğu yerdir.</li><li>Sistem yapılandırma dosyalarının asıl yeridir.</li><li>Yeniden başlatmada silinmeyen geçici dosyalar içindir.</li></ul>
+<div class="coz"><p><code>/proc</code>, "her şey dosyadır" ilkesinin örneğidir: çekirdek her süreç için <code>/proc/&lt;pid&gt;</code> altında bilgileri dosya olarak sunar ve okunduğu anda üretir; diskte yer kaplamaz. Bu parçada <code>/proc/self/status</code>'taki <code>Umask:</code> satırını oradan okudun. Programlar <code>/usr/bin</code> gibi yerlerde (B), ev dizinleri <code>/home</code>'da (C), yapılandırma <code>/etc</code>'de (D) durur. E, <code>/var/tmp</code>'nin tanımına yakındır.</p></div></li>
+
+<li data-c="B" data-k="siber-9"><p class="q"><code>find / -name '*.conf' 2&gt;/dev/null</code> komutundaki <code>2&gt;/dev/null</code> ne yapar?</p>
+<ul class="sec"><li>Bulunan dosyaları siler.</li><li>Standart hata akışını (ör. "Permission denied" iletilerini) atar; sonuçlar ekrana gelmeye devam eder.</li><li>Yalnız ilk iki sonucu gösterir.</li><li>Standart çıktıyı atar, yalnız hatalar görünür.</li><li>Komutu iki kez çalıştırır.</li></ul>
+<div class="coz"><p><code>2</code> standart hatanın numarasıdır; <code>2&gt;/dev/null</code> o akışı, yazılanı yok eden özel dosyaya yönlendirir. Sonuçlar standart çıktıdan (1) gelmeye devam eder. Bu parçadaki SUID envanterinde erişilemeyen dizinlerin gürültüsünü böyle temizledin. D, <code>&gt;/dev/null</code> (ya da <code>1&gt;</code>) ile karıştırır. A, C ve E yönlendirmenin anlamıyla ilgisizdir; silme ancak <code>-delete</code> gibi açık bir eylemle olur.</p></div></li>
+
+<li data-c="D" data-k="siber-9"><p class="q">Bir günlükten IP adreslerini çıkarıp kaç kez geçtiklerini saymak isteyen biri neden <code>uniq -c</code>'den önce <code>sort</code> kullanır?</p>
+<ul class="sec"><li><code>uniq</code> yalnız sayılarla çalıştığı için</li><li><code>sort</code> boş satırları sildiği için</li><li><code>uniq -c</code> sonucu kendiliğinden sıraladığı için <code>sort</code> yalnız hız kazandırır</li><li><code>uniq</code> yalnız art arda gelen aynı satırları birleştirdiği için aynı değerler önce yan yana getirilmelidir</li><li><code>sort</code> olmadan <code>uniq</code> hata verip durduğu için</li></ul>
+<div class="coz"><p><code>uniq</code> yalnız komşu satırları karşılaştırır. <code>a</code>, <code>b</code>, <code>a</code> satırlarından oluşan bir dosyada <code>uniq -c</code> üç ayrı "1" satırı verdi; <code>sort | uniq -c</code> ise <code>2 a</code> ve <code>1 b</code> verdi. A ve E yanlış: <code>uniq</code> metinle de çalışır ve sıralanmamış girdide hata vermez, yalnız yanlış sayar. B, <code>sort</code>'un görevi değildir. C tersidir: <code>uniq</code> sıralamaz.</p></div></li>
+
+<li data-c="E" data-k="siber-10"><p class="q">Bir kurulum sayfası <code>curl -s https://ornek.test/kur.sh | sudo bash</code> komutunu öneriyor. Bu yöntemin temel riski nedir?</p>
+<ul class="sec"><li><code>curl</code> HTTPS'i desteklemediği için bağlantı şifrelenmez.</li><li>Betik yalnız kullanıcı yetkisiyle çalıştığı için kurulum yarım kalır.</li><li>Betik paket yöneticisinin bütünlük denetiminden geçtiği için yavaş çalışır.</li><li><code>bash</code> boru ile gelen betikleri çalıştıramaz.</li><li>İçeriği görülmemiş ve imzası doğrulanmamış bir betik doğrudan root yetkisiyle çalıştırılır.</li></ul>
+<div class="coz"><p>Parça 10'da dağıtım dışı yazılım kurmanın en riskli biçimi olarak gördün: borunun ucundaki kabuk, indirilen her şeyi o anda ve burada <code>sudo</code> ile root olarak çalıştırır; okumaya, özetini ya da imzasını doğrulamaya fırsat kalmaz. A yanlış, <code>curl</code> HTTPS kullanır; ama HTTPS yalnız taşımayı korur, içeriğin güvenilirliğini değil. B tersidir: <code>sudo</code> en geniş yetkiyi verir. C'deki denetim burada hiç yoktur. D yanlış: <code>bash</code> girdisini standart girdiden okuyabilir.</p></div></li>
+
+<li data-c="C" data-k="siber-10"><p class="q">APT güven zincirinde bir paketin değiştirilmediği nasıl anlaşılır?</p>
+<ul class="sec"><li>Paket dosyasının adı ve sürüm numarası kontrol edilir.</li><li>Paket HTTPS ile indirildiyse başka denetime gerek yoktur.</li><li>Deponun imzalı <code>Release</code> dosyası güvenilen anahtarla doğrulanır; bu dosyadaki özetler paket listelerini, listelerdeki özetler de paketleri doğrular.</li><li>Paketin boyutu bir önceki sürümle karşılaştırılır.</li><li>Paket kurulduktan sonra çalıştırılıp davranışı izlenir.</li></ul>
+<div class="coz"><p>APT zinciri imzadan özetlere iner: depo, <code>Release</code> (ya da <code>InRelease</code>) dosyasını özel anahtarıyla imzalar; APT bu imzayı sistemdeki güvenilen açık anahtarla doğrular; dosyadaki özetler paket listelerinin, listelerdeki özetler de tek tek paketlerin bütünlüğünü sağlar. A ve D kolayca taklit edilir. B'de HTTPS taşımayı korur ama yansı sunucusunun kendisi ele geçirilmişse işe yaramaz; imza bu yüzden asıl güvencedir. E, zararı oluştuktan sonra fark etmektir.</p></div></li>
+
+<li data-c="A" data-k="siber-11"><p class="q"><code>/etc/passwd</code> ile <code>/etc/shadow</code> arasındaki ayrım için hangisi doğrudur?</p>
+<ul class="sec"><li><code>/etc/passwd</code> herkesin okuyabildiği kullanıcı bilgilerini, <code>/etc/shadow</code> yalnız root'un (ve <code>shadow</code> grubunun) okuyabildiği parola özetlerini tutar.</li><li>İkisi de parolaları açık metin olarak tutar.</li><li><code>/etc/shadow</code> herkese açıktır, <code>/etc/passwd</code> gizlidir.</li><li><code>/etc/passwd</code> parola özetlerini, <code>/etc/shadow</code> yalnız grup bilgilerini tutar.</li><li>Modern sistemlerde ikisi de kullanılmaz.</li></ul>
+<div class="coz"><p>Kullanıcı adlarını ve UID'leri programlar sürekli okuduğu için <code>/etc/passwd</code> 644'tür; parola alanında yalnız <code>x</code> durur. Özetler <code>/etc/shadow</code>'dadır ve bu makinede izni <code>-rw-r----- root shadow</code> idi. B, açık metin saklama yanılgısıdır; özetler tutulur. C ve D iki dosyanın rolünü karıştırır; grup bilgisi <code>/etc/group</code>'tadır. E yanlıştır; Debian tabanlı sistemler ikisini de kullanır.</p></div></li>
+
+<li data-c="B" data-k="siber-11"><p class="q"><code>su</code> ile <code>sudo</code> arasındaki farkı en doğru anlatan hangisidir?</p>
+<ul class="sec"><li>İkisi aynıdır; yalnız yazılışları farklıdır.</li><li><code>su</code> hedef kullanıcının (çoğunlukla root'un) parolasıyla onun kabuğuna geçer; <code>sudo</code> kişinin kendi parolasıyla, <code>sudoers</code>'taki kurallara göre tek tek komut çalıştırır ve kaydını tutar.</li><li><code>sudo</code> root parolasını ister, <code>su</code> hiçbir parola istemez.</li><li><code>su</code> yalnız grafik arayüzde, <code>sudo</code> yalnız uzaktan bağlantıda çalışır.</li><li><code>sudo</code> komutları kalıcı olarak root kullanıcısına dönüştürür.</li></ul>
+<div class="coz"><p>Parça 11'deki ayrım: <code>su</code> kimlik değiştirir ve hedef kullanıcının parolasını ister; root parolasının paylaşılmasını gerektirir. <code>sudo</code> ise kişinin kendi parolasıyla, <code>visudo</code> ile düzenlenen dar kurallara göre komut çalıştırır ve her kullanımı kaydeder; en az yetkiye daha uygundur. C ikisini ters çevirir. A, D ve E temelsizdir. Bu parçadaki envanterde ikisinin de SUID root programlar olduğunu (<code>/usr/bin/su</code>, <code>/usr/bin/sudo</code>) gördün.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-11">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-12">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-13">Sonraki parça: Süreçler ve sinyaller →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux file permissions chmod octal explained"</li>
+  <li>"linux directory permissions execute bit delete file"</li>
+  <li>"umask explained linux"</li>
+  <li>"suid sgid sticky bit find perm audit"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> <code>stat</code> ile iki gösterim, <code>chmod</code> simgesel/sekizlik dizisi, sahip-önce denetimi (0604, 0040), <code>chgrp</code>/<code>chown</code> denemeleri, dört umask değeri ve Python doğrulaması, alt kabukta <code>umask</code>/<code>umask -S</code>, <code>/proc/self/status</code>, dizin w/r/x deneyleri, <code>namei -l</code>, SUID kopyasında <code>s</code>/<code>S</code> ve bitin <code>chgrp</code> ile yazmada düşmesi, SGID dizin, sticky <code>t</code>/<code>T</code>, SUID/SGID envanteri ve <code>dpkg -S</code> eşlemesi, <code>getcap</code>, ACL (<code>setfacl</code>, <code>getfacl</code>, maske, <code>-b</code>), <code>find -perm</code> aramaları, kritik dosyaların <code>stat</code> çıktıları. Quiz'deki izin hesapları, <code>hex(0b11010110)</code>, <code>uniq -c</code> ile <code>sort | uniq -c</code> farkı ve <code>-perm 4000</code> / <code>-4000</code> / <code>/6000</code> / <code>-6000</code> davranışı ayrı bir deneme klasöründe çalıştırılarak doğrulandı. Ortam: Windows 11 üstünde WSL2, Kali GNU/Linux Rolling, çekirdek 6.18, ext4 kök dosya sistemi, ACL destekli.</li>
+  <li><strong>Kullanıcı ad alanıyla yapılan:</strong> <code>unshare -r</code> içinde sahte root'un kendi 000 izinli dosyasını okuması; bu gerçek root değildir. Aynı deneyde grubu <code>adm</code> (ad alanında eşlenmemiş) olan dosyayı ad alanı root'u okuyamadı; bunun çekirdeğin "sahip ve grup eşlenmiş olmalı" kuralından geldiği çıkarımı gözleme dayanır, çekirdek kaynağından ayrıca doğrulanmadı.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> Sticky bitin başka bir kullanıcının silmesini engellemesi (ikinci kullanıcı gerekir; ortamda <code>newuidmap</code> yok ve <code>sudo</code> kullanılmadı). <code>dpkg-statoverride</code>, <code>chmod u-s</code> ile sistem dosyasından bit kaldırmak ve <code>dpkg --verify</code> (root/sistem değişikliği gerektirir ya da bu parçada gerekmedi). <code>nosuid</code> bağlama denemesi bu parçada yapılmadı (Parça 8).</li>
+  <li><strong>Gizlilik:</strong> Çıktılarda gerçek kullanıcı adı ve birincil grup adı <code>kullanici</code>, ev dizini yolu sadeleştirildi; <code>namei</code> ve <code>ls -l</code> sütun hizaları bu yüzden özgün çıktıdan biraz farklıdır. <code>findmnt</code> çıktısı WSL'ye özgü yollar içerdiği için metne konmadı. Adım 8'de aynı oturumda çalıştırılan üç <code>find</code> komutundan ikisi gösterildi. Adım 4'teki <code>cd</code> denemesi, betik yolunu içeren hata iletisini önlemek için <code>bash -c</code> ile ayrıca çalıştırıldı. SUID listesi Kali'ye ve bu kuruluma özgüdür.</li>
+  <li><strong>Resmî belgeden:</strong> man7.org <code>path_resolution(7)</code> (sınıf seçimi, arama izni, <code>CAP_DAC_OVERRIDE</code>), <code>inode(7)</code> (SGID dizin, sticky), <code>chown(2)</code> (<code>CAP_CHOWN</code>, grup üyeliği, SUID/SGID temizlenmesi, Linux 2.2.13), <code>umask(2)</code> (<code>0666 &amp; ~022</code>, 022 varsayılanı, varsayılan ACL, Linux 4.7 <code>Umask:</code>), <code>execve(2)</code> (etkin UID, <code>nosuid</code>, <code>no_new_privs</code>, ptrace, betiklerde yok sayılma), <code>acl(5)</code> (girdi türleri, maske, denetim sırası), <code>find(1)</code> (<code>-perm</code> biçimleri, <code>-xdev</code>, <code>-nouser</code>); POSIX <code>write(3p)</code> (SUID/SGID'in yazmada temizlenebilmesi).</li>
+  <li><strong>İkincil kaynaktan ya da tartışmalı:</strong> CIS Debian kıyaslamalarındaki madde adları (sticky bit, herkese yazılabilir dosya, sahipsiz dosya, SUID/SGID gözden geçirme) ikincil sitelerden görüldü; güncel resmî CIS belgesiyle karşılaştırılmadı. Debian'da varsayılan umask'ın <code>pam_umask</code> ve <code>login.defs</code> (<code>USERGROUPS_ENAB</code>) ile 022 ya da 002 olabileceği yerel dosyalardan ve hafızadan; bu makinede kabukta 022 gözlendi.</li>
+  <li><strong>Hafızadan:</strong> <code>chmod</code>'un büyük <code>X</code> davranışı, sticky bitin dosyalardaki eski anlamının Linux'ta kullanılmadığı, <code>mktemp</code>'in dosyayı 600 ile oluşturduğu, <code>dpkg-statoverride</code> ve <code>rpm -qf</code> kullanımı, ext4/XFS'te ACL'nin olağan açık olduğu. Kod rafı parça numaraları <code>kod.md</code>'den, siber parça numaraları <code>siber.md</code>'den doğrulandı.</li>
+  <li><strong>Saldırı sınırı:</strong> Yanlış SUID, yazılabilir dosya ve ACL riskleri yalnız "neden tehlikeli, nasıl bulunur, nasıl kapatılır" düzeyinde anlatıldı; hiçbir sömürü yöntemi, yetki yükseltme adımı ya da araç verilmedi. Bütün denemeler kendi dosyalarımız üzerinde yapıldı. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

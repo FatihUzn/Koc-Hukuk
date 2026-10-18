@@ -1,0 +1,624 @@
+<article class="chapter ders" id="c-siber-8">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 8 · Linux ve dosya sistemi</div>
+<h1>Linux'a giriş ve dosya sistemi hiyerarşisi: tek kökten büyüyen ağaç</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir sunucuya ilk kez bakan bir savunmacı olduğunu düşün. Makinede binlerce dosya var. Hangisi sistemin ayarı, hangisi bir kullanıcının belgesi, hangisi çalışan bir programın geçici izi? Bir yapılandırma dosyasını nerede ararsın, günlükleri nerede bulursun, şüpheli bir dosyanın hangi dizinde durması seni kuşkulandırır? Ve bu makinenin "Linux" olduğunu söylediğinde aslında neyi söylemiş olursun: çekirdeği mi, dağıtımı mı, ikisini birden mi?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 4 (çekirdek ile kullanıcı alanı, sistem çağrısı, önyükleme ve init), Parça 5 (süreç, PID, <code>/proc/self/maps</code>), Parça 7 (laboratuvar, ad alanları, <code>unshare</code>). Kod rafından Parça 15 (kabuk, yol, <code>ls -a</code>, gizli dosyalar) ve Parça 16 (yönlendirme) zemindir. Bütün denemeler kendi Linux makinende ya da laboratuvar VM'inde yapılır; hiçbiri root istemez ve sistemde kalıcı bir şey değiştirmez.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bu parçayla rafın Linux bloğu (Parça 8–19) başlıyor. Önceki yedi parçada bilgisayarı aşağıdan yukarı kurduk; artık o çekirdeğin üstünde çalışan gerçek bir işletim sistemine bakıyoruz. Bloğun bütün konularının ortak zemini bu parçada kurulur: <strong>Linux nedir</strong> ve <strong>dosyaları nereye koyar</strong>.</p>
+
+<p>Parçanın beş taşı şunlar: <strong>çekirdek ile dağıtım farkı</strong>, <strong>kabuk</strong>, <strong>dosya sistemi hiyerarşisi</strong>, <strong>"her şey dosyadır" ilkesi</strong> ve <strong>bağlama</strong> (dosya sistemlerinin tek ağaca eklenmesi ve <code>noexec</code>, <code>nosuid</code> gibi seçeneklerle sınırlanması). Savunmacı için bu bir harita bilgisidir: haritayı bilen, yerinde olmayan şeyi fark eder.</p>
+
+<h2 class="s">1. Linux nedir: çekirdek ile dağıtım</h2>
+
+<p>"Linux" sözcüğü günlük dilde iki ayrı şey için kullanılır ve bu karışıklık güvenlikte gerçek hatalara yol açar. Dar anlamıyla Linux bir <strong>çekirdektir</strong>: Parça 4'te gördüğün, halka 0'da çalışan, süreçleri, belleği, dosya sistemlerini ve sürücüleri yöneten program. Linus Torvalds onu 25 Ağustos 1991'de bir haber grubunda "yalnızca bir hobi" diye duyurdu, ilk sürümü (0.01) eylülde yayımladı; bugün GPL sürüm 2 lisanslıdır.</p>
+
+<p>Ama tek başına çekirdekte ne kabuk, ne <code>ls</code>, ne de hizmetleri başlatan bir init vardır. Bunları çekirdeğin çevresine toplayıp sınanmış, güncellenebilen bir bütüne çeviren işe <strong>dağıtım</strong> denir. Bu araçların önemli bir kısmı GNU projesinden gelir (Bash, <code>coreutils</code>, glibc); bu yüzden bazı kaynaklar bütüne "GNU/Linux" der. Kali'nin kendi adı da "Kali GNU/Linux"tur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Linux çekirdeği</strong>, donanımı yöneten ve programlara sistem çağrılarıyla hizmet veren tek bir yazılımdır; kendi sürüm numarası vardır (<code>uname -r</code> gösterir). <strong>Dağıtım</strong> (distribution, kısaca distro), bir çekirdeği; C kütüphanesini, kabuğu, temel araçları, init sistemini, paket yöneticisini, varsayılan yapılandırmayı ve güvenlik güncellemesi hizmetini bir araya getiren işletim sistemidir; onun da ayrı bir sürüm numarası ve destek takvimi vardır (<code>/etc/os-release</code> gösterir).</p></div>
+
+<p>Ayrımın güvenlikteki önemi somuttur: bir açık çekirdekte (Parça 5'teki Dirty COW gibi) ya da dağıtımın paketlediği bir programda olabilir. Çekirdek güncellemesi çoğu zaman yeniden başlatma ister, paketler istemez. İki sürümü karıştıran yanlış şeyi günceller.</p>
+
+<figure>
+<svg viewBox="0 0 400 340" role="img" aria-label="Linux sisteminin katmanları: donanım, Linux çekirdeği, sistem çağrısı sınırı, dağıtımın parçaları, kabuk ve uygulamalar; dağıtım çekirdekle birlikte bunların hepsini kapsar">
+  <rect class="sv-k" x="20" y="20" width="250" height="40" rx="6"/><text class="sv-t" x="145" y="45" text-anchor="middle">Uygulamalar ve sen</text>
+  <rect class="sv-m" x="20" y="70" width="250" height="40" rx="6"/><text class="sv-t" x="145" y="95" text-anchor="middle">Kabuk (bash, zsh) ve araçlar</text>
+  <rect class="sv-m" x="20" y="120" width="250" height="56" rx="6"/><text class="sv-t" x="145" y="142" text-anchor="middle">glibc, systemd (init), paket</text><text class="sv-t" x="145" y="162" text-anchor="middle">yöneticisi, /etc'deki ayarlar</text>
+  <line class="sv-cl" x1="20" y1="192" x2="270" y2="192"/>
+  <text class="sv-s" x="145" y="186" text-anchor="middle">sistem çağrısı sınırı (Parça 4)</text>
+  <rect class="sv-l" x="20" y="200" width="250" height="56" rx="6"/><text class="sv-b" x="145" y="222" text-anchor="middle">Linux çekirdeği</text><text class="sv-s" x="145" y="242" text-anchor="middle">süreç, bellek, dosya sistemi, sürücü</text>
+  <rect class="sv-k" x="20" y="266" width="250" height="40" rx="6"/><text class="sv-t" x="145" y="291" text-anchor="middle">Donanım</text>
+  <line class="sv-c" x1="285" y1="70" x2="285" y2="256"/>
+  <line class="sv-c" x1="280" y1="70" x2="290" y2="70"/>
+  <line class="sv-c" x1="280" y1="256" x2="290" y2="256"/>
+  <text class="sv-b" x="345" y="150" text-anchor="middle">Dağıtım</text>
+  <text class="sv-s" x="345" y="168" text-anchor="middle">os-release:</text>
+  <text class="sv-s" x="345" y="184" text-anchor="middle">2026.2</text>
+  <line class="sv-c" x1="300" y1="200" x2="300" y2="256"/>
+  <text class="sv-s" x="345" y="222" text-anchor="middle">uname -r:</text>
+  <text class="sv-s" x="345" y="238" text-anchor="middle">6.18.33.2</text>
+  <text class="sv-s" x="200" y="328" text-anchor="middle">Dağıtım, çekirdeği ve üstündeki her şeyi birlikte paketler.</text>
+</svg>
+<figcaption>Linux sözcüğünün iki anlamı. Dar anlamda yalnız mor katman, yani çekirdek; geniş anlamda dağıtımın paketlediği bütün yeşil katmanlar da. İki katmanın sürüm numaraları birbirinden bağımsızdır: bu makinede dağıtım Kali 2026.2, çekirdek 6.18.33.2.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: hangi sürüm kimin?</span>
+<p><strong>Soru:</strong> Kendi makinende dağıtımın adını ve sürümünü, çekirdeğin sürümünü ayrı ayrı bul. İkisi neden farklı sayılar?</p>
+<p><strong>Adım 1.</strong> Dağıtımın kimliğini oku. <code>/etc/os-release</code>, systemd'nin tanımladığı ve neredeyse bütün güncel dağıtımların taşıdığı küçük bir metin dosyasıdır; satırları <code>ANAHTAR=değer</code> biçimindedir.</p>
+<pre class="kod" data-ad="bash">grep -E '^(PRETTY_NAME|ID|ID_LIKE|VERSION_ID)=' /etc/os-release
+uname -r
+cat /proc/version</pre>
+<pre class="cikti">PRETTY_NAME="Kali GNU/Linux Rolling"
+VERSION_ID="2026.2"
+ID=kali
+ID_LIKE=debian
+6.18.33.2-microsoft-standard-WSL2
+Linux version 6.18.33.2-microsoft-standard-WSL2 (root@f1bbfb02316b) (gcc (GCC) 13.2.0, GNU ld (GNU Binutils) 2.41) #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026</pre>
+<p><strong>Adım 2.</strong> İlk dört satır dağıtıma ait. <code>ID=kali</code> makinenin okuyacağı kısa ad, <code>ID_LIKE=debian</code> "Debian ailesindenim" demek: paketler <code>.deb</code>, araç <code>apt</code>. <code>VERSION_ID="2026.2"</code> Kali'nin anlık sürümü; "Rolling" ise sürekli güncellenen (yuvarlanan) bir dağıtım olduğunu söyler.</p>
+<p><strong>Adım 3.</strong> <code>uname -r</code> çekirdeğe sorar ve yalnız çekirdeğin sürümünü verir: 6.18.33.2. Sonundaki <code>microsoft-standard-WSL2</code>, bu çekirdeği Kali'nin değil Microsoft'un derlediğini gösterir (Parça 7: WSL 2 çekirdeği hafif bir VM'de koşar).</p>
+<p><strong>Adım 4.</strong> <code>/proc/version</code> aynı bilgiyi biraz daha ayrıntılı verir: çekirdeği derleyen derleyici (gcc 13.2.0) ve derleme tarihi. Bu dosya diskte değil, çekirdeğin o an ürettiği bir metindir; birazdan bunun ne demek olduğunu göreceğiz.</p>
+<p><strong>Sonuç:</strong> Dağıtım 2026.2, çekirdek 6.18.33.2: iki ayrı ürün, iki ayrı takvim. Bu ortamda çekirdeği Windows günceller, kullanıcı alanını Kali'nin <code>apt</code>'ı. Laboratuvarındaki Debian ya da Ubuntu VM'inde ikisi de dağıtımdan gelir, ama numaralar yine ayrıdır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kali, Ubuntu ve Fedora farklı işletim sistemleri olduğuna göre çekirdekleri de tamamen farklıdır" ya da tersine "hepsi Linux olduğuna göre aynı şeydir" diye düşünmek.</strong> İkisi de yanlış: hepsi aynı çekirdek projesinden gelir, ama her dağıtım onu kendi ayarları ve yamalarıyla, farklı sürümlerde paketler; üstündeki araçlar ve varsayılan ayarlar da farklıdır. Doğrusu: bir açığın seni etkileyip etkilemediğini "Linux kullanıyorum" diye değil, <code>uname -r</code> ile çekirdek sürümüne ve dağıtımın kendi güvenlik duyurusuna bakarak anlarsın.</p></div>
+
+<h2 class="s">2. Yaygın dağıtımlar</h2>
+
+<p>Yüzlerce dağıtım var, ama çoğu birkaç büyük ailenin çocuğudur. Bir aile; aynı paket biçimini, benzer dizin düzenini ve benzer yönetim alışkanlıklarını paylaşır. Bir aileyi öğrenen, kardeşlerinde çabuk yolunu bulur. Paketlerin nasıl kurulduğu ve imzalandığı Parça 10'un konusu; burada yalnız haritayı çiziyoruz.</p>
+
+<div class="tablo"><table>
+<tr><th>Aile ve örnekler</th><th>Paket biçimi ve aracı</th><th>Sürüm yaklaşımı</th><th>En çok nerede görürsün</th></tr>
+<tr><td>Debian; Ubuntu, Kali, Linux Mint</td><td><code>.deb</code>, <code>apt</code>/<code>dpkg</code></td><td>Kararlı sürümler, Ubuntu'da uzun destekli (LTS); Kali sürekli güncellenen (rolling)</td><td>Sunucu, bulut, masaüstü; Kali güvenlik araçlarıyla</td></tr>
+<tr><td>Red Hat; RHEL, Fedora, Rocky Linux, AlmaLinux</td><td><code>.rpm</code>, <code>dnf</code>/<code>rpm</code></td><td>RHEL ve türevleri uzun destekli; Fedora hızlı yenilenen</td><td>Kurumsal sunucular</td></tr>
+<tr><td>SUSE; openSUSE, SLES</td><td><code>.rpm</code>, <code>zypper</code></td><td>Kararlı (Leap, SLES) ve rolling (Tumbleweed) kollar</td><td>Kurumsal ortamlar, özellikle Avrupa</td></tr>
+<tr><td>Arch Linux</td><td><code>pacman</code></td><td>Rolling</td><td>Deneyimli masaüstü kullanıcıları</td></tr>
+<tr><td>Alpine Linux</td><td><code>apk</code></td><td>Küçük, sade; musl C kütüphanesi</td><td>Konteyner kalıpları (Parça 7)</td></tr>
+<tr><td>Android</td><td>Uygulama paketleri (APK)</td><td>Üretici ve Google güncellemeleri</td><td>Telefonlar: Linux çekirdeği, ama GNU araçları ve FHS düzeni yok</td></tr>
+</table></div>
+
+<p>Tablonun son satırı çekirdek ile dağıtım ayrımının en çarpıcı örneğidir: Android, Linux çekirdeğini kullanır, ama üstündeki dünya bu parçada anlatılan klasik dağıtımlara hiç benzemez. Laboratuvarın için Debian ailesinden bir dağıtım yeterlidir; Kali araçlarını hazır getirir, ama günlük ana sistem olarak değil, laboratuvar VM'i olarak tasarlanmıştır.</p>
+
+<h2 class="s">3. Neden güvenlikte Linux?</h2>
+
+<p>Bir savunmacı Windows'u da bilmek zorundadır (Parça 61–65). Yine de Linux bilgisi bu alanın ortak dilidir ve bunun dört nedeni var. <strong>Birincisi, korunacak şeylerin çoğu Linux'ta çalışır.</strong> Web sunucularının, bulut sanal makinelerinin, konteynerlerin ve ağ cihazlarının büyük çoğunluğu Linux çekirdeği üzerindedir; TOP500 listesindeki dünyanın en hızlı 500 süper bilgisayarının hepsi Kasım 2017'den beri Linux kullanır. Savunduğun şeyi tanımadan savunamazsın.</p>
+
+<p><strong>İkincisi, açıktır ve okunur.</strong> Kaynak kodu açıktır; bir davranışın nedenini belgeden, gerekirse koddan doğrularsın (Parça 4'teki <code>strace</code>, Parça 5'teki <code>/proc/self/maps</code> gibi). <strong>Üçüncüsü, metinle yönetilir.</strong> Ayarlar ve günlükler düz metindir, araçlar borularla bağlanır (kod rafı Parça 16); her adımı görebilir, kaydedebilir, otomatikleştirebilirsin. <strong>Dördüncüsü, araçların çoğu oradadır:</strong> paket yakalama, günlük analizi ve adli bilişim araçları ile eğitim platformları (Parça 74) Linux konuşur.</p>
+
+<p>Bir uyarı: "Linux virüs almaz" diye bir şey yoktur. Yaygın olduğu için hedeftir; yanlış bir izin, güncellenmemiş bir paket ya da sızmış bir SSH anahtarı her sistemde aynı sonucu doğurur. Rafın sınırı burada da geçerlidir: bu parçadaki her şey yalnız kendi makinende ya da izinli laboratuvarında yapılır; başkasının sistemini kurcalamak suçtur (Parça 72–73).</p>
+
+<h2 class="s">4. Kabuk: seninle sistem arasındaki tercüman</h2>
+
+<p>Kod rafı Parça 15'te kabuğu (shell) kullanıcı olarak tanıdın: satırı sözcüklere ayıran, joker karakterleri genişleten, <code>PATH</code>'te programı bulup çalıştıran program. İşletim sistemi gözüyle kabuk çekirdeğin bir parçası değil, sıradan bir kullanıcı alanı sürecidir. Sen <code>ls</code> yazınca kabuk <code>fork</code> ile çoğalır, çocuk <code>execve</code> ile <code>/usr/bin/ls</code>'yi yükler. Yani kabuğun yetkisi tam olarak senin yetkindir; ne fazlası ne eksiği.</p>
+
+<p>Birden çok kabuk vardır. <strong>Bash</strong> kod rafında öğrendiğin ve Debian ailesinde çoğu hesapta varsayılan kabuktur. Kali 2020.4'ten (Kasım 2020) beri masaüstünde <strong>zsh</strong> kullanır (WSL kalıbı Bash'te kaldı; burada <code>$SHELL</code> <code>/bin/bash</code>). Betiklerin çağırdığı <code>/bin/sh</code> ise Debian ailesinde küçük ve hızlı <strong>dash</strong>'tir: bu makinede <code>ls -l /bin/sh</code> <code>/bin/sh -> dash</code> gösteriyor. Sistemin giriş kabuğu olarak kabul ettiği programların listesi <code>/etc/shells</code> dosyasındadır.</p>
+
+<p>Güvenlik açısından kabuğun iki yüzü var: yönetimin aracıdır, ama saldırganın da aradığı şeydir. Kullanıcı girdisinin kabuğa geçmesi (komut enjeksiyonu, Parça 52) ya da ele geçirilen bir hesapta kabuk açılması, sistemin o hesabın yetkisiyle yönetilebilmesi demektir. Bu yüzden hizmet hesaplarının giriş kabuğu çoğu zaman <code>/usr/sbin/nologin</code> olur (Parça 11). Komut satırında dolaşmak ve metinle çalışmak Parça 9'un konusu.</p>
+
+<h2 class="s">5. Dosya sistemi hiyerarşisi: her dizinin bir görevi var</h2>
+
+<p>Windows'ta her disk ayrı bir harfle başlar: <code>C:\</code>, <code>D:\</code>. Linux'ta ise <strong>tek bir ağaç</strong> vardır ve kökü <code>/</code>'dır. Kaç disk, kaç bölüm, hatta kaç sanal dosya sistemi olursa olsun, hepsi bu ağacın bir dalına eklenir (bağlama, aşağıda). Bir ağacın faydalı olması için dalların anlamı üzerinde anlaşmak gerekir; yoksa her dağıtım ayarlarını, programlarını ve günlüklerini başka yere koyar ve hiçbir araç, hiçbir yönetici ötekini anlamaz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Dosya Sistemi Hiyerarşisi Standardı (FHS)</strong>, Linux Foundation'ın yayımladığı ve hangi tür dosyanın hangi dizinde duracağını tanımlayan sözleşmedir; güncel sürümü 3.0'dır (Mart 2015). Yaygın dağıtımlar büyük ölçüde ona uyar; <code>hier(7)</code> ve <code>file-hierarchy(7)</code> sayfaları aynı düzeni anlatır. FHS dizinleri iki eksende ayırır: <strong>paylaşılabilir mi</strong> (başka makinelerle ortak olabilir mi) ve <strong>değişken mi</strong> (sistem çalışırken değişir mi).</p></div>
+
+<p>Bu iki eksen sana bir ipucu verir: <strong>neyin değişmesi gerektiğini bilirsen, değişmemesi gereken şey değiştiğinde fark edersin.</strong> <code>/usr</code>'da beklenmedik yeni bir dosya, <code>/var/log</code>'da aniden küçülen bir günlük kuşku uyandırır. Dosya bütünlüğü izleme (kod rafı Parça 18, siber Parça 17) bu fikrin otomatikleşmiş hâlidir.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Linux dosya sistemi ağacı: kök dizinin altında etc, var, home, usr, tmp, root, proc, sys, dev ve boot dizinleri; renkler yapılandırma, değişken veri, programlar ve çekirdeğin sanal dosya sistemleri olarak ayrılmış">
+  <rect class="sv-k" x="290" y="14" width="60" height="32" rx="6"/><text class="sv-b" x="320" y="36" text-anchor="middle">/</text>
+  <line class="sv-c" x1="40" y1="70" x2="600" y2="70"/>
+  <line class="sv-c" x1="320" y1="46" x2="320" y2="70"/>
+  <line class="sv-c" x1="40" y1="70" x2="40" y2="84"/><line class="sv-c" x1="102" y1="70" x2="102" y2="84"/><line class="sv-c" x1="164" y1="70" x2="164" y2="84"/><line class="sv-c" x1="226" y1="70" x2="226" y2="84"/><line class="sv-c" x1="288" y1="70" x2="288" y2="84"/><line class="sv-c" x1="350" y1="70" x2="350" y2="84"/><line class="sv-c" x1="412" y1="70" x2="412" y2="84"/><line class="sv-c" x1="474" y1="70" x2="474" y2="84"/><line class="sv-c" x1="536" y1="70" x2="536" y2="84"/><line class="sv-c" x1="600" y1="70" x2="600" y2="84"/>
+  <rect class="sv-a" x="12" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="40" y="106" text-anchor="middle">etc</text>
+  <rect class="sv-m" x="74" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="102" y="106" text-anchor="middle">var</text>
+  <rect class="sv-m" x="136" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="164" y="106" text-anchor="middle">home</text>
+  <rect class="sv-l" x="198" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="226" y="106" text-anchor="middle">usr</text>
+  <rect class="sv-m" x="260" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="288" y="106" text-anchor="middle">tmp</text>
+  <rect class="sv-m" x="322" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="350" y="106" text-anchor="middle">root</text>
+  <rect class="sv-k" x="384" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="412" y="106" text-anchor="middle">proc</text>
+  <rect class="sv-k" x="446" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="474" y="106" text-anchor="middle">sys</text>
+  <rect class="sv-k" x="508" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="536" y="106" text-anchor="middle">dev</text>
+  <rect class="sv-l" x="572" y="84" width="56" height="34" rx="6"/><text class="sv-t" x="600" y="106" text-anchor="middle">boot</text>
+  <text class="sv-s" x="40" y="138" text-anchor="middle">ssh/</text><text class="sv-s" x="40" y="154" text-anchor="middle">hosts</text>
+  <text class="sv-s" x="102" y="138" text-anchor="middle">log/</text><text class="sv-s" x="102" y="154" text-anchor="middle">lib/</text>
+  <text class="sv-s" x="164" y="138" text-anchor="middle">kullanici/</text><text class="sv-s" x="164" y="154" text-anchor="middle">.bashrc</text>
+  <text class="sv-s" x="226" y="138" text-anchor="middle">bin/</text><text class="sv-s" x="226" y="154" text-anchor="middle">lib/</text>
+  <text class="sv-s" x="288" y="138" text-anchor="middle">herkes</text><text class="sv-s" x="288" y="154" text-anchor="middle">yazar</text>
+  <text class="sv-s" x="350" y="138" text-anchor="middle">root'un</text><text class="sv-s" x="350" y="154" text-anchor="middle">evi</text>
+  <text class="sv-s" x="412" y="138" text-anchor="middle">self</text><text class="sv-s" x="412" y="154" text-anchor="middle">version</text>
+  <text class="sv-s" x="474" y="138" text-anchor="middle">class/</text><text class="sv-s" x="474" y="154" text-anchor="middle">block/</text>
+  <text class="sv-s" x="536" y="138" text-anchor="middle">null</text><text class="sv-s" x="536" y="154" text-anchor="middle">sda</text>
+  <text class="sv-s" x="600" y="138" text-anchor="middle">çekirdek</text><text class="sv-s" x="600" y="154" text-anchor="middle">dosyası</text>
+  <rect class="sv-a" x="40" y="190" width="18" height="14" rx="3"/><text class="sv-s" x="66" y="202">yapılandırma (değişmez sayılır, makineye özgü)</text>
+  <rect class="sv-m" x="40" y="214" width="18" height="14" rx="3"/><text class="sv-s" x="66" y="226">değişken veri (günlük, kullanıcı, geçici)</text>
+  <rect class="sv-l" x="40" y="238" width="18" height="14" rx="3"/><text class="sv-s" x="66" y="250">program ve statik dosyalar (yalnız güncellemeyle değişir)</text>
+  <rect class="sv-k" x="40" y="262" width="18" height="14" rx="3"/><text class="sv-s" x="66" y="274">çekirdeğin bellekte ürettiği sanal dosya sistemleri</text>
+</svg>
+<figcaption>Kök dizinin en önemli on dalı ve her birinden bir örnek. Renkler FHS'nin "değişken mi?" eksenine göre: turuncu yapılandırma, yeşil değişen veri, mor programlar, gri ise diskte hiç durmayan, çekirdeğin o an ürettiği sanal dizinler. Bir dosyayı yanlış renkte bulmak (örneğin <code>/tmp</code>'de çalışan bir program ya da <code>/etc</code>'de bir ELF dosyası) incelemeye değer bir işarettir.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Dizin</th><th>Ne tutar (FHS ve belgeler)</th><th>Savunmacı gözüyle</th></tr>
+<tr><td><code>/</code></td><td>Ağacın kökü</td><td>Kökte beklenmedik yeni girdi incelenir</td></tr>
+<tr><td><code>/etc</code></td><td>Makineye özgü sistem yapılandırması; FHS'ye göre çalıştırılabilir ikili dosya konmaz (betikler olabilir)</td><td>Sistemin ayarlarının hepsi; değişiklikleri izlenir, yedeklenir</td></tr>
+<tr><td><code>/var</code></td><td>Değişken veri: günlükler (<code>/var/log</code>), önbellek, durum verisi</td><td>Olay incelemesinin ilk durağı (Parça 17)</td></tr>
+<tr><td><code>/home</code></td><td>Kullanıcıların ev dizinleri (<code>/home/kullanici</code>)</td><td>Kişisel veri, gizli yapılandırma dosyaları, SSH anahtarları</td></tr>
+<tr><td><code>/root</code></td><td>Root kullanıcısının ev dizini; <code>/home</code> altında değildir</td><td>Yalnız root okuyabilmeli; bu makinede <code>drwx------</code></td></tr>
+<tr><td><code>/usr</code></td><td>Paylaşılabilir, salt okunur veri: programlar, kütüphaneler; FHS'ye göre yazılmamalı</td><td>Yalnız paket yöneticisi değiştirmeli</td></tr>
+<tr><td><code>/tmp</code></td><td>Geçici dosyalar; programlar bir sonraki çalıştırmada orada bulacaklarını varsayamaz</td><td>Herkes yazabilir; bu yüzden zararlı dosyaların sık durduğu yer</td></tr>
+<tr><td><code>/var/tmp</code></td><td>Yeniden başlatmadan sonra da korunan geçici dosyalar</td><td><code>/tmp</code> ile aynı riskler, üstüne kalıcılık</td></tr>
+<tr><td><code>/proc</code></td><td>Çekirdek ve süreç bilgisini sunan sanal dosya sistemi</td><td>Çalışan süreçleri incelemenin kapısı (Parça 13)</td></tr>
+<tr><td><code>/sys</code></td><td>Aygıt ve sürücü modelini sunan sanal dosya sistemi</td><td>Bazı dosyalarına yazmak çekirdek ayarı değiştirir</td></tr>
+<tr><td><code>/dev</code></td><td>Aygıt dosyaları: disk, terminal, <code>/dev/null</code></td><td>Disk aygıtına okuma izni, diskin bütün içeriğine okuma izni demektir</td></tr>
+<tr><td><code>/boot</code></td><td>Önyükleyicinin statik dosyaları ve çekirdek kalıpları</td><td>Önyükleme zincirinin parçası (Parça 4, Secure Boot)</td></tr>
+</table></div>
+
+<h3>Programlar: <code>/usr</code> ve birleşmiş dizinler</h3>
+
+<p>Eski Unix sistemlerinde açılış için şart olan programlar <code>/bin</code> ve <code>/sbin</code>'de, geri kalanı <code>/usr/bin</code>'de dururdu, çünkü <code>/usr</code> çoğu zaman ayrı bir diskteydi ve geç bağlanırdı. Bugünkü Debian ailesinde bu ayrım kalktı: <code>/bin</code>, <code>/sbin</code> ve <code>/lib</code> artık <code>/usr</code> altındaki karşılıklarına bağlanan sembolik bağlantılardır. Bunu "Kendi makinende dene" bölümünde <code>bin -> usr/bin</code> satırında göreceksin. Sonuç pratiktir: <code>/bin/bash</code> ile <code>/usr/bin/bash</code> aynı dosyadır. Dağıtımın kurmadığı, elle derlenen programlar için <code>/usr/local</code>, üçüncü taraf büyük paketler için <code>/opt</code> ayrılmıştır; envanter çıkarırken bu iki dizine ayrıca bakarsın.</p>
+
+<h3>Değişken veri: <code>/var</code>, <code>/tmp</code> ve <code>/var/tmp</code></h3>
+
+<p><code>/var</code>, sistem çalıştıkça değişen her şeyin evidir: <code>/var/log</code> günlükleri, <code>/var/lib</code> programların durum verilerini (paket veritabanı gibi), <code>/var/cache</code> önbellekleri, <code>/var/spool</code> kuyrukları tutar. Günlükler burada durduğu için Parça 66'da onları makinenin dışına, merkezî bir yere toplamayı göreceksin.</p>
+
+<p>Geçici dizinler ikiye ayrılır. FHS'ye göre programlar <code>/tmp</code>'deki dosyaların bir sonraki çalıştırmaya kadar korunacağını <strong>varsayamaz</strong> ve açılışta temizlenmesi önerilir; <code>/var/tmp</code> ise yeniden başlatmalar arasında korunan geçici dosyalar içindir. Debian 13 (trixie) yeni kurulumlarda <code>/tmp</code>'yi bellekte duran bir <code>tmpfs</code> yaptı; kullanılmayan dosyalar <code>/tmp</code>'de 10, <code>/var/tmp</code>'de 30 gün sonra silinir. Bu makinede (WSL'deki Kali) ise <code>/tmp</code> kök dosya sisteminin sıradan bir dizinidir; farkı aşağıda <code>findmnt</code> ile okuyacağız.</p>
+
+<p>Geçici dizinlerin güvenlikteki önemi tek bir özellikten gelir: <strong>herkes yazabilir</strong>. <code>ls -ld /tmp</code> çıktısındaki <code>drwxrwxrwt</code> bunu söyler; sondaki <code>t</code> harfi, herkesin yazabildiği bu dizinde kimsenin başkasının dosyasını silememesini sağlayan "yapışkan bit"tir (ayrıntısı Parça 12). Herkesin yazabildiği yer, ayrıcalıksız bir saldırganın ilk dosyasını bırakabildiği yerdir; bağlama seçenekleri bu yüzden önerilir.</p>
+
+<h3>Ev dizinleri: <code>/home</code> ve <code>/root</code></h3>
+
+<p>Her kullanıcının belgeleri ve kişisel ayarları <code>/home/kullanici</code> gibi bir ev dizininde durur; kabukta <code>~</code> onun kısaltmasıdır (kod rafı Parça 15). Root'un ev dizini ise bilerek <code>/home</code>'un dışında, <code>/root</code>'tadır: <code>/home</code> ayrı bir diskteyse ve bağlanamazsa root yine onarım yapabilsin diye.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kök dizin" ile "root'un dizini"ni karıştırmak.</strong> İngilizcede ikisine de "root" denir, Türkçede de "kök" ve "root" sık karışır. <code>/</code> bütün ağacın köküdür ve herkes içini listeleyebilir. <code>/root</code> ise root kullanıcısının ev dizinidir ve sıradan kullanıcı içini göremez; bu makinede <code>ls /root</code> "Permission denied" verdi. Parça 4'teki üçüncü anlamı da unutma: root bir kimliktir, halka 0 bir işlemci kipidir. Bir rapora "dosya root'taydı" yazmak yerine yolu tam yaz: <code>/</code> altında mı, <code>/root</code> altında mı?</p></div>
+
+<h3>Çekirdeğin pencereleri: <code>/proc</code>, <code>/sys</code> ve <code>/dev</code></h3>
+
+<p>Bu üç dizin diskte durmaz. <code>proc(5)</code> belgesine göre <code>/proc</code>, "çekirdek veri yapılarına arayüz sağlayan bir sözde dosya sistemi"dir; <code>sysfs(5)</code> aynı tanımı <code>/sys</code> için yapar. İçlerindeki dosyaları okuduğunda çekirdek cevabı o anda üretir. Bu yüzden <code>ls -l /proc/version</code> boyutu 0 gösterir, ama okuyunca 167 bayt gelir. <code>/proc</code> süreçleri ve çekirdek bilgisini, <code>/sys</code> aygıtları ve sürücüleri sunar. <code>/proc/&lt;pid&gt;</code> altında bir sürecin komut satırını, ortamını ve açık dosyalarını okumak Parça 13'ün konusu; burada yalnız kapıyı açıyoruz.</p>
+
+<p><code>/dev</code> ise aygıt dosyalarını tutar: diskler (<code>/dev/sda</code>), terminaller, <code>/dev/urandom</code> ve <code>/dev/null</code>; onu da çekirdek (<code>devtmpfs</code>) ve udev aygıtlar takıldıkça doldurur.</p>
+
+<h2 class="s">6. "Her şey dosyadır"</h2>
+
+<p>Unix'in en eski tasarım kararlarından biri şudur: bir program diskteki bir metni, bir terminali, bir diski ya da çekirdeğin bir ayarını okurken aynı birkaç sistem çağrısını kullansın: <code>open</code>, <code>read</code>, <code>write</code>, <code>close</code> (Parça 4). Böylece her aygıt için ayrı bir programlama arayüzü öğrenmek gerekmez; <code>cat</code>, <code>head</code>, <code>grep</code> gibi metin araçları hiçbir değişiklik yapmadan aygıtlarla ve çekirdek bilgisiyle de çalışır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>"Her şey dosyadır" ilkesi:</strong> Linux, olabildiğince çok kaynağı dosya sistemi ağacında bir ad ve dosya arayüzüyle sunar: düzenli dosyalar, dizinler, sembolik bağlantılar, karakter aygıtları (bayt bayt okunan: terminal, <code>/dev/null</code>), blok aygıtları (bloklar hâlinde okunan: disk), adlandırılmış borular ve yerel soketler. <code>ls -l</code> çıktısının ilk harfi türü söyler: <code>-</code> düzenli dosya, <code>d</code> dizin, <code>l</code> sembolik bağlantı, <code>c</code> karakter aygıtı, <code>b</code> blok aygıtı, <code>p</code> boru, <code>s</code> soket. Sonuç güvenlikte doğrudan görünür: <strong>bir kaynağa erişim, çoğu zaman onu temsil eden dosyaya erişimdir</strong> ve dosya izinleriyle (Parça 12) denetlenir.</p></div>
+
+<p>Kuralın gücünü bir örnekle gör. <code>/dev/sda</code> bir blok aygıtıdır ve diskin ham baytlarını temsil eder. Onu okuyabilen biri, dosya sisteminin izinlerini hiç sormadan diskteki her baytı okuyabilir: başkalarının dosyalarını, silinmiş verinin kalıntılarını, parola özetlerini. Bu yüzden <code>/dev/sda</code> yalnız root'a ve <code>disk</code> grubuna açıktır (<code>brw-rw----</code>); birini o gruba eklemek ona fiilen bütün diski okutmaktır (Parça 11).</p>
+
+<p>Kuralı fazla harfiyen alma: ağ arayüzü <code>eth0</code> <code>/dev</code>'de bir dosya değildir, bir TCP bağlantısının da dosya adı yoktur. Daha doğru ifade "çoğu şey bir dosya tanımlayıcısıyla okunup yazılır"dır; yine de arayüzün ayarları <code>/sys/class/net/eth0/</code> altında dosya olarak okunur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: diskin boyutunu bir sanal dosyadan hesaplamak</span>
+<p><strong>Soru:</strong> <code>/sys</code> içindeki bir dosyadan bu makinenin kök diskinin (<code>sdd</code>) boyutunu bul ve <code>lsblk</code>'in söylediğiyle karşılaştır.</p>
+<pre class="kod" data-ad="bash">cat /sys/block/sdd/size
+cat /sys/block/sdd/queue/logical_block_size
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINTS</pre>
+<pre class="cikti">2147483648
+512
+NAME   SIZE TYPE MOUNTPOINTS
+sda  356.9M disk
+sdb  159.4M disk
+sdc      2G disk [SWAP]
+sdd      1T disk /mnt/wslg/distro
+                 /</pre>
+<p><strong>Adım 1.</strong> <code>size</code> dosyası tek bir sayı tutar: 2147483648. Birim bayt değil, <strong>512 baytlık sektördür</strong>; çekirdek bu değeri aygıtın gerçek sektör boyutundan bağımsız olarak hep 512 baytlık birimle verir. İkinci komut aygıtın mantıksal blok boyutunu gösteriyor; burada o da 512.</p>
+<p><strong>Adım 2.</strong> Çarp: 2147483648 × 512 = 1.099.511.627.776 bayt.</p>
+<p><strong>Adım 3.</strong> Parça 1'deki iki kuvvetini tanı: 2147483648 = 2<sup>31</sup>, 512 = 2<sup>9</sup>, çarpım 2<sup>40</sup> bayt = 1 TiB (Python ile doğrulandı: <code>2147483648*512 == 2**40</code> → <code>True</code>). Ondalık birimle yaklaşık 1,1 TB.</p>
+<p><strong>Adım 4.</strong> <code>lsblk</code> aynı diski <code>1T</code> gösteriyor ve onun <code>/</code>'a bağlandığını söylüyor. <code>lsblk</code> bu bilgiyi zaten <code>/sys</code>'ten okur; sen de aynı kaynağa <code>cat</code> ile, hiçbir özel araç olmadan ulaştın.</p>
+<p><strong>Sonuç:</strong> Çekirdek diskin boyutunu bir metin dosyası gibi sunuyor; bu, "her şey dosyadır" ilkesinin ta kendisi. Bu disk WSL'nin sanal diski olduğu için 1 TiB üst sınır gösteriyor; gerçek dolu alan çok daha az. Sendeki aygıt adı (<code>sda</code>, <code>vda</code>, <code>nvme0n1</code>) ve sayı farklı olacaktır.</p></div>
+
+<h2 class="s">7. Gizli dosyalar ve yapılandırma dosyaları</h2>
+
+<p>Kod rafı Parça 15'te <code>ls</code>'nin adı nokta ile başlayan dosyaları göstermediğini, <code>ls -a</code>'nın gösterdiğini gördün. Bu davranışın kökeni bir rastlantıdır: eski <code>ls</code>, her dizinde bulunan <code>.</code> (dizinin kendisi) ve <code>..</code> (üst dizin) girdilerini gizlemek için "nokta ile başlayanları atla" diye yazıldı ve bu kısayol bir geleneğe dönüştü. Programlar da ayar dosyalarını ev dizinini kalabalıklaştırmasın diye nokta ile adlandırmaya başladı: <code>.bashrc</code>, <code>.profile</code>, <code>.ssh/</code>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Gizli dosya</strong>, adı nokta ile başlayan herhangi bir dosya ya da dizindir. Gizlilik yalnız bir <strong>görüntüleme geleneğidir</strong>: <code>ls</code> ve dosya yöneticileri onları varsayılan olarak göstermez. Çekirdek bu dosyalara hiçbir özel koruma uygulamaz; okunabilir mi, kim değiştirebilir gibi sorular yalnız dosya izinleriyle cevaplanır. Bu yüzden bir savunmacı bir dizine bakarken her zaman <code>ls -la</code> (ya da <code>.</code> ve <code>..</code> olmadan <code>ls -A</code>) kullanır.</p></div>
+
+<h3>Yapılandırma dosyaları nerede durur?</h3>
+
+<p>Linux'ta programların davranışı çoğunlukla düz metin yapılandırma dosyalarıyla belirlenir ve bunlar iki katmanda durur. <strong>Sistem geneli ayarlar</strong> <code>/etc</code>'dedir: SSH sunucusunun ayarı <code>/etc/ssh/sshd_config</code>, ad çözümleme <code>/etc/hosts</code> ve <code>/etc/resolv.conf</code> (Parça 15), kullanıcı listesi <code>/etc/passwd</code> (Parça 11). Bu makinede <code>/etc</code> altında 299 girdi var. Pek çok programda ayrıca bir <code>.d</code> dizini bulunur (<code>/etc/ssh/sshd_config.d/</code> gibi): ana dosyaya dokunmadan küçük ek dosyalarla ayar yapılır, paket güncellemesi senin değişikliğinin üstüne yazmaz.</p>
+
+<p><strong>Kullanıcıya özgü ayarlar</strong> ev dizinindeki gizli dosyalardadır. Eski gelenek her programın ev dizinine kendi noktalı dosyasını koymasıydı; freedesktop.org'un XDG Temel Dizin Belirtimi bunları toplamayı önerir: ayarlar <code>~/.config</code>, veriler <code>~/.local/share</code>, önbellek <code>~/.cache</code> altında (ilgili ortam değişkenleri tanımlı değilse). Yeni bir kullanıcı oluşturulduğunda ev dizinine konacak başlangıç dosyaları <code>/etc/skel</code>'de bekler; bu makinede orada <code>.bashrc</code>, <code>.profile</code>, <code>.zshrc</code> ve bir <code>.config</code> dizini var.</p>
+
+<p>Savunmacı gizli dosyalara üç nedenle özellikle bakar. Sırlar oradadır: <code>~/.ssh/</code> altındaki özel anahtarlar, kabuk geçmişi, uygulama kimlik bilgileri; izinleri gevşekse başkası okuyabilir (Parça 12 ve 18). Kabuk her açılışta <code>.bashrc</code> gibi başlangıç dosyalarını çalıştırır; izinsiz eklenmiş bir satır her oturumda yeniden çalışır (kalıcılık envanteri Parça 14'te). Ve <code>/tmp</code> gibi yerlerde noktalı ya da tuhaf adlı bir dizin dikkatsiz bir bakıştan kaçabilir; <code>ls -la</code> onu gösterir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Parolayı <code>.gizli_notlar</code> adlı bir dosyaya koydum, kimse görmez."</strong> Nokta yalnız <code>ls</code>'nin varsayılan görüntüsünü değiştirir. Aynı makinedeki herhangi bir kullanıcı ya da süreç <code>ls -a</code> ile dosyayı görür ve izinler izin veriyorsa okur; bir yedekleme ya da kopyalama aracı onu da taşır. Doğrusu: sırrı korumanın yolu adını gizlemek değil, dosyanın iznini yalnız sahibine okunur yapmak (<code>chmod 600</code>, Parça 12) ve mümkünse sırrı bir parola yöneticisinde ya da kasada tutmaktır (Parça 18). Parça 6'daki ders burada da geçerli: görünmez olmak gizli olmak değildir.</p></div>
+
+<h2 class="s">8. Bağlama: dosya sistemlerini tek ağaca eklemek</h2>
+
+<p>Tek bir ağaç var dedik; peki USB bellek, ikinci disk, bellekteki <code>/proc</code> ya da WSL'de Windows'un <code>C:</code> sürücüsü bu ağaca nasıl giriyor? <code>mount(8)</code> belgesi cevabı ilk cümlesinde verir: bir Unix sistemindeki bütün erişilebilir dosyalar <code>/</code> kökünde başlayan tek büyük bir ağaçta düzenlenir ve bu dosyalar birçok aygıta yayılabilir; <code>mount</code> komutu bir aygıttaki dosya sistemini bu ağaca ekler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Bağlama</strong> (mount), bir dosya sistemini ağaçtaki var olan bir dizine (<strong>bağlama noktası</strong>) iliştirmektir. <code>mount(8)</code>'e göre dizinin önceki içeriği, sahibi ve izinleri <strong>görünmez olur</strong>; silinmez, bağlama kaldırılınca (<code>umount</code>) geri gelir. Hangi dosya sisteminin nereye, hangi seçeneklerle bağlı olduğunu çekirdek tutar; <code>findmnt</code> bunu ağaç olarak, <code>/proc/self/mounts</code> düz metin olarak gösterir. Açılışta neyin bağlanacağı geleneksel olarak <code>/etc/fstab</code>'da, systemd sistemlerinde ayrıca <code>.mount</code> birimlerinde yazar.</p></div>
+
+<p>"Görünmez olur" ayrıntısı önemlidir: Debian 13'e yükseltilen sistemlerde <code>/tmp</code> tmpfs olarak bağlanınca eski dosyalar tam böyle gizlenir ve sürüm notları onlara nasıl ulaşılacağını anlatır. Savunmacı için ders: aynı yol, bağlamadan önce ve sonra başka dosyaları gösterebilir; önce oranın bir bağlama noktası olup olmadığını öğren.</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 270" role="img" aria-label="Bu makinedeki bağlama ağacı: kök dosya sistemi ext4 diskte; proc, sysfs, devtmpfs, tmpfs ve Windows sürücüsünü taşıyan 9p dosya sistemleri ağacın farklı dallarına bağlı">
+  <rect class="sv-m" x="220" y="14" width="200" height="50" rx="8"/><text class="sv-b" x="320" y="36" text-anchor="middle">/  (ext4, /dev/sdd)</text><text class="sv-s" x="320" y="54" text-anchor="middle">kök dosya sistemi: diskte</text>
+  <line class="sv-c" x1="320" y1="64" x2="320" y2="90"/>
+  <line class="sv-c" x1="70" y1="90" x2="570" y2="90"/>
+  <line class="sv-c" x1="70" y1="90" x2="70" y2="110"/><line class="sv-c" x1="195" y1="90" x2="195" y2="110"/><line class="sv-c" x1="320" y1="90" x2="320" y2="110"/><line class="sv-c" x1="445" y1="90" x2="445" y2="110"/><line class="sv-c" x1="570" y1="90" x2="570" y2="110"/>
+  <rect class="sv-k" x="15" y="110" width="110" height="62" rx="6"/><text class="sv-t" x="70" y="132" text-anchor="middle">/proc</text><text class="sv-s" x="70" y="148" text-anchor="middle">proc</text><text class="sv-s" x="70" y="164" text-anchor="middle">nosuid,nodev,noexec</text>
+  <rect class="sv-k" x="140" y="110" width="110" height="62" rx="6"/><text class="sv-t" x="195" y="132" text-anchor="middle">/sys</text><text class="sv-s" x="195" y="148" text-anchor="middle">sysfs</text><text class="sv-s" x="195" y="164" text-anchor="middle">nosuid,nodev,noexec</text>
+  <rect class="sv-k" x="265" y="110" width="110" height="62" rx="6"/><text class="sv-t" x="320" y="132" text-anchor="middle">/dev</text><text class="sv-s" x="320" y="148" text-anchor="middle">devtmpfs</text><text class="sv-s" x="320" y="164" text-anchor="middle">nosuid</text>
+  <rect class="sv-a" x="390" y="110" width="110" height="62" rx="6"/><text class="sv-t" x="445" y="132" text-anchor="middle">/run/lock</text><text class="sv-s" x="445" y="148" text-anchor="middle">tmpfs (RAM)</text><text class="sv-s" x="445" y="164" text-anchor="middle">nosuid,nodev,noexec</text>
+  <rect class="sv-l" x="515" y="110" width="110" height="62" rx="6"/><text class="sv-t" x="570" y="132" text-anchor="middle">/mnt/c</text><text class="sv-s" x="570" y="148" text-anchor="middle">9p: Windows C:</text><text class="sv-s" x="570" y="164" text-anchor="middle">seçenek yok</text>
+  <line class="sv-c" x1="320" y1="172" x2="320" y2="196"/>
+  <rect class="sv-a" x="265" y="196" width="110" height="50" rx="6"/><text class="sv-t" x="320" y="216" text-anchor="middle">/dev/shm</text><text class="sv-s" x="320" y="234" text-anchor="middle">tmpfs, noexec yok</text>
+  <text class="sv-s" x="70" y="200" text-anchor="middle">diskte değil,</text><text class="sv-s" x="70" y="216" text-anchor="middle">çekirdeğin</text><text class="sv-s" x="70" y="232" text-anchor="middle">ürettiği</text>
+  <text class="sv-s" x="510" y="200" text-anchor="middle">/tmp ayrı değil:</text><text class="sv-s" x="510" y="216" text-anchor="middle">kökün bir dizini,</text><text class="sv-s" x="510" y="232" text-anchor="middle">kökün seçenekleri</text>
+  <text class="sv-s" x="320" y="262" text-anchor="middle">Bütün kutular tek ağacın dalları; her dalın kendi türü ve kendi seçenekleri var.</text>
+</svg>
+<figcaption>Bu makinedeki bağlama ağacından seçilmiş dallar (<code>findmnt</code> çıktısından). Kök ext4 bir diskte; <code>/proc</code>, <code>/sys</code>, <code>/dev</code> çekirdeğin sanal dosya sistemleri; <code>tmpfs</code> dalları RAM'de. WSL, Windows'un <code>C:</code> sürücüsünü <code>9p</code> adlı bir ağ dosya sistemiyle <code>/mnt/c</code>'ye bağlıyor. Seçenekler dal dal farklı: güvenlik ayarı dosyaya değil, bağlamaya da yapılabiliyor.</figcaption>
+</figure>
+
+<h3>Bağlama seçenekleri ve güvenlikteki yerleri</h3>
+
+<p>Her bağlamanın seçenekleri <strong>o dalın altındaki her dosya</strong> için, dosyanın kendi izinlerinden bağımsız olarak geçerlidir: oraya dosya bırakan biri, dosyasının iznini ne yaparsa yapsın bu kuralı değiştiremez.</p>
+
+<div class="tablo"><table>
+<tr><th>Seçenek</th><th><code>mount(8)</code>'e göre anlamı</th><th>Neden konur, nereye</th></tr>
+<tr><td><code>ro</code> / <code>rw</code></td><td>Salt okunur / okunur-yazılır bağla</td><td>Değişmemesi gereken veriyi korumak; kurtarma ve inceleme sırasında diski değiştirmemek (Parça 71)</td></tr>
+<tr><td><code>noexec</code></td><td>Bu dosya sistemindeki ikili dosyaların doğrudan çalıştırılmasına izin verme</td><td>Herkesin yazabildiği yerlere (<code>/tmp</code>, <code>/var/tmp</code>, <code>/dev/shm</code>) ve takılabilir ortama bırakılan programın doğrudan çalışmasını engellemek</td></tr>
+<tr><td><code>nosuid</code></td><td>Programları çalıştırırken set-user-ID ve set-group-ID bitlerini ve dosya yeteneklerini dikkate alma</td><td>Kullanıcıların yazabildiği bir yere konan bir dosyanın, sahibinin yetkisiyle çalışarak yetki kazandırmasını önlemek (SUID ayrıntısı Parça 12)</td></tr>
+<tr><td><code>nodev</code></td><td>Bu dosya sistemindeki karakter ve blok aygıt dosyalarını yorumlama</td><td>Bir USB bellekte ya da ev dizininde hazırlanmış bir aygıt dosyasının diske ham erişim kapısına dönüşmesini önlemek</td></tr>
+<tr><td><code>relatime</code> / <code>noatime</code></td><td>Son erişim zamanını seyrek güncelle / hiç güncelleme</td><td>Performans; ama erişim zamanına dayanan adli bilişim çıkarımları zayıflar (Parça 71)</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kullanıcıların yazabildiği ve program çalıştırması gerekmeyen her dal, <code>nosuid,nodev</code> ve çoğunlukla <code>noexec</code> ile bağlanır.</strong> Nedeni en az yetki ilkesinin (Parça 5) dosya sistemine uygulanmasıdır: <code>/tmp</code>'nin işi geçici veri tutmaktır, program çalıştırmak ya da aygıt sunmak değil; işi olmayan yetki kapatılır. CIS kıyaslamaları da <code>/tmp</code>, <code>/var/tmp</code> ve <code>/dev/shm</code> için bu seçenekleri, <code>/home</code> için en azından <code>nodev</code> ve <code>nosuid</code>'i önerir (ayrıntı ve güncel madde numaraları Parça 19). Bedeli: geçici dizinde yardımcı program çalıştıran bazı kurulum betikleri <code>noexec</code> altında başarısız olur; değişiklik önce laboratuvar VM'inde sınanır.</p></div>
+
+<p><code>noexec</code>'in sınırını da doğru anla. Seçenek, çekirdeğin o daldaki bir dosyayı <strong>doğrudan</strong> program olarak yüklemesini (<code>execve</code>) reddeder. Ama bir yorumlayıcı (<code>sh</code>, <code>python3</code>) bir betiği program olarak değil, okuduğu bir metin olarak işler; yorumlayıcının kendisi <code>/usr/bin</code>'de durduğu için çalışır ve betiği okur. "Kendi makinende dene" bölümünde bunu kendi gözünle göreceksin. Yani <code>noexec</code> bir duvar değil, derinlemesine savunmanın (Parça 5) bir katmanıdır; dosya izinleri, en az yetkili hesaplar ve izlemeyle birlikte değer taşır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: bir <code>findmnt</code> satırını savunmacı gözüyle okumak</span>
+<p><strong>Soru:</strong> Bu makinede <code>/tmp</code> ve <code>/dev/shm</code> hangi seçeneklerle bağlı? Bir sertleştirme kontrol listesi açısından ne eksik?</p>
+<pre class="kod" data-ad="bash">findmnt -T /tmp -o TARGET,FSTYPE,OPTIONS
+findmnt -o TARGET,FSTYPE,OPTIONS /dev/shm
+systemctl is-enabled tmp.mount</pre>
+<pre class="cikti">TARGET FSTYPE OPTIONS
+/      ext4   rw,relatime,discard,errors=remount-ro,data=ordered
+TARGET   FSTYPE OPTIONS
+/dev/shm tmpfs  rw,nosuid,nodev,noatime
+masked</pre>
+<p><strong>Adım 1.</strong> <code>-T</code> "bu yol hangi bağlamanın içinde?" diye sorar. <code>/tmp</code> için cevap <code>/</code>: ayrı bağlanmamış.</p>
+<p><strong>Adım 2.</strong> Öyleyse <code>/tmp</code> kökün seçeneklerini taşır: <code>rw,relatime,…</code>. Listede <code>noexec</code>, <code>nosuid</code>, <code>nodev</code> yok. Kökün kendisine bunları koyamazsın, çünkü <code>/usr/bin</code>'deki programlar da kökte; kökte <code>noexec</code> sistemi çalışmaz hâle getirir.</p>
+<p><strong>Adım 3.</strong> <code>systemctl is-enabled tmp.mount</code> <code>masked</code> diyor: systemd'nin <code>/tmp</code>'yi tmpfs olarak bağlayan birimi bu ortamda (WSL'de) bilerek kapatılmış. Debian 13'ün yeni bir kurulumunda bu birim etkin olur.</p>
+<p><strong>Adım 4.</strong> <code>/dev/shm</code> ayrı bir tmpfs ve <code>nosuid,nodev</code> taşıyor, ama <code>noexec</code> yok. Herkesin yazabildiği, RAM'de duran bu dizinde bir ikili dosya doğrudan çalıştırılabilir.</p>
+<p><strong>Sonuç:</strong> Kontrol listesi açısından iki bulgu var: <code>/tmp</code> ayrı bir bağlama değil ve <code>/dev/shm</code>'de <code>noexec</code> eksik. Bu WSL'nin kendi tercihidir ve bu makinede değiştirilmedi. Laboratuvar VM'inde çözüm, <code>/tmp</code>'yi ayrı bir tmpfs ya da bölüm olarak <code>nosuid,nodev,noexec</code> ile bağlamak ve <code>/dev/shm</code>'ye <code>noexec</code> eklemektir; nasıl ve hangi sırayla yapılacağı Parça 19'da.</p></div>
+
+<h2 class="s">Kendi makinende dene: ağacı, aygıtları ve bağlamaları kendi gözünle oku</h2>
+
+<p>Bu alıştırma yalnız kendi Linux makinende ya da laboratuvar VM'inde yapılır. Hiçbir adım root istemez, hiçbir sistem dosyasını değiştirmez; yazdığın her şey <code>/tmp/yazar/siber-8/</code> altında kalır. Çıktılar Windows 11 üstündeki WSL 2'de çalışan Kali Rolling'den birebir alındı; laboratuvarındaki Debian ya da Ubuntu VM'inde aygıt adları, tarihler ve sayılar farklı olacak. Önce çalışma klasörünü aç: <code>mkdir -p /tmp/yazar/siber-8 &amp;&amp; cd /tmp/yazar/siber-8</code>.</p>
+
+<h3>Adım 1: kök dizine ve iki "root"a bak</h3>
+
+<pre class="kod" data-ad="bash">ls -la / | grep -v ' wsl'
+echo "-----"
+ls -ld /root /tmp /home
+ls /root</pre>
+<pre class="cikti">total 2908
+drwxr-xr-x  33 root root    4096 Oct 16 16:53 .
+drwxr-xr-x  33 root root    4096 Oct 16 16:53 ..
+lrwxrwxrwx   1 root root       7 Jun 16 13:14 bin -> usr/bin
+drwxr-xr-x   3 root root    4096 Aug 20 17:07 boot
+drwxr-xr-x  14 root root    3700 Oct 16 16:53 dev
+drwxr-xr-x 193 root root   12288 Oct 16 16:54 etc
+drwxr-xr-x   3 root root    4096 Aug 20 10:16 home
+-rwxr-xr-x   1 root root 2836528 Aug 17 21:44 init
+lrwxrwxrwx   1 root root       7 Jun 16 13:14 lib -> usr/lib
+lrwxrwxrwx   1 root root       9 Aug 20 14:13 lib32 -> usr/lib32
+lrwxrwxrwx   1 root root       9 Jun 16 13:14 lib64 -> usr/lib64
+drwx------   2 root root   16384 Aug 20 10:14 lost+found
+drwxr-xr-x   2 root root    4096 Jul  2 15:46 media
+drwxr-xr-x   8 root root    4096 Aug 22 16:03 mnt
+drwxr-xr-x   3 root root    4096 Aug 20 14:13 opt
+dr-xr-xr-x 305 root root       0 Oct 16 16:53 proc
+drwx------   5 root root    4096 Aug 20 18:23 root
+drwxr-xr-x  22 root root     560 Oct 16 16:54 run
+lrwxrwxrwx   1 root root       8 Jun 16 13:14 sbin -> usr/sbin
+drwxr-xr-x   3 root root    4096 Aug 20 14:16 srv
+dr-xr-xr-x  13 root root       0 Oct 16 16:50 sys
+drwxrwxrwt  34 root root    4096 Oct 16 16:54 tmp
+drwxr-xr-x  15 root root    4096 Aug 20 14:13 usr
+drwxr-xr-x  12 root root    4096 Aug 20 17:04 var
+-----
+drwxr-xr-x  3 root root 4096 Aug 20 10:16 /home
+drwx------  5 root root 4096 Aug 20 18:23 /root
+drwxrwxrwt 34 root root 4096 Oct 16 16:54 /tmp
+ls: cannot open directory '/root': Permission denied</pre>
+
+<p><code>grep -v ' wsl'</code>, WSL'nin kökte bıraktığı rastgele adlı yardımcı dizinleri (<code>wslAgnnNg</code> gibi on beş tane) süzmek için eklendi; normal bir VM'de bu süzgece gerek yok. Satır satır oku. Her satırın başındaki harf türdür: <code>bin</code>, <code>lib</code>, <code>sbin</code> <code>l</code> ile başlıyor ve <code>-></code> ile <code>usr</code> altını gösteriyor; bunlar yukarıda anlatılan birleşmiş dizinler. <code>init</code> düzenli bir dosya (<code>-</code>); kökte durması WSL'ye özgüdür. <code>lost+found</code>, ext4'ün disk denetiminde sahipsiz kalan parçaları koyduğu dizindir. <code>media</code> takılabilir ortamın, <code>mnt</code> geçici bağlamaların, <code>run</code> çalışma anı verisinin (PID dosyaları, soketler) yeridir. <code>proc</code> ve <code>sys</code>'in boyutu 0: içleri diskte değil, çekirdekte. Alttaki üç satır parçanın iki önemli iznini gösteriyor: <code>/root</code> <code>drwx------</code>, yani yalnız sahibi (root) girebilir, bu yüzden son komut "Permission denied" verdi; <code>/tmp</code> <code>drwxrwxrwt</code>, herkes yazabilir ve sondaki <code>t</code> yapışkan bittir. İzin harflerinin tam okunuşu Parça 12'de.</p>
+
+<h3>Adım 2: aygıtlar da dosya</h3>
+
+<pre class="kod" data-ad="bash">ls -l /dev/null /dev/zero /dev/urandom /dev/sda
+echo "bu satir kaybolacak" > /dev/null
+wc -c &lt; /dev/null
+head -c 8 /dev/zero | xxd
+head -c 8 /dev/urandom | xxd</pre>
+<pre class="cikti">crw-rw-rw- 1 root root 1, 3 Oct 16 16:53 /dev/null
+brw-rw---- 1 root disk 8, 0 Oct 16 16:53 /dev/sda
+crw-rw-rw- 1 root root 1, 9 Oct 16 16:53 /dev/urandom
+crw-rw-rw- 1 root root 1, 5 Oct 16 16:53 /dev/zero
+0
+00000000: 0000 0000 0000 0000                      ........
+00000000: d528 573e 8c4f fa3e                      .(W>.O.></pre>
+
+<p>İlk dört satırda boyut sütununun yerinde <code>1, 3</code> gibi iki sayı var: <strong>büyük</strong> (major) ve <strong>küçük</strong> (minor) aygıt numarası. Büyük numara sorumlu sürücüyü, küçük numara o sürücünün hangi aygıtı olduğunu söyler: <code>/dev/null</code>, <code>/dev/zero</code> ve <code>/dev/urandom</code> aynı sürücünün (1) üç yüzü, disk <code>/dev/sda</code> 8 numaralı sürücünün blok aygıtı (<code>b</code>). Çekirdek için ad değil, tür harfi ve bu iki numara önemlidir. <code>nodev</code> seçeneğinin neden var olduğu buradan anlaşılır: biri bir USB belleğe "8, 0" numaralı bir aygıt dosyası koyabilirse, o dosya diske açılan bir kapı olur.</p>
+
+<p><code>/dev/null</code>'a yazdığın satır yok oldu ve <code>null(4)</code> belgesinin dediği gibi okumak hemen dosya sonu verdi: <code>wc -c</code> 0 bayt saydı. Hata iletilerini atmak için <code>2&gt;/dev/null</code> (kod rafı Parça 16) bu yüzden kullanılır. <code>/dev/zero</code> sıfır baytı, <code>/dev/urandom</code> çekirdeğin güvenli rastgele baytlarını veriyor (sendeki baytlar farklı; Parça 42). Üçü de sıradan <code>head</code> ve <code>xxd</code> ile okundu.</p>
+
+<h3>Adım 3: <code>/proc/self</code> ve <code>/sys</code></h3>
+
+<pre class="kod" data-ad="bash">readlink /proc/self
+readlink /proc/self
+echo "kabugun PID'i: $$"
+echo "-----"
+cat /sys/class/net/lo/mtu
+cat /sys/block/sdd/size</pre>
+<pre class="cikti">1079
+1080
+kabugun PID'i: 1062
+-----
+65536
+2147483648</pre>
+
+<p><code>/proc/self</code>'in hedefi okuyana göre değişiyor: <code>proc(5)</code>'e göre bu "sihirli" bağlantı, ona erişen sürecin kendi <code>/proc/&lt;pid&gt;</code> dizinine çözülür. Her <code>readlink</code> yeni bir süreç olduğu için 1079 ve 1080 çıktı; kabuğun kendisi 1062. Parça 5'te her programın <code>/proc/self/maps</code>'te kendi haritasını görmesi bu yüzdendi. Bir sürecin <code>/proc</code> dizininin içindekiler Parça 13'te.</p>
+
+<p><code>/sys</code> tarafında iki sayı var: döngü (loopback) arayüzü <code>lo</code>'nun MTU'su, yani tek seferde taşıyabileceği en büyük paket boyu, 65536 bayt (ağ bloğunda, Parça 21); ikincisi Çözümlü örnek 2'deki disk boyutu. İkisi de diskte hiç yazılmamış metinler; bu alıştırmada yalnız okuduk.</p>
+
+<h3>Adım 4: gizli dosyalar</h3>
+
+<pre class="kod" data-ad="bash">mkdir ev-deneme &amp;&amp; cd ev-deneme
+touch notlar.txt .gizli-ayar
+mkdir .config
+ls
+echo "-----"
+ls -a
+echo "-----"
+ls -A /etc/skel
+cd ..</pre>
+<pre class="cikti">notlar.txt
+-----
+.
+..
+.config
+.gizli-ayar
+notlar.txt
+-----
+.bash_logout
+.bashrc
+.bashrc.original
+.config
+.face
+.face.icon
+.java
+.local
+.profile
+.zprofile
+.zshrc</pre>
+
+<p>Üç girdi oluşturduk; düz <code>ls</code> yalnız birini gösterdi. <code>ls -a</code> beşini gösterdi: dizinin kendisi (<code>.</code>), üst dizin (<code>..</code>), gizli dosya, gizli dizin ve görünen dosya. Dosyaların hiçbirinde özel bir şey yok; yalnız adları nokta ile başlıyor. Son komut, yeni kullanıcıların ev dizinine kopyalanacak başlangıç dosyalarını listeledi; <code>-A</code>, <code>.</code> ve <code>..</code>'yı atlar. Bash için <code>.bashrc</code> ve <code>.profile</code>, zsh için <code>.zshrc</code> ve <code>.zprofile</code>, XDG düzeni için <code>.config</code> ve <code>.local</code> buradan geliyor. Kendi ev dizininde <code>ls -A ~</code> yazarsan çok daha uzun bir liste görürsün; içinde sırlar olabileceği için bu çıktı buraya konmadı.</p>
+
+<h3>Adım 5: bağlama seçeneklerini oku</h3>
+
+<pre class="kod" data-ad="bash">findmnt -o TARGET,FSTYPE,OPTIONS /proc
+findmnt -n -o TARGET,FSTYPE,OPTIONS /sys
+findmnt -n -o TARGET,FSTYPE,OPTIONS /dev/shm
+findmnt -n -o TARGET,FSTYPE,OPTIONS /run/lock
+findmnt -n -o TARGET,FSTYPE,OPTIONS /
+findmnt -T /tmp -n -o TARGET</pre>
+<pre class="cikti">TARGET FSTYPE OPTIONS
+/proc  proc   rw,nosuid,nodev,noexec,noatime
+/sys sysfs rw,nosuid,nodev,noexec,noatime
+/dev/shm tmpfs rw,nosuid,nodev,noatime
+/run/lock tmpfs rw,nosuid,nodev,noexec,noatime
+/ ext4 rw,relatime,discard,errors=remount-ro,data=ordered
+/</pre>
+
+<p><code>-o</code> sütunları seçer, <code>-n</code> başlık satırını atar (bu yüzden yalnız ilk satırda başlık var). Sanal dosya sistemleri <code>/proc</code> ve <code>/sys</code> üç güvenlik seçeneğini birden taşıyor: oradan program çalıştırmanın, SUID'in ya da aygıt dosyasının hiçbir meşru nedeni yok. <code>/run/lock</code> da öyle. <code>/dev/shm</code>'de <code>noexec</code> eksik (Çözümlü örnek 3). Kökteki <code>errors=remount-ro</code>, ext4'ün bir tutarsızlıkta dosya sistemini salt okunura çevirmesidir. Son satır <code>/tmp</code>'nin kendi bağlaması olmadığını, köke ait olduğunu yeniden söylüyor. Bütün ağacı görmek istersen yalnız <code>findmnt</code> yaz; bu makinede 36 bağlama var (<code>wc -l /proc/self/mounts</code>).</p>
+
+<h3>Adım 6: kendi ad alanında <code>noexec</code> ile bir tmpfs bağla</h3>
+
+<p>Bağlama normalde root ister. Parça 7'deki kullanıcı ad alanı burada yine işe yarıyor: <code>unshare -rm</code>, seni içeride sahte root'a eşleyen bir kullanıcı ad alanı (<code>-r</code>) ve kendine ait bir bağlama ad alanı (<code>-m</code>) açar. İçeride yaptığın bağlama yalnız o ad alanında görünür ve süreç bitince yok olur; dışarıdaki sistem hiç etkilenmez. Bu gerçek root değildir. Laboratuvar VM'inde aynı <code>mount</code> komutlarını <code>sudo</code> ile çalıştırırsın, ama o zaman bağlama bütün sistemde görünür. İçeride çalışacak betik:</p>
+
+<pre class="kod" data-ad="ic.sh">set -u
+echo "ic: uid=$(id -u)"
+mount -t tmpfs -o size=8m,noexec,nosuid,nodev tmpfs bag
+findmnt -o TARGET,FSTYPE,OPTIONS "$PWD/bag"
+ls -A bag; echo "(ls bitti)"
+printf '#!/bin/sh\necho "betik calisti"\n' > bag/betik.sh
+chmod +x bag/betik.sh
+cp /usr/bin/true bag/dogru
+ls -l bag
+./bag/betik.sh; echo "cikis kodu $?"
+./bag/dogru; echo "cikis kodu $?"
+sh bag/betik.sh; echo "cikis kodu $?"
+echo "----- noexec olmadan:"
+umount bag
+cat bag/eski.txt
+mount -t tmpfs -o size=8m tmpfs bag
+findmnt -n -o OPTIONS "$PWD/bag"
+printf '#!/bin/sh\necho "betik calisti"\n' > bag/betik.sh
+chmod +x bag/betik.sh
+./bag/betik.sh; echo "cikis kodu $?"
+umount bag</pre>
+
+<pre class="kod" data-ad="bash">mkdir bag
+echo "bagdan once yazildi" > bag/eski.txt
+unshare -rm bash ic.sh
+echo "----- disarida:"
+findmnt "$PWD/bag"; echo "findmnt cikis kodu $?"
+ls -A bag</pre>
+<pre class="cikti">ic: uid=0
+TARGET                 FSTYPE OPTIONS
+/tmp/yazar/siber-8/bag tmpfs  rw,nosuid,nodev,noexec,relatime,size=8192k,uid=1000,gid=1000
+(ls bitti)
+total 48
+-rwxr-xr-x 1 root root    31 Oct 16 16:55 betik.sh
+-rwxr-xr-x 1 root root 43464 Oct 16 16:55 dogru
+ic.sh: line 10: ./bag/betik.sh: Permission denied
+cikis kodu 126
+ic.sh: line 11: ./bag/dogru: Permission denied
+cikis kodu 126
+betik calisti
+cikis kodu 0
+----- noexec olmadan:
+bagdan once yazildi
+rw,relatime,size=8192k,uid=1000,gid=1000
+betik calisti
+cikis kodu 0
+----- disarida:
+findmnt cikis kodu 1
+eski.txt</pre>
+
+<p>Satır satır oku. <strong>İçeride <code>uid=0</code>:</strong> ad alanında root görünüyorsun, dışarıda hâlâ sıradan kullanıcısın (Parça 7). <strong><code>findmnt</code>:</strong> <code>bag</code> artık 8 MiB'lık bir tmpfs ve üç seçeneği taşıyor; <code>uid=1000,gid=1000</code>, kök dizininin dışarıdaki gerçek kimliğine ait olduğunu gösteriyor. <strong><code>ls -A bag</code> boş:</strong> <code>eski.txt</code> silinmedi, bağlamanın altında kaldı. <strong>İki dosya:</strong> bir betik ve <code>/usr/bin/true</code>'nun kopyası, ikisi de <code>-rwxr-xr-x</code>; izinler çalıştırmaya açık (sahip içeride <code>root</code> görünüyor, çünkü kimliğin 0'a eşlenmiş). <strong>İki "Permission denied":</strong> izinler izin verse de çekirdek, <code>noexec</code> bir daldaki dosyayı program olarak yüklemeyi reddetti. Bash'in çıkış kodu 126; Bash kılavuzuna göre bu, komutun bulunduğu ama çalıştırılamadığı anlamına gelir (bulunamayan komut 127 olurdu). <strong><code>sh bag/betik.sh</code> çalıştı:</strong> burada çalışan program <code>/usr/bin/sh</code>'dir ve <code>noexec</code> olmayan kökte durur; betiği yalnız okuyup yorumladı. <code>noexec</code>'in neyi durdurup neyi durdurmadığı bu üç satırda.</p>
+
+<p><strong>"noexec olmadan":</strong> <code>umount</code> sonrası <code>eski.txt</code> geri geldi. Aynı yere seçeneksiz bir tmpfs bağlayınca aynı betik doğrudan çalıştı (çıkış kodu 0); fark yalnız bağlama seçeneğiydi. <strong>Dışarıda:</strong> <code>findmnt</code> bağlama bulamadı (çıkış kodu 1), <code>bag</code>'de yalnız <code>eski.txt</code> var; ad alanı kapanınca bağlamalar da gitti. Sonunda <code>rm -r /tmp/yazar/siber-8</code> ile temizle. Gerçek <code>/tmp</code>'ye kalıcı seçenek koymak (<code>/etc/fstab</code> ya da <code>tmp.mount</code>) root ister ve burada çalıştırılmadı; laboratuvar VM'inde, önce anlık görüntü alarak Parça 19'da yapacaksın.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 4, 5 ve 7'ye:</strong> Çekirdek ile kullanıcı alanı ayrımı burada çekirdek ile dağıtım ayrımına dönüştü; kabuğun bir kullanıcı süreci olduğunu <code>fork</code>/<code>execve</code> ile açıkladık. <code>/proc/self</code>, Parça 5'teki <code>maps</code> ve <code>status</code> dosyalarının kapısıydı. Parça 7'deki kullanıcı ad alanı bu kez bağlama ad alanıyla birleşti ve root olmadan bağlama yapmamızı sağladı.</p>
+<p><strong>Linux bloğunun geri kalanına:</strong> Komut satırında dolaşmak ve metin işlemek Parça 9'da; <code>/usr</code>'ı değiştirmeye yetkili tek araç olan paket yöneticisi Parça 10'da; <code>/etc/passwd</code>, <code>/root</code> ve <code>disk</code> grubu Parça 11'de; <code>drwxrwxrwt</code>'deki yapışkan bit, SUID ve <code>chmod 600</code> Parça 12'de; <code>/proc/&lt;pid&gt;</code> Parça 13'te; <code>.bashrc</code> ve zamanlanmış görevler gibi kalıcılık noktaları Parça 14'te; <code>/var/log</code> Parça 17'de; <code>~/.ssh</code> Parça 18'de; bağlama seçenekleriyle sertleştirme Parça 19'da.</p>
+<p><strong>Kod rafına:</strong> Parça 15'teki yol, <code>~</code> ve <code>ls -a</code> sistemin haritasına yerleşti; Parça 16'daki <code>2&gt;/dev/null</code>'un hedefi bir aygıt dosyası çıktı; Parça 18'deki bütünlük izleyicisi <code>/usr</code> ve <code>/etc</code>'yi izlerken anlam kazanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Linux çekirdeği ile Linux dağıtımı arasındaki fark nedir? İkisinin sürümünü hangi komutla ya da dosyayla görürsün?</summary><p>Çekirdek donanımı yöneten ve sistem çağrılarına hizmet veren tek bir programdır; sürümünü uname -r verir. Dağıtım çekirdeğin üstüne C kütüphanesini, kabuğu, araçları, init sistemini, paket yöneticisini ve güncelleme hizmetini koyan bütündür; kimliği ve sürümü /etc/os-release dosyasında yazar. İkisinin sürüm numaraları ve güncelleme takvimleri ayrıdır.</p></details>
+<details><summary>/tmp ile /var/tmp arasındaki fark nedir ve geçici dizinler güvenlikte neden özel ilgi görür?</summary><p>FHS'ye göre programlar /tmp'deki dosyaların bir sonraki çalıştırmaya kadar korunacağını varsayamaz ve açılışta temizlenmesi önerilir; /var/tmp yeniden başlatmalar arasında korunur. İkisine de herkes yazabilir; ayrıcalıksız bir saldırganın dosya bırakabildiği ilk yerler oldukları için nosuid, nodev ve çoğunlukla noexec ile bağlanmaları önerilir.</p></details>
+<details><summary>"Her şey dosyadır" ilkesi ne demektir? Bir örnekle bunun güvenlikteki sonucunu anlat.</summary><p>Linux diskleri, terminalleri, rastgele sayı kaynağını ve çekirdek bilgisini ağaçta bir adla ve aynı open, read, write arayüzüyle sunar. Sonuç olarak bir kaynağa erişim, onu temsil eden dosyaya erişimdir. Örneğin /dev/sda'yı okuyabilen biri dosya sisteminin izinlerini hiç sormadan diskin bütün baytlarını okuyabilir; bu yüzden aygıt dosyası yalnız root'a ve disk grubuna açıktır.</p></details>
+<details><summary>Bir dosyayı gizli yapan nedir ve bu neden bir güvenlik önlemi değildir?</summary><p>Adının nokta ile başlaması. Bu yalnız ls ve dosya yöneticilerinin varsayılan görüntüsünü etkileyen bir gelenektir; çekirdek hiçbir koruma uygulamaz. Herkes ls -a ile görebilir ve izinler izin veriyorsa okuyabilir. Koruma dosya izinleriyle sağlanır.</p></details>
+<details><summary>noexec seçeneği neyi engeller, neyi engellemez?</summary><p>Bağlı daldaki bir dosyanın doğrudan program olarak çalıştırılmasını (execve) engeller; dosya izinleri çalıştırmaya izin verse bile çekirdek reddeder ve Bash 126 koduyla "Permission denied" verir. Ama başka bir daldaki bir yorumlayıcının (sh, python3) o dosyayı okuyup yorumlamasını engellemez. Bu yüzden noexec tek başına bir duvar değil, derinlemesine savunmanın bir katmanıdır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Linux iki anlamlı:</strong> çekirdek (uname -r; 1991, GPLv2) ve dağıtım (çekirdek + glibc + kabuk + araçlar + init + paket yöneticisi; /etc/os-release). Sürümleri ayrı.</li>
+<li><strong>Aileler:</strong> Debian (Ubuntu, Kali; apt), Red Hat (RHEL, Fedora; dnf), SUSE, Arch, Alpine. Android: Linux çekirdeği, klasik dağıtım değil.</li>
+<li><strong>Kabuk:</strong> kullanıcı alanı süreci, senin yetkinle çalışır. Bash; Kali masaüstünde zsh; Debian'da /bin/sh → dash; liste /etc/shells.</li>
+<li><strong>FHS 3.0 (2015):</strong> tek ağaç, kök /; eksenler: paylaşılabilir mi, değişken mi.</li>
+<li><strong>Dizinler:</strong> /etc yapılandırma · /var değişken veri, /var/log · /home kullanıcılar · /root root'un evi (/ değil) · /usr salt okunur programlar; /bin → usr/bin · /tmp korunması varsayılmaz (Debian 13'te tmpfs) · /var/tmp yeniden başlatmada korunur · /proc, /sys sanal · /dev aygıtlar.</li>
+<li><strong>Her şey dosyadır:</strong> tür harfleri - d l c b p s; aygıtta büyük/küçük numara. Kaynağa erişim = dosyaya erişim. /proc/self okuyana çözülür.</li>
+<li><strong>Gizli dosya:</strong> adı nokta ile başlar; koruma değil, ls -la. Sistem ayarı /etc, kullanıcı ayarı ~/.config ve noktalı dosyalar.</li>
+<li><strong>Bağlama:</strong> eski içerik görünmez olur, silinmez. findmnt, findmnt -T, /etc/fstab.</li>
+<li><strong>Seçenekler:</strong> ro · noexec (doğrudan çalıştırma yok; yorumlayıcıyı durdurmaz) · nosuid (SUID/SGID ve dosya yetenekleri yok sayılır) · nodev (aygıt dosyası yorumlanmaz). Kullanıcının yazabildiği dallara nosuid,nodev,noexec (Parça 19).</li>
+<li><strong>Sınır:</strong> bütün denemeler kendi makinende ya da izinli laboratuvarda (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-8">
+<h3>Quiz 8</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan on tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir makinede <code>/etc/os-release</code> dosyasında <code>VERSION_ID="2026.2"</code> yazıyor, <code>uname -r</code> ise <code>6.18.33.2-microsoft-standard-WSL2</code> veriyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>İki sayı aynı şeyi gösterir; biri kısa, öbürü uzun yazılışıdır.</li><li>2026.2 çekirdeğin, 6.18.33.2 dağıtımın sürümüdür.</li><li>2026.2 dağıtımın, 6.18.33.2 çekirdeğin sürümüdür; ikisi ayrı ürünlerdir.</li><li><code>uname -r</code> yalnız WSL'de çalışır, normal Linux'ta çıktı vermez.</li><li>Çekirdek sürümü dağıtım sürümünden büyük olamayacağı için bir yanlışlık vardır.</li></ul>
+<div class="coz"><p><code>/etc/os-release</code> dağıtımın kimlik dosyasıdır ve dağıtımın sürümünü yazar; <code>uname -r</code> çekirdeğe sorar ve çekirdeğin sürümünü verir. Çekirdek ile dağıtım ayrı projelerdir, bu yüzden numaraları ve takvimleri bağımsızdır (A ve E yanlış). B ikisini ters çevirir. <code>uname</code> her Linux'ta çalışır; sondaki <code>microsoft-standard-WSL2</code> yalnız bu çekirdeği Microsoft'un derlediğini gösterir (D). Bir güvenlik duyurusunu okurken bu ayrım hangi bileşeni güncelleyeceğini belirler.</p></div></li>
+
+<li data-c="A"><p class="q">SSH sunucusunun ayar dosyası gibi, bütün sistemi ilgilendiren yapılandırma dosyalarını FHS'ye göre hangi dizinde ararsın?</p>
+<ul class="sec"><li><code>/etc</code></li><li><code>/usr/bin</code></li><li><code>/var/log</code></li><li><code>/dev</code></li><li><code>/tmp</code></li></ul>
+<div class="coz"><p>FHS'ye göre <code>/etc</code> makineye özgü sistem yapılandırmasını tutar; örneğin <code>/etc/ssh/sshd_config</code>. <code>/usr/bin</code> programların kendisini (B), <code>/var/log</code> günlükleri (C), <code>/dev</code> aygıt dosyalarını (D) tutar. <code>/tmp</code> geçici dosyalar içindir ve herkes yazabildiği için kalıcı bir ayarın yeri olamaz (E). Kullanıcıya özgü ayarlar ise ev dizinindeki gizli dosyalarda durur.</p></div></li>
+
+<li data-c="D"><p class="q">FHS'ye göre <code>/tmp</code> ve <code>/var/tmp</code> için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>İkisi de yalnız root tarafından yazılabilir.</li><li><code>/tmp</code>'deki dosyaların yeniden başlatmadan sonra korunması zorunludur.</li><li><code>/var/tmp</code> açılışta mutlaka silinmelidir, <code>/tmp</code> silinmez.</li><li>Programlar <code>/tmp</code>'deki dosyaların korunacağını varsayamaz; <code>/var/tmp</code> yeniden başlatmalar arasında korunan geçici dosyalar içindir.</li><li>İkisi aynı dizinin iki adıdır.</li></ul>
+<div class="coz"><p>FHS, programların <code>/tmp</code>'deki dosya ya da dizinlerin çalıştırmalar arasında korunacağını varsaymamasını ister ve açılışta temizlenmesini önerir; <code>/var/tmp</code>'yi ise yeniden başlatmalar arasında korunan geçici dosyalar için tanımlar. B ve C bu ayrımı ters çevirir. İkisine de herkes yazabilir (<code>drwxrwxrwt</code>), bu yüzden A yanlıştır ve bağlama seçenekleri tam da bu nedenle önerilir. Ayrı dizinlerdir (E); Debian 13'te temizlenme süreleri bile farklıdır (10 ve 30 gün).</p></div></li>
+
+<li data-c="B"><p class="q">Bir dizinde <code>ls</code> yalnız <code>notlar.txt</code> gösteriyor, <code>ls -a</code> ise ayrıca <code>.gizli-ayar</code> ve <code>.config</code> gösteriyor. Bu iki girdiyi "gizli" yapan nedir?</p>
+<ul class="sec"><li>Çekirdeğin onlara uyguladığı özel bir erişim koruması</li><li>Adlarının nokta ile başlaması; <code>ls</code> bunları geleneksel olarak varsayılan görüntüde atlar</li><li>Dosya izinlerinin yalnız sahibine açık olması</li><li>Şifrelenmiş olmaları</li><li>Ayrı bir dosya sistemine bağlanmış olmaları</li></ul>
+<div class="coz"><p>Gizli dosya, adı nokta ile başlayan dosyadır; gizlilik <code>ls</code> ve dosya yöneticilerinin bir görüntü geleneğidir. Alıştırmada <code>touch .gizli-ayar</code> ile sıradan bir boş dosya oluşturuldu; izinleri, içeriği ya da bulunduğu dosya sistemi farklı değildi (C, D, E). Çekirdek nokta ile başlayan adlara hiçbir koruma uygulamaz (A). Bu yüzden sırrı gizli bir dosyaya koymak onu korumaz; koruma izinlerle sağlanır.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki iki komut art arda çalıştırılıyor. İkinci komutun çıktısı nedir?</p>
+<pre class="kod" data-ad="bash">echo "bu satir kaybolacak" > /dev/null
+wc -c &lt; /dev/null</pre>
+<ul class="sec"><li><code>20</code></li><li><code>bu satir kaybolacak</code></li><li><code>1</code></li><li>"Permission denied" hatası</li><li><code>0</code></li></ul>
+<div class="coz"><p><code>null(4)</code>'e göre <code>/dev/null</code>'a yazılan veri atılır ve okumak hemen dosya sonu döndürür; <code>wc -c</code> 0 bayt sayar. Komutlar bu parçada çalıştırıldı ve çıktı <code>0</code> oldu. A, satırın (yeni satırla birlikte 20 bayt) bir yerde saklandığını sanmanın sonucudur; B de aynı yanılgıdır. C satır sayısıyla karıştırır. <code>/dev/null</code>'un izni <code>crw-rw-rw-</code>'dir, herkes okuyup yazabilir (D).</p></div></li>
+
+<li data-c="C"><p class="q"><code>readlink /proc/self</code> komutu art arda iki kez çalıştırılınca <code>1079</code> ve <code>1080</code> yazıyor. Bunun en doğru açıklaması hangisidir?</p>
+<ul class="sec"><li><code>/proc/self</code> diskte duran ve her okunuşta bir artan bir sayaç dosyasıdır.</li><li>İki sayı kabuğun iki farklı iş parçacığının numarasıdır.</li><li><code>/proc/self</code>, ona erişen sürecin kendi <code>/proc/&lt;pid&gt;</code> dizinine çözülür ve her <code>readlink</code> ayrı bir süreçtir.</li><li>Çekirdek sembolik bağlantıları her saniye yeniden numaralandırır.</li><li>Sayılar açılıştan beri geçen saniyeleri gösterir.</li></ul>
+<div class="coz"><p><code>proc(5)</code>'e göre <code>/proc/self</code>, bir süreç ona eriştiğinde o sürecin kendi <code>/proc/&lt;pid&gt;</code> dizinine çözülen "sihirli" bir bağlantıdır. Kabuk her komut için yeni bir süreç başlattığından iki <code>readlink</code> iki ayrı PID gördü; kabuğun kendisi ise 1062'ydi. <code>/proc</code> diskte değildir ve sayaç tutmaz (A). Sayılar iş parçacığı (B), zaman (E) ya da yeniden numaralandırma (D) değil, sürecin kimliğidir.</p></div></li>
+
+<li data-c="A"><p class="q">İçinde <code>eski.txt</code> bulunan <code>bag</code> dizininin üstüne bir tmpfs bağlanıyor, ardından <code>ls -A bag</code> boş çıkıyor. Bağlama <code>umount</code> ile kaldırılınca ne olur?</p>
+<ul class="sec"><li><code>eski.txt</code> yeniden görünür; bağlama süresince yalnız gizlenmişti.</li><li><code>eski.txt</code> kalıcı olarak silinmiştir; bağlama dizini boşaltır.</li><li><code>eski.txt</code> tmpfs'e taşınmıştır ve onunla birlikte kaybolur.</li><li><code>eski.txt</code> yeniden görünür ama içeriği sıfırlanmıştır.</li><li>Dizinin üstüne bağlama yapılamadığı için komut baştan hata vermiştir.</li></ul>
+<div class="coz"><p><code>mount(8)</code>'e göre bağlama noktasının önceki içeriği, sahibi ve izinleri bağlama süresince görünmez olur; dosyalar diskte olduğu gibi kalır ve bağlama kaldırılınca geri gelir. Alıştırmada <code>umount</code> sonrası <code>cat bag/eski.txt</code> "bagdan once yazildi" yazdı, içerik değişmemişti (D). Bağlama hiçbir şeyi silmez ya da taşımaz (B, C). Dolu bir dizinin üstüne bağlamak mümkündür; Debian 13'e yükseltilen sistemlerde eski <code>/tmp</code> içeriği tam böyle gizlenir (E).</p></div></li>
+
+<li data-c="D"><p class="q">Bir tmpfs <code>noexec,nosuid,nodev</code> ile bağlanmış. İçinde izinleri <code>-rwxr-xr-x</code> olan bir kabuk betiği var. <code>./bag/betik.sh</code> "Permission denied" verip 126 koduyla dönüyor, <code>sh bag/betik.sh</code> ise betiği çalıştırıyor. En doğru çıkarım hangisidir?</p>
+<ul class="sec"><li>Betiğin dosya izinleri yanlıştır; <code>chmod +x</code> yeniden verilmelidir.</li><li><code>nosuid</code> seçeneği betiğin doğrudan çalışmasını engellemiştir.</li><li><code>noexec</code> bozuk çalışıyor; doğru çalışsaydı <code>sh</code> da betiği açamazdı.</li><li><code>noexec</code> o daldaki dosyanın doğrudan program olarak yüklenmesini engeller, ama başka daldaki bir yorumlayıcının dosyayı okuyup yorumlamasını engellemez; bu yüzden tek başına değil, öbür önlemlerle birlikte bir katman olarak değer taşır.</li><li>126 kodu dosyanın bulunamadığını gösterir; yol yanlış yazılmıştır.</li></ul>
+<div class="coz"><p>Alıştırmadaki çıktı tam böyleydi: izinler çalıştırmaya açıktı ama çekirdek <code>noexec</code> daldaki dosyayı <code>execve</code> ile yüklemeyi reddetti. <code>sh bag/betik.sh</code>'de çalışan program kökteki <code>/usr/bin/sh</code>'dir ve betiği yalnız okur. Bu, seçeneğin tasarımıdır, bozukluk değildir (C). İzinler zaten <code>rwx</code>'ti (A). <code>nosuid</code> yalnız SUID/SGID bitlerini ve dosya yeteneklerini yok sayar (B). Bash'te 126 "bulundu ama çalıştırılamadı", 127 "bulunamadı" demektir (E).</p></div></li>
+
+<li data-c="B" data-k="siber-1"><p class="q">Bir mesaj <code>m</code> bir anahtar <code>k</code> ile XOR'lanarak <code>c = m ⊕ k</code> elde ediliyor. <code>c ⊕ k</code> işleminin sonucu nedir?</p>
+<ul class="sec"><li><code>k</code></li><li><code>m</code></li><li>Bütün bitleri 0 olan bir dizi</li><li>Bütün bitleri 1 olan bir dizi</li><li><code>m ⊕ k ⊕ k ⊕ k</code> ile aynı olan ve tahmin edilemeyen bir değer</li></ul>
+<div class="coz"><p>XOR değişmeli ve birleşmelidir, bir değerin kendisiyle XOR'u 0'dır ve 0 ile XOR değeri değiştirmez: <code>(m ⊕ k) ⊕ k = m ⊕ (k ⊕ k) = m ⊕ 0 = m</code>. Aynı anahtarla bir kez daha XOR'lamak mesajı geri getirir; aynı işlem hem karıştırır hem çözer. A, C ve D yalnız özel durumlarda (ör. <code>m = 0</code> ya da <code>m = k</code>) doğru olur. E'deki ifade aslında <code>m ⊕ k</code>'ye eşittir ve tamamen hesaplanabilir. Parça 1'in uyarısı da buradan gelir: XOR tek başına şifre değildir, anahtarın tekrar kullanılması sızıntı doğurur.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Bir geliştirici bir API anahtarını C programının içine gömüp derliyor ve "derlendiği için kimse okuyamaz" diyor. En doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Doğrudur; makine kodu geri okunamaz.</li><li>Doğrudur, yeter ki program <code>-O2</code> ile derlensin.</li><li>Yalnız program x86-64 için derlendiyse okunabilir, ARM için okunamaz.</li><li>Anahtar yalnız program çalışırken RAM'de okunabilir, dosyada okunamaz.</li><li>Yanlıştır; derleme gizleme değildir, gömülü metinler çalıştırılabilir dosyada çoğu zaman olduğu gibi durur ve okunabilir.</li></ul>
+<div class="coz"><p>Parça 2'de makine kodunun <code>objdump</code> ile okunabildiğini ve programdaki metinlerin (parolalar, anahtarlar, adresler) derlenmiş dosyada çoğu zaman olduğu gibi durduğunu gördün: derleme bir gizleme yöntemi değildir. Doğrusu sırrı programa gömmemek, ayrı ve korunan bir yerde tutmaktır. A ve D bu gerçeği yok sayar; dosyanın kendisi okunabilir. İyileştirme düzeyi metni gizlemez (B). Komut kümesi farkı yalnız hangi işlemcide çalışacağını belirler, okunabilirliği değil (C).</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Bir olay incelemesinde adli bilişimcilerin "önce bellek, sonra disk" diye çalışmasının temel nedeni hangisidir?</p>
+<ul class="sec"><li>RAM uçucudur; makine kapanınca ya da yeniden başlatılınca içeriği kaybolur, disk ise kalıcıdır.</li><li>Disk her zaman şifreli olduğu için okunamaz.</li><li>RAM diskten daha büyüktür, bu yüzden daha çok delil içerir.</li><li>Disk, RAM'i okumadan bağlanamaz.</li><li>Bellek hiyerarşisinde disk daha hızlıdır, önce yavaş olan alınır.</li></ul>
+<div class="coz"><p>Parça 3'te bellek türlerini uçucu (yazmaç, önbellek, RAM: güç gidince içerik gider) ve kalıcı (SSD, disk) diye ayırdık; uçuculuk sırası bu ayrımdan doğar: önce kaybolacak olan alınır. B genelleme hatasıdır. C tersidir; RAM tipik olarak diskten küçüktür. D'nin teknik bir dayanağı yoktur. E hiyerarşiyi ters çevirir: RAM diskten çok daha hızlıdır. Ayrıntısı Parça 71'de.</p></div></li>
+
+<li data-c="C" data-k="siber-4"><p class="q">Parça 4'teki ayrıma göre "root" ile "halka 0" için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>İkisi aynı şeydir; root olarak çalışan her program halka 0'dadır.</li><li>Root yalnız halka 0'a geçmek için kullanılan bir sistem çağrısıdır.</li><li>Root bir kullanıcı kimliğidir, halka 0 bir işlemci kipidir; root olarak çalışan program da kullanıcı alanında, halka 3'te çalışır.</li><li>Halka 0 yalnız root'un ev dizini olan <code>/root</code>'ta çalışan programlar için açılır.</li><li>Root kullanıcısı çekirdeğin bir parçasıdır.</li></ul>
+<div class="coz"><p>Halka 0, işlemcinin çekirdeğe ayırdığı ayrıcalık düzeyidir; çekirdek dışındaki her şey, root dahil, kullanıcı alanında halka 3'te çalışır. Root yalnız çekirdeğin izin denetimlerinde ayrıcalıklı sayılan bir kimliktir; halka değiştirmez (A, E). Halka geçişinin yolu sistem çağrısıdır, ama root bir sistem çağrısı değildir (B). D, bu parçadaki "üç root" karışıklığının bir türevidir: <code>/root</code> yalnız bir ev dizinidir ve işlemci kipleriyle ilgisi yoktur.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q">Bir programda hata ayıklarken adreslerin her çalıştırmada aynı kalmasını istiyorsun. Parça 5'e göre doğru yol hangisidir?</p>
+<ul class="sec"><li><code>/proc/sys/kernel/randomize_va_space</code> değerini kalıcı olarak 0 yapmak</li><li>Programı root olarak çalıştırmak</li><li>Programı PIE olmadan derleyip ASLR'yi sistem genelinde kapatmak</li><li>Programı <code>setarch -R</code> ile çalıştırıp rastgeleleştirmeyi yalnız o süreç için kapatmak</li><li>Seccomp'u katı kipe almak</li></ul>
+<div class="coz"><p><code>setarch -R</code>, rastgeleleştirmeyi yalnız başlattığı süreç ve çocukları için kapatır ve root istemez; Parça 5'te iki çalıştırmada bütün adresler birebir aynı çıkmıştı. A ve C korumayı makinedeki bütün süreçlerden kaldırır, root ister ve geri açılması unutulabilir; Parça 5 bunu sık yapılan hata olarak gösterdi. Root olmak adresleri sabitlemez (B). Seccomp sistem çağrılarını daraltır, adres düzeniyle ilgisi yoktur (E).</p></div></li>
+
+<li data-c="B" data-k="siber-5"><p class="q">Tarayıcıların farklı siteleri ayrı iş parçacıklarında değil ayrı süreçlerde çalıştırmasının güvenlik açısından nedeni hangisidir?</p>
+<ul class="sec"><li>İş parçacıkları süreçlerden daha yavaş başlar.</li><li>Ayrı süreçlerin ayrı sanal adres uzayları vardır ve çekirdek onları birbirinden yalıtır; aynı süreçteki iş parçacıkları ise belleği paylaşır.</li><li>İş parçacıkları ağ bağlantısı açamaz.</li><li>Ayrı süreçler aynı sayfa tablosunu kullandığı için daha az bellek harcar.</li><li>İş parçacıklarının PID'leri farklı olduğu için izlenmeleri zordur.</li></ul>
+<div class="coz"><p>Parça 5'in ana dersi şuydu: güvenlik sınırı süreçtir, iş parçacığı değil. Her sürecin kendi sayfa tablosu ve sanal adres uzayı vardır; bir sitenin kodu kendi sürecine hapsolursa öbür sitenin belleğine bellek yoluyla ulaşamaz. İş parçacıkları aynı adres uzayını paylaşır ve birbirine karşı korumaları yoktur. A hız iddiasıdır ve gerekçe değildir; C yanlıştır. D tersidir: ayrı süreçlerin ayrı tabloları vardır. E de tersidir: aynı süreçteki iş parçacıklarının PID'i aynıdır, TID'leri farklıdır.</p></div></li>
+
+<li data-c="E" data-k="siber-6"><p class="q">"şifre" sözcüğü UTF-8 ile kaç bayt tutar?</p>
+<ul class="sec"><li>5</li><li>10</li><li>20</li><li>12</li><li>6</li></ul>
+<div class="coz"><p>Sözcükte beş karakter var. UTF-8'de ASCII harfleri (i, f, r, e) birer bayttır, Türkçe "ş" ise iki bayttır (<code>C5 9F</code>); toplam 4 + 2 = 6 bayt. A, karakter sayısını bayt sayısıyla karıştırır. B UTF-16'daki (her karakter 2 bayt), C UTF-32'deki (her karakter 4 bayt) karşılıktır. D, her harfi iki bayt saymanın sonucudur. Karakter sayısı ile bayt sayısının farklı olması, uzunluk denetimlerinde ve günlük aramalarında hataya yol açar.</p></div></li>
+
+<li data-c="A" data-k="siber-6"><p class="q">Adı <code>rapor.pdf</code> olan bir dosyanın ilk dört baytı <code>7F 45 4C 46</code>. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Bu baytlar ELF imzasıdır; dosya büyük olasılıkla bir Linux çalıştırılabilir dosyasıdır ve uzantısına güvenilmemelidir.</li><li>Dosya geçerli bir PDF'dir, çünkü uzantısı <code>.pdf</code>'dir.</li><li>Bu baytlar dosyanın şifrelenmiş olduğunu gösterir.</li><li>Bu baytlar bir ZIP arşivinin imzasıdır.</li><li>Uzantı ile içerik uyuşmadığında işletim sistemi dosyayı açmayı her zaman reddeder.</li></ul>
+<div class="coz"><p>Parça 6'daki sihirli bayt tablosuna göre <code>7F 45 4C 46</code> (<code>.ELF</code>) ELF çalıştırılabilir dosyasının imzasıdır; bu parçada <code>file /usr/bin/ls</code> da "ELF 64-bit" demişti. PDF <code>%PDF-</code> ile, ZIP <code>PK</code> ile başlar (B, D). Sihirli baytlar şifreleme değil biçim belirtir (C). Uzantı yalnız addır; işletim sistemi uzantı ile içeriği karşılaştırıp otomatik olarak reddetmez (E). Savunmacı dosyayı adına göre değil içeriğine göre değerlendirir.</p></div></li>
+
+<li data-c="C" data-k="siber-7"><p class="q">Sıradan bir kullanıcı <code>unshare -r</code> ile yeni bir kullanıcı ad alanı açıyor ve içeride <code>id -u</code> komutu 0 yazıyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Kullanıcı artık bütün sistemde gerçek root yetkisine sahiptir.</li><li>Kullanıcı ad alanının içinde başka bir çekirdek çalışmaktadır.</li><li>Kullanıcı yalnız o ad alanının içinde root görünür; dışarıda hâlâ sıradan kullanıcıdır ve gerçek root yetkisi kazanmamıştır.</li><li><code>id -u</code> hatalı çalışmaktadır, çünkü kullanıcı ad alanında UID gösterilemez.</li><li>Bu durum, sistemin ele geçirildiğinin kesin kanıtıdır.</li></ul>
+<div class="coz"><p>Parça 7'de gördüğün gibi kullanıcı ad alanı, içerideki kimlikleri dışarıdakilere eşler: içeride UID 0, dışarıda kullanıcının kendi UID'i. Dışarıdan bakınca aynı süreç sıradan kullanıcıya aittir ve sistemde gerçek root yetkisi yoktur (A). Bu parçada aynı yolla, gerçek sistemi etkilemeden bir tmpfs bağladık. Bütün ad alanları aynı çekirdeği paylaşır; "çekirdek ad alanı" yoktur (B). <code>id</code> doğru çalışır, yalnız içerideki eşlemeyi gösterir (D). Ayrıcalıksız kullanıcı ad alanı olağan bir çekirdek özelliğidir, kendi başına bir saldırı belirtisi değildir (E).</p></div></li>
+
+<li data-c="D" data-k="siber-7"><p class="q">Laboratuvar VM'inin anlık görüntülerini düzenli alıyorsun. Ayrıca yedek almana gerek olup olmadığı konusunda hangisi doğrudur?</p>
+<ul class="sec"><li>Gerek yoktur; anlık görüntü yedeğin yerini tutar.</li><li>Gerek yoktur, yeter ki görüntü VM çalışırken alınsın.</li><li>Yalnız Windows VM'leri için yedek gerekir.</li><li>Gerekir; anlık görüntü aynı diskte ana disk dosyasına bağlı bir fark dosyasıdır, disk bozulur ya da dosyalar silinirse görüntüler de gider.</li><li>Gerekir, çünkü anlık görüntüler bir gün sonra kendiliğinden silinir.</li></ul>
+<div class="coz"><p>Parça 7'de anlık görüntünün nasıl çalıştığını gördük: ana disk dondurulur, yeni yazılar fark dosyasına gider; geri almak fark dosyasını atmaktır. Zincirin hepsi aynı fiziksel diskte durduğu için disk arızası, yanlışlıkla silme ya da fidye yazılımı görüntüleri de götürür. Yedek ise başka bir ortamdaki, tek başına geri yüklenebilen bağımsız kopyadır. A ve B bu farkı yok sayar; görüntünün çalışırken alınması yalnız bellek durumunu da kaydeder. C'nin işletim sistemiyle ilgisi yoktur; E'deki kendiliğinden silinme iddiası yanlıştır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-7">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-8">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-9">Sonraki parça: Komut satırında dolaşmak ve metinle çalışmak →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"linux kernel vs distribution explained"</li>
+  <li>"linux filesystem hierarchy standard /etc /var /usr explained"</li>
+  <li>"everything is a file linux /dev /proc /sys"</li>
+  <li>"linux mount options noexec nosuid nodev"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> Örnek 1–3'teki komutlar (Python ile 2<sup>40</sup> denetimi dahil) ve "Kendi makinende dene"nin altı adımı. Ortam: WSL 2, Kali Rolling 2026.2, çekirdek 6.18.33.2, Bash 5.3.9. Çıktılar birebir; Adım 6 betiğin son hâliyle ikinci bir çalıştırmadan alındı (ilk denemedeki <code>mount -o remount,exec</code> kullanıcı ad alanında "Invalid uid" hatası verdi, betik umount ve yeniden bağlamaya çevrildi). PID'ler, tarihler ve rastgele baytlar her çalıştırmada değişir. Quiz 5–8'in cevapları bu çıktılarla doğrulandı.</li>
+  <li><strong>Kullanıcı ad alanıyla:</strong> Adım 6'daki bütün bağlamalar <code>unshare -rm</code> içinde, <code>/tmp/yazar/siber-8/bag</code> üstünde yapıldı; gerçek root yok, süreç bitince bağlamalar kayboldu. Sistemde hiçbir şey değiştirilmedi.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> <code>/tmp</code>'yi kalıcı olarak <code>nosuid,nodev,noexec</code> ile bağlamak, <code>/dev/shm</code>'ye <code>noexec</code> eklemek ve <code>sudo mount</code> ile gerçek bağlama (root ister, kalıcı değişiklik). <code>ls -A ~</code> gizlilik nedeniyle konmadı.</li>
+  <li><strong>Gizlilik ve ortam:</strong> Çıktılarda kullanıcı adı, makine adı ve ev dizini yok; WSL'nin rastgele adlı on beş kök dizini komutta <code>grep -v ' wsl'</code> ile süzüldü. <code>root@f1bbfb02316b</code>, çekirdeği derleyen Microsoft makinesinin adıdır. <code>/init</code>, <code>/mnt/c</code>, <code>9p</code> ve maskelenmiş <code>tmp.mount</code> WSL'ye özgüdür; Debian/Ubuntu VM'inde farklı görünür.</li>
+  <li><strong>Resmî belgeden:</strong> FHS 3.0 (refspecs.linuxfoundation.org, 19 Mart 2015: dizin tanımları, <code>/etc</code>'de ikili olmaması, <code>/usr</code>'ın yazılmaması, <code>/tmp</code> ve <code>/var/tmp</code>, <code>/proc</code> ve <code>/sys</code> Linux eki); man7.org <code>mount(8)</code>, <code>proc(5)</code>, <code>sysfs(5)</code>, <code>null(4)</code>; Debian 13 sürüm notları 5.1.6 ve 5.2.1; Kali 2020.4 duyurusu (zsh; WSL'de Bash kaldı, Help Net Security aktarımıyla).</li>
+  <li><strong>İkincil kaynaktan:</strong> Torvalds'ın 25 Ağustos 1991 duyurusu ve 0.01'in Eylül 1991'de yayımlanması (birden çok tarih kaynağı tutarlı); TOP500'deki 500 sistemin hepsinin Kasım 2017'den beri Linux kullanması (Linux Foundation ve Network World); <code>/sys/block/*/size</code> değerinin her zaman 512 baytlık birimle verilmesi (çekirdek posta listesi ve proje kayıtları; kernel.org ABI belgesinde bu satır bulunamadı).</li>
+  <li><strong>Doğrulanamayan ya da hafızadan:</strong> nokta kuralının eski <code>ls</code>'deki bir kısayoldan doğduğu anlatısı (birincil kaynak bulunamadı); CIS önerileri genel olarak yazıldı, madde numaraları Parça 19'da doğrulanacak; XDG varsayılanları, dağıtım tablosundaki araçlar ve sürüm yaklaşımları, Android'in FHS kullanmaması, <code>uid=1000</code>'in nedeni (yalnız gözlendi) ve <code>noexec</code>'in bazı kurulum betiklerini bozması yerleşik bilgidir. Bash'in 126/127 kodları yerel <code>bash(1)</code> sayfasından doğrulandı.</li>
+  <li><strong>Saldırı sınırı:</strong> İstismar, yük ya da korumayı aşma yöntemi yok; gizli dosyalar, <code>/tmp</code> ve bağlama seçenekleri "neden riskli, nasıl görülür, nasıl kapatılır" düzeyinde kaldı. <code>noexec</code>'in sınırı yalnız kendi dosyalarımızla gösterildi. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

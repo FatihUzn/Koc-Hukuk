@@ -1,0 +1,840 @@
+<article class="chapter ders" id="c-siber-14">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 14 · Hizmetler ve zamanlanmış görevler</div>
+<h1>Hizmetler ve zamanlanmış görevler: makinende kimse istemeden ne çalışıyor, ne zaman çalışacak?</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bilgisayarını açıyorsun; daha hiçbir programa dokunmadan arka planda onlarca süreç çalışıyor, gece yarısı bir şey günlükleri döndürüyor, sabaha karşı başka bir şey güncellemeleri denetliyor. Bunları kim başlatıyor, nerede yazılı ve nasıl kapatılır? Bir saldırgan makineye bir kez girdiğinde, yeniden başlatmadan sonra da geri gelebilmek için tam olarak bu düzeneği kullanırsa, savunmacı onu nereden ve nasıl fark eder?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 4 (önyükleme zinciri, init ve PID 1), Parça 5 (yetenekler, <code>no_new_privs</code>, seccomp), Parça 7 (ad alanları ve cgroups), Parça 8 (<code>/etc</code>, <code>/usr</code>, <code>/run</code>; bağlama), Parça 11 (hizmet kullanıcıları), Parça 12 (izinler, SUID/SGID), Parça 13 (süreç ağacı, sinyaller, arka plan işleri). Kod rafından: Parça 18 (crontab satırının alanları). Bütün komutlar kendi makinende ya da laboratuvar VM'inde, root olmadan çalışır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 13'te bir süreci terminalden <code>&amp;</code> ile arka plana atınca terminal kapandığında <code>SIGHUP</code> ile öldüğünü gördün ve "kalıcı iş hizmettir" diye not düştün. Bu parça o notun açılımı. Üç soruya cevap arayacağız. Birincisi: uzun süre çalışan arka plan programlarını Linux kim başlatır, kim izler, kim yeniden başlatır? Bugünkü cevap <strong>systemd</strong> ve onun <strong>birim</strong> (unit) dosyalarıdır. İkincisi: bir hizmet ne kadar yetkiyle çalışmalı? Her açık hizmet bir <strong>saldırı yüzeyidir</strong>; gereksizini kapatmak, gerekeni de birim dosyasındaki sertleştirme seçenekleriyle daraltmak gerekir. Üçüncüsü: belirli zamanda çalışan işler, yani <strong>cron</strong> ve <strong>systemd zamanlayıcıları</strong>, nasıl yazılır ve okunur?</p>
+
+<p>Bu üç düzeneğin ortak bir yüzü var: hepsi "ben olmasam da çalışsın" demenin yoludur. Yönetici için bu otomasyondur; makineye sızmış biri için <strong>kalıcılıktır</strong> (persistence). Bu yüzden savunmacı hizmetleri ve zamanlanmış görevleri düzenli olarak envantere çıkarır. Parçanın sonunda kendi makinende bunu salt okur biçimde yapacak, ayrıca geçici bir kullanıcı hizmeti ve zamanlayıcı kurup hiçbir iz bırakmadan kaldıracaksın.</p>
+
+<h2 class="s">Hizmet nedir ve neden ayrı bir yönetici gerekir?</h2>
+
+<p>Bir <strong>hizmet</strong> (service), Unix geleneğindeki adıyla <strong>daemon</strong>, bir terminale bağlı olmadan arka planda çalışan ve bir şeyi bekleyen süreçtir: ağdan gelen bağlantıyı (SSH sunucusu), bir zamanı (<code>cron</code>), bir donanım olayını (<code>udev</code>) ya da başka programların isteğini (<code>dbus</code>). Bir hizmetin yaşaması için birinin onu açılışta başlatması, çökerse fark etmesi, kapanışta düzgünce durdurması ve çıktısını bir yere yazması gerekir. Parça 4'te önyükleme zincirinin sonunda çekirdeğin ilk kullanıcı alanı sürecini, yani PID 1'i başlattığını gördün. Bu iş PID 1'in işidir.</p>
+
+<p>Eski sistemlerde bu iş <strong>SysV init</strong> ile yapılırdı: <code>/etc/init.d/</code> altında her hizmet için bir kabuk betiği ve betiklerin hangi sırada çalışacağını belirleyen "çalışma düzeyleri" (runlevel). Bağımlılıklar elle sıralanıyor, kendini çatallayıp ana süreçten kopan bir programın süreçleri kolayca gözden kaçıyordu. <strong>systemd</strong> 2010'da Lennart Poettering ve Kay Sievers tarafından bu sorunlara cevap olarak başlatıldı; Fedora 2011'de, Debian 8 "jessie" 2015'te onu varsayılan yaptı. Bugün Debian, Ubuntu, Fedora, RHEL ve Kali'de PID 1 systemd'dir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>systemd</strong>, PID 1 olarak çalışan sistem ve hizmet yöneticisidir. Yönettiği her şey bir <strong>birimdir</strong> (unit): hizmet (<code>.service</code>), dinleyen bir soket (<code>.socket</code>), zamanlayıcı (<code>.timer</code>), bağlama noktası (<code>.mount</code>), birimleri gruplayan hedef (<code>.target</code>) ve başkaları. Birimlerin tanımı düz metin <strong>birim dosyalarındadır</strong>. Her hizmetin süreçleri kendi <strong>cgroup</strong>'una konur (Parça 7); bu sayede systemd, hizmet kaç kez çatallanırsa çatallansın bütün süreçlerini bilir ve birlikte durdurabilir. Ayrıca her kullanıcı için ayrı bir <strong>kullanıcı yöneticisi</strong> (<code>systemd --user</code>) çalışır; root gerektirmeyen kullanıcı hizmetleri onun altında yaşar.</p></div>
+
+<p><strong>Hedefler</strong>, eski çalışma düzeylerinin yerini tutar: <code>multi-user.target</code> "ağlı, çok kullanıcılı, metin kipli sistem hazır", <code>graphical.target</code> "üstüne grafik oturum da hazır" demektir. Bir hizmet "açılışta başlasın" diye ayarlandığında aslında "şu hedefe ulaşılırken beni de getir" demiş olur. Birimler arasında iki ayrı ilişki vardır: <strong>gereklilik</strong> (<code>Wants=</code> "beni de başlat", <code>Requires=</code> "o olmazsa ben de olmam") ve <strong>sıra</strong> (<code>After=</code>, <code>Before=</code>). İkisi bağımsızdır: <code>Wants=</code> sıra belirtmez, <code>After=</code> başlatma isteği taşımaz.</p>
+
+<h2 class="s">Birim dosyasının anatomisi</h2>
+
+<p>Bir birim dosyası, köşeli parantezli bölümlerden ve <code>Anahtar=değer</code> satırlarından oluşur. Kendi makinenden gerçek bir örnek, cron hizmeti:</p>
+
+<pre class="kod" data-ad="/usr/lib/systemd/system/cron.service">[Unit]
+Description=Regular background program processing daemon
+Documentation=man:cron(8)
+After=remote-fs.target nss-user-lookup.target
+
+[Service]
+EnvironmentFile=-/etc/default/cron
+ExecStart=/usr/sbin/cron -f $EXTRA_OPTS
+IgnoreSIGPIPE=false
+KillMode=process
+Restart=on-failure
+SyslogFacility=cron
+
+[Install]
+WantedBy=multi-user.target</pre>
+
+<p>Satır satır: <code>[Unit]</code> her birim türünde ortaktır; açıklama, belge ve sıra bilgisi burada. <code>After=</code> uzak dosya sistemleri ve kullanıcı adı çözümlemesi hazır olmadan cron'un başlamamasını söyler. <code>[Service]</code> yalnız hizmetlere özgüdür. <code>EnvironmentFile=</code> ek değişkenleri bir dosyadan okur; baştaki <code>-</code> "dosya yoksa hata verme" demektir. <code>ExecStart=</code> çalıştırılacak komuttur; <code>-f</code> cron'a "ön planda kal, kendini çatallama" der, çünkü artık sürecin takibini systemd yapıyor. <code>Restart=on-failure</code> hata koduyla çıkarsa yeniden başlatır. <code>KillMode=process</code> durdururken yalnız ana süreci öldürür; cron'un başlattığı uzun işler yarıda kesilmesin diye. <code>[Install]</code> bölümünü systemd normal çalışırken hiç okumaz; yalnız <code>enable</code> komutu okur. <code>WantedBy=multi-user.target</code> "beni etkinleştirirsen o hedefin istek listesine ekle" demektir.</p>
+
+<p>Bu dosyada hizmetin hangi kullanıcıyla çalışacağına dair bir satır yok. <code>User=</code> verilmeyen sistem hizmeti <strong>root</strong> olarak çalışır. cron için bu bilinçli bir seçim: farklı kullanıcıların görevlerini o kullanıcılar adına çalıştırabilmesi için kimlik değiştirebilmesi gerekir. Ama çoğu hizmet için root gereksizdir; buna aşağıda döneceğiz.</p>
+
+<h3>Birim dosyaları nerede durur, hangisi kazanır?</h3>
+
+<p>Parça 8'deki ayrım burada birebir işler: paketin getirdiği her şey <code>/usr</code>'de, yöneticinin yerel ayarı <code>/etc</code>'de, çalışma anında üretilen geçici her şey <code>/run</code>'dadır. systemd aynı adlı birimi birkaç dizinde ararsa öncelik sırası şudur:</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Birim dosyası arama dizinleri: /etc/systemd/system en yüksek öncelik, sonra /run/systemd/system, en altta paketlerin /usr/lib/systemd/system dizini; drop-in .d dizinleri ana dosyanın üstüne eklenir">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Aynı adlı birim: üstteki kazanır</text>
+  <rect class="sv-a" x="20" y="35" width="250" height="50" rx="6" />
+  <text class="sv-b" x="145" y="57" text-anchor="middle">/etc/systemd/system</text>
+  <text class="sv-s" x="145" y="75" text-anchor="middle">yönetici · enable bağları · mask</text>
+  <rect class="sv-l" x="20" y="100" width="250" height="50" rx="6" />
+  <text class="sv-b" x="145" y="122" text-anchor="middle">/run/systemd/...</text>
+  <text class="sv-s" x="145" y="140" text-anchor="middle">çalışma anı · geçici (transient)</text>
+  <rect class="sv-k" x="20" y="165" width="250" height="50" rx="6" />
+  <text class="sv-b" x="145" y="187" text-anchor="middle">/usr/lib/systemd/system</text>
+  <text class="sv-s" x="145" y="205" text-anchor="middle">paketin getirdiği · güncellemede ezilir</text>
+  <line class="sv-cl" x1="285" y1="190" x2="285" y2="60" />
+  <polygon class="sv-cl" points="280,66 285,54 290,66" />
+  <text class="sv-s" x="295" y="125">öncelik</text>
+  <rect class="sv-m" x="20" y="235" width="360" height="50" rx="6" />
+  <text class="sv-b" x="200" y="257" text-anchor="middle">ad.service.d/*.conf (drop-in)</text>
+  <text class="sv-s" x="200" y="275" text-anchor="middle">hangi dizinde olursa olsun ana dosyanın üstüne eklenir</text>
+</svg>
+<figcaption>Paket birimi <code>/usr/lib</code>'de durur ve güncellemeyle yenilenir. Yönetici aynı adla <code>/etc</code>'ye bir dosya koyarsa tamamen onun yerine geçer; yalnız birkaç satırı değiştirmek istiyorsa <code>.d/</code> dizinine bir parça (drop-in) koyar. <code>systemd-run</code> ile kurulan geçici birimler <code>/run</code> altında yaşar ve iz bırakmaz.</figcaption>
+</figure>
+
+<p>Kullanıcı yöneticisinin de benzer bir listesi vardır; en önemlileri <code>~/.config/systemd/user/</code> (kullanıcının kendi birimleri), <code>/etc/systemd/user/</code> ve <code>/usr/lib/systemd/user/</code>. Bunun güvenlikteki anlamı açık: <strong>root olmayan bir kullanıcı da kendi ev dizinine birim koyabilir</strong>. Tam listeyi <code>systemd-analyze unit-paths</code> ve <code>systemd-analyze --user unit-paths</code> verir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ayarı değiştirmek için <code>/usr/lib/systemd/system</code> altındaki dosyayı düzenledim."</strong> O dosya paketindir; bir sonraki güncelleme değişikliğini sessizce siler ve <code>dpkg -V</code> (Parça 10) dosyayı değişmiş diye gösterir. Doğrusu: <code>sudo systemctl edit ad.service</code> ile <code>/etc/systemd/system/ad.service.d/override.conf</code> parçasını oluşturmak; yalnız değiştirmek istediğin satırları oraya yazmak. Sonucu her zaman <code>systemctl cat ad.service</code> ile oku; bu komut ana dosyayı ve bütün parçaları, yollarıyla birlikte sırayla gösterir. Elle dosya düzenlediysen <code>sudo systemctl daemon-reload</code> gerekir.</p></div>
+
+<h2 class="s"><code>systemctl</code>: başlatmak, durdurmak, etkinleştirmek</h2>
+
+<p><code>systemctl</code> systemd'ye komut veren araçtır. En sık karıştırılan nokta, iki ayrı zaman ölçeğinin olmasıdır: <strong>şu an</strong> ve <strong>bir sonraki açılış</strong>.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Başlatmak (<code>start</code>) ile etkinleştirmek (<code>enable</code>) ayrı işlerdir.</strong> Neden: systemd, hizmetin şu anki durumunu bellekte tutar; açılışta neyin başlayacağını ise dosya sistemindeki bağlardan okur. <code>start</code>/<code>stop</code> yalnız şu anı değiştirir, yeniden başlatmada iz kalmaz. <code>enable</code>/<code>disable</code> yalnız açılışı değiştirir: birim dosyasının <code>[Install]</code> bölümünü okuyup <code>/etc/systemd/system/hedef.wants/</code> altında bir sembolik bağ kurar ya da kaldırır; hizmeti o an başlatmaz. İkisini birlikte istiyorsan <code>enable --now</code> ya da <code>disable --now</code> yaz. <code>mask</code> ise birimi <code>/dev/null</code>'a bağlar; ne elle, ne açılışta, ne de başka bir birimin bağımlılığı olarak başlatılabilir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Komut</th><th>Ne yapar?</th><th>Yeniden başlatmadan sonra?</th></tr>
+<tr><td><code>systemctl status ad</code></td><td>Durum, ana PID, cgroup ağacı, son günlük satırları</td><td>Salt okur</td></tr>
+<tr><td><code>start</code> / <code>stop</code> / <code>restart</code></td><td>Şimdi başlatır, durdurur, durdurup başlatır</td><td>Etkisi kalmaz</td></tr>
+<tr><td><code>reload</code></td><td>Hizmetten yapılandırmasını yeniden okumasını ister</td><td>Etkisi kalmaz</td></tr>
+<tr><td><code>enable</code> / <code>disable</code></td><td><code>.wants/</code> bağını kurar ya da kaldırır</td><td>Kalıcı</td></tr>
+<tr><td><code>mask</code> / <code>unmask</code></td><td>Birimi <code>/dev/null</code>'a bağlar ya da bağı kaldırır</td><td>Kalıcı (<code>--runtime</code> ile geçici)</td></tr>
+<tr><td><code>is-active</code> / <code>is-enabled</code></td><td>Şu anki durumu ya da açılış ayarını tek sözcükle verir</td><td>Salt okur</td></tr>
+<tr><td><code>list-units</code> / <code>list-unit-files</code></td><td>Bellekteki birimler / diskteki birim dosyaları ve açılış durumu</td><td>Salt okur</td></tr>
+<tr><td><code>cat</code> / <code>show</code></td><td>Birim dosyası ve parçaları / systemd'nin hesapladığı bütün özellikler</td><td>Salt okur</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: "çalışıyor mu" ile "açılışta başlar mı" sorularını ayırmak</span>
+<p><strong>Soru:</strong> Makinende cron, SSH sunucusu ve NetworkManager için iki soruyu ayrı ayrı cevapla: şu an çalışıyor mu, açılışta başlar mı? Cevabın dosya sisteminde nerede yazdığını göster.</p>
+<p><strong>Adım 1.</strong> Açılış ayarını ve şu anki durumu tek sözcükle sor. Bunların hepsi salt okur komutlardır.</p>
+<pre class="kod" data-ad="bash">systemctl is-enabled cron.service ssh.service NetworkManager.service sshd-unix-local.socket
+systemctl is-active cron.service ssh.service NetworkManager.service</pre>
+<pre class="cikti">enabled
+disabled
+masked
+generated
+active
+inactive
+inactive</pre>
+<p><strong>Adım 2.</strong> Satırları eşleştir. cron etkin ve çalışıyor. SSH sunucusu kurulu ama etkin değil ve çalışmıyor: dışarıya açık bir port yok. NetworkManager maskelenmiş: biri onun bilerek hiç başlamamasını istemiş. Dördüncü satır yeni bir durum: <code>generated</code>, birimin bir disk dosyasından değil açılışta çalışan bir <strong>üretecin</strong> (generator) ürettiği olduğunu söyler; bu makinede SSH için yalnız yerel bir Unix soketi bu yolla oluşturulmuş.</p>
+<p><strong>Adım 3.</strong> "Etkin" sözünün dosya sistemindeki karşılığını gör:</p>
+<pre class="kod" data-ad="bash">readlink /etc/systemd/system/multi-user.target.wants/cron.service
+readlink /etc/systemd/system/NetworkManager.service
+grep -A1 '^\[Install\]' /usr/lib/systemd/system/cron.service /usr/lib/systemd/system/ssh.service</pre>
+<pre class="cikti">/usr/lib/systemd/system/cron.service
+/dev/null
+/usr/lib/systemd/system/cron.service:[Install]
+/usr/lib/systemd/system/cron.service-WantedBy=multi-user.target
+--
+/usr/lib/systemd/system/ssh.service:[Install]
+/usr/lib/systemd/system/ssh.service-WantedBy=multi-user.target</pre>
+<p><strong>Adım 4.</strong> Yorumla. cron'un etkinliği, <code>multi-user.target.wants/</code> içindeki bir sembolik bağdan ibaret; açılışta systemd o hedefe giderken bu bağı izleyip cron'u getiriyor. Maskeleme, <code>/etc</code>'de birimle aynı adı taşıyan ve <code>/dev/null</code>'a giden bir bağ; <code>/etc</code> en yüksek öncelikli dizin olduğu için paketteki asıl dosya hiç okunmuyor. SSH'nin <code>[Install]</code> bölümü de cron'unkiyle aynı; fark yalnız bağın kurulmamış olması.</p>
+<p><strong>Sonuç:</strong> cron: <code>active</code> + <code>enabled</code>; SSH: <code>inactive</code> + <code>disabled</code>; NetworkManager: <code>inactive</code> + <code>masked</code>. "Etkin" = <code>.wants/</code> bağı, "maskeli" = <code>/dev/null</code> bağı, "çalışıyor" = bellekteki durum. Savunmacı ikisini de ayrı ayrı sorar.</p></div>
+
+<h2 class="s">Her hizmet bir kapıdır: saldırı yüzeyi ve gereksizini kapatmak</h2>
+
+<p>Parça 49'da ayrıntılı göreceğin <strong>saldırı yüzeyi</strong>, bir sisteme dışarıdan ya da içeriden girdi verilebilen noktaların toplamıdır. Çalışan her hizmet bu yüzeye üç şey ekler: <strong>kod</strong> (her satırı bir hata adayı), <strong>girdi kanalı</strong> (bir ağ portu, bir Unix soketi, D-Bus üzerinden bir arayüz) ve <strong>yetki</strong> (çoğu zaman root). Kullanmadığın bir yazıcı hizmeti, açığı çıktığı gün o açığı makinene taşır. Hizmet sayısını azaltmak en ucuz savunmadır.</p>
+
+<p>Burada bir tuzak var: <strong>soket etkinleştirme</strong>. systemd bir portu ya da Unix soketini hizmet adına kendisi dinleyebilir; ilk bağlantı gelince hizmeti başlatır. Böyle bir hizmeti <code>stop</code> ile durdurmak yetmez, çünkü soket birimi hâlâ dinler ve ilk bağlantıda hizmeti yeniden kaldırır. Hem <code>.service</code> hem <code>.socket</code> durdurulmalı ve etkinliği kaldırılmalıdır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Gereksiz hizmeti <code>stop</code> ettim, kapandı."</strong> İki yönden eksik. Hizmet etkinse ilk yeniden başlatmada geri gelir; soketle etkinleşiyorsa ilk bağlantıda geri gelir. Doğrusu, sırasıyla: hizmetin ne iş yaptığını ve kimin ona bağımlı olduğunu öğren (<code>systemctl list-dependencies --reverse ad</code>); <code>sudo systemctl disable --now ad.service ad.socket</code> ile hem şimdiyi hem açılışı kapat; bir şeyin onu yeniden çekmesini de istemiyorsan <code>mask</code> kullan; hiç kullanılmayacaksa paketi kaldır (Parça 19). Sonra <code>ss -tlnp</code> ile portun gerçekten kapandığını doğrula (Parça 15). Her değişikliği ve geri dönüş komutunu not et.</p></div>
+
+<h2 class="s">Kalan hizmeti daraltmak: birim dosyasında sertleştirme</h2>
+
+<p>Kapatamadığın hizmeti en az yetkiyle çalıştırırsın (Parça 5 ve 11). Eskiden bu, hizmetin kendi kodunun işiydi: program root olarak başlar, portunu açar, sonra kendini sıradan bir kullanıcıya düşürürdü. systemd bunu birim dosyasına taşıdı. Hizmet başlamadan önce systemd, Parça 7'deki ad alanlarını, Parça 8'deki bağlama seçeneklerini ve Parça 5'teki yetenek ve seccomp kısıtlarını onun için kurar. Program bunların farkında bile olmayabilir; kodu değiştirmeden uygulanır.</p>
+
+<div class="tablo"><table>
+<tr><th>Seçenek</th><th>Ne yapar?</th><th>Hangi parçadan tanıdık?</th></tr>
+<tr><td><code>User=</code>, <code>Group=</code></td><td>Hizmeti belirtilen hesapla çalıştırır</td><td>Parça 11: her hizmete ayrı kullanıcı</td></tr>
+<tr><td><code>DynamicUser=yes</code></td><td>Başlarken 61184–65519 aralığından geçici bir kullanıcı ayırır, durunca bırakır; ayrıca aşağıdaki birçok kısıtı kendiliğinden açar</td><td>Parça 11: UID aralıkları</td></tr>
+<tr><td><code>NoNewPrivileges=yes</code></td><td>Süreç ve çocukları <code>execve</code> ile, SUID/SGID biti ya da dosya yeteneği yoluyla yeni ayrıcalık kazanamaz</td><td>Parça 5 ve 12: <code>no_new_privs</code></td></tr>
+<tr><td><code>ProtectSystem=</code></td><td><code>yes</code>: <code>/usr</code> ve önyükleme dizinleri salt okunur; <code>full</code>: <code>/etc</code> da; <code>strict</code>: <code>/dev</code>, <code>/proc</code>, <code>/sys</code> dışında her şey</td><td>Parça 8: <code>ro</code> bağlama</td></tr>
+<tr><td><code>ProtectHome=</code></td><td><code>yes</code>: <code>/home</code>, <code>/root</code>, <code>/run/user</code> erişilemez ve boş; <code>read-only</code>: salt okunur</td><td>Parça 8: bağlama</td></tr>
+<tr><td><code>PrivateTmp=yes</code></td><td>Hizmete kendine ait, başkalarıyla paylaşılmayan <code>/tmp</code> ve <code>/var/tmp</code>; durunca içi silinir</td><td>Parça 7: bağlama ad alanı</td></tr>
+<tr><td><code>PrivateDevices=yes</code></td><td>Yalnız <code>/dev/null</code> gibi zararsız aygıtların olduğu yalancı bir <code>/dev</code></td><td>Parça 8: "her şey dosyadır"</td></tr>
+<tr><td><code>CapabilityBoundingSet=</code></td><td>Sürecin hiçbir zaman sahip olamayacağı yetenekleri keser</td><td>Parça 5: yetenekler</td></tr>
+<tr><td><code>SystemCallFilter=</code></td><td>İzin verilen sistem çağrısı kümesi (ör. <code>@system-service</code>)</td><td>Parça 4 ve 5: seccomp</td></tr>
+<tr><td><code>RestrictAddressFamilies=</code>, <code>PrivateNetwork=</code></td><td>Açılabilecek soket türlerini daraltır / ağı tamamen keser</td><td>Parça 28: soket</td></tr>
+<tr><td><code>ReadWritePaths=</code></td><td>Salt okunur yapılan ağaçta yazılabilir bırakılacak dizinler</td><td>Parça 12: en az yazma yetkisi</td></tr>
+</table></div>
+
+<p>Bu seçeneklerin ne kadar uygulandığını ölçen hazır bir araç var: <code>systemd-analyze security</code>. Her hizmet için 0,0 ile 10,0 arasında bir <strong>maruziyet</strong> (exposure) puanı hesaplar; yüksek puan "systemd tarafında neredeyse hiç kısıt yok" demektir. Kılavuz sayfası iki uyarı yapar: puan yalnız systemd'nin uyguladığı kısıtları sayar, hizmetin kendi kodundaki önlemleri görmez; yüksek puan da hizmetin açıklı olduğu anlamına gelmez, yalnız ek kısıtlardan yarar görebileceğini söyler. Ayrıca kısıtlar tek tek aşılabilir; örneğin bağlama yetkisini koruyan bir hizmet, ad alanı kısıtlarını kendisi geri alabilir. Bu yüzden seçenekler birlikte kullanılır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Sertleştirmede en sıkıdan başla, gerekeni gerekçesiyle aç.</strong> Neden: hangi kısıtın hizmeti bozacağını önceden kestiremezsin; "önce gevşek, sonra sıkılaştır" yaklaşımında hiçbir zaman yeterince sıkılaşmazsın. Yöntem: (1) hizmet ayrı bir kullanıcıyla ya da <code>DynamicUser=yes</code> ile çalışsın; (2) <code>NoNewPrivileges=yes</code>, <code>ProtectSystem=strict</code>, <code>ProtectHome=yes</code>, <code>PrivateTmp=yes</code>, <code>PrivateDevices=yes</code> ekle; (3) yazması gereken dizini <code>ReadWritePaths=</code> ya da <code>StateDirectory=</code> ile tek tek aç; (4) değişikliği drop-in ile yap, laboratuvarda dene, günlükte "Read-only file system" ya da "Permission denied" ara; (5) <code>systemd-analyze security</code> puanını önce ve sonra kaydet. Paketlerin kendi birimlerinde gördüğün yorum satırları ("no ProtectHome for userdir logs") bu gerekçelendirmenin iyi örnekleridir.</p></div>
+
+<h2 class="s">Zamanlanmış görevler 1: cron</h2>
+
+<p>Bazı işler sürekli değil, belli zamanlarda çalışmalıdır: günlükleri döndürmek, yedek almak, sertifika yenilemek. Unix'in en eski aracı <strong>cron</strong>'dur: her dakika uyanan bir hizmet, tablolara bakıp o dakikaya denk gelen komutları çalıştırır. Kod rafının 18. parçasında crontab satırını gördün; burada okuma ve envanter tarafına bakıyoruz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir <strong>crontab satırı</strong> beş zaman alanı ve bir komuttan oluşur: dakika (0–59), saat (0–23), ayın günü (1–31), ay (1–12), haftanın günü (0–7; 0 ve 7 pazar). <code>*</code> "her değer", <code>1-5</code> aralık, <code>1,15</code> liste, <code>*/15</code> ya da <code>5-55/10</code> adım demektir. Sistem tablolarında (<code>/etc/crontab</code> ve <code>/etc/cron.d/*</code>) beşinci alandan sonra komutu <strong>hangi kullanıcının</strong> çalıştıracağı yazılır; kullanıcı tablolarında bu alan yoktur, sahibi zaten bellidir.</p></div>
+
+<p>Debian ailesinde cron'un baktığı yerler: <code>/etc/crontab</code> (sistem tablosu), <code>/etc/cron.d/</code> (paketlerin ve yöneticinin ayrı dosyaları), <code>/etc/cron.hourly</code>, <code>cron.daily</code>, <code>cron.weekly</code>, <code>cron.monthly</code> (içindeki çalıştırılabilir betikleri <code>run-parts</code> sırayla koşar; adında nokta olan dosyaları atlar) ve kullanıcı tablolarının tutulduğu <code>/var/spool/cron/crontabs/</code>. Kullanıcı kendi tablosunu yalnız <code>crontab</code> komutuyla görür ve değiştirir: <code>crontab -l</code> listeler, <code>crontab -e</code> düzenler. cron kılavuzuna göre <code>/etc/crontab</code> ve <code>/etc/cron.d</code> altındaki dosyalar root'a ait olmalı, grup ya da diğerleri yazamamalıdır; aksi hâlde cron onları çalıştırmaz. Parça 12'deki "herkese yazılabilir dosya" sorusunun en tehlikeli cevabı tam buradadır: root adına çalışan bir görev dosyasını başkası yazabiliyorsa, o kişi root adına komut çalıştırabiliyor demektir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: bir crontab satırını çözmek ve systemd karşılığıyla doğrulamak</span>
+<p><strong>Soru:</strong> Makinedeki <code>/etc/cron.d/sysstat</code> dosyasında <code>5-55/10 * * * * root …</code> satırı var. Bir de "hafta içi her gün 02.30'da" çalışacak bir yedek görevi için <code>30 2 * * 1-5</code> yazıldı. İki satır tam olarak ne zaman çalışır? Elle çöz, sonra systemd'nin takvim değerlendiricisiyle sına.</p>
+<p><strong>Adım 1.</strong> Birinci satırın alanlarını ayır: dakika <code>5-55/10</code>, saat <code>*</code>, gün <code>*</code>, ay <code>*</code>, haftanın günü <code>*</code>, kullanıcı <code>root</code>. Adım ifadesi aralığın başından başlayıp 10'ar atlar: 5, 15, 25, 35, 45, 55. Yani her saatin bu altı dakikasında, her gün.</p>
+<p><strong>Adım 2.</strong> İkinci satır: dakika 30, saat 2, ayın günü ve ay her değer, haftanın günü 1–5 (pazartesi–cuma). Her hafta içi günü 02.30.</p>
+<p><strong>Adım 3.</strong> cron'da "bu ifade bir sonra ne zaman çalışır" diye soracak bir araç yok, ama systemd'nin takvim sözdizimi aynı fikri taşır ve <code>systemd-analyze calendar</code> sonraki tetiklemeleri hesaplar. Karşılıklar: <code>*:05/10</code> (her saat, 5. dakikadan başlayıp 10'ar) ve <code>Mon..Fri 02:30</code>.</p>
+<pre class="kod" data-ad="bash">systemd-analyze calendar --iterations=4 '*:05/10'
+systemd-analyze calendar --iterations=2 'Mon..Fri 02:30'</pre>
+<pre class="cikti">  Original form: *:05/10
+Normalized form: *-*-* *:05/10:00
+    Next elapse: Fri 2026-10-16 17:35:00 +03
+       (in UTC): Fri 2026-10-16 14:35:00 UTC
+       From now: 4min 14s left
+   Iteration #2: Fri 2026-10-16 17:45:00 +03
+       (in UTC): Fri 2026-10-16 14:45:00 UTC
+       From now: 14min left
+   Iteration #3: Fri 2026-10-16 17:55:00 +03
+       (in UTC): Fri 2026-10-16 14:55:00 UTC
+       From now: 24min left
+   Iteration #4: Fri 2026-10-16 18:05:00 +03
+       (in UTC): Fri 2026-10-16 15:05:00 UTC
+       From now: 34min left
+  Original form: Mon..Fri 02:30
+Normalized form: Mon..Fri *-*-* 02:30:00
+    Next elapse: Mon 2026-10-19 02:30:00 +03
+       (in UTC): Sun 2026-10-18 23:30:00 UTC
+       From now: 2 days left
+   Iteration #2: Tue 2026-10-20 02:30:00 +03
+       (in UTC): Mon 2026-10-19 23:30:00 UTC
+       From now: 3 days left</pre>
+<p><strong>Adım 4.</strong> Çıktıyı oku. "Normalized form" ifadenin tam biçimidir: yıl-ay-gün saat:dakika:saniye. Sorgu cuma 17.30'u biraz geçe yapıldı; ilk ifade 17.35, 17.45, 17.55, 18.05 verdi, elle bulduğun 5, 15, 25… dizisi. İkinci ifade cumayı ve hafta sonunu atlayıp pazartesi 02.30'a gitti. Her satırın altında UTC karşılığı var; sunucularda saat dilimi farkı görevleri sandığından üç saat kaydırabilir (Parça 66).</p>
+<p><strong>Sonuç:</strong> <code>5-55/10 * * * *</code> her saatin 05, 15, 25, 35, 45 ve 55. dakikası; <code>30 2 * * 1-5</code> hafta içi her gün 02.30. Yazdığın bir zaman ifadesini çalıştırmadan önce değerlendiren bir araçla sınamak, gece yarısı yanlış zamanda çalışan bir yedeğin önüne geçer.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"<code>0 4 1 * 1</code> ayın 1'i pazartesiye denk gelirse çalışır."</strong> Hayır. cron kılavuzuna göre ayın günü ve haftanın günü alanlarının ikisi de kısıtlıysa (<code>*</code> değilse) komut <strong>herhangi biri</strong> tuttuğunda çalışır: bu satır her ayın 1'inde ve ayrıca her pazartesi 04.00'te çalışır. "VE" isteniyorsa alanlardan biri <code>*</code> bırakılır, öbür koşul komutun içinde sınanır. Benzer bir tuzak da <code>%</code> işaretidir: komut kısmında kaçışsız <code>%</code> satır sonuna çevrilir.</p></div>
+
+<h2 class="s">Zamanlanmış görevler 2: systemd zamanlayıcıları</h2>
+
+<p>systemd'de zamanlanmış iş iki birimle yazılır: işi tanımlayan bir <code>.service</code> ve onu ne zaman tetikleyeceğini söyleyen aynı adlı bir <code>.timer</code>. Makinendeki gerçek bir çift:</p>
+
+<pre class="kod" data-ad="/usr/lib/systemd/system/logrotate.timer (kısaltılmış)">[Timer]
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target</pre>
+
+<p><code>OnCalendar=daily</code> her gün 00.00 demektir. <code>RandomizedDelaySec=1h</code> buna 0 ile 1 saat arası rastgele bir gecikme ekler; binlerce makine aynı saniyede aynı sunucuya yüklenmesin diye. <code>Persistent=true</code> son tetikleme zamanını diske yazar; makine o saatte kapalıysa açılınca kaçırılan çalışmayı hemen yapar. Takvimin yanında görece zamanlayıcılar da vardır: <code>OnBootSec=</code> açılıştan şu kadar sonra, <code>OnUnitActiveSec=</code> hizmetin son başlamasından şu kadar sonra, <code>OnActiveSec=</code> zamanlayıcı etkinleştikten şu kadar sonra. Bir ayrıntı daha: <code>AccuracySec=</code> varsayılan olarak 1 dakikadır; systemd güç tasarrufu için tetiklemeleri bu pencere içinde bir araya toplar, yani zamanlayıcı birkaç on saniye geç çalışabilir. Eşleşen hizmet <code>logrotate.service</code> ise <code>Type=oneshot</code> ile işi bir kez yapıp çıkar ve kendi sertleştirme satırlarını taşır.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>cron</th><th>systemd zamanlayıcısı</th></tr>
+<tr><td>Tanım nerede?</td><td>Tek satır: zaman + (kullanıcı) + komut</td><td>İki dosya: <code>.timer</code> + <code>.service</code></td></tr>
+<tr><td>Kaçırılan çalışma</td><td>Kaybolur (Debian'da <code>anacron</code> günlük/haftalık için telafi eder)</td><td><code>Persistent=true</code> ile açılışta yapılır</td></tr>
+<tr><td>Çıktı ve günlük</td><td>Varsayılan olarak tablonun sahibine e-posta</td><td>journal'da birimin adıyla (Parça 17)</td></tr>
+<tr><td>Kısıtlar</td><td>Yok; komut kullanıcının bütün yetkisiyle çalışır</td><td>Hizmet birimindeki bütün sertleştirme seçenekleri</td></tr>
+<tr><td>Listeleme</td><td>Dosyaları tek tek okumak, <code>crontab -l</code></td><td><code>systemctl list-timers --all</code>: son ve sonraki çalışma</td></tr>
+<tr><td>Zamanı sınama</td><td>Hazır araç yok</td><td><code>systemd-analyze calendar</code></td></tr>
+</table></div>
+
+<p>İkisi yan yana yaşar: bu makinede günlük döndürme hem <code>/etc/cron.daily/logrotate</code> hem <code>logrotate.timer</code> ile tanımlı. Envanterde ikisine de bak.</p>
+
+<h2 class="s">Aynı düzeneğin öbür yüzü: kalıcılık</h2>
+
+<p>Bir saldırganın bir sisteme bir kez girmesi, orada kalabileceği anlamına gelmez: süreç ölür, makine yeniden başlar, açığı kullandığı hizmet yamalanır. Erişimi bunlara rağmen sürdürmeye <strong>kalıcılık</strong> (persistence) denir. Bu parçadaki her düzenek, "ben olmasam da şunu çalıştır" dediği için, kalıcılığın da doğal yeridir. Savunma dünyasının ortak dili olan MITRE ATT&amp;CK bunları ayrı tekniklere ayırır: systemd hizmeti oluşturmak ya da değiştirmek (T1543.002), cron (T1053.003) ve systemd zamanlayıcıları (T1053.006). ATT&amp;CK'ın savunma önerileri de bu parçanın söyledikleriyle örtüşür: birim dosyalarını yalnız ayrıcalıklı hesaplar yazabilsin, yazılım yalnız güvenilir depolardan gelsin, birim dosyası oluşturma ve değiştirmeleri izlensin, <code>/tmp</code> ya da <code>/dev/shm</code> gibi yerlerden çalışan <code>ExecStart=</code> yolları şüpheyle karşılansın.</p>
+
+<p>Bir sınır notu: bu bölüm kalıcılığın <strong>nasıl kurulduğunu</strong> değil, <strong>nerede aranacağını</strong> anlatır. Burada öğrendiğini yalnız kendi makinende ya da yazılı izinli bir laboratuvarda kullan; başkasının sistemine izinsiz girmek ve orada iz bırakmak suçtur (Parça 72–73).</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Kalıcılığın arandığı yerler iki sütunda: root gerektiren sistem düzeyi yerler ve root gerektirmeyen kullanıcı düzeyi yerler">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">Savunmacının envanter haritası</text>
+  <rect class="sv-a" x="10" y="35" width="185" height="36" rx="6" />
+  <text class="sv-b" x="102" y="58" text-anchor="middle">Sistem (root yazar)</text>
+  <rect class="sv-m" x="205" y="35" width="185" height="36" rx="6" />
+  <text class="sv-b" x="297" y="58" text-anchor="middle">Kullanıcı (root gerekmez)</text>
+  <rect class="sv-k" x="10" y="80" width="185" height="44" rx="6" />
+  <text class="sv-t" x="102" y="99" text-anchor="middle">/etc/systemd/system</text>
+  <text class="sv-s" x="102" y="116" text-anchor="middle">birim, drop-in, .wants bağı</text>
+  <rect class="sv-k" x="10" y="132" width="185" height="44" rx="6" />
+  <text class="sv-t" x="102" y="151" text-anchor="middle">/usr/lib/systemd/system</text>
+  <text class="sv-s" x="102" y="168" text-anchor="middle">paketle mi geldi? dpkg -S</text>
+  <rect class="sv-k" x="10" y="184" width="185" height="44" rx="6" />
+  <text class="sv-t" x="102" y="203" text-anchor="middle">/etc/crontab, /etc/cron.d</text>
+  <text class="sv-s" x="102" y="220" text-anchor="middle">ve cron.hourly … monthly</text>
+  <rect class="sv-k" x="10" y="236" width="185" height="44" rx="6" />
+  <text class="sv-t" x="102" y="255" text-anchor="middle">/var/spool/cron/crontabs</text>
+  <text class="sv-s" x="102" y="272" text-anchor="middle">bütün kullanıcı tabloları</text>
+  <rect class="sv-k" x="205" y="80" width="185" height="44" rx="6" />
+  <text class="sv-t" x="297" y="99" text-anchor="middle">~/.config/systemd/user</text>
+  <text class="sv-s" x="297" y="116" text-anchor="middle">kullanıcı birimleri</text>
+  <rect class="sv-k" x="205" y="132" width="185" height="44" rx="6" />
+  <text class="sv-t" x="297" y="151" text-anchor="middle">crontab -l</text>
+  <text class="sv-s" x="297" y="168" text-anchor="middle">kendi tablosu</text>
+  <rect class="sv-k" x="205" y="184" width="185" height="44" rx="6" />
+  <text class="sv-t" x="297" y="203" text-anchor="middle">loginctl Linger</text>
+  <text class="sv-s" x="297" y="220" text-anchor="middle">oturum yokken de çalışsın mı?</text>
+  <rect class="sv-l" x="205" y="236" width="185" height="44" rx="6" />
+  <text class="sv-t" x="297" y="255" text-anchor="middle">/run/.../transient</text>
+  <text class="sv-s" x="297" y="272" text-anchor="middle">geçici; yeniden başlatmada gider</text>
+  <text class="sv-s" x="200" y="305" text-anchor="middle">Her kalemde sor: paketten mi, ne zaman değişti,</text>
+  <text class="sv-s" x="200" y="322" text-anchor="middle">kim yazabiliyor, hangi yolu çalıştırıyor?</text>
+</svg>
+<figcaption>Sol sütun root yetkisi isteyen yerlerdir; sağ sütunu sıradan bir kullanıcı da doldurabilir. Kullanıcı birimleri normalde oturum kapanınca durur; "linger" açıksa kullanıcı giriş yapmamışken de çalışır. Mor kutudaki geçici birimler kalıcılık değildir ama o an çalışan şeyin parçasıdır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Envanter tek başına değil, bir tabanla ve paket veritabanıyla karşılaştırılınca anlam kazanır.</strong> Neden: bir makinede onlarca meşru hizmet ve zamanlayıcı vardır; tek tek "bu doğru mu" diye bakmak yorar ve yanıltır. Yöntem: temiz kurulumdan hemen sonra listeyi kaydet (taban). Sonraki her envanterde farkı çıkar. Her kalem için sor: dosya bir pakete mi ait (<code>dpkg -S</code>, Parça 10)? Paket dosyası değişmiş mi (<code>dpkg -V</code>)? Ne zaman oluştu ya da değişti (<code>find … -mtime</code>, Parça 9)? Kim yazabiliyor (Parça 12)? <code>ExecStart=</code> ya da komut kısmı beklenmedik bir yolu (<code>/tmp</code>, <code>/dev/shm</code>, ev dizini, gizli bir dizin) mi gösteriyor? Bu soruların cevabını günlükle (Parça 17) birleştirirsen "ne zaman, kim" sorusuna da yaklaşırsın.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: etkin birimleri paket sahipliğiyle eşleştiren salt okur bir envanter</span>
+<p><strong>Soru:</strong> Makinende açılışta başlayan bütün hizmet ve zamanlayıcıların birim dosyası bir pakete mi ait? Paketsiz olanı ayrıca işaretle. cron dizinleri için de aynısını yap.</p>
+<p><strong>Adım 1.</strong> Kaynağı belirle: <code>systemctl list-unit-files --state=enabled --type=service,timer --no-legend</code> etkin birimleri başlıksız verir. Her birimin dosyasını <code>systemctl show -P FragmentPath</code> söyler; şablon birimlerde (<code>getty@.service</code> gibi) bu sorgu çalışmadığı için dosya dizinlerde aranır.</p>
+<p><strong>Adım 2.</strong> Sahipliği sor: <code>dpkg -S yol</code> dosyanın hangi paketten geldiğini yazar. Debian'da birleşmiş <code>/usr</code> yüzünden bazı paketler yolu <code>/lib/…</code> diye kaydetmiş olabilir; bu yüzden ikinci deneme <code>/usr</code> öneki atılarak yapılır.</p>
+<pre class="kod" data-ad="envanter.sh">#!/bin/bash
+# Etkin servis ve zamanlayıcıların birim dosyası hangi pakete ait?
+systemctl list-unit-files --state=enabled --type=service,timer --no-legend |
+while read -r birim durum _; do
+    yol=$(systemctl show -P FragmentPath "$birim" 2&gt;/dev/null)
+    [ -z "$yol" ] &amp;&amp; yol=$(ls /etc/systemd/system/"$birim" /usr/lib/systemd/system/"$birim" 2&gt;/dev/null | head -1)
+    paket=$(dpkg -S "$yol" 2&gt;/dev/null || dpkg -S "${yol#/usr}" 2&gt;/dev/null)
+    printf '%-34s %s\n' "$birim" "${paket%%:*}"
+    [ -z "$paket" ] &amp;&amp; echo "   UYARI: $yol hiçbir pakete ait değil"
+done</pre>
+<pre class="cikti">accounts-daemon.service            accountsservice
+console-setup.service              console-setup-linux
+cron.service                       cron
+getty@.service                     systemd
+haveged.service                    haveged
+keyboard-setup.service             console-setup-linux
+lightdm.service                    lightdm
+ModemManager.service               modemmanager
+networking.service                 ifupdown
+regenerate-ssh-host-keys.service   kali-defaults
+smartmontools.service              smartmontools
+systemd-pstore.service             systemd
+apt-daily-upgrade.timer            apt
+apt-daily.timer                    apt
+dpkg-db-backup.timer               dpkg
+e2scrub_all.timer                  e2fsprogs
+fstrim.timer                       util-linux
+fwupd-refresh.timer                fwupd
+logrotate.timer                    logrotate
+man-db.timer                       man-db
+ntpsec-rotate-stats.timer          ntpsec
+phpsessionclean.timer              php-common
+plocate-updatedb.timer             plocate
+sysstat-collect.timer              sysstat
+sysstat-rotate.timer               sysstat
+sysstat-summary.timer              sysstat</pre>
+<p><strong>Adım 3.</strong> cron dizinlerine aynı soruyu sor:</p>
+<pre class="kod" data-ad="bash">for f in /etc/cron.d/* /etc/cron.daily/*; do printf '%-28s %s\n' "$f" "$(dpkg -S "$f" 2&gt;/dev/null | cut -d: -f1)"; done</pre>
+<pre class="cikti">/etc/cron.d/e2scrub_all      e2fsprogs
+/etc/cron.d/john             john
+/etc/cron.d/ntpsec           ntpsec
+/etc/cron.d/php              php-common
+/etc/cron.d/sysstat          sysstat
+/etc/cron.daily/apache2      apache2
+/etc/cron.daily/apt-compat   apt
+/etc/cron.daily/dpkg         dpkg
+/etc/cron.daily/logrotate    logrotate
+/etc/cron.daily/man-db       man-db
+/etc/cron.daily/plocate      plocate
+/etc/cron.daily/sysstat      sysstat</pre>
+<p><strong>Adım 4.</strong> Yorumla. 26 birimin ve 12 cron dosyasının hepsi bir pakete ait; UYARI satırı çıkmadı. Uyarı dalının çalıştığını, pakete ait olmayan sahte bir yol vererek ayrıca sınadım. Liste bir başka şey de söylüyor: <code>phpsessionclean.timer</code>, <code>apache2</code> ve <code>sysstat</code> görevleri, kurduğunu belki unuttuğun paketlerden geliyor. Paketle gelmek "zararsız" demek değildir (xz olayı, Parça 59), ama "beklenen" demektir; paketsiz bir kalem ise mutlaka açıklanmalıdır.</p>
+<p><strong>Sonuç:</strong> Bu makinede etkin her birim ve cron dosyası paket kaynaklı. Çıktıyı tarihiyle saklarsan bir sonraki envanter için tabanın hazır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Şüpheli birimi buldum, hemen sildim ve yeniden başlattım."</strong> Silmek, kimin, ne zaman ve hangi yoldan girdiği sorusunun cevabını da siler; kalıcılık düzeneği çoğu zaman tek değildir, biri silinince öbürü kalır. Doğrusu: önce kayıt altına al (birim dosyasının kopyası ve özeti, <code>stat</code> ile zaman damgaları, <code>systemctl status</code>, ilgili günlükler), sonra kurumun olay müdahale planına göre sınırla (Parça 70). Delil bütünlüğü Parça 71'in konusu.</p></div>
+
+<h2 class="s">Kendi makinende dene: hizmetleri ve zamanlayıcıları okumak, geçici bir hizmeti sertleştirmek</h2>
+
+<p>Bu bölümdeki her komut ya salt okurdur ya da yalnız <strong>geçici kullanıcı birimi</strong> kurar: <code>systemd-run --user</code> ile başlatılan birim <code>/run/user/UID/systemd/transient/</code> altında yaşar, durdurulunca ve yeniden başlatmada yok olur. Hiçbir adım <code>sudo</code> istemez, hiçbir şeyi etkinleştirmez, <code>~/.config</code>'e yazmaz. Önce boş bir çalışma klasörü aç: <code>mkdir -p /tmp/lab14 &amp;&amp; cd /tmp/lab14</code>. Çıktılar WSL2 üzerindeki Kali Linux'tan, systemd 260 ile alındı; senin Debian ya da Ubuntu VM'inde hizmet adları ve sayılar farklı olacaktır.</p>
+
+<h3>Adım 1: şu an çalışan hizmetler</h3>
+<pre class="kod" data-ad="bash">systemctl list-units --type=service --state=running</pre>
+<pre class="cikti">  UNIT                     LOAD   ACTIVE SUB     DESCRIPTION
+  cron.service             loaded active running Regular background program processing daemon
+  dbus.service             loaded active running D-Bus System Message Bus
+  getty@tty1.service       loaded active running Getty on tty1
+  lightdm.service          loaded active running Light Display Manager
+  polkit.service           loaded active running Authorization Manager
+  rtkit-daemon.service     loaded active running RealtimeKit Scheduling Policy Service
+  systemd-journald.service loaded active running Journal Service
+  systemd-logind.service   loaded active running User Login Management
+  systemd-oomd.service     loaded active running Userspace Out-Of-Memory (OOM) Killer
+  systemd-udevd.service    loaded active running Rule-based Manager for Device Events and Files
+  systemd-userdbd.service  loaded active running User Database Manager
+  user@1000.service        loaded active running User Manager for UID 1000
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+12 loaded units listed.</pre>
+<p>Sütunlar: <code>LOAD</code> birim dosyası okundu mu, <code>ACTIVE</code> genel durum, <code>SUB</code> türe özgü ayrıntı. On iki hizmetin çoğu systemd'nin kendi parçaları. <code>user@1000.service</code>, UID 1000 için çalışan kullanıcı yöneticisidir; birazdan geçici birimini onun altına kuracaksın. Listede ağdan bağlantı bekleyen bir sunucu yok; bu yüzden bu makinede dışarıya bakan saldırı yüzeyi küçük.</p>
+
+<h3>Adım 2: açılışta başlayacaklar</h3>
+<pre class="kod" data-ad="bash">systemctl list-unit-files --state=enabled</pre>
+<pre class="cikti">UNIT FILE                        STATE   PRESET
+ntpsec-systemd-netif.path        enabled enabled
+tpm-udev.path                    enabled enabled
+accounts-daemon.service          enabled enabled
+console-setup.service            enabled enabled
+cron.service                     enabled enabled
+getty@.service                   enabled enabled
+haveged.service                  enabled enabled
+keyboard-setup.service           enabled enabled
+lightdm.service                  enabled disabled
+ModemManager.service             enabled enabled
+networking.service               enabled enabled
+regenerate-ssh-host-keys.service enabled enabled
+smartmontools.service            enabled enabled
+systemd-pstore.service           enabled enabled
+pcscd.socket                     enabled enabled
+polkit-agent-helper.socket       enabled enabled
+systemd-userdbd.socket           enabled enabled
+uuidd.socket                     enabled enabled
+nfs-client.target                enabled enabled
+remote-fs.target                 enabled enabled
+stunnel.target                   enabled enabled
+apt-daily-upgrade.timer          enabled disabled
+apt-daily.timer                  enabled disabled
+dpkg-db-backup.timer             enabled enabled
+e2scrub_all.timer                enabled enabled
+fstrim.timer                     enabled enabled
+fwupd-refresh.timer              enabled enabled
+logrotate.timer                  enabled enabled
+man-db.timer                     enabled enabled
+ntpsec-rotate-stats.timer        enabled enabled
+phpsessionclean.timer            enabled enabled
+plocate-updatedb.timer           enabled enabled
+sysstat-collect.timer            enabled enabled
+sysstat-rotate.timer             enabled enabled
+sysstat-summary.timer            enabled enabled
+
+35 unit files listed.</pre>
+<p>Bu liste Adım 1'den farklı bir soruya cevap verir: diskte "açılışta getir" diye işaretli olanlar. <code>ModemManager</code> ve <code>smartmontools</code> etkin ama çalışmıyor: WSL'de modem ve fiziksel disk yok. Gerçek bir VM'de "kullanıyor muyum?" diye sorulmaları gerekir. <code>PRESET</code> dağıtımın önerdiği varsayılandır; <code>lightdm</code> ve iki <code>apt</code> zamanlayıcısı ona rağmen etkinleştirilmiş. <code>pcscd.socket</code> akıllı kart hizmetini ilk istekte kaldıracak.</p>
+
+<h3>Adım 3: bir birimin dosyasını ve systemd'nin hesapladığı değerleri oku</h3>
+<pre class="kod" data-ad="bash">systemctl cat cron.service
+systemctl show cron.service -p FragmentPath -p ControlGroup -p User -p NoNewPrivileges -p ProtectSystem -p ProtectHome -p PrivateTmp</pre>
+<pre class="cikti"># /usr/lib/systemd/system/cron.service
+[Unit]
+Description=Regular background program processing daemon
+… (dosyanın geri kalanı yukarıdaki anatomi bölümündekiyle aynı)
+FragmentPath=/usr/lib/systemd/system/cron.service
+ControlGroup=/system.slice/cron.service
+User=
+PrivateTmp=no
+ProtectHome=no
+ProtectSystem=no
+NoNewPrivileges=no</pre>
+<p><code>cat</code> ilk satırda dosyanın yolunu yazar; drop-in olsaydı onlar da kendi yollarıyla altında görünürdü. <code>show</code> ise dosyada yazanı değil, systemd'nin bütün parçaları ve varsayılanları birleştirerek hesapladığı son değeri verir: <code>User=</code> boş, yani root; sertleştirme seçeneklerinin hepsi kapalı. <code>ControlGroup</code> hizmetin cgroup'udur; cron'un çalıştırdığı her görev bu ağacın altında doğar.</p>
+
+<h3>Adım 4: maruziyet puanları</h3>
+<pre class="kod" data-ad="bash">systemd-analyze security
+systemd-analyze security haveged.service | grep -E '✗|Overall'</pre>
+<pre class="cikti">UNIT                                  EXPOSURE PREDICATE HAPPY
+ModemManager.service                       6.3 MEDIUM    😐
+accounts-daemon.service                    5.5 MEDIUM    😐
+cron.service                               9.6 UNSAFE    😨
+dbus.service                               9.3 UNSAFE    😨
+emergency.service                          9.5 UNSAFE    😨
+getty@tty1.service                         9.6 UNSAFE    😨
+haveged.service                            3.2 OK        🙂
+lightdm.service                            9.6 UNSAFE    😨
+ntpsec-rotate-stats.service                9.6 UNSAFE    😨
+ntpsec-systemd-netif.service               9.6 UNSAFE    😨
+ntpsec.service                             9.2 UNSAFE    😨
+pcscd.service                              1.8 OK        🙂
+plymouth-start.service                     9.5 UNSAFE    😨
+polkit.service                             1.2 OK        🙂
+rescue.service                             9.5 UNSAFE    😨
+rpc-gssd.service                           9.5 UNSAFE    😨
+rpc-statd-notify.service                   9.5 UNSAFE    😨
+rpc-svcgssd.service                        9.5 UNSAFE    😨
+rtkit-daemon.service                       7.2 MEDIUM    😐
+smartmontools.service                      9.6 UNSAFE    😨
+ssh.service                                9.6 UNSAFE    😨
+systemd-ask-password-console.service       9.4 UNSAFE    😨
+systemd-ask-password-plymouth.service      9.5 UNSAFE    😨
+systemd-ask-password-wall.service          9.4 UNSAFE    😨
+systemd-bsod.service                       9.5 UNSAFE    😨
+systemd-hostnamed.service                  1.7 OK        🙂
+systemd-journald.service                   4.9 OK        🙂
+systemd-logind.service                     2.8 OK        🙂
+systemd-oomd.service                       1.8 OK        🙂
+systemd-udevd.service                      7.1 MEDIUM    😐
+systemd-userdbd.service                    2.3 OK        🙂
+tpm-udev.service                           9.6 UNSAFE    😨
+user@1000.service                          9.4 UNSAFE    😨
+uuidd.service                              5.8 MEDIUM    😐
+✗ SystemCallFilter=~@resources                                System call allow list defined for service, and @resources is included (e.g. ioprio_set is allowed)      0.2
+✗ SystemCallFilter=~@privileged                               System call allow list defined for service, and @privileged is included (e.g. chown is allowed)          0.2
+✗ User=/DynamicUser=                                          Service runs as root user                                                                                0.4
+✗ NoNewPrivileges=                                            Service processes may acquire new privileges                                                             0.2
+✗ ProtectClock=                                               Service may write to the hardware clock or system clock                                                  0.2
+✗ ProtectControlGroups=                                       Service may modify the control group file system                                                         0.2
+✗ RestrictSUIDSGID=                                           Service may create SUID/SGID files                                                                       0.2
+✗ ProtectKernelTunables=                                      Service may alter kernel tunables                                                                        0.2
+✗ RestrictAddressFamilies=~AF_PACKET                          Service may allocate packet sockets                                                                      0.2
+✗ RestrictAddressFamilies=~AF_NETLINK                         Service may allocate netlink sockets                                                                     0.1
+✗ RestrictAddressFamilies=~AF_UNIX                            Service may allocate local sockets                                                                       0.1
+✗ RestrictAddressFamilies=~…                                  Service may allocate exotic sockets                                                                      0.3
+✗ RestrictAddressFamilies=~AF_(INET|INET6)                    Service may allocate Internet sockets                                                                    0.3
+✗ ProtectProc=                                                Service has full access to process tree (/proc hidepid=)                                                 0.2
+✗ ProcSubset=                                                 Service has full access to non-process /proc files (/proc subset=)                                       0.1
+✗ CapabilityBoundingSet=~CAP_SYS_ADMIN                        Service has administrator privileges                                                                     0.3
+✗ PrivateUsers=                                               Service has access to other users                                                                        0.2
+✗ IPAddressDeny=                                              Service does not define an IP address allow list                                                         0.2
+✗ UMask=                                                      Files created by service are world-readable by default                                                   0.1
+→ Overall exposure level for haveged.service: 3.2 OK 🙂</pre>
+<p>Tablo uzun süre çalışan, yüklenmiş hizmetleri sıralıyor. Uç değerlere bak: systemd'nin kendi bileşenleri (<code>logind</code>, <code>hostnamed</code>, <code>polkit</code>) 1–3 arasında; cron, ssh, lightdm 9,6. Bu, cron'un açıklı olduğunu söylemez; yalnız systemd tarafında hiçbir kısıt uygulanmadığını söyler. Ayrıntılı raporda <code>✓</code> uygulanan, <code>✗</code> uygulanmayan kısıttır; sağdaki sayı o eksiğin puana katkısıdır. haveged entropi hizmeti örnek olarak iyi: birim dosyasında <code>PrivateNetwork</code>, <code>PrivateDevices</code>, <code>ProtectSystem=full</code>, <code>SystemCallFilter=@system-service</code> gibi satırlar var ve puanı 3,2. Kalan en büyük kalemler root olarak çalışması (0,4) ve <code>CAP_SYS_ADMIN</code> yeteneğini tutması (0,3). Her <code>✗</code> düzeltilecek bir hata değil, gerekçesi aranacak bir sorudur: haveged çekirdeğe entropi beslemek için o yeteneğe muhtaç olabilir.</p>
+
+<h3>Adım 5: geçici bir kullanıcı hizmeti başlat, incele, durdur</h3>
+<pre class="kod" data-ad="bash">systemd-run --user --unit=siber14-deneme /bin/sh -c 'while true; do date +%T; sleep 5; done'
+systemctl --user status siber14-deneme.service --no-pager -n 0
+systemctl --user cat siber14-deneme.service
+systemd-analyze --user security siber14-deneme.service | tail -1
+systemctl --user stop siber14-deneme.service
+systemctl --user is-active siber14-deneme.service</pre>
+<pre class="cikti">Running as unit: siber14-deneme.service; invocation ID: 1c59b76ac0514b7fa4fc2577af4a8838
+● siber14-deneme.service - [systemd-run] /bin/sh -c "while true; do date +%T; sleep 5; done"
+     Loaded: loaded (/run/user/1000/systemd/transient/siber14-deneme.service; transient)
+  Transient: yes
+     Active: active (running) since Fri 2026-10-16 17:29:53 +03; 1s ago
+ Invocation: 1c59b76ac0514b7fa4fc2577af4a8838
+   Main PID: 142026 (sh)
+      Tasks: 2 (limit: 9434)
+     Memory: 784K (peak: 2M)
+        CPU: 33ms
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/siber14-deneme.service
+             ├─142026 /bin/sh -c "while true; do date +%T; sleep 5; done"
+             └─142029 sleep 5
+# /run/user/1000/systemd/transient/siber14-deneme.service
+# This is a transient unit file, created programmatically via the systemd API. Do not edit.
+[Unit]
+Description=[systemd-run] /bin/sh -c "while true; do date +%%T; sleep 5; done"
+
+[Service]
+ExecStart=
+ExecStart="/bin/sh" "-c" "while true; do date +%%T; sleep 5; done"
+→ Overall exposure level for siber14-deneme.service: 9.8 UNSAFE 😨
+inactive</pre>
+<p>Satır satır: <code>systemd-run</code> komutu bir hizmete çevirdi ve adını söyledi. <code>status</code>'ta <code>Loaded:</code> satırı birimin <code>/run</code> altındaki geçici dosyadan okunduğunu ve <code>transient</code> olduğunu gösteriyor. <code>CGroup</code> ağacı Parça 13'teki süreç ağacının systemd'deki karşılığı: kabuk ve onun çocuğu <code>sleep</code> aynı cgroup'ta; <code>stop</code> ikisini birlikte durdurur. <code>-n 0</code> günlük satırlarını gizledi; günlükler Parça 17'de. <code>cat</code> birimin systemd API'siyle üretildiğini ve düzenlenmemesi gerektiğini yazıyor; <code>%T</code>'nin <code>%%T</code> olması, birim dosyalarında <code>%</code>'nin özel anlamı yüzünden. Hiçbir kısıt olmadığı için puan 9,8.</p>
+
+<h3>Adım 6: aynı işi sertleştirerek çalıştır ve farkı gör</h3>
+<p>Önce, bir hizmetin neye erişebildiğini yoklayan küçük bir betik yaz. Betik yalnız okur ve iki deneme dosyası yazmaya çalışır; birini kendi klasörüne, birini <code>/etc</code>'ye (bu zaten izin hatası verecek).</p>
+<pre class="kod" data-ad="sina.sh">id -un
+grep NoNewPrivs /proc/self/status
+touch /tmp/lab14/iz &amp;&amp; echo "yazildi: /tmp/lab14/iz"
+ls -A /tmp | wc -l
+ls -A "$HOME" | wc -l
+touch /etc/deneme
+ls /dev | wc -l</pre>
+<pre class="kod" data-ad="bash">systemd-run --user -q -P --unit=siber14-acik /bin/sh /tmp/lab14/sina.sh
+ls -l /tmp/lab14/iz
+rm -f /tmp/lab14/iz
+cat sina.sh | systemd-run --user -q -P --unit=siber14-sert -p NoNewPrivileges=yes -p PrivateTmp=yes -p ProtectSystem=strict -p ProtectHome=yes -p PrivateDevices=yes /bin/sh -s
+ls -l /tmp/lab14/iz</pre>
+<pre class="cikti">kullanici
+NoNewPrivs:	0
+yazildi: /tmp/lab14/iz
+50
+36
+touch: cannot touch '/etc/deneme': Permission denied
+183
+-rw-rw-r-- 1 kullanici kullanici 0 Oct 16 17:29 /tmp/lab14/iz
+kullanici
+NoNewPrivs:	1
+touch: cannot touch '/tmp/lab14/iz': No such file or directory
+0
+ls: cannot access '/home/kullanici': Permission denied
+0
+touch: cannot touch '/etc/deneme': Read-only file system
+18
+ls: cannot access '/tmp/lab14/iz': No such file or directory</pre>
+<p><code>-P</code> (<code>--pipe --wait</code>) hizmetin çıktısını doğrudan terminaline getirir ve bitmesini bekler; <code>-q</code> "Running as unit" satırını susturur. İlk yedi satır kısıtsız hizmetten: <code>/tmp</code>'ye yazabildi (dosya gerçekten orada), <code>/tmp</code>'de 50 girdi, ev dizininde 36 girdi gördü, <code>/etc</code>'ye yazamadı çünkü kullanıcıdır (izin hatası), <code>/dev</code>'de 183 girdi. Sertleştirilmiş hizmette her satır değişti. Kimlik aynı, ama <code>NoNewPrivs: 1</code>. <code>PrivateTmp</code> yüzünden <code>/tmp</code> boş ve kendine ait: klasörün orada yok, betiği bu yüzden boru ile verdim. <code>ProtectHome=yes</code> ev dizinini erişilemez yaptı. <code>/etc</code> hatası "Permission denied" değil "Read-only file system": artık engel izin bitleri değil, bağlamanın kendisi; bu hizmet root olsaydı da yazamazdı. <code>/dev</code>'de yalnız 18 zararsız aygıt kaldı. Son satır, sertleştirilmiş hizmetin ana makinede iz bırakmadığını doğruluyor.</p>
+<p>Kullanıcı yöneticisinde bu seçenekler kullanıcı ad alanı ile kurulur; <code>ProtectHome=</code> gibi bazıları için kılavuz <code>PrivateUsers=</code>'ın kendiliğinden açıldığını yazar. Laboratuvar VM'inde aynı satırları <code>sudo systemctl edit</code> ile bir sistem hizmetinin drop-in'ine koyarsan, bu kez root yetkisiyle gerçek bağlamalar olarak uygulanır. Kısıt sayısını artırınca puanın nasıl düştüğünü de gör:</p>
+<pre class="kod" data-ad="bash">systemd-run --user -q --unit=siber14-cok -p NoNewPrivileges=yes -p PrivateTmp=yes -p ProtectSystem=strict -p ProtectHome=yes -p PrivateDevices=yes -p PrivateNetwork=yes -p PrivateUsers=yes -p RestrictAddressFamilies=AF_UNIX -p CapabilityBoundingSet= -p SystemCallFilter=@system-service -p SystemCallArchitectures=native -p MemoryDenyWriteExecute=yes -p LockPersonality=yes -p RestrictNamespaces=yes -p RestrictRealtime=yes -p RestrictSUIDSGID=yes -p ProtectKernelTunables=yes -p ProtectKernelModules=yes -p ProtectKernelLogs=yes -p ProtectControlGroups=yes -p ProtectClock=yes -p ProtectHostname=yes -p ProtectProc=invisible -p ProcSubset=pid -p UMask=0077 -p IPAddressDeny=any /bin/sleep 120
+systemd-analyze --user security siber14-cok.service | grep -E '✗|Overall'
+systemctl --user stop siber14-cok.service</pre>
+<pre class="cikti">✗ SystemCallFilter=~@resources                                System call allow list defined for service, and @resources is included (e.g. ioprio_set is allowed)      0.2
+✗ SystemCallFilter=~@privileged                               System call allow list defined for service, and @privileged is included (e.g. chown is allowed)          0.2
+✗ KeyringMode=                                                Service shares key material with other service                                                           0.2
+✗ RootDirectory=/RootImage=                                   Service runs within the host's root directory                                                            0.1
+✗ User=/DynamicUser=                                          Service runs as root user                                                                                0.4
+✗ RestrictAddressFamilies=~AF_UNIX                            Service may allocate local sockets                                                                       0.1
+✗ DeviceAllow=                                                Service has a device ACL with some special devices: char-rtc:r                                           0.1
+→ Overall exposure level for siber14-cok.service: 0.9 SAFE 😀</pre>
+<p>Aynı <code>sleep</code> komutu 9,8'den 0,9'a indi. Kalan <code>User=/DynamicUser=</code> kalemi yanıltıcı: hizmet aslında senin kullanıcınla çalışıyor, ama araç bunu kullanıcı yöneticisinde değerlendiremiyor. Puan okunup yorumlanacak bir sezgi aracıdır. <code>sleep</code> hiçbir şeye ihtiyaç duymadığı için bu kadar daraltma onu bozmadı; gerçek bir hizmette her satırı tek tek denemen gerekir.</p>
+
+<h3>Adım 7: <code>NoNewPrivileges</code>'ı kendi programınla sına</h3>
+<p>Parça 12'de SUID/SGID bitinin <code>no_new_privs</code> altında etkisiz kaldığını okumuştun. Bunu gerçek bir SUID-root programla değil, kendi derlediğin zararsız bir programla göreceksin: program yalnız gerçek ve etkin grup kimliğini yazar. Dosyayı üyesi olduğun bir gruba (burada <code>adm</code>) verip SGID bitini açınca, çalıştığında etkin grubun o grup olması beklenir.</p>
+<pre class="kod" data-ad="kimim.c">#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+int main(void) { printf("gercek GID=%d  etkin GID=%d\n", (int)getgid(), (int)getegid()); return 0; }</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o kimim kimim.c
+chgrp adm kimim &amp;&amp; chmod 2755 kimim
+./kimim
+setpriv --no-new-privs ./kimim
+systemd-run --user -q -P /tmp/lab14/kimim
+systemd-run --user -q -P -p NoNewPrivileges=yes /tmp/lab14/kimim</pre>
+<pre class="cikti">gercek GID=1000  etkin GID=4
+gercek GID=1000  etkin GID=1000
+gercek GID=1000  etkin GID=4
+gercek GID=1000  etkin GID=1000</pre>
+<p>Kendi kabuğunda SGID biti işledi: etkin GID 4 (<code>adm</code>). <code>setpriv --no-new-privs</code> bayrağı elle koydu ve bit yok sayıldı. Aynı karşılaştırma hizmet olarak da tuttu: kısıtsız hizmette 4, <code>NoNewPrivileges=yes</code> ile 1000. Bir web hizmeti ele geçse bile, sistemdeki SUID programlarla yetkisini büyütemez; bu tek satırın değeri budur. Bu deneme yalnız <code>/tmp</code> nosuid bağlı değilse çalışır (<code>findmnt -T .</code> ile bak); bağlıysa ilk satırda da 1000 görürsün, Parça 8'deki <code>nosuid</code> aynı işi bağlama düzeyinde yapar.</p>
+
+<h3>Adım 8: geçici bir zamanlayıcı</h3>
+<pre class="kod" data-ad="bash">systemd-run --user --on-active=20s --timer-property=AccuracySec=1s --unit=siber14-zaman /bin/sh -c 'date +%T &gt;&gt; /tmp/lab14/zaman.log'
+systemctl --user list-timers --all
+date +%T
+sleep 25
+cat /tmp/lab14/zaman.log
+systemctl --user list-timers --all</pre>
+<pre class="cikti">Running timer as unit: siber14-zaman.timer
+Will run service as unit: siber14-zaman.service
+NEXT                        LEFT LAST PASSED UNIT                ACTIVATES
+Fri 2026-10-16 17:30:16 +03  19s -         - siber14-zaman.timer siber14-zaman.service
+
+1 timers listed.
+17:29:56
+17:30:16
+NEXT LEFT LAST PASSED UNIT ACTIVATES
+
+0 timers listed.</pre>
+<p><code>systemd-run</code> iki birim kurdu: zamanlayıcı ve onun tetikleyeceği hizmet. <code>list-timers</code> sonraki tetiklemeyi (17.30.16) ve kalan süreyi gösteriyor. Görev tam saniyesinde çalıştı, çünkü <code>AccuracySec=1s</code> verdim; vermeseydin varsayılan 1 dakikalık pencere yüzünden birkaç on saniye gecikebilirdi (ilk denememde 13 saniye gecikti). Tek seferlik geçici zamanlayıcı işini bitirince kendini kaldırdı; son liste boş.</p>
+
+<h3>Adım 9: sistem zamanlayıcıları ve cron envanteri</h3>
+<pre class="kod" data-ad="bash">grep -v '^#' /etc/crontab | grep -v '^$'
+ls -l /etc/cron.d /etc/cron.daily
+ls -ld /var/spool/cron/crontabs
+ls /var/spool/cron/crontabs
+crontab -l
+systemctl list-timers --all</pre>
+<pre class="cikti">SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+17 *	* * *	root	cd / &amp;&amp; run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / &amp;&amp; run-parts --report /etc/cron.monthly; }
+/etc/cron.d:
+total 20
+-rw-r--r-- 1 root root 188 Mar  6  2026 e2scrub_all
+-rw-r--r-- 1 root root 607 Jun  3  2025 john
+-rw-r--r-- 1 root root 140 Feb  8  2026 ntpsec
+-rw-r--r-- 1 root root 712 Dec 20  2025 php
+-rw-r--r-- 1 root root 400 Jan 16  2024 sysstat
+
+/etc/cron.daily:
+total 28
+-rwxr-xr-x 1 root root  539 Dec  5  2025 apache2
+-rwxr-xr-x 1 root root 1478 Apr 14  2026 apt-compat
+-rwxr-xr-x 1 root root  123 Mar 27  2026 dpkg
+-rwxr-xr-x 1 root root  377 Jul 14  2024 logrotate
+-rwxr-xr-x 1 root root 1395 May  2  2025 man-db
+-rwxr-xr-x 1 root root  652 Dec  7  2020 plocate
+-rwxr-xr-x 1 root root  526 Jan 16  2024 sysstat
+drwx-wx--T 2 root crontab 4096 Apr 27 10:56 /var/spool/cron/crontabs
+ls: cannot open directory '/var/spool/cron/crontabs': Permission denied
+no crontab for kullanici
+NEXT                            LEFT LAST                        PASSED UNIT                         ACTIVATES
+Fri 2026-10-16 17:39:00 +03     8min Fri 2026-10-16 17:09:10 +03      - phpsessionclean.timer        phpsessionclean.service
+Fri 2026-10-16 18:13:04 +03    42min Sat 2026-08-22 09:22:59 +03      - logrotate.timer              logrotate.service
+Sat 2026-10-17 00:00:00 +03       6h Fri 2026-10-16 14:36:17 +03      - dpkg-db-backup.timer         dpkg-db-backup.service
+Sat 2026-10-17 00:01:16 +03       6h Fri 2026-10-16 15:46:21 +03      - plocate-updatedb.timer       plocate-updatedb.service
+Sat 2026-10-17 02:17:57 +03       8h Thu 2026-08-20 14:18:18 +03      - man-db.timer                 man-db.service
+Sat 2026-10-17 03:32:20 +03      10h Thu 2026-08-20 10:14:42 +03      - apt-daily.timer              apt-daily.service
+Sat 2026-10-17 06:06:45 +03      12h Fri 2026-10-16 17:09:55 +03      - apt-daily-upgrade.timer      apt-daily-upgrade.service
+Sat 2026-10-17 06:25:00 +03      12h Fri 2026-10-16 14:36:17 +03      - ntpsec-rotate-stats.timer    ntpsec-rotate-stats.service
+Sun 2026-10-18 03:10:51 +03 1 day 9h Fri 2026-10-16 15:32:49 +03      - e2scrub_all.timer            e2scrub_all.service
+-                                  - -                                - fstrim.timer                 fstrim.service
+-                                  - -                                - fwupd-refresh.timer          fwupd-refresh.service
+-                                  - -                                - systemd-tmpfiles-clean.timer -
+
+12 timers listed.</pre>
+<p><code>/etc/crontab</code>'daki dört satır, saatlik, günlük, haftalık ve aylık dizinleri çalıştırıyor; <code>anacron</code> kuruluysa son üçünü ona bırakıyor. Dosyaların hepsi root'a ait ve yalnız root yazabiliyor: cron'un istediği tam olarak bu. Kullanıcı tablolarının dizini <code>drwx-wx--T</code>, grubu <code>crontab</code>: Parça 12'deki bitlerle oku. Diğerleri dizini listeleyemez (r yok), yalnız SGID <code>crontab</code> komutu aracılığıyla kendi dosyasını yazar; sticky bit (<code>T</code>) başkasının dosyasını silmeyi engeller. Root olmadan yalnız kendi tablonu görürsün; VM'de bütün tabloları <code>sudo ls -l /var/spool/cron/crontabs</code> ile listeleyeceksin (burada çalıştırılmadı, root gerekir). <code>LAST</code> sütununda Ağustos görünen zamanlayıcılar makine kapalıyken çalışamamış olanlardır. En alttaki <code>systemd-tmpfiles-clean.timer</code> maskeli olduğu için hiçbir şeyi tetiklemiyor.</p>
+
+<h3>Adım 10: temizlik ve iz denetimi</h3>
+<pre class="kod" data-ad="bash">systemctl --user reset-failed
+systemctl --user list-units 'siber14*' --all
+ls -A /run/user/1000/systemd/transient/
+ls ~/.config/systemd/user</pre>
+<pre class="cikti">  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+ls: cannot access '/home/kullanici/.config/systemd/user': No such file or directory</pre>
+<p><code>reset-failed</code>, başarısız bitmiş geçici birimleri listeden siler; başarısız birim, sen silene kadar orada kalır. Liste boş, geçici birim dizini boş, ev dizininde kullanıcı birimi dizini hiç oluşmamış: bu alıştırma makinende kalıcı bir şey bırakmadı. Çalışma klasörünü de silebilirsin: <code>rm -rf /tmp/lab14</code>.</p>
+
+<div class="tablo"><table>
+<tr><th>Envanter kalemi</th><th>Komut (salt okur)</th><th>Şüphe işareti</th></tr>
+<tr><td>Çalışan hizmetler</td><td><code>systemctl list-units --type=service --state=running</code></td><td>Tanımadığın ad, root ile çalışan yeni hizmet</td></tr>
+<tr><td>Açılışta başlayanlar</td><td><code>systemctl list-unit-files --state=enabled</code></td><td>Tabanda olmayan, paketsiz birim</td></tr>
+<tr><td>Birim içeriği</td><td><code>systemctl cat ad</code></td><td><code>ExecStart=</code> <code>/tmp</code>, <code>/dev/shm</code>, ev ya da gizli dizinde; beklenmeyen drop-in</td></tr>
+<tr><td>Zamanlayıcılar</td><td><code>systemctl list-timers --all</code></td><td>Sık tetiklenen, tanımsız hizmet</td></tr>
+<tr><td>Sistem cron'u</td><td><code>/etc/crontab</code>, <code>/etc/cron.d</code>, <code>/etc/cron.*</code></td><td>Paketsiz dosya, herkese yazılabilir betik</td></tr>
+<tr><td>Kullanıcı tabloları</td><td><code>crontab -l</code>; root ile <code>/var/spool/cron/crontabs</code></td><td>Hizmet hesabının tablosu, gizlenmiş komut</td></tr>
+<tr><td>Kullanıcı birimleri</td><td><code>ls ~/.config/systemd/user</code>, <code>systemctl --user list-unit-files</code></td><td>Oturumu olmayan kullanıcıda "linger" açık</td></tr>
+<tr><td>Son değişiklikler</td><td><code>find /etc/systemd /etc/cron* -mtime -7</code></td><td>Güncelleme olmayan bir günde değişen birim</td></tr>
+</table></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 4'teki PID 1 burada systemd oldu. Parça 5'teki yetenekler, seccomp ve <code>no_new_privs</code>, Parça 7'deki ad alanları ve cgroups, Parça 8'deki salt okunur bağlamalar birim dosyasında tek satırlık seçeneklere dönüştü. Parça 11'in "her hizmete ayrı kullanıcı" ilkesi <code>User=</code> ve <code>DynamicUser=</code>'da, Parça 12'nin SUID frenleri ve herkese yazılabilir dosya soruları <code>NoNewPrivileges=</code>'da ve cron dosyalarında, Parça 13'ün süreç ağacı cgroup ağacında geri döndü. Parça 9 ve 10'daki <code>find</code> ve <code>dpkg -S</code> envanterin araçlarıydı.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 15'te bir hizmetin hangi portu dinlediğini, Parça 16'da o portu güvenlik duvarıyla daraltmayı göreceksin. Hizmet ve zamanlayıcı günlüklerini <code>journalctl -u</code> ile okumak Parça 17'de, SSH hizmetinin sertleştirilmesi Parça 18'de, bütün bunların kontrol listesine dönüşmesi Parça 19'da. Windows'taki karşılıkları (servisler, görev zamanlayıcı) Parça 61'de, kalıcılığın tespiti ve ATT&amp;CK ile savunma haritası Parça 69'da, şüpheli bir birimle karşılaşınca izlenecek yol Parça 70–71'de.</p>
+<p><strong>Kod rafına:</strong> Parça 18'deki crontab satırı ve <code>find</code>; Bash parçalarındaki <code>while read</code> ve parametre açılımları envanter betiğinde kullanıldı.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary><code>systemctl start</code> ile <code>systemctl enable</code> arasındaki fark nedir? Etkinleştirme dosya sisteminde neye karşılık gelir?</summary><p>start hizmeti şimdi başlatır ve yeniden başlatmadan sonra etkisi kalmaz; enable hizmeti başlatmaz, yalnız açılışta başlaması için birim dosyasının Install bölümünde yazan hedefin .wants dizinine (ör. /etc/systemd/system/multi-user.target.wants/) bir sembolik bağ kurar. İkisini birlikte yapmak için enable --now kullanılır. Bu parçadaki makinede cron hem active hem enabled, SSH sunucusu ise inactive ve disabled çıktı.</p></details>
+<details><summary>Paketin getirdiği bir birimin yalnız bir satırını değiştirmek istiyorsun. Neden <code>/usr/lib/systemd/system</code> altındaki dosyayı düzenlemezsin, ne yaparsın?</summary><p>O dosya pakete aittir; güncelleme onu yeniden yazar ve değişiklik sessizce kaybolur, ayrıca paket bütünlük denetiminde değişmiş görünür. Doğrusu systemctl edit ile /etc/systemd/system/ad.service.d/override.conf gibi bir drop-in oluşturup yalnız değişen satırları oraya yazmaktır; /etc'deki parçalar paket dosyasının üstüne eklenir ve önceliklidir. Sonuç systemctl cat ile okunur.</p></details>
+<details><summary>Bir hizmeti durdurdun ama birkaç dakika sonra yeniden çalışırken buldun. İki olası neden ve doğru kapatma yolu nedir?</summary><p>Birincisi soket etkinleştirmedir: ilgili .socket birimi hâlâ dinler ve ilk bağlantıda hizmeti yeniden başlatır. İkincisi başka bir birimin ona bağımlı olması ve onu yeniden çekmesidir; açılışta ise enable bağı onu geri getirir. Doğru yol bağımlılıkları inceleyip hem .service hem .socket birimini disable --now ile kapatmak, yeniden çekilmesini de istemiyorsan mask kullanmak, hiç gerekmiyorsa paketi kaldırmak ve portun kapandığını ss ile doğrulamaktır.</p></details>
+<details><summary><code>ProtectSystem=strict</code>, <code>ProtectHome=yes</code> ve <code>PrivateTmp=yes</code> bir hizmetin dünyasını nasıl değiştirir?</summary><p>ProtectSystem=strict /dev, /proc ve /sys dışındaki bütün dosya sistemi ağacını o hizmet için salt okunur bağlar; yazması gereken dizinler ReadWritePaths= ya da StateDirectory= ile ayrıca açılır. ProtectHome=yes /home, /root ve /run/user dizinlerini erişilemez ve boş yapar. PrivateTmp=yes hizmete kendine ait /tmp ve /var/tmp verir, başkasının geçici dosyalarını görmez ve hizmet durunca bunlar silinir. Denemede /etc'ye yazma hatası "Permission denied"den "Read-only file system"e dönüştü.</p></details>
+<details><summary>cron ile systemd zamanlayıcısını kaçırılan çalışma, günlük ve kısıtlar açısından karşılaştır.</summary><p>cron belirlenen dakikada makine kapalıysa o çalışmayı kaybeder (Debian'da anacron günlük ve haftalık işleri telafi eder); çıktısını varsayılan olarak tablo sahibine e-postayla gönderir ve komut kullanıcının bütün yetkisiyle çalışır. systemd zamanlayıcısı Persistent=true ile kaçırılanı açılışta yapar, çıktısı journal'a birimin adıyla düşer ve tetiklenen hizmet birim dosyasındaki bütün sertleştirme seçeneklerini taşıyabilir. list-timers son ve sonraki çalışmayı tek tabloda gösterir.</p></details>
+<details><summary>Kalıcılık nedir ve savunmacı hizmet ile zamanlanmış görev envanterinde her kalem için hangi soruları sorar?</summary><p>Kalıcılık, bir saldırganın süreç ölümü, yeniden başlatma ya da yama gibi kesintilere rağmen sistemdeki erişimini sürdürmesidir; hizmetler ve zamanlanmış görevler en klasik yerleridir. Savunmacı listeyi bir tabanla karşılaştırır ve her kalem için sorar: dosya bir pakete ait mi, paket dosyası değişmiş mi, ne zaman oluşmuş, kim yazabiliyor, çalıştırdığı yol beklenen yerde mi? Sistem dizinlerinin yanında kullanıcının kendi birim dizinine ve crontab'ına da bakar, çünkü bunlar için root gerekmez.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Hizmet (daemon):</strong> terminale bağlı olmayan, bir şey bekleyen arka plan süreci. Yöneticisi PID 1: bugün systemd (2010; Debian 8'den beri varsayılan). Kullanıcı başına ayrıca <code>systemd --user</code>.</li>
+<li><strong>Birim türleri:</strong> <code>.service</code>, <code>.socket</code>, <code>.timer</code>, <code>.target</code>, <code>.mount</code>… Her hizmet kendi cgroup'unda; bütün süreçleri birlikte izlenir ve durdurulur.</li>
+<li><strong>Birim dosyası:</strong> <code>[Unit]</code> (açıklama, <code>After=</code>, <code>Wants=</code>), <code>[Service]</code> (<code>ExecStart=</code>, <code>Restart=</code>, <code>User=</code>), <code>[Install]</code> (yalnız <code>enable</code> okur: <code>WantedBy=</code>). <code>User=</code> yoksa root.</li>
+<li><strong>Öncelik:</strong> <code>/etc/systemd/system</code> &gt; <code>/run/systemd/…</code> &gt; <code>/usr/lib/systemd/system</code>. Değişiklik: <code>systemctl edit</code> → <code>ad.service.d/override.conf</code>; oku: <code>systemctl cat</code>.</li>
+<li><strong>start/stop</strong> = şimdi; <strong>enable/disable</strong> = açılış (<code>.wants/</code> bağı); <strong>mask</strong> = <code>/dev/null</code> bağı, hiçbir yolla başlamaz; <code>--now</code> ikisini birleştirir.</li>
+<li><strong>Saldırı yüzeyi:</strong> her hizmet = kod + girdi kanalı + yetki. Gereksizini <code>disable --now</code> (soketiyle birlikte), gerekirse <code>mask</code> ya da paketi kaldır; <code>ss -tlnp</code> ile doğrula.</li>
+<li><strong>Sertleştirme:</strong> <code>User=</code>/<code>DynamicUser=</code>, <code>NoNewPrivileges=</code>, <code>ProtectSystem=strict</code> + <code>ReadWritePaths=</code>, <code>ProtectHome=</code>, <code>PrivateTmp=</code>, <code>PrivateDevices=</code>, <code>CapabilityBoundingSet=</code>, <code>SystemCallFilter=</code>, <code>RestrictAddressFamilies=</code>. En sıkıdan başla, gerekeni gerekçesiyle aç.</li>
+<li><strong><code>systemd-analyze security</code>:</strong> 0–10 maruziyet; yalnız systemd kısıtlarını sayar, açık olduğunu kanıtlamaz. Denemede 9,8 → 0,9.</li>
+<li><strong>cron:</strong> dakika saat gün ay haftagünü [kullanıcı] komut; <code>*</code>, <code>a-b</code>, <code>a,b</code>, <code>*/n</code>. İki gün alanı da kısıtlıysa VEYA. Yerler: <code>/etc/crontab</code>, <code>/etc/cron.d</code>, <code>/etc/cron.*</code>, <code>/var/spool/cron/crontabs</code>; dosyalar root'un ve başkası yazamaz.</li>
+<li><strong>Zamanlayıcı:</strong> <code>.timer</code> + <code>.service</code>; <code>OnCalendar=</code>, <code>OnBootSec=</code>, <code>Persistent=</code>, <code>RandomizedDelaySec=</code>, <code>AccuracySec=</code> (varsayılan 1 dk). <code>list-timers --all</code>, <code>systemd-analyze calendar</code>.</li>
+<li><strong>Kalıcılık:</strong> ATT&amp;CK T1543.002, T1053.003, T1053.006. Envanter = taban + <code>dpkg -S</code>/<code>-V</code> + <code>find -mtime</code> + izinler + <code>ExecStart=</code> yolu; kullanıcı birimleri ve crontab'ı root istemez.</li>
+<li><strong>Şüpheli birim:</strong> önce kayıt ve delil, sonra olay müdahale planı; hemen silme.</li>
+<li><strong>Geçici deneme:</strong> <code>systemd-run --user</code> (<code>-P</code>, <code>-p</code>, <code>--on-active=</code>); bitince <code>stop</code>, <code>reset-failed</code>, iz denetimi.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-14">
+<h3>Quiz 14</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on altı tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir yönetici <code>sudo systemctl enable nginx.service</code> komutunu çalıştırıyor ve başka hiçbir şey yapmıyor. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>nginx hemen başlar ve bir daha hiçbir zaman durdurulamaz.</li><li>nginx şu an başlamaz; birim dosyasındaki <code>[Install]</code> bölümüne göre bir <code>.wants/</code> bağı kurulur ve hizmet bir sonraki açılışta başlar.</li><li>nginx hem şimdi başlar hem açılışta başlar; <code>enable</code> ile <code>start</code> aynı işi yapar.</li><li>nginx'in birim dosyası <code>/usr/lib</code>'den <code>/etc</code>'ye kopyalanır ve paket güncellemeleri artık onu etkilemez.</li><li>nginx maskelenir ve elle başlatılamaz hâle gelir.</li></ul>
+<div class="coz"><p><code>enable</code> yalnız açılış ayarını değiştirir: <code>[Install]</code> bölümündeki <code>WantedBy=</code> hedefinin <code>.wants/</code> dizinine bir sembolik bağ kurar ve hizmeti o an başlatmaz. Hemen başlatmak için <code>start</code> ya da <code>enable --now</code> gerekir; bu yüzden A ve C yanlış. <code>enable</code> dosya kopyalamaz, bir bağ kurar; D, <code>systemctl edit</code> ile karıştırıyor. E, <code>mask</code> komutunun davranışıdır: o birimi <code>/dev/null</code>'a bağlar.</p></div></li>
+
+<li data-c="D"><p class="q">Bir crontab satırı <code>*/15 8-17 * * 1-5 /usr/local/bin/rapor</code> biçiminde. Bu görev ne zaman çalışır?</p>
+<ul class="sec"><li>Her gün saat 08.15 ile 17.15'te, günde iki kez</li><li>Pazartesiden cumaya, 08.00'den 17.00'ye kadar her saat başı</li><li>Her ayın 8'inden 17'sine kadar her 15 dakikada bir</li><li>Pazartesiden cumaya, 08.00'den 17.45'e kadar her 15 dakikada bir</li><li>Her 15 saatte bir, yalnız ocaktan mayısa</li></ul>
+<div class="coz"><p>Alanlar sırasıyla dakika, saat, ayın günü, ay, haftanın günüdür. <code>*/15</code> dakikada 0, 15, 30, 45; <code>8-17</code> saatte 8'den 17'ye (17 dahil); <code>1-5</code> haftanın gününde pazartesi–cuma. Son tetikleme 17.45'tir; aynı ifadenin systemd karşılığı <code>Mon..Fri 08..17:00/15</code>, <code>systemd-analyze calendar</code> ile sınandığında cuma 17.45'ten sonra pazartesi 08.00'i verdi. C, ikinci alanı ayın günü sanıyor; E alanları tamamen kaydırıyor; B ve A ise adım ifadesini yanlış okuyor.</p></div></li>
+
+<li data-c="A"><p class="q">Bir makinede <code>systemctl is-enabled NetworkManager.service</code> komutu <code>masked</code> yazıyor. Bu durum için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li><code>/etc/systemd/system/NetworkManager.service</code> adıyla <code>/dev/null</code>'a giden bir bağ vardır; hizmet ne elle ne de başka bir birimin bağımlılığı olarak başlatılabilir.</li><li>Hizmet şu an çalışmaktadır ama açılışta başlamayacaktır.</li><li>Hizmetin paketi kaldırılmış, yalnız ayar dosyaları kalmıştır.</li><li>Hizmet yalnız soket etkinleştirmeyle, ilk bağlantıda başlar.</li><li>Hizmet bir sonraki açılışta otomatik olarak etkin hâle döner.</li></ul>
+<div class="coz"><p><code>mask</code>, birimle aynı adı taşıyan ve <code>/dev/null</code>'a giden bir bağı en yüksek öncelikli <code>/etc/systemd/system</code> dizinine koyar; paketteki asıl dosya hiç okunmaz. Çözümlü örnek 1'de <code>readlink</code> tam olarak <code>/dev/null</code> verdi. Bu, <code>disable</code>'dan güçlüdür: elle <code>start</code> da, bağımlılık yoluyla çekilmek de engellenir. B <code>disable</code> edilmiş ama çalışan bir hizmeti anlatır. C ve D'nin maskeyle ilgisi yoktur. Maske kalıcıdır; <code>unmask</code> edilene kadar sürer (yalnız <code>--runtime</code> ile yapılmışsa açılışta kalkar).</p></div></li>
+
+<li data-c="C"><p class="q">Paketten gelen <code>ornek.service</code> birimine <code>NoNewPrivileges=yes</code> eklemek istiyorsun ve değişikliğin paket güncellemelerinden etkilenmemesini istiyorsun. En doğru yol hangisidir?</p>
+<ul class="sec"><li><code>/usr/lib/systemd/system/ornek.service</code> dosyasını açıp satırı eklemek</li><li>Satırı <code>/etc/crontab</code>'a eklemek</li><li><code>sudo systemctl edit ornek.service</code> ile <code>/etc/systemd/system/ornek.service.d/override.conf</code> parçasını oluşturup <code>[Service]</code> başlığı altına satırı yazmak</li><li>Hizmeti <code>mask</code> edip yeniden <code>enable</code> etmek</li><li><code>systemctl start ornek.service NoNewPrivileges=yes</code> komutunu çalıştırmak</li></ul>
+<div class="coz"><p>Drop-in parçaları ana birim dosyasının üstüne eklenir ve <code>/etc</code>'dekiler en yüksek önceliğe sahiptir; paket <code>/usr/lib</code>'deki dosyayı güncellese de parça yerinde kalır. Parça bir bölüm başlığı (<code>[Service]</code>) içermek zorundadır. A çalışır gibi görünür ama ilk güncellemede silinir ve paket bütünlüğünü bozar. B'nin systemd ile ilgisi yoktur. D, maskeli birimi etkinleştirmeye çalışır, o da başarısız olur. E diye bir sözdizimi yoktur; geçici özellik vermek <code>systemd-run -p</code> ile mümkündür ama kalıcı bir hizmete uygulanmaz.</p></div></li>
+
+<li data-c="E"><p class="q">Bir hizmetin birimine <code>ProtectSystem=strict</code> ekledikten sonra hizmet, durum dosyasını yazdığı <code>/var/lib/uyg</code> dizinine "Read-only file system" hatasıyla yazamıyor. En iyi çözüm hangisidir?</p>
+<ul class="sec"><li><code>ProtectSystem=</code> satırını tamamen kaldırmak</li><li>Hizmeti <code>User=root</code> ile çalıştırmak</li><li><code>/var/lib/uyg</code> dizinine <code>chmod 777</code> vermek</li><li><code>PrivateTmp=yes</code> ekleyip dosyayı <code>/tmp</code>'ye yazdırmak</li><li><code>ProtectSystem=strict</code>'i koruyup yalnız o dizini <code>ReadWritePaths=/var/lib/uyg</code> (ya da <code>StateDirectory=uyg</code>) ile yazılabilir bırakmak</li></ul>
+<div class="coz"><p><code>strict</code> bütün ağacı bağlama düzeyinde salt okunur yapar; engel izin bitleri değil bağlamanın kendisi olduğu için ne root olmak (B) ne de <code>chmod 777</code> (C) işe yarar, C üstelik yeni bir açık yaratır. Doğrusu kısıtı koruyup gerekeni dar açmaktır: bu ortamda <code>ProtectSystem=strict</code> ile aynı dizine yazma "Read-only file system" verdi, <code>ReadWritePaths=</code> eklenince yazma başarılı oldu. A en sıkıdan başlama ilkesinin tersidir. D, kalıcı durumu hizmet durunca silinen özel <code>/tmp</code>'ye taşır.</p></div></li>
+
+<li data-c="B"><p class="q"><code>systemd-analyze security</code> çıktısında <code>cron.service</code> için <code>9.6 UNSAFE</code> görüyorsun. Bu değer için en doğru yorum hangisidir?</p>
+<ul class="sec"><li>cron'da bilinen bir güvenlik açığı vardır; hemen kaldırılmalıdır.</li><li>Birim dosyasında systemd'nin uyguladığı kısıtlar neredeyse yoktur; puan hizmetin kendi kodundaki önlemleri saymaz ve açıklı olduğunu kanıtlamaz, yalnız ek kısıtlardan yarar görebileceğini söyler.</li><li>Puan, cron'un son 24 saatte kaç kez çöktüğünü gösterir.</li><li>9,6 ölçeğin en güvenli ucudur; 10'a yaklaştıkça hizmet daha sıkı kısıtlanmıştır.</li><li>Puan hizmetin ağdan erişilebilir olup olmadığını ölçer; cron internete açıktır.</li></ul>
+<div class="coz"><p>Kılavuz sayfası puanı 0,0–10,0 arasında bir tahmin olarak tanımlar: yüksek değer, systemd'nin birim düzeyinde neredeyse hiç kısıt uygulamadığı anlamına gelir. Aynı sayfa, yüksek puanın hizmetin gerçekten açıklı olduğu anlamına gelmediğini ve hizmet kodunun kendi önlemlerinin sayılmadığını açıkça söyler. Bu yüzden A aşırı bir sonuçtur; D ölçeği ters çevirir. Puan çökme sayısıyla ya da ağ erişilebilirliğiyle ilgili değildir; cron hiçbir port dinlemez. Ayrıca cron, kullanıcıların görevlerini onlar adına çalıştırmak için kimlik değiştirebilmeli; bazı kısıtlar onda bilerek yoktur.</p></div></li>
+
+<li data-c="D"><p class="q"><code>NoNewPrivileges=yes</code> ile çalışan bir hizmet, sahibi root olan ve SUID biti açık bir programı <code>execve</code> ile çalıştırıyor. Ne olur?</p>
+<ul class="sec"><li>Program root yetkisiyle çalışır; <code>NoNewPrivileges</code> yalnız ağ erişimini keser.</li><li>Çekirdek programı çalıştırmayı reddeder ve hizmeti öldürür.</li><li>Program çalışır ve hizmetin kendisi de kalıcı olarak root olur.</li><li>Program çalışır, ama SUID biti yok sayılır; etkin kimlik hizmetin kendi kimliği olarak kalır.</li><li>systemd hizmeti otomatik olarak <code>DynamicUser=yes</code> ile yeniden başlatır.</li></ul>
+<div class="coz"><p><code>NoNewPrivileges=yes</code> sürecin ve çocuklarının <code>no_new_privs</code> bayrağını açar; bundan sonra <code>execve</code> SUID/SGID bitleri ya da dosya yetenekleri yoluyla yeni ayrıcalık veremez. Program yine çalışır, yalnız bit etkisiz kalır. Denemede kendi SGID programımız kısıtsız hizmette etkin GID 4 (<code>adm</code>), <code>NoNewPrivileges=yes</code> ile 1000 yazdı. A ve C bayrağın tam tersini söyler; B, bit yüzünden çalıştırmanın reddedildiğini sanıyor. E diye bir otomatik davranış yoktur.</p></div></li>
+
+<li data-c="C"><p class="q">Bir makinede root olmayan bir hesabın ele geçirildiğinden şüpheleniyorsun. Hesabın, yeniden başlatmalardan sonra da komut çalıştırmak için kullanmış olabileceği ve root yetkisi <strong>gerektirmeyen</strong> yerleri kapsayan envanter hangisidir?</p>
+<ul class="sec"><li>Yalnız <code>/etc/systemd/system</code> ve <code>/etc/cron.d</code></li><li>Yalnız <code>/usr/lib/systemd/system</code> altındaki paket birimleri</li><li>Hesabın <code>~/.config/systemd/user/</code> dizini ve kullanıcı birimleri, hesabın crontab'ı (<code>crontab -l</code> ya da root ile <code>/var/spool/cron/crontabs</code>) ve hesap için "linger" ayarı</li><li>Yalnız <code>/run/user/UID/systemd/transient/</code> altındaki geçici birimler</li><li>Yalnız <code>systemd-analyze security</code> puanı yüksek olan hizmetler</li></ul>
+<div class="coz"><p>Sıradan bir kullanıcı kendi ev dizinine birim koyabilir, kendi crontab'ını yazabilir; "linger" açıksa kullanıcı hizmetleri o kullanıcı giriş yapmamışken de başlar. Bu üçü root gerektirmeyen kalıcılık yerleridir ve envanterde atlanırsa savunmacı kör kalır. A ve B'deki dizinlere yalnız root yazar; ele geçirilmiş sıradan bir hesap onlara yazamaz. D'deki geçici birimler yeniden başlatmada yok olur, yani kalıcılık sağlamaz. E'deki puan kısıt ölçer, kalıcılık bulmaz.</p></div></li>
+
+<li data-c="A" data-k="siber-1"><p class="q">Aşağıdaki C programı <code>gcc -Wall -Wextra</code> ile derlenip çalıştırılıyor. Ne yazar?</p>
+<pre class="kod">#include &lt;stdio.h&gt;
+#include &lt;stdint.h&gt;
+int main(void) { uint8_t a = 250; a += 10; printf("%u\n", a); return 0; }</pre>
+<ul class="sec"><li>4</li><li>260</li><li>255</li><li>−6</li><li>10</li></ul>
+<div class="coz"><p><code>uint8_t</code> 8 bitlik işaretsiz bir türdür ve 0–255 tutar. 250 + 10 = 260 bu aralığa sığmaz; sabit genişlikte aritmetik mod 2<sup>8</sup> çalışır: 260 − 256 = 4. İşaretsiz türlerde bu sarma C'de tanımlı davranıştır; program çalıştırılınca gerçekten 4 yazdı. 260 sınırsız tamsayıyı, 255 doyma (saturation) davranışını, −6 işaretli yorumu varsayar; 10 ise yalnız eklenen değerdir.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q"><code>objdump -d -M intel</code> çıktısında <code>   0:	b8 2a 00 00 00       	mov    eax,0x2a</code> satırı görünüyor. Ortadaki <code>b8 2a 00 00 00</code> nedir?</p>
+<ul class="sec"><li>Fonksiyonun bellekteki adresi</li><li>Komutun kaç kez çalıştırıldığını gösteren sayaç</li><li><code>eax</code> yazmacının çalışma sırasındaki değeri</li><li>Derleyicinin eklediği hata ayıklama açıklaması</li><li>Bu komutun makine kodu, yani dosyada duran baytları</li></ul>
+<div class="coz"><p><code>objdump -d</code> her satırda üç şey gösterir: adres (burada fonksiyon başından uzaklık, <code>0</code>), komutun bellekteki baytları ve bu baytların assembly karşılığı. <code>b8</code> "eax'e sabit yükle" komutunun kodu, ardından gelen <code>2a 00 00 00</code> little endian yazılmış 42 sayısıdır. Satır <code>int kirkiki(void) { return 42; }</code> derlenerek gerçekten bu biçimde alındı. Adres solda durur; yazmaç değeri ve çalıştırma sayısı statik bir dökümde görünmez.</p></div></li>
+
+<li data-c="B" data-k="siber-3"><p class="q">Bir sürecin <code>/proc/self/maps</code> çıktısında <code>[stack]</code> satırının izin sütunu normalde hangisidir?</p>
+<ul class="sec"><li><code>r-xp</code></li><li><code>rw-p</code></li><li><code>rwxp</code></li><li><code>r--p</code></li><li><code>---p</code></li></ul>
+<div class="coz"><p>Yığın yerel değişkenleri ve dönüş adreslerini tutar; okunur ve yazılır olmalıdır, ama yürütülmemelidir. Bu yüzden izinler <code>rw-p</code>'dir (sondaki <code>p</code> özel, paylaşılmayan eşleme); bu ortamda <code>grep stack /proc/self/maps</code> da <code>rw-p</code> verdi. <code>r-xp</code> kod bölümünün iznidir. <code>rwxp</code> W^X ilkesine aykırıdır ve yığında görülmesi bir uyarı işaretidir. <code>r--p</code> salt okunur veriye, <code>---p</code> erişimi tamamen kapalı koruma sayfalarına aittir.</p></div></li>
+
+<li data-c="D" data-k="siber-4"><p class="q">Önyükleme zincirinde çekirdek açıldıktan sonra kullanıcı alanında başlatılan ilk süreç hangisidir ve PID'i kaçtır?</p>
+<ul class="sec"><li>Önyükleyici (GRUB), PID 0</li><li>Kabuk (bash), PID 1000</li><li>UEFI firmware, PID 1</li><li>init (bugünkü dağıtımların çoğunda systemd), PID 1</li><li><code>cron</code>, PID 2</li></ul>
+<div class="coz"><p>Zincir UEFI → önyükleyici → çekirdek + initramfs → init şeklindedir; çekirdeğin başlattığı ilk kullanıcı alanı süreci init'tir ve PID'i 1'dir. Bu makinede <code>ps -p 1 -o comm=</code> <code>systemd</code> verdi; bu parçadaki bütün hizmetleri başlatan da odur. Önyükleyici ve firmware çekirdekten önce çalışır, birer süreç değildir. Kabuk ve cron çok daha sonra, PID 1'in torunları ya da çocukları olarak başlar.</p></div></li>
+
+<li data-c="C" data-k="siber-5"><p class="q">Sıradan bir kullanıcının kabuğunda <code>grep CapEff /proc/self/status</code> komutu <code>CapEff:	0000000000000000</code> yazıyor. Bu ne anlama gelir?</p>
+<ul class="sec"><li>Süreç root'tur ve bütün yeteneklere sahiptir.</li><li>Sürecin seccomp filtresi kapalıdır.</li><li>Sürecin şu an etkin hiçbir yeteneği (capability) yoktur.</li><li>Süreç ASLR olmadan çalışmaktadır.</li><li>Sürecin <code>no_new_privs</code> bayrağı açıktır.</li></ul>
+<div class="coz"><p><code>CapEff</code>, sürecin o an etkin yetenek kümesini onaltılık bir bit maskesi olarak gösterir; her bit bir yeteneğe karşılık gelir ve hepsi sıfırsa hiçbiri yoktur. Root'un bütün yetenekleri açık olurdu, maske sıfır olmazdı; A bu yüzden yanlış. Seccomp durumu <code>Seccomp:</code>, <code>no_new_privs</code> durumu <code>NoNewPrivs:</code> satırında ayrıca görünür. ASLR'nin bu satırla ilgisi yoktur. Bu parçadaki <code>CapabilityBoundingSet=</code> seçeneği hizmetler için bu kümeyi daraltır.</p></div></li>
+
+<li data-c="A" data-k="siber-6"><p class="q">Bir birim dosyasının sonradan değiştirilip değiştirilmediğini anlamak için önceden kaydettiğin bir değerle karşılaştırma yapmak istiyorsun. Hangi işlem bu iş için uygundur?</p>
+<ul class="sec"><li>Dosyanın SHA-256 özetini (hash) önceden kaydedip şimdiki özetle karşılaştırmak</li><li>Dosyayı Base64 ile kodlayıp çıktının uzunluğuna bakmak</li><li>Dosyayı gzip ile sıkıştırıp sıkışma oranına bakmak</li><li>Dosyanın uzantısını denetlemek</li><li>Dosyanın UTF-8 olup olmadığını <code>file</code> ile sınamak</li></ul>
+<div class="coz"><p>Hash sabit uzunlukta bir parmak izi verir; dosyada tek bir bayt değişse özet tanınmayacak kadar değişir. Bu yüzden bütünlük denetiminin aracıdır. Base64 bir kodlamadır ve uzunluğu içerik değişse de aynı kalabilir. Sıkıştırma oranı ve uzantı içerikteki küçük bir değişikliği yakalamaz. <code>file</code> yalnız türü tahmin eder. Özetin kendisi de dosyayla aynı yerde tutulursa değiştirilebilir; kaydedilen değeri ayrı ve korunan bir yerde sakla.</p></div></li>
+
+<li data-c="E" data-k="siber-7"><p class="q">Konteynerlerde ve systemd hizmetlerinde bir süreç grubunun ne kadar işlemci ve bellek kullanabileceğini sınırlayan çekirdek mekanizması hangisidir?</p>
+<ul class="sec"><li>PID ad alanı</li><li>Anlık görüntü (snapshot)</li><li>Secure Boot</li><li>Hipervizör</li><li>cgroups (denetim grupları)</li></ul>
+<div class="coz"><p>Parça 7'deki ayrımda ad alanları sürecin <strong>ne gördüğünü</strong>, cgroups ise <strong>ne kadar kullandığını</strong> belirler. systemd her hizmeti kendi cgroup'una koyar; bu parçadaki <code>status</code> çıktısında <code>CGroup:</code> satırı ve <code>Tasks: 2 (limit: 9434)</code> bunun izidir. PID ad alanı yalnız süreç numaralarını yalıtır. Anlık görüntü VM diskini dondurur, Secure Boot önyüklemeyi doğrular, hipervizör ise sanal makine çalıştırır; hiçbiri kaynak sınırı koymaz.</p></div></li>
+
+<li data-c="B" data-k="siber-8"><p class="q">Dosya sistemi hiyerarşisi standardına (FHS) göre paket yöneticisinin kurduğu programlar ve paylaşılabilir, salt okunur veriler hangi dizinde durur?</p>
+<ul class="sec"><li><code>/etc</code></li><li><code>/usr</code></li><li><code>/var</code></li><li><code>/tmp</code></li><li><code>/home</code></li></ul>
+<div class="coz"><p><code>/usr</code> salt okunur, makineler arasında paylaşılabilir program ve veri ağacıdır; systemd'nin paket birimlerini <code>/usr/lib/systemd/system</code>'de tutması bu ilkeden gelir. <code>/etc</code> makineye özgü yapılandırmadır ve yöneticinin birimleri oradadır. <code>/var</code> değişken veri (günlükler, cron tabloları), <code>/tmp</code> geçici dosyalar, <code>/home</code> kullanıcı ev dizinleri içindir. Bu ayrım, "paketin dosyası" ile "yerel değişiklik"i birbirinden ayırmanın temelidir.</p></div></li>
+
+<li data-c="D" data-k="siber-9"><p class="q"><code>/etc/systemd</code> altında son iki gün içinde içeriği değişmiş normal dosyaları listelemek için hangi komut doğrudur?</p>
+<ul class="sec"><li><code>find /etc/systemd -type f -mtime +2</code></li><li><code>find /etc/systemd -type f -mmin -2</code></li><li><code>find /etc/systemd -type d -mtime -2</code></li><li><code>find /etc/systemd -type f -mtime -2</code></li><li><code>find /etc/systemd -name -2</code></li></ul>
+<div class="coz"><p><code>-mtime</code> içeriğin son değişme zamanını gün olarak sınar; <code>-2</code> "2 günden az önce", <code>+2</code> "2 günden fazla önce" demektir. <code>-type f</code> yalnız normal dosyaları seçer. Denemede bir gün önceye tarihlenen dosya <code>-mtime -2</code> ile, üç gün önceye tarihlenen <code>-mtime +2</code> ile çıktı. B dakika ölçer (son 2 dakika), C dizinleri arar, E adı "-2" olan dosyaları arar.</p></div></li>
+
+<li data-c="A" data-k="siber-10"><p class="q"><code>dpkg -S /usr/lib/systemd/system/cron.service</code> komutu <code>cron: /usr/lib/systemd/system/cron.service</code> yazıyor. Bu çıktı ne anlama gelir?</p>
+<ul class="sec"><li>Dosya <code>cron</code> paketinin kurduğu dosyalardan biridir.</li><li>Dosyanın içeriği paket veritabanındaki özetle karşılaştırılmış ve değişmemiş bulunmuştur.</li><li>Dosya imzalı olarak indirilmiş ve imzası doğrulanmıştır.</li><li><code>cron</code> hizmeti şu an çalışmaktadır.</li><li>Dosya hiçbir pakete ait değildir, yönetici eklemiştir.</li></ul>
+<div class="coz"><p><code>dpkg -S</code> yalnız sahipliği söyler: bu yol hangi paketin dosya listesinde geçiyor? Çıktı "paket: yol" biçimindedir; pakete ait olmayan bir yol için "no path found matching pattern" yazar ve 1 ile döner, bu ortamda iki durum da gözlendi. İçeriğin değişip değişmediğini <code>dpkg -V</code> sınar; B onu karıştırıyor. İmza doğrulaması APT'nin indirme sırasında yaptığı ayrı bir iştir. Hizmetin çalışıp çalışmadığını <code>systemctl is-active</code> söyler.</p></div></li>
+
+<li data-c="C" data-k="siber-11"><p class="q"><code>sudoers</code> dosyasının bir metin düzenleyiciyle doğrudan değil <code>visudo</code> ile düzenlenmesinin temel nedeni hangisidir?</p>
+<ul class="sec"><li><code>visudo</code> dosyayı şifreleyerek kaydeder.</li><li><code>visudo</code> her kural için kullanıcıya e-posta gönderir.</li><li><code>visudo</code> dosyayı kilitler, kaydetmeden önce sözdizimini denetler ve hatalı dosyayı yazmaz; bozuk bir sudoers herkesin <code>sudo</code> kullanmasını engelleyebilir.</li><li><code>visudo</code> olmadan sudoers dosyası okunamaz.</li><li><code>visudo</code> kuralları otomatik olarak en az yetkiye göre daraltır.</li></ul>
+<div class="coz"><p>sudoers'taki tek bir sözdizimi hatası sudo'nun dosyayı hiç okuyamamasına, yani yöneticinin kendini dışarıda bırakmasına yol açabilir. <code>visudo</code> aynı anda iki kişinin düzenlemesini kilitle önler, kaydetmeden önce dosyayı denetler ve hatalıysa yazmaz; <code>-c</code> yalnız denetler, <code>-f</code> başka bir dosya üzerinde çalışır. Dosyayı şifrelemez, e-posta göndermez ve kuralların içeriğini kendiliğinden daraltmaz; dar kural yazmak yöneticinin işidir.</p></div></li>
+
+<li data-c="E" data-k="siber-11"><p class="q">Bir sistemde <code>getent passwd www-data</code> çıktısı <code>www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin</code>. Son alandaki <code>/usr/sbin/nologin</code> için hangisi doğrudur?</p>
+<ul class="sec"><li>Hesabın parolası boştur ve herkes onunla giriş yapabilir.</li><li>Hesap root yetkisine sahiptir.</li><li>Hesap silinmiş, yalnız kaydı kalmıştır.</li><li>Bu hesapla çalışan web sunucusu da başlatılamaz.</li><li>Hesapla etkileşimli bir kabuk oturumu açılamaz; hizmet ise bu kimlikle çalışmaya devam edebilir.</li></ul>
+<div class="coz"><p>Sistem hesaplarının kabuğu bilerek <code>nologin</code> ya da <code>false</code> yapılır: biri bu hesapla oturum açmaya çalışırsa kibar bir iletiyle reddedilir. Hizmetin kendisi kabuk istemez; systemd ya da hizmetin kendi kodu süreci doğrudan bu UID ile çalıştırır, D bu yüzden yanlış. UID 33 sistem aralığındadır, root değildir. Parolanın durumu <code>/etc/passwd</code>'de değil <code>/etc/shadow</code>'dadır; ikinci alandaki <code>x</code> yalnız bunu gösterir.</p></div></li>
+
+<li data-c="B" data-k="siber-12"><p class="q">İzni <code>drwxrws---</code>, grubu <code>adm</code> olan <code>ortak</code> dizininde, birincil grubu <code>kullanici</code> olan biri <code>touch ortak/rapor</code> çalıştırıyor. Yeni dosyanın grubu ne olur?</p>
+<ul class="sec"><li><code>kullanici</code>, çünkü yeni dosya her zaman oluşturanın birincil grubunu alır</li><li><code>adm</code>, çünkü dizinde SGID biti (<code>s</code>) açık ve yeni dosyalar grubu dizinden alır</li><li><code>root</code>, çünkü SGID dosyayı root'a verir</li><li>Dosya oluşturulamaz, çünkü SGID biti yazmayı engeller</li><li>Dosyanın grubu boş kalır ve <code>chgrp</code> gerekir</li></ul>
+<div class="coz"><p>Dizinlerde SGID biti grup mirası sağlar: dizinde oluşturulan dosyalar grubu oluşturan süreçten değil dizinden alır. Grup üçlüsündeki <code>s</code> hem x'in hem SGID'in açık olduğunu gösterir. Bu ortamda aynı kurulumla oluşturulan dosyanın grubu gerçekten <code>adm</code> çıktı. A, SGID olmayan dizinler için doğrudur. SGID sahipliği root'a vermez ve yazmayı engellemez; yazma için dizinde w ve x yeter.</p></div></li>
+
+<li data-c="D" data-k="siber-12"><p class="q">Bir envanterde <code>-rw-rw-rw- 1 root root … /etc/systemd/system/yedek.service</code> satırı çıkıyor. Bu durum için en doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Sorun yoktur; dosyanın sahibi root olduğu için yalnız root değiştirebilir.</li><li>Sorun yoktur; birim dosyaları zaten salt okunur bağlanır.</li><li>Yalnız okunabilirlik sorunudur; içerik gizli kalmalıydı.</li><li>Ciddi bir risktir: her kullanıcı dosyayı değiştirip <code>ExecStart=</code>'ı istediği komutla değiştirebilir ve hizmet root olarak çalışırken o komut root yetkisiyle yürür; izin 644'e indirilmeli ve değişiklik geçmişi soruşturulmalıdır.</li><li>Risk yalnız hizmet etkinse vardır; disable etmek yeterlidir.</li></ul>
+<div class="coz"><p>Diğerleri için <code>w</code> açık olduğundan sahibinin root olması kimseyi engellemez; izin denetiminde yalnız sınıflardan biri seçilir ve diğerleri sınıfı yazabilir. Root adına çalışan bir şeyin tanımını herkesin yazabilmesi, doğrudan yetki yükseltme yoludur; cron da aynı nedenle grup ya da diğerlerinin yazabildiği sistem tablolarını çalıştırmaz. Düzeltme <code>chmod 644</code>, ardından dosyanın bir pakete ait olup olmadığını ve ne zaman değiştiğini sınamaktır. Disable etmek (E) yetmez; elle ya da bağımlılıkla başlatılabilir, dosya da yazılabilir kalır.</p></div></li>
+
+<li data-c="A" data-k="siber-13"><p class="q">Bash'te <code>sleep 100 &amp; p=$!; kill $p; wait $p; echo $?</code> çalıştırılıyor. Ekrana ne yazılır ve neden?</p>
+<ul class="sec"><li>143; <code>kill</code> sinyal belirtilmezse SIGTERM (15) gönderir ve sinyalle sonlanan sürecin çıkış durumu 128 + 15 olur</li><li>137; <code>kill</code> varsayılan olarak SIGKILL (9) gönderir</li><li>0; <code>sleep</code> sinyali yok sayıp başarıyla biter</li><li>1; <code>kill</code> komutu her zaman 1 ile döner</li><li>130; <code>kill</code> varsayılan olarak SIGINT (2) gönderir</li></ul>
+<div class="coz"><p>Sinyal adı verilmeyen <code>kill</code> SIGTERM gönderir; numarası 15'tir. Kabuk, sinyalle sonlanan bir sürecin durumunu 128 + sinyal numarası diye bildirir: 143. Komut bu ortamda çalıştırıldı ve <code>143</code> yazdı. 137 SIGKILL'in, 130 SIGINT'in (Ctrl+C) karşılığıdır; ikisi de varsayılan değildir. <code>sleep</code> SIGTERM için işleyici kurmadığından varsayılan davranışla sonlanır. systemd de bir hizmeti durdururken önce SIGTERM, süre dolarsa SIGKILL gönderir.</p></div></li>
+
+<li data-c="C" data-k="siber-13"><p class="q">Bir izleme betiğini terminalde <code>./izle.sh &amp;</code> ile arka planda başlattın; terminali kapatınca betik de durdu. Bunun nedeni ve kalıcı çözüm için en doğru seçenek hangisidir?</p>
+<ul class="sec"><li>Betik bellek yetersizliğinden öldü; çözüm daha çok RAM eklemektir.</li><li>Betik SIGKILL aldı; çözüm betiğin içine <code>trap '' KILL</code> eklemektir.</li><li>Terminal kapanınca oturumdaki işlere SIGHUP gönderilir; uzun süre çalışacak iş bir hizmet (systemd birimi) olarak çalıştırılmalıdır.</li><li>Arka plan işleri yalnız root ile çalışabilir; betik <code>sudo</code> ile başlatılmalıdır.</li><li>Betik arka planda çalışamaz; ön planda bırakılmalıdır.</li></ul>
+<div class="coz"><p>Terminal kapanınca kabuk ve ona bağlı işler SIGHUP alır; varsayılan davranış sonlanmaktır. Bir işin oturumdan bağımsız ve yeniden başlatmalardan sonra da yaşaması gerekiyorsa doğru yer bir hizmet yöneticisidir: systemd onu kendi cgroup'unda başlatır, çökerse yeniden başlatır, çıktısını günlüğe yazar. SIGKILL yakalanamaz ve yok sayılamaz, B bu yüzden boştur. Arka plan işinin root ile ilgisi yoktur ve <code>sudo</code> gereksiz yetki verir. Bellek yetersizliği bu belirtiyi açıklamaz.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-13">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-14">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-15">Sonraki parça: Linux'ta ağ yapılandırması →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"systemd unit file explained service timer"</li>
+  <li>"systemctl enable vs start mask"</li>
+  <li>"systemd service hardening systemd-analyze security"</li>
+  <li>"crontab syntax explained linux persistence detection"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>freedesktop.org'daki systemd kılavuz sayfalarına bu oturumda erişilemedi (HTTP 403). Bu yüzden systemd seçeneklerini kurulu sürümün (systemd 260) yerel kılavuz sayfalarından doğruladım: <code>systemd.exec</code> (<code>ProtectSystem=</code>, <code>ProtectHome=</code>, <code>PrivateTmp=</code>, <code>NoNewPrivileges=</code>, <code>DynamicUser=</code> ve 61184–65519 aralığı), <code>systemd.timer</code> (<code>AccuracySec=</code> varsayılanı 1 dakika, <code>Persistent=</code>, <code>RandomizedDelaySec=</code>), <code>systemd.unit</code> (arama dizinleri, drop-in önceliği, <code>[Install]</code>'ın yalnız <code>enable</code>'da okunması), <code>systemctl</code> (<code>enable</code>, <code>mask</code>), <code>systemd-run</code> ve <code>systemd-analyze</code> (puanın 0,0–10,0 aralığı ve sınırları).</li>
+  <li>crontab alanları, adım ve aralık sözdizimi, iki gün alanı birlikte kısıtlıyken "herhangi biri" kuralı, <code>%</code> işaretinin anlamı ve Debian'a özgü <code>/etc/cron.d</code>, <code>/var/spool/cron/crontabs</code>, <code>run-parts</code> ad kuralı ile sistem tablolarının root'a ait ve başkasınca yazılamaz olması koşulu yerel <code>crontab(5)</code> ve <code>cron(8)</code> kılavuzlarından doğrulandı.</li>
+  <li>MITRE ATT&amp;CK teknik numaraları ve savunma önerileri attack.mitre.org'dan doğrulandı: T1543.002 (Systemd Service), T1053.006 (Systemd Timers), T1053.003 (Cron).</li>
+  <li>systemd'nin 2010'da Poettering ve Sievers tarafından başlatılması, Fedora'nın 2011'de, Debian 8'in Nisan 2015'te onu varsayılan yapması ikincil kaynaklardan (Wikipedia, LWN, haber siteleri) doğrulandı; ilk sürümün kesin günü kaynaklar arasında farklı (30 Mart / 18 Mayıs 2010), bu yüzden metinde yalnız yıl verildi. Debian sürüm notlarını bu oturumda açmadım. SysV init ve runlevel kavramları hafızadan yazıldı.</li>
+  <li>Çıktısı gösterilen her şey bu ortamda gerçekten koştu (WSL2, Kali GNU/Linux Rolling, çekirdek 6.18, systemd 260, gcc): üç çözümlü örnek, "Kendi makinende dene"deki on adım ve quiz'deki C programı (4), <code>objdump</code> satırı, <code>[stack]</code> izni, PID 1, <code>CapEff</code>, <code>find -mtime</code>, <code>dpkg -S</code> çıktıları, <code>getent passwd www-data</code>, SGID dizin mirası, <code>kill</code> sonrası 143, <code>Mon..Fri 08..17:00/15</code> takvimi ve <code>ReadWritePaths=</code> denemesi çalıştırılarak doğrulandı. Envanter betiğindeki UYARI dalı, pakete ait olmayan sahte bir yolla ayrıca sınandı.</li>
+  <li>Root gerektiren hiçbir adım çalıştırılmadı: <code>systemctl edit</code>, <code>enable</code>, <code>disable</code>, <code>mask</code> ve <code>sudo ls /var/spool/cron/crontabs</code> yalnız metinde anlatıldı ("burada çalıştırılmadı"). Sertleştirme denemeleri root'suz kullanıcı yöneticisinde, <code>systemd-run --user</code> geçici birimleriyle yapıldı; bu birimlerde kısıtlar kullanıcı ad alanıyla kurulur ve bir sistem hizmetindeki uygulamayla birebir aynı değildir. <code>NoNewPrivileges</code> denemesi bir SUID-root programla değil, kendi derlenen ve üyesi olunan <code>adm</code> grubuna SGID verilmiş zararsız bir programla yapıldı.</li>
+  <li>Hiçbir birim etkinleştirilmedi, <code>~/.config/systemd/user</code> ve kullanıcı crontab'ı oluşturulmadı ya da değiştirilmedi; her geçici birim durduruldu, başarısız kalan bir deneme birimi <code>reset-failed</code> ile silindi ve son durum Adım 10'daki gibi denetlendi. Geçici dosyalar yalnız <code>/tmp</code> altındaki çalışma klasöründe tutuldu.</li>
+  <li>Sadeleştirmeler: çalışma klasörü yolu <code>/tmp/lab14</code> olarak yazıldı (gerçek denemeler başka bir <code>/tmp</code> alt klasöründe yapıldı); kullanıcı adı <code>kullanici</code>, ev dizini <code>/home/kullanici</code> olarak değiştirildi. Makine adının göründüğü günlük satırları <code>-n 0</code> ve <code>-q</code> ile çıktıya alınmadı. Adım 3'te <code>systemctl cat</code> çıktısı "…" ile kısaltıldı (tamamı anatomi bölümünde), logrotate.timer dosyası yalnız <code>[Timer]</code> ve <code>[Install]</code> bölümleriyle verildi. Zaman damgaları, PID'ler ve çağrı kimlikleri her çalıştırmada değişir.</li>
+  <li>Ortama özgü durumlar: WSL'de ModemManager ve smartmontools koşulları tutmadığı için çalışmıyor; bazı zamanlayıcılardaki Ağustos tarihleri makinenin uzun süre kapalı kalmasından. Laboratuvar VM'inde hizmet listesi, puanlar ve <code>/tmp</code> bağlama seçenekleri farklı olabilir; <code>/tmp</code> nosuid bağlıysa Adım 7'nin ilk satırı da 1000 verir.</li>
+  <li><code>systemd-analyze security</code>'nin kullanıcı birimlerinde <code>User=/DynamicUser=</code> kalemini "root olarak çalışıyor" diye saymasının nedeni, gözleme dayalı bir çıkarımdır; kılavuzda bu duruma özel bir açıklama bulmadım.</li>
+  <li>Saldırı sınırı: kalıcılık yalnız "nerede aranır, nasıl envantere çıkarılır, bulununca ne yapılır" düzeyinde anlatıldı; kalıcılık kurma, gizleme ya da tespitten kaçınma yöntemi verilmedi. Bütün pratik kendi makinede, salt okur ya da geçici birimlerle yapıldı (Parça 72–73).</li>
+  <li>Quiz soruları ve bütün örnekler bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

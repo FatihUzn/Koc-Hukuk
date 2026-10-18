@@ -67,7 +67,7 @@ Bu rafların en önemli kuralı: **her kod örneği gerçekten çalıştırılı
 - **Pratik yalnızca okurun kendi bilgisayarında ya da açıkça izinli bir laboratuvarda yapılır.** Gerçek ya da başkasına ait sistemler asla hedef gösterilmez. Ağ tarama, paket dinleme, istek atma gibi her örnekte hedef açıkça `localhost` ya da "kendi izinli laboratuvarın" olarak sabitlenir ve bu sınır örneğin metninde tekrarlanır.
 - Gerçek sistemlere karşı kullanılabilecek bir araç ya da betik yazılmaz. Kod rafındaki "basit tarayıcı", "web isteği inceleyici" gibi projeler kendi makineni/izinli laboratuvarını tanımak içindir; bunları genel bir saldırı aracına dönüştürecek özellikler (geniş ağ taraması, kimlik denemesi, sömürü) eklenmez.
 - Örnek verirken dolandırıcıya/saldırgana yol gösterecek ayrıntı verilmez; her zaman **savunma tarafı** anlatılır.
-- Hukuki ve etik sınır `siber.md` Parça 41–43'e bağlanır; teknik parçalar da bu sınıra kısa bir cümleyle gönderme yapar.
+- Hukuki ve etik sınır `siber.md` Parça 72–73'e bağlanır; teknik parçalar da bu sınıra kısa bir cümleyle gönderme yapar.
 
 ## Doğruluk ve kaynak
 

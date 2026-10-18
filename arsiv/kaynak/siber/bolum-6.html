@@ -1,0 +1,624 @@
+<article class="chapter ders" id="c-siber-6">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 6 · Veri gösterimi</div>
+<h1>Bir bayt dizisi ne anlatır: karakter kodlama, dosya biçimi ve kodlama–hash–şifreleme ayrımı</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir yapılandırma dosyasında <code>parola: cGFyb2xhMTIz</code> satırını görüyorsun; dosyayı yazan kişi "parolayı şifreledim" diyor. Aynı gün bir müşteri adı veritabanında "GÃ¼l" diye görünüyor, bir e-postanın ekindeki <code>fatura.pdf</code> ise açılınca resim çıkıyor. Bu üç olayın ortak noktası ne? Bilgisayar baytların ne anlama geldiğini nereden biliyor ve "okunmaz görünen" bir şey ne zaman gerçekten gizlidir?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (bit, bayt, onaltılık gösterim ve <code>xxd</code> ile bayt okumak), Parça 3 (bellekte bayt sırası, little/big endian). Kod rafından: Parça 3 (<code>str</code>, <code>encode</code>/<code>decode</code>, <code>ord</code>/<code>chr</code>), Parça 7 (metin ve ikili dosya, <code>encoding="utf-8"</code>), Parça 18 (<code>sha256sum</code>, <code>gzip</code>). Bütün komutları kendi makinende çalıştıracaksın; Linux ya da WSL yeter.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 1'de gördün: bellekte ve diskte yalnızca baytlar var, yani 0 ile 255 arasında sayılar. <code>48 65 6c 6c 6f</code> dizisini harf diye okursan "Hello" olur, piksel diye okursan beş gri ton, işlemci komutu diye okursan başka bir şey. Baytlar kendi anlamlarını taşımaz; anlamı, yazanla okuyanın uyduğu bir <strong>sözleşme</strong> verir. Bu parçanın konusu bu sözleşmelerdir.</p>
+
+<p>Dört soruya cevap arayacağız: Bir harf nasıl bayta dönüşür ve "Ã¼" gibi bozuk karakterler neden çıkar? Bir dosyanın türünü bilgisayar uzantıdan mı, içindeki baytlardan mı anlar? En önemlisi: <strong>kodlama, şifreleme ve hash üç ayrı işlemdir</strong>; üçünün çıktısı da anlamsız bir harf yığını gibi görünür, ama biri herkes tarafından geri çevrilir, biri yalnız anahtar sahibi tarafından, biri hiç kimse tarafından. Son olarak: sıkıştırma bu tabloda nereye oturur?</p>
+
+<p>Bu ayrımlar güvenlikte sürekli karıştırılır ve her karışıklık aynı sonucu doğurur: <strong>yanlış güven duygusu</strong>. Şifrelemenin nasıl çalıştığını Parça 42–43'te, hash fonksiyonlarının iç özelliklerini Parça 44'te, parola saklamayı Parça 45'te göreceksin. Burada amaç, hangisinin ne olduğunu ve ne olmadığını kesin biçimde ayırmak.</p>
+
+<h2 class="s">Karakter kodlama: bir harf nasıl bayta dönüşür?</h2>
+
+<p>Bilgisayar harf bilmez, sayı bilir. Bir metni saklamak için her karaktere bir sayı vermek ve o sayıyı baytlarla yazmak gerekir. Bu iki adım çoğu zaman birbirine karıştırılır, oysa ayrı şeylerdir: önce "bu karakterin numarası kaç?", sonra "bu numarayı hangi baytlarla yazacağım?".</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Karakter</strong>, yazının soyut bir birimidir ("küçük g harfi", "avro işareti"). <strong>Kod noktası</strong> (code point), karaktere verilen numaradır; Unicode'da <code>U+</code> ile ve onaltılık yazılır: ğ için <code>U+011F</code>. <strong>Karakter kodlaması</strong> (character encoding), kod noktalarını bayt dizisine çeviren ve bayttan geri çeviren kural kümesidir: UTF-8, UTF-16, Windows-1254 birer kodlamadır. Ekranda gördüğün şekil ise <strong>glif</strong>tir ve yazı tipine aittir; aynı karakter farklı yazı tiplerinde farklı çizilir.</p></div>
+
+<h3>ASCII: 128 karakterlik ilk anlaşma</h3>
+
+<p>1960'larda yerleşen ASCII, 128 karaktere 0'dan 127'ye kadar numara verdi: İngiliz harfleri, rakamlar, noktalama ve ekranda görünmeyen <strong>denetim karakterleri</strong> (satır sonu <code>0x0A</code>, satır başı <code>0x0D</code>, sekme <code>0x09</code>). 128 değer 7 bite sığar; ASCII'de baytın en soldaki biti hep 0'dır. "A" <code>0x41</code>, "a" <code>0x61</code>: büyük ve küçük harfi tek bir bit (<code>0x20</code>) ayırır.</p>
+
+<p>ASCII'de ç, ğ, ı, ö, ş, ü yoktu. Boşta kalan sekizinci bit 128 yeni değer açıyordu ve herkes bu yeri kendi diline göre doldurdu: <strong>kod sayfaları</strong> doğdu. Batı Avrupa için ISO-8859-1 (Latin-1), Türkçe için ISO-8859-9 (Latin-5) ve Microsoft'un Windows-1254'ü (cp1254). Sorun şuydu: aynı bayt farklı kod sayfasında farklı harfti. cp1254'te <code>0xFE</code> "ş" iken Latin-1'de aynı bayt "þ"dir. Hangi kod sayfasının kullanıldığı dosyada yazmıyordu; okuyan tahmin ediyordu. Eski Türkçe sitelerdeki "Þiþli" ve "ýðdýr" yazılarının kaynağı budur.</p>
+
+<h3>Unicode: her karaktere tek bir numara</h3>
+
+<p>Unicode bu karmaşayı tek bir numara uzayıyla çözdü: dünyadaki bütün yazı sistemlerinin karakterlerine tek ve kalıcı bir kod noktası. Numara uzayı <code>U+0000</code>'dan <code>U+10FFFF</code>'e kadar uzanır; bu 1.114.112 olası kod noktası demektir ve 65.536'lık 17 "düzlem"e bölünür. Günlük karakterlerin neredeyse tamamı ilk düzlemdedir; emojiler ve tarihî yazılar üst düzlemlerdedir. Eylül 2025'teki Unicode 17.0 sürümünde 159.801 karakter tanımlıydı. İlk 128 kod noktası ASCII ile, ilk 256'sı Latin-1 ile aynıdır: "ü" (<code>U+00FC</code>) yine 252'dir.</p>
+
+<p>Ama Unicode yalnızca numarayı verir; numaranın baytlara nasıl yazılacağını söylemez. Bunun için birkaç kodlama biçimi var: <strong>UTF-32</strong> her kod noktasını düz 4 baytla yazar (basit ama savurgan); <strong>UTF-16</strong> çoğu karakteri 2, üst düzlemdekileri 4 baytla yazar ve Windows'un iç dünyasında, Java'da, JavaScript'te yaygındır; <strong>UTF-8</strong> 1 ile 4 bayt arası değişken uzunluk kullanır ve bugün web'in, Linux'un ve ağ protokollerinin varsayılanıdır.</p>
+
+<h3>UTF-8 nasıl çalışır?</h3>
+
+<p>UTF-8'in tasarımında iki hedef vardı: ASCII metin hiç değişmeden geçerli UTF-8 olsun ve bir bayt dizisinin ortasından okumaya başlayan program bile karakter sınırını bulabilsin. Kural, ilk baytın baştaki bitlerinin kaç bayt geleceğini söylemesi, devam baytlarının hep <code>10</code> ile başlamasıdır. Kesin tanım RFC 3629'dadır:</p>
+
+<div class="tablo"><table>
+<tr><th>Kod noktası aralığı</th><th>Bayt kalıbı</th><th>Bayt</th><th>Taşınan bit</th><th>Örnek</th></tr>
+<tr><td><code>U+0000</code>–<code>U+007F</code></td><td><code>0xxxxxxx</code></td><td>1</td><td>7</td><td>A → <code>41</code></td></tr>
+<tr><td><code>U+0080</code>–<code>U+07FF</code></td><td><code>110xxxxx 10xxxxxx</code></td><td>2</td><td>11</td><td>ğ → <code>C4 9F</code></td></tr>
+<tr><td><code>U+0800</code>–<code>U+FFFF</code></td><td><code>1110xxxx 10xxxxxx 10xxxxxx</code></td><td>3</td><td>16</td><td>€ → <code>E2 82 AC</code></td></tr>
+<tr><td><code>U+10000</code>–<code>U+10FFFF</code></td><td><code>11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</code></td><td>4</td><td>21</td><td>😀 → <code>F0 9F 98 80</code></td></tr>
+</table></div>
+
+<p>Tabloyu oku. 127'ye kadar olan kod noktası tek bayttır, en soldaki bit 0'dır: ASCII ile birebir aynı. Daha büyük kod noktalarında ilk bayt <code>110</code>, <code>1110</code> ya da <code>11110</code> ile başlar; baştaki 1'lerin sayısı toplam bayt sayısıdır. Devam baytları hep <code>10</code> ile başlar. Böylece bir program herhangi bir baytın karakterin başı mı ortası mı olduğunu anlar; bozuk bir bayt yalnız bir karakteri bozar. ASCII baytları çok baytlı bir karakterin içinde asla görünmez, bu yüzden <code>/</code> arayan eski bir program UTF-8 metinde yanlış yere takılmaz.</p>
+
+<p>RFC 3629 iki yasak daha koyar. <code>U+D800</code>–<code>U+DFFF</code> aralığı UTF-16'nın vekil çiftlerine ayrılmıştır ve UTF-8'de yazılamaz. Bir karakter gereğinden uzun da yazılamaz: "/" tek bayttır (<code>2F</code>); onu <code>C0 AF</code> diye iki baytla yazmak <strong>aşırı uzun</strong> (overlong) ve geçersiz bir dizidir. Kural güvenlik yüzünden vardır: aynı karakterin iki bayt biçimi olsaydı, bir denetim birine bakıp öbürünü kaçırabilirdi. RFC'nin güvenlik bölümü 2001'de bir web sunucusunda bunun yaşandığını not eder ve çözücülerin geçersiz dizileri reddetmesini zorunlu tutar. Bu tür sorunların ayrıntısı (kanonikleştirme, Unicode tuzakları) Parça 39'da; burada aklında kalacak olan, <strong>doğru bir UTF-8 çözücünün bozuk diziyi kabul etmediğidir</strong>.</p>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="ğ harfinin kod noktası U+011F'nin on bir bitinin UTF-8'in iki baytlık kalıbına yerleştirilmesi; sonuç C4 9F">
+  <text class="sv-b" x="200" y="22" text-anchor="middle">ğ = U+011F = 287</text>
+  <text class="sv-s" x="200" y="42" text-anchor="middle">11 bit: 00100 011111</text>
+  <rect class="sv-l" x="40" y="58" width="130" height="34" rx="6" />
+  <text class="sv-t" x="105" y="80" text-anchor="middle">00100</text>
+  <rect class="sv-m" x="200" y="58" width="160" height="34" rx="6" />
+  <text class="sv-t" x="280" y="80" text-anchor="middle">011111</text>
+  <line class="sv-cl" x1="105" y1="92" x2="105" y2="128" />
+  <line class="sv-cl" x1="280" y1="92" x2="280" y2="128" />
+  <rect class="sv-k" x="20" y="130" width="170" height="40" rx="6" />
+  <text class="sv-b" x="105" y="156" text-anchor="middle">110 00100</text>
+  <rect class="sv-k" x="210" y="130" width="170" height="40" rx="6" />
+  <text class="sv-b" x="295" y="156" text-anchor="middle">10 011111</text>
+  <text class="sv-s" x="105" y="190" text-anchor="middle">"iki baytlık başlangıç"</text>
+  <text class="sv-s" x="295" y="190" text-anchor="middle">"devam baytı"</text>
+  <rect class="sv-a" x="60" y="208" width="90" height="36" rx="6" />
+  <text class="sv-b" x="105" y="231" text-anchor="middle">C4</text>
+  <rect class="sv-a" x="250" y="208" width="90" height="36" rx="6" />
+  <text class="sv-b" x="295" y="231" text-anchor="middle">9F</text>
+  <text class="sv-s" x="200" y="264" text-anchor="middle">bellekte ve dosyada: C4 9F</text>
+</svg>
+<figcaption>UTF-8'in iki baytlık kalıbı 11 bit taşır. ğ'nin kod noktası (287) 11 bite yazılır, ilk 5 bit <code>110</code> önekli başlangıç baytına, son 6 bit <code>10</code> önekli devam baytına girer. Mor ve yeşil kutular kod noktasının parçaları, gri kutular kalıp, turuncu kutular dosyaya yazılan baytlardır.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: ğ ve € harflerini elle UTF-8'e çevirmek</span>
+<p><strong>Soru:</strong> ğ (<code>U+011F</code>) ve € (<code>U+20AC</code>) karakterlerinin UTF-8 baytlarını elle bul, sonra Python ile doğrula.</p>
+<p><strong>Adım 1.</strong> ğ için aralığı belirle: <code>0x011F</code> = 287; 127'den büyük, 2047'den (<code>0x07FF</code>) küçük. O hâlde 2 bayt, kalıp <code>110xxxxx 10xxxxxx</code>, 11 bitlik yer var.</p>
+<p><strong>Adım 2.</strong> 287'yi 11 bitle ikili yaz: <code>0x011F</code> = <code>001 0001 1111</code>, yani <code>00100011111</code> (Parça 1'deki gibi her hex haneyi dört bite aç, baştaki fazla sıfırları at, 11 bite tamamla).</p>
+<p><strong>Adım 3.</strong> Bitleri kalıba dök: ilk 5 bit <code>00100</code> birinci bayta, son 6 bit <code>011111</code> ikinci bayta. Birinci bayt <code>110 00100</code> = <code>1100 0100</code> = <code>0xC4</code>; ikinci bayt <code>10 011111</code> = <code>1001 1111</code> = <code>0x9F</code>.</p>
+<p><strong>Adım 4.</strong> € için aralık: <code>0x20AC</code> = 8364; 2047'den büyük, 65535'ten küçük. O hâlde 3 bayt, kalıp <code>1110xxxx 10xxxxxx 10xxxxxx</code>, 16 bitlik yer.</p>
+<p><strong>Adım 5.</strong> 16 bit: <code>0010 0000 1010 1100</code>. İlk 4 bit <code>0010</code>, sonraki 6 bit <code>000010</code>, son 6 bit <code>101100</code>. Baytlar: <code>1110 0010</code> = <code>0xE2</code>, <code>10 000010</code> = <code>0x82</code>, <code>10 101100</code> = <code>0xAC</code>.</p>
+<p><strong>Adım 6.</strong> Python ile doğrula. <code>encode("utf-8")</code> metni baytlara çevirir, <code>hex(" ")</code> baytları boşlukla ayrılmış onaltılık yazar (kod rafı Parça 3).</p>
+<pre class="kod" data-ad="python3 harfler.py">for harf in ["A", "ç", "ğ", "ş", "€", "😀"]:
+    b = harf.encode("utf-8")
+    print(f"{harf}  U+{ord(harf):04X}  {len(b)} bayt  {b.hex(' ')}")
+
+kelime = "şifre"
+print(len(kelime), "karakter,", len(kelime.encode("utf-8")), "bayt")
+print(bytes([0xC4, 0x9F]).decode("utf-8"))</pre>
+<pre class="cikti">A  U+0041  1 bayt  41
+ç  U+00E7  2 bayt  c3 a7
+ğ  U+011F  2 bayt  c4 9f
+ş  U+015F  2 bayt  c5 9f
+€  U+20AC  3 bayt  e2 82 ac
+😀  U+1F600  4 bayt  f0 9f 98 80
+5 karakter, 6 bayt
+ğ</pre>
+<p><strong>Adım 7.</strong> Çıktıyı oku: elle bulduğun <code>c4 9f</code> ve <code>e2 82 ac</code> birebir çıktı. Türkçe harfler 2 bayt, avro 3, emoji 4. "şifre" 5 karakter ama 6 bayt, çünkü yalnız "ş" iki bayt. Son satırda <code>C4 9F</code> yine ğ'ye döndü.</p>
+<p><strong>Sonuç:</strong> ğ = <code>C4 9F</code>, € = <code>E2 82 AC</code>. Karakter sayısı bayt sayısı değildir; "en çok 20 karakter" sınırı UTF-8'de 80 bayta kadar çıkabilir. C'de sabit boyutlu bir tampon ayırırken (Parça 3, Parça 60) bu fark bir bellek hatasının başlangıcı olabilir.</p></div>
+
+<p>"şifre" UTF-16'da 10, UTF-32'de 20 bayt tutar. UTF-16'da baytların sırası sorusu da doğar; Parça 3'teki endianness burada geri döner: ğ UTF-16LE'de <code>1F 01</code>, UTF-16BE'de <code>01 1F</code> yazılır. Sırayı bildirmek için dosyanın başına <code>U+FEFF</code> konabilir; buna <strong>bayt sırası işareti</strong> (BOM) denir. UTF-8'de sıra sorunu yoktur, ama bazı Windows programları UTF-8 dosyalara da <code>EF BB BF</code> diye BOM yazar; bu üç bayt bir betiğin <code>#!/bin/bash</code> satırını bozabilir ya da "aynı" iki metni farklı gösterebilir.</p>
+
+<h3>Bozuk karakter (mojibake): yanlış sözleşmeyle okumak</h3>
+
+<p>Japoncadan gelen <strong>mojibake</strong> sözcüğü, metnin yanlış kodlamayla çözülmesinden çıkan anlamsız karakterleri anlatır. Mekanizma her zaman aynıdır: baytlar bir kodlamayla yazılmış, başka bir kodlamayla okunmuştur. Baytlar bozulmamıştır; bozulan, onları yorumlayan sözleşmedir. Bu yüzden mojibake çoğu zaman onarılabilir, ama yanlış onarım ya da "bilinmeyen karakteri değiştir" seçeneği veriyi kalıcı olarak yok edebilir.</p>
+
+<p>Üç tipik görüntü vardır ve her biri sana ne olduğunu söyler. <strong>Bir harf yerine iki tuhaf harf</strong> ("Ã¼", "ÅŸ") görüyorsan, UTF-8 baytları tek baytlık bir kod sayfasıyla (Latin-1 ya da cp1254) okunmuştur: iki baytlık ü, iki ayrı karakter olarak çözülmüştür. <strong>Soru işaretli eşkenar dörtgen</strong> (�, <code>U+FFFD</code>, "yerine koyma karakteri") görüyorsan, tek baytlık bir kod sayfasıyla yazılmış baytlar UTF-8 diye okunmuş ve geçersiz diziler bu işaretle değiştirilmiştir. <strong>Harf sayısı doğru ama harfler yanlış</strong> ("Þiþli") ise iki farklı tek baytlık kod sayfası (cp1254 ve Latin-1) karışmıştır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: mojibake'yi üretmek, teşhis etmek ve onarmak</span>
+<p><strong>Soru:</strong> "Güvenlik şifresi" metni bir sistemde "GÃ¼venlik ÅŸifresi" diye, başka bir sistemde "G�venlik �ifresi" diye görünüyor. Her birinde ne olmuş, hangisi onarılabilir?</p>
+<p><strong>Adım 1.</strong> İki durumu bilinçli olarak üreten bir betik yaz. <code>encode</code> ile metni bir kodlamada bayta çevir, <code>decode</code> ile başka bir kodlamada geri oku.</p>
+<pre class="kod" data-ad="python3 bozuk.py">metin = "Güvenlik şifresi"
+
+utf8 = metin.encode("utf-8")
+print("UTF-8 baytları :", utf8.hex(" "))
+print("cp1254 sanılırsa:", utf8.decode("cp1254"))
+
+eski = metin.encode("cp1254")
+print("cp1254 baytları:", eski.hex(" "))
+try:
+    eski.decode("utf-8")
+except UnicodeDecodeError as hata:
+    print("UTF-8 sanılırsa:", hata)
+print("replace ile    :", eski.decode("utf-8", errors="replace"))
+
+bozuk = utf8.decode("cp1254")
+print("onarım         :", bozuk.encode("cp1254").decode("utf-8"))</pre>
+<pre class="cikti">UTF-8 baytları : 47 c3 bc 76 65 6e 6c 69 6b 20 c5 9f 69 66 72 65 73 69
+cp1254 sanılırsa: GÃ¼venlik ÅŸifresi
+cp1254 baytları: 47 fc 76 65 6e 6c 69 6b 20 fe 69 66 72 65 73 69
+UTF-8 sanılırsa: 'utf-8' codec can't decode byte 0xfc in position 1: invalid start byte
+replace ile    : G�venlik �ifresi
+onarım         : Güvenlik şifresi</pre>
+<p><strong>Adım 2.</strong> İlk durumu çöz: UTF-8'de ü <code>c3 bc</code>'dir. cp1254 tablosunda <code>c3</code> "Ã", <code>bc</code> "¼" karakteridir; ş'nin <code>c5 9f</code> baytları da "Å" ve "Ÿ" olur. Yani UTF-8 yazılmış, cp1254 diye okunmuş.</p>
+<p><strong>Adım 3.</strong> İkinci durumu çöz: cp1254'te ü tek bayttır, <code>fc</code>. İkili yazınca <code>1111 1100</code>; UTF-8 tablosunda böyle başlayan bir bayt yoktur. Python'un varsayılan <code>strict</code> hata işleyicisi burada istisna fırlatır ("invalid start byte"). <code>errors="replace"</code> ise geçersiz baytı � ile değiştirip devam eder.</p>
+<p><strong>Adım 4.</strong> Onarılabilirliği değerlendir. İlk durumda bayt kaybolmadı: bozuk metni cp1254 ile yeniden bayta çevirip UTF-8 ile okuyunca özgün metin geldi. İkinci durumda <code>replace</code> çıktısı kaydedilirse ü ile ş'nin yerinde yalnız � kalır; harf bilgisi gitmiştir.</p>
+<p><strong>Sonuç:</strong> "Ã¼" geri çevrilebilir; "�" kaydedildiyse veri kaybolmuştur ve onarım için özgün baytlara dönmek gerekir. Ham veriyi dönüştürmeden önce olduğu gibi saklamak bu yüzden iyi bir alışkanlıktır.</p></div>
+
+<h3>Kodlamanın güvenlikteki yüzü</h3>
+
+<p>Mojibake bir görüntü sorunu gibi durur, ama savunmada üç somut etkisi vardır. <strong>İzleme körlüğü</strong>: günlüklerde (Parça 17) "şifre" arayan bir kural, kayıt "ÅŸifre" diye yazılmışsa hiçbir şey bulamaz. <strong>Karşılaştırma hataları</strong>: iki sistem aynı kullanıcı adını farklı baytlarla saklıyorsa biri "aynı kişi", öbürü "farklı kişi" der; yetki denetimi bu farka dayanırsa sonuç öngörülemez. <strong>Uzunluk</strong>: sabit boyutlu alanda çok baytlı bir karakterin ortasından kesilen metin geçersiz UTF-8 olur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Baytlar kodlamalarını kendileri söylemez; kodlamayı sen açıkça söylersin.</strong> Neden: aynı bayt dizisi her kodlamada başka bir metindir ve tahmin yanılır. Kural: Metni dış dünyadan alırken (dosya, ağ, veritabanı) hemen bilinen bir kodlamayla çöz, program içinde metin olarak işle, dışarı yazarken yine açıkça kodla; yeni her şeyde UTF-8 kullan. Python'da dosyayı her zaman <code>open(yol, encoding="utf-8")</code> diye aç (kod rafı Parça 7). Çözemediğin baytı sessizce değiştirmek yerine hatayı gör ve kaynağı düzelt.</p></div>
+
+<p>"Açıkça" sözcüğünün nedeni: Python 3.13'te <code>encoding</code> verilmeden açılan dosya yerel ayara göre çözülür; Linux'ta genellikle UTF-8, Türkçe bir Windows'ta cp1254 olabilir ve aynı betik iki makinede farklı sonuç verir. PEP 686, Python 3.15'ten başlayarak varsayılanı her yerde UTF-8 yapmayı öngörüyor; yine de açıkça yazmak sürümden bağımsız tek güvenli yoldur.</p>
+
+<h2 class="s">Metin dosyası, ikili dosya ve sihirli baytlar</h2>
+
+<p>İşletim sistemi açısından "metin dosyası" diye ayrı bir tür yoktur: her dosya bir bayt dizisidir. <strong>Metin</strong> dediğimiz dosyanın baytları bir karakter kodlamasıyla okununca anlamlı karakterlere ve satırlara dönüşür. <strong>İkili</strong> (binary) dosyanın baytları ise başka bir yapı (piksel, makine komutu, sıkıştırılmış veri) olarak yorumlanır; içinde <code>0x00</code> dahil her değer görünebilir. Metinde boş bayt neredeyse hiç bulunmadığı için birçok araç ikili dosyayı ona bakarak tahmin eder; <code>grep</code>'in "binary file matches" demesi böyle bir tahmindir.</p>
+
+<p>Metin dosyalarında bile bir sözleşme farkı vardır: <strong>satır sonu</strong>. Linux satırı <code>0A</code> (LF) ile, Windows <code>0D 0A</code> (CR LF) ile bitirir. Windows'ta yazılmış bir kabuk betiği Linux'ta "<code>$'\r': command not found</code>" hatası verir, çünkü kabuk sondaki <code>0D</code>'yi komutun parçası sanır. Bu parçanın örneklerini çalıştırmadan önce <code>sed -i 's/\r$//'</code> ile bu baytları silmem bu yüzden gerekti.</p>
+
+<h3>Dosya biçimi ve sihirli bayt</h3>
+
+<p>Bir resim, bir arşiv ya da bir program, baytlarının nasıl düzenleneceğini belirleyen bir <strong>dosya biçimine</strong> (file format) göre yazılır. Biçimlerin çoğu, dosyanın ilk birkaç baytına sabit bir imza koyar. Okuyan program bu imzaya bakıp "bu bir PNG, öyle okuyacağım" der. Bu imzaya <strong>sihirli bayt</strong> ya da <strong>sihirli sayı</strong> (magic bytes, magic number) denir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sihirli bayt</strong>, bir dosya biçiminin dosyanın belirli bir konumuna (çoğunlukla en başına) koyduğu sabit bayt dizisidir. Dosyanın türünü adından bağımsız olarak, içeriğinden tanımayı sağlar. <strong>Dosya uzantısı</strong> (<code>.png</code>, <code>.pdf</code>) ise yalnızca adın bir parçasıdır; işletim sistemine ve kullanıcıya "bunu hangi programla açayım" ipucu verir, içerik hakkında hiçbir şey kanıtlamaz.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Biçim</th><th>İlk baytlar (hex)</th><th>ASCII görünümü</th><th>Not</th></tr>
+<tr><td>PNG resmi</td><td><code>89 50 4E 47 0D 0A 1A 0A</code></td><td><code>.PNG....</code></td><td>Her baytın bir görevi var (aşağıda).</td></tr>
+<tr><td>ZIP arşivi</td><td><code>50 4B 03 04</code></td><td><code>PK..</code></td><td>DOCX, XLSX, JAR, APK de içte ZIP'tir.</td></tr>
+<tr><td>gzip</td><td><code>1F 8B</code></td><td><code>..</code></td><td><code>.gz</code>, <code>.tar.gz</code> dosyaları.</td></tr>
+<tr><td>PDF belgesi</td><td><code>25 50 44 46 2D</code></td><td><code>%PDF-</code></td><td>Ardından sürüm gelir: <code>1.4</code> gibi.</td></tr>
+<tr><td>ELF programı</td><td><code>7F 45 4C 46</code></td><td><code>.ELF</code></td><td>Linux'ta çalıştırılabilir dosya (Parça 2).</td></tr>
+<tr><td>Windows programı</td><td><code>4D 5A</code></td><td><code>MZ</code></td><td><code>.exe</code>, <code>.dll</code> dosyaları.</td></tr>
+<tr><td>JPEG resmi</td><td><code>FF D8 FF</code></td><td><code>...</code></td><td>Sonraki bayt alt türe göre değişir.</td></tr>
+</table></div>
+
+<p>PNG imzası iyi düşünülmüş bir tasarımdır. Belirtimin gerekçe bölümüne göre ilk bayt <code>0x89</code> bilerek ASCII dışı seçilmiştir: metnin PNG sanılmasını zorlaştırır ve sekizinci biti silen eski aktarım yollarını yakalar. Sonraki üç bayt "PNG" yazar. <code>0D 0A</code> satır sonlarını değiştiren hatalı aktarımı ortaya çıkarır, <code>1A</code> eski MS-DOS'ta ekrana basmayı durdurur, son <code>0A</code> ters yöndeki dönüşümü yakalar. Sekiz bayt hem "ben PNG'yim" der hem "yolda bozuldum mu?" sorusuna erken cevap verir.</p>
+
+<p>Linux'taki <code>file</code> komutu türü tahmin etmek için üç grup sınamayı sırayla uygular: dosya sistemi sınamaları (dizin mi, boş mu?), <strong>sihirli sınamalar</strong> (bilinen imzalar belirli konumlarda var mı?) ve dil sınamaları (metinse hangi kodlamada?). İlk başarılı sınama sonucu belirler. <code>file</code> uzantıya bakmaz, ama verdiği bir <strong>tahmindir</strong>; kılavuz sayfası da dil sınamalarının en az güvenilir grup olduğunu söyler. Aşağıdaki denemede yalnız "şifre" yazan 7 baytlık bir metni <code>file</code>'ın "OpenPGP Secret Key" sandığını göreceksin.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Uzantısı .pdf, demek ki PDF" ya da "tarayıcı image/png dedi, demek ki resim" diye düşünmek.</strong> Uzantıyı dosyayı gönderen koyar; yüklenen dosyanın türünü bildiren <code>Content-Type</code> başlığı da istemciden gelir (Parça 31). Windows'ta bilinen uzantıların gizlenmesi, <code>fatura.pdf.exe</code> adlı bir programın <code>fatura.pdf</code> diye görünmesine yol açabilir; Dosya Gezgini'nde uzantıları görünür yapmak basit bir korunmadır. Sihirli bayt daha iyi bir ipucudur ama yalnız ilk baytlara bakar: bir dosya baştan bir biçime benzeyip devamında başka şey taşıyabilir. Doğrusu: türü içerikten belirle, yalnız izin verdiğin türleri kabul et, mümkünse dosyayı sağlam bir ayrıştırıcıyla açıp yeniden kaydet. Dosya yükleme savunması Parça 39'da.</p></div>
+
+<h2 class="s">Üç ayrı şey: kodlama, şifreleme ve hash</h2>
+
+<p>Veriyi başka biçime çeviren işlemlerin çıktısı birbirine benzer: anlamsız bir harf ve rakam yığını. Onları iki kesin soru ayırır: <strong>Anahtar gerekiyor mu?</strong> <strong>Geri dönülebiliyor mu, dönülebiliyorsa kim dönebiliyor?</strong></p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kodlama</strong> (encoding): veriyi başka bir gösterime çevirir ki bir sistemden öbürüne bozulmadan geçsin. Anahtar yoktur, yöntem herkese açıktır, herkes geri çevirir. Amaç uyumluluktur, gizlilik değil. Örnekler: UTF-8, Base64, URL (yüzde) kodlaması, hex.</p>
+<p><strong>Şifreleme</strong> (encryption): veriyi, yalnız doğru <strong>anahtara</strong> sahip olanın geri çevirebileceği biçime sokar. Yöntem herkese açık olabilir, olmalıdır da; gizli olan yalnız anahtardır (Kerckhoffs ilkesi, Parça 42). Amaç gizliliktir. Örnek: AES.</p>
+<p><strong>Hash</strong> (özet): veriden sabit uzunlukta bir <strong>parmak izi</strong> üretir. Anahtar yoktur ve geri dönüş yoktur: özetten veriyi elde etmenin bir yöntemi yoktur. Amaç bütünlük ve tanımadır: "bu veri o veri mi?". Örnek: SHA-256.</p>
+<p><strong>Sıkıştırma</strong> (compression): veriyi daha az baytla yazar. Anahtar yoktur, herkes açar. Amaç yer ve hız kazanmaktır. Örnek: gzip.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Aynı veri dört ayrı işlemden geçiyor: kodlama, sıkıştırma, şifreleme ve hash; yalnız şifrelemede anahtar var, hash'te geri dönüş yok">
+  <text class="sv-b" x="200" y="20" text-anchor="middle">"parola123" verisi dört işlemden geçiyor</text>
+  <rect class="sv-k" x="10" y="40" width="110" height="50" rx="6" />
+  <text class="sv-b" x="65" y="62" text-anchor="middle">Kodlama</text>
+  <text class="sv-s" x="65" y="80" text-anchor="middle">Base64</text>
+  <line class="sv-c" x1="120" y1="65" x2="160" y2="65" />
+  <text class="sv-t" x="165" y="62">cGFyb2xhMTIz</text>
+  <text class="sv-s" x="165" y="80">anahtar yok · herkes geri çevirir</text>
+  <rect class="sv-m" x="10" y="110" width="110" height="50" rx="6" />
+  <text class="sv-b" x="65" y="132" text-anchor="middle">Sıkıştırma</text>
+  <text class="sv-s" x="65" y="150" text-anchor="middle">gzip</text>
+  <line class="sv-c" x1="120" y1="135" x2="160" y2="135" />
+  <text class="sv-t" x="165" y="132">1f 8b 08 00 …</text>
+  <text class="sv-s" x="165" y="150">anahtar yok · herkes açar</text>
+  <rect class="sv-l" x="10" y="180" width="110" height="50" rx="6" />
+  <text class="sv-b" x="65" y="202" text-anchor="middle">Şifreleme</text>
+  <text class="sv-s" x="65" y="220" text-anchor="middle">AES + anahtar</text>
+  <line class="sv-cl" x1="120" y1="205" x2="160" y2="205" />
+  <text class="sv-t" x="165" y="202">rastgele görünen baytlar</text>
+  <text class="sv-s" x="165" y="220">yalnız anahtar sahibi geri çevirir</text>
+  <rect class="sv-a" x="10" y="250" width="110" height="50" rx="6" />
+  <text class="sv-b" x="65" y="272" text-anchor="middle">Hash</text>
+  <text class="sv-s" x="65" y="290" text-anchor="middle">SHA-256</text>
+  <line class="sv-c" x1="120" y1="275" x2="160" y2="275" />
+  <text class="sv-t" x="165" y="272">64 hex hane, sabit uzunluk</text>
+  <text class="sv-s" x="165" y="290">geri dönüş yok · yalnız karşılaştırılır</text>
+  <text class="sv-s" x="200" y="322" text-anchor="middle">Gizlilik yalnız mor satırda var; o da anahtarın gizli kalmasına bağlı.</text>
+</svg>
+<figcaption>Dört işlemin çıktısı da "okunmaz" görünür, ama ayıran iki soru şudur: anahtar var mı, geri dönüş var mı? Yalnızca şifreleme anahtar kullanır; yalnızca hash geri döndürülemez. Kodlama ile sıkıştırma ise herkesin açabildiği, kamuya açık dönüşümlerdir.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Kodlama</th><th>Sıkıştırma</th><th>Şifreleme</th><th>Hash</th></tr>
+<tr><td>Amaç</td><td>Biçim uyumu, güvenli taşıma</td><td>Yer ve süre kazanmak</td><td>Gizlilik</td><td>Bütünlük, tanıma</td></tr>
+<tr><td>Anahtar var mı?</td><td>Yok</td><td>Yok</td><td>Var</td><td>Yok (anahtarlı türü HMAC, Parça 44)</td></tr>
+<tr><td>Geri dönülür mü?</td><td>Evet, herkes</td><td>Evet, herkes</td><td>Evet, yalnız anahtar sahibi</td><td>Hayır</td></tr>
+<tr><td>Çıktı boyu</td><td>Değişir (Base64'te yaklaşık üçte bir büyür)</td><td>Çoğunlukla küçülür</td><td>Girdiye yakın, küçük bir ekle</td><td>Sabit (SHA-256'da 32 bayt)</td></tr>
+<tr><td>Gizlilik sağlar mı?</td><td>Hayır</td><td>Hayır</td><td>Evet, doğru kullanılırsa</td><td>Bunun için tasarlanmadı; tahmin edilebilir girdiyi ele verir</td></tr>
+<tr><td>Örnek araç</td><td><code>base64</code>, <code>xxd</code>, <code>iconv</code></td><td><code>gzip</code>, <code>zip</code></td><td><code>openssl</code>, <code>gpg</code></td><td><code>sha256sum</code></td></tr>
+</table></div>
+
+<h3>Base64: okunmaz görünür, ama gizli değildir</h3>
+
+<p>E-posta, JSON, HTTP başlıkları gibi kanallar metin için tasarlanmıştır; içinden rastgele baytlar geçirirsen boş bayt, satır sonu ya da tırnak kanalı bozar. <strong>Base64</strong> her bayt dizisini yalnızca 64 güvenli ASCII karakteriyle yazar. RFC 4648'e göre alfabe: 0–25 için <code>A</code>–<code>Z</code>, 26–51 için <code>a</code>–<code>z</code>, 52–61 için <code>0</code>–<code>9</code>, 62 için <code>+</code>, 63 için <code>/</code>. Girdi 3'er baytlık (24 bitlik) gruplara bölünür, her grup 6'şar bitlik dört parçaya ayrılır ve her parça bir karakterle yazılır (64 = 2<sup>6</sup>). Son grup eksikse sıfırla tamamlanır ve eksik yerine <code>=</code> dolgusu konur. Çıktı girdiden yaklaşık üçte bir büyüktür.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: "Kim" ve "Ki" sözcüklerini elle Base64'e çevirmek</span>
+<p><strong>Soru:</strong> "Kim" ve "Ki" ASCII metinlerinin Base64 karşılığını elle bul; sonra bir HTTP başlığındaki Base64'ün anahtarsız çözüldüğünü göster.</p>
+<p><strong>Adım 1.</strong> Baytları yaz: K = <code>0x4B</code>, i = <code>0x69</code>, m = <code>0x6D</code>. İkili: <code>01001011 01101001 01101101</code>.</p>
+<p><strong>Adım 2.</strong> 24 biti 6'şarlık gruplara böl: <code>010010</code> <code>110110</code> <code>100101</code> <code>101101</code>. Onluk: 18, 54, 37, 45.</p>
+<p><strong>Adım 3.</strong> Alfabeden karşılıkları bul: 18 → <code>S</code> (A'dan 18 sonra); 54 → 54 − 52 = 2, rakamlar bölgesi → <code>2</code>; 37 → 37 − 26 = 11, küçük harf bölgesinde 11. harf → <code>l</code>; 45 → 45 − 26 = 19 → <code>t</code>. Sonuç: <code>S2lt</code>.</p>
+<p><strong>Adım 4.</strong> "Ki" yalnızca 2 bayt, 16 bit: <code>01001011 01101001</code>. 6'şarlık gruplar <code>010010</code> <code>110110</code> <code>1001</code>; son grup 4 bit kaldığı için sağdan iki sıfırla tamamlanır: <code>100100</code> = 36 → 36 − 26 = 10 → <code>k</code>. Üç karakter çıktı, dördüncü karakterin yerine dolgu konur: <code>S2k=</code>. Tek bayt olsaydı iki dolgu karakteri olurdu.</p>
+<p><strong>Adım 5.</strong> Python ile doğrula ve bir adım ileri git. HTTP'nin "Basic" kimlik doğrulaması (RFC 7617) kullanıcı adını ve parolayı iki noktayla birleştirip Base64 ile kodlayarak <code>Authorization</code> başlığına koyar.</p>
+<pre class="kod" data-ad="python3 kodla.py">import base64
+from urllib.parse import quote, quote_plus, unquote
+
+for veri in [b"Kim", b"Ki", b"K"]:
+    print(veri, "-&gt;", base64.b64encode(veri).decode())
+
+gizli = base64.b64encode(b"admin:parola123").decode()
+print("Basic", gizli)
+print(base64.b64decode(gizli))
+
+print(base64.b64encode(bytes([0xFB, 0xFF])).decode(),
+      base64.urlsafe_b64encode(bytes([0xFB, 0xFF])).decode())
+
+adres = quote("şifre güvenli?")
+print(adres)
+print(quote_plus("şifre güvenli?"))
+print(unquote(adres))</pre>
+<pre class="cikti">b'Kim' -&gt; S2lt
+b'Ki' -&gt; S2k=
+b'K' -&gt; Sw==
+Basic YWRtaW46cGFyb2xhMTIz
+b'admin:parola123'
++/8= -_8=
+%C5%9Fifre%20g%C3%BCvenli%3F
+%C5%9Fifre+g%C3%BCvenli%3F
+şifre güvenli?</pre>
+<p><strong>Adım 6.</strong> Çıktıyı oku. İlk üç satır elle bulduğun sonuçları ve "K"nin iki dolgu karakterini doğruluyor. Dördüncü satır ağdan geçen bir <code>Authorization</code> başlığının değeri; beşinci satır anahtarsız, tek bir çağrıyla parolayı geri veriyor. RFC 7617 bu yüzden Basic kimlik doğrulamanın TLS olmadan kullanılmamasını söyler.</p>
+<p><strong>Sonuç:</strong> "Kim" → <code>S2lt</code>, "Ki" → <code>S2k=</code>. Base64'ü çözmek için sır gerekmez; RFC 4648'in güvenlik bölümü de Base64'ün hesaplamalı bir gizlilik sağlamadığını yazar.</p></div>
+
+<p>Altıncı satır bir ayrıntıyı gösteriyor: <code>+</code> ve <code>/</code> URL'lerde ve dosya adlarında özel anlam taşıdığı için RFC 4648 <strong>base64url</strong> alfabesini de tanımlar; 62 için <code>-</code>, 63 için <code>_</code>. Parça 37'deki JWT belirteçleri base64url ile kodlanır: imzalıdır, yani değiştirilirse anlaşılır, ama şifreli değildir; içi herkesçe okunur.</p>
+
+<h3>URL (yüzde) kodlaması</h3>
+
+<p>URL'de bazı karakterlerin özel görevi vardır: <code>/</code> yolu böler, <code>?</code> sorguyu başlatır, <code>&amp;</code> parametreleri ayırır. RFC 3986 harfleri, rakamları ve <code>- . _ ~</code> işaretlerini "ayrılmamış" sayar ve olduğu gibi yazar; geri kalan her bayt <code>%</code> ve iki hex haneyle yazılır: boşluk <code>%20</code>, soru işareti <code>%3F</code>. Türkçe harfler önce UTF-8 baytlarına çevrilir: ş'nin <code>C5 9F</code> baytları <code>%C5%9F</code> olur. Çıktıdaki ikinci satır HTML formlarının kuralını gösteriyor: orada boşluk <code>+</code> yazılır.</p>
+
+<p>Yüzde kodlaması da gizlilik sağlamaz; üstelik URL'ler, yolda şifrelense bile, tarayıcı geçmişinde ve sunucu günlüklerinde düz metin durur. RFC 3986 bu yüzden gizli kullanıcı adı ya da parolanın URL'ye konmamasını söyler.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Parolayı Base64'le sakladım, artık güvende."</strong> Base64, hex ya da yüzde kodlaması bir sırrı yalnızca okunması zor hâle getirir; dosyayı, günlüğü ya da trafiği gören herkes onu saniyeler içinde geri çevirir. Kodlanmış bir sır, düz metin sırla aynı derecede açıktadır, üstelik sahibine sahte bir güven verdiği için daha az korunur. Doğrusu: sırrın ne için tutulduğuna bak. Bir hizmete bağlanmak için sır gerekiyorsa sır yönetimi aracı, sıkı dosya izinleri (Parça 12, 18) ya da gerçek şifreleme kullan; şifrelediysen anahtarı aynı yerde tutma. Kullanıcı parolasını doğrulamak içinse onu hiç geri çevrilebilir biçimde saklama; tuzlu ve yavaş bir parola özeti kullan (Parça 45). Sırların depoya ve günlüğe sızması da Parça 58'in konusu.</p></div>
+
+<h3>Hash'e ilk bakış: verinin parmak izi</h3>
+
+<p>Bir hash fonksiyonu, her uzunlukta girdiyi alır ve sabit uzunlukta bir çıktı, yani <strong>özet</strong> üretir. SHA-256'nın özeti her zaman 256 bittir: 32 bayt, onaltılık yazınca 64 hane. Bir harf de versen, bir film de versen boy değişmez. Üç özelliği bilmen bu parça için yeterli. <strong>Belirlenimlidir</strong>: aynı girdi her zaman, her makinede aynı özeti verir; bu yüzden iki tarafın elindeki veriyi göndermeden karşılaştırabilirsin. <strong>Küçük değişiklik büyük fark yaratır</strong>: girdide tek bir bit değişince özet tanınmayacak kadar değişir; buna çığ etkisi denir. <strong>Tek yönlüdür</strong>: özetten girdiyi hesaplamanın bilinen bir yolu yoktur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Hash fonksiyonu</strong>, keyfi uzunluktaki veriyi sabit uzunlukta bir özete çeviren, aynı girdiye hep aynı özeti veren ve özetten girdiye geri dönülemeyen fonksiyondur. Özet, verinin <strong>parmak izi</strong> gibi kullanılır: dosyanın indirilirken bozulup bozulmadığını, iki dosyanın aynı olup olmadığını, bir delilin değiştirilip değiştirilmediğini söyler. Hangi özelliklerin tam olarak ne anlama geldiği, MD5 ile SHA-1'in neden emekliye ayrıldığı ve özet ile kimlik doğrulamanın birleştirilmesi (HMAC) Parça 44'te.</p></div>
+
+<p>"Hash'i çözmek" diye bir işlem yoktur; çözülecek bir anahtar yoktur. "Kırılmış parola özeti" denince olan şudur: biri olası parolaları deneyip özetlerini hesaplamış ve eşleşeni bulmuştur. Bu yüzden "123456" gibi tahmin edilebilir bir girdinin özeti girdiyi neredeyse ele verir; tablodaki "gizlilik için tasarlanmadı" ifadesi bunu kastediyor (ayrıntı Parça 45).</p>
+
+<h3>Sıkıştırma: küçültür, gizlemez</h3>
+
+<p>Sıkıştırma, verideki tekrarı kullanarak aynı bilgiyi daha az baytla yazar: aynı satırı iki bin kez içeren bir günlük çok iyi sıkışır, çünkü tekrar kısa bir göndermeyle yazılır. Rastgele veri ise sıkışmaz; desen yoksa kısaltılacak bir şey de yoktur. Bu, kodlama ile şifrelemeyi ayırmak için kullanışlı bir sezgi verir.</p>
+
+<pre class="kod" data-ad="python3 sikistir.py">import base64, gzip, random
+
+gunluk = "".join(f"2026-10-16 10:{i % 60:02d}:00 giris basarisiz kullanici=deneme\n"
+                 for i in range(2000)).encode()
+rastgele = random.Random(6).randbytes(len(gunluk))
+b64 = base64.b64encode(gunluk)
+
+for ad, veri in [("günlük metni", gunluk), ("Base64 hâli", b64),
+                 ("rastgele bayt", rastgele)]:
+    kucuk = gzip.compress(veri, compresslevel=9, mtime=0)
+    print(f"{ad:14} {len(veri):7} bayt -&gt; {len(kucuk):7} bayt  (%{100*len(kucuk)/len(veri):.1f})")</pre>
+<pre class="cikti">günlük metni    106000 bayt -&gt;     857 bayt  (%0.8)
+Base64 hâli     141336 bayt -&gt;    1306 bayt  (%0.9)
+rastgele bayt   106000 bayt -&gt;  106053 bayt  (%100.0)</pre>
+
+<p>Çıktıyı oku. Tekrarlı günlük yüzde 1'in altına indi. Base64 hâli önce üçte bir büyüdü, ama yine aynı oranda sıkıştı: Base64 deseni yok etmiyor, yalnızca başka harflerle yazıyor. Rastgele baytlar küçülmedi, gzip başlığı yüzünden 53 bayt büyüdü. İyi bir şifrelemenin çıktısı da rastgele baytlardan ayırt edilemez olmalıdır (Parça 43). Buradan bir sağduyu sınaması çıkar: "şifrelenmiş" denen veri gzip ile belirgin küçülüyorsa büyük olasılıkla şifreli değildir. Tersi kanıt değildir: sıkışmayan veri zaten sıkıştırılmış olabilir. Rastgele veri tohumlu (<code>random.Random(6)</code>) üretildiği için sayılar sende de aynı çıkmalı.</p>
+
+<p>Sıkıştırılmış dosya da gizli değildir; <code>gzip -d</code> herkesin elindedir. Parolalı ZIP ise sıkıştırmanın yanına şifreleme ekler ve güvenliği yönteme bağlıdır: eski "ZipCrypto" zayıf, AES tabanlı yöntem çok daha güçlü sayılır.</p>
+
+<h2 class="s">Bu ayrımlar neden sürekli karıştırılıyor?</h2>
+
+<p>Karışıklığın üç kaynağı var. İlki <strong>dil</strong>: Türkçede "şifre" hem parola hem şifreleme yöntemi için kullanılır; bu raf bu yüzden gizli sözcüğe <strong>parola</strong>, veriyi anahtarla okunmaz kılmaya <strong>şifreleme</strong> der. İkincisi <strong>görünüş</strong>: <code>cGFyb2xhMTIz</code>, bir SHA-256 özeti ve AES çıktısı gözüne aynı derecede anlamsız görünür, ama anlaşılmazlık korumaz; korumayı yalnızca anahtarın gizliliği sağlar. Üçüncüsü <strong>alışkanlık</strong>: eski belgelerde ve forumlarda "MD5 ile şifrele", "Base64 şifreleme" gibi yanlış ifadeler kopyalandıkça yayılır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>"Okunmaz görünüyor" ile "gizli" aynı şey değildir; gizlilik sorusu "anahtar nerede?" diye sorulur.</strong> Neden: kodlama ve sıkıştırma kamuya açık yöntemlerdir, herkes geri çevirir; hash geri çevrilmez ama tahmin edilen girdiyle karşılaştırılabilir. Kural: Bir verinin korunduğu söylendiğinde iki soru sor: Hangi işlem uygulandı? Bir anahtar varsa nerede ve kim erişebiliyor? Anahtar yoksa ya da verinin hemen yanında duruyorsa, o veri korunmuyordur.</p></div>
+
+<p>Yanlış seçim çoğu zaman yanlış soruyla başlar. Aşağıdaki tablo, "ne istiyorum?" sorusundan doğru işleme gitmeni sağlar. Satırların ayrıntılarını ileriki parçalarda göreceksin; burada amaç yalnızca doğru kutuyu seçmek.</p>
+
+<div class="tablo"><table>
+<tr><th>Ne istiyorsun?</th><th>Doğru işlem</th><th>Yanlış ama sık yapılan seçim</th></tr>
+<tr><td>İkili veriyi metin kanalından (JSON, e-posta) bozmadan geçirmek</td><td>Kodlama (Base64)</td><td>Bunun gizlilik de sağladığını sanmak</td></tr>
+<tr><td>Veriyi yalnız belirli kişiler okusun</td><td>Şifreleme (Parça 42–43, 46)</td><td>Base64 ya da sıkıştırma</td></tr>
+<tr><td>İndirilen dosya bozulmuş mu, değiştirilmiş mi?</td><td>Hash ile karşılaştırma (Parça 44); kaynağın da doğrulanması için imza</td><td>Dosya boyutuna ya da adına bakmak</td></tr>
+<tr><td>Kullanıcı parolasını doğrulamak için saklamak</td><td>Tuzlu, yavaş parola özeti (Parça 45)</td><td>Düz hash, şifreleme ya da Base64</td></tr>
+<tr><td>Arşivin yerini küçültmek</td><td>Sıkıştırma</td><td>Küçültmenin veriyi gizlediğini sanmak</td></tr>
+<tr><td>Metni farklı sistemlerde aynı okumak</td><td>Karakter kodlaması: her yerde açıkça UTF-8</td><td>Varsayılan kodlamaya güvenmek</td></tr>
+</table></div>
+
+<p>Bir sınır notu: bu parçadaki her bilgi, kendi verini doğru korumak ve başkasının yanlış güvenini fark edip düzeltmek içindir. Kodlamanın ya da dosya biçiminin inceliklerini başkasının sistemindeki bir denetimi aşmak için kullanmak, hem bu rafın sınırının dışındadır hem de izinsiz erişim olarak suç sayılabilir. Yasal ve etik çerçeve Parça 72–73'te.</p>
+
+<h2 class="s">Kendi makinende dene: baytları, biçimleri ve dönüşümleri gözünle görmek</h2>
+
+<p>Bütün adımlar kendi bilgisayarında, kendi oluşturduğun dosyalarla yapılır; hiçbir yere bağlanman gerekmez. Linux'ta ya da Windows'ta WSL içinde bir terminal aç, boş bir klasör oluştur ve içine geç (<code>mkdir -p ~/lab/veri &amp;&amp; cd ~/lab/veri</code>). Aşağıdaki çıktılar WSL2 üzerinde Kali Linux, <code>file</code> 5.47 ve Python 3.13.12 ile alındı.</p>
+
+<h3>Adım 1: Terminalin UTF-8 konuştuğunu doğrula</h3>
+<pre class="kod" data-ad="bash">locale charmap</pre>
+<pre class="cikti">UTF-8</pre>
+<p>Bu komut kabuğun karakterleri hangi kodlamayla yorumladığını söyler. <code>UTF-8</code> görmüyorsan (ör. <code>ANSI_X3.4-1968</code>, yani düz ASCII) aşağıdaki Türkçe örnekler sende farklı bayt üretir ya da ekranda bozuk görünür; o durumda <code>export LANG=C.UTF-8</code> ile oturumu UTF-8'e geçir.</p>
+
+<h3>Adım 2: Harflerin baytlarını <code>xxd</code> ile gör</h3>
+<pre class="kod" data-ad="bash">printf 'A' | xxd
+printf 'ğ' | xxd
+printf 'ğ' | xxd -b
+printf '€ş' | xxd</pre>
+<pre class="cikti">00000000: 41                                       A
+00000000: c49f                                     ..
+00000000: 11000100 10011111                                      ..
+00000000: e282 acc5 9f                             .....</pre>
+<p>Satır satır: "A" tek bayt, <code>41</code>. "ğ" iki bayt, <code>c4 9f</code>; sağdaki noktalar, <code>xxd</code>'nin bu baytları yazdırılabilir ASCII saymadığını gösterir. <code>-b</code> aynı baytları bit bit yazar: <code>110</code> önekli başlangıç ve <code>10</code> önekli devam baytı, şekildeki kalıp. Son satırda € ve ş yan yana, beş bayt. <code>echo</code> yerine <code>printf</code> kullandık, çünkü <code>echo</code> sona <code>0a</code> ekler.</p>
+
+<h3>Adım 3: Mojibake üret ve kod sayfası baytlarına bak</h3>
+<pre class="kod" data-ad="bash">printf 'Güvenlik şifresi\n' | iconv -f cp1254 -t utf-8
+printf 'Güvenlik şifresi\n' | iconv -f utf-8 -t cp1254 &gt; eski.txt
+xxd eski.txt
+file eski.txt</pre>
+<pre class="cikti">GÃ¼venlik ÅŸifresi
+00000000: 47fc 7665 6e6c 696b 20fe 6966 7265 7369  G.venlik .ifresi
+00000010: 0a                                       .
+eski.txt: ISO-8859 text</pre>
+<p>İlk komut UTF-8 baytlarını <code>iconv</code>'a "bunlar cp1254" diye veriyor; "Ã¼" ve "ÅŸ" aynen çıkıyor. İkinci komut metni gerçekten cp1254'e çeviriyor: ü yerine tek bayt <code>fc</code>, ş yerine <code>fe</code> var; dosya 19 değil 17 bayt. <code>file</code> dosyanın UTF-8 olmadığını anlıyor ama hangi kod sayfası olduğunu bilemiyor: "ISO-8859 text". Tek baytlık kod sayfaları baytlara bakarak kesin ayırt edilemez; kodlamanın ayrıca bildirilmesi bu yüzden gerekir.</p>
+
+<h3>Adım 4: Satır sonlarını ve <code>file</code>'ın tahminini sına</h3>
+<pre class="kod" data-ad="bash">printf 'satir1\nsatir2\n' &gt; lf.txt
+printf 'satir1\r\nsatir2\r\n' &gt; crlf.txt
+printf 'şifre\n' &gt; turkce.txt
+printf 'Güvenlik şifresi\n' &gt; turkce2.txt
+printf '\xef\xbb\xbfGüvenlik şifresi\n' &gt; bomlu.txt
+xxd crlf.txt
+file lf.txt crlf.txt turkce.txt turkce2.txt bomlu.txt</pre>
+<pre class="cikti">00000000: 7361 7469 7231 0d0a 7361 7469 7232 0d0a  satir1..satir2..
+lf.txt:      ASCII text
+crlf.txt:    ASCII text, with CRLF line terminators
+turkce.txt:  OpenPGP Secret Key
+turkce2.txt: Unicode text, UTF-8 text
+bomlu.txt:   Unicode text, UTF-8 (with BOM) text</pre>
+<p>İlk satırda Windows usulü satır sonlarını görüyorsun: her satırın sonunda <code>0d0a</code>. <code>file</code> bunu fark edip "with CRLF line terminators" diye not düşüyor. Üçüncü dosya bu adımın asıl dersi: içinde yalnızca "şifre" yazan 7 baytlık metin <code>file</code>'a göre bir "OpenPGP Secret Key". Dosyanın ilk baytı <code>c5</code>, <code>file</code>'ın imza veritabanındaki bir kurala tesadüfen uyuyor ve sihirli sınama dil sınamasından önce geldiği için o kazanıyor. Aynı harfleri içeren daha uzun metin doğru tanınıyor; BOM'lu dosya da ayrıca işaretleniyor. Sonuç: <code>file</code> iyi bir yardımcıdır ama verdiği bir tahmindir, özellikle küçük dosyalarda yanılabilir.</p>
+
+<h3>Adım 5: Kendi ürettiğin dosyaların sihirli baytlarını oku</h3>
+<p>Önce dört biçimde birer küçük dosya üreten bir Python betiği yaz. Betik 1×1 piksellik bir PNG, bir ZIP, bir gzip ve tek boş sayfalık bir PDF oluşturuyor; hiçbirini internetten indirmiyorsun. Ardından küçük bir C programı derle (kod rafı Parça 26).</p>
+<pre class="kod" data-ad="python3 olustur.py">import struct, zlib, zipfile, gzip
+
+def parca(tur, veri):
+    govde = tur + veri
+    return struct.pack("&gt;I", len(veri)) + govde + struct.pack("&gt;I", zlib.crc32(govde))
+
+# 1x1 beyaz PNG
+ihdr = struct.pack("&gt;IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+idat = zlib.compress(b"\x00\xff\xff\xff")
+png = b"\x89PNG\r\n\x1a\n" + parca(b"IHDR", ihdr) + parca(b"IDAT", idat) + parca(b"IEND", b"")
+open("resim.png", "wb").write(png)
+
+# ZIP arşivi
+with zipfile.ZipFile("arsiv.zip", "w") as z:
+    z.writestr("not.txt", "merhaba\n")
+
+# gzip
+with gzip.GzipFile("not.txt.gz", "wb", mtime=0) as g:
+    g.write(b"merhaba\n")
+
+# En küçük PDF (tek boş sayfa)
+nesneler = [
+    b"&lt;&lt; /Type /Catalog /Pages 2 0 R &gt;&gt;",
+    b"&lt;&lt; /Type /Pages /Kids [3 0 R] /Count 1 &gt;&gt;",
+    b"&lt;&lt; /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] &gt;&gt;",
+]
+pdf = b"%PDF-1.4\n"
+konumlar = []
+for i, n in enumerate(nesneler, 1):
+    konumlar.append(len(pdf))
+    pdf += f"{i} 0 obj\n".encode() + n + b"\nendobj\n"
+xref = len(pdf)
+pdf += f"xref\n0 {len(nesneler)+1}\n0000000000 65535 f \n".encode()
+for k in konumlar:
+    pdf += f"{k:010d} 00000 n \n".encode()
+pdf += f"trailer\n&lt;&lt; /Size {len(nesneler)+1} /Root 1 0 R &gt;&gt;\nstartxref\n{xref}\n%%EOF\n".encode()
+open("belge.pdf", "wb").write(pdf)</pre>
+<pre class="kod" data-ad="merhaba.c">#include &lt;stdio.h&gt;
+
+int main(void) {
+    puts("merhaba");
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">python3 olustur.py
+gcc -Wall -Wextra -o merhaba merhaba.c
+file resim.png arsiv.zip not.txt.gz belge.pdf merhaba
+for f in resim.png arsiv.zip not.txt.gz belge.pdf merhaba; do head -c 8 "$f" | xxd; done</pre>
+<pre class="cikti">resim.png:  PNG image data, 1 x 1, 8-bit/color RGB, non-interlaced
+arsiv.zip:  Zip archive data, made by v2.0 UNIX, extract using at least v2.0, last modified Oct 16 2026 15:48:54, uncompressed size 8, method=store
+not.txt.gz: gzip compressed data, was "not.txt", max compression, original size modulo 2^32 8
+belge.pdf:  PDF document, version 1.4, 1 page(s)
+merhaba:    ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=538a7cea3f5cf71f2cc2781cfb690bbf8e5aebee, for GNU/Linux 3.2.0, not stripped
+00000000: 8950 4e47 0d0a 1a0a                      .PNG....
+00000000: 504b 0304 1400 0000                      PK......
+00000000: 1f8b 0808 0000 0000                      ........
+00000000: 2550 4446 2d31 2e34                      %PDF-1.4
+00000000: 7f45 4c46 0201 0100                      .ELF....</pre>
+<p><code>file</code> beşini de doğru tanıdı ve imzadan sonraki alanları da okudu: PNG'nin boyutu, ZIP'in yöntemi, ELF'in 64 bitlik ve "LSB" yani little endian olduğu (Parça 3). ZIP satırındaki tarih ve ELF'in <code>BuildID</code>'si sende farklı olacak. İlk sekiz baytta tablodaki imzaların hepsi var: PNG'nin sekiz baytı belirtimdeki gibi, ZIP <code>PK</code>, PDF <code>%PDF-1.4</code>, ELF <code>7f</code> ve "ELF" ile başlıyor; gzip'te <code>1f 8b</code>'den sonraki <code>08</code> sıkıştırma yöntemini (deflate) gösteriyor.</p>
+
+<h3>Adım 6: Uzantıyı değiştir, içeriğin değişmediğini gör</h3>
+<pre class="kod" data-ad="bash">cp resim.png rapor.pdf
+file rapor.pdf
+file --mime-type rapor.pdf belge.pdf</pre>
+<pre class="cikti">rapor.pdf: PNG image data, 1 x 1, 8-bit/color RGB, non-interlaced
+rapor.pdf: image/png
+belge.pdf: application/pdf</pre>
+<p>Dosyanın adı <code>.pdf</code> ile bitiyor ama içerik PNG; <code>file</code> ada değil baytlara bakıyor. <code>--mime-type</code> aynı sonucu web'in kullandığı tür adıyla veriyor. Bu dosyayı bir resim görüntüleyiciyle açabilirsin, bir PDF okuyucuyla açmaya çalışırsan hata alırsın. Bir sunucunun yüklenen dosyayı adına göre değil içeriğine göre sınıflandırması gerektiğinin en kısa kanıtı bu üç satır.</p>
+
+<h3>Adım 7: Base64'ü kodla ve anahtarsız geri çöz</h3>
+<pre class="kod" data-ad="bash">printf 'parola123' | base64
+echo 'parola123' | base64
+printf 'cGFyb2xhMTIz' | base64 -d; echo</pre>
+<pre class="cikti">cGFyb2xhMTIz
+cGFyb2xhMTIzCg==
+parola123</pre>
+<p>İlk satır, parçanın başındaki "şifrelenmiş parola"nın ta kendisi. İkinci satır sık düşülen bir tuzağı gösteriyor: <code>echo</code> sona <code>0a</code> eklediği için kodlanan veri 10 bayt oldu ve çıktı <code>Cg==</code> ile bitti; iki komutun çıktısını karşılaştıran biri "aynı parola, farklı sonuç" diye şaşırır. Üçüncü satırda <code>-d</code> ile çözme yapıyoruz: ne parola sordu ne anahtar. Sondaki <code>echo</code>, yalnızca imleç bir alt satıra geçsin diye var. Bu üç satır, Base64'ün neden bir gizlilik aracı olmadığını tek başına anlatıyor.</p>
+
+<h3>Adım 8: Özetin sabit boyunu ve çığ etkisini gör</h3>
+<pre class="kod" data-ad="bash">printf 'Merhaba dünya' | sha256sum
+printf 'Merhaba dünyA' | sha256sum
+head -c 1000000 /dev/zero | sha256sum</pre>
+<pre class="cikti">44a4b2f143db852b7df0b40111e1aba8aaf64e7fe2508744284b0ec7448a4610  -
+5801e7a674ada7d06324f14756479bf59e5adb93dd2de777b383bb045ca265c1  -
+d29751f2649b32ff572b5e0a9f541ea660a50f94ff0beedfb0b692b924cc8025  -</pre>
+<p>Üç satır da 64 hex hane, yani 256 bit: 14 baytlık cümle de bir milyon sıfır baytı da aynı boyda özet veriyor. Sondaki <code>-</code>, girdinin standart girdiden geldiğini söyler. İlk iki girdi yalnız son harfin büyüklüğüyle ayrılıyor, özetlerde ise ortak desen yok: saydım, 64 haneden 62'si, 256 bitten 126'sı farklı, yani yaklaşık yarısı. Bu özetlerden metni geri hesaplamanın yolu yok; yalnız bir adayın özetini hesaplayıp karşılaştırabilirsin. İndirdiğin dosyanın özetini yayımlanan özetle böyle karşılaştıracaksın (Parça 7 ve 10).</p>
+
+<h3>Adım 9: Sıkıştırma oranıyla metni ve rastgeleliği ayır</h3>
+<pre class="kod" data-ad="bash">for i in $(seq 2000); do echo "2026-10-16 giris basarisiz kullanici=deneme"; done &gt; gunluk.txt
+wc -c &lt; gunluk.txt
+gzip -9 -n -c gunluk.txt | wc -c
+head -c 90000 /dev/urandom &gt; rastgele.bin
+gzip -9 -n -c rastgele.bin | wc -c
+gzip -9 -n -c gunluk.txt | head -c 4 | xxd</pre>
+<pre class="cikti">88000
+337
+90033
+00000000: 1f8b 0800                                ....</pre>
+<p>Günlük dosyası 2000 satır × 44 bayt = 88.000 bayt; sıkıştırılmış hâli 337 bayt, binde dört. <code>-n</code> dosya adını ve zamanı başlığa yazdırmaz, böylece sonuç tekrarlanabilir; <code>-c</code> sonucu standart çıktıya verir. İşletim sisteminin rastgele kaynağından alınan 90.000 bayt sıkıştırınca 90.033 bayta çıktı; bu sayı sende birkaç bayt farklı olabilir. Son satırda gzip imzası <code>1f 8b</code> var; dördüncü bayt Adım 5'tekinden farklı olarak <code>00</code>, çünkü <code>-n</code> yüzünden dosya adı alanı yok.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Önceki parçalara:</strong> Parça 1'deki hex ve <code>xxd</code> burada harflere ve dosya imzalarına uygulandı; Parça 3'teki bayt sırası UTF-16'nın LE/BE ayrımında ve ELF'in "LSB" ibaresinde geri döndü.</p>
+<p><strong>Sonraki parçalara:</strong> Parça 7'de indirdiğin kalıbın özetini doğrulayacaksın. Parça 31'de HTTP başlıklarında Base64'ü ve URL kodlamasını, Parça 37'de JWT'nin base64url ile kodlanıp şifrelenmediğini göreceksin. Parça 39 kanonikleştirme, Unicode tuzakları ve dosya yükleme savunmasını; Parça 42–43 şifrelemeyi; Parça 44 hash fonksiyonlarını ve HMAC'i; Parça 45 parola saklamayı; Parça 71 delil bütünlüğünde hash kullanımını derinleştirecek.</p>
+<p><strong>Kod rafına:</strong> Parça 3'teki <code>encode</code>/<code>decode</code> ve <code>ord</code>, Parça 7'deki <code>encoding="utf-8"</code> ve ikili kip, Parça 18'deki <code>sha256sum</code> ve <code>gzip</code> burada güvenlik gözüyle yeniden çalıştı.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+
+<details><summary>Karakter, kod noktası ve karakter kodlaması arasındaki fark nedir? ğ için üçünü de söyle.</summary><p>Karakter yazının soyut birimidir (küçük g harfi, ğ). Kod noktası Unicode'un ona verdiği numaradır: U+011F, onlukta 287. Karakter kodlaması bu numarayı baytlara çeviren kuraldır: UTF-8'de ğ, C4 9F baytlarıyla yazılır; cp1254'te ise tek bayt F0'dır. Aynı karakter, aynı kod noktası, farklı kodlamada farklı baytlar.</p></details>
+<details><summary>UTF-8'de bir baytın bir karakterin başı mı devamı mı olduğu nasıl anlaşılır ve bu neden yararlıdır?</summary><p>Devam baytları her zaman 10 bitleriyle başlar; başlangıç baytları ise 0 (tek baytlık ASCII) ya da 110, 1110, 11110 ile başlar ve baştaki 1'lerin sayısı karakterin kaç bayt olduğunu söyler. Bu sayede bir program metnin ortasından okumaya başlasa bile sonraki karakter sınırını bulur, bozuk bir bayt yalnız bir karakteri etkiler ve ASCII baytları çok baytlı karakterlerin içinde asla görünmez.</p></details>
+<details><summary>"GÃ¼l" ile "G�l" görüntüleri sana ne anlatır? Hangisi kayıpsız onarılabilir?</summary><p>"GÃ¼l", UTF-8 ile yazılmış baytların Latin-1 ya da cp1254 gibi tek baytlık bir kod sayfasıyla okunduğunu gösterir; hiçbir bayt kaybolmadığı için yanlış kodlamayla geri bayta çevirip UTF-8 diye okuyunca onarılır. "G�l" ise UTF-8 olmayan baytların UTF-8 sanıldığını ve geçersiz baytın yerine koyma karakteriyle değiştirildiğini gösterir; bu metin kaydedildiyse özgün harf bilgisi kaybolmuştur.</p></details>
+<details><summary>Sihirli bayt nedir, uzantıdan neden daha iyi bir ipucudur ve neden yine de tek başına kanıt değildir?</summary><p>Sihirli bayt, bir dosya biçiminin dosyanın başına koyduğu sabit imzadır (PNG için 89 50 4E 47 0D 0A 1A 0A, ZIP için PK). Uzantı yalnızca adın parçası olduğu ve herkes tarafından istenildiği gibi verildiği için içerik hakkında bir şey söylemez; sihirli bayt ise içerikten gelir. Yine de yalnız ilk birkaç bayta bakar: bir dosya baştan bir biçime benzeyip devamında başka şey taşıyabilir, file gibi araçlar da kısa dosyalarda yanılabilir. Sağlam yöntem, izin listesi ve gerçek bir ayrıştırıcıyla açıp doğrulamaktır.</p></details>
+<details><summary>Kodlama, şifreleme, hash ve sıkıştırmayı "anahtar var mı" ve "geri dönülür mü" sorularıyla ayır.</summary><p>Kodlama: anahtar yok, herkes geri çevirir (Base64, URL kodlaması, UTF-8). Sıkıştırma: anahtar yok, herkes açar (gzip). Şifreleme: anahtar var, yalnız anahtar sahibi geri çevirir (AES). Hash: anahtar yok, geri dönüş de yok; yalnız aynı girdinin aynı özeti verdiği karşılaştırılabilir (SHA-256). Gizlilik yalnızca şifrelemede vardır ve anahtarın gizli kalmasına bağlıdır.</p></details>
+<details><summary>"Şifrelenmiş" denen bir veri gzip ile yüzde 10'una iniyor. Bu ne düşündürür ve neden?</summary><p>İyi bir şifrelemenin çıktısı rastgele baytlardan ayırt edilemez ve rastgele veri sıkışmaz; bu parçadaki denemede rastgele baytlar gzip ile küçülmedi, hatta biraz büyüdü. Belirgin biçimde sıkışan veri desen taşıyor demektir; büyük olasılıkla şifreli değil, yalnız kodlanmış (ör. Base64) ya da düz metindir. Tersi kanıt değildir: sıkışmayan bir veri şifreli olmayıp zaten sıkıştırılmış da olabilir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Baytlar anlam taşımaz;</strong> anlamı yazanla okuyanın uyduğu sözleşme (kodlama, dosya biçimi) verir.</li>
+<li><strong>Karakter → kod noktası (U+011F) → kodlama → baytlar (C4 9F).</strong> Glif yazı tipine aittir.</li>
+<li><strong>ASCII:</strong> 128 karakter, 7 bit. <strong>Kod sayfaları</strong> (Latin-1, Latin-5, cp1254): üst 128 yeri farklı doldurur, aynı bayt farklı harf.</li>
+<li><strong>Unicode:</strong> U+0000–U+10FFFF, 17 düzlem; tek numara. <strong>UTF-8:</strong> 1–4 bayt, ASCII uyumlu, devam baytı hep 10 ile başlar; aşırı uzun ve vekil diziler geçersiz (RFC 3629).</li>
+<li><strong>Karakter sayısı ≠ bayt sayısı:</strong> "şifre" 5 karakter, UTF-8'de 6 bayt, UTF-16'da 10, UTF-32'de 20.</li>
+<li><strong>Mojibake:</strong> "Ã¼" = UTF-8 tek baytlık sayfayla okunmuş (onarılır); "�" = UTF-8 olmayan bayt UTF-8 sanılmış (değiştirildiyse kayıp); "Þiþli" = iki kod sayfası karışmış.</li>
+<li><strong>Kodlamayı açıkça söyle:</strong> <code>encoding="utf-8"</code>; girişte çöz, içeride metin, çıkışta kodla.</li>
+<li><strong>Metin/ikili:</strong> işletim sistemi ayırmaz; satır sonu LF (<code>0A</code>) / CRLF (<code>0D 0A</code>).</li>
+<li><strong>Sihirli bayt:</strong> PNG <code>89 50 4E 47 0D 0A 1A 0A</code>, ZIP <code>PK</code>, gzip <code>1F 8B</code>, PDF <code>%PDF-</code>, ELF <code>7F 45 4C 46</code>, EXE <code>MZ</code>. Uzantı yalnız ad; <code>file</code> içeriğe bakar ama tahmin eder.</li>
+<li><strong>Kodlama</strong> (anahtar yok, herkes çözer) · <strong>sıkıştırma</strong> (anahtar yok, herkes açar) · <strong>şifreleme</strong> (anahtar var, yalnız sahibi çözer) · <strong>hash</strong> (anahtar yok, geri dönüş yok).</li>
+<li><strong>Base64:</strong> 3 bayt → 4 karakter, <code>=</code> dolgu, üçte bir büyür; base64url <code>-</code> <code>_</code>. Gizlilik sağlamaz (RFC 4648, RFC 7617).</li>
+<li><strong>URL kodlaması:</strong> ayrılmamış karakterler dışı her bayt <code>%HH</code>; ş → <code>%C5%9F</code>. URL'ler günlükte durur, sırrı URL'ye koyma.</li>
+<li><strong>Hash:</strong> sabit boy (SHA-256: 64 hex), belirlenimli, çığ etkisi, tek yönlü. "Hash çözmek" yoktur, tahmin edip karşılaştırmak vardır.</li>
+<li><strong>Sağduyu sınaması:</strong> belirgin sıkışan "şifreli" veri büyük olasılıkla şifreli değildir.</li>
+<li><strong>Altın soru:</strong> "Okunmaz" ≠ "gizli". Anahtar nerede, kim erişebiliyor?</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-6">
+<h3>Quiz 6</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan sekiz tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Aşağıdakilerden hangisi anahtar kullanmayan ve herkesin geri çevirebildiği bir kodlamadır?</p>
+<ul class="sec"><li>AES ile şifreleme</li><li>Base64</li><li>SHA-256 özeti</li><li>RSA ile şifreleme</li><li>Parolalı ve AES tabanlı ZIP arşivi</li></ul>
+<div class="coz"><p>Base64, baytları 64 güvenli ASCII karakteriyle yazan herkese açık bir dönüşümdür; anahtar yoktur ve <code>base64 -d</code> gibi bir komutla herkes geri çevirir. AES ve RSA şifrelemedir, geri çevirmek için anahtar gerekir. AES tabanlı parolalı ZIP de sıkıştırmanın yanına şifreleme ekler. SHA-256 bir hash'tir: anahtarı yoktur ama geri dönüşü de yoktur, bu yüzden "herkesin geri çevirebildiği" tanımına uymaz. Soru, kodlamayı anahtar ve geri dönüş ölçütleriyle ayırmayı yokluyor.</p></div></li>
+
+<li data-c="D"><p class="q">Aşağıdaki Python satırının çıktısı nedir?</p>
+<pre class="kod">print(len("şifre".encode("utf-8")))</pre>
+<ul class="sec"><li>5</li><li>10</li><li>7</li><li>6</li><li>20</li></ul>
+<div class="coz"><p>"şifre" beş karakterdir ama <code>encode("utf-8")</code> bayt dizisi verir ve <code>len</code> baytları sayar. Türkçe ş (<code>U+015F</code>) UTF-8'de iki bayttır (<code>c5 9f</code>), öbür dört harf ASCII olduğu için birer bayt: toplam 6. 5, karakter sayısıdır (<code>encode</code> unutulmuş gibi). 10 aynı metnin UTF-16'daki, 20 UTF-32'deki bayt sayısıdır; 7 ise ş'yi üç bayt sanmanın sonucudur. Bütün değerler çalıştırılarak doğrulandı.</p></div></li>
+
+<li data-c="A"><p class="q">Bir web sayfasında "Güzel" sözcüğü "GÃ¼zel" diye görünüyor. En olası açıklama hangisidir?</p>
+<ul class="sec"><li>UTF-8 ile yazılmış baytlar, Latin-1 ya da cp1254 gibi tek baytlık bir kod sayfasıyla çözülmüştür.</li><li>Metin AES ile şifrelenmiş, anahtar yanlış girilmiştir.</li><li>cp1254 ile yazılmış baytlar UTF-8 diye çözülmüş ve geçersiz baytlar silinmiştir.</li><li>Metin Base64 ile kodlanmış, çözülmeden gösterilmiştir.</li><li>Yazı tipinde ü harfinin glifi bulunmadığı için harf ikiye bölünmüştür.</li></ul>
+<div class="coz"><p>ü UTF-8'de iki bayttır (<code>c3 bc</code>); tek baytlık bir kod sayfası bu baytları iki ayrı karakter olarak okur: <code>c3</code> "Ã", <code>bc</code> "¼". Bir harf yerine iki tuhaf harf görmek bu durumun tipik izidir ve metin kayıpsız onarılabilir. C'deki durumda ü tek bayt (<code>fc</code>) olurdu ve UTF-8 çözücü onu � ile değiştirir ya da hata verirdi, "Ã¼" çıkmazdı. Şifreli ya da Base64'lü veride "G", "zel" gibi okunur parçalar kalmazdı. Glif eksikliği ise genellikle boş kutu ya da yedek yazı tipiyle sonuçlanır, harfi iki karaktere bölmez.</p></div></li>
+
+<li data-c="C"><p class="q">Adı <code>fatura.pdf</code> olan bir dosyanın ilk baytları <code>50 4B 03 04</code>. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Dosya bir PDF'tir, çünkü uzantı türü belirler.</li><li>Dosya bozuktur, çünkü PDF'ler her zaman <code>89 50</code> ile başlar.</li><li>İçerik büyük olasılıkla ZIP biçimindedir (DOCX, JAR gibi ZIP tabanlı biçimler de olabilir); uzantı içerikle uyuşmuyor.</li><li>Dosya şifrelenmiştir, çünkü ilk baytlar okunmuyor.</li><li>Dosya bir Linux programıdır, çünkü <code>50 4B</code> ELF imzasıdır.</li></ul>
+<div class="coz"><p><code>50 4B 03 04</code> ASCII'de "PK.." demektir ve ZIP arşivinin sihirli baytıdır; DOCX, XLSX, JAR, APK gibi biçimler de içte ZIP olduğu için aynı imzayla başlar. Uzantı yalnız adın parçasıdır, içeriği belirlemez; bu yüzden A yanlış. PDF <code>%PDF-</code> (<code>25 50 44 46 2D</code>) ile başlar; <code>89 50</code> PNG'nin başıdır, B iki yönden yanlış. "PK" gayet okunur, şifrelemeyle ilgisi yoktur. ELF'in imzası <code>7F 45 4C 46</code>'dır. Doğru tepki dosyayı türüne göre değil içeriğine göre değerlendirmek ve beklenen türde değilse reddetmektir.</p></div></li>
+
+<li data-c="E"><p class="q">Aşağıdaki komutun çıktısı nedir?</p>
+<pre class="kod">printf 'S2lt' | base64 -d; echo</pre>
+<ul class="sec"><li><code>S2lt</code></li><li><code>Kim=</code></li><li>Anlamsız ikili baytlar</li><li>Hata: çözmek için anahtar gerekir</li><li><code>Kim</code></li></ul>
+<div class="coz"><p><code>S2lt</code> dört Base64 karakteridir: S = 18, 2 = 54, l = 37, t = 45. Bunların 6'şar biti yan yana konunca <code>01001011 01101001 01101101</code>, yani <code>4B 69 6D</code> baytları çıkar: "Kim". Komut çalıştırılarak doğrulandı. Base64 anahtarsız bir kodlama olduğu için D yanlıştır. <code>=</code> dolgu karakteri kodlanmış tarafta bulunur, çözülen metinde yer almaz; B bu karışıklığı yokluyor. Çıktı okunur ASCII metindir, ikili çöp değildir; A ise hiçbir çözme yapılmadığını varsayar.</p></div></li>
+
+<li data-c="B"><p class="q">SHA-256 için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Özet, doğru anahtar girilirse özgün veriye geri çevrilebilir.</li><li>Girdi bir bayt da olsa bir gigabayt da olsa özet 256 bittir ve girdideki tek bir harf değişince özet tanınmayacak kadar değişir.</li><li>Girdi büyüdükçe özet de uzar; bu yüzden büyük dosyaların özeti daha güvenlidir.</li><li>Base64 gibi bir kodlamadır; <code>sha256sum -d</code> ile çözülür.</li><li>Aynı girdi her çalıştırmada rastgele farklı bir özet verir.</li></ul>
+<div class="coz"><p>Hash fonksiyonu her uzunluktaki girdiden sabit uzunlukta özet üretir; SHA-256'da bu 256 bit, yani 64 onaltılık hanedir. Denemede "Merhaba dünya" ile "Merhaba dünyA" özetlerinin 64 hanesinden 62'si farklı çıktı: çığ etkisi. A yanlış, hash'te anahtar da geri dönüş de yoktur. C yanlış, boy sabittir. D yanlış, hash bir kodlama değildir ve öyle bir çözme seçeneği yoktur. E yanlış, hash belirlenimlidir; aynı girdi hep aynı özeti verir, karşılaştırma bu sayede mümkündür.</p></div></li>
+
+<li data-c="D"><p class="q">Bir geliştirici veritabanı parolasını yapılandırma dosyasında <code>Y29rZ2l6bGk=</code> diye saklıyor ve "parolayı şifreledim" diyor. En doğru değerlendirme hangisidir?</p>
+<ul class="sec"><li>Değer Base64 olduğu için yalnızca geliştirici çözebilir; güvenlidir.</li><li>Değer bir hash'tir; geri çevrilemediği için veritabanı bu parolayla bağlanamaz.</li><li>Değeri bir kez daha Base64'le kodlamak güvenliği iki katına çıkarır.</li><li>Bu bir kodlamadır, gizlilik sağlamaz; dosyayı okuyabilen herkes parolayı anahtarsız çözer. Sır, erişimi sınırlı bir sır yönetimi aracıyla ya da anahtarı ayrı tutulan gerçek bir şifrelemeyle korunmalıdır.</li><li>Sonundaki <code>=</code> işareti şifrelemenin kanıtıdır.</li></ul>
+<div class="coz"><p><code>=</code> ile biten, yalnızca Base64 alfabesinden oluşan değer kodlamadır; herkes <code>base64 -d</code> ile çözer (bu değer "cokgizli" verir). Kodlanmış sır, düz metin sır kadar açıktır; doğru savunma sır yönetimi, sıkı dosya izinleri ya da anahtarı aynı yerde tutulmayan şifrelemedir. A, kodlamayı şifreleme sanıyor. B, değeri hash sanıyor; hash'ten parola geri alınamayacağı için bağlantı için gereken sırrı saklamaya da uygun değildir. C'de iki kat kodlama yine anahtarsızdır. E'deki <code>=</code> yalnızca Base64 dolgusudur.</p></div></li>
+
+<li data-c="A"><p class="q">Bir sistemdeki "AES ile şifrelenmiş" denen 100 KB'lık yedek dosyası gzip ile 3 KB'a iniyor. En doğru yorum hangisidir?</p>
+<ul class="sec"><li>İyi şifrelenmiş veri rastgele görünür ve sıkışmaz; bu dosya büyük olasılıkla şifreli değil, düz ya da yalnızca kodlanmış veri içeriyor ve doğrulanmalı.</li><li>AES çıktısı tekrar ettiği için iyi sıkışır; bu, şifrelemenin doğru yapıldığını gösterir.</li><li>Sıkışma oranı şifrelemeyle ilgili hiçbir şey söylemez.</li><li>Dosya gzip ile küçüldüğüne göre artık hem sıkıştırılmış hem şifrelenmiş sayılır.</li><li>Dosya küçüldüğüne göre anahtar dosyanın içine gömülüdür.</li></ul>
+<div class="coz"><p>Sıkıştırma tekrarı ve deseni kullanır; desen taşımayan rastgele veri sıkışmaz. Bu parçadaki denemede rastgele baytlar gzip ile küçülmedi, tekrarlı metin ve onun Base64 hâli ise yüzde 1'in altına indi. İyi bir şifrelemenin çıktısı rastgele baytlardan ayırt edilemez olmalıdır, bu yüzden 100 KB'tan 3 KB'a inen bir "şifreli" dosya ciddi bir uyarıdır. B bunun tam tersini söylüyor. C aşırı genelleme: sıkışma kanıt değil ama güçlü bir ipucudur. D'de gzip şifreleme eklemez. E'nin sıkışmayla bir bağı yoktur.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">8 bitlik işaretli (ikiye tümleyen) gösterimde <code>1111 1111</code> baytı hangi sayıyı gösterir?</p>
+<ul class="sec"><li>255</li><li>−127</li><li>−1</li><li>0</li><li>−128</li></ul>
+<div class="coz"><p>İkiye tümleyende en soldaki bit 1 ise sayı negatiftir; değerini bulmak için bitleri ters çevirip 1 eklersin: <code>0000 0000</code> + 1 = 1, yani sayı −1'dir. 255, aynı baytın işaretsiz okunuşudur; aynı baytların farklı sözleşmeyle farklı sayı olması bu parçanın da ana fikridir. −127, yalnız işaret bitini ayırıp kalanı okuyan eski "işaret-büyüklük" yöntemiyle çıkar. −128, <code>1000 0000</code>'ın değeridir. 0 hiçbir okumada çıkmaz.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Getir-çöz-yürüt döngüsünde program sayacı (PC) ne tutar?</p>
+<ul class="sec"><li>Programın o ana kadar kaç komut çalıştırdığını</li><li>Son hesaplanan aritmetik işlemin sonucunu</li><li>Çalışan süreçlerin sayısını</li><li>Belleğin toplam boyutunu</li><li>Bir sonraki getirilecek komutun bellekteki adresini</li></ul>
+<div class="coz"><p>Program sayacı, işlemcinin sıradaki komutu bellekte nereden getireceğini gösteren yazmaçtır; komut getirilince normalde bir sonraki komuta ilerler, atlama komutları ise onu başka bir adrese ayarlar. Adına rağmen bir "sayaç" değildir, A bu yanılgıyı yokluyor. Aritmetik sonuçlar genel amaçlı yazmaçlarda tutulur. Süreç sayısı işletim sisteminin, bellek boyutu donanımın bilgisidir; ikisi de PC'nin işi değildir.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">32 bitlik <code>0x12345678</code> değeri little endian bir makinede, küçük adresten büyüğe doğru hangi bayt sırasıyla saklanır?</p>
+<ul class="sec"><li><code>78 56 34 12</code></li><li><code>12 34 56 78</code></li><li><code>87 65 43 21</code></li><li><code>21 43 65 87</code></li><li><code>34 12 78 56</code></li></ul>
+<div class="coz"><p>Little endian düzende en az anlamlı bayt (<code>0x78</code>) en küçük adrese yazılır, ardından <code>56</code>, <code>34</code> ve en anlamlı bayt <code>12</code> gelir. B, big endian sıradır. C ve D, baytları değil onaltılık haneleri ters çeviriyor; bayt iki haneden oluşan bir bütündür ve kendi içinde ters dönmez. E, 16 bitlik yarımları yer değiştiriyor, bu bir bayt sırası kuralı değildir.</p></div></li>
+
+<li data-c="D" data-k="siber-3"><p class="q">Bir fonksiyon çağrıldığında, işi bitince nereye dönüleceğini gösteren dönüş adresi genellikle nerede tutulur?</p>
+<ul class="sec"><li>Öbekte (heap), <code>malloc</code> ile ayrılmış bir alanda</li><li>Diskteki takas dosyasında</li><li>Programın kod bölümünde, komutların arasında</li><li>Yığında (stack), o çağrının yığın çerçevesinde</li><li>İşlemcinin önbelleğinde kalıcı olarak</li></ul>
+<div class="coz"><p>Her fonksiyon çağrısı yığında bir çerçeve açar; dönüş adresi, yerel değişkenlerle birlikte bu çerçevede tutulur ve fonksiyon bitince oradan okunur. Yerel verinin dönüş adresinin yakınında durması, bellek güvenliği açıklarının (Parça 60) zeminidir. Öbek, programcının dinamik olarak ayırdığı veriler içindir. Kod bölümü çalışma sırasında değişmeyen komutları taşır. Önbellek ve takas, verinin geçici kopyalarının durabileceği yerlerdir ama dönüş adresinin "yeri" olarak tanımlanmaz.</p></div></li>
+
+<li data-c="B" data-k="siber-4"><p class="q">Kullanıcı modunda çalışan bir program diske yazmak istediğinde ne olur?</p>
+<ul class="sec"><li>Program diske doğrudan erişir; işletim sistemi araya girmez.</li><li>Program bir sistem çağrısı yapar; işlemci çekirdek moduna geçer ve yazmayı çekirdek, izinleri denetleyerek gerçekleştirir.</li><li>Program kendini ring 0'a yükseltir, yazar ve geri döner.</li><li>Yazma isteği önyükleyiciye (bootloader) gönderilir.</li><li>Program önce Secure Boot'tan izin ister.</li></ul>
+<div class="coz"><p>Donanıma erişim çekirdek modunda (x86'da ring 0) yapılır; kullanıcı programları ring 3'te çalışır ve böyle bir işi ancak sistem çağrısıyla çekirdekten isteyebilir. Çekirdek izinleri denetler, işi yapar ve sonucu döndürür; <code>strace</code> ile bu çağrıları görebilirsin. A, ayrıcalık ayrımını yok sayıyor. C'de programın kendini yükseltebilmesi tam olarak bu ayrımın engellediği şeydir. Önyükleyici yalnız açılışta çalışır; Secure Boot da önyükleme zincirini denetler, çalışma anındaki dosya yazmalarını değil.</p></div></li>
+
+<li data-c="C" data-k="siber-4"><p class="q">Güvenli Önyükleme (Secure Boot) neyi amaçlar?</p>
+<ul class="sec"><li>Diskteki bütün dosyaları şifrelemeyi</li><li>Bilgisayarın daha hızlı açılmasını</li><li>Önyükleme zincirindeki bileşenlerin (önyükleyici, çekirdek) imzalarını doğrulayarak imzasız ya da değiştirilmiş kodun yüklenmesini engellemeyi</li><li>Kullanıcı parolasını firmware içinde saklamayı</li><li>Ağdan gelen saldırıları güvenlik duvarı gibi süzmeyi</li></ul>
+<div class="coz"><p>Secure Boot'ta UEFI firmware, yükleyeceği önyükleyicinin dijital imzasını güvendiği anahtarlarla doğrular; zincirin sonraki halkaları da aynı şeyi sürdürür. Böylece işletim sistemi açılmadan önce araya giren, imzasız ya da değiştirilmiş kod çalışamaz. Disk şifreleme ayrı bir konudur (Parça 48); Secure Boot verinin gizliliğini sağlamaz. Hız kazandırmak amacı değildir, parola saklamaz, ağ trafiğiyle de ilgilenmez. Burada imza, bu parçadaki ayrımda şifreleme değil bütünlük ve kaynak doğrulama işi görür.</p></div></li>
+
+<li data-c="E" data-k="siber-5"><p class="q">Aynı programı birkaç kez çalıştırıp bir yerel değişkenin adresini yazdırdığında adres her seferinde farklı çıkıyor. Bunun nedeni nedir?</p>
+<ul class="sec"><li>Bellek çiplerinin her açılışta farklı sırayla dizilmesi</li><li>Yürütülemez bellek (NX) korumasının adresleri şifrelemesi</li><li>Yazınca kopyala (copy-on-write) mekanizmasının değişkeni taşıması</li><li>Programın her çalıştırmada yeniden derlenmesi</li><li>Adres rastgeleleştirme (ASLR): yığın, öbek ve kütüphaneler her çalıştırmada farklı sanal adreslere yerleştirilir</li></ul>
+<div class="coz"><p>ASLR, bir sürecin bellek bölgelerinin sanal adreslerini her çalıştırmada rastgele seçer; böylece bir saldırganın önceden bilinen bir adrese güvenmesi zorlaşır. NX bellek sayfalarının yürütülüp yürütülemeyeceğini belirler, adresleri değiştirmez ve şifrelemez. Copy-on-write, <code>fork</code> sonrası sayfaların ne zaman kopyalanacağıyla ilgilidir. Bellek çipleri yer değiştirmez; program da her çalıştırmada yeniden derlenmez.</p></div></li>
+
+<li data-c="D" data-k="siber-5"><p class="q"><code>fork</code> ile oluşturulan çocuk sürecin belleği için "yazınca kopyala" (copy-on-write) ne demektir?</p>
+<ul class="sec"><li>Çocuk süreç ana sürecin belleğini hiç göremez; boş bir bellekle başlar.</li><li>Ana sürecin bütün belleği <code>fork</code> anında hemen baştan sona kopyalanır.</li><li>İki süreç aynı belleği sonsuza dek paylaşır; biri yazınca öbürü de değişikliği görür.</li><li>Sayfalar başta iki süreç arasında paylaşılır; süreçlerden biri bir sayfaya yazmaya kalkınca o sayfanın ayrı bir kopyası çıkarılır.</li><li>Bellek diske yazılır, çocuk süreç onu diskten okur.</li></ul>
+<div class="coz"><p>Copy-on-write'ta <code>fork</code> sayfaları kopyalamaz, iki sürecin sayfa tablolarını aynı fiziksel sayfalara bağlar ve bunları salt okunur işaretler. Biri yazmaya kalkınca çekirdek yalnız o sayfayı kopyalar; böylece hem hız kazanılır hem süreçlerin yalıtımı korunur. A yanlış, çocuk ana sürecin bellek görüntüsüyle başlar. B, copy-on-write olmasaydı olacak pahalı yoldur. C yalıtımı bozardı; süreçler değişikliklerini birbirine yansıtmaz. E'nin bu mekanizmayla ilgisi yoktur.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-5">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-6">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-7">Sonraki parça: Sanallaştırma, konteyner ve güvenli laboratuvar →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"UTF-8 nasıl çalışır Unicode kod noktası bayt"</li>
+  <li>"encoding vs encryption vs hashing difference"</li>
+  <li>"Base64 encoding explained step by step"</li>
+  <li>"file signatures magic bytes hex editor"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>UTF-8 bayt kalıpları, U+10FFFF üst sınırı, U+D800–U+DFFF aralığının yasaklanması, çözücülerin geçersiz (aşırı uzun dahil) dizileri kabul etmemesi zorunluluğu, güvenlik bölümündeki 2001 web sunucusu notu ve UTF-8 BOM'un EF BB BF olduğu RFC 3629'dan (rfc-editor.org) doğrulandı. "/" karakterinin aşırı uzun biçimi olarak verdiğim C0 AF, kalıptan elle hesaplandı; RFC'de örnek olarak C0 80 geçiyor. Python'un bu tür bir diziyi reddettiğini <code>bytes.fromhex("c080").decode("utf-8", errors="replace")</code> ile denetledim (iki U+FFFD verdi).</li>
+  <li>Base64 alfabesi, 24 bitlik gruplar, <code>=</code> dolgusu, base64url'deki <code>-</code> ve <code>_</code> ile Base64'ün "hesaplamalı gizlilik sağlamadığı" ifadesi RFC 4648'den; Basic kimlik doğrulamanın kullanıcı adı ve parolayı iki noktayla birleştirip Base64'lediği ve TLS olmadan kullanılmaması gerektiği RFC 7617'den doğrulandı.</li>
+  <li>Yüzde kodlaması, ayrılmamış karakterler (harf, rakam, <code>- . _ ~</code>), büyük harfli hex önerisi, yeni bileşenlerde önce UTF-8'e çevirme ve URL'lere gizli kullanıcı adı/parola konmaması uyarısı RFC 3986'nın 2.1, 2.3, 2.5 ve 7.5 bölümlerinden doğrulandı. Formlarda boşluğun <code>+</code> olması Python <code>quote_plus</code> çıktısıyla gösterildi; ilgili HTML/WHATWG belirtimini bu oturumda açmadım.</li>
+  <li>PNG imzası W3C PNG belirtiminden; her baytın gerekçesi (0x89, "PNG", CR LF, Ctrl-Z, son LF) PNG 1.2 belirtiminin gerekçe bölümünden (libpng.org, 12.12) doğrulandı.</li>
+  <li><code>file</code> komutunun üç sınama grubu, sırası ve dil sınamalarının en az güvenilir olduğu file(1) kılavuz sayfasından (man7.org) doğrulandı. "şifre" dosyasının "OpenPGP Secret Key" diye tanınması bu ortamda gerçekten gözlendi (file 5.47); hangi magic kuralının eşleştiğini ayrıca incelemedim, metindeki "ilk bayt tesadüfen bir imza kuralına uyuyor" açıklaması bu gözleme dayalı çıkarımdır. Başka <code>file</code> sürümlerinde sonuç farklı olabilir.</li>
+  <li>Python'un cp1254 (Türkçe), latin_1 ve iso8859_9 (Latin-5, Türkçe) kodekleri ile <code>strict</code> ve <code>replace</code> hata işleyicileri docs.python.org codecs sayfasından doğrulandı. PEP 686'nın Python 3.15'te UTF-8 kipini varsayılan yapmayı öngördüğü PEP sayfası ve ikincil kaynaklardan; PEP 790'a göre 3.15.0'ın 9 Ekim 2026'da çıkması planlanmıştı, gerçekten çıktığını resmî duyurudan doğrulamadım, bu yüzden metinde "öngörüyor" dedim.</li>
+  <li>Unicode 17.0'ın 9 Eylül 2025'te yayımlandığı ve 159.801 karakter içerdiği Unicode Consortium blogu ve karakter sayım sayfasından doğrulandı. Unicode 18.0'ın Eylül 2026'da yayımlandığını bildiren ikincil kaynaklar var ama sayılar arasında tutarsızlık gördüm ve resmî sayfadan doğrulayamadım; bu yüzden metinde yalnız 17.0'ın sayısını verdim.</li>
+  <li>Hafızadan yazdıklarım ve bu oturumda kaynakla karşılaştırmadıklarım: ASCII'nin 1960'larda yerleşmesi ve 33 denetim karakteri; ZIP, gzip, ELF, MZ ve JPEG imzaları (ZIP, gzip, PDF ve ELF imzaları kendi ürettiğim dosyalarda gözlendi, MZ ve JPEG gözlenmedi); Windows'un bilinen uzantıları varsayılan olarak gizlemesi; ZipCrypto'nun zayıf, AES tabanlı ZIP şifrelemesinin daha güçlü sayılması; "mojibake" sözcüğünün Japoncadan gelmesi.</li>
+  <li>Çalıştırılan örnekler (hepsi gerçekten koştu, çıktılar birebir): <code>harfler.py</code>, <code>bozuk.py</code>, <code>kodla.py</code>, <code>sikistir.py</code>, <code>olustur.py</code> (Python 3.13.12, <code>python3 -I</code>), <code>merhaba.c</code> (gcc 15.2, <code>-Wall -Wextra</code>, uyarısız) ve "Kendi makinende dene" bölümündeki bütün kabuk komutları (WSL2, Kali GNU/Linux Rolling, çekirdek 6.18, file 5.47, yerel ayar en_US.UTF-8). Özetlerde 62/64 hane ve 126/256 bit farkı Python ile sayıldı; quiz'deki bayt sayıları, Base64 çözümleri (<code>S2lt</code> → Kim, <code>Y29rZ2l6bGk=</code> → cokgizli) ve çeldiriciler (5, 10, 20) çalıştırılarak doğrulandı. Windows'ta yazılan kaynak dosyalar çalıştırılmadan önce CRLF'den arındırıldı.</li>
+  <li>Değişken ve sadeleştirilmiş çıktılar: ZIP satırındaki tarih, ELF satırındaki BuildID ve <code>/dev/urandom</code> ile üretilen dosyanın sıkıştırılmış boyu her çalıştırmada değişir. Klasör adını ve kabuk istemini genel tuttum (<code>~/lab/veri</code>); makine adı, kullanıcı adı ve ev dizini çıktılarda görünmüyor, görünecek komutlardan (ör. <code>ls -l</code>) bilerek kaçındım. Bu parçada root gerektiren ya da burada çalıştırılamayan bir adım yok.</li>
+  <li>Saldırı sınırı: kodlama ve dosya biçimi yalnız yanlış güven duygusunu fark etmek ve doğru aracı seçmek açısından anlatıldı; filtre atlatma, zararlı dosya gizleme ya da benzeri bir yöntem verilmedi.</li>
+  <li>Quiz soruları ve bütün örnekler bu parça için yazıldı.</li>
+</ul>
+</div>
+</div>
+</article>

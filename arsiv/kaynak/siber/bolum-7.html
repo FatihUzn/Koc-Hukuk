@@ -1,0 +1,623 @@
+<article class="chapter ders" id="c-siber-7">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 7 · Sanallaştırma ve laboratuvar</div>
+<h1>Bilgisayarın içinde bilgisayar: sanallaştırma, konteyner ve güvenli bir laboratuvar</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>İlerideki parçalarda bir güvenlik duvarına kural yazacak, kendi ağ trafiğini yakalayacak, bilerek yanlış ayarlanmış bir sunucuyu inceleyecek, bir Windows etki alanı kuracaksın. Bunların hepsini her gün kullandığın, içinde fotoğrafların, banka uygulaman ve okul belgelerin olan bilgisayarda mı yapacaksın? Bir ayarı bozarsan, ev ağındaki öbür cihazlar etkilenirse ya da indirdiğin kalıp dosyası yolda değiştirilmişse ne olacak? Bozulduğunda bir tuşla geri alabileceğin, dış dünyadan duvarla ayrılmış ikinci bir bilgisayarı, aynı makinenin içinde nasıl kurarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 4 (çekirdek, kullanıcı modu ile çekirdek modu, ring 0/3, sistem çağrısı, önyükleme), Parça 5 (süreç, sanal adres uzayı, süreçlerin yalıtılması), Parça 6 (hash'in tek yönlü parmak izi olduğu). Komutlar için kod rafındaki kabuk parçaları (Parça 15–18) yeter; <code>sha256sum</code> ile ilk tanışman kod rafı Parça 18'de oldu.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Bu raftaki pratik işlerin neredeyse tamamı bir <strong>laboratuvar</strong> ister: bozulmasında sakınca olmayan, dışarıyla bağlantısı senin denetiminde olan, istediğin an temiz hâline dönen bir ortam. Önce bir bilgisayarın yazılımla nasıl taklit edildiğini (sanal makine, hipervizör), sonra onun hafif ama zayıf duvarlı akrabasını (konteyner) göreceksin. Ardından laboratuvarın üç aracı gelir: zamanı geri saran <strong>anlık görüntü</strong>, kapıyı belirleyen <strong>sanal ağ kipi</strong> ve indirilen dosyanın sahte olmadığını gösteren <strong>özet ve imza doğrulaması</strong>.</p>
+
+<p>Ana fikir: <strong>yalıtım katmanlar hâlinde gelir ve her katmanın duvarı farklı kalınlıktadır.</strong> Süreçler sanal bellekle (Parça 5), konteynerler ad alanlarıyla, sanal makineler hipervizörle ayrılır. Hangi duvarın neyi durdurduğunu bilmeyen, ince bir perdeyi beton duvar sanabilir.</p>
+
+<h2 class="s">Sanal makine: yazılımla yapılmış bir bilgisayar</h2>
+
+<p>Parça 4'te çekirdeğin ring 0'da donanımı tek başına yönettiğini gördün. Şimdi aynı makinede iki işletim sistemi aynı anda çalışsın ve ikisi de makineyi yalnız kendisininmiş gibi sansın. İkisi de donanıma doğrudan dokunursa birbirinin belleğini ezer, aynı diske aynı anda yazar. Araya, ikisine de inandırıcı bir sahte donanım sunan ve gerçeğini paylaştıran bir hakem gerekir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sanal makine (VM)</strong>: İşlemci, bellek, disk, ağ kartı gibi parçaları yazılımla sağlanan, içinde kendi çekirdeğiyle eksiksiz bir işletim sistemi çalışan bilgisayar. İçinde çalışan işletim sistemine <strong>konuk</strong> (guest), VM'i çalıştıran fiziksel bilgisayara <strong>ana makine</strong> (host) denir.</p>
+<p><strong>Hipervizör</strong>: Sanal makineleri oluşturan, çalıştıran ve fiziksel donanımı aralarında paylaştıran yazılım katmanı. Her VM'e kendi sanal donanımını sunar ve VM'lerin birbirinin ya da ana makinenin belleğine dokunmasını engeller.</p></div>
+
+<p>VM'in "donanımı" ana makinedeki dosyalar ve ayrılmış kaynaklardır. Sanal disk, ana makinede tek bir büyük dosyadır (VirtualBox'ta <code>.vdi</code>, VMware'de <code>.vmdk</code>, Hyper-V'de <code>.vhdx</code>, QEMU/KVM'de çoğunlukla <code>.qcow2</code>); konuk onu gerçek disk sanıp biçimlendirir. Sanal işlemci (vCPU), ana makinenin çekirdeklerinden ayrılmış zaman dilimleridir. Sanal ağ kartı, hipervizörün yazılımla kurduğu bir anahtara (switch) bağlıdır; anahtarın nereye çıkacağına sen karar verirsin.</p>
+
+<p>Hızı işlemci sağlar. Konuk çekirdek ring 0'da çalıştığını sanır, ama gerçekten ring 0'a çıkarsa ana makinenin çekirdeğiyle çatışır. Bugünkü x86 işlemcilerde <strong>donanım sanallaştırma uzantıları</strong> vardır: Intel'de VT-x, AMD'de AMD-V. Konuk kendi ring 0'ında çalışır; tehlikeli bir işe (donanıma doğrudan erişim, sayfa tablosunu değiştirme) kalkışınca işlemci denetimi kendiliğinden hipervizöre devreder. Bazı kaynaklar bu düzeye gayriresmî olarak "ring −1" der. Bellekte de ikinci bir çeviri katmanı vardır (Intel'de EPT, AMD'de NPT): konuğun "fiziksel" sandığı adresleri gerçek fiziksel adreslere çevirir. Laboratuvar kurmadan önce ilk iş, UEFI ayarlarında bu uzantıların açık olduğunu denetlemektir; kapalıysa hipervizörlerin çoğu çalışmaz ya da çok yavaşlar.</p>
+
+<h2 class="s">Hipervizör türleri: tip 1 ve tip 2</h2>
+
+<p>Hakemin nerede durduğu iki mimari doğurur. Sınırları bugün biraz bulanık, ama güvenlikte işe yarar: hipervizörün altında ne kadar az yazılım varsa güvenmek zorunda olduğun kod o kadar azdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Tip 1 (çıplak donanım, bare-metal) hipervizör</strong>: Doğrudan donanımın üstünde çalışır; altında genel amaçlı bir işletim sistemi yoktur. Örnekler: Microsoft Hyper-V, VMware ESXi, Xen. Veri merkezleri ve bulut sağlayıcıları bu türü kullanır.</p>
+<p><strong>Tip 2 (barındırılan, hosted) hipervizör</strong>: Sıradan bir işletim sisteminin (Windows, macOS, Linux) üstünde bir uygulama olarak çalışır ve donanıma o işletim sistemi aracılığıyla ulaşır. Örnekler: Oracle VirtualBox, VMware Workstation Pro, UTM. Masaüstü laboratuvarlarının çoğu bu türdür.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Üç sütun: tip 1 hipervizör, tip 2 hipervizör ve konteyner katmanları; en altta donanım, konteynerde ortak çekirdek">
+  <text class="sv-b" x="105" y="22" text-anchor="middle">Tip 1 hipervizör</text>
+  <text class="sv-b" x="320" y="22" text-anchor="middle">Tip 2 hipervizör</text>
+  <text class="sv-b" x="535" y="22" text-anchor="middle">Konteyner</text>
+  <rect class="sv-m" x="15" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="57" y="62" text-anchor="middle">uygulama</text>
+  <text class="sv-s" x="57" y="80" text-anchor="middle">konuk OS</text>
+  <text class="sv-s" x="57" y="95" text-anchor="middle">+ çekirdek</text>
+  <rect class="sv-m" x="110" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="152" y="62" text-anchor="middle">uygulama</text>
+  <text class="sv-s" x="152" y="80" text-anchor="middle">konuk OS</text>
+  <text class="sv-s" x="152" y="95" text-anchor="middle">+ çekirdek</text>
+  <rect class="sv-l" x="15" y="150" width="180" height="40" rx="6"/>
+  <text class="sv-b" x="105" y="175" text-anchor="middle">Hipervizör</text>
+  <rect class="sv-k" x="15" y="240" width="180" height="40" rx="6"/>
+  <text class="sv-b" x="105" y="265" text-anchor="middle">Donanım</text>
+  <rect class="sv-m" x="230" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="272" y="62" text-anchor="middle">uygulama</text>
+  <text class="sv-s" x="272" y="80" text-anchor="middle">konuk OS</text>
+  <text class="sv-s" x="272" y="95" text-anchor="middle">+ çekirdek</text>
+  <rect class="sv-a" x="325" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="367" y="66" text-anchor="middle">tarayıcı,</text>
+  <text class="sv-t" x="367" y="84" text-anchor="middle">e-posta</text>
+  <rect class="sv-l" x="230" y="110" width="85" height="40" rx="6"/>
+  <text class="sv-b" x="272" y="135" text-anchor="middle">Hipervizör</text>
+  <rect class="sv-a" x="230" y="195" width="180" height="40" rx="6"/>
+  <text class="sv-b" x="320" y="220" text-anchor="middle">Ana işletim sistemi</text>
+  <rect class="sv-k" x="230" y="240" width="180" height="40" rx="6"/>
+  <text class="sv-b" x="320" y="265" text-anchor="middle">Donanım</text>
+  <rect class="sv-m" x="445" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="487" y="66" text-anchor="middle">uygulama</text>
+  <text class="sv-s" x="487" y="84" text-anchor="middle">+ kitaplıklar</text>
+  <rect class="sv-m" x="540" y="40" width="85" height="62" rx="6"/>
+  <text class="sv-t" x="582" y="66" text-anchor="middle">uygulama</text>
+  <text class="sv-s" x="582" y="84" text-anchor="middle">+ kitaplıklar</text>
+  <rect class="sv-a" x="445" y="150" width="180" height="85" rx="6"/>
+  <text class="sv-b" x="535" y="182" text-anchor="middle">Ana işletim sistemi</text>
+  <text class="sv-t" x="535" y="202" text-anchor="middle">TEK ortak çekirdek</text>
+  <text class="sv-s" x="535" y="222" text-anchor="middle">ad alanı + cgroup</text>
+  <rect class="sv-k" x="445" y="240" width="180" height="40" rx="6"/>
+  <text class="sv-b" x="535" y="265" text-anchor="middle">Donanım</text>
+  <line class="sv-c" x1="105" y1="102" x2="105" y2="150"/>
+  <line class="sv-c" x1="105" y1="190" x2="105" y2="240"/>
+  <line class="sv-c" x1="272" y1="102" x2="272" y2="110"/>
+  <line class="sv-c" x1="272" y1="150" x2="272" y2="195"/>
+  <line class="sv-c" x1="367" y1="102" x2="367" y2="195"/>
+  <line class="sv-c" x1="535" y1="102" x2="535" y2="150"/>
+</svg>
+<figcaption>Tip 1'de hipervizör doğrudan donanımın üstünde, her VM'in kendi çekirdeği var. Tip 2'de hipervizör, tarayıcının yanında sıradan bir uygulama; VM'in altında ana işletim sisteminin bütün kodu da duruyor. Konteynerde ayrı çekirdek yok; hepsi tek çekirdeği paylaşıyor. Duvar soldan sağa inceliyor.</figcaption>
+</figure>
+
+<p>Gerçekte çizgi keskin değil. Microsoft'un belgesine göre Hyper-V tip 1'dir; onu açınca her gün kullandığın Windows da onun üstünde, ayrıcalıklı bir bölümde koşar. Linux'taki KVM, çekirdeğe yüklenip onu hipervizöre çeviren bir modüldür; kimi kaynak onu tip 1, kimi tip 2 sayar. Asıl soru şudur: <strong>VM ile donanım arasında hangi kod duruyor ve ben ona güvenmek zorunda mıyım?</strong> Tip 2'de zincir uzundur; ana makine ele geçirilirse içindeki VM'ler de ele geçmiş sayılır. Ters yön, yani VM'in içinden ana makineye ulaşmak, hipervizörün işi gereği zor olmalıdır.</p>
+
+<p>"Olmalı" sözcüğü önemli: hipervizörler de yazılımdır. Sanal aygıt kodundaki hataların konuktan ana makineye ulaşmaya imkân verdiği <strong>VM kaçışı</strong> (VM escape) açıkları bulunmuş ve yamalanmıştır. Bu yüzden hipervizörü güncel tutar, gerekmeyen sanal aygıtları (paylaşılan klasör, ortak pano, sürükle-bırak) kapatırsın; her biri konukla ana makine arasında küçük bir kapıdır.</p>
+
+<h2 class="s">Konteyner: aynı çekirdeği paylaşan yalıtılmış süreçler</h2>
+
+<p>VM'in bedeli ağırlığıdır: ayrı çekirdek, eksiksiz işletim sistemi, gigabaytlarca bellek. Oysa çoğu zaman tek istediğin, bir uygulamanın kendi kitaplıklarıyla, başkalarına karışmadan çalışmasıdır. Konteyner bu ihtiyaçtan doğdu.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Konteyner</strong>: Ana makinenin çekirdeğini paylaşan, ama çekirdeğin yalıtım özellikleri sayesinde sistemin geri kalanından ayrı bir dünyada çalışıyormuş gibi görünen süreç ya da süreç grubu. Linux'ta iki temel yapı taşı vardır: <strong>ad alanları</strong> (namespaces) sürecin <em>ne gördüğünü</em>, <strong>denetim grupları</strong> (cgroups) <em>ne kadar kaynak kullanabileceğini</em> sınırlar. Konteynerin dosya sistemi, uygulamayı ve kitaplıklarını içeren bir <strong>kalıptan</strong> (image) gelir.</p></div>
+
+<p>namespaces(7) kılavuz sayfasına göre bir ad alanı, küresel bir sistem kaynağını bir soyutlamanın içine sarar; içindeki süreçler kaynağın kendilerine ait bir kopyası varmış gibi görür. Kaynak çoğaltılmaz, yalnız görünüşü bölünür:</p>
+
+<div class="tablo"><table>
+<tr><th>Ad alanı</th><th>Neyi yalıtır?</th><th>İçeriden görünüşü</th></tr>
+<tr><td>PID</td><td>Süreç kimlik numaraları</td><td>İlk süreç kendini PID 1 sanır; dışarıdaki süreçleri görmez.</td></tr>
+<tr><td>Mount</td><td>Bağlama noktaları</td><td>Kendi dosya sistemi ağacı.</td></tr>
+<tr><td>Network</td><td>Ağ aygıtları, yığınlar, portlar</td><td>Kendi arayüzleri, kendi yönlendirme tablosu.</td></tr>
+<tr><td>UTS</td><td>Makine adı ve NIS etki alanı adı</td><td>Kendi makine adı.</td></tr>
+<tr><td>User</td><td>Kullanıcı ve grup kimlikleri</td><td>İçeride root (UID 0), dışarıda sıradan kullanıcı olabilir.</td></tr>
+<tr><td>IPC</td><td>System V IPC ve POSIX ileti kuyrukları</td><td>Yalnız kendi grubuyla süreçler arası iletişim.</td></tr>
+<tr><td>Cgroup</td><td>Denetim grubu kök dizini</td><td>Kendi cgroup ağacının kökü.</td></tr>
+<tr><td>Time</td><td>Açılıştan beri geçen ve monoton saatler</td><td>Kaydırılmış saat değerleri.</td></tr>
+</table></div>
+
+<p>Tabloda eksik olan satır bu parçanın en önemli dersi: <strong>çekirdek ad alanı diye bir şey yoktur.</strong> Bütün konteynerler aynı çekirdeğe aynı sistem çağrılarıyla (Parça 4) konuşur. Parça 5'teki seccomp ve yetenekler (capabilities) bu yüzeyi daraltır, ortadan kaldırmaz. Çekirdekteki bir hata her konteynerden erişilebilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Konteyner tam bir güvenlik sınırı sayılmaz.</strong> Neden: konteynerle ana makine arasındaki duvar paylaşılan çekirdeğin içindeki yapılandırmadır; VM'inki ise donanımın desteklediği ayrı bir katmandır. NIST'in konteyner güvenliği kılavuzu (SP 800-190, Eylül 2017) bunu açıkça söyler: paylaşılan çekirdek, hipervizörlere göre her zaman daha geniş bir saldırı yüzeyi doğurur ve konteyner yalıtımı hipervizör yalıtımı kadar yüksek değildir. Sonuç: güvenmediğin bir şeyi (tanımadığın bir yazılımı, bilerek zafiyetli bir eğitim uygulamasını) yalıtacaksan onu bir VM'in içine koy.</p></div>
+
+<p>Konteynerden ana makineye ulaşmaya <strong>konteyner kaçışı</strong> denir. Nasıl yapıldığını anlatmıyoruz; bilmen gereken, mümkün olduğu ve bu yüzden konteynerin bir paketleme aracı, VM'in ise bir yalıtım aracı sayılmasıdır. NIST'in savunma önerileri: ana makinenin çekirdeğini hızla güncelle, aynı hassasiyetteki iş yüklerini aynı makinede topla, konteynerli ve konteynersiz uygulamaları karıştırma.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Sanal makine</th><th>Konteyner</th></tr>
+<tr><td>Çekirdek</td><td>Her VM'in kendi çekirdeği</td><td>Ana makinenin çekirdeği paylaşılır</td></tr>
+<tr><td>Yalıtım duvarı</td><td>Hipervizör + işlemcinin sanallaştırma desteği</td><td>Ad alanları, cgroup, seccomp, yetenekler</td></tr>
+<tr><td>Başka işletim sistemi çalıştırma</td><td>Evet (Linux üstünde Windows ya da tersi)</td><td>Hayır; Linux konteyneri Linux çekirdeği ister</td></tr>
+<tr><td>Açılış süresi</td><td>Saniyeler–dakikalar</td><td>Genellikle saniyenin altında</td></tr>
+<tr><td>Boyut</td><td>Gigabaytlar</td><td>Megabaytlar–birkaç yüz megabayt</td></tr>
+<tr><td>Anlık görüntü ve geri alma</td><td>Hipervizörün yerleşik özelliği</td><td>Kalıptan yeniden başlatma; çalışan durum genelde saklanmaz</td></tr>
+<tr><td>Laboratuvardaki yeri</td><td>Güvenmediğin şeyi koyduğun ana duvar</td><td>VM'in <em>içinde</em> düzenli ve hızlı kurulum aracı</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Konteyner küçük bir sanal makinedir."</strong> Dışarıdan öyle görünür: kendi dosya sistemi, süreç listesi, makine adı vardır. Ama altta tek bir çekirdek vardır. "Kendi makinende dene" bölümünde bunu göreceksin: yeni bir PID ad alanında <code>ps</code> üç süreç gösterirken <code>uname -r</code> dışarıdakiyle aynı çekirdeği söyleyecek. Doğrusu: konteyner <strong>yalıtılmış bir süreçtir</strong>, VM <strong>yalıtılmış bir bilgisayardır</strong>.</p>
+<p><strong>"Python'daki sanal ortam (venv) da bir tür sanal makinedir."</strong> Kod rafı Parça 9'daki <code>venv</code> yalnızca paketlerin ayrı bir klasöre kurulmasıdır; süreç, dosya ya da ağ yalıtımı sağlamaz.</p></div>
+
+<p>İki kavramın iç içe geçtiği bir örnek: Microsoft'un belgesine göre WSL 2 gerçek bir Linux çekirdeğini hafif bir yardımcı VM'de çalıştırır; kurduğun her dağıtım o VM'in içinde konteyner olarak koşar. Dağıtımlar çekirdeği, belleği ve ağ ad alanını paylaşır; kendi PID, mount, kullanıcı ve cgroup ad alanları vardır. Yani Windows ile Linux arasındaki duvar VM duvarı, iki dağıtım arasındaki duvar konteyner duvarıdır. WSL 2 Windows sürücülerini <code>/mnt/c</code> altında kendiliğinden açtığı için gündelik iş için rahat, güvenmediğin şeyler için uygun değildir.</p>
+
+<h2 class="s">Anlık görüntü: zamanı geri saran düğme</h2>
+
+<p>Laboratuvarda bir şeyleri bozacaksın: bir güvenlik duvarı kuralıyla kendini dışarıda bırakacak, bir yapılandırma dosyasını sileceksin. Gerçek bilgisayarda bu saatlerce yeniden kurulumdur, VM'de tek tıklama.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Anlık görüntü</strong> (snapshot): Bir VM'in belirli bir andaki durumunun kaydı: disk içeriği, VM ayarları ve VM çalışırken alındıysa bellek durumu. VirtualBox kılavuzunun ifadesiyle, VM'i bu kayıtlardan herhangi birine geri döndürerek "zamanda geri gidebilirsin". Görüntüler dallanabilir: eski bir görüntüye dönüp oradan başka bir deneme yaparsan bir görüntü ağacı oluşur.</p></div>
+
+<p>Mekanizma hem hızını hem de neden yedek olmadığını açıklar. Görüntü alındığı an hipervizör ana disk dosyasını <strong>dondurur</strong> ve boş bir <strong>fark dosyası</strong> (differencing image) açar. Konuğun yeni yazıları fark dosyasına gider; okurken önce fark dosyasına, orada yoksa ana diske bakılır. Geri almak, fark dosyasını atmaktır; saniyeler sürer. Bu, Parça 5'teki yazınca kopyala fikrinin diske uygulanmışıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Anlık görüntü zinciri: dondurulmuş ana disk, ona bağlı birinci fark dosyası, ona bağlı ikinci fark dosyası; hepsi aynı fiziksel diskte">
+  <rect class="sv-k" x="10" y="30" width="380" height="150" rx="10"/>
+  <text class="sv-s" x="200" y="22" text-anchor="middle">ana makinedeki tek fiziksel disk</text>
+  <rect class="sv-l" x="25" y="60" width="110" height="64" rx="6"/>
+  <text class="sv-b" x="80" y="84" text-anchor="middle">ana disk</text>
+  <text class="sv-s" x="80" y="102" text-anchor="middle">donduruldu</text>
+  <text class="sv-s" x="80" y="117" text-anchor="middle">(salt okunur)</text>
+  <rect class="sv-m" x="148" y="60" width="105" height="64" rx="6"/>
+  <text class="sv-b" x="200" y="84" text-anchor="middle">fark 1</text>
+  <text class="sv-s" x="200" y="102" text-anchor="middle">"temiz-kurulum"</text>
+  <text class="sv-s" x="200" y="117" text-anchor="middle">sonrası yazılar</text>
+  <rect class="sv-a" x="266" y="60" width="110" height="64" rx="6"/>
+  <text class="sv-b" x="321" y="84" text-anchor="middle">fark 2</text>
+  <text class="sv-s" x="321" y="102" text-anchor="middle">şu anki</text>
+  <text class="sv-s" x="321" y="117" text-anchor="middle">yazılar</text>
+  <path class="sv-cl" d="M148 92H137M142 87L136 92L142 97"/>
+  <path class="sv-cl" d="M266 92H255M260 87L254 92L260 97"/>
+  <text class="sv-t" x="200" y="150" text-anchor="middle">okuma: sağdan sola, ilk bulunan kazanır</text>
+  <text class="sv-t" x="200" y="168" text-anchor="middle">geri alma: sağdaki fark dosyası atılır</text>
+  <text class="sv-s" x="200" y="205" text-anchor="middle">disk bozulursa ya da ana disk dosyası silinirse</text>
+  <text class="sv-s" x="200" y="221" text-anchor="middle">bütün zincir birlikte gider: görüntü yedek değildir</text>
+</svg>
+<figcaption>Her fark dosyası bir öncekine bağlıdır, tek başına anlamı yoktur. Zincirin hepsi aynı fiziksel diskte durur; disk bozulunca bütün görüntüler de gider.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Anlık görüntüm var, yedeğe gerek yok."</strong> Görüntü, aynı diskte ana disk dosyasına bağlı bir fark dosyasıdır. Disk bozulursa, VM klasörünü yanlışlıkla silersen ya da fidye yazılımı dosyaları şifrelerse görüntüler de gider; uzun zincirler diski yavaşlatır. Doğrusu: görüntü <strong>kısa vadeli geri alma</strong> aracıdır (deneyden önce al, sonra sil ya da birleştir); <strong>yedek</strong> başka bir ortama alınmış, tek başına geri yüklenebilen bağımsız kopyadır.</p></div>
+
+<h2 class="s">Neden yalıtılmış laboratuvar şart?</h2>
+
+<p>"Kendi bilgisayarımda deniyorum, kime zararı olur?" sorusunun dört cevabı var. <strong>Ana makinen değerli:</strong> parolaların, oturumların, belgelerin orada; yanlış bir ayar ya da güvenmediğin bir dosya hepsine dokunabilir. VM'deki hata VM'de kalır.</p>
+
+<p><strong>Ev ağındaki öbür cihazlar senin değil:</strong> ailenin telefonları, televizyon, yazıcı, modem. Yanlış ağa bağlı bir VM'den yapılan tarama ya da trafik yakalama, senin olmayan cihazlara taşar. Bu hukuki bir sorundur: başkasının sistemine izinsiz erişmek ya da trafiğini dinlemek suçtur ve "yalnız deniyordum" savunma değildir (Parça 72–73). Bu rafta saldırılar yalnız kavram ve savunma düzeyinde anlatılır; pratik yalnız kendi makinende ya da açıkça izinli bir laboratuvarda yapılır ve amaç zararlı yazılım çalıştırmak değil, savunmayı güvenle denemektir.</p>
+
+<p><strong>Tekrar edilebilirlik:</strong> bir deneyi temiz başlangıçtan tekrar yapabilmek, neyin neden olduğunu anlamanın yoludur; VM'de temiz başlangıç bir görüntü uzaklığındadır. <strong>Bilerek zafiyetli yazılım:</strong> ileride (Parça 74) eğitim için açıklı bırakılmış uygulamalarla çalışacaksın; açık bir ağda durmaları, başkalarının onları ele geçirip senin ağına basamak yapması demektir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Laboratuvarın üç duvarı:</strong> (1) Güvenmediğin her şey bir <strong>VM'in içinde</strong> çalışır. (2) VM'in ağı varsayılan olarak <strong>dışarıya kapalıdır</strong>. (3) Her deneyden önce <strong>anlık görüntü</strong>, düzenli olarak başka bir ortama <strong>yedek</strong> alınır. Neden üçü birden: VM yalıtımı ana makineyi, ağ kipi ev ağını, görüntü ve yedek zamanını ve verini korur; biri kaçırdığını öbürü yakalar.</p></div>
+
+<h2 class="s">Sanal ağ kipleri: laboratuvarın kapısı</h2>
+
+<p>Sanal ağ kartını nereye "taktığın", VM'in kiminle konuşabileceğini belirler; laboratuvarın en önemli ayarıdır. Tablo VirtualBox kılavuzunun erişim tablosuna dayanır; öbür hipervizörlerde adlar farklıdır (Hyper-V'de iç, özel, dış sanal anahtar), fikir aynıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Kip</th><th>VM → ana makine</th><th>Ana makine → VM</th><th>VM ↔ VM</th><th>VM → dış ağ / internet</th><th>Dış ağ → VM</th><th>Laboratuvarda ne zaman?</th></tr>
+<tr><td>Bağlı değil</td><td>Hayır</td><td>Hayır</td><td>Hayır</td><td>Hayır</td><td>Hayır</td><td>Tamamen çevrimdışı inceleme.</td></tr>
+<tr><td>Host-only</td><td>Evet</td><td>Evet</td><td>Evet</td><td>Hayır</td><td>Hayır</td><td><strong>Varsayılan laboratuvar ağı.</strong></td></tr>
+<tr><td>İç ağ (internal)</td><td>Hayır</td><td>Hayır</td><td>Evet</td><td>Hayır</td><td>Hayır</td><td>VM'ler ana makineden de ayrı olsun.</td></tr>
+<tr><td>NAT</td><td>Evet</td><td>Yalnız port yönlendirmeyle</td><td>Hayır</td><td>Evet</td><td>Yalnız port yönlendirmeyle</td><td>Yalnız güncelleme ve paket kurma sırasında, geçici olarak.</td></tr>
+<tr><td>NAT ağı</td><td>Evet</td><td>Yalnız port yönlendirmeyle</td><td>Evet</td><td>Evet</td><td>Yalnız port yönlendirmeyle</td><td>Birkaç VM'in birlikte güncellenmesi gerektiğinde.</td></tr>
+<tr><td>Köprü (bridged)</td><td>Evet</td><td>Evet</td><td>Evet</td><td>Evet</td><td>Evet</td><td><strong>Kaçın.</strong> VM ev ağına tam üye olur.</td></tr>
+</table></div>
+
+<p><strong>Host-only</strong> kipte hipervizör ana makinede sanal bir ağ arayüzü açar (VirtualBox'ta varsayılan 192.168.56.0/24) ve VM'leri ona bağlar; dışarıya yol yoktur. Ana makineden VM'lere bağlanabilir, VM'ler arası trafiği yakalayabilirsin, internete hiçbir şey sızmaz. <strong>İç ağda</strong> ana makine de dışarıda kalır; güvenmediğin bir şeyi incelerken iyi bir seçenektir.</p>
+
+<p><strong>NAT</strong> çoğu hipervizörde varsayılandır, çünkü hemen internet verir. VirtualBox'ta her NAT kartı kendi özel ağını alır (ilk kart 10.0.2.0/24, konuk çoğunlukla 10.0.2.15) ve konuğun giden trafiği ana makinenin adresiyle çıkar; dışarıdan gelen bağlantı ancak port yönlendirmeyle ulaşır. Ayrıntısı Parça 27'de; şimdilik bil ki NAT bir güvenlik duvarı değildir ve VM'in <strong>dışarıya</strong> çıkmasını engellemez. Güncelleme için gereken de budur: NAT'ı ikinci kart olarak ekler, yalnız güncelleme sırasında "kablosunu takarsın".</p>
+
+<p><strong>Köprü</strong> kipinde VM, fiziksel kartı paylaşarak ev ağına ayrı bir cihaz gibi katılır: modemden adres alır, her cihazı görür ve görülür. "Her şey çalışır" diye cazip gelir; laboratuvar için ise yalıtım duvarını kendi elinle kaldırmaktır.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Laboratuvar ağ şeması: ana makine ve iki VM host-only ağa bağlı; biri geçici NAT kartıyla internete çıkıyor; köprü bağlantısı kapalı, ev ağı ayrı">
+  <rect class="sv-k" x="10" y="10" width="380" height="225" rx="10"/>
+  <text class="sv-s" x="200" y="28" text-anchor="middle">ana makine (senin bilgisayarın)</text>
+  <rect class="sv-l" x="120" y="40" width="160" height="40" rx="6"/>
+  <text class="sv-b" x="200" y="58" text-anchor="middle">host-only anahtar</text>
+  <text class="sv-s" x="200" y="73" text-anchor="middle">192.168.56.0/24</text>
+  <rect class="sv-m" x="25" y="125" width="105" height="55" rx="6"/>
+  <text class="sv-b" x="77" y="148" text-anchor="middle">VM: araçlar</text>
+  <text class="sv-s" x="77" y="166" text-anchor="middle">.101</text>
+  <rect class="sv-m" x="148" y="125" width="105" height="55" rx="6"/>
+  <text class="sv-b" x="200" y="148" text-anchor="middle">VM: hedef</text>
+  <text class="sv-s" x="200" y="166" text-anchor="middle">.102</text>
+  <rect class="sv-a" x="271" y="125" width="105" height="55" rx="6"/>
+  <text class="sv-b" x="323" y="148" text-anchor="middle">ana makine</text>
+  <text class="sv-s" x="323" y="166" text-anchor="middle">arayüzü .1</text>
+  <line class="sv-cl" x1="77" y1="125" x2="160" y2="80"/>
+  <line class="sv-cl" x1="200" y1="125" x2="200" y2="80"/>
+  <line class="sv-cl" x1="323" y1="125" x2="240" y2="80"/>
+  <rect class="sv-k" x="25" y="195" width="105" height="30" rx="6"/>
+  <text class="sv-s" x="77" y="214" text-anchor="middle">NAT (geçici)</text>
+  <line class="sv-c" x1="77" y1="180" x2="77" y2="195"/>
+  <line class="sv-c" x1="77" y1="225" x2="77" y2="268"/>
+  <rect class="sv-k" x="20" y="268" width="115" height="45" rx="6"/>
+  <text class="sv-t" x="77" y="287" text-anchor="middle">internet</text>
+  <text class="sv-s" x="77" y="304" text-anchor="middle">yalnız güncelleme</text>
+  <rect class="sv-a" x="245" y="268" width="140" height="45" rx="6"/>
+  <text class="sv-t" x="315" y="287" text-anchor="middle">ev ağı</text>
+  <text class="sv-s" x="315" y="304" text-anchor="middle">telefon, TV, yazıcı</text>
+  <text class="sv-b" x="200" y="290" text-anchor="middle">köprü yok</text>
+  <line class="sv-c" x1="185" y1="255" x2="215" y2="255"/>
+  <line class="sv-c" x1="190" y1="248" x2="210" y2="262"/>
+  <line class="sv-c" x1="190" y1="262" x2="210" y2="248"/>
+</svg>
+<figcaption>Önerilen ev laboratuvarı: iki VM ve ana makine yalnız host-only anahtar üzerinden konuşur. "Araçlar" VM'inin NAT kartı yalnız güncellemede bağlanır; "hedef" VM'inin internete yolu yoktur; ev ağına köprü yoktur.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Laboratuvarında iki VM var: araçlarını kurduğun bir Linux VM'i ve ileride bilerek zafiyetli bir eğitim uygulaması koyacağın "hedef" VM'i. Üç iş yapacaksın: (a) Linux VM'ini güncellemek, (b) Linux VM'inden hedef VM'deki web uygulamasına istek atmak, (c) ana makinenin tarayıcısından hedef VM'deki uygulamaya bakmak. Her VM'e hangi kartları takarsın?</p>
+<p><strong>Adım 1.</strong> Her iş için kimin kiminle konuşması gerektiğini yaz. (a) Linux VM'i → internet. (b) Linux VM'i ↔ hedef VM. (c) Ana makine → hedef VM.</p>
+<p><strong>Adım 2.</strong> (b) ve (c)'yi birlikte karşılayan kipi tablodan bul: VM ↔ VM ve ana makine → VM sütunlarının ikisi de "Evet" olan, ama dış ağ sütunları "Hayır" olan tek kip host-only'dir. İki VM'in birinci kartı host-only olur.</p>
+<p><strong>Adım 3.</strong> (a) için internet gerekir. Köprü de verir, ama ev ağını açar; NAT ise yalnız dışarı çıkışı verir. Linux VM'ine ikinci kart olarak NAT eklenir ve yalnız güncelleme sırasında bağlı tutulur.</p>
+<p><strong>Adım 4.</strong> Hedef VM'e internet gerekir mi diye sor. Gerekmez; zafiyetli bir uygulamanın dışarıya yolu olmaması tam da istediğin şeydir. Hedef VM yalnız host-only kartıyla kalır. Ona paket kurman gerekirse, kurulumu uygulamayı yüklemeden önce, temiz hâlindeyken yaparsın.</p>
+<p><strong>Sonuç:</strong> Linux VM'i: kart 1 host-only, kart 2 NAT (çoğu zaman bağlı değil). Hedef VM: yalnız host-only. Köprü hiçbir yerde yok. Her değişiklikten önce iki VM'in de görüntüsü alınır.</p></div>
+
+<h2 class="s">Sanallaştırma yazılımı seçimi (16 Ekim 2026 itibarıyla)</h2>
+
+<p>Lisans koşulları sık değiştiği için tablo 16 Ekim 2026'da resmî sayfalara bakılarak yazıldı; kurmadan önce sen de üreticinin sayfasına bak.</p>
+
+<div class="tablo"><table>
+<tr><th>Yazılım</th><th>Tür</th><th>Ana makine</th><th>Lisans durumu (16 Ekim 2026)</th><th>Not</th></tr>
+<tr><td>Oracle VirtualBox 7.2.20</td><td>Tip 2</td><td>Windows, macOS (Intel ve Apple Silicon), Linux</td><td>Temel paket GPLv3, ücretsiz. Ayrı "Extension Pack" ise PUEL lisanslı: yalnız kişisel ve eğitim amaçlı kullanım ücretsiz, ticari kullanım ayrı lisans ister.</td><td>Laboratuvar için en yaygın başlangıç; ağ kiplerinin hepsi var.</td></tr>
+<tr><td>VMware Workstation Pro (son sürüm 26H1)</td><td>Tip 2</td><td>Windows, Linux (macOS'ta karşılığı Fusion Pro)</td><td>Mayıs 2024'ten beri kişisel kullanımda, 11 Kasım 2024'ten beri ticari ve eğitim kullanımında da ücretsiz; lisans anahtarı gerekmiyor. İndirmek için ücretsiz Broadcom hesabı gerekiyor.</td><td>Ücretli destek satışı kaldırıldı; yalnız topluluk desteği var.</td></tr>
+<tr><td>Microsoft Hyper-V</td><td>Tip 1</td><td>Windows 11 Pro, Enterprise, Education</td><td>Windows'a dahil, ek ücret yok. Windows 11 Home'da resmî olarak yok.</td><td>Açıldığında öbür hipervizörler onun üstünden çalışmak zorunda kalır.</td></tr>
+<tr><td>KVM + QEMU (ör. virt-manager arayüzüyle)</td><td>Çekirdekte (tartışmalı)</td><td>Linux</td><td>Açık kaynak, ücretsiz; KVM 2.6.20'den beri Linux çekirdeğinde.</td><td>VT-x ya da AMD-V ister.</td></tr>
+<tr><td>UTM</td><td>Tip 2</td><td>macOS (özellikle Apple Silicon)</td><td>Ücretsiz ve açık kaynak; App Store sürümü aynı, ücretlidir ve geliştirmeyi destekler.</td><td>ARM konuklar neredeyse yerel hızda; x86 konuklar öykünmeyle, yavaş.</td></tr>
+</table></div>
+
+<p><strong>VirtualBox</strong>'ta temel paketle Extension Pack'i karıştırma: ilki açık kaynak, ikincisinin lisansı kişisel ve eğitim kullanımıyla sınırlı; şirkette laboratuvar kuruyorsan fark önemlidir. <strong>VMware Workstation Pro</strong> iki adımda ücretsizleşti: Mayıs 2024'te kişisel kullanıma, 11 Kasım 2024'te herkese; Broadcom'a göre 17.5.2 ve sonrası için.</p>
+
+<p><strong>Hyper-V</strong>'de iki tuzak var. Home'da yoktur, ama WSL 2 "Sanal Makine Platformu" adlı Hyper-V alt kümesiyle Home'da da çalışır. Ve Hyper-V ya da WSL 2 açıkken donanım desteğini Windows'un hipervizörü tutar; VirtualBox ile VMware o zaman Microsoft'un sunduğu arayüz üzerinden çalışır. Microsoft'a göre ikisi de bunu destekler; yavaşlık ya da uyumsuzluk görürsen nedeni büyük olasılıkla budur.</p>
+
+<p><strong>Apple Silicon</strong> Mac'te işlemci ARM'dır (Parça 2'deki komut kümesi farkı): ARM64 (aarch64) kalıpları hızlı çalışır, x86 kalıpları ancak öykünmeyle ve çok yavaş. Mac'te dağıtımın ARM64 kalıbını indir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bilgisayarında 16 GB RAM, 8 çekirdekli bir x86 işlemci ve 120 GB boş disk var; Windows 11 Pro kullanıyorsun. Laboratuvarda iki Linux VM'i (biri araçlar, biri hedef) ve ileride bir Windows değerlendirme VM'i çalıştırmak istiyorsun. Kaynakları nasıl paylaştırırsın?</p>
+<p><strong>Adım 1.</strong> Ana makineye pay ayır. Windows, tarayıcı ve hipervizörün kendisi rahat çalışsın diye ana makineye en az 6 GB RAM bırak. Kalan: 16 − 6 = 10 GB.</p>
+<p><strong>Adım 2.</strong> Aynı anda neyin açık olacağını belirle. Üç VM'i aynı anda çalıştırmak zorunda değilsin. Linux bloğunda iki Linux VM'i açık olur: araçlar VM'ine 4 GB, hedef VM'e 2 GB ver (hedef hafif bir sunucu). Toplam 6 GB; 10 GB'ın içinde kalır.</p>
+<p><strong>Adım 3.</strong> Windows bloğuna geçince araçlar VM'i (4 GB) ile Windows VM'i (4 GB) açık olur: toplam 8 GB, yine 10 GB'ın altında. Hedef VM'i kapatırsın.</p>
+<p><strong>Adım 4.</strong> İşlemci: her VM'e 2 vCPU ver. Aynı anda en çok 2 VM açık olacağı için 4 vCPU kullanılır; 8 çekirdeğin yarısı ana makineye kalır.</p>
+<p><strong>Adım 5.</strong> Disk: Linux VM'lerine 25'er, Windows VM'ine 50 GB "dinamik büyüyen" disk; üst sınır 100 GB. Görüntülerin fark dosyaları için 15–20 GB pay kalır; yedekler harici diske.</p>
+<p><strong>Sonuç:</strong> Ana makine 6 GB; Linux bloğunda 4 + 2 GB, Windows bloğunda 4 + 4 GB; her VM 2 vCPU; disk 25 + 25 + 50 GB üst sınırla. Kural: aynı anda açık VM'lerin toplam RAM'i, ana makine payı düşüldükten sonra kalanı geçmesin; geçerse ana makine diske takas yapmaya başlar ve her şey yavaşlar.</p></div>
+
+<h2 class="s">Laboratuvar planı adım adım</h2>
+
+<p>Bu adımlar hipervizör kurulumu ve VM oluşturma içerdiği için burada <strong>çalıştırılmadı</strong>: bu ortamda VM kurulamıyor ve yönetici yetkisi isteyen işlem yapılmadı. Resmî belgelere dayanan bir plandır; menü adları sürüme göre değişir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1. Donanımı denetle.</strong> UEFI ayarlarında Intel VT-x ya da AMD-V açık mı? Windows'ta Görev Yöneticisi'nin Performans sekmesinde "Sanallaştırma: Etkin" yazmalı.</p>
+<p><strong>2. Kaynak bütçesini çıkar</strong> (Çözümlü örnek 2 gibi).</p>
+<p><strong>3. Hipervizörü yalnız üreticinin kendi sitesinden indir ve kur.</strong></p>
+<p><strong>4. Host-only ağı oluştur.</strong> Hipervizörün ağ yöneticisinde bir host-only ağ aç; DHCP sunucusunu açık bırakabilirsin.</p>
+<p><strong>5. Dağıtım kalıbını (ISO) indir ve doğrula:</strong> önce SHA256SUMS dosyasının imzası, sonra kalıbın özeti (aşağıda).</p>
+<p><strong>6. VM'i oluştur.</strong> Kart 1: host-only. Kart 2: NAT, ilk kurulum ve güncelleme için bağlı.</p>
+<p><strong>7. Kur ve güncelle,</strong> sonra NAT kartının kablosunu çıkar.</p>
+<p><strong>8. Gereksiz kapıları kapat:</strong> paylaşılan klasör, ortak pano, sürükle-bırak kapalı.</p>
+<p><strong>9. "temiz-kurulum" adıyla ilk anlık görüntüyü al</strong> ve bir laboratuvar defterine VM adı, adresi, kartları ve görüntü listesini yaz.</p>
+<p><strong>10. İlk yedeği</strong> başka bir diske al ve bir kez geri yüklemeyi dene.</p></div>
+
+<p>Sıranın nedeni: doğrulanmamış kalıptan kurulan VM'in görüntüsünü almak, belki bozuk bir başlangıcı "temiz" diye mühürlemektir. Önce doğrula, sonra kur, sonra mühürle.</p>
+
+<h2 class="s">İndirilen kalıbın doğrulanması: özet ve imza</h2>
+
+<p>Kalıp yolda bozulmuş (yarım inen indirme) ya da ele geçirilmiş bir ayna sunucusunda değiştirilmiş olabilir. İki ayrı sorun, iki ayrı araç ister. Parça 6'da hash'in tek yönlü parmak izi olduğunu gördün: tek bit değişse özet tamamen başka olur (ayrıntı Parça 44'te). Dağıtımlar her kalıbın SHA-256 özetini <code>SHA256SUMS</code> dosyasında yayımlar; sen indirdiğin dosyanın özetini hesaplayıp karşılaştırırsın.</p>
+
+<p>Ama kalıbı değiştirebilen biri yanındaki <code>SHA256SUMS</code>'ı da değiştirebilir. Özet, kendisiyle aynı yerden geliyorsa yalnız <strong>kazara bozulmayı</strong> yakalar, <strong>kasıtlı değiştirmeyi</strong> yakalamaz. Bu yüzden dağıtımlar listeyi bir de <strong>dijital imzayla</strong> imzalar (Kali ve Ubuntu'da <code>SHA256SUMS.gpg</code>). İmza dağıtımın özel anahtarıyla üretilir, açık anahtarıyla doğrulanır; özel anahtarı olmayan, değiştirdiği dosyaya geçerli imza üretemez. Matematiği Parça 46'da.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Doğrulama zinciri iki halkalıdır ve sırası değişmez:</strong> (1) <code>SHA256SUMS</code>'ın imzasını dağıtımın açık anahtarıyla doğrula; "Good signature" görmeden devam etme. (2) Kalıbın özetini imzası doğrulanmış listeyle karşılaştır; "OK" görmeden kurma. En zayıf halka anahtarın kendisidir: parmak izini dağıtımın resmî sitesindeki değerle karakter karakter karşılaştırırsın. Kali'nin belgesi parmak izini yayımlar ve imza ya da özet tutmazsa kalıbı kullanmamanı söyler.</p></div>
+
+<p>Ubuntu'nun kılavuzu bir yanılgıyı düzeltir: "Good signature" altında "WARNING: This key is not certified with a trusted signature!" görebilirsin. Bu, imzanın bozuk olduğunu değil, anahtarı senin onaylamadığını söyler; geçersiz imza "BAD signature" diye görünür.</p>
+
+<h2 class="s">Kendi makinende dene: kalıp doğrulama, ad alanı ve WSL 2</h2>
+
+<p>Bu bölümdeki her komut gerçekten çalıştırıldı, çıktılar birebir aktarıldı (ortam: Windows 11 üstünde WSL 2, Kali Linux; yalnız ev dizini, kullanıcı ve makine adı genel adlarla değiştirildi). Hiçbir adım bir şey indirmez, yönetici yetkisi istemez, kalıcı ayar değiştirmez; yerel Linux'ta ya da bir Linux VM'inde de çalışır. Yalnız kendi makinende çalıştır.</p>
+
+<h3>Adım 1. Şu an bir VM'in içinde misin?</h3>
+
+<pre class="kod" data-ad="bash">uname -r
+systemd-detect-virt
+grep -c hypervisor /proc/cpuinfo</pre>
+<pre class="cikti">6.18.33.2-microsoft-standard-WSL2
+wsl
+12</pre>
+
+<p>Satır satır: birinci satır çekirdek sürümüdür; sonundaki <code>microsoft-standard-WSL2</code>, Microsoft'un WSL 2 için derlediği çekirdek olduğunu söyler. <code>systemd-detect-virt</code> sanallaştırma türünü tanıyıp <code>wsl</code> der. Üçüncü satır <code>hypervisor</code> bayrağını sayar: işlemci, altında hipervizör çalıştığını konuğa bu bayrakla bildirir; 12 mantıksal işlemcinin her birinde bayrak var. Yani bu terminal hafif bir VM'in içinde koşuyor. Sanallaştırmasız makinede belgeye göre <code>none</code> ve 0 çıkar (burada denenemedi). Sendeki sayılar farklı olacaktır.</p>
+
+<h3>Adım 2. Konteyner ayrı bir makine değil: PID ad alanı</h3>
+
+<p>Root yetkisi olmadan yeni bir kullanıcı ve PID ad alanı açacağız. <code>unshare</code> bir programı yeni ad alanlarında çalıştırır: <code>--user --map-root-user</code> kullanıcı ad alanı açıp seni içeride root'a eşler, <code>--pid --fork</code> PID ad alanı açıp programı onun ilk süreci yapar, <code>--mount-proc</code> <code>ps</code>'in yeni ad alanını görmesi için <code>/proc</code>'u yeniden bağlar. İçeride çalışacak betik:</p>
+
+<pre class="kod" data-ad="ic2.sh">sleep 300 &amp;
+echo "ic: PID=$$ kullanici=$(id -un) uid=$(id -u)"
+echo "ic: cekirdek $(uname -r)"
+ps -e -o pid,user,cmd
+wait</pre>
+
+<pre class="kod" data-ad="bash">unshare --user --map-root-user --pid --fork --mount-proc bash ic2.sh &amp;
+sleep 1
+ps -C sleep -o pid,user,cmd
+echo "dis: cekirdek $(uname -r)"
+pkill -f 'sleep 300'</pre>
+<pre class="cikti">ic: PID=1 kullanici=root uid=0
+ic: cekirdek 6.18.33.2-microsoft-standard-WSL2
+    PID USER     CMD
+      1 root     bash ic2.sh
+      2 root     sleep 300
+      6 root     ps -e -o pid,user,cmd
+    PID USER     CMD
+   1214 kullanici sleep 300
+dis: cekirdek 6.18.33.2-microsoft-standard-WSL2</pre>
+
+<p>İçeriden (ilk altı satır): <code>bash</code> kendini PID 1 sanıyor, kullanıcı <code>root</code>, UID 0; <code>ps</code> yalnız üç süreç görüyor, makinedeki onlarca süreçten hiçbiri bu dünyada yok. PID 6'ya atlanması, aradaki numaraların <code>$(...)</code> alt süreçlerine gitmesindendir. Dışarıdan (son üç satır): aynı <code>sleep</code> PID 1214'tür ve sahibi sıradan kullanıcıdır. İçerideki "root" dışarıda hiçbir ayrıcalık taşımaz. En önemli satır: çekirdek içeride de dışarıda da <strong>aynı</strong>. Konteyner araçları buna daha çok ad alanı, cgroup sınırı ve hazır kalıp ekler; altta yine tek çekirdek vardır.</p>
+
+<p>Yeni bir makine adı (UTS ad alanı) da aynı mantıkla çalışır:</p>
+
+<pre class="kod" data-ad="bash">unshare -r -u sh -c 'hostname lab-ici; hostname'
+hostname</pre>
+<pre class="cikti">lab-ici
+ana-makine</pre>
+
+<p>İçeride makine adını değiştirdin; dışarıdaki ad hiç etkilenmedi (gerçek ad gizlilik için <code>ana-makine</code> diye değiştirildi). Son olarak, kullanıcı ad alanı olmadan yalnız PID ad alanı açmaya çalışırsan çekirdek izin vermez:</p>
+
+<pre class="kod" data-ad="bash">unshare --pid --fork --mount-proc true; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">unshare: unshare failed: Operation not permitted
+(cikis kodu 1)</pre>
+
+<p>Sıradan kullanıcı PID ad alanını ancak kendi kullanıcı ad alanının içinde açabilir; gerçek root yetkisi bu yolla verilmez (Parça 5'teki en az yetki ilkesi). Bazı dağıtımlar ayrıcalıksız kullanıcı ad alanlarını kısıtlar; sende ilk komut da bu hatayı verirse nedeni budur.</p>
+
+<h3>Adım 3. Sahte bir kalıbın özetini doğrulamak</h3>
+
+<p>Gerçek bir ISO indirmek yerine kendi küçük "kalıbımızı" üretelim: başında bir metin satırı, ardından 1 MiB sıfır baytı olan bir dosya. Yayıncı rolünde onun <code>SHA256SUMS</code> dosyasını çıkaracağız, sonra kullanıcı rolünde doğrulayacağız.</p>
+
+<pre class="kod" data-ad="bash">mkdir -p ~/lab-dene/kalip &amp;&amp; cd ~/lab-dene/kalip
+printf 'LABOS sahte kalip surum 1.0\n' > lab-os-1.0.iso
+head -c 1048576 /dev/zero >> lab-os-1.0.iso
+ls -l lab-os-1.0.iso | awk '{print $5, $9}'
+sha256sum lab-os-1.0.iso > SHA256SUMS
+cat SHA256SUMS
+sha256sum -c SHA256SUMS; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">1048604 lab-os-1.0.iso
+d09530bcd9c42e49f8a787e0de4a58e1fd3e9b9aed5d16b35e241f9c11f1dad5  lab-os-1.0.iso
+lab-os-1.0.iso: OK
+(cikis kodu 0)</pre>
+
+<p>Dosya 1.048.604 bayt: 28 baytlık metin artı 1.048.576 sıfır. <code>SHA256SUMS</code> satırı "64 onaltılık hane, iki boşluk, dosya adı"dır; 64 hane, Parça 1'deki hesapla 32 bayt, yani 256 bittir. <code>sha256sum -c</code> özeti yeniden hesaplar, tutarsa <code>OK</code> yazıp 0 koduyla döner. İçerik herkeste aynı olduğu için özet sende de birebir aynı çıkmalı.</p>
+
+<p>Şimdi saldırganın ya da bozuk bir indirmenin yapacağını yapalım: dosyanın ortasında tek bir baytı değiştirelim.</p>
+
+<pre class="kod" data-ad="bash">cp lab-os-1.0.iso yedek.iso
+printf '\x01' | dd of=lab-os-1.0.iso bs=1 seek=500000 conv=notrunc status=none
+cmp yedek.iso lab-os-1.0.iso
+sha256sum -c SHA256SUMS; echo "(cikis kodu $?)"
+sha256sum lab-os-1.0.iso
+cp yedek.iso lab-os-1.0.iso
+sha256sum -c SHA256SUMS; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">yedek.iso lab-os-1.0.iso differ: byte 500001, line 2
+lab-os-1.0.iso: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+(cikis kodu 1)
+d198949b4854a88e823f482e5bd1839e5167363fc58e6fb8d6a9f323308ea20e  lab-os-1.0.iso
+lab-os-1.0.iso: OK
+(cikis kodu 0)</pre>
+
+<p><code>dd</code> 500.000. konumdaki baytın üstüne 0x01 yazdı (<code>seek</code> sıfırdan saydığı için <code>cmp</code> 500.001 diyor). Bir milyonu aşkın bayttan biri değişti, <code>sha256sum -c</code> hemen <code>FAILED</code> dedi ve 1 koduyla döndü; yeni özet eskisine hiç benzemiyor. Yedeği geri koyunca yine <code>OK</code>. Gerçek kalıpta <code>FAILED</code> görürsen silip yeniden indirirsin; "bir bayt nedir ki" diye kurmazsın.</p>
+
+<h3>Adım 4. Aynı doğrulama Windows'ta</h3>
+
+<p>Windows'ta PowerShell'in <code>Get-FileHash</code> komutu aynı işi yapar; aynı dosyayla:</p>
+
+<pre class="kod" data-ad="PowerShell">Get-FileHash .\lab-os-1.0.iso -Algorithm SHA256 | Format-List
+$beklenen = (Get-Content .\SHA256SUMS).Split(' ')[0]
+(Get-FileHash .\lab-os-1.0.iso -Algorithm SHA256).Hash -eq $beklenen</pre>
+<pre class="cikti">Algorithm : SHA256
+Hash      : D09530BCD9C42E49F8A787E0DE4A58E1FD3E9B9AED5D16B35E241F9C11F1DAD5
+Path      : C:\lab\lab-os-1.0.iso
+
+True</pre>
+
+<p>Özet Linux'takiyle aynı, yalnız harfler büyük; <code>-eq</code> metinlerde büyük-küçük harf ayırmadığı için <code>True</code>. Özeti gözle değil makineyle karşılaştır; 64 hanede bir haneyi kaçırmak kolaydır. (<code>Path</code> satırı gizlilik için kısaltıldı.)</p>
+
+<h3>Adım 5. SHA256SUMS'ın imzasını yerelde denemek</h3>
+
+<p>Gerçek bir anahtar indirmeden zinciri görmek için kendi geçici anahtarımızla "yayıncı" olacağız. Kendi anahtarlığına dokunmamak için <code>GNUPGHOME</code>'u geçici bir klasöre yönlendiriyoruz. Anahtar bir gün geçerli ve parolasız; yalnız bu deneme için. Gerçek anahtarlara parola konur (Parça 18).</p>
+
+<pre class="kod" data-ad="bash">cd ~/lab-dene/kalip
+export GNUPGHOME="$HOME/lab-dene/gnupg-gecici"
+mkdir -m 700 "$GNUPGHOME"
+gpg --batch --passphrase '' --quick-gen-key 'Lab Dagitim Deneme &lt;lab@example.invalid>' ed25519 sign 1d
+gpg --list-keys</pre>
+<pre class="cikti">gpg: keybox '/home/kullanici/lab-dene/gnupg-gecici/pubring.kbx' created
+gpg: /home/kullanici/lab-dene/gnupg-gecici/trustdb.gpg: trustdb created
+gpg: directory '/home/kullanici/lab-dene/gnupg-gecici/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/home/kullanici/lab-dene/gnupg-gecici/openpgp-revocs.d/BBD06C79B1E220586C4C3B00D96DEB722D516560.rev'
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+gpg: next trustdb check due at 2026-10-17
+/home/kullanici/lab-dene/gnupg-gecici/pubring.kbx
+-------------------------------------------
+pub   ed25519 2026-10-16 [SC] [expires: 2026-10-17]
+      BBD06C79B1E220586C4C3B00D96DEB722D516560
+uid           [ultimate] Lab Dagitim Deneme &lt;lab@example.invalid></pre>
+
+<p>İlk dört satır anahtarlığın ve iptal sertifikasının oluşturulduğunu söyler. <code>pub</code> satırı türü (ed25519), tarihi, işlevi (<code>[SC]</code>: imzalama ve sertifikalama) ve bitişi verir. Altındaki 40 hanelik dizi <strong>parmak izidir</strong>; Kali'nin yayımladığı değer bunun karşılığıdır. <code>[ultimate]</code>, anahtarı sen ürettiğin için tam güvenildiğini gösterir; dağıtımdan aldığın anahtarda <code>[unknown]</code> görürsün. Parmak izi her üretimde rastgeledir.</p>
+
+<pre class="kod" data-ad="bash">gpg --batch --yes --detach-sign --armor --output SHA256SUMS.asc SHA256SUMS
+head -3 SHA256SUMS.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS; echo "(cikis kodu $?)"</pre>
+<pre class="cikti">-----BEGIN PGP SIGNATURE-----
+
+iHUEABYKAB0WIQS70Gx5seIgWGxMOwDZbetyLVFlYAUCatIc0gAKCRDZbetyLVFl
+gpg: Signature made Fri Oct 16 15:47:14 2026 +03
+gpg:                using EDDSA key BBD06C79B1E220586C4C3B00D96DEB722D516560
+gpg: Good signature from "Lab Dagitim Deneme &lt;lab@example.invalid>" [ultimate]
+(cikis kodu 0)</pre>
+
+<p><code>--detach-sign</code> imzayı ayrı dosyaya yazar; dağıtımların <code>SHA256SUMS.gpg</code>'si de ayrık imzadır (onlarınki ikili, bizimki <code>--armor</code> ile metin). İmza dosyasındaki harfler Parça 6'daki Base64 kodlamasıdır, şifreleme değil. <code>gpg --verify</code> anahtarı, zamanı ve "Good signature" sonucunu verir. Şimdi listede tek karakter değiştirelim; kalıpla birlikte özeti de değiştiren saldırganın yaptığı budur:</p>
+
+<pre class="kod" data-ad="bash">cp SHA256SUMS SHA256SUMS.orj
+sed -i 's/^\(.\)/0/' SHA256SUMS
+head -c 20 SHA256SUMS; echo
+gpg --verify SHA256SUMS.asc SHA256SUMS; echo "(cikis kodu $?)"
+cp SHA256SUMS.orj SHA256SUMS</pre>
+<pre class="cikti">009530bcd9c42e49f8a7
+gpg: Signature made Fri Oct 16 15:47:14 2026 +03
+gpg:                using EDDSA key BBD06C79B1E220586C4C3B00D96DEB722D516560
+gpg: BAD signature from "Lab Dagitim Deneme &lt;lab@example.invalid>" [ultimate]
+(cikis kodu 1)</pre>
+
+<p>İlk hane <code>d</code> iken <code>0</code> oldu ve <code>gpg</code> <code>BAD signature</code> dedi. Saldırgan kalıbı ve listeyi birlikte değiştirse de özel anahtar olmadan geçerli imza üretemez; iki halkalı zincirin anlamı budur. Bitince <code>gpgconf --kill gpg-agent</code> ile ajanı durdurup <code>~/lab-dene</code>'yi silebilirsin. Gerçek kalıpta tek fark, anahtarı dağıtımdan alıp parmak izini resmî sayfayla karşılaştırmandır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir dağıtımın kalıbını bir aynadan indirdin. Elinde üç dosya var: kalıp, <code>SHA256SUMS</code> ve <code>SHA256SUMS.gpg</code>. Dört olası çıktı kombinasyonu için ne yaparsın? (i) İmza Good, özet OK. (ii) İmza Good, özet FAILED. (iii) İmza BAD, özet OK. (iv) İmza Good ama yanında "WARNING: This key is not certified with a trusted signature!"</p>
+<p><strong>Adım 1.</strong> Zincirin sırasını hatırla: önce imza, sonra özet. Özetin anlamı, ancak <code>SHA256SUMS</code> dosyası güvenilirse vardır.</p>
+<p><strong>Adım 2.</strong> (i) İki halka da geçti; parmak izini resmî sayfayla daha önce karşılaştırdıysan kalıp güvenilirdir, kurabilirsin.</p>
+<p><strong>Adım 3.</strong> (ii) Liste güvenilir ama kalıp onunla uyuşmuyor: kalıp bozuk ya da değiştirilmiş. Sil, başka bir aynadan yeniden indir, yeniden doğrula.</p>
+<p><strong>Adım 4.</strong> (iii) Özetin OK olması hiçbir şey kanıtlamaz, çünkü listenin kendisi değiştirilmiş olabilir: saldırgan kalıbı değiştirip yeni özetini listeye yazmışsa tam olarak bu tabloyu görürsün. Kurma; kaynağı şüpheli say.</p>
+<p><strong>Adım 5.</strong> (iv) İmza geçerli; uyarı yalnız bu anahtarı senin kendi anahtarınla onaylamadığını söyler. Yapman gereken, çıktıdaki anahtar parmak izini dağıtımın resmî sitesindeki değerle karşılaştırmaktır. Uyuşuyorsa (i) ile aynı durumdasın.</p>
+<p><strong>Sonuç:</strong> Yalnız (i) ve parmak izi uyuşan (iv) kurulur. (iii) en tehlikeli durumdur, çünkü "OK" kelimesi insana yanlış bir güven verir.</p></div>
+
+<h2 class="s">Yedek ve geri yükleme alışkanlığı</h2>
+
+<p>En kolay yol, kapalı bir VM'i hipervizörün "dışa aktar" (export) özelliğiyle tek bir paket dosyasına yazmaktır; VirtualBox ve VMware açık bir biçim olan OVF/OVA'yı kullanır. Dosyayı ana makinenin diskinde değil, harici bir diskte saklarsın. WSL'de Microsoft'un önerdiği yol <code>wsl --export</code> ve gerektiğinde <code>wsl --import</code>'tur. Bunlar burada <strong>çalıştırılmadı</strong>, çünkü sistemde kalıcı değişiklik yapar.</p>
+
+<p>Üç alışkanlık: <strong>Düzen</strong>: her büyük aşamanın sonunda bir yedek. <strong>Ayrı ortam</strong>: yedek asıl veriyle aynı diskte durmaz (3-2-1 kuralı Parça 71'de). <strong>Geri yükleme testi</strong>: hiç geri yüklenmemiş yedek, var olduğu umulan yedektir; ilkini yeni bir adla içe aktarıp açılıyor mu dene. Yedeğin yanına bir özet de yaz (<code>sha256sum yedek.ova > yedek.ova.sha256</code>); yıllar sonra bozulmadığını böyle anlarsın. Bu, Adım 3'ün kendi verine uygulanmışıdır.</p>
+
+<h2 class="s">Bu laboratuvar neden bütün pratik parçaların ön koşulu?</h2>
+
+<p>Linux bloğunda (Parça 8–19) izinleri bozacak, servisleri kapatacak, güvenlik duvarı kuracaksın (Parça 16'da kendini dışarıda bırakırsan bir görüntüyle döneceksin). Ağ bloğunda trafiği yalnız host-only ağda, kendi VM'lerin arasında yakalayacaksın (Parça 32). Windows bloğunda bir Windows VM'i (Parça 61) ve yalıtık ağda küçük bir etki alanı (Parça 63) kuracaksın; Parça 74'te laboratuvarı genişleteceksin. Her birinde aynı üç duvar: VM içinde çalış, ağı kapalı tut, önce görüntü al.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 4 ve 5'e:</strong> Ring ayrımı hipervizörle bir kat derine indi; süreç yalıtımı ve yazınca kopyala, ad alanlarında ve fark dosyasında yeniden çıktı. Seccomp ve yetenekler Parça 5'te.</p>
+<p><strong>Parça 6, 44 ve 46'ya:</strong> Kalıp doğrulamada hash'i kullandın; özelliklerinin ayrıntısı Parça 44'te, imzanın matematiği Parça 46'da.</p>
+<p><strong>Parça 27'ye:</strong> NAT kipinin ve port yönlendirmenin arkasındaki adres çevirisi orada açılıyor.</p>
+<p><strong>Parça 71, 72–73 ve 74'e:</strong> Yedekleme stratejisi Parça 71'de; laboratuvarın yasal ve etik çerçevesi Parça 72–73'te; laboratuvarın genişletilmesi ve eğitim platformları Parça 74'te.</p>
+<p><strong>Kod rafına:</strong> <code>sha256sum -c</code> kod rafı Parça 18'deki bütünlük izleyicisinin temelidir; <code>venv</code> (kod rafı Parça 9) adına rağmen yalıtım değildir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Tip 1 ile tip 2 hipervizör arasındaki fark nedir? Her birine bir örnek ver ve güvenlik açısından neden önemli olduğunu söyle.</summary><p>Tip 1 doğrudan donanımın üstünde çalışır (Hyper-V, ESXi, Xen); tip 2 sıradan bir işletim sisteminin üstünde uygulama olarak çalışır (VirtualBox, VMware Workstation Pro, UTM). Tip 2'de VM ile donanım arasında ana işletim sisteminin bütün kodu durur; ana makine ele geçerse içindeki VM'ler de ele geçmiş sayılır. KVM'in hangi türe girdiği tartışmalıdır.</p></details>
+<details><summary>Konteyner neden tam bir güvenlik sınırı sayılmaz?</summary><p>Çünkü bütün konteynerler ana makinenin tek çekirdeğini paylaşır; aralarındaki duvar ad alanları, cgroup, seccomp ve yetenekler gibi çekirdek içi yapılandırmalardır. Çekirdekteki bir hata her konteynerden erişilebilir. NIST SP 800-190, paylaşılan çekirdeğin hipervizörlere göre daha geniş bir saldırı yüzeyi doğurduğunu ve konteyner yalıtımının hipervizör yalıtımı kadar yüksek olmadığını söyler. Güvenmediğin şeyi bir VM'in içine koyarsın.</p></details>
+<details><summary>Anlık görüntü nasıl çalışır ve neden yedek yerine geçmez?</summary><p>Görüntü alınınca ana disk dosyası dondurulur ve yeni yazılar bir fark dosyasına gider; geri almak fark dosyasını atmaktır. Ama fark dosyası ana diske bağlıdır ve hepsi aynı fiziksel diskte durur; disk bozulur, klasör silinir ya da dosyalar şifrelenirse görüntüler de gider. Yedek ise başka bir ortamda, tek başına geri yüklenebilen bağımsız bir kopyadır.</p></details>
+<details><summary>Laboratuvar VM'i için hangi ağ kipini varsayılan yaparsın, NAT'ı ne zaman açarsın, köprüden neden kaçınırsın?</summary><p>Varsayılan host-only'dir: VM'ler ana makineyle ve birbirleriyle konuşur, dışarıya yolları yoktur. NAT ikinci bir kart olarak eklenir ve yalnız güncelleme ya da paket kurma sırasında bağlı tutulur. Köprü kipinde VM ev ağına ayrı bir cihaz gibi katılır; ev ağındaki her cihazı görür ve görülür, bu da laboratuvarın yalıtımını ortadan kaldırır.</p></details>
+<details><summary>İndirdiğin kalıbı doğrulamanın iki halkası nedir ve sıraları neden önemlidir?</summary><p>Önce SHA256SUMS dosyasının imzası dağıtımın açık anahtarıyla doğrulanır (parmak izi resmî sayfayla karşılaştırılarak), sonra kalıbın özeti bu listeyle karşılaştırılır. Sıra önemlidir, çünkü liste kalıpla aynı yerden geliyorsa saldırgan ikisini birlikte değiştirebilir; imzası doğrulanmamış listeyle alınan "OK" hiçbir şey kanıtlamaz.</p></details>
+<details><summary>WSL 2'de Windows ile Linux arasındaki duvar ve iki Linux dağıtımı arasındaki duvar hangi türdendir?</summary><p>Microsoft'un belgesine göre WSL 2 gerçek bir Linux çekirdeğini hafif bir yardımcı VM'de çalıştırır; Windows ile Linux arasındaki duvar VM duvarıdır. Dağıtımlar o VM'in içinde konteyner olarak koşar; aynı çekirdeği ve ağ ad alanını paylaşır, kendi PID, mount, kullanıcı ve cgroup ad alanları vardır. Bu yüzden iki dağıtım arasındaki duvar konteyner duvarıdır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>VM:</strong> yazılımla sağlanan donanım üstünde, kendi çekirdeğiyle eksiksiz işletim sistemi. <strong>Konuk</strong> içeride, <strong>ana makine</strong> dışarıda. Hız için VT-x / AMD-V gerekir.</li>
+<li><strong>Tip 1:</strong> donanımın üstünde (Hyper-V, ESXi, Xen). <strong>Tip 2:</strong> işletim sisteminin üstünde (VirtualBox, VMware Workstation Pro, UTM). KVM tartışmalı.</li>
+<li><strong>Konteyner:</strong> ortak çekirdek + ad alanları (ne gördüğü) + cgroups (ne kadar kullandığı). Çekirdek ad alanı yoktur. <strong>Tam güvenlik sınırı değildir</strong> (NIST SP 800-190).</li>
+<li><strong>Kaçış</strong> (VM ya da konteyner) mümkündür → hipervizörü ve çekirdeği güncel tut, gereksiz paylaşımları kapat.</li>
+<li><strong>Anlık görüntü:</strong> dondurulmuş disk + fark dosyası; hızlı geri alma. <strong>Yedek değildir.</strong></li>
+<li><strong>Ağ kipleri:</strong> host-only varsayılan; iç ağ en kapalı; NAT yalnız güncelleme için, geçici; <strong>köprüden kaçın</strong>.</li>
+<li><strong>Yazılım (16 Ekim 2026):</strong> VirtualBox 7.2.20 GPLv3 (Extension Pack PUEL); VMware Workstation Pro herkese ücretsiz (11 Kasım 2024'ten beri); Hyper-V Win 11 Pro/Enterprise/Education; KVM/QEMU Linux; UTM Apple Silicon.</li>
+<li><strong>Kalıp doğrulama:</strong> önce <code>gpg --verify SHA256SUMS.gpg SHA256SUMS</code> (Good + parmak izi), sonra <code>sha256sum -c</code> (OK). İmza BAD ise özetin OK olması değersiz.</li>
+<li><strong>Üç duvar:</strong> VM içinde çalış · ağı kapalı tut · önce görüntü, düzenli yedek, geri yükleme testi.</li>
+<li><strong>Sınır:</strong> pratik yalnız kendi makinende ya da izinli laboratuvarda (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-7">
+<h3>Quiz 7</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan dokuz tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Aşağıdakilerden hangisi tip 1 hipervizörü doğru anlatır?</p>
+<ul class="sec"><li>Windows'un üstüne bir uygulama olarak kurulan ve donanıma Windows aracılığıyla ulaşan hipervizör</li><li>Doğrudan donanımın üstünde çalışan, altında genel amaçlı bir işletim sistemi bulunmayan hipervizör; Hyper-V gibi</li><li>Yalnız konteyner çalıştırabilen, sanal makine çalıştıramayan yazılım</li><li>İşlemciyi tamamen yazılımla taklit ettiği için donanım desteğine hiç ihtiyaç duymayan program</li><li>Python'da her projeye ayrı paket klasörü açan araç</li></ul>
+<div class="coz"><p>Tip 1 (çıplak donanım) hipervizör doğrudan donanımın üstünde çalışır; Microsoft'un belgesi Hyper-V'yi böyle tanımlar, ESXi ve Xen de bu türdendir. A tip 2'yi anlatıyor (VirtualBox, VMware Workstation Pro). C konteyner çalışma ortamını anlatıyor; hipervizör değildir. D öykünmeyi (emülasyon) anlatıyor; tip ayrımıyla ilgisi yoktur. E Python'daki <code>venv</code>'dir; hiçbir yalıtım sağlamaz.</p></div></li>
+
+<li data-c="D"><p class="q">Bir konteyner ile bir sanal makine arasındaki <strong>temel</strong> fark aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Konteynerler yalnız Windows'ta, sanal makineler yalnız Linux'ta çalışır.</li><li>Konteynerin kendi çekirdeği vardır, sanal makine ana makinenin çekirdeğini kullanır.</li><li>Konteynerler hiçbir zaman ağa bağlanamaz.</li><li>Konteynerler ana makinenin çekirdeğini paylaşır; her sanal makinenin ise kendi çekirdeği vardır.</li><li>Sanal makineler disk kullanmaz, yalnız bellekte çalışır.</li></ul>
+<div class="coz"><p>Konteyner, ana makinenin tek çekirdeğini paylaşan ve ad alanları ile cgroup'larla yalıtılmış süreçlerdir; VM ise kendi çekirdeğiyle eksiksiz bir işletim sistemi çalıştırır. B bunu tam tersine çeviriyor; en sık yapılan karışıklık budur. A yanlış: Linux konteynerleri Linux çekirdeği ister ve VM'ler her işletim sisteminde çalışabilir. C yanlış: konteynerin kendi ağ ad alanı vardır ve ağa bağlanabilir. E yanlış: VM'in sanal diski ana makinede bir dosyadır.</p></div></li>
+
+<li data-c="A"><p class="q">Laboratuvar VM'lerinin ana makineyle ve birbirleriyle konuşabilmesini, ama internete ve ev ağına hiç çıkamamasını istiyorsun. VirtualBox'ta hangi ağ kipini seçersin?</p>
+<ul class="sec"><li>Host-only</li><li>Köprü (bridged)</li><li>NAT</li><li>İç ağ (internal)</li><li>NAT ağı</li></ul>
+<div class="coz"><p>VirtualBox kılavuzunun erişim tablosuna göre host-only kipte VM → ana makine, ana makine → VM ve VM ↔ VM yolları açık, dış ağa giden ve dış ağdan gelen yollar kapalıdır. Köprü her şeyi açar ve VM'i ev ağına tam üye yapar. NAT ve NAT ağı dışarıya, internete çıkışı verir. İç ağda VM'ler birbirini görür ama ana makine de duvarın dışında kalır; sorudaki "ana makineyle konuşabilsin" koşulunu karşılamaz.</p></div></li>
+
+<li data-c="C"><p class="q">Anlık görüntü (snapshot) için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Görüntü, VM'in bütün diskinin başka bir fiziksel diske alınmış bağımsız kopyasıdır.</li><li>Görüntü alındıktan sonra VM'in diskine bir daha yazılamaz.</li><li>Görüntü genellikle dondurulmuş ana diske bağlı bir fark dosyasıdır; aynı diskte durduğu için disk bozulursa birlikte kaybolur ve yedek yerine geçmez.</li><li>Görüntüler yalnız konteynerlerde kullanılabilir.</li><li>Bir VM'in yalnız tek bir görüntüsü olabilir; ikincisini almak birinciyi siler.</li></ul>
+<div class="coz"><p>Görüntü alınınca ana disk dondurulur, yeni yazılar fark dosyasına gider; geri almak fark dosyasını atmaktır. Fark dosyası ana diske bağlıdır ve aynı fiziksel diskte durur; bu yüzden yedek değildir. A yedeği tarif ediyor. B yanlış: yazılar devam eder, yalnız fark dosyasına gider. D yanlış: görüntü hipervizörlerin yerleşik özelliğidir. E yanlış: görüntüler zincir ve hatta ağaç oluşturabilir.</p></div></li>
+
+<li data-c="E"><p class="q">Ev laboratuvarında bir VM'i köprü (bridged) kipinde çalıştırmaktan neden kaçınılır?</p>
+<ul class="sec"><li>Köprü kipinde VM internete hiç çıkamaz.</li><li>Köprü kipi yalnız tip 1 hipervizörlerde bulunur.</li><li>Köprü kipinde anlık görüntü alınamaz.</li><li>Köprü kipi VM'in diskini şifreler ve yavaşlatır.</li><li>VM ev ağına ayrı bir cihaz gibi katılır; ev ağındaki öbür cihazları görür ve onlar tarafından görülür, böylece laboratuvarın yalıtımı ortadan kalkar.</li></ul>
+<div class="coz"><p>Köprüde VM, ana makinenin fiziksel kartını paylaşarak modemden kendi adresini alır; erişim tablosunda bütün sütunlar "Evet"tir. Laboratuvarda bozulan ya da bilerek zafiyetli bırakılan bir şey ev ağındaki telefonlara, yazıcıya, modeme doğrudan ulaşabilir. A tam tersini söylüyor: köprü internete de çıkar. B yanlış: VirtualBox gibi tip 2 hipervizörlerde de vardır. C ve D'nin ağ kipiyle ilgisi yoktur.</p></div></li>
+
+<li data-c="B"><p class="q">Root olmayan bir kullanıcı, Linux'ta aşağıdaki komutu çalıştırıyor. Çıktının üç satırı sırasıyla nedir?</p>
+<p class="q"><code>unshare -r -p -f --mount-proc sh -c 'echo $$; id -u; uname -r'</code></p>
+<ul class="sec"><li>1 / 1000 / ana makineninkinden farklı bir çekirdek sürümü</li><li>1 / 0 / ana makinedeki çekirdekle aynı sürüm</li><li>Ana makinedeki gibi büyük bir PID (ör. 671) / 0 / aynı çekirdek sürümü</li><li>1 / 0 / konteynere özgü yeni bir çekirdek sürümü</li><li>Komut root yetkisi gerektirdiği için yalnız "Operation not permitted" yazar.</li></ul>
+<div class="coz"><p>Komut bu parçanın ortamında çalıştırıldı: çıktı <code>1</code>, <code>0</code> ve <code>6.18.33.2-microsoft-standard-WSL2</code> oldu; son satır dışarıdaki <code>uname -r</code> ile birebir aynıydı. <code>-p -f</code> yeni PID ad alanı açıp kabuğu onun ilk süreci yaptığı için <code>$$</code> 1'dir; <code>-r</code> yeni kullanıcı ad alanında seni root'a eşlediği için <code>id -u</code> 0'dır. A, kullanıcı ad alanını unutuyor; D ve A, konteynerin kendi çekirdeği olduğunu sanıyor. C, <code>-f</code> unutulduğunda görülen durumdur: o zaman kabuğun kendisi yeni ad alanına girmez ve dışarıdaki PID'ini yazar. E, <code>-r</code> olmadan çalıştırıldığında olur; <code>-r</code> varken ayrıcalıksız kullanıcı ad alanına izin veren bir sistemde komut çalışır.</p></div></li>
+
+<li data-c="D"><p class="q">Bir kalıbı ve onun <code>SHA256SUMS</code> dosyasını aynı ayna sunucusundan indirdin ve <code>sha256sum -c SHA256SUMS</code> "OK" verdi. İmzayı denetlemedin. Bu sonuç tek başına neyi gösterir?</p>
+<ul class="sec"><li>Kalıbın dağıtımın resmî kalıbı olduğunu kesin olarak kanıtlar.</li><li>Kalıbın içinde zararlı yazılım olmadığını kanıtlar.</li><li>Ayna sunucusunun ele geçirilmediğini kanıtlar.</li><li>Yalnız kalıbın bu listedeki değerle uyuştuğunu gösterir; ayna ele geçirildiyse saldırgan kalıbı ve listeyi birlikte değiştirmiş olabilir, bu yüzden listenin imzası da doğrulanmalıdır.</li><li>Hiçbir şey göstermez; SHA-256 özetleri kazara bozulmayı bile yakalayamaz.</li></ul>
+<div class="coz"><p>Özet, kendisiyle aynı yerden geliyorsa yalnız kazara bozulmayı yakalar; kasıtlı değiştirmeyi yakalamak için listenin dağıtımın özel anahtarıyla atılmış imzası doğrulanmalıdır. A ve C, imza olmadan kurulamayacak bir güveni varsayıyor. B yanlış: dağıtımın kendisi bile zararlı bir şey yayımlamış olsaydı özet bunu söylemezdi; özet yalnız "aynı dosya mı" sorusuna cevap verir. E de yanlış: bu parçada tek bir bayt değişince <code>FAILED</code> çıktığını gördün.</p></div></li>
+
+<li data-c="A"><p class="q"><code>gpg --verify SHA256SUMS.gpg SHA256SUMS</code> çıktısında "Good signature from …" satırının altında "WARNING: This key is not certified with a trusted signature!" yazıyor. Bu ne anlama gelir ve ne yapmalısın?</p>
+<ul class="sec"><li>İmza geçerli ve dosya imzadan sonra değişmemiş; uyarı yalnız bu anahtarı senin onaylamadığını söyler. Çıktıdaki parmak izini dağıtımın resmî sitesindeki değerle karşılaştırmalısın.</li><li>İmza bozuk; dosya kesinlikle değiştirilmiş, hemen silmelisin.</li><li>Anahtarın süresi dolmuş; imzayı yok sayıp yalnız özete bakmalısın.</li><li>Uyarı, SHA-256'nın güvensiz olduğunu söyler; MD5 ile yeniden denemelisin.</li><li>Uyarı yalnız Windows'ta çıkar; Linux'ta çalıştırırsan kaybolur.</li></ul>
+<div class="coz"><p>Ubuntu'nun doğrulama kılavuzuna göre bu uyarı imzanın başarısız olduğunu söylemez; anahtarı kendi anahtarınla imzalayıp güvenilir listene eklemediğini hatırlatır. İmza geçersiz olsaydı "BAD signature" yazardı (B'deki durum, bu parçadaki denemede gördüğün gibi). C yanlış: uyarı süreyle ilgili değildir ve imzayı yok saymak zincirin ilk halkasını atmaktır. D yanlış: MD5 artık güvenli sayılmaz (Parça 44); uyarının özet algoritmasıyla ilgisi yoktur. E yanlış: uyarı GPG'nin güven modelinden gelir, işletim sisteminden değil.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">Onaltılık (hex) <code>0x2F</code> sayısının onluk karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>32</li><li>215</li><li>47</li><li>31</li><li>2F'nin onlukta karşılığı yoktur.</li></ul>
+<div class="coz"><p>Onaltılıkta her hane 16'nın bir kuvvetidir: 2 × 16 + F; F = 15 olduğu için 32 + 15 = 47 (Python'da <code>0x2F</code> da 47 verir). A, F hanesini unutup yalnız 2 × 16 almış. B, haneleri onluk sayı gibi yan yana yazmış (2 ve 15). D, 2'yi 16 ile çarpmayı unutup 16 + 15 toplamış. E yanlış: her onaltılık sayının onluk karşılığı vardır; yalnız gösterim farklıdır.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">İşlemcideki program sayacı (PC) yazmacı ne tutar?</p>
+<ul class="sec"><li>Son yürütülen komutun sonucunu</li><li>RAM'de kalan boş alan miktarını</li><li>Çalışan süreçlerin sayısını</li><li>İşlemcinin saat hızını</li><li>Getir-çöz-yürüt döngüsünde getirilecek bir sonraki komutun bellekteki adresini</li></ul>
+<div class="coz"><p>Program sayacı, işlemcinin bir sonraki adımda bellekten hangi komutu getireceğini gösteren adresi tutar; getir aşamasında bu adresteki komut okunur ve sayaç bir sonrakine ilerler (atlama komutları onu başka bir adrese yönlendirir). A bir genel amaçlı yazmacın ya da hedef yazmacın işidir. B ve C işletim sisteminin tuttuğu bilgilerdir, bir işlemci yazmacının değil. D bir yazmaç değeri değil, donanımın çalışma hızıdır.</p></div></li>
+
+<li data-c="B" data-k="siber-3"><p class="q">32 bitlik <code>0x12345678</code> değeri little endian bir makinede belleğe yazılıyor. En küçük adresten başlayarak baytların sırası nedir?</p>
+<ul class="sec"><li>12 34 56 78</li><li>78 56 34 12</li><li>87 65 43 21</li><li>56 78 12 34</li><li>21 43 65 87</li></ul>
+<div class="coz"><p>Little endian düzende en az anlamlı bayt (78) en küçük adrese yazılır, ardından 56, 34 ve 12 gelir; Python'da <code>struct.pack("&lt;I", 0x12345678)</code> de <code>78 56 34 12</code> verir. A big endian sırasıdır. C ve E hex haneleri (yarım baytları) tek tek ters çeviriyor; endianness bayt sırasıdır, hane sırası değil. D iki baytlık grupları yer değiştirmiş; böyle bir standart düzen yoktur.</p></div></li>
+
+<li data-c="A" data-k="siber-4"><p class="q">Kullanıcı modunda çalışan bir program diskteki bir dosyayı okumak istiyor. Aşağıdakilerden hangisi doğru akıştır?</p>
+<ul class="sec"><li>Program bir sistem çağrısı yapar; işlemci çekirdek moduna (ring 0) geçer, okuma işini çekirdek yapar ve sonuçla birlikte kullanıcı moduna döner.</li><li>Program ring 3'ten disk denetleyicisine doğrudan komut gönderir; çekirdeğin haberi olmaz.</li><li>Program kendini ring 0'a yükseltir ve okuma bitince ring 3'e iner.</li><li>Okuma işini aygıt sürücüsü kullanıcı modunda, programın kendi belleğinde yapar.</li><li>Dosya okumak için önyükleyiciden (bootloader) izin istenir.</li></ul>
+<div class="coz"><p>Kullanıcı modundaki program donanıma doğrudan dokunamaz; işi çekirdekten bir sistem çağrısıyla ister (çoğu zaman glibc'nin <code>read</code> gibi sarmalayıcıları üzerinden). İşlemci denetimi çekirdeğe verir, çekirdek ring 0'da işi yapar ve sonucu döndürür; <code>strace</code> ile bu çağrıları görebilirsin. B ve C, ayrıcalık ayrımının tam da engellediği şeyleri anlatıyor. D yanlış: sürücüler çekirdek alanında çalışır, bu yüzden yüksek risklidir. E yanlış: önyükleyicinin işi açılışta biter.</p></div></li>
+
+<li data-c="D" data-k="siber-4"><p class="q">Güvenli Önyükleme (Secure Boot) neyi sağlamayı amaçlar?</p>
+<ul class="sec"><li>Diskteki bütün dosyaları şifreleyerek çalınan diskin okunmasını engellemeyi</li><li>Kullanıcının parolasız oturum açmasını</li><li>Bilgisayara bulaşmış her zararlı yazılımı açılışta temizlemeyi</li><li>Önyükleme zincirinde yalnız imzası güvenilen önyükleyici ve çekirdeğin çalışmasına izin vermeyi</li><li>Önyükleme süresini kısaltmayı</li></ul>
+<div class="coz"><p>Secure Boot, UEFI'nin önyükleme zincirindeki her halkanın (önyükleyici, çekirdek) imzasını güvenilen anahtarlarla denetlemesi ve imzası tutmayanı çalıştırmamasıdır; amaç, açılış sürecine sahte bir bileşenin sokulmasını engellemektir. A tam disk şifrelemenin işidir. B ile ilgisi yoktur. C yanlış: Secure Boot bir antivirüs değildir, yalnız önyükleme bileşenlerinin imzasına bakar. E bir amaç değildir; denetim süreyi kısaltmaz.</p></div></li>
+
+<li data-c="C" data-k="siber-5"><p class="q">Aynı programı iki kez çalıştırıp bir yığın değişkeninin adresini yazdırdığında iki farklı adres görüyorsun. Bunun nedeni hangi korumadır?</p>
+<ul class="sec"><li>Yürütülemez bellek (NX/DEP)</li><li>Yazınca kopyala (copy-on-write)</li><li>Adres rastgeleleştirme (ASLR)</li><li>Seccomp</li><li>Sayfa tablosunun her çalıştırmada silinmesi</li></ul>
+<div class="coz"><p>ASLR, yığın, öbek ve kitaplıkların başlangıç adreslerini her çalıştırmada rastgele seçer; böylece bir saldırgan önemli verinin adresini önceden bilemez. A, bir bellek bölgesinde kod çalıştırılmasını engeller; adresleri değiştirmez. B, <code>fork</code> sonrasında sayfaların ancak yazılınca kopyalanmasıdır. D, bir sürecin yapabileceği sistem çağrılarını sınırlar. E bir koruma değildir; adreslerin değişmesini açıklamaz.</p></div></li>
+
+<li data-c="E" data-k="siber-5"><p class="q">Bir süreç <code>fork</code> ile çocuk süreç oluşturduğunda, yazınca kopyala (copy-on-write) sayesinde ne olur?</p>
+<ul class="sec"><li>Ana sürecin bütün belleği hemen çocuk için baştan sona kopyalanır.</li><li>Çocuk süreç, ana sürecin belleğine yazdığında değişiklik ana süreçte de görünür.</li><li>Çocuk süreç belleği hiç kullanamaz, yalnız okuyabilir.</li><li>Ana süreç sonlandırılır ve belleği çocuğa devredilir.</li><li>Sayfalar başta iki süreç arasında paylaşılır; biri bir sayfaya yazmak istediğinde yalnız o sayfanın kopyası çıkarılır.</li></ul>
+<div class="coz"><p>Yazınca kopyala, <code>fork</code>'u ucuzlatan yöntemdir: iki süreç başta aynı fiziksel sayfaları salt okunur olarak paylaşır, biri yazmaya kalkınca yalnız o sayfa kopyalanır ve iki süreç kendi kopyasıyla devam eder. A, bu yöntemin kaçındığı pahalı yoldur. B yanlış: yalıtım korunur, kopya çıktığı için değişiklik öbür süreçte görünmez. C yanlış: çocuk yazabilir, yazdığında kopya oluşur. D <code>fork</code>'un yaptığı bir şey değildir.</p></div></li>
+
+<li data-c="B" data-k="siber-6"><p class="q">Bir yapılandırma dosyasında <code>parola=cGFyb2xhMTIz</code> satırını görüyorsun ve değerin Base64 olduğunu anlıyorsun. Aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Base64 güçlü bir şifrelemedir; anahtarı olmayan çözemez.</li><li>Base64 bir kodlamadır; anahtar gerekmeden herkes çözebilir, bu yüzden gizlilik sağlamaz.</li><li>Base64 bir hash'tir; geri çevrilemez.</li><li>Base64 bir sıkıştırmadır; çözülünce daha büyük bir dosya çıkar.</li><li>Base64 yalnız resim dosyaları için kullanılır, parola saklamaz.</li></ul>
+<div class="coz"><p>Base64 baytları yazdırılabilir karakterlere çeviren bir kodlamadır; anahtar yoktur ve herkes geri çevirebilir. Bu örnekteki değer Python'da çözülünce <code>parola123</code> verir. A, kodlama ile şifrelemeyi karıştırıyor; çok yaygın bir yanılgıdır. C yanlış: hash geri çevrilemez, Base64 ise tamamen geri çevrilir. D yanlış: Base64 veriyi büyütür, sıkıştırmaz. E yanlış: her türlü baytı kodlayabilir.</p></div></li>
+
+<li data-c="A" data-k="siber-6"><p class="q">Uzantısı <code>.jpg</code> olan bir dosya için <code>file</code> komutu "PDF document" yazıyor. Bunun en doğru açıklaması hangisidir?</p>
+<ul class="sec"><li><code>file</code> uzantıya değil, dosyanın başındaki sihirli baytlara (magic bytes) bakar; içerik gerçekte PDF'dir, uzantı yanıltıcıdır.</li><li><code>file</code> komutu bozuktur; uzantı her zaman doğrudur.</li><li>JPEG ve PDF aynı biçimdir, yalnız adları farklıdır.</li><li><code>file</code> dosyayı açıp PDF'e dönüştürmüştür.</li><li>Dosya şifrelenmiş olduğu için <code>file</code> yanlış sonuç verir.</li></ul>
+<div class="coz"><p>Dosya biçimini uzantı değil, içeriğin kendisi belirler; çoğu biçim tanınabilir bir sihirli bayt dizisiyle başlar (PDF <code>%PDF</code> ile) ve <code>file</code> bunu okur. Uzantı yalnız bir addır, kolayca değiştirilebilir; bu yüzden güvenlikte "uzantıya güvenme" kuralı vardır. B bunu tersine çeviriyor. C yanlış: iki biçimin yapısı tamamen farklıdır. D yanlış: <code>file</code> dosyayı değiştirmez, yalnız okur. E yanlış: şifreli bir dosya PDF imzası taşımaz, genellikle "data" diye görünür.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-6">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-7">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-8">Sonraki parça: Linux'a giriş ve dosya sistemi hiyerarşisi →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"tip 1 tip 2 hipervizör farkı sanal makine nedir"</li>
+  <li>"konteyner sanal makine farkı namespaces cgroups"</li>
+  <li>"VirtualBox host-only NAT bridged ağ ayarları"</li>
+  <li>"ISO dosyası SHA256SUMS gpg imza doğrulama"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan komutlar (16 Ekim 2026, Windows 11 üstünde WSL 2, Kali Linux, çekirdek 6.18):</strong> <code>uname -r</code>, <code>systemd-detect-virt</code>, <code>grep -c hypervisor /proc/cpuinfo</code>; <code>unshare</code> ile kullanıcı+PID ad alanı (<code>ic2.sh</code>), UTS ad alanı ve kullanıcı ad alanı olmadan PID ad alanı denemesi; sahte kalıbın üretilmesi, <code>sha256sum</code>/<code>sha256sum -c</code>, tek bayt değiştirme ve geri alma; geçici <code>GNUPGHOME</code> ile ed25519 anahtar üretme, ayrık imza, <code>gpg --verify</code> (Good ve BAD); Windows tarafında PowerShell 5.1 ile <code>Get-FileHash</code>. Hepsi gerçekten koştu ve çıktılar birebir aktarıldı. Quiz 6'nın doğru cevabı ve "-f olmadan" ile "-r olmadan" çeldiricileri de çalıştırılarak doğrulandı; tekrar sorularındaki 0x2F = 47, little endian bayt sırası ve Base64 çözümü Python 3.13 ile hesaplandı.</li>
+  <li><strong>Sadeleştirmeler ve gizlilik:</strong> Komutlar gerçekte <code>/tmp/yazar/siber-7/</code> altında çalıştırıldı; metinde <code>~/lab-dene</code> ve çıktılarda <code>/home/kullanici/lab-dene</code> olarak gösterildi. <code>ps</code> çıktısındaki gerçek kullanıcı adı <code>kullanici</code>, <code>hostname</code> çıktısındaki gerçek makine adı <code>ana-makine</code>, <code>Get-FileHash</code> çıktısındaki Windows kullanıcı klasörünü içeren uzun yol <code>C:\lab\lab-os-1.0.iso</code> olarak değiştirildi (PowerShell gerçekte uzun yolu iki satıra bölmüş ve <code>True</code>'dan önce üç boş satır bırakmıştı; metinde tek boş satır gösterildi). Kalıp üretme ve GPG adımları gerçekte tek bir betikte, etiket satırlarıyla birlikte çalıştırıldı; metinde etiket satırları atıldı, çıktı satırları değişmedi. <code>ic2.sh</code> denemesi ayrı bir betikte koştu. GPG parmak izi, imza satırı ve "+03" saat dilimi o çalıştırmaya özgüdür.</li>
+  <li><strong>Burada çalıştırılmayanlar:</strong> Hipervizör kurulumu, VM oluşturma, host-only ağ açma, ağ kipi değiştirme, anlık görüntü alma, VM dışa aktarma (OVF/OVA), <code>wsl --export</code>/<code>--import</code> ve UEFI ayarları; ortamda VM kurulamıyor, şifresiz <code>sudo</code> yok ve sistem ayarı değiştiren komut çalıştırılmadı. Yerel (sanallaştırmasız) Linux'ta <code>systemd-detect-virt</code>'in <code>none</code> yazacağı bilgisi belgeye ve hafızaya dayanır, denenmedi. Ortamda <code>/dev/kvm</code> vardı (iç içe sanallaştırma açık), ama qemu ve docker/podman kurulu değildi; gerçek bir konteyner aracı çalıştırılmadı, konteyner mantığı yalnız <code>unshare</code> ile gösterildi.</li>
+  <li><strong>Lisans ve sürümler (16 Ekim 2026'da bakıldı):</strong> VirtualBox: virtualbox.org indirme sayfası; güncel sürüm 7.2.20, temel paket GPLv3, Extension Pack PUEL (sürüm 12, 22 Temmuz 2024) ile yalnız kişisel ve eğitim kullanımı; Windows, macOS Intel, macOS Apple Silicon ve Linux paketleri. 7.2.20'nin çıkış tarihini doğrulayamadım; Oracle'ın docs sayfasındaki değişiklik günlüğü 7.2.4'te kalmıştı. VMware: Broadcom destek makalesi 368667'den 11 Kasım 2024'te ticari, eğitim ve kişisel kullanıma ücretsiz açılış, 17.5.2 ve sonrası koşulu, lisans anahtarı gerekmemesi ve Broadcom hesabı gerekliliği; Mayıs 2024 kişisel kullanım adımı ve ücretli destek satışının durması heise'nin haberinden ve aynı olayı aktaran başka haber sitelerinin arama özetlerinden (Broadcom'un blog yazısının kendisi okunmadı). "26H1" sürümünün Mayıs 2026'da çıktığı yalnız ikincil kaynaklardan (Softprom vb.) görüldü, Broadcom'un sürüm notlarıyla karşılaştırılmadı. Hyper-V: Microsoft Learn "Hyper-V virtualization in Windows Server and Windows" sayfasından (tip 1 tanımı; Windows 11 Pro, Enterprise, Education'da bulunduğu). Home'da "resmî olarak olmadığı" çıkarımı bu listeden ve Microsoft soru-cevap sayfasından. WSL 2: Microsoft Learn "What is WSL" ve WSL SSS sayfaları (hafif yardımcı VM, dağıtımların konteyner olarak koşması ve paylaşılan/ayrı ad alanları, Home'da çalışması, "Virtual Machine Platform", VirtualBox/VMware ile birlikte çalışma, <code>wsl --export</code>). KVM: linux-kvm.org (VT/AMD-V gereksinimi, 2.6.20'den beri çekirdekte, kullanıcı alanı bileşeni QEMU'da). UTM: mac.getutm.app (ücretsiz, açık kaynak, QEMU ve Apple Virtualization çerçevesi, ARM'de neredeyse yerel hız, x86 öykünmesi yavaş, App Store sürümü aynı); lisans adı sayfada geçmiyordu, App Store fiyatını doğrulayamadım.</li>
+  <li><strong>Ağ kipleri:</strong> VirtualBox kılavuzunun "networking details" sayfasındaki erişim tablosundan (host-only, iç ağ, köprü, NAT, NAT ağı) ve NAT'ın 10.0.2.0 ağı, 10.0.2.15 konuk adresi bilgisinden. "Bağlı değil" satırı aynı sayfanın metninden. Host-only ağın varsayılan 192.168.56.0/24 aralığı ve VMware/Hyper-V'deki kip adları hafızadan; doğrulanmadı.</li>
+  <li><strong>Konteyner ve ad alanları:</strong> namespaces(7) ve unshare(1) kılavuz sayfaları (man7.org) okundu; tablo oradan. NIST SP 800-190 (Eylül 2017; Souppaya, Morello, Scarfone) PDF metninde 3.5.2 "Shared kernel" bölümü okundu: "the level of isolation provided by container runtimes is not as high as that provided by hypervisors" cümlesi ve 4.5.2'deki iş yüklerini hassasiyete göre gruplama, konteynerli ve konteynersiz uygulamaları karıştırmama önerisi oradan; çekirdeğin hızla güncellenmesi önerisi 4.5.1'in sonundan. "Bazı dağıtımlar ayrıcalıksız kullanıcı ad alanlarını kısıtlar" ifadesi hafızadan (ör. Ubuntu'nun AppArmor tabanlı kısıtlaması), doğrulanmadı.</li>
+  <li><strong>Kalıp doğrulama:</strong> Kali'nin "Downloading Kali Linux" belgesi (SHA256SUMS ve SHA256SUMS.gpg, anahtar parmak izi, "Good signature" görmeden devam etmeme) ve Ubuntu'nun "How to verify your Ubuntu download" kılavuzu (aynı iki dosya, "not certified" uyarısının anlamı, BAD signature ayrımı). Kali belgesi kalıbı <code>shasum -a 256 -c</code> ile doğruluyor; metinde eşdeğeri olan <code>sha256sum -c</code> kullanıldı.</li>
+  <li><strong>Hafızadan yazılanlar:</strong> donanım sanallaştırma uzantılarının işleyişi, "ring −1" deyimi, EPT/NPT, disk dosyası uzantıları (.vdi, .vmdk, .vhdx, .qcow2), Hyper-V açıkken Windows'un ayrıcalıklı bir bölümde koştuğu, KVM'in tip 1 mi tip 2 mi sayılacağının tartışmalı olduğu, VM kaçışı açıklarının geçmişte bulunup yamalandığı (belirli bir olay adı verilmedi), anlık görüntünün fark dosyası mekanizması (VirtualBox giriş sayfası görüntüleri ve dallanmayı doğruluyor, fark dosyası ayrıntısını sayfada bulamadım), OVF/OVA dışa aktarma, Görev Yöneticisi'ndeki "Sanallaştırma: Etkin" satırı, ayrıcalıksız kullanıcının PID ad alanını kullanıcı ad alanı olmadan açamaması (denemeyle doğrulandı, gerekçesi hafızadan). Çözümlü örnek 2'deki bellek paylaştırması bir öneridir, resmî bir kural değildir.</li>
+  <li><strong>Saldırı sınırı:</strong> VM ve konteyner kaçışı yalnız "mümkündür, bu yüzden tam güvenlik sınırı sayılmaz" düzeyinde anıldı; hiçbir istismar, araç, yük ya da kaçınma yöntemi verilmedi. Bütün denemeler yalnız yazarın kendi makinesinde, ağa çıkmadan yapıldı; okura da yalnız kendi makinesinde çalıştırması söylendi ve yasal çerçeve Parça 72–73'e bağlandı.</li>
+</ul>
+</div>
+</div>
+</article>

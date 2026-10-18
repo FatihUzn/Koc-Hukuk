@@ -1,0 +1,741 @@
+<article class="chapter ders" id="c-siber-5">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 5 · İşletim sistemi 2</div>
+<h1>Süreç, sanal bellek ve yalıtım: her programın kendi dünyası</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bilgisayarında aynı anda bir tarayıcı, bir parola yöneticisi ve bir terminal açık; üçü de aynı RAM yongalarını kullanıyor. Tarayıcıda açtığın kötü niyetli bir sayfa neden parola yöneticisinin belleğindeki parolayı doğrudan okuyamıyor? Aynı programı iki kez çalıştırdığında bir değişkenin adresi neden her seferinde başka çıkıyor? Ve bir program yalnız birkaç işi yapacaksa, işletim sistemi ona neden bütün yetkileri vermesin?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (onaltılık gösterim, KiB), Parça 3 (adres, işaretçi, sürecin bellek düzeni: kod, veri, öbek, yığın), Parça 4 (çekirdek ve kullanıcı modu, sistem çağrısı, <code>strace</code>). Kod rafından Parça 26–29 (C derleme, işaretçi, <code>malloc</code>) ve Parça 14 (iş parçacığı ile süreç farkı) zemindir. Bütün denemeler kendi Linux makinende (WSL2 de olur) ve yalnız kendi derlediğin programlarla yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 4'te çekirdeğin, donanıma ve belleğe dokunma yetkisini kendinde tuttuğunu, programların ise kullanıcı modunda çalışıp her ayrıcalıklı iş için sistem çağrısıyla çekirdekten izin istediğini gördük. Bu parça o ayrımın üstüne bir kat daha çıkıyor ve şu soruyu soruyor: Çekirdek, aynı anda çalışan onlarca programı <strong>birbirinden</strong> nasıl ayırıyor? Bir programın hatası ya da kötü niyeti neden öbürüne sıçramıyor?</p>
+
+<p>Cevap beş taşla kurulur: <strong>süreç</strong> (çalışan programın çekirdekteki kaydı); <strong>sanal bellek</strong> (her sürecin kendine ait adres haritası; altında <strong>sayfa</strong> ve <strong>sayfa tablosu</strong>); <strong><code>fork</code> ve yazınca kopyala</strong> (yeni süreçlerin doğuşu); <strong>bellek korumaları</strong> (NX/DEP, W^X ve ASLR); <strong>kimlik ve yetki</strong> (kullanıcı kimliği, yetenekler ve seccomp ile "bu süreç yalnız şunları yapabilir" demek).</p>
+
+<p>Hepsinin arkasındaki fikir tektir: <strong>bir şey ters gittiğinde zararı küçük bir alana hapsetmek.</strong> Güvenlikte buna yalıtım ve en az yetki denir. Parçanın sonunda bu korumaların hepsini kendi makinende, kendi programında gözünle göreceksin.</p>
+
+<h2 class="s">1. Program ile süreç aynı şey değil</h2>
+
+<p>Diskteki <code>/usr/bin/bash</code> dosyası bir <strong>program</strong>dır: makine kodu ve veriden oluşan, hiçbir şey yapmadan duran bir bayt dizisi. Onu çalıştırdığında çekirdek bu dosyayı belleğe yükler, ona bir numara verir, bir bellek haritası kurar, açık dosyalarını ve kimliğini kaydeder. Bu canlı kayda <strong>süreç</strong> (process) denir. Aynı programdan aynı anda on süreç çalışabilir; üç terminal penceresi açtığında üç ayrı <code>bash</code> süreci olur. Program bir yemek tarifine benzer, süreç o tarifle o anda mutfakta pişen yemeğe.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Süreç</strong>, çalışmakta olan bir programın çekirdekteki örneğidir. Çekirdek her süreç için en az şunları tutar: bir <strong>süreç kimliği (PID)</strong>, kendine ait bir <strong>sanal adres uzayı</strong>, yazmaçların son değerleri (Parça 2'deki program sayacı dahil), <strong>açık dosyaların</strong> listesi, <strong>kimlik bilgileri</strong> (hangi kullanıcı adına çalıştığı) ve durumu (çalışıyor, bekliyor, durdurulmuş).</p></div>
+
+<p>Bir işlemci çekirdeği aynı anda yalnız bir şey yürütür; onlarca sürecin birlikte çalışıyor görünmesi, çekirdeğin <strong>zamanlayıcısının</strong> (scheduler) her birine milisaniyelik dilimler vermesindendir. Geçişte çekirdek eski sürecin yazmaçlarını saklar, yenisininkini yükler ve işlemciye "artık bu sürecin bellek haritasını kullan" der: <strong>bağlam değiştirme</strong> (context switch).</p>
+
+<h3>İş parçacığı: aynı süreçte birden fazla akış</h3>
+
+<p>Kod rafı Parça 14'te iş parçacığı (thread) ile süreç farkını Python üzerinden görmüştün. İşletim sistemi açısından fark şudur: bir sürecin içinde birden fazla yürütme akışı olabilir. Her akışın kendi yazmaçları, kendi program sayacı ve kendi yığını vardır, ama hepsi <strong>aynı adres uzayını</strong>, aynı açık dosyaları ve aynı kimliği paylaşır. Linux'ta her iş parçacığının ayrıca bir iş parçacığı kimliği (TID) vardır; sürecin ilk iş parçacığının TID'i PID'ine eşittir.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Ayrı süreçler</th><th>Aynı süreçteki iş parçacıkları</th></tr>
+<tr><td>Adres uzayı (bellek)</td><td>Her birinin kendi uzayı; birinin yazdığı öbürüne görünmez</td><td>Ortak; biri bir değişkeni değiştirince hepsi görür</td></tr>
+<tr><td>Yığın, yazmaçlar, program sayacı</td><td>Ayrı</td><td>Ayrı (her iş parçacığına bir yığın)</td></tr>
+<tr><td>Açık dosyalar</td><td>Ayrı tablo (<code>fork</code> sırasında kopyalanır)</td><td>Ortak</td></tr>
+<tr><td>Kimlik (UID/GID)</td><td>Süreç başına</td><td>Pratikte ortak</td></tr>
+<tr><td>Numara</td><td>Her birinin PID'i farklı</td><td>Aynı PID, farklı TID</td></tr>
+<tr><td>Biri çökünce</td><td>Öbürü genellikle çalışmayı sürdürür</td><td>Bütün süreç birlikte ölür</td></tr>
+<tr><td>Güvenlik sınırı mı?</td><td>Evet, işletim sisteminin temel sınırı</td><td>Hayır, birbirlerine karşı korumaları yok</td></tr>
+</table></div>
+
+<p>Son satır asıl ders: <strong>güvenlik sınırı süreçtir, iş parçacığı değil.</strong> Tarayıcıların siteleri ayrı süreçlerde çalıştırması bu yüzdendir: kendi sürecine hapsolan kod öbür sitenin verisine bellek yoluyla ulaşamaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: iş parçacıkları aynı belleği görür</span>
+<p><strong>Soru:</strong> Bir iş parçacığı küresel bir değişkeni 1'den 2'ye çevirirse, ana iş parçacığı onu kaç olarak görür? Adresleri aynı mı olur?</p>
+<p><strong>Adım 1.</strong> Kısa bir C programı yaz: küresel <code>deger = 1</code>; yeni iş parçacığı onu 2 yapsın ve kendi PID ile TID'ini yazdırsın; ana iş parçacığı onu bekleyip aynı şeyi yazdırsın.</p>
+<pre class="kod" data-ad="ip.c">#define _GNU_SOURCE
+#include &lt;pthread.h>
+#include &lt;stdio.h>
+#include &lt;unistd.h>
+
+int deger = 1;
+
+static void *is(void *arg)
+{
+    (void)arg;
+    deger = 2;                                   /* ayni adres uzayi: ana da gorecek */
+    printf("is parcacigi: pid=%d tid=%d &amp;deger=%p deger=%d\n",
+           (int)getpid(), (int)gettid(), (void *)&amp;deger, deger);
+    return NULL;
+}
+
+int main(void)
+{
+    pthread_t t;
+    if (pthread_create(&amp;t, NULL, is, NULL) != 0)
+        return 1;
+    pthread_join(t, NULL);
+    printf("ana         : pid=%d tid=%d &amp;deger=%p deger=%d\n",
+           (int)getpid(), (int)gettid(), (void *)&amp;deger, deger);
+    return 0;
+}</pre>
+<p><strong>Adım 2.</strong> Derle ve çalıştır. <code>-pthread</code> seçeneği iş parçacığı kütüphanesini bağlar.</p>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -pthread -o ip ip.c
+./ip</pre>
+<pre class="cikti">is parcacigi: pid=1096 tid=1097 &amp;deger=0x5f8c21e4e038 deger=2
+ana         : pid=1096 tid=1096 &amp;deger=0x5f8c21e4e038 deger=2</pre>
+<p><strong>Adım 3.</strong> İkisinde de PID 1096: tek süreç. TID'ler farklı: iki akış, ana akışın TID'i PID'e eşit. Adres aynı ve ana iş parçacığı 2 görüyor: ikisi aynı haritaya bakıyor.</p>
+<p><strong>Sonuç:</strong> İş parçacıkları belleği paylaşır. Aşağıda aynı deneyi iki <em>süreçle</em> yapıp tersini göreceğiz. PID ve adresler sende farklı çıkar.</p></div>
+
+<h2 class="s">2. Sanal bellek: her sürece kendi haritası</h2>
+
+<p>Parça 3'te bir sürecin belleğini kod, veri, öbek ve yığın diye bölmüş, her baytın bir adresi olduğunu söylemiştik. Peki tarayıcın ile terminalin ikisi de <code>0x5555...</code> gibi bir adreste değişken tutuyorsa, aynı RAM hücresine mi yazıyorlar? Hayır. Programın gördüğü adres <strong>sanal</strong>dır; RAM'deki gerçek konum (fiziksel adres) başka bir sayıdır ve aradaki çeviriyi donanım, çekirdeğin kurduğu tablolara bakarak her bellek erişiminde yapar.</p>
+
+<p>Bu ara katman neden var? Dört neden sayılabilir ve hepsi bugün de geçerli:</p>
+
+<p><strong>Yalıtım.</strong> Bir süreç yalnız kendi haritasındaki adresleri adlandırabilir; başka bir sürecin belleği haritasında yoksa ona işaret edecek bir sayı bile yazamaz. Parçanın sorusundaki tarayıcı ile parola yöneticisi arasındaki duvar budur. <strong>Basitlik.</strong> Her program makinede tek başınaymış gibi aynı düzenle yüklenir. <strong>Esneklik.</strong> Çekirdek fiziksel belleği ancak kullanıldığında verir, seyrek kullanılanı diske taşıyabilir (swap); x86-64'te dört düzeyli sayfalamada bir sürecin kullanıcı alanı yaklaşık 128 TiB'dir. <strong>Paylaşım.</strong> Bir kütüphanenin salt okunur kodu yüz süreçte kullanılsa da RAM'de tek kopya durabilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sanal adres</strong>, bir sürecin kodunun kullandığı adrestir ve yalnız o sürecin haritasında anlam taşır. <strong>Fiziksel adres</strong>, RAM'deki gerçek konumdur. Çeviriyi işlemcinin içindeki <strong>bellek yönetim birimi</strong> (MMU) yapar; çeviri tablolarını ise yalnız çekirdek kurar ve değiştirir. Kullanıcı modundaki bir süreç kendi tablosunu düzenleyemez (Parça 4'teki halka ayrımı burada işe yarar).</p></div>
+
+<h3>Sayfa, çerçeve ve sayfa tablosu</h3>
+
+<p>Her baytın çevirisini ayrı ayrı tutmak imkânsız derecede büyük bir tablo gerektirirdi. Bu yüzden bellek eşit boyutlu bloklarla yönetilir. Sanal adres uzayındaki bloğa <strong>sayfa</strong> (page), fiziksel bellekteki aynı boyuttaki bloğa <strong>çerçeve</strong> (frame) denir. x86-64 üzerindeki Linux'ta olağan sayfa boyutu 4 KiB'dir, yani 4096 bayt; kendi makinende <code>getconf PAGESIZE</code> yazarsan 4096 görürsün. Daha büyük "dev sayfalar" da vardır ama temel birim budur.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Sayfa tablosu</strong>, bir sürecin her sanal sayfasının hangi fiziksel çerçeveye karşılık geldiğini ve o sayfaya neler yapılabileceğini tutan tablodur. Her sürecin <strong>kendi</strong> sayfa tablosu vardır. Tablodaki her girdi bir çerçeve numarası ile birkaç bayrak taşır: sayfa bellekte mi (present), yazılabilir mi, kullanıcı modundan erişilebilir mi, <strong>çalıştırılabilir mi</strong> (NX biti). Bağlam değiştirmede çekirdek, işlemcideki "geçerli sayfa tablosu" yazmacını (x86'da CR3) yeni sürecinkine çevirir; böylece aynı sanal adres artık başka bir çerçeveye çıkar.</p></div>
+
+<p>4096 = 2<sup>12</sup> olduğu için bir sanal adresin <strong>son 12 biti</strong> sayfanın içindeki konumu (sayfa içi uzaklık, offset), geri kalan bitleri ise <strong>sayfa numarasını</strong> verir. Parça 1'den hatırla: bir onaltılık hane 4 bittir, öyleyse 12 bit son <strong>üç onaltılık hane</strong> demektir. Bu küçük gözlem, aşağıda ASLR'yi okurken çok işine yarayacak.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: bir adresi sayfa numarası ve uzaklığa ayırmak</span>
+<p><strong>Soru:</strong> Bir programın <code>main</code> fonksiyonu <code>0x593c89af3199</code> sanal adresinde. Sayfa boyutu 4 KiB ise bu adres hangi sayfada ve sayfanın kaçıncı baytında?</p>
+<p><strong>Adım 1.</strong> Sayfa boyutu 4096 = 2<sup>12</sup> bayt (4 KiB tanımı, Parça 1).</p>
+<p><strong>Adım 2.</strong> 12 bit = 3 onaltılık hane (her hane 4 bit). Adresin son üç hanesi uzaklıktır: <code>0x199</code>, yani onluk 409. bayt (1×256 + 9×16 + 9 = 409).</p>
+<p><strong>Adım 3.</strong> Geri kalan haneler sayfa numarasıdır: <code>0x593c89af3</code>.</p>
+<p><strong>Adım 4.</strong> Sayfanın başlangıç adresi, uzaklık sıfırlanarak bulunur: <code>0x593c89af3000</code>. Python ile doğrulama: <code>hex(a &gt;&gt; 12)</code> → <code>0x593c89af3</code>, <code>hex(a &amp; 0xfff)</code> → <code>0x199</code>.</p>
+<p><strong>Sonuç:</strong> MMU sayfa numarasını (<code>0x593c89af3</code>) sayfa tablosunda arar, karşılığındaki çerçeve numarasını bulur ve uzaklığı (<code>0x199</code>) olduğu gibi ekler. Uzaklık çeviride hiç değişmez; değişen yalnız sayfa numarasıdır.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 340" role="img" aria-label="İki sürecin sanal sayfalarının fiziksel bellek çerçevelerine eşlenmesi; kütüphane kodu iki süreçte aynı çerçeveye, veri sayfaları ayrı çerçevelere gider">
+  <text class="sv-b" x="95" y="22" text-anchor="middle">Süreç A</text>
+  <text class="sv-s" x="95" y="38" text-anchor="middle">sanal sayfalar</text>
+  <text class="sv-b" x="320" y="22" text-anchor="middle">RAM</text>
+  <text class="sv-s" x="320" y="38" text-anchor="middle">fiziksel çerçeveler</text>
+  <text class="sv-b" x="545" y="22" text-anchor="middle">Süreç B</text>
+  <text class="sv-s" x="545" y="38" text-anchor="middle">sanal sayfalar</text>
+  <rect class="sv-l" x="20" y="55" width="150" height="34" rx="6"/><text class="sv-t" x="95" y="77" text-anchor="middle">libc kodu r-x</text>
+  <rect class="sv-m" x="20" y="105" width="150" height="34" rx="6"/><text class="sv-t" x="95" y="127" text-anchor="middle">veri rw-</text>
+  <rect class="sv-m" x="20" y="155" width="150" height="34" rx="6"/><text class="sv-t" x="95" y="177" text-anchor="middle">öbek rw-</text>
+  <rect class="sv-m" x="20" y="205" width="150" height="34" rx="6"/><text class="sv-t" x="95" y="227" text-anchor="middle">yığın rw-</text>
+  <rect class="sv-k" x="20" y="255" width="150" height="34" rx="6"/><text class="sv-s" x="95" y="277" text-anchor="middle">eşlenmemiş adres</text>
+  <rect class="sv-l" x="470" y="55" width="150" height="34" rx="6"/><text class="sv-t" x="545" y="77" text-anchor="middle">libc kodu r-x</text>
+  <rect class="sv-m" x="470" y="105" width="150" height="34" rx="6"/><text class="sv-t" x="545" y="127" text-anchor="middle">veri rw-</text>
+  <rect class="sv-m" x="470" y="155" width="150" height="34" rx="6"/><text class="sv-t" x="545" y="177" text-anchor="middle">öbek rw-</text>
+  <rect class="sv-m" x="470" y="205" width="150" height="34" rx="6"/><text class="sv-t" x="545" y="227" text-anchor="middle">yığın rw-</text>
+  <rect class="sv-k" x="260" y="50" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="68" text-anchor="middle">çerçeve 0</text>
+  <rect class="sv-l" x="260" y="80" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="98" text-anchor="middle">çerçeve 1: libc</text>
+  <rect class="sv-k" x="260" y="110" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="128" text-anchor="middle">çerçeve 2: A veri</text>
+  <rect class="sv-k" x="260" y="140" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="158" text-anchor="middle">çerçeve 3: B yığın</text>
+  <rect class="sv-k" x="260" y="170" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="188" text-anchor="middle">çerçeve 4: A öbek</text>
+  <rect class="sv-k" x="260" y="200" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="218" text-anchor="middle">çerçeve 5: B veri</text>
+  <rect class="sv-k" x="260" y="230" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="248" text-anchor="middle">çerçeve 6: A yığın</text>
+  <rect class="sv-k" x="260" y="260" width="120" height="26" rx="4"/><text class="sv-s" x="320" y="278" text-anchor="middle">çerçeve 7: B öbek</text>
+  <line class="sv-cl" x1="170" y1="72" x2="260" y2="93"/>
+  <line class="sv-cl" x1="470" y1="72" x2="380" y2="93"/>
+  <line class="sv-c" x1="170" y1="122" x2="260" y2="123"/>
+  <line class="sv-c" x1="170" y1="172" x2="260" y2="183"/>
+  <line class="sv-c" x1="170" y1="222" x2="260" y2="243"/>
+  <line class="sv-c" x1="470" y1="122" x2="380" y2="213"/>
+  <line class="sv-c" x1="470" y1="172" x2="380" y2="273"/>
+  <line class="sv-c" x1="470" y1="222" x2="380" y2="153"/>
+  <text class="sv-s" x="320" y="312" text-anchor="middle">Kalın çizgi: iki süreç aynı salt okunur çerçeveyi paylaşıyor.</text>
+  <text class="sv-s" x="320" y="330" text-anchor="middle">İnce çizgiler: yazılabilir sayfalar her süreçte ayrı çerçeveye gider.</text>
+</svg>
+<figcaption>Her sürecin sayfa tablosu, kendi sanal sayfalarını RAM'deki çerçevelere bağlar. A ile B'nin "veri" sayfası aynı sanal adreste olsa bile farklı çerçevelere gider; birinin yazdığı öbürüne ulaşmaz. Ortak kütüphane kodu ise salt okunur olduğu için tek çerçevede paylaşılır. A'nın eşlenmemiş adresine erişmek sayfa hatası doğurur; o adreste geçerli bir bölge yoksa çekirdek süreci durdurur.</figcaption>
+</figure>
+
+<h3>Sayfa hatası: her zaman bir hata değil</h3>
+
+<p>MMU bir adresi çevirirken sayfa tablosunda "bellekte değil" ya da "bu işleme izin yok" bayrağıyla karşılaşırsa işlemci durur ve denetimi çekirdeğe verir. Buna <strong>sayfa hatası</strong> (page fault) denir. Adı korkutucu ama çoğu sayfa hatası tamamen olağandır: çekirdek "bu sayfa henüz ayrılmadı, şimdi bir çerçeve vereyim", "bu sayfa diskteydi, geri getireyim" ya da birazdan göreceğimiz "bu sayfa yazınca kopyalanacaktı, şimdi kopyalayayım" der, tabloyu düzeltir ve programı kaldığı komuttan sürdürür. Program bunu fark etmez.</p>
+
+<p>Adres haritada hiç yoksa ya da izin gerçekten yoksa (salt okunur sayfaya yazmak, çalıştırılamaz sayfayı yürütmek) sayfa hatası bir <strong>ihlal</strong>dir: çekirdek sürece <code>SIGSEGV</code> gönderir, süreç "Segmentation fault" ile ölür. Bu ölüm bir güvenlik özelliğidir; yanlış adrese yazan program başka bir şeyi bozmadan durdurulur. İşlemci son çevirileri <strong>TLB</strong> adlı küçük bir önbellekte tutar (Parça 2'deki önbellek fikri).</p>
+
+<h2 class="s">3. Yalıtım ve paylaşılan bellek</h2>
+
+<p>Yalıtımın mantığı: her bellek erişimi sürecin kendi sayfa tablosundan geçer; tabloyu yalnız çekirdek yazar ve bir sürecin tablosuna başkasının özel çerçevelerini koymaz. O hâlde süreç başkasının verisine bellek yoluyla varamaz; isterse çekirdeğe sistem çağrısıyla <em>sormak</em> zorundadır ve çekirdek orada izni denetler.</p>
+
+<p>Bazen süreçlerin bilerek veri paylaşması gerekir: bir video oynatıcının çözücü süreci ile ekran süreci büyük kareleri her seferinde kopyalamak istemez. Bunun için <strong>paylaşılan bellek</strong> vardır: çekirdek iki sürecin tablosuna <em>aynı</em> çerçeveyi koyar. Linux'ta bir yolu <code>mmap</code>'e <code>MAP_SHARED</code> vermektir; <code>mmap(2)</code> belgesine göre böyle bir eşlemedeki güncellemeler aynı bölgeyi eşleyen öbür süreçlere görünür. Paylaşım <strong>açık istekle ve çekirdeğin aracılığıyla</strong> olur: yalıtım varsayılandır, paylaşım istisnadır.</p>
+
+<p>Hata ayıklayıcılar da istisna değildir: <code>gdb</code> başka bir sürecin belleğine ancak çekirdeğe <code>ptrace</code> çağrısıyla sorarak ulaşır ve çekirdek yetkini denetler; başka kullanıcının sürecine izin vermez. Süreçleri izlemek Parça 13'ün konusu.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"İki süreçte aynı adres varsa aynı bellektir" diye düşünmek.</strong> Sanal adres yalnız kendi sürecinin haritasında anlam taşır. Aşağıdaki <code>fork</code> örneğinde ana ve çocuk süreçte bir değişkenin adresi birebir aynı çıkacak ama değerleri farklı olacak. Aynı sanal adres, iki farklı sayfa tablosunda iki farklı çerçeveye gidebilir. Doğrusu: "aynı bellek mi?" sorusunun cevabı adreste değil, iki sürecin tablosunun aynı çerçeveyi gösterip göstermediğindedir ve bunu yalnız çekirdek bilir.</p></div>
+
+<h2 class="s">4. <code>fork</code> ve yazınca kopyala</h2>
+
+<p>Linux'ta yeni bir süreç çoğunlukla var olan bir sürecin kendini ikiye bölmesiyle doğar. <code>fork()</code> sistem çağrısı, çağıran sürecin neredeyse birebir bir kopyasını oluşturur: aynı kod, aynı değişken değerleri, aynı açık dosyalar, aynı kimlik. Farklı olanlar: çocuğun kendi PID'i vardır ve <code>fork</code> iki sürece iki ayrı değer döndürür. Ana süreçte dönüş değeri çocuğun PID'idir, çocukta 0'dır; program bu değere bakıp "ben hangisiyim?" sorusunu cevaplar. Kabuğunda bir komut yazdığında olan budur: kabuk <code>fork</code> ile kendini çoğaltır, çocuk ardından <code>execve</code> ile kendi yerine istenen programı yükler. Parça 4'te <code>strace</code> ile gördüğün <code>execve</code> satırı bu ikinci adımdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><code>fork(2)</code> belgesinin ifadesiyle ana ve çocuk süreç <strong>ayrı bellek alanlarında</strong> çalışır; <code>fork</code> anında bu alanların içeriği aynıdır, ama sonradan birinin yaptığı yazma öbürünü etkilemez. Çocuk yalnız <code>fork</code>'u çağıran iş parçacığıyla doğar. İstisna, bilerek paylaşılan (<code>MAP_SHARED</code>) eşlemelerdir: onlar <code>fork</code>'tan sonra da paylaşılmaya devam eder.</p></div>
+
+<p>Peki çekirdek yüzlerce megabaytlık belleği her <code>fork</code>'ta kopyalıyor mu? Öyle olsaydı her komut yavaşlardı; üstelik çocuk çoğu zaman hemen <code>execve</code> yapıp kopyayı atar. Çözümün adı <strong>yazınca kopyala</strong>dır (copy-on-write, COW) ve <code>fork(2)</code> belgesi de Linux'un <code>fork</code>'u böyle uyguladığını söyler.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Yazınca kopyala</strong> şöyle işler. <strong>1.</strong> <code>fork</code> anında çekirdek belleği kopyalamaz; yalnız sayfa tablosunu kopyalar. İki sürecin tablosu artık aynı çerçeveleri gösterir. <strong>2.</strong> Çekirdek, bu özel (paylaşılmaması gereken) sayfaları iki tabloda da <strong>salt okunur</strong> işaretler ve "aslında yazılabilir, yazınca kopyala" diye not düşer. <strong>3.</strong> İki süreç de okudukça hiçbir şey olmaz; aynı çerçeveyi okurlar. <strong>4.</strong> Biri bir sayfaya yazmaya kalkınca MMU izin yok der ve sayfa hatası oluşur. <strong>5.</strong> Çekirdek notu görür, boş bir çerçeve alır, sayfanın içeriğini oraya kopyalar, yazan sürecin tablosunu yeni çerçeveye çevirip yazılabilir yapar ve komutu yeniden başlatır. Böylece yalnız <strong>gerçekten değiştirilen sayfalar</strong> kopyalanır.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 300" role="img" aria-label="Yazınca kopyala: fork'tan hemen sonra iki süreç aynı çerçeveyi salt okunur paylaşır; çocuk yazınca çekirdek çerçeveyi kopyalar ve çocuğun tablosunu yeni çerçeveye çevirir">
+  <text class="sv-b" x="160" y="22" text-anchor="middle">1) fork'tan hemen sonra</text>
+  <text class="sv-b" x="480" y="22" text-anchor="middle">2) çocuk sayfaya yazdıktan sonra</text>
+  <line class="sv-c" x1="320" y1="35" x2="320" y2="290"/>
+  <rect class="sv-m" x="20" y="50" width="120" height="44" rx="8"/><text class="sv-t" x="80" y="70" text-anchor="middle">ana süreç</text><text class="sv-s" x="80" y="86" text-anchor="middle">sayfa: ozel=1</text>
+  <rect class="sv-a" x="180" y="50" width="120" height="44" rx="8"/><text class="sv-t" x="240" y="70" text-anchor="middle">çocuk süreç</text><text class="sv-s" x="240" y="86" text-anchor="middle">sayfa: ozel=1</text>
+  <rect class="sv-l" x="90" y="180" width="140" height="50" rx="8"/><text class="sv-t" x="160" y="202" text-anchor="middle">çerçeve X</text><text class="sv-s" x="160" y="220" text-anchor="middle">ozel=1</text>
+  <line class="sv-cl" x1="80" y1="94" x2="140" y2="180"/>
+  <line class="sv-cl" x1="240" y1="94" x2="180" y2="180"/>
+  <text class="sv-s" x="160" y="140" text-anchor="middle">ikisinde de</text>
+  <text class="sv-s" x="160" y="156" text-anchor="middle">salt okunur</text>
+  <text class="sv-s" x="160" y="258" text-anchor="middle">Okuma serbest, kopya yok.</text>
+  <text class="sv-s" x="160" y="276" text-anchor="middle">İlk yazma sayfa hatası doğurur.</text>
+  <rect class="sv-m" x="340" y="50" width="120" height="44" rx="8"/><text class="sv-t" x="400" y="70" text-anchor="middle">ana süreç</text><text class="sv-s" x="400" y="86" text-anchor="middle">ozel=1</text>
+  <rect class="sv-a" x="500" y="50" width="120" height="44" rx="8"/><text class="sv-t" x="560" y="70" text-anchor="middle">çocuk süreç</text><text class="sv-s" x="560" y="86" text-anchor="middle">ozel=2</text>
+  <rect class="sv-l" x="340" y="180" width="120" height="50" rx="8"/><text class="sv-t" x="400" y="202" text-anchor="middle">çerçeve X</text><text class="sv-s" x="400" y="220" text-anchor="middle">ozel=1, rw</text>
+  <rect class="sv-a" x="500" y="180" width="120" height="50" rx="8"/><text class="sv-t" x="560" y="202" text-anchor="middle">çerçeve Y (kopya)</text><text class="sv-s" x="560" y="220" text-anchor="middle">ozel=2, rw</text>
+  <line class="sv-cl" x1="400" y1="94" x2="400" y2="180"/>
+  <line class="sv-cl" x1="560" y1="94" x2="560" y2="180"/>
+  <text class="sv-s" x="480" y="258" text-anchor="middle">Çekirdek yalnız yazılan sayfayı kopyaladı;</text>
+  <text class="sv-s" x="480" y="276" text-anchor="middle">sanal adres iki süreçte hâlâ aynı.</text>
+</svg>
+<figcaption>Yazınca kopyala, yalıtımı korurken kopyalama maliyetini ertelenmiş ve küçük tutar. Sol: <code>fork</code>'tan sonra iki tablo aynı çerçeveyi salt okunur gösterir. Sağ: çocuğun ilk yazması sayfa hatası doğurur, çekirdek sayfanın kopyasını çıkarır ve yalnız çocuğun tablosunu yeni çerçeveye çevirir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: aynı adres, farklı değer; paylaşılan sayfa, aynı değer</span>
+<p><strong>Soru:</strong> Bir küresel değişken (<code>ozel</code>) ve <code>MAP_SHARED</code> ile istenmiş bir sayfa (<code>ortak</code>) 1 değeriyle başlıyor. <code>fork</code>'tan sonra çocuk ikisini de 2 yaparsa, ana süreç neyi görür?</p>
+<pre class="kod" data-ad="catal.c">#include &lt;stdio.h>
+#include &lt;sys/mman.h>
+#include &lt;sys/wait.h>
+#include &lt;unistd.h>
+
+int ozel = 1;                                    /* her surece ayri kopya */
+
+int main(void)
+{
+    /* iki surecin gercekten paylasacagi bir sayfa iste */
+    int *ortak = mmap(NULL, sizeof *ortak, PROT_READ | PROT_WRITE,
+                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (ortak == MAP_FAILED)
+        return 1;
+    *ortak = 1;
+
+    pid_t pid = fork();
+    if (pid &lt; 0) {
+        perror("fork");
+        return 1;
+    }
+    if (pid == 0) {                              /* cocuk */
+        ozel = 2;
+        *ortak = 2;
+        printf("cocuk pid=%d  &amp;ozel=%p ozel=%d  ortak=%p *ortak=%d\n",
+               (int)getpid(), (void *)&amp;ozel, ozel, (void *)ortak, *ortak);
+        return 0;
+    }
+    waitpid(pid, NULL, 0);                       /* ana: cocugu bekle */
+    printf("ana   pid=%d  &amp;ozel=%p ozel=%d  ortak=%p *ortak=%d\n",
+           (int)getpid(), (void *)&amp;ozel, ozel, (void *)ortak, *ortak);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o catal catal.c
+./catal</pre>
+<pre class="cikti">cocuk pid=1093  &amp;ozel=0x6102aa91b040 ozel=2  ortak=0x787074d19000 *ortak=2
+ana   pid=1092  &amp;ozel=0x6102aa91b040 ozel=1  ortak=0x787074d19000 *ortak=2</pre>
+<p><strong>Adım 1.</strong> PID'ler farklı (1093, 1092): iki süreç. Ana süreç <code>waitpid</code> ile beklediği için çocuğun satırı önce geldi.</p>
+<p><strong>Adım 2.</strong> <code>&amp;ozel</code> iki satırda da <code>0x6102aa91b040</code>: çocuk ananın haritasının kopyasıyla doğdu.</p>
+<p><strong>Adım 3.</strong> Ama ana süreç <code>ozel=1</code> görüyor: çocuğun yazması sayfa hatası doğurdu, çekirdek sayfayı çocuk için kopyaladı, 2 yalnız çocuğun çerçevesine yazıldı.</p>
+<p><strong>Adım 4.</strong> <code>*ortak</code> ana süreçte de 2: <code>MAP_SHARED</code> sayfada iki tablo aynı çerçeveyi gösterir, yazınca kopyala uygulanmaz.</p>
+<p><strong>Sonuç:</strong> Özel bellek süreç başına ayrıdır; paylaşım ancak açıkça istenirse olur. Örnek 1'deki iş parçacıklarında değer ortak çıkmıştı.</p></div>
+
+<p>Kopyalamanın gerçekten "yazınca" olduğunu sayılarla da görebilirsin: çekirdek her sürecin küçük sayfa hatalarını sayar, <code>getrusage</code> bu sayıyı verir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: kopyalamanın ne zaman olduğunu saymak</span>
+<p><strong>Soru:</strong> <code>fork</code>'tan sonra çocuk 1000 sayfayı yalnız okursa kaç sayfa hatası olur? Aynı sayfalara yazarsa kaç?</p>
+<pre class="kod" data-ad="cow.c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;string.h>
+#include &lt;sys/resource.h>
+#include &lt;sys/wait.h>
+#include &lt;unistd.h>
+
+#define SAYFA 4096
+#define ADET  1000
+
+static long sayfa_hatasi(void)                   /* simdiye kadarki kucuk sayfa hatalari */
+{
+    struct rusage r;
+    getrusage(RUSAGE_SELF, &amp;r);
+    return r.ru_minflt;
+}
+
+int main(void)
+{
+    char *tampon = malloc((size_t)SAYFA * ADET); /* 1000 sayfalik alan */
+    if (tampon == NULL)
+        return 1;
+    memset(tampon, 'a', (size_t)SAYFA * ADET);   /* hepsine yaz: sayfalar gercekten ayrilsin */
+
+    pid_t pid = fork();
+    if (pid &lt; 0) {
+        perror("fork");
+        return 1;
+    }
+    if (pid == 0) {
+        long t0 = sayfa_hatasi();
+        volatile char toplam = 0;
+        for (int i = 0; i &lt; ADET; i++)
+            toplam += tampon[(size_t)i * SAYFA];    /* her sayfadan bir bayt OKU */
+        long t1 = sayfa_hatasi();
+        for (int i = 0; i &lt; ADET; i++)
+            tampon[(size_t)i * SAYFA] = 'b';        /* her sayfaya bir bayt YAZ */
+        long t2 = sayfa_hatasi();
+        printf("cocuk: 1000 sayfayi okurken sayfa hatasi : %ld\n", t1 - t0);
+        printf("cocuk: 1000 sayfaya yazarken sayfa hatasi: %ld\n", t2 - t1);
+        printf("cocuk: tampon[0] = %c\n", tampon[0]);
+        return 0;
+    }
+    waitpid(pid, NULL, 0);
+    printf("ana  : tampon[0] = %c\n", tampon[0]);
+    free(tampon);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o cow cow.c
+./cow</pre>
+<pre class="cikti">cocuk: 1000 sayfayi okurken sayfa hatasi : 0
+cocuk: 1000 sayfaya yazarken sayfa hatasi: 1000
+cocuk: tampon[0] = b
+ana  : tampon[0] = a</pre>
+<p><strong>Adım 1.</strong> Okumada 0 sayfa hatası: <code>fork</code> sayfa tablosunu kopyaladığı için 1000 sayfa çocukta zaten geçerli (salt okunur); okumak için çekirdeğe gerek yok.</p>
+<p><strong>Adım 2.</strong> Yazmada tam 1000 hata: her sayfaya ilk yazma bir hata doğurdu ve çekirdek o sayfayı kopyaladı. İkinci yazma yeni hata doğurmazdı; artık çocuğun kendi kopyası var.</p>
+<p><strong>Adım 3.</strong> Ana süreç hâlâ <code>a</code> görüyor: kopyalar yalnız çocuğa ait.</p>
+<p><strong>Sonuç:</strong> Kopyalama <code>fork</code> anında değil, ilk yazmada ve yalnız yazılan sayfa için olur. Çekirdek sürümüne ve dev sayfa ayarlarına göre sende küçük farklar çıkabilir.</p></div>
+
+<p>Güvenlik açısından iki not. Çocuk ananın belleğini <strong>miras alır</strong>: ana süreçteki bir parola <code>fork</code> sonrası çocukta da vardır, bu yüzden sır taşıyan program sırrı gereğinden uzun tutmamalıdır. Ve bu mekanizmayı çekirdek uygular, çekirdek de hatasız değildir: 2016'da açıklanan "Dirty COW" (CVE-2016-5195) yarış hatası, ayrıcalıksız bir kullanıcının salt okunur eşlemelere yazıp yetkisini yükseltmesine yol açtı ve çekirdek güncellemesiyle kapatıldı. Yalıtım çekirdek kadar sağlamdır; çekirdek güncellemeleri ertelenmez (Parça 10 ve 19).</p>
+
+<h2 class="s">5. Bellek korumaları: NX/DEP ve W^X</h2>
+
+<p>Sanal bellek süreçleri birbirinden ayırır. Ama tek bir sürecin <em>içindeki</em> hatalara karşı ne yapar? Parça 3'te yığında dönüş adresinin, yerel dizilerin hemen yanında durduğunu ve kod rafı Parça 30'da sınırı denetlenmeyen bir yazmanın komşu belleğe taşabildiğini görmüştün. Tarihsel olarak bu tür hataların en tehlikeli sonucu şuydu: dışarıdan gelen veri belleğe yazılıyor, sonra işlemci bir biçimde o verinin bulunduğu adrese yönlendirilip onu <strong>komut gibi çalıştırıyordu</strong>. Veri ile kod arasındaki ayrım yalnız programcının kafasındaydı; donanım ikisini aynı baytlar olarak görüyordu.</p>
+
+<p>Savunmanın fikri, bu ayrımı donanıma öğretmektir. Sayfa tablosundaki her girdiye bir bit eklenir: <strong>bu sayfadaki baytlar komut olarak yürütülemez</strong>. x86-64'te bu bitin adı NX (no-execute; Intel belgelerinde XD) olarak geçer. İşlemci, program sayacı NX işaretli bir sayfayı gösterdiği anda komutu yürütmez, sayfa hatası verir ve çekirdek süreci durdurur. Windows aynı korumaya <strong>DEP</strong> (Data Execution Prevention, veri yürütme engellemesi) der; Microsoft'un belgesine göre DEP, Windows XP ve Windows Server 2003'ten beri sistemde yerleşiktir ve öbek, yığın gibi veri sayfalarından kod çalıştırılmasını engeller.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>W^X (yaz XOR çalıştır):</strong> Bir bellek sayfası ya yazılabilir ya çalıştırılabilir olur; <strong>ikisi birden asla</strong>. Kod sayfaları <code>r-x</code> (okunur, çalıştırılır, yazılamaz), veri, öbek ve yığın sayfaları <code>rw-</code> (okunur, yazılır, çalıştırılamaz) olur. Adındaki "XOR" Parça 1'deki bit işleminden gelir: iki koşuldan tam biri doğru olabilir. NX biti bu ilkeyi donanımda uygulamanın aracıdır; W^X ise işletim sistemi ve programların uyduğu ilkedir. Terim 2003'te OpenBSD'de yaygınlaştı.</p></div>
+
+<p>Neden ikisi birden olmasın? Saldırganın klasik ihtiyacı tam o kesişimdir: hem <strong>yazabileceği</strong> hem <strong>çalıştırabileceği</strong> bir yer. Kesişim boşsa belleğe yazılan dış veri doğrudan komut olarak yürütülmez, kod sayfaları da çalışma sırasında değiştirilemez.</p>
+
+<p>İstisna, çalışma anında makine kodu üreten programlardır: tarayıcıların JavaScript motorları sık çalışan kodu yerinde derler (just-in-time, JIT). W^X'e uymak için üretilen kodu önce yazılabilir sayfaya yazar, sonra sayfayı yazılamaz ve çalıştırılabilir yaparlar (Microsoft'un DEP belgesi de bunu önerir). Bu motorlar ayrıca ayrı süreçlerde ve sıkı kum havuzlarında çalıştırılır.</p>
+
+<h2 class="s">6. Adres rastgeleleştirme (ASLR)</h2>
+
+<p>NX, belleğe konan verinin kod gibi çalışmasını engeller. Ama bir hatayı kötüye kullanmak isteyen biri çoğu zaman programın ya da kütüphanenin içindeki <em>var olan</em> bir şeyin adresini bilmek ister. Eski sistemlerde her program her çalıştırmada aynı adreslere yüklenirdi; adresleri bir kez kendi makinesinde öğrenen, aynı sürümü çalıştıran bütün makinelerde aynı adresleri bilirdi. ASLR (address space layout randomization, adres uzayı düzeni rastgeleleştirme) bu bilgiyi elinden alır: yığın, öbek, paylaşılan kütüphaneler ve (program buna uygun derlendiyse) programın kendisi her çalıştırmada başka bir sanal adrese yerleştirilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>ASLR</strong>, bir sürecin bellek bölgelerinin başlangıç adreslerini her çalıştırmada rastgele seçen çekirdek özelliğidir. Amacı, adres bilgisine dayanan bir saldırıyı tahmine dönüştürmektir: yanlış tahmin genellikle sürecin çökmesiyle sonuçlanır. Programın kendi kod bölgesinin de kayabilmesi için program <strong>konumdan bağımsız</strong> (PIE) derlenmiş olmalıdır; güncel Debian tabanlı dağıtımlarda, Kali dahil, <code>gcc</code> bunu varsayılan olarak yapar (ayrıntısı Parça 60).</p></div>
+
+<p>Linux'ta ASLR'nin düzeyini <code>/proc/sys/kernel/randomize_va_space</code> dosyası tutar. Çekirdek belgesi değerleri şöyle tanımlar:</p>
+
+<div class="tablo"><table>
+<tr><th>Değer</th><th>Anlamı (kernel.org belgesine göre)</th><th>Ne zaman görülür</th></tr>
+<tr><td>0</td><td>Rastgeleleştirme kapalı</td><td>Özelliği desteklemeyen mimariler ya da <code>norandmaps</code> ile açılmış çekirdek</td></tr>
+<tr><td>1</td><td><code>mmap</code> tabanı, yığın ve VDSO rastgele; dolayısıyla paylaşılan kütüphaneler de rastgele adreste; PIE programların kod başlangıcı da rastgele</td><td>Çekirdek <code>CONFIG_COMPAT_BRK</code> ile derlenmişse varsayılan</td></tr>
+<tr><td>2</td><td>1'dekilere ek olarak öbek (heap) de rastgele</td><td>Güncel dağıtımların çoğunda varsayılan</td></tr>
+</table></div>
+
+<p>Rastgeleleştirmenin bir ayrıntısı var: kaydırma <strong>sayfa düzeyinde</strong> yapılır. Bölgelerin başlangıcı sayfa sınırına oturmak zorunda olduğu için rastgele seçilen şey sayfa numarasıdır; bir fonksiyonun sayfa içindeki uzaklığı (son üç onaltılık hane) çalıştırmadan çalıştırmaya değişmez. Bunu birazdan kendi çıktında göreceksin. Kaç bitin rastgele olduğu (entropi) mimariye ve bölgeye göre değişir. Fikir PaX projesinin 2001 tarihli bir yamasına dayanır; Linux ana çekirdeğine 2005 dolaylarında girdi. Çekirdeğin kendi adresini rastgeleleştiren biçimine KASLR denir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Hata ayıklarken adresler değişmesin diye ASLR'yi sistem genelinde kapatmak.</strong> <code>randomize_va_space</code> değerini 0 yapmak makinedeki <em>bütün</em> süreçlerin (tarayıcın, ağ servislerin) korumasını kaldırır, root ister ve geri açmayı unutmak kolaydır. Doğrusu, rastgeleleştirmeyi yalnız incelediğin <strong>tek programda</strong> kapatmaktır: <code>setarch -R ./program</code> yalnız o süreç ve çocukları için kapatır, root gerektirmez. Hata ayıklayıcılar da çoğunlukla bunu kendileri yapar.</p></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Hiçbir bellek koruması tek başına yeterli değildir.</strong> NX belleğe konan verinin çalışmasını, ASLR adreslerin bilinmesini zorlaştırır; ikisi de hatanın kendisini düzeltmez. Bu yüzden korumalar katman katman kullanılır (derinlemesine savunma): güvenli kod ve sınır denetimi, derleyici korumaları, NX, ASLR, en az yetki ve kum havuzu. Bu korumaların nasıl aşılmaya çalışıldığı bu rafın konusu değildir; Parça 60 bellek güvenliği açıklarını yine yalnız kavram ve savunma düzeyinde ele alır.</p></div>
+
+<p>Bu rafın sınırını burada bir kez daha hatırla: bütün denemeler yalnız kendi makinende ve kendi derlediğin programlarla yapılır, başkasına ait bir sistemi incelemek ya da korumalarını sınamak izinsiz erişimdir ve suçtur; yasal ve etik çerçeve Parça 72 ve 73'te.</p>
+
+<h2 class="s">7. Kimlik, yetki ve en az yetki ilkesi</h2>
+
+<p>Sanal bellek "kim neyi <em>görebilir</em>" sorusunu çözer. Geriye "kim neyi <em>yapabilir</em>" sorusu kalır: hangi dosyayı açabilir, hangi sürece sinyal gönderebilir, hangi porta bağlanabilir? Bunu çekirdek, her sürecin taşıdığı <strong>kimlik bilgilerine</strong> bakarak, her sistem çağrısında yeniden karar verir.</p>
+
+<p>Her sürecin bir kullanıcı kimliği (UID) ve grup kimliği (GID) vardır; aslında birkaç tane: <strong>gerçek</strong> (süreci kim başlattı), <strong>etkin</strong> (izin denetiminde hangisi kullanılır), <strong>saklanmış</strong> ve dosya sistemi kimliği. <code>/proc/self/status</code> dosyasındaki <code>Uid:</code> satırı bu dördünü sırayla yazar. Süreç <code>fork</code> ile çoğaldığında kimlik de çocuğa geçer. Bu yüzden senin kabuğundan başlattığın her program senin yetkilerinle çalışır; ne fazlası ne eksiği. Kullanıcıların ve grupların kendisi, <code>root</code> ve <code>sudo</code> Parça 11'in konusudur; burada yalnız çekirdeğin süreç düzeyinde ne tuttuğuna bakıyoruz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>En az yetki ilkesi:</strong> Bir süreç, işini yapmak için gereken yetkilerin <strong>en azıyla</strong> ve <strong>gerektiği süre kadar</strong> çalışmalıdır. Nedeni şudur: her süreç bir gün bir hata ya da saldırıyla ele geçirilebilir; ele geçirilen süreç ancak elindeki yetkiler kadar zarar verebilir. İşletim sisteminde bu ilkenin araçları şunlardır: hizmetleri kendi ayrı kullanıcılarıyla çalıştırmak, ayrıcalığı işi bitince bırakmak, süper kullanıcı gücünü <strong>yeteneklere</strong> bölüp yalnız gerekeni vermek ve <strong>seccomp</strong> ile yapılabilecek sistem çağrılarını daraltmak.</p></div>
+
+<h3>Yetenekler (capabilities): root'u parçalara bölmek</h3>
+
+<p>Geleneksel Unix'te dünya ikiye ayrılırdı: etkin UID'i 0 olan süreç (root) çekirdeğin bütün izin denetimlerini atlar, öbürleri her denetime tabi olur. Bu "ya hepsi ya hiçbiri" düzeninde 1024'ün altındaki bir porta bağlanacak web sunucusu, sırf bunun için her dosyayı değiştirebilecek güce sahip olurdu. <code>capabilities(7)</code> belgesine göre Linux 2.2'den beri süper kullanıcı ayrıcalıkları ayrı ayrı açılıp kapatılabilen <strong>yeteneklere</strong> bölünmüştür.</p>
+
+<div class="tablo"><table>
+<tr><th>Yetenek</th><th>Neye izin verir</th><th>Kimin işine yarar</th></tr>
+<tr><td><code>CAP_NET_BIND_SERVICE</code></td><td>1024'ün altındaki (ayrıcalıklı) portlara bağlanmak</td><td>80/443'te dinleyen web sunucusu</td></tr>
+<tr><td><code>CAP_KILL</code></td><td>Sinyal gönderirken izin denetimini atlamak</td><td>Başka kullanıcıların süreçlerini durdurması gereken bir bekçi</td></tr>
+<tr><td><code>CAP_DAC_OVERRIDE</code></td><td>Dosya okuma, yazma, çalıştırma izin denetimlerini atlamak</td><td>Yedekleme aracı (çok geniş, dikkatle verilir)</td></tr>
+<tr><td><code>CAP_NET_RAW</code></td><td>Ham soket açmak</td><td>Ağ tanılama araçları</td></tr>
+<tr><td><code>CAP_SYS_ADMIN</code></td><td>Birbiriyle ilgisiz pek çok yönetim işi; belge "aşırı yüklenmiş" der ve kaçınılmasını önerir</td><td>Neredeyse root'a eşdeğer; verilmemesi en iyisi</td></tr>
+</table></div>
+
+<p>Her iş parçacığının birkaç yetenek kümesi vardır. <strong>Etkin</strong> (Effective) küme çekirdeğin o anda denetlediğidir. <strong>İzinli</strong> (Permitted) küme etkinin üst sınırıdır; buradan atılan yetenek kural olarak geri alınamaz. <strong>Sınırlayıcı</strong> (Bounding) küme, <code>execve</code> ile kazanılabileceklerin tavanıdır; <strong>devredilebilir</strong> (Inheritable) ve <strong>ortam</strong> (Ambient) kümeleri <code>execve</code> sonrasında neyin korunacağını belirler. <code>/proc/self/status</code>'taki <code>Cap*</code> satırları bunları onaltılık bit maskesi olarak gösterir (Parça 1); adlara <code>capsh --decode</code> çevirir.</p>
+
+<h3>seccomp: yapılabilecek sistem çağrılarını daraltmak</h3>
+
+<p>Yetenekler "hangi ayrıcalıklı işi yapabilir?" sorusunu daraltır. <strong>seccomp</strong> (secure computing) bir adım daha ileri gider: süreç hangi <strong>sistem çağrılarını</strong> yapabilir? Parça 4'te bir programın dünyayla bütün temasının sistem çağrılarıyla olduğunu gördük. Bir sıkıştırma kütüphanesi yalnız okuyup yazmalıysa, ona ağ soketi açma ya da yeni program başlatma çağrılarına erişim vermek gereksizdir. Ele geçirilirse kullanılabilecek kapı sayısını azaltmak için o çağrılar kapatılır.</p>
+
+<p><code>seccomp(2)</code> belgesine göre iki kip vardır. <strong>Katı kip</strong> (strict) yalnız <code>read</code>, <code>write</code>, <code>_exit</code> (ama <code>exit_group</code> değil) ve <code>sigreturn</code> çağrılarına izin verir; başka bir çağrı yapan süreç <code>SIGKILL</code> ile öldürülür. <strong>Süzgeç kipi</strong> (filter) her çağrı için küçük bir kural programı çalıştırır ve izin verme, hata döndürme ya da öldürme gibi kararlar verebilir; bunu kurmak için ya <code>CAP_SYS_ADMIN</code> gerekir ya da süreç önce <code>no_new_privs</code> bayrağını açmalıdır. Bu bayrak, sürecin sonradan <code>execve</code> ile daha yetkili bir programa dönüşmesini engeller. Süzgeçler <code>fork</code> ile çocuklara geçer ve <code>execve</code>'den sonra da kalır: daraltılan süreç kendini genişletemez. systemd hizmetleri, tarayıcılar ve konteyner çalıştırıcıları (Parça 7) bunu yaygın kullanır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5: katı seccomp kipinde süreç ne yapabilir?</span>
+<p><strong>Soru:</strong> Bir program kendini katı seccomp kipine sokuyor, ardından ekrana yazıyor ve bir dosya açmaya çalışıyor. Hangi satırlar görünür ve süreç nasıl biter?</p>
+<pre class="kod" data-ad="kum.c">#include &lt;fcntl.h>
+#include &lt;linux/seccomp.h>
+#include &lt;string.h>
+#include &lt;sys/prctl.h>
+#include &lt;sys/syscall.h>
+#include &lt;unistd.h>
+
+static void yaz(const char *s)
+{
+    if (write(1, s, strlen(s)) &lt; 0)
+        syscall(SYS_exit, 1);
+}
+
+int main(void)
+{
+    yaz("1) kisitlamadan once: istedigim cagriyi yapabilirim\n");
+
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT) != 0)
+        return 1;                                /* bundan sonra yalniz read/write/exit/sigreturn */
+
+    yaz("2) kati kipteyim: write hala izinli\n");
+    int fd = open("/etc/hostname", O_RDONLY);    /* izin listesinde yok: cekirdek sureci oldurur */
+    (void)fd;
+    yaz("3) bu satir hic yazilmayacak\n");
+    syscall(SYS_exit, 0);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o kum kum.c
+./kum; echo "cikis kodu: $?"</pre>
+<pre class="cikti">1) kisitlamadan once: istedigim cagriyi yapabilirim
+2) kati kipteyim: write hala izinli
+bash: line 1:  1274 Killed                     ./kum
+cikis kodu: 137</pre>
+<p><strong>Adım 1.</strong> Birinci satır, kısıtlamadan önce yazıldı.</p>
+<p><strong>Adım 2.</strong> <code>prctl</code> çağrısından sonra süreç katı kipte. İkinci satır yine göründü, çünkü <code>write</code> izinli dört çağrıdan biri.</p>
+<p><strong>Adım 3.</strong> <code>open</code> izinli değil. Çekirdek çağrıyı yürütmek yerine süreci <code>SIGKILL</code> ile öldürdü; kabuk bunu "Killed" diye bildirdi. Üçüncü satır hiç yazılmadı.</p>
+<p><strong>Adım 4.</strong> Çıkış kodu 137 = 128 + 9; kabuk, sinyalle ölen süreç için 128'e sinyal numarasını ekler ve <code>SIGKILL</code>'in numarası 9'dur.</p>
+<p><strong>Sonuç:</strong> seccomp, sürecin çekirdekle konuşabileceği kapıları daraltır; kapatılan kapıya dokunan süreç durdurulur. Programın sonunda <code>exit</code> yerine <code>syscall(SYS_exit, 0)</code> yazılmasının nedeni de bu: C kütüphanesinin olağan çıkışı <code>exit_group</code> çağrısını kullanır ve o da katı kipte yasaktır. "Killed" iletisinin biçimi kabuğa göre değişir; etkileşimli terminalde yalnız <code>Killed</code> görebilirsin.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Koruma</th><th>Hangi soruyu cevaplar</th><th>Kim uygular</th><th>Kendi makinende nasıl görülür</th></tr>
+<tr><td>Sanal bellek, ayrı sayfa tabloları</td><td>Bu süreç başkasının belleğini görebilir mi?</td><td>Çekirdek + MMU</td><td><code>fork</code> örneğinde aynı adres, farklı değer</td></tr>
+<tr><td>NX/DEP, W^X</td><td>Bu bellekteki veri komut olarak çalışabilir mi?</td><td>İşlemci (NX biti) + çekirdek + derleyici</td><td><code>/proc/self/maps</code>'te <code>rwx</code> olmaması</td></tr>
+<tr><td>ASLR</td><td>Adresler önceden bilinebilir mi?</td><td>Çekirdek (+ PIE derleme)</td><td>Art arda çalıştırmada değişen adresler</td></tr>
+<tr><td>UID/GID</td><td>Bu süreç kimin adına çalışıyor?</td><td>Çekirdek</td><td><code>Uid:</code> ve <code>Gid:</code> satırları</td></tr>
+<tr><td>Yetenekler</td><td>Hangi ayrıcalıklı işleri yapabilir?</td><td>Çekirdek</td><td><code>Cap*</code> satırları, <code>getpcaps</code></td></tr>
+<tr><td>seccomp</td><td>Hangi sistem çağrılarını yapabilir?</td><td>Çekirdek</td><td><code>Seccomp:</code> satırı, katı kip örneği</td></tr>
+</table></div>
+
+<h2 class="s">Kendi makinende dene: ASLR'yi, W^X'i ve yetenekleri gözünle gör</h2>
+
+<p>Bu alıştırma yalnız kendi bilgisayarında ve kendi programlarınla yapılır; root gerekmez, hiçbir sistem ayarı değişmez. Linux ya da WSL2 ve <code>gcc</code> yeter. Adresler rastgele olduğu için sendeki sayılar farklı çıkacak; önemli olan değişip değişmedikleri.</p>
+
+<h3>Adım 1: adresleri art arda üç kez yazdır</h3>
+
+<p>Aşağıdaki program Parça 3'teki dört bölgeden birer adresi ve C kütüphanesindeki <code>printf</code> fonksiyonunun adresini yazdırır.</p>
+
+<pre class="kod" data-ad="adres.c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;unistd.h>
+
+int sayac = 7;                                   /* veri bolumu */
+
+int main(void)
+{
+    int yerel = 42;                              /* yigin */
+    int *obek = malloc(sizeof *obek);            /* obek */
+    if (obek == NULL)
+        return 1;
+    *obek = 99;
+
+    printf("PID              : %d\n", (int)getpid());
+    printf("kod   (main)     : %p\n", (void *)main);
+    printf("veri  (sayac)    : %p\n", (void *)&amp;sayac);
+    printf("obek  (malloc)   : %p\n", (void *)obek);
+    printf("yigin (yerel)    : %p\n", (void *)&amp;yerel);
+    printf("kutuphane(printf): %p\n", (void *)printf);
+
+    free(obek);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o adres adres.c
+for i in 1 2 3; do ./adres; echo; done</pre>
+<pre class="cikti">PID              : 1085
+kod   (main)     : 0x5fc0e2f4b159
+veri  (sayac)    : 0x5fc0e2f4e028
+obek  (malloc)   : 0x5fc10c8f3310
+yigin (yerel)    : 0x7fff3fe23834
+kutuphane(printf): 0x75630e115740
+
+PID              : 1086
+kod   (main)     : 0x63eff3239159
+veri  (sayac)    : 0x63eff323c028
+obek  (malloc)   : 0x63f01fb81310
+yigin (yerel)    : 0x7ffe306328e4
+kutuphane(printf): 0x7e3289563740
+
+PID              : 1087
+kod   (main)     : 0x5d9aab824159
+veri  (sayac)    : 0x5d9aab827028
+obek  (malloc)   : 0x5d9ae909d310
+yigin (yerel)    : 0x7ffc4df0bb94
+kutuphane(printf): 0x7c0b9629d740</pre>
+
+<p>Satır satır oku. <strong>PID</strong> her seferinde bir artıyor: her çalıştırma yeni süreç. <strong>Kod</strong> adresi üç kez üç farklı yerde ama hep <code>...159</code> ile bitiyor: program PIE olduğu için kod bölgesi kaydı, <code>main</code>'in sayfa içi uzaklığı (<code>0x159</code>) sabit kaldı. <strong>Veri</strong> kodla birlikte kayıyor, hep <code>...028</code> ile bitiyor ve koda uzaklığı her seferinde aynı (<code>0x2ecf</code>): program dosyası tek blok yerleşiyor. <strong>Öbek</strong> programın biraz ötesinde, aradaki boşluk her seferinde farklı (düzey 2'nin getirisi). <strong>Yığın</strong> kullanıcı alanının tepesine yakın; son haneleri de değişti, yani sayfa içinde de kaydırılmış. <strong>Kütüphane</strong> kodla ilgisiz rastgele bir yerde, ama hep <code>...740</code> ile bitiyor.</p>
+
+<h3>Adım 2: ASLR düzeyini oku</h3>
+
+<pre class="kod" data-ad="bash">cat /proc/sys/kernel/randomize_va_space</pre>
+<pre class="cikti">2</pre>
+
+<p>2, tam rastgeleleştirme demek: yığın, kütüphaneler, VDSO ve öbek. Değeri değiştirmek root yetkisi ister ve sistem genelinde kapatmak önerilmez; bu alıştırmada değiştirilmedi (burada çalıştırılmadı).</p>
+
+<h3>Adım 3: rastgeleleştirmeyi yalnız bu programda kapat</h3>
+
+<pre class="kod" data-ad="bash">for i in 1 2; do setarch -R ./adres; echo; done</pre>
+<pre class="cikti">PID              : 1089
+kod   (main)     : 0x555555555159
+veri  (sayac)    : 0x555555558028
+obek  (malloc)   : 0x555555559310
+yigin (yerel)    : 0x7fffffffe634
+kutuphane(printf): 0x7ffff7e04740
+
+PID              : 1090
+kod   (main)     : 0x555555555159
+veri  (sayac)    : 0x555555558028
+obek  (malloc)   : 0x555555559310
+yigin (yerel)    : 0x7fffffffe634
+kutuphane(printf): 0x7ffff7e04740</pre>
+
+<p><code>setarch -R</code>, belgesindeki ifadeyle sanal adres uzayının rastgeleleştirilmesini kapatır (<code>ADDR_NO_RANDOMIZE</code> kişilik bayrağı). İki çalıştırmada PID değişti ama bütün adresler birebir aynı. Kod artık <code>0x555555555159</code> gibi "düz" bir değerde: Linux'un rastgeleleştirme yokken PIE programlar için seçtiği sabit taban. Öbek, verinin hemen ardında, arada rastgele boşluk yok. Yığın kullanıcı alanının en tepesine yaslanmış. İşte saldırganın eski sistemlerde her makinede bulduğu öngörülebilir düzen budur. Bu bayrak yalnız bu süreç (ve çocukları) için geçerli; başka hiçbir program etkilenmedi.</p>
+
+<h3>Adım 4: kendi bellek haritanda W^X'i oku</h3>
+
+<p>Çekirdek, her sürecin haritasını <code>/proc/&lt;pid&gt;/maps</code> dosyasında yazar; süreç kendininkine <code>/proc/self/maps</code> diye ulaşır. Aşağıdaki program önce dört adresini, sonra kendi haritasını yazdırır.</p>
+
+<pre class="kod" data-ad="harita.c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+int sayac = 7;
+
+int main(void)
+{
+    int yerel = 42;
+    int *obek = malloc(sizeof *obek);
+    if (obek == NULL)
+        return 1;
+
+    printf("main=%p  sayac=%p  obek=%p  yerel=%p\n\n",
+           (void *)main, (void *)&amp;sayac, (void *)obek, (void *)&amp;yerel);
+
+    FILE *f = fopen("/proc/self/maps", "r");     /* kendi bellek haritamiz */
+    if (f == NULL)
+        return 1;
+    char satir[512];
+    while (fgets(satir, sizeof satir, f) != NULL)
+        fputs(satir, stdout);
+    fclose(f);
+    free(obek);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="bash">gcc -Wall -Wextra -o harita harita.c
+./harita</pre>
+<pre class="cikti">main=0x593c89af3199  sayac=0x593c89af6048  obek=0x593cbefd6310  yerel=0x7ffc41c49b6c
+
+593c89af2000-593c89af3000 r--p 00000000 08:30 674127                     /tmp/yazar/siber-5/harita
+593c89af3000-593c89af4000 r-xp 00001000 08:30 674127                     /tmp/yazar/siber-5/harita
+593c89af4000-593c89af5000 r--p 00002000 08:30 674127                     /tmp/yazar/siber-5/harita
+593c89af5000-593c89af6000 r--p 00002000 08:30 674127                     /tmp/yazar/siber-5/harita
+593c89af6000-593c89af7000 rw-p 00003000 08:30 674127                     /tmp/yazar/siber-5/harita
+593cbefd6000-593cbeff7000 rw-p 00000000 00:00 0                          [heap]
+7d6d53972000-7d6d53975000 rw-p 00000000 00:00 0
+7d6d53975000-7d6d5399d000 r--p 00000000 08:30 23014                      /usr/lib/x86_64-linux-gnu/libc.so.6
+7d6d5399d000-7d6d53b07000 r-xp 00028000 08:30 23014                      /usr/lib/x86_64-linux-gnu/libc.so.6
+7d6d53b07000-7d6d53b5a000 r--p 00192000 08:30 23014                      /usr/lib/x86_64-linux-gnu/libc.so.6
+7d6d53b5a000-7d6d53b5e000 r--p 001e5000 08:30 23014                      /usr/lib/x86_64-linux-gnu/libc.so.6
+7d6d53b5e000-7d6d53b60000 rw-p 001e9000 08:30 23014                      /usr/lib/x86_64-linux-gnu/libc.so.6
+7d6d53b60000-7d6d53b6d000 rw-p 00000000 00:00 0
+7d6d53b88000-7d6d53b8a000 rw-p 00000000 00:00 0
+7d6d53b8a000-7d6d53b8e000 r--p 00000000 00:00 0                          [vvar]
+7d6d53b8e000-7d6d53b90000 r--p 00000000 00:00 0                          [vvar_vclock]
+7d6d53b90000-7d6d53b92000 r-xp 00000000 00:00 0                          [vdso]
+7d6d53b92000-7d6d53b93000 r--p 00000000 08:30 23024                      /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7d6d53b93000-7d6d53bbc000 r-xp 00001000 08:30 23024                      /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7d6d53bbc000-7d6d53bc7000 r--p 0002a000 08:30 23024                      /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7d6d53bc7000-7d6d53bc9000 r--p 00035000 08:30 23024                      /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7d6d53bc9000-7d6d53bca000 rw-p 00037000 08:30 23024                      /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+7d6d53bca000-7d6d53bcb000 rw-p 00000000 00:00 0
+7ffc41c2b000-7ffc41c4c000 rw-p 00000000 00:00 0                          [stack]</pre>
+
+<p>Her satır bir bölgedir. <code>proc_pid_maps(5)</code> belgesine göre alanlar sırasıyla adres aralığı, izinler, dosya içindeki uzaklık, aygıt, düğüm (inode) ve bölgenin dayandığı dosyanın yoludur. İzinlerdeki <code>r</code> okuma, <code>w</code> yazma, <code>x</code> çalıştırma, son harf <code>p</code> özel (yazınca kopyala), <code>s</code> ise paylaşılan demektir.</p>
+
+<p>Adresleri haritaya yerleştir. <code>main=0x593c89af3199</code>, ikinci satırdaki <code>r-xp</code> aralığında: kod okunur ve çalıştırılır ama <strong>yazılamaz</strong>; Örnek 2'deki sayfa başlangıcı <code>0x593c89af3000</code> bu satırın başı. <code>sayac=0x593c89af6048</code>, beşinci satırdaki <code>rw-p</code> aralığında: veri yazılır ama <strong>çalıştırılamaz</strong>. Aradaki <code>r--p</code> satırlar dosya başlığı, sabit metinler ve yükleyicinin sonradan salt okunur yaptığı tablolardır. <code>obek</code> <code>[heap]</code>, <code>yerel</code> <code>[stack]</code> satırında, ikisi de <code>rw-p</code>. Yolu boş <code>rw-p</code> satırlar dosyaya dayanmayan (anonim) bellektir. <code>libc.so.6</code> ve dinamik yükleyici <code>ld-linux</code> da aynı kalıpta: kod <code>r-xp</code>, veri <code>rw-p</code>. <code>[vdso]</code>, çekirdeğin her sürece koyduğu küçük bir kod sayfası; saati okumak gibi işleri sistem çağrısı geçişi olmadan yaptırır.</p>
+
+<p>Asıl gözlem listede <strong>olmayan</strong> şey: hiçbir satırda <code>rwx</code> yok. Yazılabilen hiçbir bölge çalıştırılamıyor, çalıştırılabilen hiçbir bölge yazılamıyor. W^X bu çıktıda kelimenin tam anlamıyla okunuyor. Kendi makinende bir süreçte <code>rwx</code> bir bölge görürsen bu her zaman saldırı değildir (JIT kullanan bazı eski programlar böyle yapar), ama incelemeye değer bir işarettir.</p>
+
+<h3>Adım 5: kendi kimliğini ve yeteneklerini oku</h3>
+
+<pre class="kod" data-ad="bash">grep -E '^(Uid|Gid|NoNewPrivs|Seccomp|Seccomp_filters|Cap)' /proc/self/status
+getpcaps $$
+capsh --decode=000001ffffffffff</pre>
+<pre class="cikti">Uid:	1000	1000	1000	1000
+Gid:	1000	1000	1000	1000
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	000001ffffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Seccomp_filters:	0
+1051: =
+0x000001ffffffffff=cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore</pre>
+
+<p>Satır satır: <code>Uid</code> dört kez 1000: gerçek, etkin, saklanmış ve dosya sistemi kimliği aynı sıradan kullanıcı; <code>Gid</code> de öyle. <code>CapPrm</code> ve <code>CapEff</code> sıfır: süreç hiçbir ayrıcalıklı işi yapamaz, doğrusu da bu. <code>CapBnd</code>'de 41 bitin hepsi açık; bu yetki değil, yalnız tavan. <code>CapInh</code> ve <code>CapAmb</code> sıfır. <code>NoNewPrivs: 0</code> bayrak kapalı, <code>Seccomp: 0</code> süzgeç yok (belgeye göre 1 katı, 2 süzgeç kipi). <code>getpcaps $$</code>, kabuğun PID'inden sonra <code>=</code> ile boş küme yazdı. Son komut maskeyi adlara çevirdi; tablodaki adları listede bulabilirsin.</p>
+
+<h3>Adım 6: en az yetkiyle çalışan bir hizmete bak</h3>
+
+<p>systemd kullanan bir dağıtımda, belleği izleyip gerektiğinde süreç sonlandıran <code>systemd-oomd</code> hizmeti çalışıyorsa (çalışmıyorsa <code>Seccomp: 2</code> görünen başka bir hizmeti seç):</p>
+
+<pre class="kod" data-ad="bash">p=$(pidof systemd-oomd)
+grep -E '^(Name|Uid|CapEff|NoNewPrivs|Seccomp):' /proc/$p/status
+capsh --decode=0000000000000022</pre>
+<pre class="cikti">Name:	systemd-oomd
+Uid:	968	968	968	968
+CapEff:	0000000000000022
+NoNewPrivs:	1
+Seccomp:	2
+0x0000000000000022=cap_dac_override,cap_kill</pre>
+
+<p>En az yetkinin canlı örneği: hizmet root değil, kendine ayrılmış 968 numaralı kullanıcıyla çalışıyor. Yalnız iki yeteneği var: <code>cap_kill</code> (süreç sonlandırmak, işinin özü) ve <code>cap_dac_override</code> (izlediği dosyaları okuyabilmek). <code>NoNewPrivs: 1</code> ile daha yetkili bir programa dönüşemez, <code>Seccomp: 2</code> ile sistem çağrıları süzgeçten geçiyor. Ele geçirilse bile saldırganın eline root değil, dar bir kutu geçer. Bu katmanlar systemd birim dosyalarıyla kurulur (Parça 14).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3 ve 4'e:</strong> Parça 3'teki bellek düzeni burada her sürece ayrı bir sanal harita olarak kuruldu; Parça 4'teki halka ayrımı, sayfa tablolarını yalnız çekirdeğin değiştirebilmesini sağlıyor; sistem çağrısı da seccomp'un süzdüğü kapı.</p>
+<p><strong>Sonraki parçalara:</strong> Konteynerin bu parçadaki yeteneklere, seccomp'a ve ad alanlarına dayanan bir yalıtım olduğu ve neden tam bir güvenlik sınırı sayılmadığı Parça 7'de. Kullanıcılar ve <code>sudo</code> Parça 11'de, süreçleri <code>ps</code> ve <code>/proc</code> ile izlemek Parça 13'te, systemd hizmetlerini sertleştirmek Parça 14'te. Bellek korumalarının derleyici tarafı (PIE, yığın kanaryası) ve bellek güvenliği açıkları Parça 60'ta; Windows'taki erişim belirteci ve bütünlük düzeyleri Parça 61'de.</p>
+<p><strong>Kod rafına:</strong> Parça 14'teki iş parçacığı/süreç ayrımı burada işletim sistemi düzeyinde açıklandı; Parça 28–30'daki işaretçi, <code>malloc</code> ve bellek güvenliği kavramları sayfa izinleri ve ASLR ile tamamlandı.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Önce kendi cümlelerinle cevapla, sonra aç.</p>
+
+<details><summary>Aynı programdan çalışan iki süreç ile aynı süreçteki iki iş parçacığı arasında güvenlik açısından en önemli fark nedir?</summary><p>İki süreç ayrı sanal adres uzaylarına sahiptir ve çekirdek onları birbirinden yalıtır; biri öbürünün özel belleğini göremez. İki iş parçacığı ise aynı adres uzayını, aynı açık dosyaları ve aynı kimliği paylaşır, birbirine karşı hiçbir korumaları yoktur. Bu yüzden güvenlik sınırı süreçtir; tarayıcıların siteleri ayrı süreçlerde çalıştırması bu nedenledir.</p></details>
+<details><summary>Sayfa boyutu 4 KiB iken bir adresin son üç onaltılık hanesi neyi gösterir ve ASLR bu haneleri neden değiştirmez?</summary><p>4096 = 2 üzeri 12, 12 bit de üç onaltılık hane eder; bu haneler sayfanın içindeki uzaklıktır. Bölgeler sayfa sınırlarına yerleştirildiği için ASLR yalnız sayfa numarasını rastgele seçer; bir fonksiyonun sayfa içindeki konumu aynı kalır.</p></details>
+<details><summary>Yazınca kopyala nasıl çalışır ve neden fork'u hızlı yapar?</summary><p>fork anında çekirdek belleği değil yalnız sayfa tablosunu kopyalar ve özel sayfaları iki süreçte de salt okunur işaretler. Süreçlerden biri bir sayfaya ilk kez yazınca sayfa hatası olur, çekirdek yalnız o sayfayı kopyalar ve yazan sürecin tablosunu kopyaya çevirir. Böylece hiç yazılmayan sayfalar asla kopyalanmaz.</p></details>
+<details><summary>W^X ilkesi nedir ve bir sürecin bellek haritasında nasıl doğrulanır?</summary><p>Bir sayfa ya yazılabilir ya çalıştırılabilir olur, ikisi birden olmaz. /proc/self/maps çıktısında kod bölgelerinin r-xp, veri, öbek ve yığının rw-p olduğuna ve hiçbir satırda rwx bulunmadığına bakılır.</p></details>
+<details><summary>Hata ayıklarken adreslerin sabit kalmasını istiyorsan ASLR'yi neden sistem genelinde kapatmamalısın, ne yapmalısın?</summary><p>randomize_va_space değerini 0 yapmak bütün süreçlerin korumasını kaldırır, root ister ve açık kalması unutulabilir. Bunun yerine setarch -R ile yalnız incelediğin programı rastgeleleştirmesiz çalıştırırsın; root gerekmez ve başka hiçbir süreç etkilenmez.</p></details>
+<details><summary>Yetenekler (capabilities) hangi sorunu çözer? Bir örnekle anlat.</summary><p>Geleneksel Unix'te süreç ya root'tur ve bütün denetimleri atlar ya da hiçbir ayrıcalığı yoktur. Yetenekler root gücünü ayrı parçalara böler; örneğin 443 numaralı porta bağlanacak bir web sunucusuna yalnız CAP_NET_BIND_SERVICE verilir, dosya izinlerini atlama gibi başka güçler verilmez. Böylece ele geçirilen süreç yalnız o dar işi yapabilir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Süreç:</strong> çalışan programın çekirdekteki kaydı; PID, sanal adres uzayı, yazmaçlar, açık dosyalar, kimlik. <strong>İş parçacığı:</strong> aynı süreçte ayrı akış; belleği paylaşır, kendi yığını ve TID'i vardır.</li>
+<li><strong>Güvenlik sınırı süreçtir</strong>, iş parçacığı değil.</li>
+<li><strong>Sanal bellek:</strong> her süreç kendi haritasını görür; MMU sanal adresi fiziksel adrese çevirir, tabloları yalnız çekirdek yazar.</li>
+<li><strong>Sayfa</strong> 4 KiB (x86-64 Linux'ta olağan); adresin son 12 biti (3 hex hane) sayfa içi uzaklık. <strong>Sayfa tablosu</strong> girdisi: çerçeve + bayraklar (var mı, yazılır mı, kullanıcı mı, NX).</li>
+<li><strong>Sayfa hatası</strong> çoğu zaman olağan (yeni sayfa, diskten getirme, COW); gerçek ihlalde SIGSEGV.</li>
+<li><strong>Paylaşılan bellek</strong> yalnız açıkça istenince (MAP_SHARED).</li>
+<li><strong>fork:</strong> çocuk aynı içerikle ayrı bellekte doğar; anaya çocuğun PID'i, çocuğa 0 döner. <strong>Yazınca kopyala:</strong> sayfalar salt okunur paylaşılır, ilk yazmada yalnız o sayfa kopyalanır.</li>
+<li><strong>NX/DEP:</strong> veri sayfası komut olarak yürütülemez. <strong>W^X:</strong> yazılabilir ya da çalıştırılabilir, ikisi birden asla; maps'te rwx olmamalı.</li>
+<li><strong>ASLR:</strong> yığın, öbek, kütüphaneler ve PIE kod her çalıştırmada başka adreste; randomize_va_space 0/1/2; sistem genelinde kapatma, tek program için setarch -R.</li>
+<li><strong>Hiçbir koruma tek başına yetmez:</strong> derinlemesine savunma (Parça 60).</li>
+<li><strong>Kimlik:</strong> gerçek/etkin/saklanmış/dosya sistemi UID ve GID; fork ile çocuğa geçer, her sistem çağrısında denetlenir.</li>
+<li><strong>En az yetki:</strong> ayrı hizmet kullanıcısı, yalnız gereken <strong>yetenekler</strong> (CapEff), <strong>no_new_privs</strong>, <strong>seccomp</strong> ile dar sistem çağrısı kümesi.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-5">
+<h3>Quiz 5</h3>
+<p class="qa">Sekiz yeni soru ve önceki parçalardan yedi tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Aynı süreç içindeki iki iş parçacığı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Her birinin ayrı bir sanal adres uzayı vardır.</li><li>Aynı sanal adres uzayını paylaşırlar ama her birinin kendi yığını ve yazmaçları vardır.</li><li>Her birinin PID'i farklıdır.</li><li>Biri çökse bile öbürü her zaman çalışmayı sürdürür.</li><li>Çekirdek onları birbirinden süreçler kadar yalıtır.</li></ul>
+<div class="coz"><p>İş parçacıkları aynı sürecin içindeki ayrı yürütme akışlarıdır: belleği, açık dosyaları ve kimliği paylaşırlar, ama her birinin kendi yığını, yazmaçları ve program sayacı vardır. Ayrı adres uzayı (A) ve birbirinden yalıtılma (E) süreçlerin özelliğidir. Linux'ta iş parçacıklarının PID'i aynı, TID'leri farklıdır (C); Örnek 1'de ikisi de 1096 göstermişti. Bir iş parçacığının ölümcül hatası bütün süreci düşürür (D). Bu yüzden güvenlik sınırı süreçtir.</p></div></li>
+
+<li data-c="D"><p class="q">Sayfa boyutu 4 KiB olan bir sistemde <code>0x7ffc4df0bb94</code> sanal adresinin sayfa içi uzaklığı (offset) aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><code>0x94</code></li><li><code>0xbb94</code></li><li><code>0x7ffc4df0b</code></li><li><code>0xb94</code></li><li><code>0x4</code></li></ul>
+<div class="coz"><p>4 KiB = 4096 = 2<sup>12</sup> bayt, yani uzaklık 12 bittir; bir onaltılık hane 4 bit olduğundan son üç hane uzaklıktır: <code>0xb94</code>. A yalnız son iki haneyi (8 bit, 256 baytlık sayfa varsayımı), B son dört haneyi (16 bit, 64 KiB'lık sayfa varsayımı) alır. C, uzaklık değil sayfa numarasıdır. E yalnız son haneyi alır. Python'da <code>hex(0x7ffc4df0bb94 &amp; 0xfff)</code> → <code>0xb94</code>.</p></div></li>
+
+<li data-c="A"><p class="q">Parçadaki <code>catal.c</code> programında çocuk süreç hem <code>ozel</code> küresel değişkenini hem de <code>MAP_SHARED</code> ile istenmiş <code>*ortak</code> değerini 1'den 2'ye çeviriyor. Ana süreç çocuğu bekledikten sonra hangi değerleri yazdırır?</p>
+<ul class="sec"><li><code>ozel=1</code>, <code>*ortak=2</code></li><li><code>ozel=2</code>, <code>*ortak=2</code></li><li><code>ozel=1</code>, <code>*ortak=1</code></li><li><code>ozel=2</code>, <code>*ortak=1</code></li><li>Adresler aynı olduğu için program çöker.</li></ul>
+<div class="coz"><p>Program çalıştırıldığında ana süreç <code>ozel=1 ... *ortak=2</code> yazdırdı. <code>ozel</code> özel bellektedir: çocuğun yazması yazınca kopyala ile yalnız çocuğun kopyasına gitti. <code>ortak</code> ise açıkça paylaşılan bir eşlemedir; iki süreç aynı çerçeveyi gösterir, çocuğun yazdığı ana sürece görünür. B, süreçleri iş parçacığı gibi düşünmenin sonucudur; C paylaşılan belleği unutur; D ikisini ters çevirir. Aynı sanal adres iki ayrı tabloda sorun yaratmaz (E).</p></div></li>
+
+<li data-c="C"><p class="q">ASLR açıkken aynı program üç kez çalıştırıldığında <code>main</code> fonksiyonunun adresi <code>0x5fc0e2f4b159</code>, <code>0x63eff3239159</code>, <code>0x5d9aab824159</code> çıkıyor. Son üç hanenin hep <code>159</code> olmasının nedeni nedir?</p>
+<ul class="sec"><li>ASLR yalnız yığını rastgeleleştirir, kodu hiç kaydırmaz.</li><li>Rastgele sayı üretecinin zayıf olmasından kaynaklanan bir rastlantıdır.</li><li>Rastgeleleştirme sayfa düzeyinde yapılır; fonksiyonun sayfa içindeki uzaklığı değişmez.</li><li>Program PIE derlenmediği için kod sabit kalmıştır.</li><li><code>randomize_va_space</code> değeri 1 olduğu için yalnız üst haneler değişir.</li></ul>
+<div class="coz"><p>Bölgeler sayfa sınırlarına yerleştirilir; ASLR rastgele bir sayfa numarası seçer, sayfa içi uzaklık (son 12 bit, üç onaltılık hane) programın yapısından gelir ve aynı kalır. A yanlıştır, çünkü üst haneler açıkça değişiyor: kod da kayıyor. B'de rastlantı yok, bu yapısal bir sonuç. D tersidir: kodun hiç kayması PIE sayesindedir; PIE olmasaydı adresin tamamı sabit kalırdı. E'de 1 ile 2 arasındaki fark öbeğin rastgeleleştirilmesidir, sayfa içi uzaklıkla ilgisi yoktur.</p></div></li>
+
+<li data-c="E"><p class="q">Bir sürecin <code>/proc/self/maps</code> çıktısında aşağıdaki izin dizilerinden hangisi W^X ilkesine <strong>aykırıdır</strong>?</p>
+<ul class="sec"><li><code>r-xp</code></li><li><code>rw-p</code></li><li><code>r--p</code></li><li><code>rw-s</code></li><li><code>rwxp</code></li></ul>
+<div class="coz"><p>W^X, bir sayfanın aynı anda hem yazılabilir (w) hem çalıştırılabilir (x) olmamasını ister; <code>rwxp</code> ikisini birden taşır. <code>r-xp</code> kod bölgesidir: çalıştırılır ama yazılamaz. <code>rw-p</code> veri, öbek ya da yığındır: yazılır ama çalıştırılamaz. <code>r--p</code> salt okunurdur. <code>rw-s</code> paylaşılan yazılabilir bellektir, çalıştırma izni olmadığı için W^X'e uyar; son harf yalnız özel/paylaşılan ayrımını gösterir.</p></div></li>
+
+<li data-c="B"><p class="q"><code>cow.c</code> deneyinde çocuk süreç, <code>fork</code>'tan sonra 1000 sayfanın her birinden önce bir bayt okumuş, sonra her birine bir bayt yazmıştı. Okuma aşamasında 0, yazma aşamasında 1000 sayfa hatası ölçülmesinin en doğru açıklaması hangisidir?</p>
+<ul class="sec"><li><code>fork</code> bütün belleği hemen kopyaladığı için okuma ucuzdur; yazma ise diske gider.</li><li>Sayfalar iki süreçte salt okunur paylaşılır; okumak serbesttir, her sayfaya ilk yazma bir hata doğurur ve çekirdek yalnız o sayfayı kopyalar.</li><li>Okumalar önbellekten geldiği için sayılmaz; yazmaların hepsi SIGSEGV doğurup yok sayılır.</li><li>Çocuk süreç, ana sürecin belleğine doğrudan yazdığı için her yazmada çekirdek izin ister.</li><li>Yazma hataları ASLR'nin her yazmada adresleri yeniden karıştırmasından kaynaklanır.</li></ul>
+<div class="coz"><p>Yazınca kopyalada <code>fork</code> yalnız sayfa tablosunu kopyalar ve özel sayfaları salt okunur işaretler. Okuma bu izinle uyumlu olduğu için hata doğurmaz. İlk yazmada MMU izin olmadığını görür, sayfa hatası oluşur, çekirdek o sayfayı kopyalayıp çocuğa yazılabilir verir: 1000 sayfa, 1000 hata. A'daki "hemen kopyalama" tam olarak COW'un önlediği şeydir. C yanlış: süreç ölmedi ve ana süreç <code>a</code>, çocuk <code>b</code> gördü. D yalıtımı yok sayar; E'de ASLR yalnız yükleme anında adres seçer.</p></div></li>
+
+<li data-c="D"><p class="q">Kendini <code>prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT)</code> ile katı kipe sokan bir süreç, ardından sırasıyla <code>write</code> ile bir satır yazıp <code>open</code> ile bir dosya açmaya çalışıyor. Ne olur?</p>
+<ul class="sec"><li>İkisi de başarılı olur; katı kip yalnız ağ çağrılarını engeller.</li><li><code>write</code> engellenir, <code>open</code> başarılı olur.</li><li>İkisi de -1 döndürür ve süreç çalışmayı sürdürür.</li><li>Satır yazılır; <code>open</code> çağrısında çekirdek süreci <code>SIGKILL</code> ile öldürür.</li><li><code>open</code> başarılı olur ama dosya salt okunur açılır.</li></ul>
+<div class="coz"><p>Katı kip yalnız <code>read</code>, <code>write</code>, <code>_exit</code> ve <code>sigreturn</code> çağrılarına izin verir. <code>write</code> izinli olduğu için satır yazılır; <code>open</code> listede olmadığından çekirdek süreci <code>SIGKILL</code> ile sonlandırır. Örnek 5'te çıkış kodu 137 (128 + 9) olmuştu. A ve E kısıtlamayı yok sayar; B izinliyle yasaklıyı ters çevirir. C, katı kipte değil, süzgeç kipinde "hata döndür" kuralı yazılırsa görülebilecek bir davranıştır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir web sunucusu 443 numaralı portta dinleyecek ve yalnız kendi dizinindeki dosyaları okuyacak. En az yetki ilkesine en uygun yapılandırma hangisidir?</p>
+<ul class="sec"><li>Ayrı bir hizmet kullanıcısıyla çalıştırmak, yalnız <code>CAP_NET_BIND_SERVICE</code> vermek, <code>no_new_privs</code> ve bir seccomp süzgeci eklemek</li><li>Port 1024'ün altında olduğu için süreci kalıcı olarak root ile çalıştırmak</li><li>Süreci root ile başlatıp <code>CAP_SYS_ADMIN</code> dışındaki yetenekleri atmak</li><li>ASLR'yi sistem genelinde kapatıp sunucuyu sıradan kullanıcıyla çalıştırmak</li><li>Sunucuya <code>CAP_DAC_OVERRIDE</code> verip dosya izinlerine takılmamasını sağlamak</li></ul>
+<div class="coz"><p>Sunucunun tek ayrıcalıklı ihtiyacı düşük numaralı porta bağlanmaktır; bunun karşılığı <code>CAP_NET_BIND_SERVICE</code>'tir. Ayrı kullanıcı, kimliği daraltır; <code>no_new_privs</code> sonradan yetki kazanmayı, seccomp gereksiz sistem çağrılarını kapatır. Bu, Adım 6'daki <code>systemd-oomd</code> örneğiyle aynı kalıptır. B en geniş yetkiyi verir. C, belgenin "aşırı yüklenmiş" dediği ve neredeyse root'a eşdeğer olan yeteneği bırakır. D bir korumayı bütün sistemden kaldırır ve port sorununu çözmez. E dosya izinlerini atlama gücü verir; ihtiyaç bu değil.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">İkiye tümleyen gösterimle 8 bitlik işaretli bir tamsayıda <code>0xFF</code> baytı hangi değeri gösterir?</p>
+<ul class="sec"><li>255</li><li>−127</li><li>−1</li><li>−128</li><li>127</li></ul>
+<div class="coz"><p>İkiye tümleyende en soldaki bit 1 ise sayı negatiftir; değeri bulmak için işaretsiz değerden 2<sup>8</sup> = 256 çıkarılır: 255 − 256 = −1. A, aynı baytın işaretsiz yorumudur. B, "işaret biti + büyüklük" gösterimiyle karıştırmanın sonucudur. D, <code>0x80</code>'in değeridir (en küçük 8 bitlik işaretli sayı); E ise <code>0x7F</code>'nin değeridir. Python'da <code>int.from_bytes(b'\xff', 'big', signed=True)</code> → −1.</p></div></li>
+
+<li data-c="E" data-k="siber-2"><p class="q">Getir-çöz-yürüt döngüsünde program sayacının (program counter) görevi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>O ana kadar yürütülen komutların sayısını tutmak</li><li>Çalışan programların sayısını işletim sistemine bildirmek</li><li>Son hesaplanan sonucu saklamak</li><li>Bellekteki boş alanın adresini göstermek</li><li>Getirilecek sonraki komutun bellekteki adresini tutmak</li></ul>
+<div class="coz"><p>Program sayacı bir yazmaçtır ve işlemcinin sıradaki komutu bellekte nereden getireceğini gösterir; komut getirilince bir sonrakine ilerler, atlama komutlarıyla başka bir adrese ayarlanır. Adındaki "sayaç" yanıltıcıdır: komut saymaz (A). Süreç sayısıyla (B), hesap sonucuyla (C, bu genel amaçlı yazmaçların işi) ya da boş bellekle (D) ilgisi yoktur. Bu parçada bağlam değiştirmede saklanan yazmaçlardan biri olarak yeniden karşına çıktı.</p></div></li>
+
+<li data-c="B" data-k="siber-2"><p class="q">x86-64 için derlenmiş bir C programı neden ARM işlemcili bir bilgisayarda doğrudan çalışmaz?</p>
+<ul class="sec"><li>C dili yalnız x86-64 işlemcilerde kullanılabildiği için</li><li>İki işlemcinin komut kümesi farklı olduğu için makine kodu karşılığı olmayan komutlardan oluşur</li><li>ARM işlemcilerde yazmaç bulunmadığı için</li><li>Program assembly dilinde değil makine kodunda olduğu için</li><li>ARM işlemciler yalnız yorumlanan dilleri çalıştırabildiği için</li></ul>
+<div class="coz"><p>Derleyici kaynak kodu belirli bir komut kümesinin makine koduna çevirir. x86-64 ile ARM'ın komutları ve kodlanışları farklıdır; ARM işlemci x86-64 baytlarını kendi komutları olarak çözemez. Çözüm, aynı kaynağı ARM için yeniden derlemektir; bu yüzden A yanlıştır, C taşınabilir bir dildir. C'deki iddia yanlıştır, her işlemcinin yazmaçları vardır. D, makine kodunun zaten işlemcinin çalıştırdığı biçim olduğunu gözden kaçırır. E temelsizdir.</p></div></li>
+
+<li data-c="D" data-k="siber-3"><p class="q">32 bitlik <code>0x12345678</code> değeri little endian bir makinede bellekte artan adres sırasıyla hangi baytlar olarak durur?</p>
+<ul class="sec"><li><code>12 34 56 78</code></li><li><code>87 65 43 21</code></li><li><code>34 12 78 56</code></li><li><code>78 56 34 12</code></li><li><code>56 78 12 34</code></li></ul>
+<div class="coz"><p>Little endian'da en az anlamlı bayt en küçük adrese yazılır: önce <code>78</code>, sonra <code>56</code>, <code>34</code>, <code>12</code>. A, big endian sırasıdır. B, baytları değil onaltılık haneleri ters çevirme hatasıdır; bayt bölünmez. C ve E, 16 bitlik yarıları karıştırmanın sonucudur. Python'da <code>(0x12345678).to_bytes(4, 'little').hex(' ')</code> → <code>78 56 34 12</code>.</p></div></li>
+
+<li data-c="A" data-k="siber-3"><p class="q">Bir fonksiyon çağrıldığında, fonksiyon bitince programın nereye döneceğini gösteren dönüş adresi kavramsal olarak nerede tutulur?</p>
+<ul class="sec"><li>Yığında, o çağrının yığın çerçevesiyle birlikte</li><li>Öbekte, <code>malloc</code> ile ayrılan bir blokta</li><li>Diskte, programın çalıştırılabilir dosyasında</li><li>Kod bölümünde, fonksiyonun kendi komutlarının içinde</li><li>Veri bölümünde, küresel değişkenlerin yanında</li></ul>
+<div class="coz"><p>Her çağrı yığında bir çerçeve açar; dönüş adresi, yerel değişkenler ve kaydedilen değerler burada durur ve fonksiyon dönünce çerçeve kaldırılır. Dönüş adresinin yerel dizilerin yakınında yığında durması, bellek güvenliği açıklarının zemini olarak bu yüzden önemlidir. Öbek açıkça istenen dinamik bellektir (B). Disk ve kod bölümü çalışma anında değişen dönüş adreslerini tutamaz (C, D); veri bölümü küresel değişkenler içindir (E).</p></div></li>
+
+<li data-c="C" data-k="siber-4"><p class="q">Kullanıcı modunda çalışan bir program diskteki bir dosyayı açmak istediğinde ne olur?</p>
+<ul class="sec"><li>Program disk denetleyicisine doğrudan komut gönderir.</li><li>Program kendini ring 0'a yükseltip dosyayı kendi açar.</li><li>Program bir sistem çağrısıyla çekirdekten ister; çekirdek izinleri denetleyip işi yapar.</li><li>Aygıt sürücüsü programın içine kopyalanır ve dosyayı açar.</li><li>glibc dosyayı çekirdeğe sormadan kendi başına açar.</li></ul>
+<div class="coz"><p>Kullanıcı modu donanıma doğrudan erişemez; dosya açmak için program (çoğunlukla glibc'nin <code>open</code> gibi bir sarmalayıcısı üzerinden) sistem çağrısı yapar, işlemci çekirdek moduna geçer, çekirdek izinleri denetler ve sonucu döndürür. A ve B bu ayrımı yok sayar; kullanıcı programı kendi ayrıcalık düzeyini yükseltemez. Sürücüler çekirdekte çalışır, programa kopyalanmaz (D). glibc yalnız sarmalayıcıdır, sonunda yine sistem çağrısı yapar (E); <code>strace</code> bu çağrıları gösterir.</p></div></li>
+
+<li data-c="E" data-k="siber-4"><p class="q">Güvenli Önyükleme (Secure Boot) kavramının temel amacı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>Diskteki bütün dosyaları şifrelemek</li><li>Bilgisayarın daha hızlı açılmasını sağlamak</li><li>Çalışan süreçleri birbirinden yalıtmak</li><li>Kullanıcının parolasını firmware'de saklamak</li><li>Önyükleme zincirinde yalnız imzası doğrulanan önyükleyici ve çekirdeğin yüklenmesini sağlamak</li></ul>
+<div class="coz"><p>Güvenli Önyükleme, UEFI firmware'inin bir sonraki aşamayı (önyükleyiciyi, o da çekirdeği) çalıştırmadan önce imzasını güvenilen anahtarlarla doğrulamasıdır; böylece işletim sistemi daha başlamadan araya sokulmuş değiştirilmiş bir önyükleyici ya da çekirdek yüklenmez. Disk şifreleme (A) ayrı bir mekanizmadır. Amaç hız değildir (B). Süreçlerin yalıtımı (C) bu parçada gördüğün gibi çalışan çekirdeğin işidir. Parola saklamakla ilgisi yoktur (D).</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-4">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-5">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-6">Sonraki parça: Veri gösterimi: kodlama, hash, şifreleme karışmasın →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"virtual memory paging page table explained"</li>
+  <li>"fork copy on write linux"</li>
+  <li>"ASLR NX bit DEP explained"</li>
+  <li>"linux capabilities seccomp introduction"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler (hepsi koştu):</strong> <code>ip.c</code>, <code>catal.c</code>, <code>cow.c</code>, <code>kum.c</code>, <code>adres.c</code> (normal ve <code>setarch -R</code> ile), <code>harita.c</code>, <code>randomize_va_space</code> okuma, <code>getconf PAGESIZE</code>, <code>/proc/self/status</code>, <code>getpcaps</code>, <code>capsh --decode</code>, <code>systemd-oomd</code> durum satırları. Ortam: WSL2 üzerinde Kali Rolling, çekirdek 6.18, gcc 15.2; C dosyaları <code>-Wall -Wextra</code> ile uyarısız derlendi. Her çıktı tek bir gerçek çalıştırmanın birebir kopyasıdır. Adres hesapları ve quiz'deki sayısal cevaplar Python ile doğrulandı.</li>
+  <li><strong>Gizlilik:</strong> Kullanıcı adını içeren <code>id</code> çıktısı metne konmadı, yerine sayısal <code>Uid/Gid</code> satırları gösterildi; makine adı ve ev dizini hiçbir çıktıda yok, yol olarak yalnız geçici klasör <code>/tmp/yazar/siber-5</code> görünüyor. "Killed" satırı <code>script</code> ile etkileşimsiz kabukta alındı.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> <code>randomize_va_space</code> değerini değiştirmek (root ister, ortamda şifresiz <code>sudo</code> yok; sistem genelinde kapatmak zaten önerilmez). JIT ve tarayıcı süreç yalıtımı denenmedi, belgelere dayanır.</li>
+  <li><strong>Resmî belgeden:</strong> man7.org <code>fork(2)</code>, <code>mmap(2)</code>, <code>proc_pid_maps(5)</code>, <code>proc_pid_status(5)</code>, <code>seccomp(2)</code>, <code>capabilities(7)</code>, <code>setarch(8)</code>; kernel.org sysctl/kernel (<code>randomize_va_space</code>) ve x86_64 bellek düzeni (yaklaşık 128 TB kullanıcı alanı) belgeleri; Microsoft Learn "Data Execution Prevention".</li>
+  <li><strong>İkincil kaynaktan:</strong> W^X'in 2003'te OpenBSD'de yaygınlaşması; ASLR'nin PaX'in 2001 yamasına dayanması ve Linux'a 2005'te (2.6.12 dolaylarında; kapsamı çekirdek posta listesinde tartışılmış) girmesi; Dirty COW'un Ekim 2016'da açıklanması (Red Hat).</li>
+  <li><strong>Doğrulanamayan, hafızadan:</strong> Yığın adresinin sayfa içinde de kaymasının nedeni (x86 çekirdeğinin yığın başlangıcına ek kaydırma uygulaması) çekirdek kaynağından doğrulanamadı, yalnız gözlendi. PIE'nin rastgeleleştirmesiz tabanı (<code>0x555555554000</code>) yalnız çıktıdan görüldü. CR3, TLB ve Intel'deki XD adı yerleşik bilgi olarak yazıldı. <code>gcc</code>'nin varsayılan PIE üretmesi çıktıdan çıkarıldı (Parça 60). <code>cow.c</code> sayılarının başka ortamlarda değişebileceği tahmindir.</li>
+  <li><strong>Saldırı sınırı:</strong> İstismar kodu, yük ya da korumaları aşma yöntemi yoktur; NX, W^X ve ASLR'nin yalnız neden var oldukları anlatıldı. Hukuki çerçeve Parça 72–73'te.</li>
+</ul>
+</div>
+</div>
+</article>

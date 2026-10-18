@@ -1,0 +1,718 @@
+<article class="chapter ders" id="c-siber-2">
+<div class="prose">
+<div class="eyebrow">Siber güvenlik · Parça 2 · İşlemci ve makine kodu</div>
+<h1>İşlemci ve makine kodu: yazdığın satırdan işlemcinin yürüttüğü bayta</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 16 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>İşlemci Python bilmez, C bilmez, Türkçe hiç bilmez; yalnız baytları tanır. Peki <code>return a + b;</code> diye yazdığın satır, işlemcinin anladığı baytlara nasıl dönüşüyor? Elinde kaynak kodu olmayan şüpheli bir programın ne yaptığını bir savunmacı nasıl anlıyor? Ve bütün yazılımın altında duran işlemcinin kendisi, yani donanım, bir güvenlik açığı taşıyabilir mi?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (bit, bayt, onaltılık gösterim, ikiye tümleyen, <code>xxd</code>). Kod rafını okuduysan Parça 1'deki Python yorumlayıcısı ve Parça 26'daki C derleme zinciri işini kolaylaştırır; okumadıysan da bu parça kendi başına anlaşılır. Bütün denemeler yalnızca kendi bilgisayarında ve kendi yazdığın küçük programlarla yapılır.</p>
+
+<h2 class="s">Önce büyük resim: bu parça neyi kuruyor?</h2>
+
+<p>Parça 1'de bilgisayardaki her şeyin bit ve bayt olduğunu gördün. Bu parçada fikri bir adım ileri taşıyoruz: <strong>programlar da bayttır</strong>. İşlemcinin yürüttüğü her komut bellekte duran birkaç bayttır; işlemci bu baytları sırayla okur, ne anlama geldiklerini çözer ve gereğini yapar.</p>
+
+<p>Sırasıyla şunları kuracağız: bilgisayarın parçaları; yazmaçlar ve program sayacı; <strong>getir-çöz-yürüt</strong> döngüsü ve onu canlandıran bir oyuncak işlemci; komut kümesi ve x86-64 ile ARM farkı; makine kodu, assembly ve yüksek düzeyli dil, derleyici ile yorumlayıcı; kendi makinende bir C programını derleyip <code>objdump</code> ile okumak; çok çekirdek ve önbellek; son olarak spekülatif yürütme açıklarının tek dersi: <strong>donanım da açık verebilir</strong>. Belleğin ayrıntısı (adres, yığın, öbek) Parça 3'ün, ayrıcalık düzeyleri ve sistem çağrısı Parça 4'ün konusu; burada onlara yalnızca kapı aralıyoruz.</p>
+
+<p>Raf boyunca geçerli sınır burada da geçerli: hiçbir açığın nasıl kullanıldığı anlatılmaz ve <code>objdump</code> gibi araçlar yalnızca <strong>kendi derlediğin programda</strong> kullanılır. Başkasının yazılımını izinsiz incelemenin yasal ve etik sınırlarını Parça 72 ve 73'te göreceğiz.</p>
+
+<h2 class="s">Bilgisayarın parçaları ve aralarındaki yol</h2>
+
+<p><strong>İşlemci</strong> (CPU) talimatları yürüten parçadır: iki sayıyı toplar, iki değeri karşılaştırır, sonuca göre bir sonraki talimatı seçer. <strong>Ana bellek</strong> (RAM) onun çalışma masasıdır: açık programların komutları ve o an kullandıkları veri buradadır; elektrik kesilince içeriği kaybolur. <strong>Depolama</strong> (SSD ya da disk) kapandıktan sonra da kalması gerekeni tutar. Bir programı açtığında dosyası diskten RAM'e yüklenir; işlemci komutları RAM'den okur (hız farkları Parça 3'te).</p>
+
+<p><strong>Anakart</strong> bu parçaları veriyollarıyla (bus) birbirine bağlar ve açılışta ilk çalışan ürün yazılımını (bugün çoğunlukla UEFI, Parça 4) taşır. <strong>Giriş-çıkış aygıtları</strong> (klavye, ekran, ağ kartı, USB) dış dünyanın kapılarıdır ve güvenlikte özel bir yerleri var: dışarıdan gelen her veri bu kapılardan girer. "Veri hangi kapıdan giriyor?" sorusuna rafın ilerisinde <strong>saldırı yüzeyi</strong> diyeceğiz (Parça 49).</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İşlemci</strong> talimatları yürütür; <strong>RAM</strong> çalışan programların komutlarını ve verisini geçici olarak tutar; <strong>depolama</strong> veriyi elektrik olmadan da saklar; <strong>anakart</strong> parçaları veriyollarıyla birbirine bağlar; <strong>giriş-çıkış aygıtları</strong> bilgisayarı dış dünyaya bağlar. Bir program çalışmadan önce depolamadan RAM'e yüklenir ve işlemci onu RAM'den okuyarak yürütür.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Bilgisayarın parçaları: işlemci, RAM, depolama ve giriş-çıkış aygıtları anakart üzerindeki veriyoluna bağlı">
+  <rect class="sv-k" x="8" y="8" width="384" height="254" rx="12" />
+  <text class="sv-s" x="200" y="28" text-anchor="middle">anakart</text>
+  <rect class="sv-l" x="24" y="42" width="160" height="92" rx="8" />
+  <text class="sv-b" x="104" y="64" text-anchor="middle">İşlemci (CPU)</text>
+  <text class="sv-s" x="104" y="84" text-anchor="middle">yazmaçlar, program sayacı</text>
+  <text class="sv-s" x="104" y="102" text-anchor="middle">aritmetik birim</text>
+  <text class="sv-s" x="104" y="120" text-anchor="middle">önbellek</text>
+  <rect class="sv-m" x="216" y="42" width="160" height="92" rx="8" />
+  <text class="sv-b" x="296" y="70" text-anchor="middle">RAM</text>
+  <text class="sv-s" x="296" y="92" text-anchor="middle">çalışan programlar</text>
+  <text class="sv-s" x="296" y="110" text-anchor="middle">ve verileri (uçucu)</text>
+  <line class="sv-cl" x1="24" y1="168" x2="376" y2="168" />
+  <text class="sv-s" x="200" y="160" text-anchor="middle">veriyolu</text>
+  <line class="sv-c" x1="104" y1="134" x2="104" y2="168" />
+  <line class="sv-c" x1="296" y1="134" x2="296" y2="168" />
+  <line class="sv-c" x1="104" y1="168" x2="104" y2="190" />
+  <line class="sv-c" x1="296" y1="168" x2="296" y2="190" />
+  <rect class="sv-a" x="24" y="190" width="160" height="58" rx="8" />
+  <text class="sv-b" x="104" y="214" text-anchor="middle">Depolama</text>
+  <text class="sv-s" x="104" y="234" text-anchor="middle">SSD / disk (kalıcı)</text>
+  <rect class="sv-k" x="216" y="190" width="160" height="58" rx="8" />
+  <text class="sv-b" x="296" y="214" text-anchor="middle">Giriş-çıkış</text>
+  <text class="sv-s" x="296" y="234" text-anchor="middle">ağ, USB, klavye, ekran</text>
+</svg>
+<figcaption>Bütün parçalar anakarttaki yollarla birbirine bağlı. Bir programı açtığında komutları depolamadan RAM'e taşınır, işlemci de onları RAM'den okur. Dışarıdan gelen her veri sağ alttaki giriş-çıkış kapılarından girer; savunmanın ilk sorusu da bu kapılarla ilgilidir.</figcaption>
+</figure>
+
+<h2 class="s">İşlemcinin içi: yazmaçlar ve program sayacı</h2>
+
+<p>İşlemcinin içinde üç tür parça vardır. <strong>Aritmetik-mantık birimi</strong> (ALU) toplama, karşılaştırma ve Parça 1'deki bit işlemlerini yapar. <strong>Denetim birimi</strong> sıradaki komutu okur, çözer ve ALU'ya ne yapacağını söyler. <strong>Yazmaçlar</strong> (register) o an işlenen değerleri tutan, sayısı az ama çok hızlı hücrelerdir. Neden var oldukları basit: RAM işlemciye göre çok uzaktır; her toplamada RAM'e gidip gelmek işlemciyi bekletir. Bu yüzden değerler önce yazmaçlara alınır, hesap orada yapılır. 64 bitlik bir işlemcide her genel amaçlı yazmaç 64 bit (8 bayt) tutar; "64 bitlik işlemci" sözü buradan gelir.</p>
+
+<p>Bir yazmaç özeldir: <strong>program sayacı</strong>. İşlemcinin <strong>bir sonraki</strong> yürüteceği komutun adresini tutar ve her komut okunduğunda o komutun uzunluğu kadar kendiliğinden ilerler. Bir atlama komutu (<code>if</code>'in ya da döngünün makine kodundaki karşılığı) ise ona doğrudan yeni bir adres yazar. Programın "akışı", program sayacının aldığı değerlerin sırasıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Yazmaç:</strong> işlemcinin içinde, o an işlenen değeri tutan küçük ve çok hızlı saklama hücresi. <strong>Program sayacı:</strong> sıradaki komutun adresini tutan yazmaç; x86-64'te adı <code>rip</code> (instruction pointer, komut göstergesi). <strong>Bayrak yazmacı:</strong> son işlemin sonucuna dair tek bitlik bilgileri (sonuç sıfır mı, negatif mi, taşma oldu mu) tutar; koşullu atlamalar bu bitlere bakarak karar verir.</p></div>
+
+<p>Güvenlik açısından bu şu cümleye varır: <strong>program sayacını kim belirlerse, programın ne yapacağını o belirler.</strong> Bellek güvenliği açıklarının (Parça 60) ciddi sayılmasının nedeni, bazı hataların program sayacına programcının istemediği bir değerin yazılmasına yol açabilmesidir. Çıktılarda geçecek x86-64 yazmaçları şunlar:</p>
+
+<div class="tablo"><table>
+<tr><th>Yazmaç (x86-64)</th><th>Genişlik</th><th>Bu parçada ne işe yarıyor?</th></tr>
+<tr><td><code>rax</code> / <code>eax</code></td><td>64 / alt 32 bit</td><td>Fonksiyonun dönüş değeri buraya konur.</td></tr>
+<tr><td><code>rdi</code> / <code>edi</code></td><td>64 / alt 32 bit</td><td>Fonksiyonun birinci argümanı (Linux'taki çağrı kuralına göre).</td></tr>
+<tr><td><code>rsi</code> / <code>esi</code></td><td>64 / alt 32 bit</td><td>Fonksiyonun ikinci argümanı.</td></tr>
+<tr><td><code>rcx</code>, <code>rdx</code></td><td>64 bit</td><td>Dördüncü ve üçüncü argüman; derleyici ara hesap için de kullanır.</td></tr>
+<tr><td><code>rsp</code>, <code>rbp</code></td><td>64 bit</td><td>Yığının tepesini ve fonksiyonun çerçevesini gösterir (ayrıntısı Parça 3'te).</td></tr>
+<tr><td><code>rip</code></td><td>64 bit</td><td>Program sayacı: sıradaki komutun adresi.</td></tr>
+<tr><td><code>rflags</code></td><td>64 bit</td><td>Bayraklar; <code>cmp</code> ve <code>test</code> bunları ayarlar, <code>jle</code> gibi atlamalar okur.</td></tr>
+</table></div>
+
+<p>x86-64'te 16 genel amaçlı yazmaç vardır: tablodakiler, <code>rbx</code> ve <code>r8</code>–<code>r15</code>. "e" ile başlayan adlar aynı yazmacın alt 32 bitidir; C'deki <code>int</code> 32 bit olduğu için derleyici bu adları kullanır. Hangi argümanın hangi yazmaçla geçtiği işlemcinin değil, işletim sistemi ve derleyicinin uyduğu bir anlaşmadır (çağrı kuralı); Windows'ta bu kural farklıdır.</p>
+
+<h2 class="s">Getir, çöz, yürüt: işlemcinin tek bildiği döngü</h2>
+
+<p>İşlemci açıldığı andan kapandığı ana kadar aynı üç adımı, saniyede milyarlarca kez tekrarlar; "2,6 GHz" gibi yazılan saat hızı, iç saatinin saniyede kaç kez tıkladığını gösterir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Getir-çöz-yürüt döngüsü:</strong> (1) <strong>Getir:</strong> program sayacının gösterdiği adresten komutun baytlarını oku ve program sayacını komutun uzunluğu kadar ilerlet. (2) <strong>Çöz:</strong> baytların hangi işlemi (topla, taşı, karşılaştır, atla) ve hangi yazmaçları ya da sayıları anlattığını belirle. (3) <strong>Yürüt:</strong> işlemi yap; sonucu bir yazmaca ya da belleğe yaz, bayrakları güncelle. Komut bir atlamaysa program sayacına yeni adresi yaz. Sonra başa dön.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Getir, çöz, yürüt adımlarının döngü şeması; ortada program sayacı">
+  <rect class="sv-l" x="130" y="16" width="140" height="56" rx="10" />
+  <text class="sv-b" x="200" y="40" text-anchor="middle">1. Getir</text>
+  <text class="sv-s" x="200" y="60" text-anchor="middle">adresteki baytları oku</text>
+  <rect class="sv-m" x="238" y="190" width="150" height="62" rx="10" />
+  <text class="sv-b" x="313" y="214" text-anchor="middle">2. Çöz</text>
+  <text class="sv-s" x="313" y="234" text-anchor="middle">hangi işlem, hangi yazmaç?</text>
+  <rect class="sv-a" x="12" y="190" width="150" height="62" rx="10" />
+  <text class="sv-b" x="87" y="214" text-anchor="middle">3. Yürüt</text>
+  <text class="sv-s" x="87" y="234" text-anchor="middle">hesapla, yaz, atla</text>
+  <line class="sv-cl" x1="270" y1="60" x2="320" y2="190" />
+  <polygon class="sv-cl" points="320,190 309,180 323,176" />
+  <line class="sv-cl" x1="238" y1="232" x2="162" y2="232" />
+  <polygon class="sv-cl" points="162,232 174,225 174,239" />
+  <line class="sv-cl" x1="80" y1="190" x2="130" y2="60" />
+  <polygon class="sv-cl" points="130,60 120,70 134,74" />
+  <ellipse class="sv-k" cx="200" cy="140" rx="78" ry="30" />
+  <text class="sv-b" x="200" y="137" text-anchor="middle">program sayacı</text>
+  <text class="sv-s" x="200" y="155" text-anchor="middle">sıradaki komutun adresi</text>
+  <text class="sv-s" x="200" y="278" text-anchor="middle">atlama komutu program sayacına yeni adres yazar</text>
+</svg>
+<figcaption>Getir adımı program sayacını okur ve ilerletir; yürüt adımı bir atlama gördüğünde program sayacının üzerine yeni adres yazar. Programın akışı, ortadaki bu tek yazmacın hikâyesidir.</figcaption>
+</figure>
+
+<p>Gözden kaçan bir nokta: komutlar da veri gibi <strong>bellekte</strong> durur. Bir bayt dizisinin "komut" mu "veri" mi olduğu, program sayacının oraya gösterip göstermemesine bağlıdır. Bu "kayıtlı program" (von Neumann) fikri bugünkü bilgisayarların temelidir ve bir tehlike taşır: dışarıdan gelen bir veri komut gibi yürütülürse bilgisayar o veriyi gönderenin istediğini yapar. Bu yüzden işletim sistemleri belleğin bazı bölgelerini "yürütülemez" diye işaretler (Parça 5).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1: oyuncak bir işlemciyi adım adım izlemek</span>
+<p><strong>Soru:</strong> Aşağıdaki Python programı iki yazmaçlı, beş komutlu bir oyuncak işlemciyi canlandırıyor; program bellekte baytlar olarak duruyor ve 3 + 2 + 1'i hesaplıyor. Her adımda program sayacı ve yazmaçlar nasıl değişiyor?</p>
+<pre class="kod" data-ad="python3 oyuncak.py"># Oyuncak bir islemci: getir - coz - yurut dongusu.
+# Bellek bir bayt listesi; program da veri gibi baytlardan olusur.
+bellek = [
+    0x01, 0, 0,      # 0: MOV r0, 0    (r0 = 0, toplam)
+    0x01, 1, 3,      # 3: MOV r1, 3    (r1 = 3, sayac)
+    0x02, 0, 1,      # 6: ADD r0, r1   (r0 = r0 + r1)
+    0x03, 1, 1,      # 9: SUB r1, 1    (r1 = r1 - 1)
+    0x04, 1, 6,      # 12: JNZ r1, 6   (r1 sifir degilse 6'ya atla)
+    0xFF,            # 15: HLT         (dur)
+]
+r = [0, 0]   # iki yazmac
+pc = 0       # program sayaci: siradaki komutun adresi
+
+while True:
+    op = bellek[pc]                          # GETIR: komut baytini oku
+    if op == 0xFF:                           # COZ: hangi komut?
+        print(f"pc={pc:2}  HLT           r0={r[0]} r1={r[1]}")
+        break
+    x, y = bellek[pc + 1], bellek[pc + 2]
+    eski = pc
+    pc = pc + 3                              # program sayaci ilerler
+    if op == 0x01:                           # YURUT
+        r[x] = y; ad = f"MOV r{x}, {y}"
+    elif op == 0x02:
+        r[x] = r[x] + r[y]; ad = f"ADD r{x}, r{y}"
+    elif op == 0x03:
+        r[x] = r[x] - y; ad = f"SUB r{x}, {y}"
+    elif op == 0x04:
+        ad = f"JNZ r{x}, {y}"
+        if r[x] != 0:
+            pc = y                           # atlama: program sayaci degisir
+    print(f"pc={eski:2}  {ad:&lt;13} r0={r[0]} r1={r[1]}  sonraki pc={pc}")</pre>
+<pre class="cikti">pc= 0  MOV r0, 0     r0=0 r1=0  sonraki pc=3
+pc= 3  MOV r1, 3     r0=0 r1=3  sonraki pc=6
+pc= 6  ADD r0, r1    r0=3 r1=3  sonraki pc=9
+pc= 9  SUB r1, 1     r0=3 r1=2  sonraki pc=12
+pc=12  JNZ r1, 6     r0=3 r1=2  sonraki pc=6
+pc= 6  ADD r0, r1    r0=5 r1=2  sonraki pc=9
+pc= 9  SUB r1, 1     r0=5 r1=1  sonraki pc=12
+pc=12  JNZ r1, 6     r0=5 r1=1  sonraki pc=6
+pc= 6  ADD r0, r1    r0=6 r1=1  sonraki pc=9
+pc= 9  SUB r1, 1     r0=6 r1=0  sonraki pc=12
+pc=12  JNZ r1, 6     r0=6 r1=0  sonraki pc=15
+pc=15  HLT           r0=6 r1=0</pre>
+<p><strong>Adım 1. Baytlara bak.</strong> İlk üç bayt <code>01 00 00</code>. Oyuncak komut kümemizde <code>01</code> "yazmaca sayı yükle" demek; sonraki iki bayt hangi yazmaç (0) ve hangi sayı (0). Yani "r0 = 0". Komutlar Parça 1'deki onaltılık baytlardan başka bir şey değil.</p>
+<p><strong>Adım 2. Getir ve ilerlet.</strong> <code>op = bellek[pc]</code> program sayacının gösterdiği baytı okuyor, <code>pc = pc + 3</code> sayacı sonraki komuta ilerletiyor; ilk iki satırda "sonraki pc" 3 ve 6.</p>
+<p><strong>Adım 3. Çöz ve yürüt.</strong> <code>if op == 0x01 … elif …</code> zinciri çözme adımıdır. Üçüncü satırda <code>ADD r0, r1</code>: r0 = 0 + 3 = 3. Dördüncüde <code>SUB r1, 1</code>: r1 = 2.</p>
+<p><strong>Adım 4. Atlamayı izle.</strong> Beşinci satırdaki <code>JNZ r1, 6</code> (sıfır değilse atla): r1 = 2 olduğu için program sayacına 6 yazılıyor ve işlemci toplamaya geri dönüyor. Dilde <code>while</code> yazarsın; işlemcide yalnızca program sayacının geriye atlaması vardır.</p>
+<p><strong>Adım 5. Çıkışı izle.</strong> On birinci satırda r1 = 0, <code>JNZ</code> atlamıyor, sayaç 15'e ilerliyor ve <code>FF</code> "dur" komutu.</p>
+<p><strong>Sonuç:</strong> r0 = 6. Oyuncak işlemci getirdi, çözdü, yürüttü, sayacı ilerletti ve atladı. Gerçek işlemcide bu mantık transistörlerle kurulu ve yüzlerce komut var, ama döngü aynı. Örnek Python 3.13 ile çalıştırıldı.</p></div>
+
+<h2 class="s">Komut kümesi: işlemcinin dili</h2>
+
+<p>Oyuncak işlemcimizde <code>01</code> "yükle" demekti; bu eşleşmeyi biz uydurduk. Gerçek işlemcilerde bu eşleşmeyi birileri tanımlayıp belgeler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Komut kümesi mimarisi</strong> (instruction set architecture, ISA): bir işlemci ailesinin hangi komutları tanıdığını, her komutun hangi baytlarla yazıldığını (kodlamasını), hangi yazmaçların bulunduğunu ve komutların belleğe nasıl eriştiğini tanımlayan sözleşme. Aynı komut kümesini uygulayan farklı işlemciler (farklı üretici, farklı nesil) aynı makine kodunu çalıştırır; farklı komut kümeleri birbirinin makine kodunu doğrudan çalıştıramaz.</p></div>
+
+<p>Komut kümesi bir sözleşmedir, bir yonga değil. x86-64'ü hem Intel hem AMD uygular, bu yüzden aynı Linux programı ikisinde de çalışır (64 bit uzantıyı ilk AMD tanımlamıştı, AMD64 adıyla). ARM başka bir sözleşmedir: Arm şirketi tasarlar ve lisanslar; telefonlar ve giderek dizüstüler ve sunucular onu uygular.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>x86-64</th><th>ARM 64 bit (AArch64)</th></tr>
+<tr><td>Nerede yaygın?</td><td>Masaüstü ve dizüstü PC'lerin çoğu, sunucuların çoğu</td><td>Telefonlar, tabletler; giderek dizüstü ve sunucular</td></tr>
+<tr><td>Komut uzunluğu</td><td>Değişken: 1 ile 15 bayt arası</td><td>Sabit: her komut 4 bayt (32 bit)</td></tr>
+<tr><td>Genel amaçlı yazmaç</td><td>16 (<code>rax</code>…<code>r15</code>)</td><td>31 (<code>x0</code>…<code>x30</code>; 32 bitlik adları <code>w0</code>…<code>w30</code>)</td></tr>
+<tr><td>Tasarım geleneği</td><td>CISC: bir komut bellekten okuyup hesaplayabilir</td><td>RISC: hesap yazmaçlarda, bellek erişimi ayrı komutlarla</td></tr>
+<tr><td>Fonksiyon argümanları (Linux)</td><td><code>rdi</code>, <code>rsi</code>, … ; dönüş <code>rax</code></td><td><code>x0</code>, <code>x1</code>, … ; dönüş <code>x0</code></td></tr>
+</table></div>
+
+<p>CISC (karmaşık) ve RISC (indirgenmiş komut kümesi) tarihsel bir ayrımdır; bugün iki aile birbirinden çok şey almıştır, modern x86 işlemciler de karmaşık komutları içeride küçük adımlara böler. Ayrımı bir kalite sıralaması gibi okuma. Değişken uzunluğun savunmacı için bir sonucu var: x86-64'te baytları yanlış yerden okumaya başlarsan bambaşka komutlar çözersin; araçlar bu yüzden başlangıcı dosyadaki sembollerden öğrenir.</p>
+
+<h2 class="s">Makine kodu, assembly ve yüksek düzeyli dil</h2>
+
+<p>Programcılar işlemciye doğrudan bayt yazmaz; araya katmanlar girer.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Makine kodu:</strong> işlemcinin doğrudan yürüttüğü baytlar (örnek: <code>8d 04 37</code>). <strong>Assembly:</strong> makine kodunun insanın okuyabileceği, komut komut karşılığı olan metin hâli (örnek: <code>lea eax,[rdi+rsi*1]</code>); assembly'yi makine koduna çeviren araca <strong>assembler</strong>, makine kodunu yeniden assembly'ye çeviren araca <strong>disassembler</strong> denir. <strong>Yüksek düzeyli dil:</strong> C, Python, Go gibi, tek satırı birçok komuta karşılık gelen ve belirli bir işlemciye bağlı olmayan dil. <strong>Derleyici</strong> yüksek düzeyli dili önceden, bir kez, makine koduna çevirir; <strong>yorumlayıcı</strong> programı çalıştırırken satır satır (ya da kendi ara koduna çevirerek) yürütür.</p></div>
+
+<p>Assembly ile makine kodu neredeyse bire bir eşleşir: her satır tek komut, belirli baytlar. Yüksek düzeyli dil ile makine kodu ise bire bir değildir: tek bir C satırı birkaç komuta dönüşebilir, derleyici bazı satırları silebilir ya da birleştirebilir.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Çeviri zinciri: solda C kaynağı derleyiciyle assembly ve makine koduna çevrilir; sağda Python kaynağı yorumlayıcı içinde bayt koduna çevrilir ve yorumlayıcının kendi makine kodu yürütür">
+  <text class="sv-b" x="100" y="20" text-anchor="middle">Derlenen (C)</text>
+  <text class="sv-b" x="300" y="20" text-anchor="middle">Yorumlanan (Python)</text>
+  <rect class="sv-l" x="15" y="32" width="170" height="44" rx="8" />
+  <text class="sv-t" x="100" y="52" text-anchor="middle">islem.c</text>
+  <text class="sv-s" x="100" y="68" text-anchor="middle">return a + b;</text>
+  <text class="sv-s" x="100" y="96" text-anchor="middle">derleyici (gcc, önceden)</text>
+  <line class="sv-cl" x1="100" y1="76" x2="100" y2="108" />
+  <rect class="sv-m" x="15" y="108" width="170" height="44" rx="8" />
+  <text class="sv-t" x="100" y="128" text-anchor="middle">assembly</text>
+  <text class="sv-s" x="100" y="144" text-anchor="middle">lea eax,[rdi+rsi*1]</text>
+  <text class="sv-s" x="100" y="172" text-anchor="middle">assembler</text>
+  <line class="sv-cl" x1="100" y1="152" x2="100" y2="184" />
+  <rect class="sv-a" x="15" y="184" width="170" height="44" rx="8" />
+  <text class="sv-t" x="100" y="204" text-anchor="middle">makine kodu</text>
+  <text class="sv-s" x="100" y="220" text-anchor="middle">8d 04 37 c3</text>
+  <rect class="sv-l" x="215" y="32" width="170" height="44" rx="8" />
+  <text class="sv-t" x="300" y="52" text-anchor="middle">topla.py</text>
+  <text class="sv-s" x="300" y="68" text-anchor="middle">return a + b</text>
+  <text class="sv-s" x="300" y="96" text-anchor="middle">CPython (çalışırken)</text>
+  <line class="sv-cl" x1="300" y1="76" x2="300" y2="108" />
+  <rect class="sv-m" x="215" y="108" width="170" height="44" rx="8" />
+  <text class="sv-t" x="300" y="128" text-anchor="middle">bayt kodu</text>
+  <text class="sv-s" x="300" y="144" text-anchor="middle">BINARY_OP (+)</text>
+  <text class="sv-s" x="300" y="172" text-anchor="middle">yorumlayıcı döngüsü</text>
+  <line class="sv-cl" x1="300" y1="152" x2="300" y2="184" />
+  <rect class="sv-a" x="215" y="184" width="170" height="44" rx="8" />
+  <text class="sv-t" x="300" y="204" text-anchor="middle">yorumlayıcının</text>
+  <text class="sv-t" x="300" y="220" text-anchor="middle">kendi makine kodu</text>
+  <line class="sv-cl" x1="100" y1="228" x2="180" y2="268" />
+  <line class="sv-cl" x1="300" y1="228" x2="220" y2="268" />
+  <rect class="sv-k" x="130" y="268" width="140" height="48" rx="10" />
+  <text class="sv-b" x="200" y="290" text-anchor="middle">İşlemci</text>
+  <text class="sv-s" x="200" y="306" text-anchor="middle">getir-çöz-yürüt</text>
+</svg>
+<figcaption>İki yolun sonunda da işlemci yalnız makine kodu yürütür. Solda C kaynağı önceden makine koduna çevrilir. Sağda Python kaynağı çalışırken bayt koduna çevrilir; onu da C ile yazılıp derlenmiş CPython yorumlayıcısının makine kodu yürütür.</figcaption>
+</figure>
+
+<p>Kod rafı Parça 1'de <code>python3 dosya.py</code> diye çalıştırdığın her program önce bir ara koda çevrilir; <code>dis</code> modülü onu gösterir:</p>
+
+<pre class="kod" data-ad="python3 topla.py">import dis
+
+def topla(a, b):
+    return a + b
+
+dis.dis(topla)</pre>
+<pre class="cikti">  3           RESUME                   0
+
+  4           LOAD_FAST_LOAD_FAST      1 (a, b)
+              BINARY_OP                0 (+)
+              RETURN_VALUE</pre>
+
+<p>Soldaki 3 ve 4 kaynak satır numaraları. <code>RESUME</code> yorumlayıcının iç denetimi için konmuş, iş görmeyen bir işaret; <code>LOAD_FAST_LOAD_FAST</code> <code>a</code> ve <code>b</code>'yi iç yığına koyar, <code>BINARY_OP 0 (+)</code> toplar, <code>RETURN_VALUE</code> döndürür. Bunlar işlemcinin değil, CPython'ın "sanal makinesinin" komutlarıdır; oyuncak işlemcimizdeki <code>if op == …</code> zincirine benzeyen bir döngü onları çözüp yürütür. Python belgelerine göre bayt kodu sürümden sürüme değişebilir; bu çıktı 3.13'e özgüdür.</p>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>Derlenen dil (C, Go)</th><th>Yorumlanan dil (Python, Bash)</th></tr>
+<tr><td>Çeviri ne zaman?</td><td>Çalıştırmadan önce, bir kez</td><td>Her çalıştırmada, çalışırken</td></tr>
+<tr><td>Kullanıcıya ne verilir?</td><td>Makine kodu içeren çalıştırılabilir dosya</td><td>Çoğu zaman kaynak kodun kendisi</td></tr>
+<tr><td>Hangi işlemcide çalışır?</td><td>Yalnızca derlendiği komut kümesinde</td><td>Yorumlayıcısı olan her makinede</td></tr>
+<tr><td>Hız</td><td>Genellikle daha hızlı</td><td>Genellikle daha yavaş (araya yorumlayıcı girer)</td></tr>
+<tr><td>Hata ne zaman görülür?</td><td>Birçok hata derlerken (kod rafı Parça 26'daki uyarılar)</td><td>Çoğu hata ancak o satır çalışınca</td></tr>
+<tr><td>Güvenlikte dikkat</td><td>Bellek hatalarına açık (C); savunmacı makine kodunu okur</td><td>Yorumlayıcının kendisi de bir program; onun açığı herkesi etkiler</td></tr>
+</table></div>
+
+<p>Ayrım her zaman bu kadar keskin değildir. Java ve C# önce bir ara koda derlenir, sonra bir sanal makine bu kodu çalışırken makine koduna çevirir (anında derleme, JIT). Tablo, iki ucun tipik davranışını anlatır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Python programım makine kodu çalıştırmıyor, işlemci düzeyindeki sorunlar beni ilgilendirmez."</strong> Senin kodun makine koduna çevrilmiyor, ama onu yürüten CPython derlenmiş bir C programıdır; birçok kütüphane (sayısal hesap, sıkıştırma, şifreleme) de içeride derlenmiş C taşır. Bu katmanlardaki bir bellek hatası, Python kodun kusursuz olsa bile programını etkileyebilir. Doğrusu: her programın altında bir makine kodu katmanı vardır; yorumlayıcıyı ve kütüphaneleri güncel tutmak (Parça 10 ve 59) bu yüzden önemlidir.</p></div>
+
+<h2 class="s">Kendi makinende dene: bir C fonksiyonunu derleyip makine kodunu okumak</h2>
+
+<p>Aşağıdaki adımları Linux'ta (ya da Windows'ta WSL içinde) yap; gereken araçlar <code>gcc</code> ve <code>objdump</code> (Debian tabanlılarda <code>gcc</code> ve <code>binutils</code> paketleri). Hepsi yalnızca senin yazdığın dosyayla çalışır.</p>
+
+<h3>Adım 1: iki küçük fonksiyon yaz</h3>
+
+<p>Bir klasör aç (ör. <code>~/lab/siber-2</code>) ve <code>islem.c</code> dosyasını kaydet. <code>main</code> yok, çünkü amacımız çalıştırmak değil, üretilen komutları okumak.</p>
+
+<pre class="kod" data-ad="islem.c">int topla(int a, int b) {
+    return a + b;
+}
+
+int toplam(int n) {
+    int s = 0;
+    for (int i = 1; i &lt;= n; i++) {
+        s = s + i;
+    }
+    return s;
+}</pre>
+
+<h3>Adım 2: iyileştirmesiz derle ve makine kodunu göster</h3>
+
+<p><code>-O0</code> "iyileştirme yapma" demek ve gcc'nin varsayılanı; derleyici kaynağı olabildiğince satır satır çevirir. <code>-c</code> bağlayıcı adımını (kod rafı Parça 26) atlar; çıktı bir nesne dosyasıdır. <code>objdump -d</code> kod bölümünü assembly'ye çevirir, <code>-M intel</code> Intel yazımını seçer (varsayılan AT&amp;T yazımında işlenen sırası terstir, yazmaçların başında <code>%</code> olur).</p>
+
+<pre class="kod" data-ad="$ komut">gcc -Wall -Wextra -O0 -c islem.c -o islem_O0.o
+objdump -d -M intel islem_O0.o</pre>
+<pre class="cikti">
+islem_O0.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 &lt;topla&gt;:
+   0:	55                   	push   rbp
+   1:	48 89 e5             	mov    rbp,rsp
+   4:	89 7d fc             	mov    DWORD PTR [rbp-0x4],edi
+   7:	89 75 f8             	mov    DWORD PTR [rbp-0x8],esi
+   a:	8b 55 fc             	mov    edx,DWORD PTR [rbp-0x4]
+   d:	8b 45 f8             	mov    eax,DWORD PTR [rbp-0x8]
+  10:	01 d0                	add    eax,edx
+  12:	5d                   	pop    rbp
+  13:	c3                   	ret
+
+0000000000000014 &lt;toplam&gt;:
+  14:	55                   	push   rbp
+  15:	48 89 e5             	mov    rbp,rsp
+  18:	89 7d ec             	mov    DWORD PTR [rbp-0x14],edi
+  1b:	c7 45 fc 00 00 00 00 	mov    DWORD PTR [rbp-0x4],0x0
+  22:	c7 45 f8 01 00 00 00 	mov    DWORD PTR [rbp-0x8],0x1
+  29:	eb 0a                	jmp    35 &lt;toplam+0x21&gt;
+  2b:	8b 45 f8             	mov    eax,DWORD PTR [rbp-0x8]
+  2e:	01 45 fc             	add    DWORD PTR [rbp-0x4],eax
+  31:	83 45 f8 01          	add    DWORD PTR [rbp-0x8],0x1
+  35:	8b 45 f8             	mov    eax,DWORD PTR [rbp-0x8]
+  38:	3b 45 ec             	cmp    eax,DWORD PTR [rbp-0x14]
+  3b:	7e ee                	jle    2b &lt;toplam+0x17&gt;
+  3d:	8b 45 fc             	mov    eax,DWORD PTR [rbp-0x4]
+  40:	5d                   	pop    rbp
+  41:	c3                   	ret</pre>
+
+<p>Satır satır oku. <code>file format elf64-x86-64</code>: dosya Linux'un çalıştırılabilir dosya biçimi ELF'te ve x86-64 için. <code>&lt;topla&gt;:</code> fonksiyonun adı ve başlangıç adresi; dosya henüz bağlanmadığı için adresler 0'dan başlıyor. Her komut satırında üç sütun var: komutun adresi (onaltılık), <strong>makine kodu baytları</strong> ve aynı baytların <strong>assembly</strong> karşılığı.</p>
+
+<p><code>topla</code>'da <code>push rbp</code> ve <code>mov rbp,rsp</code> yığında çerçeve kuran standart giriş (anlamı Parça 3'te). Sonraki iki satır <code>edi</code> ve <code>esi</code>'deki argümanları belleğe yazıyor: <code>DWORD PTR [rbp-0x4]</code> "rbp'nin 4 bayt altındaki 4 baytlık yer". İyileştirme kapalı olduğu için her değişken bellekte tutuluyor. Sonra ikisi yeniden yazmaçlara okunuyor, <code>add eax,edx</code> topluyor ve sonuç dönüş yazmacı <code>eax</code>'ta kalıyor; <code>pop rbp</code> çerçeveyi kaldırıyor, <code>ret</code> geri dönüyor. Boylara bak: <code>push rbp</code> tek bayt (<code>55</code>), <code>add eax,edx</code> iki bayt, <code>mov</code>'lar üç ya da yedi bayt. Değişken uzunluk budur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2: bir döngüyü makine kodundan geri okumak</span>
+<p><strong>Soru:</strong> Yukarıdaki <code>toplam</code> fonksiyonunun makine kodunda C'deki <code>for</code> döngüsü nerede? <code>toplam(2)</code> çağrılırsa komutlar hangi sırayla yürür?</p>
+<p><strong>Adım 1. Değişkenleri bul.</strong> <code>18:</code> argümanı (<code>n</code>) <code>[rbp-0x14]</code>'e, <code>1b:</code> 0'ı <code>[rbp-0x4]</code>'e (<code>s = 0</code>), <code>22:</code> 1'i <code>[rbp-0x8]</code>'e (<code>i = 1</code>) yazıyor.</p>
+<p><strong>Adım 2. Atlamaları bul.</strong> <code>29:</code>'daki <code>jmp 35</code> koşulsuz: gövdeyi atlayıp koşula gidiyor. <code>3b:</code>'deki <code>jle 2b</code> koşullu: "küçük ya da eşitse 2b'ye dön". Geriye doğru koşullu atlama, döngünün imzasıdır.</p>
+<p><strong>Adım 3. Koşulu oku.</strong> <code>35:</code> ve <code>38:</code> <code>i</code>'yi <code>eax</code>'a alıp <code>cmp</code> ile <code>n</code>'yle karşılaştırıyor. <code>cmp</code> sonucu bir yere yazmaz, yalnız bayrakları ayarlar; <code>jle</code> bayraklara bakıp atlıyor. Bu, <code>i &lt;= n</code>'nin makine kodu.</p>
+<p><strong>Adım 4. Gövdeyi oku.</strong> <code>2b:</code>–<code>31:</code> arası: <code>s = s + i</code>, sonra <code>i++</code>.</p>
+<p><strong>Adım 5. toplam(2) için izle.</strong> s = 0, i = 1 → <code>jmp 35</code> → 1 ≤ 2, <code>2b</code>'ye atla → s = 1, i = 2 → 2 ≤ 2, atla → s = 3, i = 3 → 3 ≤ 2 değil, atlama yok → <code>3d:</code> satırı <code>s</code>'yi <code>eax</code>'a koyar → <code>ret</code>. Dönüş değeri 3.</p>
+<p><strong>Adım 6. Parça 1'le bağla.</strong> <code>jle 2b</code>'nin baytları <code>7e ee</code>. <code>7e</code> "kısa jle" işlem kodu, <code>ee</code> ise atlama mesafesi: 8 bitlik ikiye tümleyende <code>0xEE</code> = −18. Mesafe bir sonraki komutun adresinden sayılır: 0x3d − 18 = 0x2b. Parça 1'deki işaretli sayı gösterimi, işlemcinin geriye atlamayı nasıl yazdığının ta kendisi.</p>
+<p><strong>Sonuç:</strong> <code>for</code> makine kodunda bir atama, koşula giden bir <code>jmp</code>, bir <code>cmp</code> ve geriye dönen bir <code>jle</code>'dir. Kaynağı olmayan bir programda savunmacılar döngüleri ve koşulları bu yolla tanır.</p></div>
+
+<h3>Adım 3: aynı dosyayı iyileştirmeyle derle</h3>
+
+<p>gcc belgesine göre <code>-O2</code>, boyut ile hız arasında ödünleşim gerektirmeyen iyileştirmelerin neredeyse hepsini uygular; dağıtımlardaki programların çoğu böyle derlenir.</p>
+
+<pre class="kod" data-ad="$ komut">gcc -Wall -Wextra -O2 -c islem.c -o islem_O2.o
+objdump -d -M intel islem_O2.o</pre>
+<pre class="cikti">
+islem_O2.o:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000000000 &lt;topla&gt;:
+   0:	8d 04 37             	lea    eax,[rdi+rsi*1]
+   3:	c3                   	ret
+   4:	90                   	nop
+   5:	66 66 2e 0f 1f 84 00 	data16 cs nop WORD PTR [rax+rax*1+0x0]
+   c:	00 00 00 00
+
+0000000000000010 &lt;toplam&gt;:
+  10:	85 ff                	test   edi,edi
+  12:	7e 3c                	jle    50 &lt;toplam+0x40&gt;
+  14:	8d 4f 01             	lea    ecx,[rdi+0x1]
+  17:	31 d2                	xor    edx,edx
+  19:	83 e7 01             	and    edi,0x1
+  1c:	b8 01 00 00 00       	mov    eax,0x1
+  21:	74 1d                	je     40 &lt;toplam+0x30&gt;
+  23:	b8 02 00 00 00       	mov    eax,0x2
+  28:	ba 01 00 00 00       	mov    edx,0x1
+  2d:	39 c8                	cmp    eax,ecx
+  2f:	74 1a                	je     4b &lt;toplam+0x3b&gt;
+  31:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+  35:	66 66 2e 0f 1f 84 00 	data16 cs nop WORD PTR [rax+rax*1+0x0]
+  3c:	00 00 00 00
+  40:	8d 54 42 01          	lea    edx,[rdx+rax*2+0x1]
+  44:	83 c0 02             	add    eax,0x2
+  47:	39 c8                	cmp    eax,ecx
+  49:	75 f5                	jne    40 &lt;toplam+0x30&gt;
+  4b:	89 d0                	mov    eax,edx
+  4d:	c3                   	ret
+  4e:	66 90                	xchg   ax,ax
+  50:	31 d2                	xor    edx,edx
+  52:	89 d0                	mov    eax,edx
+  54:	c3                   	ret</pre>
+
+<p><code>topla</code> dokuz komuttan ikiye indi: çerçeve yok, belleğe yazma yok; argümanlar zaten yazmaçlarda olduğu için derleyici <code>lea eax,[rdi+rsi*1]</code> yazmış. <code>lea</code> aslında "adres hesapla" komutudur, ama adres hesabı bir toplama olduğundan derleyiciler onu iki sayıyı tek komutta toplamak için kullanır. <code>ret</code>'ten sonraki <code>nop</code>'lar hiç yürütülmeyen dolgu baytlarıdır: sonraki fonksiyon 16'nın katı bir adreste (0x10) başlasın diye konmuş, çünkü işlemci hizalı adreslerden daha hızlı getirir.</p>
+
+<p><code>toplam</code> ise değişmiş: <code>edx</code> toplamı, <code>eax</code> sayacı, <code>ecx</code> n + 1 sınırını tutuyor; <code>test edi,edi</code> ve <code>jle 50</code> önce n ≤ 0 durumunu ayırıyor. <code>40:</code>–<code>49:</code> arasındaki döngü her turda <strong>iki</strong> sayı ekliyor: <code>lea edx,[rdx+rax*2+0x1]</code> toplamı i + (i + 1) kadar artırıyor, sayaç ikişer ilerliyor; n tekse fazla kalan terimi <code>and edi,0x1</code> ile önceden hallediyor. Derleyici döngüyü "açmış" (loop unrolling). Bu çıktı gcc 15.2'ye özgüdür; <code>clang -O2</code> ile derlediğimizde ise döngü tamamen kayboldu, clang toplamı çarpma ve kaydırmalı bir formüle çevirdi.</p>
+
+<h3>Adım 4: baytların dosyada gerçekten durduğunu gör</h3>
+
+<p>Kod bölümünü ayrı bir dosyaya çıkarıp Parça 1'deki <code>xxd</code> ile bak:</p>
+
+<pre class="kod" data-ad="$ komut">file islem_O0.o
+objcopy -O binary --only-section=.text islem_O2.o text.bin
+xxd text.bin | head -2</pre>
+<pre class="cikti">islem_O0.o: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+00000000: 8d04 37c3 9066 662e 0f1f 8400 0000 0000  ..7..ff.........
+00000010: 85ff 7e3c 8d4f 0131 d283 e701 b801 0000  ..~&lt;.O.1........</pre>
+
+<p><code>file</code>: 64 bitlik ELF nesnesi, "LSB" küçük uç (little endian) bayt sırası, "relocatable" henüz bağlanmamış, "not stripped" fonksiyon adları dosyada. <code>xxd</code>'nin ilk dört baytı <code>8d 04 37 c3</code>: <code>topla</code>'nın <code>lea</code> ve <code>ret</code>'i; ardından <code>90</code> ve dolgu, 0x10'da <code>toplam</code>'ın <code>85 ff 7e 3c</code>'si. Sağ sütundaki anlamsız harfler aynı baytların metin diye okunması: bağlama göre bayt metin, sayı ya da komut olabilir.</p>
+
+<h3>Adım 5: kendi işlemcini tanı</h3>
+
+<p><code>lscpu</code> işletim sisteminin işlemci hakkında bildiklerini verir; <code>lscpu -C</code> yalnız önbellekleri listeler.</p>
+
+<pre class="kod" data-ad="$ komut">lscpu
+lscpu -C</pre>
+<pre class="cikti">Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  12
+On-line CPU(s) list:                     0-11
+Vendor ID:                               GenuineIntel
+Model name:                              Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
+CPU family:                              6
+Model:                                   165
+Thread(s) per core:                      2
+Core(s) per socket:                      6
+Socket(s):                               1
+…
+L1d cache:                               192 KiB (6 instances)
+L1i cache:                               192 KiB (6 instances)
+L2 cache:                                1.5 MiB (6 instances)
+L3 cache:                                12 MiB (1 instance)
+…
+NAME ONE-SIZE ALL-SIZE WAYS TYPE        LEVEL  SETS PHY-LINE COHERENCY-SIZE
+L1d       32K     192K    8 Data            1    64        1             64
+L1i       32K     192K    8 Instruction     1    64        1             64
+L2       256K     1.5M    4 Unified         2  1024        1             64
+L3        12M      12M   16 Unified         3 12288        1             64</pre>
+
+<p>Çıktı uzun olduğu için iki yeri "…" ile kısalttım. Birincisinde <code>Stepping</code>, mikrokod ve <code>BogoMIPS</code> satırları, işlemcinin desteklediği özellikleri listeleyen çok uzun <code>Flags</code> satırı ve sanallaştırma satırları; ikincisinde NUMA satırları ve en sondaki açık durumu satırları var (onlara aşağıda döneceğiz). Sendeki işlemci modeli, çekirdek sayısı ve önbellek boyları büyük olasılıkla farklı olacak; satırların anlamı aynıdır.</p>
+
+<p><code>Architecture: x86_64</code> komut kümesi; ARM makinede <code>aarch64</code> görürsün. <code>Address sizes</code>: yazmaçlar 64 bit olsa da işlemci fiziksel adreste 39, sanal adreste 48 bit kullanıyor (sanal adres Parça 5'te). <code>Byte Order: Little Endian</code>: çok baytlı sayının en küçük baytı önce yazılır (Parça 3). <code>Core(s) per socket: 6</code> altı fiziksel çekirdek, <code>Thread(s) per core: 2</code> her çekirdekte iki komut akışı; bu yüzden <code>CPU(s): 12</code>. <code>L1d</code>…<code>L3</code> önbellekler; <code>lscpu -C</code>'de <code>ONE-SIZE</code> tek önbelleğin, <code>ALL-SIZE</code> hepsinin toplam boyu, <code>COHERENCY-SIZE</code> 64 bayt önbellek satırının boyu. Çıktı WSL içinde alındı; sanal makinede bazı bilgiler (ör. mikrokod sürümü) hipervizörden geldiği için gerçek makinedekinden farklı görünebilir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Kaynak kodda yazdığım her satır makine koduna aynen geçer."</strong> Adım 3'te gördüğün gibi derleyici kodu yeniden kurar ve sonucu kullanılmayan işleri siler. Güvenlikte bilinen tuzak: parolayı tutan tampon iş bitince <code>memset</code> ile sıfırlanıyor ve bir daha okunmuyorsa, derleyici bu sıfırlamayı "gereksiz yazma" sayıp silebilir; parola bellekte kalır. MITRE bu zayıflığı CWE-14 ("tamponu temizleyen kodun derleyicice kaldırılması") adıyla kaydeder. Doğrusu: güvenlik açısından önemli bir işin derlenmiş kodda gerçekten var olduğunu varsayma; sırrı silmek için derleyicinin kaldıramayacağı işlevleri kullan (glibc'deki <code>explicit_bzero</code> gibi) ve şüphedeysen <code>objdump</code> ile kendi programında komutun yerinde durduğuna bak.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3: aynı fonksiyon, iki ayrı komut kümesi</span>
+<p><strong>Soru:</strong> <code>topla</code> fonksiyonunu bir ARM işlemci için derlersek makine kodu nasıl görünür, ve x86-64 için üretilen baytlar bir ARM işlemcide neden çalışmaz?</p>
+<p><strong>Adım 1. ARM için derle.</strong> clang başka komut kümeleri için de kod üretebilir; çıktıyı LLVM'in disassembler'ıyla okuyoruz (sende adı <code>llvm-objdump</code> ya da sürüm numaralı olabilir).</p>
+<pre class="kod" data-ad="$ komut">clang --target=aarch64-linux-gnu -O2 -c islem.c -o islem_arm.o
+llvm-objdump-21 -d islem_arm.o
+file islem_arm.o</pre>
+<pre class="cikti">
+islem_arm.o:	file format elf64-littleaarch64
+
+Disassembly of section .text:
+
+0000000000000000 &lt;topla&gt;:
+       0: 0b000020     	add	w0, w1, w0
+       4: d65f03c0     	ret
+
+0000000000000008 &lt;toplam&gt;:
+       8: 71000408     	subs	w8, w0, #0x1
+       c: 540000eb     	b.lt	0x28 &lt;toplam+0x20&gt;
+      10: 51000809     	sub	w9, w0, #0x2
+      14: 9ba97d08     	umull	x8, w8, w9
+      18: d341fd08     	lsr	x8, x8, #1
+      1c: 0b000508     	add	w8, w8, w0, lsl #1
+      20: 51000500     	sub	w0, w8, #0x1
+      24: d65f03c0     	ret
+      28: 2a1f03e0     	mov	w0, wzr
+      2c: d65f03c0     	ret
+islem_arm.o: ELF 64-bit LSB relocatable, ARM aarch64, version 1 (SYSV), not stripped</pre>
+<p><strong>Adım 2. Komutları karşılaştır.</strong> ARM'da <code>topla</code>: <code>add w0, w1, w0</code> (topla, sonucu dönüş yazmacı <code>w0</code>'a koy) ve <code>ret</code>. Mantık x86-64'teki <code>lea</code> + <code>ret</code> ile aynı; yazmaç adları ve kodlama farklı.</p>
+<p><strong>Adım 3. Boyları karşılaştır.</strong> Adres sütunu her satırda tam 4 artıyor: ARM'da her komut 4 bayt. x86-64'te <code>topla</code> 4 bayt tutuyordu, ARM'da 8. <code>llvm-objdump</code> her komutu tek bir 32 bitlik sayı olarak yazıyor.</p>
+<p><strong>Adım 4. Neden çalışmaz?</strong> ARM işlemci x86-64'ün <code>8d 04 37 c3</code> baytlarını tek bir 4 baytlık ARM komutu (küçük uçtan 0xc337048d) diye çözmeye çalışır; bu <code>lea</code> ile ilgisiz bir şey olur ya da geçersizdir. Baytlar aynı, sözleşme farklı. İşletim sistemi de <code>file</code>'ın gösterdiği bu bilgiye bakıp uyuşmayan dosyayı baştan reddeder.</p>
+<p><strong>Adım 5. Derleyici farkı.</strong> ARM'daki <code>toplam</code>'da döngü yok: clang toplamı çarpma (<code>umull</code>) ve sağa kaydırma (<code>lsr</code>, 2'ye bölme) içeren bir formüle çevirmiş. Bu ARM'ın değil clang'ın tercihi.</p>
+<p><strong>Sonuç:</strong> Aynı kaynak her komut kümesi için ayrı makine koduna derlenir; "tek çalıştırılabilir dosya, her işlemci" kendiliğinden mümkün değildir. Zararlı yazılım incelemesinde ilk soru budur: bu dosya hangi komut kümesi için?</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Programımı derleyip yalnızca çalıştırılabilir dosyayı verirsem içindekiler gizli kalır."</strong> Bu bölümde gördüğün gibi makine kodu herkesin kurabileceği bir araçla assembly'ye çevrilip okunabilir; dosyanın içindeki metinler (parolalar, API anahtarları, adresler) çoğu zaman olduğu gibi durur. Derleme bir gizleme yöntemi değildir. Doğrusu: sırları programın içine gömme; onları ayrı ve korunan bir yerde tut (gömülü anahtarın neden tehlikeli olduğu Parça 48'de, sır saklama Parça 18'de). Güvenliği, saldırganın kodunu okuyabileceğini varsayarak kur; bu, kriptografide Kerckhoffs ilkesi adıyla karşına çıkacak (Parça 42).</p></div>
+
+<h2 class="s">Çok çekirdek ve önbellek</h2>
+
+<p>2000'lerin başına kadar işlemciler her yıl daha yüksek saat hızlarına çıkarak hızlandı. Sonra bu yol tıkandı: saat hızını artırmak güç tüketimini ve ısınmayı kabul edilemez ölçüde artırıyordu. Üreticiler bunun yerine tek yongaya birden çok işlemci koymaya başladı. Her biri kendi getir-çöz-yürüt döngüsünü, kendi program sayacını ve kendi yazmaçlarını taşıyan bu birimlere <strong>çekirdek</strong> denir. <code>lscpu</code> çıktısındaki 6 çekirdek, aynı anda altı ayrı komut akışının gerçekten birlikte yürüyebildiği anlamına gelir. "Çekirdek başına iki iş parçacığı" ise eşzamanlı çoklu iş parçacığı (SMT; Intel'deki adıyla Hyper-Threading) denen tekniktir: bir çekirdek iki program sayacı ve iki yazmaç takımı taşır, ama hesap birimlerini iki akış arasında paylaştırır. Bu yüzden 12 mantıksal işlemci, 12 tam çekirdek kadar güçlü değildir.</p>
+
+<p>Çok çekirdek her programı kendiliğinden hızlandırmaz. Bir program işini parçalara bölüp farklı çekirdeklere dağıtacak biçimde yazılmamışsa tek çekirdekte çalışır, öbürleri boş durur. İşi bölmek de kolay değildir: iki çekirdek aynı veriyi aynı anda değiştirmeye kalkarsa sonuç bozulabilir. Programların bu tür eşzamanlılık hataları (yarış durumu) güvenlik açıklarına da yol açabilir; kod rafındaki eşzamanlılık parçalarında bu konuyu görmüş olabilirsin.</p>
+
+<p>İkinci büyük fikir <strong>önbellek</strong> (cache). İşlemci bir komutu bir nanosaniyeden çok daha kısa sürede yürütür, ama RAM'den bir değer getirmek bunun yüzlerce katı sürebilir. Bu farkı kapatmak için işlemcinin içine küçük ama çok hızlı bellekler konur. <code>lscpu</code> çıktısında gördüğün düzen tipiktir: her çekirdeğin kendine ait birinci düzey önbellekleri vardır (L1d veri, L1i komut için; her biri 32 KiB), her çekirdeğin bir de daha büyük ve biraz daha yavaş ikinci düzey önbelleği (L2, 256 KiB), bütün çekirdeklerin paylaştığı üçüncü düzey önbellek (L3, 12 MiB) ise en büyük ve en yavaşıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Çok çekirdekli işlemci: her çekirdeğin kendi L1 ve L2 önbelleği, bütün çekirdeklerin paylaştığı L3 önbellek ve dışarıda RAM">
+  <rect class="sv-k" x="8" y="8" width="384" height="214" rx="12" />
+  <text class="sv-s" x="200" y="26" text-anchor="middle">işlemci yongası (6 çekirdekten ikisi çizildi)</text>
+  <rect class="sv-l" x="24" y="38" width="150" height="54" rx="8" />
+  <text class="sv-b" x="99" y="60" text-anchor="middle">Çekirdek 0</text>
+  <text class="sv-s" x="99" y="78" text-anchor="middle">yazmaçlar, program sayacı</text>
+  <rect class="sv-l" x="226" y="38" width="150" height="54" rx="8" />
+  <text class="sv-b" x="301" y="60" text-anchor="middle">Çekirdek 1</text>
+  <text class="sv-s" x="301" y="78" text-anchor="middle">yazmaçlar, program sayacı</text>
+  <rect class="sv-m" x="24" y="100" width="72" height="30" rx="6" />
+  <text class="sv-s" x="60" y="120" text-anchor="middle">L1d 32K</text>
+  <rect class="sv-m" x="102" y="100" width="72" height="30" rx="6" />
+  <text class="sv-s" x="138" y="120" text-anchor="middle">L1i 32K</text>
+  <rect class="sv-m" x="226" y="100" width="72" height="30" rx="6" />
+  <text class="sv-s" x="262" y="120" text-anchor="middle">L1d 32K</text>
+  <rect class="sv-m" x="304" y="100" width="72" height="30" rx="6" />
+  <text class="sv-s" x="340" y="120" text-anchor="middle">L1i 32K</text>
+  <rect class="sv-m" x="24" y="138" width="150" height="28" rx="6" />
+  <text class="sv-s" x="99" y="157" text-anchor="middle">L2 256K</text>
+  <rect class="sv-m" x="226" y="138" width="150" height="28" rx="6" />
+  <text class="sv-s" x="301" y="157" text-anchor="middle">L2 256K</text>
+  <rect class="sv-a" x="24" y="176" width="352" height="34" rx="6" />
+  <text class="sv-b" x="200" y="198" text-anchor="middle">L3 12M (bütün çekirdekler paylaşır)</text>
+  <line class="sv-cl" x1="200" y1="222" x2="200" y2="244" />
+  <rect class="sv-k" x="110" y="244" width="180" height="44" rx="8" />
+  <text class="sv-b" x="200" y="264" text-anchor="middle">RAM</text>
+  <text class="sv-s" x="200" y="280" text-anchor="middle">çok daha büyük, çok daha yavaş</text>
+</svg>
+<figcaption>Rakamlar bu parçadaki <code>lscpu</code> çıktısından. Çekirdeğe yakın önbellek küçük ve hızlı, uzaklaştıkça büyük ve yavaş. L3'ün bütün çekirdeklerce paylaşılması verimlidir, ama bir çekirdekte çalışan programın önbellekte bıraktığı izin başka bir çekirdekten dolaylı yoldan sezilebilmesi gibi güvenlik sorularını da doğurur.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Önbellek neden işe yarar:</strong> programlar belleğe rastgele değil, belirli bir düzenle erişir. Az önce kullanılan bir değer büyük olasılıkla yakında yeniden kullanılır (zamansal yerellik); bir adresin hemen yanındaki adres de büyük olasılıkla yakında okunur (uzaysal yerellik). Bu yüzden işlemci RAM'den tek bir bayt değil, bir <strong>önbellek satırı</strong> (bu makinede 64 bayt) getirir. Komşu adreslere sırayla erişen kod önbellekten çok yararlanır; belleğin içinde büyük adımlarla sıçrayan kod her seferinde RAM'i bekler.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4: önbelleği bir zaman ölçümüyle görmek</span>
+<p><strong>Soru:</strong> 4096 × 4096 boyutlu bir <code>int</code> tablosunun bütün elemanlarını iki kez topluyoruz: bir kez satır satır, bir kez sütun sütun. İkisi de tam olarak aynı sayıları topluyor. Süreleri neden farklı çıkar?</p>
+<pre class="kod" data-ad="onbellek.c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+
+#define N 4096
+
+static double sure(struct timespec a, struct timespec b) {
+    return (b.tv_sec - a.tv_sec) + (b.tv_nsec - a.tv_nsec) / 1e9;
+}
+
+int main(void) {
+    int *m = malloc(sizeof(int) * N * N);   /* 4096 x 4096 int = 64 MiB */
+    if (m == NULL) return 1;
+    for (long i = 0; i &lt; (long)N * N; i++) m[i] = 1;
+
+    struct timespec t0, t1;
+    long s = 0;
+
+    clock_gettime(CLOCK_MONOTONIC, &amp;t0);
+    for (int i = 0; i &lt; N; i++)          /* satir satir: komsu adresler */
+        for (int j = 0; j &lt; N; j++)
+            s += m[(long)i * N + j];
+    clock_gettime(CLOCK_MONOTONIC, &amp;t1);
+    printf("satir satir : toplam=%ld  %.3f s\n", s, sure(t0, t1));
+
+    s = 0;
+    clock_gettime(CLOCK_MONOTONIC, &amp;t0);
+    for (int j = 0; j &lt; N; j++)          /* sutun sutun: 16 KiB atlayarak */
+        for (int i = 0; i &lt; N; i++)
+            s += m[(long)i * N + j];
+    clock_gettime(CLOCK_MONOTONIC, &amp;t1);
+    printf("sutun sutun : toplam=%ld  %.3f s\n", s, sure(t0, t1));
+
+    free(m);
+    return 0;
+}</pre>
+<pre class="kod" data-ad="$ komut">gcc -Wall -Wextra -O1 onbellek.c -o onbellek
+./onbellek
+./onbellek</pre>
+<pre class="cikti">satir satir : toplam=16777216  0.013 s
+sutun sutun : toplam=16777216  0.224 s
+satir satir : toplam=16777216  0.012 s
+sutun sutun : toplam=16777216  0.219 s</pre>
+<p><strong>Adım 1. Bellek düzenini hesapla.</strong> Tablo bellekte tek bir uzun dizi olarak duruyor; <code>m[i * N + j]</code>, i. satırın j. elemanı. Bir <code>int</code> 4 bayt, bir satır 4096 × 4 = 16.384 bayt (16 KiB). Tablonun tamamı 64 MiB; L3'e (12 MiB) bile sığmıyor.</p>
+<p><strong>Adım 2. Satır satır erişimi düşün.</strong> İç döngü <code>j</code>'yi artırıyor: ardışık iki erişim bellekte yan yana, aradaki fark 4 bayt. İşlemci 64 baytlık bir önbellek satırı getirdiğinde içinde 64 / 4 = 16 eleman var; sonraki 15 erişim önbellekten karşılanıyor. İşlemci düzenli ilerleyişi fark edip sonraki satırları önceden de getirebiliyor.</p>
+<p><strong>Adım 3. Sütun sütun erişimi düşün.</strong> İç döngü <code>i</code>'yi artırıyor: ardışık iki erişim arasında 16 KiB var. Her erişim başka bir önbellek satırına düşüyor; getirilen 64 baytın yalnızca 4'ü kullanılıyor ve o satır yeniden gerekene kadar önbellekten çoktan atılmış oluyor. Neredeyse her erişim RAM'i bekliyor.</p>
+<p><strong>Adım 4. Ölçümü oku.</strong> İki satırdaki toplam aynı (16.777.216 = 4096 × 4096, çünkü her eleman 1), yani iki yöntem aynı işi yapıyor. Ama bu ölçümde sütun sütun erişim yaklaşık 17 kat yavaş (0,224 / 0,013). İkinci çalıştırma (son iki satır) neredeyse aynı sonucu verdi, yani fark tesadüf değil.</p>
+<p><strong>Sonuç:</strong> Aynı hesap, aynı komut sayısı; tek fark erişim sırası. Farkı yaratan önbellektir. Kesin süreler senin makinende farklı olacak (işlemci, önbellek boyu, o an çalışan başka programlar, derleyici sürümü); oran da değişebilir, ama sütun sütun erişimin belirgin biçimde yavaş olması beklenir. <code>-O1</code> seçtik, çünkü daha yüksek iyileştirme düzeylerinde derleyici döngüleri yeniden düzenleyerek ölçümü karıştırabilir. Bellek hiyerarşisinin bütün basamaklarını ve gecikme rakamlarını Parça 3'te göreceğiz.</p></div>
+
+<p>Bu örneğin güvenlikle bağı şu: bir erişimin önbellekten mi RAM'den mi karşılandığı <strong>zamandan</strong> anlaşılabilir. Programın sonucu (toplam) iki durumda da aynıydı, ama süresi başkaydı. Sonucu değil de yan etkisini (süreyi, güç tüketimini, önbellekte kalan izi) gözleyerek bilgi çıkarmaya <strong>yan kanal</strong> (side channel) denir. Bu kavram bir sonraki bölümün anahtarıdır.</p>
+
+<h2 class="s">Spekülatif yürütme: donanım da açık verebilir</h2>
+
+<p>Modern bir çekirdek, getir-çöz-yürüt döngüsünü komut komut, sırayla yapmaz. Bir komutu yürütürken sonrakileri getirip çözmeye başlar (boru hattı, pipeline); birbirine bağlı olmayan komutları yazıldıkları sıradan farklı bir sırayla yürütebilir (sıra dışı yürütme). Bir koşullu atlamaya geldiğinde ise sonucu henüz belli olmayan koşulun hangi yöne gideceğini <strong>tahmin eder</strong> ve tahmin ettiği yoldaki komutları önceden yürütmeye başlar. Buna <strong>spekülatif yürütme</strong> denir. Tahmin doğruysa zaman kazanılmıştır; yanlışsa işlemci o yoldaki sonuçları atar ve program açısından hiçbir şey olmamış gibi doğru yoldan devam eder. Çözümlü örnek 2'deki <code>jle</code> gibi her koşullu atlama, işlemcinin içinde böyle bir tahmindir.</p>
+
+<p>Ocak 2018'de kamuya açıklanan araştırmalar, bu "hiçbir şey olmamış gibi" varsayımının tam doğru olmadığını gösterdi. Atılan spekülatif işin sonuçları yazmaçlardan silinse de önbellekte iz bırakabiliyordu ve bu iz, bir önceki bölümdeki gibi zaman ölçülerek dolaylı yoldan okunabiliyordu. Böylece bir programın erişmemesi gereken veriler yan kanal üzerinden sızabiliyordu. Bulgular Google Project Zero ve birkaç üniversite ekibince birbirinden bağımsız olarak bulunmuştu; Project Zero bunları 1 Haziran 2017'de Intel, AMD ve ARM'a bildirmiş, açıklama ise üreticilerle koordine edilerek ertelenmişti (koordineli açıklama Parça 73'te).</p>
+
+<div class="tablo"><table>
+<tr><th>Ad</th><th>CVE kaydı</th><th>Neyi delebiliyordu? (kavram)</th></tr>
+<tr><td>Meltdown</td><td>CVE-2017-5754</td><td>Kullanıcı programı ile işletim sistemi çekirdeği arasındaki yalıtımı (Parça 4)</td></tr>
+<tr><td>Spectre, varyant 1</td><td>CVE-2017-5753</td><td>Programlar arasındaki ve program içindeki sınır denetimlerini</td></tr>
+<tr><td>Spectre, varyant 2</td><td>CVE-2017-5715</td><td>Programlar arasındaki yalıtımı, dallanma tahminini yanlış yöne çekerek</td></tr>
+</table></div>
+
+<p>Bu bulguların asıl dersi tek cümlelik: <strong>yazılımda hiçbir hata olmasa bile donanımın tasarımı bir açık taşıyabilir.</strong> Hızlı olmak için eklenen bir özellik (tahmin, önbellek) işletim sisteminin dayandığı yalıtım varsayımlarını zayıflatmıştı. Meltdown büyük ölçüde belirli Intel işlemcilerini ve bazı ARM çekirdeklerini etkiliyordu; Spectre ise sıra dışı ve spekülatif yürütme yapan hemen bütün modern işlemcilerde (Intel, AMD, ARM) gösterildi. Nasıl sömürüldükleri bu rafın konusu değil; bizi ilgilendiren, nasıl savunulduğu.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Donanım açıklarına karşı savunma katmanlıdır:</strong> (1) işlemci üreticisinin <strong>mikrokod</strong> güncellemesi (işlemcinin kendi iç yazılımı; ürün yazılımı ya da işletim sistemi güncellemeleriyle gelir); (2) <strong>işletim sistemi</strong> yamaları (Meltdown için Linux'taki KPTI, çekirdek belleğini kullanıcı programlarının adres alanından ayıran değişiklik); (3) <strong>derleyici</strong> önlemleri (tehlikeli dallanma noktalarına spekülasyonu durduran komutlar eklemek); (4) yeni işlemci nesillerinde <strong>donanım</strong> düzeltmesi. Senin yapacağın şey basittir ama vazgeçilmezdir: işletim sistemini, ürün yazılımını (UEFI) ve tarayıcıyı güncel tut. Bu önlemlerin bir kısmı biraz performans maliyeti getirir; bu bir hata değil, güvenliğin bedelidir.</p></div>
+
+<p>Linux, çekirdeğin hangi donanım açıklarını tanıdığını ve hangi önlemi uyguladığını <code>/sys</code> altındaki küçük dosyalarda okunabilir biçimde tutar; <code>lscpu</code> çıktısının sonundaki "Vulnerability" satırları da buradan gelir. Bu, yalnızca kendi makinenin savunma durumunu okumaktır:</p>
+
+<pre class="kod" data-ad="$ komut">grep . /sys/devices/system/cpu/vulnerabilities/{meltdown,spectre_v1,spectre_v2}</pre>
+<pre class="cikti">/sys/devices/system/cpu/vulnerabilities/meltdown:Not affected
+/sys/devices/system/cpu/vulnerabilities/spectre_v1:Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+/sys/devices/system/cpu/vulnerabilities/spectre_v2:Mitigation: Enhanced / Automatic IBRS; IBPB: conditional; PBRSB-eIBRS: SW sequence; BHI: SW loop, KVM: SW loop</pre>
+
+<p><code>grep .</code> her dosyanın boş olmayan satırını dosya adıyla birlikte yazar. Linux çekirdek belgelerine göre "Not affected" işlemcinin bu açıktan etkilenmediğini, "Mitigation: …" bir önlemin uygulandığını ve iki nokta üst üsteden sonra hangi önlemler olduğunu, "Vulnerable" ise açığın önlemsiz kaldığını söyler. Bu makinede Meltdown'dan etkilenmeyen daha yeni bir işlemci var; Spectre'nin iki varyantı için önlemler açık. <code>spectre_v2</code> satırındaki "Enhanced IBRS", işlemcinin dallanma tahminini donanım düzeyinde kısıtlayan bir özelliktir; satırın gerisi çekirdeğin yanına eklediği yazılım önlemleri. Sendeki satırlar işlemcine, çekirdek sürümüne ve sanallaştırma ortamına göre farklı olacak; WSL'de bu dosyalar WSL'nin çekirdeğinin görüşünü yansıtır. "Vulnerable" gören bir satır varsa ilk iş sistemi ve ürün yazılımını güncellemektir.</p>
+
+<p>Bu konuyu Parça 4 ve 5 derinleştirecek: işletim sisteminin çekirdeği kullanıcı programlarından nasıl ayırdığını ve her sürecin kendi sanal belleğine nasıl kapatıldığını gördüğünde, Meltdown'ın neyi tehdit ettiğini daha iyi anlayacaksın.</p>
+
+<h2 class="s">Güvenlik gözüyle: savunmacı makine kodunu neden okur?</h2>
+
+<p>Bu parçada kurduğun bilgi, savunma tarafında birkaç somut işe karşılık gelir. <strong>Zararlı yazılım incelemesi:</strong> bir olay müdahalesinde (Parça 70) ele geçen şüpheli bir dosyanın kaynak kodu yoktur; analistler dosyanın hangi komut kümesi için derlendiğine bakar, makine kodunu assembly'ye çevirir ve döngüleri, koşulları, dışarıya bağlanan kısımları Çözümlü örnek 2'deki yöntemle okur. <strong>Kendi programını doğrulamak:</strong> bir derleyici korumasının (Parça 60'taki yığın kanaryası gibi) ya da bir sır silme işleminin gerçekten derlenmiş kodda olup olmadığını kaynaktan değil, makine kodundan anlarsın. <strong>Doğru yamayı seçmek:</strong> bir güvenlik danışmasında (Parça 49) "yalnızca x86-64" ya da "yalnızca belirli ARM çekirdekleri" yazıyorsa, kendi makinenin <code>lscpu</code> çıktısıyla etkilenip etkilenmediğini anlarsın.</p>
+
+<p>Bu işlerin hepsinde aynı sınır geçerli: makine kodu okumak, ancak sana ait ya da incelemen için açıkça izin verilmiş bir programda meşrudur. Başkasına ait yazılımı izinsiz tersine çevirmek lisans sözleşmelerine ve bazı durumlarda yasalara aykırı olabilir; bunun ayrıntısı Parça 72–73'te.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1'e:</strong> komutların onaltılık baytlardan ibaret olduğunu, <code>xxd</code> ile nesne dosyasında gördün; <code>jle</code>'nin geriye atlama mesafesi ikiye tümleyenle yazılmış bir negatif sayıydı.</p>
+<p><strong>Parça 3'e:</strong> yığın çerçevesi (<code>push rbp</code>, <code>[rbp-0x4]</code>), küçük uç bayt sırası ve önbellekten RAM'e uzanan bellek hiyerarşisi orada açılacak.</p>
+<p><strong>Parça 4 ve 5'e:</strong> işlemcinin kullanıcı ve çekirdek kipleri, sistem çağrısı, sanal adres ve yürütülemez bellek; Meltdown'ın tehdit ettiği yalıtımın kendisi.</p>
+<p><strong>Parça 60'a:</strong> program sayacının neden en değerli hedef olduğu ve derleyici korumalarının kendi programında nasıl görüleceği.</p>
+<p><strong>Kod rafına:</strong> Parça 1'deki yorumlayıcı ile Parça 26'daki derleme zincirini (önişlemci, derleyici, bağlayıcı) burada makine kodu düzeyinden gördün; <code>-c</code> ile bağlayıcıdan önce durduk. Parça 27–30'daki C fonksiyonlarının, dizilerin ve işaretçilerin her biri sonunda bu tür komutlara dönüşür.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Program sayacı ne tutar ve bir atlama komutu onu nasıl değiştirir?</summary><p>Program sayacı, işlemcinin bir sonraki yürüteceği komutun bellekteki adresini tutar; x86-64'te adı rip'tir. Her getirme adımında komutun uzunluğu kadar kendiliğinden ilerler. Bir atlama komutu ise program sayacına doğrudan yeni bir adres yazar ve işlemci oradan devam eder; döngüler ve koşullar makine kodunda böyle görünür.</p></details>
+<details><summary>Komut kümesi mimarisi nedir? x86-64 için derlenmiş bir dosya neden bir ARM işlemcide doğrudan çalışmaz?</summary><p>Komut kümesi, bir işlemci ailesinin hangi komutları tanıdığını, her komutun hangi baytlarla yazıldığını ve hangi yazmaçların bulunduğunu tanımlayan sözleşmedir. x86-64 ve ARM farklı sözleşmelerdir: aynı baytlar iki ailede bambaşka anlamlara gelir ya da geçersizdir. Ayrıca x86-64 komutları 1–15 bayt arası değişken uzunluktayken ARM komutlarının hepsi 4 bayttır.</p></details>
+<details><summary>Derleyici ile yorumlayıcı arasındaki temel fark nedir? Python programının altında makine kodu var mı?</summary><p>Derleyici programı çalıştırmadan önce, bir kez makine koduna çevirir; yorumlayıcı programı her çalıştırmada, çalışırken yürütür. Python kodu CPython içinde bayt koduna çevrilir ve bu bayt kodunu C ile yazılmış, derlenmiş yorumlayıcının makine kodu yürütür. Yani Python programının altında da işlemcide çalışan bir makine kodu katmanı vardır.</p></details>
+<details><summary>Satır satır erişim sütun sütun erişimden neden daha hızlıydı?</summary><p>İşlemci RAM'den tek bayt değil, 64 baytlık bir önbellek satırı getirir. Satır satır erişimde ardışık elemanlar yan yana durduğu için bir satır getirmek sonraki 15 erişimi de önbellekten karşılar. Sütun sütun erişimde her erişim 16 KiB öteye sıçrar, her seferinde yeni bir satır getirmek gerekir ve işlemci sürekli RAM'i bekler.</p></details>
+<details><summary>Spectre ve Meltdown'ın genel dersi nedir ve bir kullanıcı olarak sen ne yaparsın?</summary><p>Yazılım kusursuz olsa bile donanımın hız için eklenmiş bir özelliği (spekülatif yürütme ve önbellek) yalıtımı zayıflatıp veri sızdırabilir. Savunma katmanlıdır: mikrokod, işletim sistemi yamaları, derleyici önlemleri ve yeni donanım. Kullanıcı olarak işletim sistemini, ürün yazılımını ve tarayıcıyı güncel tutarsın; Linux'ta durumu /sys/devices/system/cpu/vulnerabilities altındaki dosyalardan okuyabilirsin.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Parçalar:</strong> işlemci yürütür, RAM çalışan programı tutar (uçucu), depolama kalıcıdır, anakart bağlar, giriş-çıkış dış dünyanın kapısıdır (saldırı yüzeyi).</li>
+<li><strong>İşlemcinin içi:</strong> ALU hesaplar, denetim birimi çözer, yazmaçlar o anki değerleri tutar. x86-64'te 16 genel amaçlı yazmaç; dönüş <code>rax</code>, argümanlar <code>rdi</code>, <code>rsi</code>… (Linux).</li>
+<li><strong>Program sayacı</strong> (<code>rip</code>) sıradaki komutun adresidir; onu kim belirlerse programın ne yapacağını o belirler.</li>
+<li><strong>Getir → çöz → yürüt</strong>, sürekli. Atlama komutu program sayacına yeni adres yazar; döngü = geriye koşullu atlama.</li>
+<li><strong>Komutlar da bellekte bayttır</strong> (kayıtlı program); veriyi komut gibi yürütmek tehlikelidir (yürütülemez bellek, Parça 5).</li>
+<li><strong>Komut kümesi</strong> bir sözleşmedir: x86-64 (değişken 1–15 bayt, CISC geleneği) ve AArch64 (sabit 4 bayt, RISC geleneği) birbirinin makine kodunu çalıştıramaz.</li>
+<li><strong>Makine kodu</strong> (bayt) ↔ <strong>assembly</strong> (bire bir metin) ↔ <strong>yüksek düzeyli dil</strong> (bire bir değil). Derleyici önceden çevirir, yorumlayıcı çalışırken yürütür; CPython'ın altında da makine kodu var.</li>
+<li><strong>objdump -d -M intel</strong>: adres | baytlar | assembly. <code>-O0</code> satır satır, <code>-O2</code> yeniden kurulmuş kod; derleyici gereksiz gördüğünü siler (CWE-14, <code>explicit_bzero</code>).</li>
+<li><strong>Derleme gizleme değildir:</strong> makine kodu okunur; sırrı programa gömme.</li>
+<li><strong>Çok çekirdek:</strong> her çekirdeğin kendi döngüsü; SMT ile çekirdek başına iki akış. Program bölünmezse hızlanmaz.</li>
+<li><strong>Önbellek:</strong> L1 (çekirdeğe özel, küçük, en hızlı) → L2 → L3 (paylaşılan) → RAM; 64 baytlık satırlar, yerellik ilkesi. Süre farkı bir yan kanaldır.</li>
+<li><strong>Spekülatif yürütme</strong> (2018, Meltdown CVE-2017-5754, Spectre CVE-2017-5753/5715): donanım da açık verebilir. Savunma: mikrokod + işletim sistemi + derleyici + yeni donanım; sen güncel tutarsın.</li>
+<li><strong>Sınır:</strong> makine kodunu yalnız kendi ya da izinli programında oku (Parça 72–73).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="siber-2">
+<h3>Quiz 2</h3>
+<p class="qa">Sekiz yeni soru ve Parça 1'den iki tekrar sorusu. Önce kâğıtta düşün, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Program sayacı (x86-64'te <code>rip</code>) neyi tutar?</p>
+<ul class="sec"><li>İşlemcinin o ana kadar yürüttüğü komutların sayısını</li><li>İşlemcinin bir sonraki yürüteceği komutun bellekteki adresini</li><li>Fonksiyonun dönüş değerini</li><li>Bilgisayarda çalışan program sayısını</li><li>Son karşılaştırmanın sonucunu tutan bayrakları</li></ul>
+<div class="coz"><p>Program sayacı, sıradaki komutun adresini tutan yazmaçtır; her getirme adımında komutun uzunluğu kadar ilerler, atlama komutları ona doğrudan yeni bir adres yazar. A adının yanlış okunmasından doğan bir yanılgıdır: bir sayaç olsa da saydığı şey komut sayısı değil, adrestir. C'deki dönüş değeri x86-64'te <code>rax</code>/<code>eax</code>'a konur. D işletim sisteminin süreç listesiyle ilgilidir (Parça 13). E bayrak yazmacının (<code>rflags</code>) işidir.</p></div></li>
+
+<li data-c="D"><p class="q">Getir-çöz-yürüt döngüsünün "çöz" adımında ne olur?</p>
+<ul class="sec"><li>Komutun baytları diskten RAM'e kopyalanır.</li><li>Program sayacı bir sonraki komuta ilerletilir.</li><li>İşlemin sonucu yazmaca ya da belleğe yazılır.</li><li>Okunan baytların hangi işlemi ve hangi yazmaçları ya da sayıları anlattığı belirlenir.</li><li>Kaynak kod makine koduna çevrilir.</li></ul>
+<div class="coz"><p>Çözme adımı, getirilen baytların anlamını belirler: hangi işlem (topla, taşı, karşılaştır, atla) ve hangi işlenenler. Oyuncak işlemcideki <code>if op == 0x01 … elif …</code> zinciri buydu. B getirme adımının parçasıdır; C yürütme adımının işidir. A döngünün değil, programın yüklenmesinin işidir ve işletim sistemi yapar. E derleyicinin işidir ve program çalışmadan önce, bir kez olur.</p></div></li>
+
+<li data-c="A"><p class="q">x86-64 için derlenmiş bir çalıştırılabilir dosya, 64 bitlik bir ARM işlemcide doğrudan çalışmaz. Bunun temel nedeni aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>İki işlemci farklı komut kümesi mimarilerini uygular; aynı baytlar ARM'da başka anlama gelir ya da geçersizdir.</li><li>ARM işlemcilerin saat hızı x86-64 işlemcilerden düşüktür.</li><li>ARM işlemcilerde yazmaç yoktur, her işlem doğrudan bellekte yapılır.</li><li>ARM işlemciler yalnızca yorumlanan dillerle yazılmış programları çalıştırabilir.</li><li>Dosya ARM'da çalışabilir ama önce önbelleğin temizlenmesi gerekir.</li></ul>
+<div class="coz"><p>Komut kümesi, hangi baytın hangi komut olduğunu tanımlayan sözleşmedir; x86-64 ile AArch64 farklı sözleşmelerdir. x86-64'teki <code>8d 04 37 c3</code> bir ARM işlemcide <code>lea</code> + <code>ret</code> olarak çözülmez. B ilgisizdir: saat hızı hangi komutların tanındığını belirlemez. C yanlıştır: AArch64'te 31 genel amaçlı yazmaç vardır. D yanlıştır: ARM için derlenmiş C programları da çalışır. E'deki önbellek, komutların anlamını değiştirmez.</p></div></li>
+
+<li data-c="C"><p class="q">Derleyici ile yorumlayıcı için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Yorumlanan bir dille yazılan programın altında hiçbir aşamada makine kodu çalışmaz.</li><li>Derleyici programı her çalıştırmada satır satır yeniden çevirir.</li><li>Python kodu CPython içinde bayt koduna çevrilir; bu bayt kodunu, kendisi derlenmiş bir program olan yorumlayıcı yürütür.</li><li>Derlenmiş bir program, yorumlayıcısı olan her işlemcide değiştirilmeden çalışır.</li><li>Assembly yüksek düzeyli bir dildir; her satırı onlarca komuta karşılık gelir.</li></ul>
+<div class="coz"><p><code>dis</code> çıktısında gördüğün <code>LOAD_FAST_LOAD_FAST</code> ve <code>BINARY_OP</code> CPython'ın bayt kodudur; onları işlemci değil, C ile yazılıp derlenmiş yorumlayıcının makine kodu yürütür. Bu yüzden A yanlıştır: altta her zaman makine kodu vardır. B yorumlayıcıyı anlatıyor, derleyici bir kez ve önceden çevirir. D yanlıştır: derlenmiş program yalnız derlendiği komut kümesinde çalışır. E yanlıştır: assembly makine koduyla neredeyse bire bir eşleşen düşük düzeyli dildir.</p></div></li>
+
+<li data-c="E"><p class="q">Çözümlü örnek 1'deki oyuncak işlemcide yalnız ikinci komut <code>MOV r1, 3</code> yerine <code>MOV r1, 4</code> olarak değiştirilirse program durduğunda r0 kaç olur?</p>
+<ul class="sec"><li>4</li><li>6</li><li>9</li><li>0</li><li>10</li></ul>
+<div class="coz"><p>Döngü her turda önce r1'i r0'a ekliyor, sonra r1'i 1 azaltıyor ve r1 sıfır değilse başa dönüyor. r1 = 4 ile eklenen değerler 4, 3, 2, 1'dir; r1 sıfır olunca <code>JNZ</code> atlamaz ve toplam 10 olur (değiştirilmiş programı çalıştırarak doğruladık: r0 = 10, r1 = 0). B, değişikliği görmeyip eski sonucu yazmaktır. C (4 + 3 + 2) son turu unutur; döngünün r1 = 1 iken de çalıştığını gözden kaçırır. A yalnız ilk toplamayı sayar, D ise döngünün hiç çalışmadığını varsayar.</p></div></li>
+
+<li data-c="B"><p class="q">Bir programcı, parolayı tuttuğu tamponu işi bitince <code>memset</code> ile sıfırlıyor; tampon bundan sonra hiç okunmuyor. Program <code>-O2</code> ile derleniyor. Aşağıdakilerden hangisi doğru bir değerlendirmedir?</p>
+<ul class="sec"><li>Kaynakta yazan her satır makine koduna aynen geçtiği için parola kesinlikle silinmiştir.</li><li>Derleyici bu yazmayı gereksiz sayıp kaldırabilir; silme için derleyicinin kaldıramayacağı bir işlev (ör. <code>explicit_bzero</code>) kullanılmalı ve gerekirse makine kodundan doğrulanmalıdır.</li><li>Sorun yalnız <code>-O0</code> ile derlendiğinde ortaya çıkar.</li><li>Program derlendiği için parola dosyanın içinde okunamaz; silmeye gerek yoktur.</li><li>Tamponu iki kez <code>memset</code> ile sıfırlamak sorunu kesin olarak çözer.</li></ul>
+<div class="coz"><p>İyileştirme yapan derleyici, sonucu bir daha okunmayan yazmaları siler; bu, CWE-14 olarak kayıtlı bilinen bir zayıflıktır. Doğru savunma, derleyicinin kaldıramayacağı bir silme işlevi kullanmak ve şüphede <code>objdump</code> ile kendi programında komutun yerinde olduğuna bakmaktır. A, -O2 örneğinde gördüğün yeniden düzenlemeyle çelişir. C tersini söylüyor: sorun iyileştirme açıkken çıkar. D iki yanılgıyı birleştirir: sorun bellekteki paroladır, ayrıca derleme bir gizleme değildir. E'de iki yazma da "gereksiz" sayılıp silinebilir.</p></div></li>
+
+<li data-c="D"><p class="q">Çözümlü örnek 4'te tablonun elemanlarını sütun sütun toplamak, satır satır toplamaktan belirgin biçimde yavaştı. Bunun en doğru açıklaması hangisidir?</p>
+<ul class="sec"><li>Sütun sütun döngüde daha fazla toplama işlemi yapılır.</li><li>Sütun sütun toplama yanlış sonuç verdiği için işlemci işlemi tekrarlar.</li><li>Sütun sütun erişimde program sayacı daha sık sıfırlanır.</li><li>İşlemci RAM'den 64 baytlık satırlar getirir; sütun sütun erişimde her erişim 16 KiB öteye düştüğü için getirilen satırın çoğu kullanılmadan atılır ve işlemci sürekli RAM'i bekler.</li><li>Sütun sütun döngü yalnız bir çekirdekte, satır satır döngü altı çekirdekte çalışır.</li></ul>
+<div class="coz"><p>İki döngü aynı sayıda toplama yapar ve aynı sonucu verir (iki satırda da toplam 16.777.216); fark erişim sırasındadır. Satır satır erişimde bir önbellek satırı 16 ardışık elemanı taşır; sütun sütun erişimde ardışık iki eleman arasında 16 KiB vardır, her erişim yeni bir satır ister. A ve B çıktıyla çelişir. C anlamsızdır, program sayacı sıfırlanmaz. E yanlıştır: program iş parçacığına bölünmemişti, iki döngü de tek çekirdekte çalıştı.</p></div></li>
+
+<li data-c="A"><p class="q">Spectre ve Meltdown için aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Performans için eklenen spekülatif yürütmenin önbellekte bıraktığı izlerden doğdular; savunma mikrokod, işletim sistemi ve derleyici önlemleriyle katmanlı yapılır.</li><li>Belirli bir web tarayıcısının kaynak kodundaki tek bir yazım hatasından doğdular.</li><li>Yalnız ARM işlemcileri etkilediler; x86-64 işlemciler hiç etkilenmedi.</li><li>Bir kez donanım satın alındıktan sonra hiçbir yazılım önlemiyle hafifletilemezler.</li><li>Yalnız çok çekirdekli işlemcilerde ortaya çıkar; tek çekirdekli işlemciler spekülatif yürütme yapmaz.</li></ul>
+<div class="coz"><p>Bu açıklar, işlemcinin tahmin ettiği yolda önceden yürüttüğü ve sonra attığı işin önbellekte iz bırakmasından doğdu; asıl ders donanım tasarımının da açık taşıyabilmesidir. Savunma mikrokod güncellemesi, işletim sistemi yamaları (KPTI gibi), derleyici önlemleri ve yeni donanımın birleşimidir. B yanlış: kök tek bir programda değil, işlemci tasarımındaydı. C yanlış: Meltdown özellikle Intel işlemcileri etkiledi, Spectre Intel, AMD ve ARM'da gösterildi. D, <code>/sys</code> çıktısında gördüğün "Mitigation" satırlarıyla çelişir. E yanlış: spekülatif yürütme her çekirdeğin kendi içinde yaptığı bir şeydir.</p></div></li>
+
+<li data-c="C" data-k="siber-1"><p class="q">x86-64'te <code>ret</code> komutunun makine kodu tek bir bayttır: onaltılık <code>C3</code>. Bu baytın onluk ve ikili karşılığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>123 ve 01111011</li><li>183 ve 10110111</li><li>195 ve 11000011</li><li>195 ve 11000110</li><li>203 ve 11001011</li></ul>
+<div class="coz"><p>Her onaltılık hane dört bite karşılık gelir: C = 1100, 3 = 0011, yani C3 = 11000011. Onluğa çevirmek için 12 × 16 + 3 = 195. A, "C3"ü onluk sayılar gibi okuyup harfi yok saymaktan doğar. B ve E hanelerden birinin yanlış çevrilmesidir (E'de 3 yerine B, yani 1011 yazılmış). D onluk değeri doğru verir ama ikili yazımda son dört biti ters çevirmiştir; 0110 onaltılıkta 6'dır, 3 değil.</p></div></li>
+
+<li data-c="E" data-k="siber-1"><p class="q">Çözümlü örnek 2'deki <code>jle</code> komutunun atlama mesafesi tek bayttı: <code>0xEE</code>. Bu bayt 8 bitlik işaretli sayı olarak (ikiye tümleyen) hangi değeri gösterir?</p>
+<ul class="sec"><li>238</li><li>−17</li><li>18</li><li>−238</li><li>−18</li></ul>
+<div class="coz"><p>8 bitlik ikiye tümleyende en üst biti 1 olan bir bayt negatiftir ve değeri, işaretsiz değerden 256 çıkarılarak bulunur: 0xEE = 238, 238 − 256 = −18. Aynı sonuca bitleri ters çevirip 1 ekleyerek de varırsın: 11101110 → 00010001 → 00010010 = 18, yani −18. A baytı işaretsiz okur. B yalnız bitleri ters çevirip 1 eklemeyi unutmaktan (birler tümleyeni) doğar. C işareti atlar, D işaretsiz değerin önüne eksi koyar. Bu −18 sayesinde işlemci 0x3d adresinden 0x2b'ye, yani döngünün başına geri atlar.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#siber-1">← Önceki parça</a>
+  <button class="btn ok" data-done="siber-2">Bu bölümü okudum</button>
+  <a class="btn" href="#siber-3">Sonraki parça: Bellek: adres, yığın ve öbek →</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"getir çöz yürüt döngüsü fetch decode execute cycle"</li>
+  <li>"x86-64 assembly objdump okuma başlangıç"</li>
+  <li>"derleyici yorumlayıcı farkı makine kodu assembly"</li>
+  <li>"CPU cache line row major column major performans"</li>
+  <li>"Spectre Meltdown nedir speculative execution açıklama"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li><strong>Çalıştırılan örnekler:</strong> Bütün kod ve komutlar Windows 11 üzerinde WSL2 (Kali GNU/Linux Rolling, çekirdek 6.18, gcc 15.2.0, Debian clang 21.1.8, GNU binutils 2.46, Python 3.13.12) içinde gerçekten çalıştırıldı ve çıktılar birebir konuldu: <code>oyuncak.py</code>, <code>topla.py</code> (<code>dis</code>), <code>islem.c</code>'nin <code>-O0</code>/<code>-O2</code> derlenip <code>objdump -d -M intel</code> ile okunması, <code>file</code>, <code>objcopy</code> + <code>xxd</code>, clang ile AArch64 derlemesi ve <code>llvm-objdump-21</code>, <code>lscpu</code>, <code>lscpu -C</code>, <code>onbellek.c</code> (iki kez) ve <code>/sys/devices/system/cpu/vulnerabilities</code> okuması. Metinde sözü geçen ama çıktısı gösterilmeyen <code>clang -O2</code> x86-64 derlemesi de çalıştırıldı (döngüsüz, formüllü kod üretti). Python programları <code>python3 -I</code> ile çalıştırıldı.</li>
+  <li><strong>Kısaltmalar ve gizlilik:</strong> <code>lscpu</code> çıktısında <code>Stepping</code>, <code>Flags</code>, mikrokod, BogoMIPS, sanallaştırma, NUMA ve "Vulnerability" satırları "…" ile çıkarıldı; başka çıktı kısaltılmadı. Çalışma klasörü metinde genel bir adla (<code>~/lab/siber-2</code>) verildi; makine adı ve kullanıcı adı içeren çıktılar (ör. <code>uname -a</code>, <code>ls -l</code>) gösterilmedi, gösterilen çıktılarda kişisel bilgi yok. İşlemci modeli yazarın makinesine aittir; okurunki farklı olacaktır. Zaman ölçümleri makineye ve ana göre değişir.</li>
+  <li><strong>Burada çalıştırılmadı:</strong> Bu parçada root yetkisi gerektiren bir adım yok. ARM için üretilen nesne dosyası gerçek bir ARM işlemcide çalıştırılmadı (ortamda yok); yalnız derlenip disassembler ile okundu. "x86-64 baytlarının ARM'da başka bir komut olarak çözüleceği ya da geçersiz olacağı" ifadesi, komut kümesi tanımından çıkan bir sonuçtur; 0xc337048d sayısının ARM'da tam olarak neye çözüldüğünü denetlemedim.</li>
+  <li><strong>Spectre/Meltdown:</strong> CVE numaraları (Meltdown CVE-2017-5754; Spectre CVE-2017-5753 ve CVE-2017-5715), "Meltdown kullanıcı programı ile işletim sistemi arasındaki, Spectre programlar arasındaki yalıtımı kırar" ayrımı, KPTI ve derleyici önlemleri meltdownattack.com'dan; Project Zero'nun 3 Ocak 2018 tarihli yazısı ve bulguları 1 Haziran 2017'de Intel, AMD ve ARM'a bildirdiği bilgisi, yazının künyesini ve özetini aktaran arama sonuçları ile Red Hat danışmasından doğrulandı (Project Zero sayfasının tam metnini okumadım). Etkilenen işlemcilerin ayrıntılı listesi tartışmalı ve modele göre değişir; metinde yalnız genel çerçeve verildi. Açıkların nasıl sömürüldüğü bilerek anlatılmadı.</li>
+  <li><strong>/sys dosyaları:</strong> <code>spectre_v1</code>/<code>spectre_v2</code> dosyalarının anlamı ve "Not affected", "Mitigation", "Vulnerable" değerleri Linux çekirdek belgelerinden (docs.kernel.org, admin-guide/hw-vuln/spectre) doğrulandı. WSL'de bu değerlerin gerçek donanımdaki durumla birebir aynı olup olmadığını denetlemedim.</li>
+  <li><strong>Araçlar ve derleyici:</strong> <code>objdump -d</code>, <code>-M intel</code>/<code>att</code> seçenekleri GNU binutils belgesinden; <code>-O0</code>'ın varsayılan olduğu ve <code>-O2</code>'nin tanımı gcc belgesinden (Optimize Options) doğrulandı. objdump'ın varsayılan biçiminin AT&amp;T olması belgede seçenek olarak geçiyor, varsayılanın AT&amp;T olduğunu bu makinede <code>-M</code> olmadan alınan çıktının biçiminden değil genel bilgiden yazdım. Dolgu (<code>nop</code>) baytlarının hizalama amaçlı olduğu yaygın bilgidir; gcc'nin bu dosyada 16 bayt hizalama seçtiğini çıktıdaki 0x10 adresinden çıkardım.</li>
+  <li><strong>Yazmaçlar ve komut kümeleri:</strong> x86-64'te 16 genel amaçlı yazmaç, <code>rip</code> ve <code>rflags</code> Microsoft'un x64 mimari belgesi ve ders notlarından; azami komut uzunluğunun 15 bayt olduğu binutils, LLVM ve Linux çekirdeği değişiklik kayıtlarından ve AMD el kitabına atıf yapan bir kaynaktan doğrulandı (Intel SDM'nin kendisine erişmedim). AArch64'ün 31 genel amaçlı yazmacı (X0–X30, W adları) ve sabit 32 bit komut uzunluğu Arm mimari başvuru el kitabının bir kopyası ve ikincil kaynaklardan doğrulandı; developer.arm.com sayfası içerik vermedi. System V AMD64 çağrı kuralı (<code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>rcx</code>, …; dönüş <code>rax</code>) Harvard CS61 ders notları ve başka ders kaynaklarından; Windows'ta kuralın farklı olduğu genel bilgidir.</li>
+  <li><strong>CWE-14 ve dis:</strong> CWE-14'ün adı ve <code>memset</code> örneği cwe.mitre.org'dan doğrulandı. <code>explicit_bzero</code>'nun bu makinedeki glibc başlığında bulunduğu <code>/usr/include/string.h</code>'de görüldü; derleyicinin onu kaldırmadığı güvencesi glibc belgesine dayanan genel bilgidir, bu oturumda belgeyle karşılaştırmadım. Bayt kodunun sürümden sürüme değişebilen bir uygulama ayrıntısı olduğu ve <code>LOAD_FAST_LOAD_FAST</code>, <code>BINARY_OP</code>, <code>RESUME</code> komutlarının anlamı docs.python.org'daki <code>dis</code> belgesinden doğrulandı.</li>
+  <li><strong>Hafızadan yazdıklarım:</strong> AMD'nin 64 bit uzantıyı ilk tanımlaması (AMD64), kayıtlı program / von Neumann mimarisi fikri, CISC/RISC ayrımının tarihsel niteliği, saat hızı artışının 2000'lerin ortasında güç ve ısı yüzünden tıkanıp çok çekirdeğe geçilmesi, SMT/Hyper-Threading açıklaması, önbellek yerelliği ilkeleri ve RAM gecikmesinin "yüzlerce kat" olması. Bunlar yaygın kabul gören bilgilerdir ama bu oturumda birincil kaynakla karşılaştırmadım; kesin gecikme rakamları Parça 3'te doğrulanacak.</li>
+  <li>Quiz soruları ve örnekler bu parça için yazıldı; çıktı tahmini sorusu (5) ve tekrar soruları (9, 10), doğru cevap ve çeldiricileriyle birlikte Python'da hesaplanarak doğrulandı.</li>
+</ul>
+</div>
+</div>
+</article>

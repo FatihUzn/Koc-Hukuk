@@ -1,6 +1,6 @@
 /* 275 — service worker. Kabuk önbellekte, çevrimdışı açılır.
    Değişiklik yayınlarken SURUM'u artır. */
-const SURUM = "275-v36";
+const SURUM = "275-v37";
 const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./esitle.js","./kasa.js","./bloklar.js","./spor.js","./okuma.js","./katalog.js","./manifest.webmanifest","./fonts/arsiv.css",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-64.png"];
 
@@ -32,13 +32,23 @@ self.addEventListener("fetch", e => {
   }));
 });
 
+/* ---- ikon rozeti: kalan gün (app.js ile aynı hesap; uygulama kapalıyken sabah bildirimiyle güncellenir) ---- */
+const HEDEF_GUN = new Date("2027-06-19T10:15:00+03:00").getTime();
+function rozet() {
+  try {
+    if (!("setAppBadge" in self.navigator)) return Promise.resolve();
+    const n = Math.max(0, Math.ceil((HEDEF_GUN - Date.now()) / 86400000));
+    return (n > 0 ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {});
+  } catch (_) { return Promise.resolve(); }
+}
+
 /* ---- anlık bildirim ---- */
 self.addEventListener("push", e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: "275", body: e.data ? e.data.text() : "" }; }
-  e.waitUntil(self.registration.showNotification(d.title || "275", {
+  e.waitUntil(Promise.all([self.registration.showNotification(d.title || "275", {
     body: d.body || "", icon: "icons/icon-192.png", badge: "icons/favicon-64.png", tag: d.tag || "275", renotify: true, data: { url: d.url || "./" }
-  }));
+  }), rozet()]));
 });
 self.addEventListener("notificationclick", e => {
   e.notification.close();

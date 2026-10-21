@@ -114,7 +114,7 @@ const esitlemeTesti=(async()=>{
   T("kısa anahtar reddediliyor", (await C.E.baglan("abc"))===false);
   const D=cihaz(S); await D.E.baglan("https://x/#esitle="+key); T("bağlantı yapıştırınca bağlanıyor", D.E.anahtar()===key);
   const src=oku("esitle.js"), app=oku("app.js");
-  ["gunler","denemeler","hatalar","tekrar","gunluk","motto"].forEach(k=>T('"'+k+'" eşitleme listesinde', new RegExp('ANAHTARLAR\\s*=\\s*\\[[^\\]]*"'+k+'"').test(src) && app.includes('"'+k+'"')));
+  ["gunler","denemeler","hatalar","tekrar","gunluk","motto","isler"].forEach(k=>T('"'+k+'" eşitleme listesinde', new RegExp('ANAHTARLAR\\s*=\\s*\\[[^\\]]*"'+k+'"').test(src) && app.includes('"'+k+'"')));
 });
 
 /* ---------- 5. arşiv ---------- */

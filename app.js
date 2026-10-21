@@ -927,6 +927,7 @@ function yereldenYukle(){
   S.tekrar=yerelOku("tekrar",{}) || {};
   S.gunluk=yerelOku("gunluk",{}) || {};
   S.spor=yerelOku("spor",{}) || {};
+  S.isler=yerelOku("isler",{}) || {};
   $("motto").textContent=S.motto;
   yerelYaz("son_kayit", new Date().toISOString());
 }
@@ -942,7 +943,7 @@ function mottoKur(){
 
 /* yedek al / yükle */
 function yedekAl(){
-  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{}, spor:S.spor||{}, ders_hedef:yerelOku("ders_hedef",{})||{} };
+  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{}, spor:S.spor||{}, ders_hedef:yerelOku("ders_hedef",{})||{}, isler:S.isler||{} };
   var blob=new Blob([JSON.stringify(paket,null,2)],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="275-yedek-"+anahtar(new Date())+".json"; document.body.appendChild(a); a.click();
@@ -963,6 +964,7 @@ function yedekYukle(file){
       if(p.gunluk && typeof p.gunluk==="object"){ S.gunluk=p.gunluk; yerelYaz("gunluk",S.gunluk); }
       if(p.spor && typeof p.spor==="object"){ S.spor=p.spor; yerelYaz("spor",S.spor); }
       if(p.ders_hedef && typeof p.ders_hedef==="object") yerelYaz("ders_hedef",p.ders_hedef);
+      if(p.isler && typeof p.isler==="object"){ S.isler=p.isler; yerelYaz("isler",S.isler); }
       yerelYaz("gunler",S.gunler); yerelYaz("denemeler",S.denemeler); yerelYaz("hatalar",S.hatalar); yerelYaz("motto",S.motto);
       ciz(); durumYaz("yedek yüklendi");
     }catch(e){ durumYaz("dosya okunamadı"); }
@@ -1497,6 +1499,44 @@ function sinavKur(){
   var d=cizYil; cizYil=function(){ d(); cizYogun(); };
 })();
 
+/* ============ Bugün: günün işleri — bloklardan ayrı, o gün yapılacak küçük işler (Karaambar'daki kartın aynısı) ============
+   Varsayılan 3 satır; "+ İş ekle" ile en çok 8. Kayıt S.isler[gün] = [{t, ok}], cihazlar arası eşitlenir. */
+var IS_EN_AZ=3, IS_EN_COK=8;
+function islerKaydet(){
+  var g=Object.keys(S.isler||{}).sort(); while(g.length>60) delete S.isler[g.shift()];   // son 60 gün yeter
+  yerelYaz("isler",S.isler);
+}
+function cizIsler(){
+  var c=$("isler"); if(!c) return;
+  if(c.contains(document.activeElement) && document.activeElement.tagName==="INPUT") return;   // yazarken bozma
+  if(!S.isler) S.isler={};
+  var k=anahtar(bugunTarih()), l=(S.isler[k]||[]).slice();
+  while(l.length<IS_EN_AZ) l.push({t:"",ok:0});
+  function sakla(){ var dolu=l.some(function(x){return x.t;}); if(dolu) S.isler[k]=l; else delete S.isler[k]; islerKaydet(); }
+  function bas(){ var d=l.filter(function(x){return x.t;}), b=d.filter(function(x){return x.ok;}).length; return "Bugünün işleri"+(d.length?" · "+b+"/"+d.length:""); }
+  c.innerHTML="";
+  var h=el("div","isbas",bas()); c.appendChild(h);
+  l.forEach(function(x,i){
+    var r=el("div","isr2"+(x.ok?" ok":"")), t=el("button","istik"); t.type="button"; t.setAttribute("aria-pressed",x.ok?"true":"false"); t.setAttribute("aria-label",(i+1)+". iş bitti mi");
+    var inp=document.createElement("input"); inp.type="text"; inp.value=x.t; inp.placeholder=(i+1)+". iş"; inp.maxLength=80; inp.autocomplete="off";
+    t.addEventListener("click",function(){
+      if(!l[i].t) { inp.focus(); return; }
+      l[i].ok=l[i].ok?0:1; sakla(); cizIsler();
+      var d=l.filter(function(y){return y.t;}); if(l[i].ok && d.every(function(y){return y.ok;})) tost(d.length>1?"Hepsi tamam. Bugün kazandın.":"Tamam.");
+    });
+    inp.addEventListener("change",function(){ l[i].t=inp.value.replace(/\s+/g," ").trim(); if(!l[i].t){ l[i].ok=0; r.classList.remove("ok"); t.setAttribute("aria-pressed","false"); } sakla(); h.textContent=bas(); });
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); var s=c.querySelectorAll("input"); if(s[i+1]) s[i+1].focus(); else inp.blur(); } });
+    r.appendChild(t); r.appendChild(inp);
+    if(i>=IS_EN_AZ){ var sil=el("button","issil","×"); sil.type="button"; sil.setAttribute("aria-label",(i+1)+". işi sil"); sil.addEventListener("click",function(){ l.splice(i,1); sakla(); cizIsler(); }); r.appendChild(sil); }
+    c.appendChild(r);
+  });
+  if(l.length<IS_EN_COK){
+    var ek=el("button","isekle","+ İş ekle"); ek.type="button";
+    ek.addEventListener("click",function(){ l.push({t:"",ok:0}); S.isler[k]=l; cizIsler(); var s=c.querySelectorAll("input"); if(s.length) s[s.length-1].focus(); });
+    c.appendChild(ek);
+  }
+}
+
 /* ============ Bugün: antrenman kartı (hareket + en son kaldırılan) ============ */
 function sporSon(hid){            // bu hareketin en son kaydı, bugün dahil
   var G=S.spor||{}, gs=Object.keys(G).filter(function(x){ return G[x] && G[x].h && G[x].h[hid] && G[x].h[hid].some(function(s){return s && s.t;}); }).sort();
@@ -1684,7 +1724,7 @@ function cizHedefCubuk(){
   g.appendChild(sf);
 }
 
-function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); cizDersKart(); cizAntKart(); cizHaftaOzet(); if(aktif==="ders") cizDers(); if(aktif==="spor" && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#sporListe"))) cizSpor(); yedekKontrol(); }
+function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); cizDersKart(); cizIsler(); cizAntKart(); cizHaftaOzet(); if(aktif==="ders") cizDers(); if(aktif==="spor" && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#sporListe"))) cizSpor(); yedekKontrol(); }
 
 /* ============ düzen: dört ana başlık + ortada tek düğme ============
    Aynı amaca hizmet eden bölümler aynı başlık altında:

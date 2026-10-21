@@ -375,12 +375,14 @@ var TAMAM = [
 ];
 var sozKay=0;
 function cizSoz(pct){
+  var e2=$("bugunSoz");
   var e=$("soz"); if(!e) return;
   var b=bugunTarih(), gun=gunFark(BASLANGIC,b), kalan=Math.max(0,Math.ceil((SINAV-new Date())/86400000));
   var l = pct===100 ? TAMAM : CUMLELER;
   var t = l[((gun+sozKay)%l.length+l.length)%l.length].replace(/256 gün/g, kalan+" gün");
   e.textContent=t;
   if(pct===100){ e.appendChild(el("small",null,"gün tamam")); }
+  if(e2) e2.textContent=t;
 }
 
 /* ============ bugün ============ */
@@ -455,6 +457,7 @@ function cizBugun(){
   $("streak").textContent="seri "+seriHesap();
   $("cnt-bugun").textContent="%"+pct;
   cizSoz(pct);
+  cizBugunEk(b, k, pct);
   // arşiv kilidi bu özeti okur (arsiv/ — aynı adres, aynı localStorage)
   // Ekim okuma planı süresince bugün okunan her ders parçası bir Odak bloğu yerine geçer (aynı iş iki kez sayılmaz).
   var odakYap=say.filter(function(x){return x.tur==="Odak" && v[x.id];}).length, odakTop=say.filter(function(x){return x.tur==="Odak";}).length;
@@ -470,6 +473,31 @@ function cizBugun(){
   }
   if(typeof grupGuncelle==="function" && $("gnav") && $("gnav").children.length) grupGuncelle();
   var ca=$("cnt-arsiv"); if(ca){ ca.textContent = (yap>=gerek) ? "açık" : (gerek-yap)+" blok"; ca.className="cnt "+((yap>=gerek)?"acik":"kilit"); }
+}
+/* Bugün ekranı ekleri: haftanın gidişi + bugünkü antrenman (21 Ekim: "fazla boş") */
+function cizBugunEk(b, k, pct){
+  var oz=$("bugunOzet");
+  if(oz){
+    var d=new Date(b), dw=(b.getDay()+6)%7, top=0, n=0;   // pazartesiden bugüne
+    for(var i=dw;i>=0;i--){ var g=new Date(b); g.setDate(b.getDate()-i); top+=gunYuzde(anahtar(g)).pct; n++; }
+    var hafta=n?Math.round(top/n):0, seri=seriHesap();
+    oz.innerHTML='<div><span>Bugün</span><b>%'+pct+'</b></div><div><span>Bu hafta</span><b>%'+hafta+'</b></div><div><span>Seri</span><b>'+seri+(seri?' gün':'')+'</b></div>';
+  }
+  var sk=$("sporKart"); if(!sk) return;
+  var p = window.Spor ? Spor.gun(sporMod(), b.getDay()) : null;
+  if(!p){ sk.hidden=true; return; }
+  sk.hidden=false; sk.innerHTML="";
+  var ust=el("div","sku"); ust.appendChild(el("span","skk","Bugünkü antrenman")); ust.appendChild(el("b",null,p.ad)); ust.appendChild(el("small",null,p.hareketler.length+" hareket · "+p.alt));
+  sk.appendChild(ust);
+  var kay=((S.spor||{})[k]||{}).h||{};
+  p.hareketler.slice(0,4).forEach(function(h){
+    var once=sporOnceki(sporMod(),h.id,k), bugun=(kay[h.id]||[]).filter(function(s){return s&&s.t;}).length;
+    var r=el("div","skr"); r.appendChild(el("span",null,h.ad));
+    var son = once ? sporOzet(once.setler,h).split(" · ")[0] : "";
+    r.appendChild(el("em",bugun>=h.set?"ok":null, bugun>=h.set ? "✓ bitti" : (son ? "geçen: "+son : h.set+" × "+h.tekrar)));
+    sk.appendChild(r);
+  });
+  if(p.hareketler.length>4) sk.appendChild(el("small","skd","+"+(p.hareketler.length-4)+" hareket daha ›"));
 }
 function haftaIciBloklari(dw){ return Bloklar.haftaIci(dw); }
 function cumartesiBloklari(){ return Bloklar.cumartesi(); }
@@ -1131,6 +1159,7 @@ function cizDersBazli(){
   h.addEventListener("pointerleave",function(){ h.style.setProperty("--rx","0deg"); h.style.setProperty("--ry","0deg"); h.style.setProperty("--mx","78%"); h.style.setProperty("--my","0%"); });
 })();
 (function(){
+  var e2=$("bugunSoz");
   var e=$("soz"); if(!e) return;
   function sonraki(){ sozKay++; cizBugun(); }
   e.addEventListener("click",sonraki);
@@ -1235,6 +1264,8 @@ function sporKur(){
   });
   var kr=$("sporKurallar"); Spor.kurallar.forEach(function(r){ var d=el("div","rps2"); d.appendChild(el("b",null,r[0])); d.appendChild(el("p",null,r[1])); kr.appendChild(d); });
   var sl=$("simdiSpor"); if(sl) sl.addEventListener("click",function(){ sporGun=null; git("spor"); });
+  var skt=$("sporKart"); if(skt) skt.addEventListener("click",function(){ sporGun=null; git("spor"); });
+  var bs=$("bugunSoz"); if(bs){ var sozDegis=function(){ var s=$("soz"); if(s) s.click(); }; bs.addEventListener("click",sozDegis); bs.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); sozDegis(); } }); }
 }
 
 /* ============ konu ısı haritası: her kare bir konu, koyulaştıkça hata çok ============ */

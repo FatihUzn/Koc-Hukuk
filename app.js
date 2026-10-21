@@ -425,6 +425,7 @@ function seriHesap(){
 }
 /* ---- seri rozetleri: %70 ve üstü üst üste günler ---- */
 var ROZETLER=[3,7,14,21,30,50,75,100,150,200,275];
+var YONE={3:"'e",7:"'ye",14:"'e",21:"'e",30:"'a",50:"'ye",75:"'e",100:"'e",150:"'ye",200:"'e",275:"'e"};   // 7'ye, 30'a …
 function enUzunSeri(){
   var d=new Date(BASLANGIC), son=bugunTarih(), n=0, en=0;
   while(d<=son){ var p=gunYuzde(anahtar(d)).pct; if(p>=70){ n++; if(n>en) en=n; } else if(anahtar(d)!==anahtar(son)) n=0; d.setDate(d.getDate()+1); }
@@ -490,7 +491,7 @@ function cizBugun(){
   $("dayBarWrap").classList.toggle("full",pct===100);
   $("dayCount").innerHTML = pct===100 ? '<b>Gün tamam.</b>' : (yap+"/"+say.length+" blok");
   var seri=seriHesap(), sonraki=ROZETLER.filter(function(x){return x>seri;})[0];
-  $("streak").textContent="seri "+seri+(sonraki?" · "+sonraki+"'e "+(sonraki-seri):"");
+  $("streak").textContent="seri "+seri+(sonraki?" · "+sonraki+YONE[sonraki]+" "+(sonraki-seri):"");
   $("streak").title="%70 ve üstü üst üste gün. Sıradaki rozet: "+(sonraki||"—");
   var yeniTik = sonTik && !sonTik.islendi && Date.now()-sonTik.t<1200; if(yeniTik) sonTik.islendi=true;
   if(pct===100 && yeniTik){ var dl=document.querySelector("#s-bugun .dayline"); if(dl){ dl.classList.remove("tamampop"); void dl.offsetWidth; dl.classList.add("tamampop"); } tost("Gün tamam. Bugün borcun yok."); }

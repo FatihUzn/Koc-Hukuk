@@ -168,9 +168,12 @@ function haftaNo(d){ return Math.floor(gunFark(BASLANGIC,d)/7)+1; }
 function cizMast(){
   var simdi=new Date();
   var kalan=Math.max(0,Math.ceil((SINAV-simdi)/86400000));
-  $("cdDays").textContent=kalan;
-  rozetYaz(kalan);
-  var bd=$("brand"); if(bd) bd.innerHTML=kalan+"<em>gün</em>";
+  // Hafta olarak: 241 gün → "34 hafta kaldı · +3 gün". Son haftada gün sayısına döner.
+  var hf=Math.floor(kalan/7), ek=kalan%7, haftaMi=hf>0;
+  $("cdDays").textContent = haftaMi ? hf : kalan;
+  var ce=$("cdEt"); if(ce) ce.textContent = haftaMi ? ("hafta kaldı"+(ek?" · +"+ek+" gün":"")) : "gün kaldı";
+  rozetYaz(haftaMi ? hf : kalan);
+  var bd=$("brand"); if(bd) bd.innerHTML = haftaMi ? hf+"<em>hafta</em>" : kalan+"<em>gün</em>";
   $("cdClock").textContent = pad(simdi.getHours())+":"+pad(simdi.getMinutes());
   var b=bugunTarih(), f=fazBul(b);
   $("fPhase").innerHTML = f ? (f.no+" <small>"+f.ad+"</small>") : "—";
@@ -182,7 +185,7 @@ function cizMast(){
   suAnYaz();
 }
 
-/* Ana ekran ikonundaki sayı: kalan gün. Ad ve ikon resmi eklerken sabitlenir, değişemez; köşedeki rozet değişebilir.
+/* Ana ekran ikonundaki sayı: kalan hafta (son haftada gün). Ad ve ikon resmi eklerken sabitlenir, değişemez; köşedeki rozet değişebilir.
    iPhone'da (iOS 16.4+) yalnız ana ekrandan açılan uygulamada ve bildirim izni verilmişse görünür. Sabah bildirimi gelince sw.js de günceller. */
 var sonRozet=null;
 function rozetYaz(n){

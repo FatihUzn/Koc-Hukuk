@@ -1,6 +1,6 @@
 /* 275 — service worker. Kabuk önbellekte, çevrimdışı açılır.
    Değişiklik yayınlarken SURUM'u artır. */
-const SURUM = "275-v39";
+const SURUM = "275-v40";
 const KABUK = ["./","./index.html","./arsiv/","./styles.css","./app.js","./esitle.js","./kasa.js","./bloklar.js","./spor.js","./okuma.js","./katalog.js","./manifest.webmanifest","./fonts/arsiv.css",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon-64.png"];
 
@@ -32,12 +32,12 @@ self.addEventListener("fetch", e => {
   }));
 });
 
-/* ---- ikon rozeti: kalan gün (app.js ile aynı hesap; uygulama kapalıyken sabah bildirimiyle güncellenir) ---- */
+/* ---- ikon rozeti: kalan hafta, son haftada gün (app.js ile aynı hesap; uygulama kapalıyken sabah bildirimiyle güncellenir) ---- */
 const HEDEF_GUN = new Date("2027-06-19T10:15:00+03:00").getTime();
 function rozet() {
   try {
     if (!("setAppBadge" in self.navigator)) return Promise.resolve();
-    const n = Math.max(0, Math.ceil((HEDEF_GUN - Date.now()) / 86400000));
+    const g = Math.max(0, Math.ceil((HEDEF_GUN - Date.now()) / 86400000)), n = g >= 7 ? Math.floor(g / 7) : g;   // hafta; son haftada gün
     return (n > 0 ? self.navigator.setAppBadge(n) : self.navigator.clearAppBadge()).catch(() => {});
   } catch (_) { return Promise.resolve(); }
 }

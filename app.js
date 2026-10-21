@@ -255,6 +255,7 @@ function zilKur(){
           return g.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64Dizi(VAPID_ACIK)})
             .then(function(yeni){ return E.rpc("abone_kaydet",{p_anahtar:E.anahtar(), p_abone:yeni.toJSON()}); })
             .then(function(){ return g.showNotification("275",{body:"Bildirimler açık.",icon:"icons/icon-192.png",tag:"275"}); })
+            .then(function(){ sonRozet=null; cizMast(); })   // izin yeni verildi: ikon rozetini hemen yaz
             .then(durum);
         });
       });

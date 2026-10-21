@@ -76,7 +76,7 @@ const SERT = [
 ];
 /* 14 Ekim: günde yalnız iki bildirim. Blok başlangıcı ("Odak I" vb.), gün içi ara mesajlar ve öğle/akşamüstü yoklaması kaldırıldı.
    SABAH 07:45 → kalan hafta (sınavın adı yazmaz; kilit ekranında yalnız "N hafta N gün kaldı").
-   AKSAM 21:45 → gün sonu: işaretli blok sayısı; eşitleme özeti yoksa bir cümle. */
+   AKSAM 21:45 → gün sonu: işaretli blok sayısı; eşitleme özeti yoksa bir cümle. Pazar başlığı "Hafta kapandı". */
 const SABAH = 465, AKSAM = 1305;
 const SINAV_GUNU = "2027-06-19";   // app.js'teki SINAV ile aynı gün
 
@@ -110,7 +110,8 @@ function secim(z, ozet) {
       const y = ozet.yapilan, t = ozet.toplam || Bloklar.gunluk(z.dw).filter((b) => b.say).length;
       m = y >= t ? y + "/" + t + ". Tam gün. Ekranı kapat, uyu." : y === 0 ? "Bugün işaretli blok yok. Yarın ilk blokla başla." : y + "/" + t + ". Yarın bir fazlası.";
     } else m = "Günü kapat. Yarının ilk bloğunu şimdi seç.";
-    out.push({ title: "Gün sonu", body: m, tag: "aksam" });
+    if (z.dw === 0) out.push({ title: "Hafta kapandı", body: m + " Haftanın özeti uygulamada.", tag: "aksam" });
+    else out.push({ title: "Gün sonu", body: m, tag: "aksam" });
   }
   return out;
 }

@@ -92,13 +92,26 @@ function yerelOku(k,v){ try{var x=localStorage.getItem(k); return x?JSON.parse(x
 function yerelYaz(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
 
 /* ============ tema ============ */
+/* Dört seçenek: Açık · Koyu (eski ikili) · Mermer (açık zemin) · Gece Yolu (koyu zemin).
+   "tema" anahtarı açık/koyu olarak kalır (arşiv sayfaları onu okur); renk takımı "palet" anahtarında. */
+var TEMALAR=["acik","mermer","koyu","yol"];
+function temaSimdi(){ var p=document.documentElement.getAttribute("data-palet"); if(p==="mermer"||p==="yol") return p; return document.documentElement.getAttribute("data-theme")==="dark"?"koyu":"acik"; }
+function temaUygula(ad){
+  var h=document.documentElement, koyu=(ad==="koyu"||ad==="yol"), palet=(ad==="mermer"||ad==="yol")?ad:"";
+  h.setAttribute("data-theme",koyu?"dark":"light");
+  if(palet) h.setAttribute("data-palet",palet); else h.removeAttribute("data-palet");
+  yerelYaz("tema",koyu?"dark":"light"); yerelYaz("palet",palet);
+  temaSecCiz(); ciz();
+}
+function temaSecCiz(){ var t=temaSimdi(); document.querySelectorAll("#temaSec button").forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-t")===t?"true":"false"); }); }
 (function(){
-  $("themeBtn").addEventListener("click",function(){
-    var cur=document.documentElement.getAttribute("data-theme");
-    var nx = cur==="light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme",nx); yerelYaz("tema",nx); ciz();
-  });
+  $("themeBtn").addEventListener("click",function(){ temaUygula(TEMALAR[(TEMALAR.indexOf(temaSimdi())+1)%TEMALAR.length]); });
+  document.querySelectorAll("#temaSec button").forEach(function(b){ b.addEventListener("click",function(){ temaUygula(b.getAttribute("data-t")); }); });
 })();
+
+/* kısa bildirim şeridi (uygulama içi) */
+var tostZaman=null;
+function tost(m){ var e=$("tost"); if(!e) return; e.textContent=m; e.classList.add("acik"); clearTimeout(tostZaman); tostZaman=setTimeout(function(){ e.classList.remove("acik"); },2600); }
 
 /* ============ gezinme ============ */
 var IKON={
@@ -156,6 +169,7 @@ function cizMast(){
   var simdi=new Date();
   var kalan=Math.max(0,Math.ceil((SINAV-simdi)/86400000));
   $("cdDays").textContent=kalan;
+  rozetYaz(kalan);
   var bd=$("brand"); if(bd) bd.innerHTML=kalan+"<em>gün</em>";
   $("cdClock").textContent = pad(simdi.getHours())+":"+pad(simdi.getMinutes());
   var b=bugunTarih(), f=fazBul(b);
@@ -168,6 +182,13 @@ function cizMast(){
   suAnYaz();
 }
 
+/* Ana ekran ikonundaki sayı: kalan gün. Ad ve ikon resmi eklerken sabitlenir, değişemez; köşedeki rozet değişebilir.
+   iPhone'da (iOS 16.4+) yalnız ana ekrandan açılan uygulamada ve bildirim izni verilmişse görünür. Sabah bildirimi gelince sw.js de günceller. */
+var sonRozet=null;
+function rozetYaz(n){
+  if(n===sonRozet || !("setAppBadge" in navigator)) return; sonRozet=n;
+  try{ (n>0 ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(function(){}); }catch(e){}
+}
 function dkDan(str){ var p=str.split(":"); return (+p[0])*60 + (+p[1]); }
 function gunlukListe(){
   var b=bugunTarih(), dw=b.getDay();
@@ -188,7 +209,8 @@ function suAnkiBlok(){
 var sonBlokId=null;
 function cizSimdi(r){
   var k=$("simdi"); if(!k) return;
-  var ss=$("simdiSpor"); if(ss){ var sb=(r.simdi&&r.simdi.id==="b9")?r.simdi:((!r.simdi&&r.sonraki&&r.sonraki.id==="b9")?r.sonraki:null), sp=sb&&window.Spor?Spor.gun(sporMod(),bugunTarih().getDay()):null; ss.hidden=!sp; if(sp) ss.textContent="Bugünkü antrenman: "+sp.ad+" →"; }
+  var ss=$("simdiSpor"); if(ss) ss.hidden=true;   // antrenman artık Bugün'de kendi kartında
+  cizOdak(r);
   var ad=$("simdiAd"), et=$("simdiEt"), bar=$("simdiBar"), kal=$("simdiKalan"), son=$("simdiSonra");
   if(r.simdi){
     var bas=dkDan(r.simdi.s), sure=r.simdi.dk||1, gecen=r.dk-bas, kalan=bas+sure-r.dk;
@@ -374,27 +396,39 @@ function gunVerisi(k){
   var ay=k.slice(0,7), g=k.slice(8);
   return (S.gunler[ay] && S.gunler[ay][g]) || {};
 }
+var sonTik=null;   // az önce işaretlenen blok: tik animasyonu yalnız ona oynar
 function blokAc(k,bid){
   var ay=k.slice(0,7), g=k.slice(8);
   if(!S.gunler[ay]) S.gunler[ay]={};
   if(!S.gunler[ay][g]) S.gunler[ay][g]={};
   var v=S.gunler[ay][g];
-  if(v[bid]) delete v[bid]; else v[bid]=1;
+  if(v[bid]) delete v[bid]; else { v[bid]=1; sonTik={bid:bid, t:Date.now()}; }
   kaydetAy(ay);
 }
-function gunYuzde(k){
-  var v=gunVerisi(k), say=BLOKLAR.filter(function(b){return b.say;});
-  var t=say.filter(function(b){return v[b.id];}).length;
-  return {yapilan:t, toplam:say.length, pct: say.length? Math.round(t*100/say.length):0};
-}
+/* O günün kendi blok listesiyle (hafta sonu blokları farklı; eskiden Pazartesi listesiyle sayılıyordu,
+   tam bir Cumartesi %37 görünüp seriyi bozuyordu). */
+function gunYuzde(k){ return gunOzet(k); }
 function seriHesap(){
   var d=bugunTarih(), n=0;
   if(gunYuzde(anahtar(d)).pct>=70) n++;
   d.setDate(d.getDate()-1);
   for(var i=0;i<400;i++){
+    if(d<BASLANGIC) break;
     if(gunYuzde(anahtar(d)).pct>=70){ n++; d.setDate(d.getDate()-1); } else break;
   }
   return n;
+}
+/* ---- seri rozetleri: %70 ve üstü üst üste günler ---- */
+var ROZETLER=[3,7,14,21,30,50,75,100,150,200,275];
+function enUzunSeri(){
+  var d=new Date(BASLANGIC), son=bugunTarih(), n=0, en=0;
+  while(d<=son){ var p=gunYuzde(anahtar(d)).pct; if(p>=70){ n++; if(n>en) en=n; } else if(anahtar(d)!==anahtar(son)) n=0; d.setDate(d.getDate()+1); }
+  return en;
+}
+function rozetKontrol(seri){
+  var r=ROZETLER.filter(function(x){return x<=seri;}).pop(); if(!r) return;
+  var g=yerelOku("rozet_son",0)||0;
+  if(r>g){ yerelYaz("rozet_son",r); tost(r+" gün üst üste. Rozet senin."); }
 }
 function cizBugun(){
   var b=bugunTarih(), k=anahtar(b), v=gunVerisi(k);
@@ -420,6 +454,7 @@ function cizBugun(){
     end.appendChild(el("span","tag"+((bl.tur==="TYT"||bl.tur==="AYT"||bl.tur==="Deneme")?" acc":""),bl.tur));
     end.appendChild(el("span","mark"));
     btn.appendChild(end);
+    if(sonTik && sonTik.bid===bl.id && v[bl.id] && Date.now()-sonTik.t<1200) btn.classList.add("pop");
     btn.addEventListener("click",function(){ blokAc(k,bl.id); cizBugun(); cizHafta(); cizMast(); });
     if(k===anahtar(bugunTarih())){
       var n=new Date(), dkn=n.getHours()*60+n.getMinutes();
@@ -438,7 +473,12 @@ function cizBugun(){
   $("dayBar").style.width=pct+"%";
   $("dayBarWrap").classList.toggle("full",pct===100);
   $("dayCount").innerHTML = pct===100 ? '<b>Gün tamam.</b>' : (yap+"/"+say.length+" blok");
-  $("streak").textContent="seri "+seriHesap();
+  var seri=seriHesap(), sonraki=ROZETLER.filter(function(x){return x>seri;})[0];
+  $("streak").textContent="seri "+seri+(sonraki?" · "+sonraki+"'e "+(sonraki-seri):"");
+  $("streak").title="%70 ve üstü üst üste gün. Sıradaki rozet: "+(sonraki||"—");
+  var yeniTik = sonTik && !sonTik.islendi && Date.now()-sonTik.t<1200; if(yeniTik) sonTik.islendi=true;
+  if(pct===100 && yeniTik){ var dl=document.querySelector("#s-bugun .dayline"); if(dl){ dl.classList.remove("tamampop"); void dl.offsetWidth; dl.classList.add("tamampop"); } tost("Gün tamam. Bugün borcun yok."); }
+  if(yeniTik) rozetKontrol(seri);
   $("cnt-bugun").textContent="%"+pct;
   cizSoz(pct);
   // arşiv kilidi bu özeti okur (arsiv/ — aynı adres, aynı localStorage)
@@ -879,7 +919,7 @@ function mottoKur(){
 
 /* yedek al / yükle */
 function yedekAl(){
-  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{}, spor:S.spor||{} };
+  var paket={ surum:2, tarih:new Date().toISOString(), gunler:S.gunler, denemeler:S.denemeler, hatalar:S.hatalar, motto:S.motto, tekrar:S.tekrar||{}, gunluk:S.gunluk||{}, spor:S.spor||{}, ders_hedef:yerelOku("ders_hedef",{})||{} };
   var blob=new Blob([JSON.stringify(paket,null,2)],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="275-yedek-"+anahtar(new Date())+".json"; document.body.appendChild(a); a.click();
@@ -899,6 +939,7 @@ function yedekYukle(file){
       if(p.tekrar && typeof p.tekrar==="object"){ S.tekrar=p.tekrar; yerelYaz("tekrar",S.tekrar); }
       if(p.gunluk && typeof p.gunluk==="object"){ S.gunluk=p.gunluk; yerelYaz("gunluk",S.gunluk); }
       if(p.spor && typeof p.spor==="object"){ S.spor=p.spor; yerelYaz("spor",S.spor); }
+      if(p.ders_hedef && typeof p.ders_hedef==="object") yerelYaz("ders_hedef",p.ders_hedef);
       yerelYaz("gunler",S.gunler); yerelYaz("denemeler",S.denemeler); yerelYaz("hatalar",S.hatalar); yerelYaz("motto",S.motto);
       ciz(); durumYaz("yedek yüklendi");
     }catch(e){ durumYaz("dosya okunamadı"); }
@@ -1153,11 +1194,12 @@ function cizSpor(){
     x.addEventListener("click",function(){ sporGun=g[0]; cizSpor(); });
     gs.appendChild(x);
   });
-  var p=Spor.gun(mod,dw); kutu.innerHTML="";
+  var p=Spor.gun(mod,dw,k); kutu.innerHTML="";
   $("sporBaslik").textContent = p ? p.ad : "Dinlenme günü";
-  $("sporAlt").textContent = !p ? "Antrenman yok. Yürüyüş ya da hiçbir şey." : p.alt.charAt(0).toUpperCase()+p.alt.slice(1)+". "+(bugunMu ? "Yaptığın seti yaz; geçen seferki rakam kutuda soluk görünür." : "Yalnızca bakıyorsun; kayıt bugünün antrenmanına girilir.");
+  $("sporAlt").textContent = !p ? "Antrenman yok. Yürüyüş ya da hiçbir şey." : p.alt.charAt(0).toUpperCase()+p.alt.slice(1)+". "+(p.not?p.not+" ":"")+(bugunMu ? "Yaptığın seti yaz; geçen seferki rakam kutuda soluk görünür." : "Yalnızca bakıyorsun; kayıt bugünün antrenmanına girilir.");
   $("sporBitir").hidden = !p || !bugunMu;
   if(!p) return;
+  if(p.not) kutu.appendChild(el("div","spnot",p.not));
   var kayit=((S.spor||{})[k]||{}).h||{}, biten=0;
   p.hareketler.forEach(function(h,hi){
     var once=sporOnceki(mod,h.id,k), setler=kayit[h.id]||[], dolu=setler.filter(function(s){return s&&s.t;}).length;
@@ -1183,7 +1225,7 @@ function cizSpor(){
             for(var j=0;j<hh[h.id].length;j++) if(!hh[h.id][j]) hh[h.id][j]={};
             S.spor[k].mod=mod; yerelYaz("spor",S.spor);
             if(tip==="t"){ kut.classList.toggle("dolu",!!v); if(v && h.birim!=="dk" && i<h.set-1) sporDinlen(h.dinlen); }
-            var d2=hh[h.id].filter(function(q){return q&&q.t;}).length; c.classList.toggle("tamam", d2>=h.set); sporIlerleme();
+            var d2=hh[h.id].filter(function(q){return q&&q.t;}).length; c.classList.toggle("tamam", d2>=h.set); sporIlerleme(); cizAntKart();
           });
           return inp;
         }
@@ -1198,7 +1240,7 @@ function cizSpor(){
   sporIlerleme();
 }
 function sporIlerleme(){
-  var b=bugunTarih(), k=anahtar(b), p=Spor.gun(sporMod(),b.getDay()), e=$("sporDurum"); if(!e) return;
+  var b=bugunTarih(), k=anahtar(b), p=Spor.gun(sporMod(),b.getDay(),k), e=$("sporDurum"); if(!e) return;
   if(!p){ e.textContent=""; return; }
   var kayit=((S.spor||{})[k]||{}).h||{}, top=0, yap=0;
   p.hareketler.forEach(function(h){ top+=h.set; yap+=Math.min(h.set,(kayit[h.id]||[]).filter(function(s){return s&&s.t;}).length); });
@@ -1213,11 +1255,13 @@ function sporDinlen(sn){
 }
 function sporKur(){
   if(!$("sporListe") || !window.Spor) return;
+  // Salon üyeliği başlayınca bir kez kendiliğinden Salon programına geç (sonra elle değiştirilebilir).
+  if(Spor.basla && anahtar(bugunTarih())>=Spor.basla && !yerelOku("spor_gecis",0)){ yerelYaz("spor_mod","salon"); yerelYaz("spor_gecis",1); }
   document.querySelectorAll("#sporMod button").forEach(function(x){ x.addEventListener("click",function(){ yerelYaz("spor_mod",x.getAttribute("data-mod")); cizSpor(); }); });
   $("sporSayac").addEventListener("click",function(){ clearInterval(sporSayac); $("sporSayac").hidden=true; });
   $("sporBitir").addEventListener("click",function(){
     var k=anahtar(bugunTarih()), l=Bloklar.gunluk(bugunTarih().getDay());
-    if(l.some(function(x){return x.id==="b9";}) && !gunVerisi(k).b9){ blokAc(k,"b9"); cizBugun(); cizHafta(); cizMast(); }
+    if(l.some(function(x){return x.id==="b9";}) && !gunVerisi(k).b9){ blokAc(k,"b9"); cizBugun(); cizHafta(); cizMast(); cizAntKart(); }
     sporIlerleme();
   });
   var kr=$("sporKurallar"); Spor.kurallar.forEach(function(r){ var d=el("div","rps2"); d.appendChild(el("b",null,r[0])); d.appendChild(el("p",null,r[1])); kr.appendChild(d); });
@@ -1423,12 +1467,189 @@ function sinavKur(){
 
 (function(){
   var a=cizDefter; cizDefter=function(){ a(); cizIsi(); };
-  var b=cizDenemeler; cizDenemeler=function(){ b(); cizTahmin(); };
+  var b=cizDenemeler; cizDenemeler=function(){ b(); cizTahmin(); cizHedefCubuk(); };
   var c=cizHafta; cizHafta=function(){ c(); cizRapor(); };
   var d=cizYil; cizYil=function(){ d(); cizYogun(); };
 })();
 
-function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); cizDersKart(); if(aktif==="ders") cizDers(); if(aktif==="spor" && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#sporListe"))) cizSpor(); yedekKontrol(); }
+/* ============ Bugün: antrenman kartı (hareket + en son kaldırılan) ============ */
+function sporSon(hid){            // bu hareketin en son kaydı, bugün dahil
+  var G=S.spor||{}, gs=Object.keys(G).filter(function(x){ return G[x] && G[x].h && G[x].h[hid] && G[x].h[hid].some(function(s){return s && s.t;}); }).sort();
+  if(!gs.length) return null; var g=gs[gs.length-1]; return {gun:g, setler:G[g].h[hid]};
+}
+function sporEnIyi(son,h){
+  var l=son.setler.filter(function(s){return s && s.t;}), en=null;
+  if(h.kg){ l.forEach(function(s){ if(s.k && (!en || +s.k>+en.k)) en=s; }); if(en) return vir(+en.k,(+en.k%1)?1:0)+" kg × "+en.t; }
+  var x=l[l.length-1]; return x ? x.t+(h.birim==="tekrar"?" tekrar":" "+h.birim) : "";
+}
+function cizAntKart(){
+  var c=$("antKart"); if(!c || !window.Spor) return;
+  var b=bugunTarih(), k=anahtar(b), mod=sporMod(), p=Spor.gun(mod,b.getDay(),k);
+  if(!p){ c.hidden=true; return; }
+  c.hidden=false; c.innerHTML="";
+  var kayit=((S.spor||{})[k]||{}).h||{}, top=0, yap=0, bitti=!!gunVerisi(k).b9;
+  function dolu(h){ return (kayit[h.id]||[]).filter(function(s){return s && s.t;}).length; }
+  p.hareketler.forEach(function(h){ top+=h.set; yap+=Math.min(h.set,dolu(h)); });
+  var hd=el("div","hd"); hd.appendChild(el("h3",null,"Antrenman · "+p.ad)); hd.appendChild(el("span","r", bitti ? "tamam ✓" : yap+" / "+top+" set"));
+  c.appendChild(hd);
+  var l=el("div","antl");
+  p.hareketler.forEach(function(h){
+    var r=el("div","antr"+(dolu(h)>=h.set?" ok":"")), sol=el("div");
+    sol.appendChild(el("b",null,h.ad)); sol.appendChild(el("span",null,h.set+" × "+h.tekrar+(h.birim==="tekrar"?"":" "+h.birim)));
+    r.appendChild(sol);
+    var son=sporSon(h.id), sag=el("em",null, son ? sporEnIyi(son,h) : "ilk kez");
+    if(son) sag.title="en son "+trTarih(son.gun);
+    r.appendChild(sag); l.appendChild(r);
+  });
+  c.appendChild(l);
+  c.appendChild(el("div","antalt", bitti ? "Ayrıntı →" : "Antrenmana git →"));
+  c.onclick=function(){ sporGun=null; git("spor"); };
+}
+
+/* ============ odak sayacı: şu anki bloğun sonuna kadar sayar, bitince bloğu işaretler ============ */
+var odakTik=null;
+function odakBitir(d,tamam){
+  try{ localStorage.removeItem("odak_sayac"); }catch(x){}
+  clearInterval(odakTik); odakTik=null;
+  if(tamam){
+    if(!gunVerisi(d.gun)[d.bid]) blokAc(d.gun,d.bid);
+    try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(x){}
+    tost(d.ad+" bitti, işaretlendi.");
+    try{ if(document.visibilityState!=="visible" && window.Notification && Notification.permission==="granted" && navigator.serviceWorker)
+      navigator.serviceWorker.ready.then(function(g){ g.showNotification("275",{body:d.ad+" bitti.",icon:"icons/icon-192.png",tag:"odak"}); }).catch(function(){}); }catch(x){}
+  }
+  cizBugun(); cizHafta(); cizMast();
+}
+function cizOdak(r){
+  var e=$("odak"); if(!e) return;
+  var d=yerelOku("odak_sayac",null), k=anahtar(bugunTarih());
+  if(d && d.gun!==k){ try{ localStorage.removeItem("odak_sayac"); }catch(x){} d=null; }
+  if(d){
+    var kal=Math.round((d.bit-Date.now())/1000);
+    if(kal<=0){ odakBitir(d,true); return; }
+    e.hidden=false; e.className="odak calisiyor"; e.innerHTML="";
+    var sa=Math.floor(kal/3600), dk=Math.floor(kal%3600/60), sn=kal%60;
+    e.appendChild(el("span","osay",(sa?sa+":"+pad(dk):dk)+":"+pad(sn)));
+    e.appendChild(el("span","oad","Sayaç açık · bitince "+d.ad+" işaretlenir"));
+    var b=el("button","odur","Durdur"); b.type="button"; b.addEventListener("click",function(ev){ ev.stopPropagation(); odakBitir(d,false); });
+    e.appendChild(b);
+    if(!odakTik) odakTik=setInterval(function(){ cizOdak(); },1000);
+    return;
+  }
+  if(odakTik){ clearInterval(odakTik); odakTik=null; }
+  var sim=r && r.simdi;
+  if(!sim || !sim.say || sim.tur==="Beden" || !sim.dk || gunVerisi(k)[sim.id]){ e.hidden=true; return; }
+  var bit=dkDan(sim.s)+sim.dk, kalan=bit-r.dk;
+  if(kalan<5){ e.hidden=true; return; }
+  e.hidden=false; e.className="odak"; e.innerHTML="";
+  var bs=el("button","obas","Sayacı başlat · "+(kalan>=60?Math.floor(kalan/60)+" sa "+(kalan%60)+" dk":kalan+" dk")); bs.type="button";
+  bs.addEventListener("click",function(){ var t=new Date(); t.setHours(0,0,0,0); yerelYaz("odak_sayac",{gun:k, bid:sim.id, ad:sim.ad, bas:Date.now(), bit:t.getTime()+bit*60000}); cizOdak(); });
+  e.appendChild(bs); e.appendChild(el("span","oip","Blok bitince kendiliğinden işaretlenir."));
+}
+
+/* ============ Pazar akşamı (ve Pazartesi öğlene kadar): haftanın özeti Bugün'de ============ */
+function haftaHesap(pzt){
+  var bugunK=anahtar(bugunTarih()), kisa=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"], gunler=[], yap=0, top=0, eksik={};
+  for(var i=0;i<7;i++){
+    var d=new Date(pzt); d.setDate(pzt.getDate()+i); var k=anahtar(d);
+    if(k>bugunK || d<BASLANGIC){ gunler.push({k:k,ad:kisa[i],yok:true}); continue; }
+    var o=gunOzet(k); gunler.push({k:k,ad:kisa[i],pct:o.pct}); yap+=o.yapilan; top+=o.toplam;
+    o.eksik.forEach(function(x){ eksik[x.ad]=(eksik[x.ad]||0)+1; });
+  }
+  var ilk=gunler[0].k, son=gunler[6].k;
+  return {ilk:ilk, son:son, gunler:gunler, yap:yap, top:top, pct: top?Math.round(yap*100/top):null, eksik:eksik,
+    dn:S.denemeler.filter(function(x){return x.tarih>=ilk && x.tarih<=son;}).sort(function(a,c){return a.tarih<c.tarih?-1:1;})};
+}
+function cizHaftaOzet(){
+  var c=$("haftaOzet"); if(!c) return;
+  var n=new Date(), b=bugunTarih(), dw=b.getDay(), saat=n.getHours();
+  var goster = (dw===0 && saat>=17) || (dw===1 && saat<12);
+  var pzt=new Date(b); pzt.setDate(b.getDate()-((dw+6)%7)-(dw===1?7:0));
+  var kapali=yerelOku("hafta_ozet_kapat","");
+  if(!goster || kapali===anahtar(pzt)){ c.hidden=true; return; }
+  var h=haftaHesap(pzt), onc=new Date(pzt); onc.setDate(pzt.getDate()-7); var g=haftaHesap(onc);
+  c.hidden=false; c.innerHTML="";
+  var hd=el("div","hd"); hd.appendChild(el("h3",null,dw===1?"Geçen hafta":"Haftanın özeti"));
+  var r=el("span","r",trTarih(h.ilk)+" – "+trTarih(h.son)+" ");
+  var x=el("button","hokapat","×"); x.type="button"; x.setAttribute("aria-label","Bu haftanın özetini kapat");
+  x.addEventListener("click",function(){ yerelYaz("hafta_ozet_kapat",anahtar(pzt)); c.hidden=true; });
+  r.appendChild(x); hd.appendChild(r); c.appendChild(hd);
+  var ic=el("div","in");
+  var ust=el("div","rpu"); ust.appendChild(el("b",null,h.pct==null?"—":"%"+h.pct));
+  var fark = (h.pct!=null && g.pct!=null) ? h.pct-g.pct : null;
+  ust.appendChild(el("span",fark==null?null:(fark>=0?"art":"az"), h.yap+" / "+h.top+" blok"+(fark==null?"":" · geçen haftaya göre "+(fark>=0?"+":"")+fark)));
+  ic.appendChild(ust);
+  var cub=el("div","rpg");
+  h.gunler.forEach(function(x2){ var cc=el("div","rpc"+(x2.yok?" yok":"")); var i2=el("i"); i2.style.height=(x2.yok?0:Math.max(4,x2.pct))+"%"; cc.appendChild(i2); cc.appendChild(el("span",null,x2.ad)); cub.appendChild(cc); });
+  ic.appendChild(cub);
+  function satir(k,v){ var s=el("div","rps"); s.appendChild(el("span",null,k)); s.appendChild(el("b",null,v)); ic.appendChild(s); }
+  var en=h.gunler.filter(function(x2){return !x2.yok;}).sort(function(a,c2){return c2.pct-a.pct;})[0];
+  if(en) satir("En iyi gün", en.ad+" %"+en.pct);
+  var ek=Object.keys(h.eksik).sort(function(a,c2){return h.eksik[c2]-h.eksik[a];}).slice(0,2);
+  satir("En çok atlanan", ek.length ? ek.map(function(a){return a+" ("+h.eksik[a]+")";}).join(" · ") : "yok");
+  satir("Denemeler", h.dn.length ? h.dn.map(function(d){return d.tur+" "+vir(d.net,1);}).join(" · ") : "girilmedi");
+  satir("Seri", seriHesap()+" gün · en uzun "+enUzunSeri());
+  var a=el("button","btn sm ghost","Hafta ekranında aç"); a.type="button"; a.style.marginTop="12px"; a.addEventListener("click",function(){ git("hafta"); });
+  ic.appendChild(a); c.appendChild(ic);
+}
+
+/* ============ Netler: ders ders hedefe uzaklık ============ */
+/* Varsayılanlar merdivenin tepesine (TYT 112 · AYT 73) toplanır; Netler'den değiştirilebilir. */
+var DERS_HEDEF_VARSAYILAN={TYT:{turkce:37,sosyal:17,matematik:39,fen:19}, AYT:{matematik:37,fizik:12,kimya:12,biyoloji:12}};
+function dersHedef(){
+  var h=yerelOku("ders_hedef",null)||{}, o={};
+  ["TYT","AYT"].forEach(function(t){ o[t]={}; DERSLER[t].forEach(function(d){ var v=h[t] && h[t][d[0]]; o[t][d[0]] = (typeof v==="number" && v>=0 && v<=d[2]) ? v : DERS_HEDEF_VARSAYILAN[t][d[0]]; }); });
+  return o;
+}
+function cizHedefCubuk(){
+  var kutu=$("hedefCubuk"); if(!kutu) return; kutu.innerHTML="";
+  var H=dersHedef(), varMi=false;
+  ["TYT","AYT"].forEach(function(tur){
+    var l=S.denemeler.filter(function(d){return d.tur===tur && d.dersler && Object.keys(d.dersler).length;}).sort(function(a,b){return a.tarih<b.tarih?-1:1;}).slice(-3);
+    if(!l.length) return; varMi=true;
+    var satirlar=DERSLER[tur].map(function(d){
+      var v=l.map(function(x){return dersNet(x.dersler[d[0]]);}).filter(function(z){return z!==null;});
+      var ort=v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null, hd=H[tur][d[0]];
+      return {d:d, ort:ort, hedef:hd, acik: ort==null ? null : hd-ort};
+    });
+    var enAcik=null; satirlar.forEach(function(s){ if(s.acik!=null && s.acik>0.24 && (!enAcik || s.acik>enAcik.acik)) enAcik=s; });
+    var topH=satirlar.reduce(function(a,s){return a+s.hedef;},0), topO=satirlar.reduce(function(a,s){return a+(s.ort||0);},0);
+    var bas=el("div","dbt"); bas.textContent=(tur==="AYT"?"AYT-SAY":"TYT")+" · "+vir(topO,1)+" / "+topH; kutu.appendChild(bas);
+    satirlar.forEach(function(s){
+      var r=el("div","hcs"+(s===enAcik?" enacik":"")+(s.acik!=null && s.acik<=0 ? " tamam":""));
+      var ad=el("b",null,s.d[1]); if(s===enAcik) ad.appendChild(el("i",null,"en açık")); r.appendChild(ad);
+      var bar=el("span","hcb"), f=el("i"), m=el("u");
+      f.style.width=(s.ort==null?0:Math.max(0,Math.min(100,s.ort*100/s.d[2])))+"%";
+      m.style.left=(s.hedef*100/s.d[2])+"%"; bar.appendChild(f); bar.appendChild(m); r.appendChild(bar);
+      var sy=el("span","hcn"); sy.innerHTML=(s.ort==null?"—":vir(s.ort,1))+' <small>/ '+s.hedef+'</small>'; r.appendChild(sy);
+      r.appendChild(el("span","hcf", s.acik==null ? "" : s.acik<=0 ? "hedefte" : "−"+vir(s.acik,1)));
+      kutu.appendChild(r);
+    });
+  });
+  if(!varMi) kutu.appendChild(el("div","empty","Ders bazlı deneme girince her dersin hedefe ne kadar uzak olduğu burada çıkar. En büyük açık kırmızı görünür."));
+  // düzenleme
+  var g=$("hedefGir"); if(!g || ($("hedefDuz") && $("hedefDuz").contains(document.activeElement))) return;
+  g.innerHTML="";
+  ["TYT","AYT"].forEach(function(tur){
+    var top=0; DERSLER[tur].forEach(function(d){ top+=H[tur][d[0]]; });
+    var tepe=MERDIVEN[MERDIVEN.length-1][tur==="TYT"?"tyt":"ayt"];
+    g.appendChild(el("div","hdb",(tur==="AYT"?"AYT-SAY":"TYT")+" · toplam "+top+" (merdiven tepesi "+tepe+")"));
+    DERSLER[tur].forEach(function(d){
+      var f=el("label","hdf"); f.appendChild(el("span",null,d[1]));
+      var inp=document.createElement("input"); inp.type="number"; inp.min="0"; inp.max=String(d[2]); inp.step="0.5"; inp.inputMode="decimal"; inp.value=String(H[tur][d[0]]);
+      inp.addEventListener("change",function(){
+        var v=Number(String(inp.value).replace(",",".")); if(isNaN(v)) return; v=Math.max(0,Math.min(d[2],Math.round(v*2)/2));
+        var o=yerelOku("ders_hedef",null)||{}; if(!o[tur]) o[tur]={}; o[tur][d[0]]=v; yerelYaz("ders_hedef",o);
+        inp.blur(); cizHedefCubuk();
+      });
+      f.appendChild(inp); g.appendChild(f);
+    });
+  });
+  var sf=el("button","btn sm ghost","Varsayılana dön"); sf.type="button"; sf.addEventListener("click",function(){ yerelYaz("ders_hedef",{}); cizHedefCubuk(); });
+  g.appendChild(sf);
+}
+
+function ciz(){ cizMast(); cizBugun(); cizHafta(); cizDenemeler(); cizGrafik(); cizDefter(); cizYil(); cizPlan(); cizGunluk(); cizDersKart(); cizAntKart(); cizHaftaOzet(); if(aktif==="ders") cizDers(); if(aktif==="spor" && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#sporListe"))) cizSpor(); yedekKontrol(); }
 
 /* ============ düzen: dört ana başlık + ortada tek düğme ============
    Aynı amaca hizmet eden bölümler aynı başlık altında:
@@ -1490,7 +1711,6 @@ function grupGuncelle(){
     n.appendChild(b);
   });
   var eskiGit=git; git=function(id){ eskiGit(id); grupGuncelle(); };
-  var t=$("ayTema"); if(t) t.addEventListener("click",function(){ $("themeBtn").click(); });
   var y=$("ayYedek"); if(y) y.addEventListener("click",function(){ yedekAl(); });
   var u=$("ayYukle"); if(u) u.addEventListener("click",function(){ $("ioFile").click(); });
 })();
@@ -1559,8 +1779,9 @@ ioKur();
 durumYaz();
 ciz();
 git(aktif);
-setInterval(function(){ cizMast(); cizBugun(); }, 30000);
-document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ cizMast(); cizBugun(); } });
+setInterval(function(){ cizMast(); cizBugun(); cizHaftaOzet(); }, 30000);
+document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible"){ cizMast(); cizBugun(); cizHaftaOzet(); } });
+temaSecCiz();
 zilKur();
 (function(){ var o=$("raporOnce"); if(o) o.addEventListener("click",function(){ raporHafta = raporHafta===0 ? -1 : 0; o.textContent = raporHafta===0 ? "Geçen hafta" : "Bu hafta"; cizRapor(); }); })();
 var rsz; window.addEventListener("resize",function(){ clearTimeout(rsz); rsz=setTimeout(function(){ if(aktif==="netler") cizGrafik(); },180); });

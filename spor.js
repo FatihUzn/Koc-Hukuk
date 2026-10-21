@@ -7,50 +7,56 @@
 function h(id,ad,set,tekrar,o){ o=o||{}; return {id:id, ad:ad, set:set, tekrar:tekrar, birim:o.birim||"tekrar", kg:o.kg!==false && !o.birim, nasil:o.nasil||"", dinlen:o.dinlen||90}; }
 var YOK={kg:false};
 
+/* Salon (MACFit, 25 Ekim'den): 17 Ekim ölçümüne göre — 184 cm, 89,7 kg, yağ ~%25,5 (ev tartısı).
+   Hedef yağ düşerken kası korumak ve büyütmek; 1,5 yıl ara verildiği için ilk iki hafta alışma (bkz. gun()).
+   Ağırlık günlerinin sonunda 15 dk eğimli yürüyüş; Çarşamba ve Pazar torba. Salonda ölçüm alınınca güncellenecek. */
+var BASLA="2026-10-25", ALISMA_GUN=14;
 var SALON={
  1:{ad:"Üst A", alt:"üst göğüs ve itiş", hareketler:[
-   h("s-egimli-bar","Eğimli bench press (bar ya da Smith)",4,"6–8",{dinlen:150,nasil:"Sehpa 30 derece; daha dik olursa iş omuza kayar. Barı köprücük kemiğinin biraz altına indir."}),
-   h("s-duz-db","Düz dumbbell press",3,"8–10",{dinlen:120,nasil:"Dirsekler gövdeye 45 derece. Altta bir an dur."}),
-   h("s-lat","Lat pulldown",4,"8–10",{nasil:"Barı göğsün üstüne çek, dirsekleri aşağı ve geriye sür."}),
+   h("s-egimli-smith","Eğimli Smith press",3,"8–10",{dinlen:120,nasil:"Sehpa 30 derece; daha dik olursa iş omuza kayar. Barı köprücük kemiğinin biraz altına indir. İlk gün hafif başla, ağırlığı tekrar sayısı söylesin."}),
+   h("s-gogus-mak","Göğüs press makinesi",3,"10–12",{dinlen:90,nasil:"Tutamaklar göğüs ortası hizasında. Dirsekleri arkaya açma."}),
+   h("s-lat","Lat pulldown",3,"10–12",{nasil:"Barı göğsün üstüne çek, dirsekleri aşağı ve geriye sür."}),
    h("s-kablo-fly","Kablo fly, aşağıdan yukarı",3,"12–15",{dinlen:60,nasil:"Makaralar en altta. Eller yüz hizasında buluşsun; üst göğsü hedefleyen hareket bu."}),
-   h("s-kablo-row","Oturarak kablo row",3,"10–12",{nasil:"Göğüs dik, kürek kemiklerini sık."}),
-   h("s-yan","Yana dumbbell kaldırma",3,"12–15",{dinlen:60,nasil:"Hafif ağırlık, sallanmadan."}),
-   h("s-pushdown","Triceps pushdown",3,"10–15",{dinlen:60})
+   h("s-omuz-mak","Omuz press makinesi",2,"10–12",{dinlen:90}),
+   h("s-pushdown","Triceps pushdown",2,"12–15",{dinlen:60}),
+   h("s-yuruyus","Eğimli yürüyüş (koşu bandı)",1,"15",{birim:"dk",nasil:"Eğim 8–12, hız 4,5–5,5. Konuşabileceğin ama şarkı söyleyemeyeceğin tempo."})
  ]},
- 2:{ad:"Alt A", alt:"squat ağırlıklı", hareketler:[
-   h("s-squat","Squat",4,"6–8",{dinlen:180,nasil:"Kalça diz hizasının altına insin. Son tekrar temiz çıkmıyorsa ağırlık fazla."}),
-   h("s-rdl","Romanian deadlift",3,"8–10",{dinlen:120,nasil:"Sırt düz, bar bacağa yakın; arka bacakta gerilme hissedince dön."}),
-   h("s-legpress","Leg press",3,"10–12",{dinlen:120}),
+ 2:{ad:"Alt A", alt:"bacak, makine ağırlıklı", hareketler:[
+   h("s-legpress","Leg press",3,"10–12",{dinlen:120,nasil:"Ara sonrası ilk dört hafta ağır squat yerine bu: bel ve diz alışsın. Kalça platformdan kalkmasın."}),
+   h("s-goblet","Goblet squat",3,"10",{dinlen:90,nasil:"Dumbbell göğüste, dirsekler dizlerin içinden geçsin."}),
+   h("s-rdl-db","Dumbbell Romanian deadlift",3,"10–12",{dinlen:90,nasil:"Sırt düz, dumbbell bacağa yakın; arka bacakta gerilme hissedince dön."}),
    h("s-legcurl","Leg curl",3,"10–15",{dinlen:60}),
    h("s-calf","Calf raise",3,"12–15",{dinlen:60,nasil:"Altta tam esne, üstte bir saniye bekle."}),
-   h("s-plank","Plank",3,"45–60",{birim:"sn",dinlen:45})
+   h("s-plank","Plank",3,"30–45",{birim:"sn",dinlen:45}),
+   h("s-yuruyus","Eğimli yürüyüş (koşu bandı)",1,"15",{birim:"dk",nasil:"Eğim 8–12, hız 4,5–5,5."})
  ]},
- 3:{ad:"Kardiyo", alt:"nabız yükselsin, bacak yorulmasın", hareketler:[
-   h("s-yuruyus","Eğimli yürüyüş (koşu bandı)",1,"30–35",{birim:"dk",nasil:"Konuşabileceğin ama şarkı söyleyemeyeceğin tempo."}),
-   h("s-legraise","Asılarak ya da yatarak bacak kaldırma",3,"10–15",{kg:false,dinlen:60}),
+ 3:{ad:"Boks", alt:"torba ve gövde", hareketler:[
+   h("s-isinma","Isınma: ip ya da hafif koşu",1,"8",{birim:"dk"}),
+   h("s-torba","Torba",6,"3",{birim:"dk",dinlen:60,nasil:"Üç dakika çalış, bir dakika dinlen. İlk raundlar teknik: düz, kroşe, aparkat; son iki raunt tempolu. Bandaj ve eldivensiz vurma."}),
    h("s-kablo-crunch","Kablo crunch",3,"12–15",{dinlen:60}),
+   h("s-pallof","Pallof press (taraf başına)",3,"10",{dinlen:45,nasil:"Kablonun yanında dur, kolları ileri it; gövde dönmesin."}),
    h("s-esneme","Esneme",1,"10",{birim:"dk",nasil:"Göğüs, kalça önü, arka bacak."})
  ]},
  5:{ad:"Üst B", alt:"üst göğüs ve çekiş", hareketler:[
-   h("s-egimli-db","Eğimli dumbbell press",4,"8–10",{dinlen:120,nasil:"Sehpa 30 derece. Üstte dumbbell'ları birbirine vurma, gerilim kaybolur."}),
-   h("s-bar-row","Barbell row",4,"6–8",{dinlen:120,nasil:"Gövde yere yakın paralel, barı göbeğe çek."}),
-   h("s-barfiks","Barfiks (gerekirse destekli)",3,"6–10",{kg:false,dinlen:120,nasil:"Sayı 6'nın altındaysa destekli makine ya da lastik kullan."}),
-   h("s-egimli-fly","Eğimli dumbbell fly",3,"12–15",{dinlen:60,nasil:"Dirsek hafif kırık, altta göğüs gerilsin. Ağır yükleme; omuz için riskli."}),
+   h("s-egimli-db","Eğimli dumbbell press",3,"8–10",{dinlen:120,nasil:"Sehpa 30 derece. Üstte dumbbell'ları birbirine vurma, gerilim kaybolur."}),
+   h("s-kablo-row","Oturarak kablo row",3,"10–12",{nasil:"Göğüs dik, kürek kemiklerini sık."}),
+   h("s-tek-row","Tek kol dumbbell row",3,"10–12",{nasil:"Bir el ve diz sehpada. Dumbbell'ı kalçaya doğru çek."}),
    h("s-facepull","Face pull",3,"12–15",{dinlen:60}),
-   h("s-curl","Biceps curl",3,"10–12",{dinlen:60}),
-   h("s-ust-triceps","Baş üstü triceps extension",3,"10–12",{dinlen:60})
+   h("s-yan","Yana dumbbell kaldırma",3,"12–15",{dinlen:60,nasil:"Hafif ağırlık, sallanmadan."}),
+   h("s-curl","Biceps curl",2,"10–12",{dinlen:60}),
+   h("s-yuruyus","Eğimli yürüyüş (koşu bandı)",1,"15",{birim:"dk",nasil:"Eğim 8–12, hız 4,5–5,5."})
  ]},
- 6:{ad:"Alt B", alt:"kalça ve arka bacak", hareketler:[
-   h("s-deadlift","Deadlift",3,"5",{dinlen:180,nasil:"Sabahki uzun oturumdan sonra yorgunsan ağırlığı yüzde 10 düşür. Sırt yuvarlanıyorsa seti bitir."}),
-   h("s-bulgar","Bulgar split squat (bacak başına)",3,"8–10",{dinlen:90}),
-   h("s-legext","Leg extension",3,"12–15",{dinlen:60}),
-   h("s-hipthrust","Hip thrust",3,"8–12",{dinlen:90}),
-   h("s-calf2","Calf raise",3,"12–15",{dinlen:60}),
-   h("s-crunch","Crunch ya da ab wheel",3,"10–15",{kg:false,dinlen:60})
+ 6:{ad:"Alt B", alt:"kalça ve kondisyon", hareketler:[
+   h("s-smith-squat","Smith squat",3,"8–10",{dinlen:120,nasil:"Ayaklar barın biraz önünde. Kalça diz hizasına insin; son tekrar temiz çıkmıyorsa ağırlık fazla."}),
+   h("s-hipthrust","Hip thrust",3,"10–12",{dinlen:90}),
+   h("s-bulgar","Bulgar split squat (bacak başına)",2,"8–10",{dinlen:90}),
+   h("s-legext","Leg extension",2,"12–15",{dinlen:60}),
+   h("s-torba","Torba",4,"2",{birim:"dk",dinlen:60,nasil:"İki dakika tempolu, bir dakika dinlen."})
  ]},
- 0:{ad:"Hafif", alt:"toparlanma", hareketler:[
-   h("s-hafif-kardiyo","Hafif kardiyo",1,"25–30",{birim:"dk",nasil:"Yürüyüş ya da bisiklet. Terle ama yorulma."}),
-   h("s-mobilite","Hareket açıklığı",1,"15",{birim:"dk",nasil:"Omuz, kalça, bel. Ertesi gün Üst A var."})
+ 0:{ad:"Hafif", alt:"teknik torba ve toparlanma", hareketler:[
+   h("s-torba","Torba",4,"3",{birim:"dk",dinlen:60,nasil:"Pazar teknik günü: hız değil düzgün vuruş. Nefesi tutma."}),
+   h("s-hafif-kardiyo","Hafif kardiyo",1,"20",{birim:"dk",nasil:"Yürüyüş ya da bisiklet. Terle ama yorulma."}),
+   h("s-mobilite","Hareket açıklığı",1,"10",{birim:"dk",nasil:"Omuz, kalça, bel. Ertesi gün Üst A var."})
  ]}
 };
 
@@ -103,6 +109,8 @@ var EV={
 };
 
 var KURALLAR=[
+ ["Ölçüm ve hedef","17 Ekim, ev tartısı: 89,7 kg, yağ ~%25,5 → yağsız kütle ~67 kg. Aynı kas kütlesiyle %12 yağ ≈ 76 kg demek. Yağı indiren beslenme açığı ve günlük adım; bu programın işi o sırada kası korumak ve büyütmek. Ev tartısının yağ oranı kaba bir tahmin; salonda ölçüm alınınca program ona göre güncellenecek."],
+ ["İlk iki hafta","25 Ekim – 7 Kasım alışma: uygulama her hareketten bir set eksik gösterir. Her seti 3 tekrar daha yapabileceğin yerde bırak. 1,5 yıl aradan sonra kas, tendondan hızlı toparlanır; ilk haftalarda zorlamak sakatlığın en sık sebebi."],
  ["İlerleme","Her harekette bir tekrar aralığı var. Bütün setlerde aralığın üstüne çıktığında ağırlığı bir kademe artır (evde: çantaya kitap ekle ya da inişi yavaşlat), aralığın altından yeniden başla."],
  ["Hacim","Kası büyüten şey, 6 ile 15 tekrar arasında zorlanarak biten setlerdir. Bir sette 15'i rahat geçiyorsan o set artık dayanıklılık çalıştırıyor: tekrarı artırma, yükü artır ya da hareketi zorlaştır."],
  ["Zorluk","Her seti, temiz yapabileceğin son tekrardan bir iki tekrar önce bırak. Tükenene kadar gitmek toparlanmayı uzatır, ertesi günün dersini de yer."],
@@ -111,5 +119,14 @@ var KURALLAR=[
  ["Evde zayıf nokta","Ekipmansız programda çekiş hareketleri eksik kalır. Kapıya takılan bir barfiks demiri bunu çözen en ucuz şeydir."]
 ];
 
-return { salon:SALON, ev:EV, kurallar:KURALLAR, gun:function(mod,dw){ return (mod==="salon"?SALON:EV)[dw]||null; } };
+/* k (YYYY-AA-GG) verilirse ve salonun ilk iki haftasındaysa: her hareketten bir set eksik (en az 1). */
+function gunEkle(k,n){ var p=k.split("-"), d=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]+n)); return d.toISOString().slice(0,10); }
+function gun(mod,dw,k){
+  var p=(mod==="salon"?SALON:EV)[dw]||null;
+  if(!p || mod!=="salon" || !k || k>=gunEkle(BASLA,ALISMA_GUN)) return p;
+  var hafta = k<BASLA ? 1 : Math.floor((Date.UTC(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10))-Date.UTC(+BASLA.slice(0,4),+BASLA.slice(5,7)-1,+BASLA.slice(8,10)))/604800000)+1;
+  return {ad:p.ad, alt:p.alt, not:"Alışma haftası "+Math.min(2,hafta)+"/2: setler bir eksik, her seti 3 tekrar kala bırak.",
+    hareketler:p.hareketler.map(function(x){ var y={}; for(var a in x) y[a]=x[a]; y.set=Math.max(1,x.set-1); return y; })};
+}
+return { salon:SALON, ev:EV, kurallar:KURALLAR, basla:BASLA, gun:gun };
 });

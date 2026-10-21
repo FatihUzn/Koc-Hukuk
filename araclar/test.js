@@ -35,6 +35,13 @@ for(let dw=0;dw<7;dw++){
     T("spor "+m+" "+dw+": hareket var, alanlar tam", g.hareketler.length>0 && g.hareketler.every(x=>x.id&&x.ad&&x.set>0&&x.tekrar));
     T("spor "+m+" "+dw+": gün içinde kimlik tekrarı yok", new Set(g.hareketler.map(x=>x.id)).size===g.hareketler.length);
     g.hareketler.forEach(x=>{ const o=gorulen[x.id]; T("spor kimliği "+x.id+" tek harekete ait", !o||o===x.ad, o+" / "+x.ad); gorulen[x.id]=x.ad; }); } });
+  /* alışma: salonun ilk iki haftası her hareketten bir set eksik; sonrasında tam */
+  { const tam=Spor.gun("salon",1), al=Spor.gun("salon",1,"2026-10-26"), son=Spor.gun("salon",1,"2026-11-08"), ev=Spor.gun("ev",1,"2026-10-26");
+    T("alışma haftası setleri bir eksik", al.hareketler.every((x,i)=>x.set===Math.max(1,tam.hareketler[i].set-1)) && /Alışma haftası 1\/2/.test(al.not));
+    T("alışma 7 Kasım'da biter", Spor.gun("salon",1,"2026-11-07").not && !son.not && son.hareketler.every((x,i)=>x.set===tam.hareketler[i].set));
+    T("alışma programın kendisini değiştirmez", Spor.gun("salon",1).hareketler[0].set===tam.hareketler[0].set && !ev.not); }
+  { const sw=oku("sw.js"), app=oku("app.js"), m=sw.match(/HEDEF_GUN = new Date\("(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/), a=app.match(/var SINAV = new Date\((\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+    T("ikon rozeti ile sayaç aynı güne sayıyor", m && a && +m[1]===+a[1] && +m[2]===+a[2]+1 && +m[3]===+a[3] && +m[4]===+a[4] && +m[5]===+a[5]); }
   T("spor günleri blok listesindeki spor günleriyle aynı", [0,1,2,3,4,5,6].every(dw=>!!Spor.gun("ev",dw)===Bloklar.gunluk(dw).some(b=>b.id==="b9") && !!Spor.gun("salon",dw)===!!Spor.gun("ev",dw)));
 }
 

@@ -1,0 +1,926 @@
+<article class="chapter ders" id="c-ileri-26">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 26 · Türev 5</div>
+<h1>Türev 5: ikinci türev, bükeylik ve grafik çizimi</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>İki haber başlığı düşün: "Kira artışı hızlanıyor" ve "Kira artışı yavaşlıyor". İkisinde de kiralar artıyor; yani kirayı zamana göre veren fonksiyonun türevi ikisinde de pozitif. O hâlde iki başlık arasındaki fark türevin işaretinde değil, türevin kendisinin nasıl değiştiğinde. Grafikte bu fark, eğrinin hangi yöne kıvrıldığı olarak görünür. Bir eğrinin kıvrılma yönünü hangi sayı söyler ve bir polinomun grafiğini, nokta tablosu doldurmadan, doğru biçimde nasıl çizersin?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 22 (türev, f″ gösterimi, konum-hız-ivme), Parça 23 (zincir kuralı), Parça 24 (teğet doğrusu), Parça 25 (türevin işaretiyle artan-azalan aralıklar, kritik nokta, birinci türev testi, f′ grafiği okuma), Parça 7 (işaret tablosu, çift katlı kök), Parça 1 ve Parça 4 (tek fonksiyon, orijine göre simetri, öteleme). Kâğıt kalem yanında olsun; bu parçada çok tablo kuracaksın.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 25'te f′'nün işaretine bakıp f'nin nerede arttığını, nerede azaldığını ve nerede yerel maksimum ya da minimum yaptığını buldun. Bu bilgi grafiğin "yukarı mı aşağı mı gittiğini" söyler, ama "nasıl kıvrıldığını" söylemez. Artan bir eğri giderek dikleşerek de yükselebilir, giderek yatıklaşarak da. Bu ikisini ayıran şey ikinci türevdir. Bu parçada ikinci türevin ne anlattığını, eğrinin kıvrılma yönünü (bükeylik) ve kıvrılma yönünün değiştiği noktayı (büküm noktası) kuracak, sonra bütün türev bilgisini birleştirip bir polinomun grafiğini adım adım çizeceksin.</p>
+
+<p>AYT'de bu konu şu kalıplarla gelir: bir polinomun büküm noktasını ya da bükey olduğu aralığı bulma; ikinci türev testiyle bir kritik noktanın yerel maksimum mu minimum mu olduğuna karar verme; büküm noktası verilip katsayı bulma; üçüncü dereceden fonksiyonun büküm noktasına göre simetrisi ("f(1) + f(5) kaçtır?" türü); f′ ya da f″ grafiği verilip f hakkında öncüllü sorular; f, f′, f″ grafiklerini eşleştirme; grafiği verilen polinomun denklemini yazma. Kapsam notu: rasyonel fonksiyonların grafiği ve asimptot çizimi 2018 programında yoktur; bu parçada yalnızca polinom grafiği çizilir.</p>
+
+<h2 class="s">1. İkinci türev: eğimin değişim hızı</h2>
+
+<p>Parça 22'de f′'nün de bir fonksiyon olduğunu ve onun türevine ikinci türev dendiğini gördün: f″(x) = (f′(x))′. Orada yalnızca hesabını yaptın. Şimdi anlamına bak. f′(x), grafiğin x noktasındaki teğetinin eğimidir. Bir fonksiyonun türevi o fonksiyonun değişim hızı olduğuna göre, f″(x) <strong>eğimin değişim hızıdır</strong>: x biraz artınca teğetin eğimi artıyor mu azalıyor mu, ne kadar hızla?</p>
+
+<p>Somut bir örnekle gör. f(x) = x<sup>3</sup> için f′(x) = 3x<sup>2</sup> ve f″(x) = 6x. Birkaç noktada eğimi ve ikinci türevi hesapla:</p>
+
+<div class="tablo"><table>
+<tr><th>x</th><th>−2</th><th>−1</th><th>0</th><th>1</th><th>2</th></tr>
+<tr><td>f′(x) = 3x<sup>2</sup> (eğim)</td><td>12</td><td>3</td><td>0</td><td>3</td><td>12</td></tr>
+<tr><td>f″(x) = 6x</td><td>−12</td><td>−6</td><td>0</td><td>6</td><td>12</td></tr>
+</table></div>
+
+<p>Soldan sağa yürü. x = −2'den x = 0'a giderken eğim 12'den 3'e, sonra 0'a düşüyor: eğim azalıyor ve f″ bu bölgede negatif. x = 0'dan sağa giderken eğim 0'dan 3'e, sonra 12'ye çıkıyor: eğim artıyor ve f″ pozitif. Dikkat et, x<sup>3</sup> her yerde artandır (eğim hiç negatif değil); ikinci türevin işareti artanlık hakkında değil, <strong>eğimin</strong> artıp azalması hakkında bilgi veriyor.</p>
+
+<p>Fizikten tanıdık bir karşılığı var. s(t) konumsa s′(t) hız, s″(t) ivmedir (Parça 22). İvme, hızın değişim hızıdır. Bir araba ileri gidiyorsa hız pozitiftir; gaza basıyorsa ivme pozitif (hızlanıyor), frene basıyorsa ivme negatif (yavaşlıyor) olur. Kira örneğinde de durum aynıdır: "kira artışı hızlanıyor" demek f′ &gt; 0 ve f″ &gt; 0; "kira artışı yavaşlıyor" demek f′ &gt; 0 ama f″ &lt; 0.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>İkinci türev</strong> f″(x), birinci türevin türevidir ve teğet eğiminin x'e göre değişim hızını verir. f″(x) &gt; 0 ise x çevresinde eğim artmakta, f″(x) &lt; 0 ise azalmaktadır.</p>
+<p><strong>Neden?</strong> Türev, hangi fonksiyona uygulanırsa onun değişim hızını verir. f′ eğimi veren fonksiyon olduğu için f′'nün türevi eğimin değişim hızıdır. Parça 25'teki kural (türev pozitifse fonksiyon artan) f′'ye uygulanınca: f″ &gt; 0 ise f′ artandır.</p></div>
+
+<h2 class="s">2. Bükeylik: eğri hangi yöne kıvrılıyor?</h2>
+
+<p>Aşağıdaki iki eğrinin ikisi de 0 ile 4 arasında artandır ve ikisi de x = 2'de eğimi 1 olan bir teğete sahiptir. Ama biri yukarı doğru kıvrılıyor, öbürü aşağı doğru. Farkı yaratan şey eğimlerin gidişidir.</p>
+
+<figure>
+<svg viewBox="0 0 400 296" role="img" aria-label="İki artan eğri yan yana. Solda y eşittir x kare bölü 4 eğrisi yukarı bükeydir; x eşittir 2 noktasındaki teğet eğrinin altında kalır, eğimler 0,5'ten 1,5'e artar. Sağda y eşittir 2x eksi x kare bölü 4 eğrisi aşağı bükeydir; x eşittir 2 noktasındaki teğet eğrinin üstünde kalır, eğimler 1,5'ten 0,5'e azalır.">
+  <line class="sv-c" x1="25" y1="232" x2="193" y2="232" />
+  <line class="sv-c" x1="25" y1="232" x2="25" y2="48" />
+  <line class="sv-c" x1="65" y1="229" x2="65" y2="235" />
+  <text class="sv-s" x="65" y="248" text-anchor="middle">1</text>
+  <line class="sv-c" x1="22" y1="192" x2="28" y2="192" />
+  <line class="sv-c" x1="105" y1="229" x2="105" y2="235" />
+  <text class="sv-s" x="105" y="248" text-anchor="middle">2</text>
+  <line class="sv-c" x1="22" y1="152" x2="28" y2="152" />
+  <line class="sv-c" x1="145" y1="229" x2="145" y2="235" />
+  <text class="sv-s" x="145" y="248" text-anchor="middle">3</text>
+  <line class="sv-c" x1="22" y1="112" x2="28" y2="112" />
+  <line class="sv-c" x1="185" y1="229" x2="185" y2="235" />
+  <text class="sv-s" x="185" y="248" text-anchor="middle">4</text>
+  <line class="sv-c" x1="22" y1="72" x2="28" y2="72" />
+  <polyline class="sv-cl" points="25,232 29,231.9 33,231.6 37,231.1 41,230.4 45,229.5 49,228.4 53,227.1 57,225.6 61,223.9 65,222 69,219.9 73,217.6 77,215.1 81,212.4 85,209.5 89,206.4 93,203.1 97,199.6 101,195.9 105,192 109,187.9 113,183.6 117,179.1 121,174.4 125,169.5 129,164.4 133,159.1 137,153.6 141,147.9 145,142 149,135.9 153,129.6 157,123.1 161,116.4 165,109.5 169,102.4 173,95.1 177,87.6 181,79.9 185,72" />
+  <line class="sv-c" x1="49" y1="248" x2="169" y2="128" />
+  <circle class="sv-a" cx="105" cy="192" r="4" />
+  <circle class="sv-m" cx="65" cy="222" r="3" />
+  <circle class="sv-m" cx="145" cy="142" r="3" />
+  <text class="sv-b" x="110" y="20" text-anchor="middle">f″ &gt; 0: yukarı bükey</text>
+  <text class="sv-s" x="110" y="38" text-anchor="middle">(çukur, konveks)</text>
+  <text class="sv-t" x="110" y="270" text-anchor="middle">teğet altta kalır</text>
+  <text class="sv-s" x="110" y="288" text-anchor="middle">eğim 0,5 → 1 → 1,5</text>
+  <line class="sv-c" x1="215" y1="232" x2="383" y2="232" />
+  <line class="sv-c" x1="215" y1="232" x2="215" y2="48" />
+  <line class="sv-c" x1="255" y1="229" x2="255" y2="235" />
+  <text class="sv-s" x="255" y="248" text-anchor="middle">1</text>
+  <line class="sv-c" x1="212" y1="192" x2="218" y2="192" />
+  <line class="sv-c" x1="295" y1="229" x2="295" y2="235" />
+  <text class="sv-s" x="295" y="248" text-anchor="middle">2</text>
+  <line class="sv-c" x1="212" y1="152" x2="218" y2="152" />
+  <line class="sv-c" x1="335" y1="229" x2="335" y2="235" />
+  <text class="sv-s" x="335" y="248" text-anchor="middle">3</text>
+  <line class="sv-c" x1="212" y1="112" x2="218" y2="112" />
+  <line class="sv-c" x1="375" y1="229" x2="375" y2="235" />
+  <text class="sv-s" x="375" y="248" text-anchor="middle">4</text>
+  <line class="sv-c" x1="212" y1="72" x2="218" y2="72" />
+  <polyline class="sv-cl" points="215,232 219,224.1 223,216.4 227,208.9 231,201.6 235,194.5 239,187.6 243,180.9 247,174.4 251,168.1 255,162 259,156.1 263,150.4 267,144.9 271,139.6 275,134.5 279,129.6 283,124.9 287,120.4 291,116.1 295,112 299,108.1 303,104.4 307,100.9 311,97.6 315,94.5 319,91.6 323,88.9 327,86.4 331,84.1 335,82 339,80.1 343,78.4 347,76.9 351,75.6 355,74.5 359,73.6 363,72.9 367,72.4 371,72.1 375,72" />
+  <line class="sv-c" x1="231" y1="176" x2="351" y2="56" />
+  <circle class="sv-a" cx="295" cy="112" r="4" />
+  <circle class="sv-m" cx="255" cy="162" r="3" />
+  <circle class="sv-m" cx="335" cy="82" r="3" />
+  <text class="sv-b" x="300" y="20" text-anchor="middle">f″ &lt; 0: aşağı bükey</text>
+  <text class="sv-s" x="300" y="38" text-anchor="middle">(tümsek, konkav)</text>
+  <text class="sv-t" x="300" y="270" text-anchor="middle">teğet üstte kalır</text>
+  <text class="sv-s" x="300" y="288" text-anchor="middle">eğim 1,5 → 1 → 0,5</text>
+</svg>
+<figcaption>Gerçek ölçüyle: solda y = x<sup>2</sup>/4, sağda y = 2x − x<sup>2</sup>/4. Turuncu noktalar x = 2'deki değme noktası, yeşil noktalar x = 1 ve x = 3. Solda eğimler soldan sağa artıyor (f″ = 1/2 &gt; 0) ve teğet eğrinin altında kalıyor; sağda eğimler azalıyor (f″ = −1/2 &lt; 0) ve teğet eğrinin üstünde kalıyor.</figcaption>
+</figure>
+
+<p>Teğetin neden altta kaldığını bir kez kendin düşün; kural ezber olmaktan çıkar. Soldaki eğride değme noktasından sağa doğru yürü. Teğet hep aynı eğimle (1) yükselir. Eğri ise yürüdükçe daha dik yükselir, çünkü eğimi 1'in üstüne çıkar. Daha hızlı yükselen eğri teğetin üstünde kalır. Değme noktasından sola yürüdüğünde de teğet her birim için 1 aşağı iner; eğrinin eğimi orada 1'den küçük olduğu için eğri daha az iner, yine teğetin üstünde kalır. Sonuç: eğimler artıyorsa eğri, teğetinin iki yanında da teğetin üstündedir. Sağdaki eğri için aynı düşünce ters yönde işler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir aralıkta <strong>f″ &gt; 0</strong> ise f'nin grafiği o aralıkta <strong>yukarı bükeydir</strong> (konveks, çukur): eğim artar, her teğet grafiğin altında kalır, grafik ∪ gibi su tutar.</p>
+<p>Bir aralıkta <strong>f″ &lt; 0</strong> ise grafik o aralıkta <strong>aşağı bükeydir</strong> (konkav, tümsek): eğim azalır, her teğet grafiğin üstünde kalır, grafik ∩ gibi suyu döker.</p>
+<p><strong>Neden?</strong> f″ &gt; 0 demek f′'nün artan olması demektir (Bölüm 1); eğimi artan bir eğri, yukarıdaki yürüyüşte gördüğün gibi teğetinden yukarı kıvrılır.</p></div>
+
+<p>Kaynaklarda "konveks" ve "konkav" sözcükleri her zaman aynı anlamda kullanılmaz; bazı eski kitaplar bunları tersine ya da "içbükey/dışbükey" diye verir. Sınavda takılmamak için sözcüğe değil işarete güven: <strong>f″ &gt; 0 ⇔ ∪ (çukur)</strong>, <strong>f″ &lt; 0 ⇔ ∩ (tümsek)</strong>. Soru kökünde "çukur", "tümsek", "yukarı bükey" gibi sözcükler genellikle birlikte verilir.</p>
+
+<p>Birinci ve ikinci türevin işaretleri birlikte, grafiğin küçük bir parçasının biçimini tam olarak belirler. Dört olasılık var ve her birini bir cümleyle söyleyebilmelisin:</p>
+
+<div class="tablo"><table>
+<tr><th>f′</th><th>f″</th><th>Grafiğin biçimi</th><th>Günlük dille</th></tr>
+<tr><td>+</td><td>+</td><td>artan, çukur: giderek dikleşerek yükselir</td><td>hızlanan artış</td></tr>
+<tr><td>+</td><td>−</td><td>artan, tümsek: giderek yatıklaşarak yükselir</td><td>yavaşlayan artış</td></tr>
+<tr><td>−</td><td>+</td><td>azalan, çukur: giderek yatıklaşarak iner</td><td>yavaşlayan düşüş</td></tr>
+<tr><td>−</td><td>−</td><td>azalan, tümsek: giderek dikleşerek iner</td><td>hızlanan düşüş</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Bükeyliği artanlıkla karıştırmak.</strong> "f″ &gt; 0 ise f artandır" yanlıştır. f(x) = x<sup>2</sup> için f″ = 2 &gt; 0, yani grafik her yerde çukurdur; ama x &lt; 0'da fonksiyon azalandır. f″ yalnızca <em>f′'nün</em> artanlığını söyler. Artanlık sorusunu f′'nün işaretine, bükeylik sorusunu f″'nün işaretine sor; ikisini birbirinin yerine kullanma. Tablodaki dört satırın dördü de gerçekten vardır.</p></div>
+
+<h2 class="s">3. Büküm noktası</h2>
+
+<p>x<sup>3</sup> örneğine dön: x &lt; 0'da f″ &lt; 0 (tümsek), x &gt; 0'da f″ &gt; 0 (çukur). Grafik orijinde kıvrılma yönünü değiştiriyor. Böyle noktalara özel bir ad verilir, çünkü grafiğin karakterinin değiştiği yerlerdir ve çizimde mutlaka işaretlenmeleri gerekir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Grafiğin sürekli olduğu ve teğetinin bulunduğu bir noktada bükeylik yön değiştiriyorsa (bir yanda çukur, öbür yanda tümsek), o noktaya <strong>büküm noktası</strong> (dönüm noktası) denir. Polinomlarda büküm noktaları, <strong>f″'nün işaret değiştirdiği</strong> x değerlerindedir. Büküm noktası bir nokta olduğu için (a, f(a)) biçiminde yazılır.</p>
+<p><strong>Neden f″'ye bakılır?</strong> Bükeyliğin yönünü f″'nün işareti belirler; yön değişiyorsa işaret değişiyordur. Polinomda f″ de bir polinomdur ve süreklidir; işaret değiştirmek için sıfırdan geçmek zorundadır. Bu yüzden büküm noktasının apsisi f″ = 0 denkleminin bir köküdür.</p></div>
+
+<p>Büküm noktasında teğet eğriyi <strong>keser</strong>: tümsek tarafta teğet eğrinin üstünde, çukur tarafta altındadır. Bu, büküm noktasını grafikte tanımanın en kolay yoludur. Köklü fonksiyonlarda f″'nün tanımsız olduğu bir nokta da büküm adayı olabilir (y = ³√x orijinde böyledir); polinomlarda f″ her yerde tanımlı olduğu için yalnızca f″ = 0 kökleri adaydır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Büküm noktası bulma:</strong> (1) f″'yü bul ve çarpanlarına ayır. (2) f″ = 0 denkleminin köklerini yaz; bunlar yalnızca <em>aday</em>dır. (3) f″ için işaret tablosu kur (Parça 7: en sağdan baş katsayının işaretiyle başla, tek katlı kökte işaret değişir, çift katlı kökte değişmez). (4) İşaretin değiştiği her a için büküm noktası (a, f(a)) olur.</p>
+<p><strong>Neden işaret tablosu şart?</strong> f″(a) = 0 olması işaretin değiştiğini garanti etmez; çift katlı bir kökte f″ sıfıra değip geri döner.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = x<sup>4</sup> − 6x<sup>2</sup> + 5 fonksiyonunun grafiğinin çukur ve tümsek olduğu aralıkları ve büküm noktalarını bulun.</p>
+<p><strong>Adım 1.</strong> İki kez türev al.</p>
+<span class="mat">f′(x) = 4x<sup>3</sup> − 12x <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">f″(x) = 12x<sup>2</sup> − 12 <span class="g">(f′'nün türevi)</span></span>
+<p><strong>Adım 2.</strong> Çarpanlarına ayır ve kökleri yaz.</p>
+<span class="mat">f″(x) = 12(x − 1)(x + 1) <span class="g">(iki kare farkı)</span></span>
+<span class="mat">f″(x) = 0 ⇒ x = −1 ya da x = 1 <span class="g">(adaylar, ikisi de tek katlı)</span></span>
+<p><strong>Adım 3.</strong> İşaret tablosu: baş katsayı 12 &gt; 0, en sağda +; tek katlı köklerde işaret değişir.</p>
+<span class="mat">(−∞, −1): +  ·  (−1, 1): −  ·  (1, ∞): + <span class="g">(x = 0 koyarak denetle: f″(0) = −12 &lt; 0)</span></span>
+<p><strong>Adım 4.</strong> Yorumla.</p>
+<span class="mat">çukur: (−∞, −1) ve (1, ∞); tümsek: (−1, 1) <span class="g">(f″'nün işaretine göre)</span></span>
+<p><strong>Adım 5.</strong> Büküm noktalarının ordinatlarını f'den (f″'den değil) hesapla.</p>
+<span class="mat">f(1) = 1 − 6 + 5 = 0, f(−1) = 1 − 6 + 5 = 0 <span class="g">(işaret iki adayda da değişiyor)</span></span>
+<p><strong>Adım 6 (kontrol yolu).</strong> (1, 0)'daki teğetin eğimi f′(1) = 4 − 12 = −8, denklemi y = −8x + 8. x = 0,5'te eğri 3,5625, teğet 4: tümsek tarafta eğri teğetin altında. x = 1,5'te eğri −3,4375, teğet −4: çukur tarafta eğri teğetin üstünde. Teğet eğriyi gerçekten kesiyor. Ayrıca f çift fonksiyon olduğu için (Parça 1) büküm noktalarının y eksenine göre simetrik çıkması beklenir.</p>
+<p><strong>Sonuç:</strong> Grafik (−∞, −1) ve (1, ∞) aralıklarında çukur, (−1, 1) aralığında tümsektir; büküm noktaları (−1, 0) ve (1, 0)'dır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"f″(a) = 0 ise (a, f(a)) büküm noktasıdır" demek.</strong> f(x) = x<sup>4</sup> için f″(x) = 12x<sup>2</sup>; f″(0) = 0 ama 12x<sup>2</sup> çift katlı kökte işaret değiştirmez, iki yanda da pozitiftir. Grafik her yerde çukurdur ve orijin bir büküm noktası değil, en küçük değerin alındığı noktadır. f″ = 0 yalnızca aday üretir; karar işaret tablosunundur. İkinci bir yanlış: büküm noktasının ordinatını f″'den okumak. "(1, 0)" yazarken 0, f(1)'dir; f″(1) her büküm noktasında zaten 0'dır ve hiçbir bilgi taşımaz.</p></div>
+
+<h2 class="s">4. İkinci türev testi</h2>
+
+<p>Parça 25'te bir kritik noktanın (f′(a) = 0) yerel maksimum mu minimum mu olduğuna, f′'nün o noktadaki işaret değişimine bakarak karar verdin: − → + ise minimum, + → − ise maksimum. Bükeylik bunu kısaltır. Yatay teğetli bir noktada grafik çukursa (∪) o nokta bir çukurun dibidir; tümsekse (∩) bir tümseğin tepesidir.</p>
+
+<p>Bunu f′ üzerinden de söyleyebilirsin. f′(a) = 0 ve f″(a) &gt; 0 olsun. f″(a) &gt; 0, f′'nün a çevresinde artan olduğunu söyler. Artan bir fonksiyon a'da 0 değerini alıyorsa a'nın solunda 0'dan küçük, sağında 0'dan büyüktür. Yani f′'nün işareti − → + değişir: birinci türev testine göre yerel minimum. f″(a) &lt; 0 için her şey tersine döner.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>İkinci türev testi.</strong> f′(a) = 0 olsun.</p>
+<p>f″(a) &gt; 0 ise f, a'da <strong>yerel minimum</strong> yapar. f″(a) &lt; 0 ise f, a'da <strong>yerel maksimum</strong> yapar. f″(a) = 0 ise test <strong>sonuçsuzdur</strong>: maksimum, minimum ya da hiçbiri olabilir; birinci türev testine dön.</p>
+<p><strong>Neden?</strong> f″(a) &gt; 0 iken f′, a'da artan ve f′(a) = 0 olduğundan f′ − → + işaret değiştirir; grafik orada çukurdur ve yatay teğetli çukur noktası dip noktadır.</p></div>
+
+<p>"Sonuçsuz" sözcüğünü ciddiye al. Aşağıdaki üç fonksiyonun üçünde de x = 0'da f′(0) = 0 ve f″(0) = 0; ama davranışları üç farklıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>f(x)</th><th>f′(x)</th><th>f″(x)</th><th>x = 0'da f′'nün işareti</th><th>Sonuç</th></tr>
+<tr><td>x<sup>3</sup></td><td>3x<sup>2</sup></td><td>6x</td><td>+ → + (değişmez)</td><td>ekstremum yok; büküm noktası</td></tr>
+<tr><td>x<sup>4</sup></td><td>4x<sup>3</sup></td><td>12x<sup>2</sup></td><td>− → +</td><td>yerel minimum</td></tr>
+<tr><td>−x<sup>4</sup></td><td>−4x<sup>3</sup></td><td>−12x<sup>2</sup></td><td>+ → −</td><td>yerel maksimum</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> − 3x<sup>2</sup> − 9x + 1 fonksiyonunun yerel ekstremum noktalarını ikinci türev testiyle sınıflandırın ve büküm noktasını bulun.</p>
+<p><strong>Adım 1.</strong> Kritik noktalar.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 6x − 9 = 3(x − 3)(x + 1) <span class="g">(ortak çarpan 3, sonra çarpanlara ayırma)</span></span>
+<span class="mat">f′(x) = 0 ⇒ x = −1 ya da x = 3</span>
+<p><strong>Adım 2.</strong> İkinci türevi kritik noktalarda hesapla.</p>
+<span class="mat">f″(x) = 6x − 6 <span class="g">(f′'nün türevi)</span></span>
+<span class="mat">f″(−1) = −12 &lt; 0 ⇒ x = −1'de yerel maksimum</span>
+<span class="mat">f″(3) = 12 &gt; 0 ⇒ x = 3'te yerel minimum</span>
+<p><strong>Adım 3.</strong> Değerleri f'den hesapla.</p>
+<span class="mat">f(−1) = −1 − 3 + 9 + 1 = 6 <span class="g">(yerel maksimum değeri)</span></span>
+<span class="mat">f(3) = 27 − 27 − 27 + 1 = −26 <span class="g">(yerel minimum değeri)</span></span>
+<p><strong>Adım 4.</strong> Büküm noktası: f″ = 6x − 6 doğrusal, tek kökünde işaret değiştirir.</p>
+<span class="mat">6x − 6 = 0 ⇒ x = 1, f(1) = 1 − 3 − 9 + 1 = −10</span>
+<p><strong>Adım 5 (kontrol yolu).</strong> İki ekstremum noktasının orta noktası ((−1 + 3)/2, (6 + (−26))/2) = (1, −10). Büküm noktasıyla aynı. Bu rastlantı değil; Bölüm 6'da nedenini göreceksin.</p>
+<p><strong>Sonuç:</strong> Yerel maksimum (−1, 6), yerel minimum (3, −26), büküm noktası (1, −10).</p></div>
+
+<p>Hangi testi seçeceksin? f″ kolay hesaplanıyorsa ve yalnızca ekstremumun türü soruluyorsa ikinci türev testi hızlıdır: işaret tablosu kurmadan tek bir sayının işaretine bakarsın. f″(a) = 0 çıkarsa ya da f′ zaten çarpanlarına ayrılmış duruyorsa birinci türev testi daha güvenlidir, çünkü her zaman sonuç verir.</p>
+
+<h2 class="s">5. Büküm noktası verilip katsayı bulma</h2>
+
+<p>"Grafiğinin büküm noktası A(a, b) olduğuna göre …" diye başlayan sorularda iki bilgi saklıdır ve ikisini de denklem olarak yazman gerekir: büküm noktasının apsisi f″'nün kökü olmalı, nokta da eğrinin üzerinde olmalıdır. Soru bir de "büküm noktasındaki teğetin eğimi m" diyorsa üçüncü denklem f′(a) = m olur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>A(a, b), f'nin grafiğinin büküm noktası ise <strong>f″(a) = 0</strong> ve <strong>f(a) = b</strong>'dir. Bulduğun katsayılarla f″'nün a'da gerçekten işaret değiştirdiğini denetle.</p>
+<p><strong>Neden?</strong> İlk denklem büküm noktası tanımının gerekli koşulu (Bölüm 3), ikincisi noktanın grafiğe ait olmasıdır. Gerekli koşul yeterli olmadığı için denetim şarttır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> + ax<sup>2</sup> + bx + 1 fonksiyonunun grafiğinin büküm noktası A(1, −2) olduğuna göre a ve b kaçtır? Büküm noktasındaki teğetin eğimi kaçtır?</p>
+<p><strong>Adım 1.</strong> Türevleri yaz.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> + 2ax + b, f″(x) = 6x + 2a</span>
+<p><strong>Adım 2.</strong> Birinci koşul: f″(1) = 0.</p>
+<span class="mat">6 + 2a = 0 ⇒ a = −3</span>
+<p><strong>Adım 3.</strong> İkinci koşul: f(1) = −2.</p>
+<span class="mat">1 + a + b + 1 = −2 <span class="g">(x = 1 koyduk)</span></span>
+<span class="mat">1 − 3 + b + 1 = −2 ⇒ b = −1 <span class="g">(a = −3)</span></span>
+<p><strong>Adım 4.</strong> Denetim: f″(x) = 6x − 6 doğrusaldır, x = 1'de işaret değiştirir. Koşul gerçekten sağlanıyor.</p>
+<p><strong>Adım 5.</strong> Teğetin eğimi f′(1).</p>
+<span class="mat">f′(1) = 3 + 2 · (−3) · 1 + (−1) = −4</span>
+<p><strong>Sonuç:</strong> a = −3, b = −1; büküm noktasındaki teğetin eğimi −4. f(x) = x<sup>3</sup> − 3x<sup>2</sup> − x + 1 için f(1) = −2 olduğunu yerine koyarak bir kez daha görebilirsin.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Parametreyi bulup işaret denetimini atlamak.</strong> "f(x) = x<sup>4</sup> + ax<sup>3</sup> + 6x<sup>2</sup> fonksiyonunun x = 1'de büküm noktası varsa a kaçtır?" sorusunda f″(x) = 12x<sup>2</sup> + 6ax + 12 ve f″(1) = 0'dan a = −4 bulunur. Ama o zaman f″(x) = 12x<sup>2</sup> − 24x + 12 = 12(x − 1)<sup>2</sup> olur: çift katlı kök, işaret değişmez. x = 1'de büküm noktası yoktur; doğru cevap "böyle bir a yoktur"dur. Bir başka sık hata, büküm koşulu yerine f′(a) = 0 yazmaktır; o, yatay teğetin koşuludur.</p></div>
+
+<h2 class="s">6. Üçüncü dereceden fonksiyon: büküm noktası simetri merkezidir</h2>
+
+<p>f(x) = ax<sup>3</sup> + bx<sup>2</sup> + cx + d (a ≠ 0) için f″(x) = 6ax + 2b doğrusaldır. Doğrusal bir ifadenin tek kökü vardır ve orada mutlaka işaret değiştirir. Bu yüzden <strong>her üçüncü dereceden polinomun tam olarak bir büküm noktası vardır</strong> ve apsisi r = −b/(3a)'dır.</p>
+
+<p>Bu noktanın iki özelliği daha var. Birincisi, f′(x) = 3ax<sup>2</sup> + 2bx + c bir paraboldür ve tepe noktasının apsisi −2b/(6a) = −b/(3a)'dır (Parça 5). Yani büküm noktası, eğimin en küçük (a &gt; 0 ise) ya da en büyük (a &lt; 0 ise) olduğu yerdir. f′ = 0'ın kökleri, yani ekstremumların apsisleri, varsa bu tepeye göre simetriktir; büküm noktasının apsisi iki ekstremum apsisinin ortasıdır. İkincisi, f'nin üç gerçek kökü varsa kökler toplamı −b/a olduğundan (kök-katsayı bağıntısı) r, köklerin aritmetik ortalamasıdır.</p>
+
+<p>Asıl güçlü özellik şudur: grafik büküm noktasına göre <strong>simetriktir</strong>. Nedenini görmek için x yerine r + t yaz, yani büküm noktasından t birim uzaklaş. Açınca t<sup>2</sup>'li terimin katsayısı 3ar + b çıkar ve r = −b/(3a) olduğu için bu katsayı sıfırdır. Geriye kalan:</p>
+
+<span class="mat">f(r + t) = at<sup>3</sup> + f′(r) · t + f(r) <span class="g">(t<sup>2</sup> terimi sıfır; t'nin katsayısı f′(r))</span></span>
+
+<p>Demek ki g(t) = f(r + t) − f(r) = at<sup>3</sup> + f′(r) · t yalnızca tek kuvvetlerden oluşan bir polinomdur, yani tek fonksiyondur (Parça 1): g(−t) = −g(t). Parça 4'ün diliyle: grafiği, büküm noktası orijine gelecek biçimde ötelersen orijine göre simetrik bir eğri elde edersin. Geri ötelediğinde simetri merkezi büküm noktası olur.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Üçüncü dereceden f'nin büküm noktası (r, f(r)) ise, r = −b/(3a) ve her t için</p>
+<span class="mat">f(r + t) + f(r − t) = 2 · f(r)</span>
+<p><strong>Neden?</strong> g(t) = f(r + t) − f(r) tek fonksiyondur: g(t) + g(−t) = 0. Bunu açınca formül çıkar. Geometrik anlamı: büküm noktasına göre simetrik iki noktanın ordinatlarının ortalaması f(r)'dir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 350" role="img" aria-label="y eşittir x küp eksi 3x artı 2 grafiği. Yerel maksimum (−1, 4), yerel minimum (1, 0), büküm noktası (0, 2). (−1, 4) ile (1, 0) noktalarını ve (−2, 0) ile (2, 4) noktalarını birleştiren kesikli doğru parçalarının ikisinin de orta noktası büküm noktasıdır. Eğri x eksenine x eşittir 1'de teğettir, x eşittir −2'de keser.">
+  <line class="sv-c" x1="18" y1="240" x2="382" y2="240" />
+  <line class="sv-c" x1="200" y1="340.8" x2="200" y2="18.8" />
+  <line class="sv-c" x1="60" y1="237" x2="60" y2="243" />
+  <text class="sv-s" x="72" y="256" text-anchor="middle">−2</text>
+  <line class="sv-c" x1="130" y1="237" x2="130" y2="243" />
+  <text class="sv-s" x="130" y="256" text-anchor="middle">−1</text>
+  <line class="sv-c" x1="270" y1="237" x2="270" y2="243" />
+  <text class="sv-s" x="270" y="256" text-anchor="middle">1</text>
+  <line class="sv-c" x1="340" y1="237" x2="340" y2="243" />
+  <text class="sv-s" x="340" y="256" text-anchor="middle">2</text>
+  <line class="sv-c" x1="197" y1="184" x2="203" y2="184" />
+  <line class="sv-c" x1="197" y1="128" x2="203" y2="128" />
+  <line class="sv-c" x1="197" y1="72" x2="203" y2="72" />
+  <text class="sv-s" x="194" y="76" text-anchor="end">6</text>
+  <polyline class="sv-cl" points="39,331.5 42.5,313.9 46,297.3 49.5,281.7 53,266.9 56.5,253 60,240 63.5,227.8 67,216.5 70.5,205.9 74,196.1 77.5,187.1 81,178.8 84.5,171.2 88,164.3 91.5,158.1 95,152.5 98.5,147.6 102,143.2 105.5,139.5 109,136.3 112.5,133.7 116,131.6 119.5,130 123,128.9 126.5,128.2 130,128 133.5,128.2 137,128.8 140.5,129.8 144,131.1 147.5,132.8 151,134.8 154.5,137.1 158,139.6 161.5,142.5 165,145.5 168.5,148.8 172,152.2 175.5,155.8 179,159.6 182.5,163.4 186,167.4 189.5,171.5 193,175.6 196.5,179.8 200,184 203.5,188.2 207,192.4 210.5,196.5 214,200.6 217.5,204.6 221,208.4 224.5,212.2 228,215.8 231.5,219.2 235,222.5 238.5,225.5 242,228.4 245.5,230.9 249,233.2 252.5,235.2 256,236.9 259.5,238.2 263,239.2 266.5,239.8 270,240 273.5,239.8 277,239.1 280.5,238 284,236.4 287.5,234.3 291,231.7 294.5,228.5 298,224.8 301.5,220.4 305,215.5 308.5,209.9 312,203.7 315.5,196.8 319,189.2 322.5,180.9 326,171.9 329.5,162.1 333,151.5 336.5,140.2 340,128 343.5,115 347,101.1 350.5,86.3 354,70.7 357.5,54.1 361,36.5" />
+  <line class="sv-c" x1="130" y1="128" x2="133.9" y2="131.1" />
+  <line class="sv-c" x1="137.8" y1="134.2" x2="141.7" y2="137.4" />
+  <line class="sv-c" x1="145.6" y1="140.5" x2="149.5" y2="143.6" />
+  <line class="sv-c" x1="153.4" y1="146.7" x2="157.3" y2="149.9" />
+  <line class="sv-c" x1="161.2" y1="153" x2="165.1" y2="156.1" />
+  <line class="sv-c" x1="169" y1="159.2" x2="172.9" y2="162.4" />
+  <line class="sv-c" x1="176.9" y1="165.5" x2="180.8" y2="168.6" />
+  <line class="sv-c" x1="184.7" y1="171.7" x2="188.6" y2="174.9" />
+  <line class="sv-c" x1="192.5" y1="178" x2="196.4" y2="181.1" />
+  <line class="sv-c" x1="200.3" y1="184.2" x2="204.2" y2="187.3" />
+  <line class="sv-c" x1="208.1" y1="190.5" x2="212" y2="193.6" />
+  <line class="sv-c" x1="215.9" y1="196.7" x2="219.8" y2="199.8" />
+  <line class="sv-c" x1="223.7" y1="203" x2="227.6" y2="206.1" />
+  <line class="sv-c" x1="231.5" y1="209.2" x2="235.4" y2="212.3" />
+  <line class="sv-c" x1="239.3" y1="215.5" x2="243.2" y2="218.6" />
+  <line class="sv-c" x1="247.1" y1="221.7" x2="251" y2="224.8" />
+  <line class="sv-c" x1="254.9" y1="228" x2="258.8" y2="231.1" />
+  <line class="sv-c" x1="262.7" y1="234.2" x2="266.7" y2="237.3" />
+  <line class="sv-c" x1="60" y1="240" x2="64.6" y2="238.1" />
+  <line class="sv-c" x1="69.3" y1="236.3" x2="73.9" y2="234.4" />
+  <line class="sv-c" x1="78.6" y1="232.6" x2="83.2" y2="230.7" />
+  <line class="sv-c" x1="87.9" y1="228.9" x2="92.5" y2="227" />
+  <line class="sv-c" x1="97.1" y1="225.1" x2="101.8" y2="223.3" />
+  <line class="sv-c" x1="106.4" y1="221.4" x2="111.1" y2="219.6" />
+  <line class="sv-c" x1="115.7" y1="217.7" x2="120.4" y2="215.9" />
+  <line class="sv-c" x1="125" y1="214" x2="129.6" y2="212.1" />
+  <line class="sv-c" x1="134.3" y1="210.3" x2="138.9" y2="208.4" />
+  <line class="sv-c" x1="143.6" y1="206.6" x2="148.2" y2="204.7" />
+  <line class="sv-c" x1="152.8" y1="202.9" x2="157.5" y2="201" />
+  <line class="sv-c" x1="162.1" y1="199.1" x2="166.8" y2="197.3" />
+  <line class="sv-c" x1="171.4" y1="195.4" x2="176.1" y2="193.6" />
+  <line class="sv-c" x1="180.7" y1="191.7" x2="185.3" y2="189.9" />
+  <line class="sv-c" x1="190" y1="188" x2="194.6" y2="186.1" />
+  <line class="sv-c" x1="199.3" y1="184.3" x2="203.9" y2="182.4" />
+  <line class="sv-c" x1="208.6" y1="180.6" x2="213.2" y2="178.7" />
+  <line class="sv-c" x1="217.8" y1="176.9" x2="222.5" y2="175" />
+  <line class="sv-c" x1="227.1" y1="173.1" x2="231.8" y2="171.3" />
+  <line class="sv-c" x1="236.4" y1="169.4" x2="241.1" y2="167.6" />
+  <line class="sv-c" x1="245.7" y1="165.7" x2="250.3" y2="163.9" />
+  <line class="sv-c" x1="255" y1="162" x2="259.6" y2="160.2" />
+  <line class="sv-c" x1="264.3" y1="158.3" x2="268.9" y2="156.4" />
+  <line class="sv-c" x1="273.5" y1="154.6" x2="278.2" y2="152.7" />
+  <line class="sv-c" x1="282.8" y1="150.9" x2="287.5" y2="149" />
+  <line class="sv-c" x1="292.1" y1="147.2" x2="296.8" y2="145.3" />
+  <line class="sv-c" x1="301.4" y1="143.4" x2="306" y2="141.6" />
+  <line class="sv-c" x1="310.7" y1="139.7" x2="315.3" y2="137.9" />
+  <line class="sv-c" x1="320" y1="136" x2="324.6" y2="134.2" />
+  <line class="sv-c" x1="329.3" y1="132.3" x2="333.9" y2="130.4" />
+  <line class="sv-c" x1="338.5" y1="128.6" x2="340" y2="128" />
+  <circle class="sv-m" cx="130" cy="128" r="4" />
+  <circle class="sv-m" cx="270" cy="240" r="4" />
+  <circle class="sv-m" cx="60" cy="240" r="4" />
+  <circle class="sv-m" cx="340" cy="128" r="4" />
+  <circle class="sv-a" cx="200" cy="184" r="5" />
+  <text class="sv-t" x="130" y="116" text-anchor="middle">yerel maks. (−1, 4)</text>
+  <text class="sv-t" x="268" y="272" text-anchor="start">yerel min. (1, 0)</text>
+  <text class="sv-s" x="268" y="288" text-anchor="start">çift katlı kök: teğet</text>
+  <text class="sv-b" x="212" y="188" text-anchor="start">büküm (0, 2)</text>
+  <text class="sv-s" x="348" y="148" text-anchor="start">(2, 4)</text>
+  <text class="sv-s" x="56" y="230" text-anchor="end">(−2, 0)</text>
+  <text class="sv-b" x="14" y="40" text-anchor="start">y = x³ − 3x + 2</text>
+  <text class="sv-s" x="392" y="234" text-anchor="end">x</text>
+  <text class="sv-s" x="208" y="22" text-anchor="start">y</text>
+</svg>
+<figcaption>y = x<sup>3</sup> − 3x + 2 = (x − 1)<sup>2</sup>(x + 2), gerçek ölçüyle. Büküm noktası (0, 2). Yerel maksimum (−1, 4) ile yerel minimum (1, 0) büküm noktasına göre simetrik; (−2, 0) ile (2, 4) de öyle: 0 + 4 = 2 · 2. Eğrinin büküm noktasındaki eğimi f′(0) = −3, eğrinin her yerdeki en küçük eğimidir.</figcaption>
+</figure>
+
+<p>Formülü sayılarla dene. Örnek 2'deki fonksiyonun büküm noktası (1, −10) idi. f(−1) = 6 ve f(3) = −26; −1 ile 3, 1'e göre simetrik ve 6 + (−26) = −20 = 2 · (−10). Sınavdaki kalıp şöyledir: "f üçüncü dereceden bir polinom, büküm noktası (1, 4) ve f(0) = 7 ise f(2) kaçtır?" Cevap: 0 ile 2, 1'e göre simetrik olduğundan f(0) + f(2) = 8, yani f(2) = 1. f'yi hiç bulmadan.</p>
+
+<h2 class="s">7. f, f′ ve f″ grafikleri arasında geçiş</h2>
+
+<p>AYT'nin sevdiği bir soru türü, f'nin değil f′'nün grafiğini verip f hakkında soru sormaktır. Bu sorularda yapılacak tek şey, bakılan grafiğin hangi özelliğinin f'nin hangi özelliğine karşılık geldiğini karıştırmamaktır. Aşağıdaki tablo bütün eşleşmeleri toplar.</p>
+
+<div class="tablo"><table>
+<tr><th>f'de aranan</th><th>f′ grafiğinde görünüşü</th><th>f″ grafiğinde görünüşü</th></tr>
+<tr><td>f artan</td><td>f′ x ekseninin üstünde</td><td>doğrudan okunmaz</td></tr>
+<tr><td>f'nin yerel ekstremumu</td><td>f′ x eksenini keserek geçer</td><td>doğrudan okunmaz</td></tr>
+<tr><td>f çukur (yukarı bükey)</td><td>f′ artan</td><td>f″ x ekseninin üstünde</td></tr>
+<tr><td>f tümsek (aşağı bükey)</td><td>f′ azalan</td><td>f″ x ekseninin altında</td></tr>
+<tr><td>f'nin büküm noktası</td><td>f′'nün yerel ekstremumu</td><td>f″ x eksenini keserek geçer</td></tr>
+</table></div>
+
+<p>Son satır en çok kaçırılandır. Büküm noktasında bükeylik değişir; bükeylik f′'nün artanlığıdır; f′'nün artanlığının değiştiği yer f′'nün tepe ya da çukur noktasıdır. Yani <strong>f'nin büküm noktası, f′'nün yerel ekstremum noktasıdır.</strong> Aşağıdaki üç grafik bunu aynı x ölçeğinde gösteriyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 412" role="img" aria-label="Üst üste üç grafik, aynı x ölçeğinde. Üstte f(x) eşittir x küp eksi 3x: x eşittir −1'de yerel maksimum, x eşittir 1'de yerel minimum, x eşittir 0'da büküm noktası. Ortada f′(x) eşittir 3x kare eksi 3: x eşittir ±1'de x eksenini keser, x eşittir 0'da en küçük değeri −3'tür. Altta f″(x) eşittir 6x: x eşittir 0'da negatiften pozitife geçer. Kesikli dikey çizgiler x eşittir −1, 0, 1'i üç grafikte hizalar.">
+  <line class="sv-c" x1="168" y1="10" x2="168" y2="14" />
+  <line class="sv-c" x1="168" y1="18" x2="168" y2="22" />
+  <line class="sv-c" x1="168" y1="26" x2="168" y2="30" />
+  <line class="sv-c" x1="168" y1="34" x2="168" y2="38" />
+  <line class="sv-c" x1="168" y1="42" x2="168" y2="46" />
+  <line class="sv-c" x1="168" y1="50" x2="168" y2="54" />
+  <line class="sv-c" x1="168" y1="58" x2="168" y2="62" />
+  <line class="sv-c" x1="168" y1="66" x2="168" y2="70" />
+  <line class="sv-c" x1="168" y1="74" x2="168" y2="78" />
+  <line class="sv-c" x1="168" y1="82" x2="168" y2="86" />
+  <line class="sv-c" x1="168" y1="90" x2="168" y2="94" />
+  <line class="sv-c" x1="168" y1="98" x2="168" y2="102" />
+  <line class="sv-c" x1="168" y1="106" x2="168" y2="110" />
+  <line class="sv-c" x1="168" y1="114" x2="168" y2="118" />
+  <line class="sv-c" x1="168" y1="122" x2="168" y2="126" />
+  <line class="sv-c" x1="168" y1="130" x2="168" y2="134" />
+  <line class="sv-c" x1="168" y1="138" x2="168" y2="142" />
+  <line class="sv-c" x1="168" y1="146" x2="168" y2="150" />
+  <line class="sv-c" x1="168" y1="154" x2="168" y2="158" />
+  <line class="sv-c" x1="168" y1="162" x2="168" y2="166" />
+  <line class="sv-c" x1="168" y1="170" x2="168" y2="174" />
+  <line class="sv-c" x1="168" y1="178" x2="168" y2="182" />
+  <line class="sv-c" x1="168" y1="186" x2="168" y2="190" />
+  <line class="sv-c" x1="168" y1="194" x2="168" y2="198" />
+  <line class="sv-c" x1="168" y1="202" x2="168" y2="206" />
+  <line class="sv-c" x1="168" y1="210" x2="168" y2="214" />
+  <line class="sv-c" x1="168" y1="218" x2="168" y2="222" />
+  <line class="sv-c" x1="168" y1="226" x2="168" y2="230" />
+  <line class="sv-c" x1="168" y1="234" x2="168" y2="238" />
+  <line class="sv-c" x1="168" y1="242" x2="168" y2="246" />
+  <line class="sv-c" x1="168" y1="250" x2="168" y2="254" />
+  <line class="sv-c" x1="168" y1="258" x2="168" y2="262" />
+  <line class="sv-c" x1="168" y1="266" x2="168" y2="270" />
+  <line class="sv-c" x1="168" y1="274" x2="168" y2="278" />
+  <line class="sv-c" x1="168" y1="282" x2="168" y2="286" />
+  <line class="sv-c" x1="168" y1="290" x2="168" y2="294" />
+  <line class="sv-c" x1="168" y1="298" x2="168" y2="302" />
+  <line class="sv-c" x1="168" y1="306" x2="168" y2="310" />
+  <line class="sv-c" x1="168" y1="314" x2="168" y2="318" />
+  <line class="sv-c" x1="168" y1="322" x2="168" y2="326" />
+  <line class="sv-c" x1="168" y1="330" x2="168" y2="334" />
+  <line class="sv-c" x1="168" y1="338" x2="168" y2="342" />
+  <line class="sv-c" x1="168" y1="346" x2="168" y2="350" />
+  <line class="sv-c" x1="168" y1="354" x2="168" y2="358" />
+  <line class="sv-c" x1="168" y1="362" x2="168" y2="366" />
+  <line class="sv-c" x1="168" y1="370" x2="168" y2="374" />
+  <line class="sv-c" x1="168" y1="378" x2="168" y2="382" />
+  <line class="sv-c" x1="168" y1="386" x2="168" y2="388" />
+  <line class="sv-c" x1="236" y1="10" x2="236" y2="14" />
+  <line class="sv-c" x1="236" y1="18" x2="236" y2="22" />
+  <line class="sv-c" x1="236" y1="26" x2="236" y2="30" />
+  <line class="sv-c" x1="236" y1="34" x2="236" y2="38" />
+  <line class="sv-c" x1="236" y1="42" x2="236" y2="46" />
+  <line class="sv-c" x1="236" y1="50" x2="236" y2="54" />
+  <line class="sv-c" x1="236" y1="58" x2="236" y2="62" />
+  <line class="sv-c" x1="236" y1="66" x2="236" y2="70" />
+  <line class="sv-c" x1="236" y1="74" x2="236" y2="78" />
+  <line class="sv-c" x1="236" y1="82" x2="236" y2="86" />
+  <line class="sv-c" x1="236" y1="90" x2="236" y2="94" />
+  <line class="sv-c" x1="236" y1="98" x2="236" y2="102" />
+  <line class="sv-c" x1="236" y1="106" x2="236" y2="110" />
+  <line class="sv-c" x1="236" y1="114" x2="236" y2="118" />
+  <line class="sv-c" x1="236" y1="122" x2="236" y2="126" />
+  <line class="sv-c" x1="236" y1="130" x2="236" y2="134" />
+  <line class="sv-c" x1="236" y1="138" x2="236" y2="142" />
+  <line class="sv-c" x1="236" y1="146" x2="236" y2="150" />
+  <line class="sv-c" x1="236" y1="154" x2="236" y2="158" />
+  <line class="sv-c" x1="236" y1="162" x2="236" y2="166" />
+  <line class="sv-c" x1="236" y1="170" x2="236" y2="174" />
+  <line class="sv-c" x1="236" y1="178" x2="236" y2="182" />
+  <line class="sv-c" x1="236" y1="186" x2="236" y2="190" />
+  <line class="sv-c" x1="236" y1="194" x2="236" y2="198" />
+  <line class="sv-c" x1="236" y1="202" x2="236" y2="206" />
+  <line class="sv-c" x1="236" y1="210" x2="236" y2="214" />
+  <line class="sv-c" x1="236" y1="218" x2="236" y2="222" />
+  <line class="sv-c" x1="236" y1="226" x2="236" y2="230" />
+  <line class="sv-c" x1="236" y1="234" x2="236" y2="238" />
+  <line class="sv-c" x1="236" y1="242" x2="236" y2="246" />
+  <line class="sv-c" x1="236" y1="250" x2="236" y2="254" />
+  <line class="sv-c" x1="236" y1="258" x2="236" y2="262" />
+  <line class="sv-c" x1="236" y1="266" x2="236" y2="270" />
+  <line class="sv-c" x1="236" y1="274" x2="236" y2="278" />
+  <line class="sv-c" x1="236" y1="282" x2="236" y2="286" />
+  <line class="sv-c" x1="236" y1="290" x2="236" y2="294" />
+  <line class="sv-c" x1="236" y1="298" x2="236" y2="302" />
+  <line class="sv-c" x1="236" y1="306" x2="236" y2="310" />
+  <line class="sv-c" x1="236" y1="314" x2="236" y2="318" />
+  <line class="sv-c" x1="236" y1="322" x2="236" y2="326" />
+  <line class="sv-c" x1="236" y1="330" x2="236" y2="334" />
+  <line class="sv-c" x1="236" y1="338" x2="236" y2="342" />
+  <line class="sv-c" x1="236" y1="346" x2="236" y2="350" />
+  <line class="sv-c" x1="236" y1="354" x2="236" y2="358" />
+  <line class="sv-c" x1="236" y1="362" x2="236" y2="366" />
+  <line class="sv-c" x1="236" y1="370" x2="236" y2="374" />
+  <line class="sv-c" x1="236" y1="378" x2="236" y2="382" />
+  <line class="sv-c" x1="236" y1="386" x2="236" y2="388" />
+  <line class="sv-c" x1="304" y1="10" x2="304" y2="14" />
+  <line class="sv-c" x1="304" y1="18" x2="304" y2="22" />
+  <line class="sv-c" x1="304" y1="26" x2="304" y2="30" />
+  <line class="sv-c" x1="304" y1="34" x2="304" y2="38" />
+  <line class="sv-c" x1="304" y1="42" x2="304" y2="46" />
+  <line class="sv-c" x1="304" y1="50" x2="304" y2="54" />
+  <line class="sv-c" x1="304" y1="58" x2="304" y2="62" />
+  <line class="sv-c" x1="304" y1="66" x2="304" y2="70" />
+  <line class="sv-c" x1="304" y1="74" x2="304" y2="78" />
+  <line class="sv-c" x1="304" y1="82" x2="304" y2="86" />
+  <line class="sv-c" x1="304" y1="90" x2="304" y2="94" />
+  <line class="sv-c" x1="304" y1="98" x2="304" y2="102" />
+  <line class="sv-c" x1="304" y1="106" x2="304" y2="110" />
+  <line class="sv-c" x1="304" y1="114" x2="304" y2="118" />
+  <line class="sv-c" x1="304" y1="122" x2="304" y2="126" />
+  <line class="sv-c" x1="304" y1="130" x2="304" y2="134" />
+  <line class="sv-c" x1="304" y1="138" x2="304" y2="142" />
+  <line class="sv-c" x1="304" y1="146" x2="304" y2="150" />
+  <line class="sv-c" x1="304" y1="154" x2="304" y2="158" />
+  <line class="sv-c" x1="304" y1="162" x2="304" y2="166" />
+  <line class="sv-c" x1="304" y1="170" x2="304" y2="174" />
+  <line class="sv-c" x1="304" y1="178" x2="304" y2="182" />
+  <line class="sv-c" x1="304" y1="186" x2="304" y2="190" />
+  <line class="sv-c" x1="304" y1="194" x2="304" y2="198" />
+  <line class="sv-c" x1="304" y1="202" x2="304" y2="206" />
+  <line class="sv-c" x1="304" y1="210" x2="304" y2="214" />
+  <line class="sv-c" x1="304" y1="218" x2="304" y2="222" />
+  <line class="sv-c" x1="304" y1="226" x2="304" y2="230" />
+  <line class="sv-c" x1="304" y1="234" x2="304" y2="238" />
+  <line class="sv-c" x1="304" y1="242" x2="304" y2="246" />
+  <line class="sv-c" x1="304" y1="250" x2="304" y2="254" />
+  <line class="sv-c" x1="304" y1="258" x2="304" y2="262" />
+  <line class="sv-c" x1="304" y1="266" x2="304" y2="270" />
+  <line class="sv-c" x1="304" y1="274" x2="304" y2="278" />
+  <line class="sv-c" x1="304" y1="282" x2="304" y2="286" />
+  <line class="sv-c" x1="304" y1="290" x2="304" y2="294" />
+  <line class="sv-c" x1="304" y1="298" x2="304" y2="302" />
+  <line class="sv-c" x1="304" y1="306" x2="304" y2="310" />
+  <line class="sv-c" x1="304" y1="314" x2="304" y2="318" />
+  <line class="sv-c" x1="304" y1="322" x2="304" y2="326" />
+  <line class="sv-c" x1="304" y1="330" x2="304" y2="334" />
+  <line class="sv-c" x1="304" y1="338" x2="304" y2="342" />
+  <line class="sv-c" x1="304" y1="346" x2="304" y2="350" />
+  <line class="sv-c" x1="304" y1="354" x2="304" y2="358" />
+  <line class="sv-c" x1="304" y1="362" x2="304" y2="366" />
+  <line class="sv-c" x1="304" y1="370" x2="304" y2="374" />
+  <line class="sv-c" x1="304" y1="378" x2="304" y2="382" />
+  <line class="sv-c" x1="304" y1="386" x2="304" y2="388" />
+  <line class="sv-c" x1="83" y1="70" x2="389" y2="70" />
+  <line class="sv-c" x1="100" y1="67" x2="100" y2="73" />
+  <line class="sv-c" x1="372" y1="67" x2="372" y2="73" />
+  <polyline class="sv-cl" points="96.6,121.8 100,112 103.4,102.9 106.8,94.3 110.2,86.4 113.6,79.1 117,72.3 120.4,66.1 123.8,60.4 127.2,55.2 130.6,50.6 134,46.4 137.4,42.7 140.8,39.4 144.2,36.6 147.6,34.2 151,32.3 154.4,30.7 157.8,29.5 161.2,28.7 164.6,28.2 168,28 171.4,28.2 174.8,28.6 178.2,29.3 181.6,30.4 185,31.6 188.4,33.1 191.8,34.8 195.2,36.7 198.6,38.8 202,41.1 205.4,43.6 208.8,46.1 212.2,48.9 215.6,51.7 219,54.6 222.4,57.6 225.8,60.6 229.2,63.7 232.6,66.9 236,70 239.4,73.1 242.8,76.3 246.2,79.4 249.6,82.4 253,85.4 256.4,88.3 259.8,91.1 263.2,93.9 266.6,96.4 270,98.9 273.4,101.2 276.8,103.3 280.2,105.2 283.6,106.9 287,108.4 290.4,109.6 293.8,110.7 297.2,111.4 300.6,111.8 304,112 307.4,111.8 310.8,111.3 314.2,110.5 317.6,109.3 321,107.7 324.4,105.8 327.8,103.4 331.2,100.6 334.6,97.3 338,93.6 341.4,89.4 344.8,84.8 348.2,79.6 351.6,73.9 355,67.7 358.4,60.9 361.8,53.6 365.2,45.7 368.6,37.1 372,28 375.4,18.2" />
+  <circle class="sv-m" cx="168" cy="28" r="4" />
+  <circle class="sv-m" cx="304" cy="112" r="4" />
+  <circle class="sv-a" cx="236" cy="70" r="4" />
+  <text class="sv-b" x="6" y="66" text-anchor="start">f</text>
+  <text class="sv-s" x="6" y="84" text-anchor="start">x³ − 3x</text>
+  <line class="sv-c" x1="83" y1="228" x2="389" y2="228" />
+  <line class="sv-c" x1="100" y1="225" x2="100" y2="231" />
+  <line class="sv-c" x1="372" y1="225" x2="372" y2="231" />
+  <polyline class="sv-cl" points="96.6,141.5 100,147 103.4,152.3 106.8,157.5 110.2,162.6 113.6,167.5 117,172.3 120.4,177 123.8,181.5 127.2,185.9 130.6,190.1 134,194.2 137.4,198.2 140.8,202.1 144.2,205.8 147.6,209.4 151,212.8 154.4,216.1 157.8,219.3 161.2,222.3 164.6,225.2 168,228 171.4,230.6 174.8,233.1 178.2,235.5 181.6,237.7 185,239.8 188.4,241.8 191.8,243.6 195.2,245.3 198.6,246.8 202,248.2 205.4,249.5 208.8,250.7 212.2,251.7 215.6,252.6 219,253.3 222.4,253.9 225.8,254.4 229.2,254.7 232.6,254.9 236,255 239.4,254.9 242.8,254.7 246.2,254.4 249.6,253.9 253,253.3 256.4,252.6 259.8,251.7 263.2,250.7 266.6,249.5 270,248.2 273.4,246.8 276.8,245.3 280.2,243.6 283.6,241.8 287,239.8 290.4,237.7 293.8,235.5 297.2,233.1 300.6,230.6 304,228 307.4,225.2 310.8,222.3 314.2,219.3 317.6,216.1 321,212.8 324.4,209.4 327.8,205.8 331.2,202.1 334.6,198.2 338,194.3 341.4,190.1 344.8,185.9 348.2,181.5 351.6,177 355,172.3 358.4,167.5 361.8,162.6 365.2,157.5 368.6,152.3 372,147 375.4,141.5" />
+  <circle class="sv-a" cx="236" cy="255" r="4" />
+  <circle class="sv-m" cx="168" cy="228" r="4" />
+  <circle class="sv-m" cx="304" cy="228" r="4" />
+  <text class="sv-b" x="6" y="224" text-anchor="start">f′</text>
+  <text class="sv-s" x="6" y="242" text-anchor="start">3x² − 3</text>
+  <line class="sv-c" x1="83" y1="330" x2="389" y2="330" />
+  <line class="sv-c" x1="100" y1="327" x2="100" y2="333" />
+  <line class="sv-c" x1="372" y1="327" x2="372" y2="333" />
+  <polyline class="sv-cl" points="96.6,382.9 100,381.6 103.4,380.3 106.8,379 110.2,377.7 113.6,376.4 117,375.1 120.4,373.9 123.8,372.6 127.2,371.3 130.6,370 134,368.7 137.4,367.4 140.8,366.1 144.2,364.8 147.6,363.5 151,362.2 154.4,361 157.8,359.7 161.2,358.4 164.6,357.1 168,355.8 171.4,354.5 174.8,353.2 178.2,351.9 181.6,350.6 185,349.4 188.4,348.1 191.8,346.8 195.2,345.5 198.6,344.2 202,342.9 205.4,341.6 208.8,340.3 212.2,339 215.6,337.7 219,336.4 222.4,335.2 225.8,333.9 229.2,332.6 232.6,331.3 236,330 239.4,328.7 242.8,327.4 246.2,326.1 249.6,324.8 253,323.6 256.4,322.3 259.8,321 263.2,319.7 266.6,318.4 270,317.1 273.4,315.8 276.8,314.5 280.2,313.2 283.6,311.9 287,310.7 290.4,309.4 293.8,308.1 297.2,306.8 300.6,305.5 304,304.2 307.4,302.9 310.8,301.6 314.2,300.3 317.6,299 321,297.8 324.4,296.5 327.8,295.2 331.2,293.9 334.6,292.6 338,291.3 341.4,290 344.8,288.7 348.2,287.4 351.6,286.1 355,284.9 358.4,283.6 361.8,282.3 365.2,281 368.6,279.7 372,278.4 375.4,277.1" />
+  <circle class="sv-a" cx="236" cy="330" r="4" />
+  <text class="sv-b" x="6" y="326" text-anchor="start">f″</text>
+  <text class="sv-s" x="6" y="344" text-anchor="start">6x</text>
+  <text class="sv-s" x="168" y="404" text-anchor="middle">x = −1</text>
+  <text class="sv-s" x="236" y="404" text-anchor="middle">x = 0</text>
+  <text class="sv-s" x="304" y="404" text-anchor="middle">x = 1</text>
+</svg>
+<figcaption>f(x) = x<sup>3</sup> − 3x ve türevleri, aynı x ölçeğinde. f'nin ekstremumları (x = ±1) f′'nün x eksenini kestiği yerlerin tam üstünde. f'nin büküm noktası (x = 0), f′'nün en küçük değerini aldığı yerin ve f″'nün x eksenini kestiği yerin tam üstünde. Derece her türevde bir düşer: 3, 2, 1.</figcaption>
+</figure>
+
+<p><strong>Eşleştirme soruları.</strong> Üç grafik verilir ve hangisinin f, hangisinin f′, hangisinin f″ olduğu sorulur. İki ipucu her zaman işe yarar. Birincisi derece: polinomda her türev dereceyi bir düşürür; doğru olan grafik, en alttaki türevdir. İkincisi hizalama: bir grafiğin yatay teğetli noktaları (tepe, çukur), bir başkasının x eksenini kestiği yerlerin tam üstündeyse ikincisi birincinin türevidir. Bu testi her çift için yap; tutarlı tek sıralama cevaptır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Bir f polinom fonksiyonunun türevi olan f′'nün grafiği aşağıda verilmiştir (f′(x) = x<sup>3</sup> − 3x<sup>2</sup>). Buna göre (a) f'nin artan ve azalan olduğu aralıkları ve yerel ekstremumlarını, (b) f'nin çukur ve tümsek olduğu aralıkları ve büküm noktalarının apsislerini bulun.</p>
+<figure>
+<svg viewBox="0 0 400 275" role="img" aria-label="Bir f fonksiyonunun türevi olan f′ fonksiyonunun grafiği: f′(x) eşittir x küp eksi 3x kare. Grafik x eşittir 0'da x eksenine üstten değip geri döner (orada f′ için yerel maksimum, değeri 0), x eşittir 2'de en alçak noktasına iner (değer −4), x eşittir 3'te x eksenini aşağıdan yukarı keser.">
+  <line class="sv-c" x1="12" y1="150" x2="396" y2="150" />
+  <line class="sv-c" x1="108" y1="263.4" x2="108" y2="11.4" />
+  <line class="sv-c" x1="28" y1="147" x2="28" y2="153" />
+  <line class="sv-c" x1="188" y1="147" x2="188" y2="153" />
+  <line class="sv-c" x1="268" y1="147" x2="268" y2="153" />
+  <line class="sv-c" x1="348" y1="147" x2="348" y2="153" />
+  <text class="sv-s" x="28" y="142" text-anchor="middle">−1</text>
+  <text class="sv-s" x="188" y="142" text-anchor="middle">1</text>
+  <text class="sv-s" x="268" y="142" text-anchor="middle">2</text>
+  <text class="sv-s" x="338" y="142" text-anchor="middle">3</text>
+  <line class="sv-c" x1="105" y1="234" x2="111" y2="234" />
+  <text class="sv-s" x="101" y="238" text-anchor="end">−4</text>
+  <line class="sv-c" x1="105" y1="66" x2="111" y2="66" />
+  <text class="sv-s" x="101" y="70" text-anchor="end">4</text>
+  <polyline class="sv-cl" points="20,254.2 24,243.8 28,234 32,224.9 36,216.3 40,208.4 44,201.1 48,194.3 52,188.1 56,182.4 60,177.2 64,172.6 68,168.4 72,164.7 76,161.4 80,158.6 84,156.2 88,154.3 92,152.7 96,151.5 100,150.7 104,150.2 108,150 112,150.2 116,150.6 120,151.3 124,152.4 128,153.6 132,155.1 136,156.8 140,158.7 144,160.8 148,163.1 152,165.6 156,168.1 160,170.9 164,173.7 168,176.6 172,179.6 176,182.6 180,185.7 184,188.9 188,192 192,195.1 196,198.3 200,201.4 204,204.4 208,207.4 212,210.3 216,213.1 220,215.9 224,218.4 228,220.9 232,223.2 236,225.3 240,227.2 244,228.9 248,230.4 252,231.6 256,232.7 260,233.4 264,233.8 268,234 272,233.8 276,233.3 280,232.5 284,231.3 288,229.7 292,227.8 296,225.4 300,222.6 304,219.3 308,215.6 312,211.4 316,206.8 320,201.6 324,195.9 328,189.7 332,182.9 336,175.6 340,167.7 344,159.1 348,150 352,140.2 356,129.8 360,118.7 364,107 368,94.5 372,81.4 376,67.5 380,52.9 384,37.5 388,21.4" />
+  <line class="sv-c" x1="268" y1="150" x2="268" y2="154" />
+  <line class="sv-c" x1="268" y1="158" x2="268" y2="162" />
+  <line class="sv-c" x1="268" y1="166" x2="268" y2="170" />
+  <line class="sv-c" x1="268" y1="174" x2="268" y2="178" />
+  <line class="sv-c" x1="268" y1="182" x2="268" y2="186" />
+  <line class="sv-c" x1="268" y1="190" x2="268" y2="194" />
+  <line class="sv-c" x1="268" y1="198" x2="268" y2="202" />
+  <line class="sv-c" x1="268" y1="206" x2="268" y2="210" />
+  <line class="sv-c" x1="268" y1="214" x2="268" y2="218" />
+  <line class="sv-c" x1="268" y1="222" x2="268" y2="226" />
+  <line class="sv-c" x1="268" y1="230" x2="268" y2="234" />
+  <circle class="sv-a" cx="108" cy="150" r="4" />
+  <circle class="sv-a" cx="268" cy="234" r="4" />
+  <circle class="sv-m" cx="348" cy="150" r="4" />
+  <text class="sv-s" x="116" y="106" text-anchor="start">f′ için yerel maks.</text>
+  <text class="sv-s" x="116" y="122" text-anchor="start">(0, 0), değer 0</text>
+  <text class="sv-s" x="268" y="254" text-anchor="middle">f′ için yerel min. (2, −4)</text>
+  <text class="sv-b" x="384" y="23.5" text-anchor="end">y = f′(x)</text>
+  <text class="sv-s" x="392" y="144" text-anchor="end">x</text>
+</svg>
+<figcaption>Verilen grafik f′'nündür, f'nin değil. Turuncu noktalar f′'nün yerel ekstremumları, yeşil nokta f′'nün işaret değiştirdiği kök.</figcaption>
+</figure>
+<p><strong>Adım 1.</strong> (a) için f′'nün <em>işaretine</em> bak. Grafik x &lt; 3'te x ekseninin altında (x = 0'da yalnızca eksene değiyor), x &gt; 3'te üstünde.</p>
+<span class="mat">f azalan: (−∞, 3); f artan: (3, ∞) <span class="g">(f′ ≤ 0 ve f′ ≥ 0 bölgeleri)</span></span>
+<p><strong>Adım 2.</strong> İşaret değişimi yalnızca x = 3'te (− → +): orada yerel minimum. x = 0'da f′ sıfır olur ama işaret değişmez (− → −): orada ekstremum yok, yalnızca yatay teğet var.</p>
+<p><strong>Adım 3.</strong> (b) için f′'nün <em>artanlığına</em> bak. f′ grafiği (−∞, 0)'da yükseliyor, (0, 2)'de iniyor, (2, ∞)'da yeniden yükseliyor.</p>
+<span class="mat">f çukur: (−∞, 0) ve (2, ∞); f tümsek: (0, 2) <span class="g">(f′ artan ⇔ çukur)</span></span>
+<p><strong>Adım 4.</strong> Büküm noktaları f′'nün yerel ekstremumlarında: x = 0 (f′ için tepe) ve x = 2 (f′ için çukur).</p>
+<p><strong>Adım 5 (kontrol yolu).</strong> f″ = 3x<sup>2</sup> − 6x = 3x(x − 2): kökler 0 ve 2, işaret + − +. Grafikten okuduğunla aynı.</p>
+<p><strong>Sonuç:</strong> f, (−∞, 3)'te azalan, (3, ∞)'da artan; tek yerel ekstremumu x = 3'teki yerel minimum. Büküm noktalarının apsisleri 0 ve 2. x = 0'daki nokta hem yatay teğetli hem büküm noktasıdır. Örnek 6'da türevi bunun dört katı olan bir fonksiyonu çizecek ve bu sonuçları şekilde göreceksin.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>f′ grafiğinin tepe noktasını f'nin maksimumu sanmak.</strong> Örnek 4'te f′ grafiğinin x = 0'daki tepe noktasını görüp "f, x = 0'da yerel maksimum yapar" demek, f′ grafiğini f grafiği gibi okumaktır. f′'nün tepe noktası f'nin <em>büküm</em> noktasıdır; f'nin ekstremumu f′'nün x eksenini <em>keserek</em> geçtiği yerdedir. Soruyu okurken önce "bu grafik kimin?" diye sor ve grafiğin altına not et.</p></div>
+
+<h2 class="s">8. Polinom grafiği çizme adımları</h2>
+
+<p>Şimdi elindeki her şeyi birleştir. Bir polinomun grafiğini doğru çizmek için nokta tablosu doldurmaya gerek yoktur; şu sorulara cevap verirsen grafiğin biçimi kendiliğinden belirlenir: nerede başlar ve biter, ekseni nerede ve nasıl keser, nerede yükselir ve iner, nereye doğru kıvrılır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>(1) Tanım kümesi:</strong> polinomda bütün gerçek sayılar. <strong>(2) Eksen kesişimleri:</strong> y eksenini (0, f(0))'da keser; x eksenini köklerde keser ya da kökte eksene değer. Kökleri katlılıklarıyla yaz. <strong>(3) Uç davranış:</strong> x → ±∞ iken f'nin gidişini baş terimden oku. <strong>(4) f′ tablosu:</strong> kritik noktalar, artan-azalan aralıklar, ekstremum değerleri. <strong>(5) f″ tablosu:</strong> çukur-tümsek aralıklar, büküm noktaları. <strong>(6) Birleşik değişim tablosu:</strong> bütün özel noktaları sıraya diz, her aralık için f′ ve f″ işaretini ve f'nin biçimini yaz. <strong>(7) Çizim:</strong> özel noktaları koy, tablodaki biçimlerle birleştir.</p>
+<p><strong>Neden bu sıra?</strong> Her adım bir öncekinin bilgisini daraltır: uç davranış eğrinin iki ucunu, f′ yükselip inme sırasını, f″ her parçanın kıvrılma yönünü belirler. Aynı işaret dizisine uyan yalnızca bir biçim vardır.</p></div>
+
+<p><strong>Uç davranış.</strong> |x| çok büyükken baş terim öbür terimlerin hepsinden baskın çıkar (Parça 20'deki sezgi): x<sup>3</sup> − 3x + 2'de x = 100 için x<sup>3</sup> bir milyon, 3x yalnızca 300'dür. Bu yüzden yalnızca derecenin tek-çift oluşuna ve baş katsayının işaretine bakılır.</p>
+
+<div class="tablo"><table>
+<tr><th>Derece</th><th>Baş katsayı</th><th>x → −∞ iken</th><th>x → +∞ iken</th><th>Örnek</th></tr>
+<tr><td>çift</td><td>pozitif</td><td>f → +∞</td><td>f → +∞</td><td>x<sup>4</sup> − 4x<sup>3</sup></td></tr>
+<tr><td>çift</td><td>negatif</td><td>f → −∞</td><td>f → −∞</td><td>−x<sup>2</sup> + 1</td></tr>
+<tr><td>tek</td><td>pozitif</td><td>f → −∞</td><td>f → +∞</td><td>x<sup>3</sup> − 3x + 2</td></tr>
+<tr><td>tek</td><td>negatif</td><td>f → +∞</td><td>f → −∞</td><td>−x<sup>3</sup> + x</td></tr>
+</table></div>
+
+<p><strong>Kökün katlılığı.</strong> f(x) = (x − r)<sup>k</sup> · q(x) ve q(r) ≠ 0 olsun. x, r'ye çok yakınken q(x) neredeyse sabit, q(r) kadardır; grafik r çevresinde q(r) · (x − r)<sup>k</sup> gibi davranır. Yani tek katlı kökte doğru gibi, çift katlı kökte parabol gibi, üç katlı kökte x<sup>3</sup> gibi.</p>
+
+<figure>
+<svg viewBox="0 0 400 220" role="img" aria-label="Köklerin katlılığına göre grafiğin x eksenindeki davranışı, üç küçük grafik. Tek katlı kökte eğri x eksenini eğik olarak keser. Çift katlı kökte eğri x eksenine teğet olur ve geri döner, işaret değişmez. Üç katlı kökte eğri x eksenine teğet olur ve keserek geçer, kökte büküm noktası vardır.">
+  <line class="sv-c" x1="12.5" y1="90" x2="127.5" y2="90" />
+  <line class="sv-c" x1="70" y1="152.5" x2="70" y2="27.5" />
+  <polyline class="sv-cl" points="15,145 17.5,142.5 20,140 22.5,137.5 25,135 27.5,132.5 30,130 32.5,127.5 35,125 37.5,122.5 40,120 42.5,117.5 45,115 47.5,112.5 50,110 52.5,107.5 55,105 57.5,102.5 60,100 62.5,97.5 65,95 67.5,92.5 70,90 72.5,87.5 75,85 77.5,82.5 80,80 82.5,77.5 85,75 87.5,72.5 90,70 92.5,67.5 95,65 97.5,62.5 100,60 102.5,57.5 105,55 107.5,52.5 110,50 112.5,47.5 115,45 117.5,42.5 120,40 122.5,37.5 125,35" />
+  <circle class="sv-a" cx="70" cy="90" r="4" />
+  <text class="sv-b" x="70" y="172" text-anchor="middle">tek katlı</text>
+  <text class="sv-s" x="70" y="190" text-anchor="middle">keserek geçer</text>
+  <line class="sv-c" x1="142.5" y1="90" x2="257.5" y2="90" />
+  <line class="sv-c" x1="200" y1="152.5" x2="200" y2="27.5" />
+  <polyline class="sv-cl" points="147.5,34.9 149.9,39.8 152.3,44.4 154.7,48.9 157,53.1 159.4,57.1 161.8,60.8 164.2,64.4 166.6,67.7 169,70.8 171.4,73.6 173.8,76.2 176.1,78.6 178.5,80.8 180.9,82.7 183.3,84.4 185.7,85.9 188.1,87.2 190.5,88.2 192.8,89 195.2,89.5 197.6,89.9 200,90 202.4,89.9 204.8,89.5 207.2,89 209.5,88.2 211.9,87.2 214.3,85.9 216.7,84.4 219.1,82.7 221.5,80.8 223.9,78.6 226.2,76.2 228.6,73.6 231,70.8 233.4,67.7 235.8,64.4 238.2,60.8 240.6,57.1 243,53.1 245.3,48.9 247.7,44.4 250.1,39.8 252.5,34.9" />
+  <circle class="sv-a" cx="200" cy="90" r="4" />
+  <text class="sv-b" x="200" y="172" text-anchor="middle">çift katlı</text>
+  <text class="sv-s" x="200" y="190" text-anchor="middle">teğet, kesmez</text>
+  <line class="sv-c" x1="272.5" y1="90" x2="387.5" y2="90" />
+  <line class="sv-c" x1="330" y1="152.5" x2="330" y2="27.5" />
+  <polyline class="sv-cl" points="275,156.6 277.5,147.9 280,140 282.5,132.9 285,126.5 287.5,120.7 290,115.6 292.5,111.1 295,107.2 297.5,103.7 300,100.8 302.5,98.3 305,96.2 307.5,94.6 310,93.2 312.5,92.1 315,91.3 317.5,90.8 320,90.4 322.5,90.2 325,90 327.5,90 330,90 332.5,90 335,90 337.5,89.8 340,89.6 342.5,89.2 345,88.7 347.5,87.9 350,86.8 352.5,85.4 355,83.8 357.5,81.7 360,79.2 362.5,76.3 365,72.9 367.5,68.9 370,64.4 372.5,59.3 375,53.6 377.5,47.1 380,40 382.5,32.1 385,23.4" />
+  <circle class="sv-a" cx="330" cy="90" r="4" />
+  <text class="sv-b" x="330" y="172" text-anchor="middle">üç katlı</text>
+  <text class="sv-s" x="330" y="190" text-anchor="middle">teğet ve keser</text>
+  <text class="sv-s" x="200" y="212" text-anchor="middle">ikinci ve üçüncüde x ekseni kökte teğettir; üçüncüde büküm</text>
+</svg>
+<figcaption>Kök çevresindeki üç davranış. Tek katlı kökte işaret değişir, eğri eğik keser. Çift katlı kökte işaret değişmez: eğri eksene teğet olur ve orada yerel ekstremum vardır. Üç katlı kökte işaret değişir ama eğri eksene teğettir: yatay teğetli bir büküm noktası.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Polinomun x eksenindeki davranışı kökün katlılığına bağlıdır: <strong>tek katlı</strong> kökte eksen kesilir; <strong>çift katlı</strong> kökte eksene teğet olunur ve kesilmez (yerel ekstremum); <strong>üç katlı</strong> kökte eksene teğet olunur ve kesilir (büküm noktası).</p>
+<p><strong>Neden?</strong> Kök çevresinde grafik c(x − r)<sup>k</sup> gibidir. k tekse (x − r)<sup>k</sup> r'de işaret değiştirir, çiftse değiştirmez. k ≥ 2 ise f′(r) = 0 olur, yani teğet yataydır; k = 3'te ayrıca f″ de r'de işaret değiştirir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> − 3x + 2 fonksiyonunun grafiğini çizin.</p>
+<p><strong>Adım 1.</strong> Tanım kümesi R. y kesişimi f(0) = 2.</p>
+<p><strong>Adım 2.</strong> Kökler: x = 1 koyunca 1 − 3 + 2 = 0, demek ki (x − 1) bir çarpan. Bölünce:</p>
+<span class="mat">x<sup>3</sup> − 3x + 2 = (x − 1)(x<sup>2</sup> + x − 2) = (x − 1)<sup>2</sup>(x + 2) <span class="g">(x<sup>2</sup> + x − 2 = (x − 1)(x + 2))</span></span>
+<span class="mat">x = −2 tek katlı (keser), x = 1 çift katlı (teğet) <span class="g">(katlılık)</span></span>
+<p><strong>Adım 3.</strong> Uç davranış: tek derece, baş katsayı 1 &gt; 0: solda −∞, sağda +∞.</p>
+<p><strong>Adım 4.</strong> f′ tablosu.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 3 = 3(x − 1)(x + 1) <span class="g">(işaret + − +)</span></span>
+<span class="mat">yerel maks. f(−1) = −1 + 3 + 2 = 4; yerel min. f(1) = 0</span>
+<p><strong>Adım 5.</strong> f″ tablosu.</p>
+<span class="mat">f″(x) = 6x <span class="g">(x &lt; 0'da −, x &gt; 0'da +)</span></span>
+<span class="mat">büküm noktası (0, f(0)) = (0, 2)</span>
+<p><strong>Adım 6.</strong> Birleşik değişim tablosu:</p>
+<div class="tablo"><table>
+<tr><th>Aralık ya da nokta</th><th>f′</th><th>f″</th><th>f'nin davranışı</th></tr>
+<tr><td>(−∞, −1)</td><td>+</td><td>−</td><td>artan, tümsek (−∞'dan gelir; x = −2'de ekseni keser)</td></tr>
+<tr><td>x = −1</td><td>0</td><td>−</td><td>yerel maksimum: 4</td></tr>
+<tr><td>(−1, 0)</td><td>−</td><td>−</td><td>azalan, tümsek</td></tr>
+<tr><td>x = 0</td><td>−</td><td>0</td><td>büküm noktası: 2</td></tr>
+<tr><td>(0, 1)</td><td>−</td><td>+</td><td>azalan, çukur</td></tr>
+<tr><td>x = 1</td><td>0</td><td>+</td><td>yerel minimum: 0 (eksene teğet)</td></tr>
+<tr><td>(1, ∞)</td><td>+</td><td>+</td><td>artan, çukur (+∞'a gider)</td></tr>
+</table></div>
+<p><strong>Adım 7.</strong> Noktaları koy: (−2, 0), (−1, 4), (0, 2), (1, 0). Tabloyu soldan sağa izleyerek birleştir. Sonuç Bölüm 6'daki şekildir.</p>
+<p><strong>Adım 8 (kontrol yolu).</strong> Tablo kendi içinde tutarlı olmalı: maksimumda f″ negatif (tümsek), minimumda pozitif (çukur); çift katlı kökte (x = 1) yerel minimum ve değeri 0; büküm noktası ekstremumların ortası ((−1 + 1)/2, (4 + 0)/2) = (0, 2).</p>
+<p><strong>Sonuç:</strong> Grafik soldan aşağıdan gelir, x = −2'de ekseni keser, (−1, 4)'te tepe yapar, (0, 2)'de kıvrılma yönünü değiştirir, (1, 0)'da eksene teğet olup geri döner ve sağda yükselir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> f(x) = x<sup>4</sup> − 4x<sup>3</sup> fonksiyonunun grafiğini çizin.</p>
+<p><strong>Adım 1.</strong> Eksen kesişimleri: f(0) = 0.</p>
+<span class="mat">x<sup>4</sup> − 4x<sup>3</sup> = x<sup>3</sup>(x − 4) <span class="g">(x<sup>3</sup> ortak çarpan)</span></span>
+<span class="mat">x = 0 üç katlı (teğet ve keser), x = 4 tek katlı (keser)</span>
+<p><strong>Adım 2.</strong> Uç davranış: çift derece, baş katsayı pozitif: iki uçta da +∞.</p>
+<p><strong>Adım 3.</strong> f′ tablosu.</p>
+<span class="mat">f′(x) = 4x<sup>3</sup> − 12x<sup>2</sup> = 4x<sup>2</sup>(x − 3) <span class="g">(x = 0 çift katlı, x = 3 tek katlı)</span></span>
+<span class="mat">işaret: (−∞, 0) −, (0, 3) −, (3, ∞) + <span class="g">(çift katlı kökte değişmez)</span></span>
+<span class="mat">yerel min. f(3) = 81 − 108 = −27; x = 0'da ekstremum yok</span>
+<p><strong>Adım 4.</strong> f″ tablosu.</p>
+<span class="mat">f″(x) = 12x<sup>2</sup> − 24x = 12x(x − 2) <span class="g">(işaret + − +)</span></span>
+<span class="mat">büküm noktaları: (0, 0) ve (2, f(2)) = (2, 16 − 32) = (2, −16)</span>
+<p><strong>Adım 5.</strong> Birleşik tablo, kısaca: (−∞, 0) azalan-çukur; 0'da yatay teğetli büküm; (0, 2) azalan-tümsek; 2'de büküm; (2, 3) azalan-çukur; 3'te minimum −27; (3, ∞) artan-çukur, x = 4'te ekseni keser.</p>
+<figure>
+<svg viewBox="0 0 400 355" role="img" aria-label="y eşittir x üzeri 4 eksi 4x küp grafiği. Eğri soldan yukarıdan iner, orijinde yatay teğetle büküm yapar, (2, −16) noktasında ikinci bir büküm noktasından geçer, (3, −27) noktasında en küçük değerini alır, x eşittir 4'te x eksenini keserek yükselir.">
+  <line class="sv-c" x1="7.6" y1="128" x2="395.2" y2="128" />
+  <line class="sv-c" x1="96" y1="348.4" x2="96" y2="10.2" />
+  <line class="sv-c" x1="28" y1="125" x2="28" y2="131" />
+  <line class="sv-c" x1="164" y1="125" x2="164" y2="131" />
+  <line class="sv-c" x1="232" y1="125" x2="232" y2="131" />
+  <line class="sv-c" x1="300" y1="125" x2="300" y2="131" />
+  <line class="sv-c" x1="368" y1="125" x2="368" y2="131" />
+  <text class="sv-s" x="28" y="120" text-anchor="middle">−1</text>
+  <text class="sv-s" x="164" y="120" text-anchor="middle">1</text>
+  <line class="sv-c" x1="93" y1="204" x2="99" y2="204" />
+  <text class="sv-s" x="89" y="208" text-anchor="end">−10</text>
+  <line class="sv-c" x1="93" y1="280" x2="99" y2="280" />
+  <text class="sv-s" x="89" y="284" text-anchor="end">−20</text>
+  <polyline class="sv-cl" points="24.6,83.6 28,90 31.4,95.7 34.8,100.9 38.2,105.4 41.6,109.3 45,112.8 48.4,115.7 51.8,118.3 55.2,120.4 58.6,122.2 62,123.7 65.4,124.9 68.8,125.9 72.2,126.6 75.6,127.1 79,127.5 82.4,127.7 85.8,127.9 89.2,128 92.6,128 96,128 99.4,128 102.8,128 106.2,128.1 109.6,128.2 113,128.4 116.4,128.8 119.8,129.2 123.2,129.8 126.6,130.5 130,131.3 133.4,132.4 136.8,133.6 140.2,135 143.6,136.6 147,138.4 150.4,140.5 153.8,142.7 157.2,145.2 160.6,147.9 164,150.8 167.4,154 170.8,157.3 174.2,160.9 177.6,164.8 181,168.8 184.4,173.1 187.8,177.6 191.2,182.2 194.6,187.1 198,192.1 201.4,197.3 204.8,202.7 208.2,208.2 211.6,213.9 215,219.6 218.4,225.5 221.8,231.5 225.2,237.5 228.6,243.5 232,249.6 235.4,255.7 238.8,261.7 242.2,267.7 245.6,273.7 249,279.5 252.4,285.2 255.8,290.7 259.2,296.1 262.6,301.2 266,306.1 269.4,310.7 272.8,315 276.2,318.9 279.6,322.5 283,325.6 286.4,328.2 289.8,330.3 293.2,331.9 296.6,332.9 300,333.2 303.4,332.9 306.8,331.8 310.2,329.9 313.6,327.2 317,323.7 320.4,319.2 323.8,313.7 327.2,307.2 330.6,299.6 334,290.9 337.4,281 340.8,269.8 344.2,257.3 347.6,243.5 351,228.2 354.4,211.4 357.8,193.1 361.2,173.1 364.6,151.4 368,128 371.4,102.8 374.8,75.6 378.2,46.5 381.6,15.4" />
+  <line class="sv-c" x1="232" y1="128" x2="232" y2="132" />
+  <line class="sv-c" x1="232" y1="136" x2="232" y2="140" />
+  <line class="sv-c" x1="232" y1="144" x2="232" y2="148" />
+  <line class="sv-c" x1="232" y1="152" x2="232" y2="156" />
+  <line class="sv-c" x1="232" y1="160" x2="232" y2="164" />
+  <line class="sv-c" x1="232" y1="168" x2="232" y2="172" />
+  <line class="sv-c" x1="232" y1="176" x2="232" y2="180" />
+  <line class="sv-c" x1="232" y1="184" x2="232" y2="188" />
+  <line class="sv-c" x1="232" y1="192" x2="232" y2="196" />
+  <line class="sv-c" x1="232" y1="200" x2="232" y2="204" />
+  <line class="sv-c" x1="232" y1="208" x2="232" y2="212" />
+  <line class="sv-c" x1="232" y1="216" x2="232" y2="220" />
+  <line class="sv-c" x1="232" y1="224" x2="232" y2="228" />
+  <line class="sv-c" x1="232" y1="232" x2="232" y2="236" />
+  <line class="sv-c" x1="232" y1="240" x2="232" y2="244" />
+  <line class="sv-c" x1="232" y1="248" x2="232" y2="249.6" />
+  <line class="sv-c" x1="300" y1="128" x2="300" y2="132" />
+  <line class="sv-c" x1="300" y1="136" x2="300" y2="140" />
+  <line class="sv-c" x1="300" y1="144" x2="300" y2="148" />
+  <line class="sv-c" x1="300" y1="152" x2="300" y2="156" />
+  <line class="sv-c" x1="300" y1="160" x2="300" y2="164" />
+  <line class="sv-c" x1="300" y1="168" x2="300" y2="172" />
+  <line class="sv-c" x1="300" y1="176" x2="300" y2="180" />
+  <line class="sv-c" x1="300" y1="184" x2="300" y2="188" />
+  <line class="sv-c" x1="300" y1="192" x2="300" y2="196" />
+  <line class="sv-c" x1="300" y1="200" x2="300" y2="204" />
+  <line class="sv-c" x1="300" y1="208" x2="300" y2="212" />
+  <line class="sv-c" x1="300" y1="216" x2="300" y2="220" />
+  <line class="sv-c" x1="300" y1="224" x2="300" y2="228" />
+  <line class="sv-c" x1="300" y1="232" x2="300" y2="236" />
+  <line class="sv-c" x1="300" y1="240" x2="300" y2="244" />
+  <line class="sv-c" x1="300" y1="248" x2="300" y2="252" />
+  <line class="sv-c" x1="300" y1="256" x2="300" y2="260" />
+  <line class="sv-c" x1="300" y1="264" x2="300" y2="268" />
+  <line class="sv-c" x1="300" y1="272" x2="300" y2="276" />
+  <line class="sv-c" x1="300" y1="280" x2="300" y2="284" />
+  <line class="sv-c" x1="300" y1="288" x2="300" y2="292" />
+  <line class="sv-c" x1="300" y1="296" x2="300" y2="300" />
+  <line class="sv-c" x1="300" y1="304" x2="300" y2="308" />
+  <line class="sv-c" x1="300" y1="312" x2="300" y2="316" />
+  <line class="sv-c" x1="300" y1="320" x2="300" y2="324" />
+  <line class="sv-c" x1="300" y1="328" x2="300" y2="332" />
+  <circle class="sv-a" cx="96" cy="128" r="5" />
+  <circle class="sv-a" cx="232" cy="249.6" r="5" />
+  <circle class="sv-m" cx="300" cy="333.2" r="4" />
+  <circle class="sv-m" cx="368" cy="128" r="4" />
+  <text class="sv-s" x="106" y="92" text-anchor="start">(0, 0): büküm,</text>
+  <text class="sv-s" x="106" y="108" text-anchor="start">yatay teğet</text>
+  <text class="sv-s" x="224" y="253.6" text-anchor="end">büküm (2, −16)</text>
+  <text class="sv-s" x="308" y="339.2" text-anchor="start">min. (3, −27)</text>
+  <text class="sv-s" x="360" y="120" text-anchor="end">4</text>
+  <text class="sv-s" x="232" y="120" text-anchor="middle">2</text>
+  <text class="sv-s" x="300" y="120" text-anchor="middle">3</text>
+  <text class="sv-b" x="177.6" y="36.8" text-anchor="start">y = x⁴ − 4x³</text>
+  <text class="sv-s" x="392" y="122" text-anchor="end">x</text>
+</svg>
+<figcaption>y = x<sup>4</sup> − 4x<sup>3</sup>, gerçek ölçüyle (düşey eksen sıkıştırıldı: bir birim yatayda 68, düşeyde 7,6 birim). Orijinde üç katlı kök: eğri eksene teğet olup keserek geçer, aynı nokta hem büküm hem yatay teğetli noktadır. Bu fonksiyonun türevi 4x<sup>3</sup> − 12x<sup>2</sup>, Örnek 4'teki f′'nün dört katıdır; bu yüzden büküm ve ekstremum apsisleri orada okunanlarla aynıdır.</figcaption>
+</figure>
+<p><strong>Sonuç:</strong> Grafik soldan yukarıdan iner, orijinde yatay teğetle büküm yapar, (2, −16)'da ikinci kez kıvrılma yönünü değiştirir, (3, −27)'de en küçük değerini alır ve x = 4'te ekseni keserek yükselir. Ekstremumu bir, büküm noktası iki tanedir.</p></div>
+
+<h2 class="s">9. Grafiği verilen polinomun denklemini yazma</h2>
+
+<p>Bu, çizimin tersidir. Grafikten kökleri ve her kökün katlılığını okursun (keser mi, teğet mi, teğet olup keser mi), polinomu çarpanlarıyla yazarsın, kalan tek bilinmeyen olan baş katsayıyı grafikteki bir noktadan bulursun.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Kökler x<sub>1</sub>, x<sub>2</sub>, … ve katlılıkları k<sub>1</sub>, k<sub>2</sub>, … ise f(x) = a(x − x<sub>1</sub>)<sup>k<sub>1</sub></sup>(x − x<sub>2</sub>)<sup>k<sub>2</sub></sup>…; katlılıkların toplamı polinomun derecesine eşit olmalıdır. a'yı kök olmayan bir noktadan (çoğunlukla y kesişiminden) bul; işaretini uç davranışla denetle.</p>
+<p><strong>Neden?</strong> Her kök bir çarpan verir (çarpanlara ayırma), katlılık o çarpanın üssüdür ve Bölüm 8'deki kurala göre grafikten okunur. Çarpanlar biçimi belirler, a yalnızca düşey esnetmedir (Parça 4).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Üçüncü dereceden bir f polinomunun grafiği x eksenini x = −1'de keserek geçiyor, x = 2'de x eksenine teğet oluyor ve y eksenini (0, 4) noktasında kesiyor. Buna göre f(3) kaçtır?</p>
+<p><strong>Adım 1.</strong> Katlılıklar: x = −1 tek katlı (keser), x = 2 çift katlı (teğet). Toplam 1 + 2 = 3, derece tutuyor.</p>
+<span class="mat">f(x) = a(x + 1)(x − 2)<sup>2</sup></span>
+<p><strong>Adım 2.</strong> a'yı y kesişiminden bul.</p>
+<span class="mat">f(0) = a · 1 · 4 = 4 ⇒ a = 1</span>
+<p><strong>Adım 3.</strong> İstenen değer.</p>
+<span class="mat">f(3) = (3 + 1)(3 − 2)<sup>2</sup> = 4 · 1 = 4</span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Açık biçim: (x + 1)(x<sup>2</sup> − 4x + 4) = x<sup>3</sup> − 3x<sup>2</sup> + 4. f′ = 3x(x − 2): x = 0'da maksimum f(0) = 4, x = 2'de minimum f(2) = 0 (teğet kök ile uyumlu). Büküm x = 1'de, f(1) = 2 = (4 + 0)/2: ekstremumların ortası. a = 1 &gt; 0: sağda +∞, grafikteki gidişle uyumlu.</p>
+<p><strong>Sonuç:</strong> f(x) = (x + 1)(x − 2)<sup>2</sup> ve f(3) = 4.</p></div>
+
+<p>Kökleri okunamayan sorularda koşullardan katsayı bulunur. "Üçüncü dereceden f'nin büküm noktası (0, 2), x = 1'de yerel minimum değeri 0" denirse f(x) = ax<sup>3</sup> + bx<sup>2</sup> + cx + d yazıp dört koşulu kullanırsın: f″(0) = 0 ⇒ b = 0; f(0) = 2 ⇒ d = 2; f′(1) = 0 ⇒ 3a + c = 0; f(1) = 0 ⇒ a + c + 2 = 0. Son ikisinden a = 1, c = −3: f(x) = x<sup>3</sup> − 3x + 2, yani Örnek 5'in fonksiyonu.</p>
+
+<h3>Programda olmayanlar</h3>
+
+<p>Rasyonel fonksiyonların (y = 1/(x − 2), y = (x + 1)/(x − 3) gibi) grafiklerinin çizimi ve düşey-yatay asimptotların çizimle kullanılması 2018 programında yoktur. Parça 20'de asimptotu yalnızca sezgi olarak gördün; bir kaynakta asimptotlu grafik çizimiyle karşılaşırsan AYT kapsamı dışında olduğunu bil.</p>
+
+<h2 class="s">Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol.</strong> (1) Üçüncü dereceden polinomda büküm apsisi doğrudan −b/(3a); hesap gerektirmez. (2) "f(r + t) + f(r − t)" kalıbını görünce f'yi bulmaya çalışma, 2f(r) yaz. (3) Ekstremumun türü sorulduysa ikinci türev testi: tek bir sayının işareti. (4) f′ grafiği verildiyse iki soru sor: x ekseninin neresinde (artanlık, ekstremum), nereye doğru gidiyor (bükeylik, büküm). (5) Grafikten denklem: kök, katlılık, a.</p>
+
+<p><strong>Kontrol yolu.</strong> (1) Büküm noktası adaylarında işaret değişimini mutlaka denetle (x<sup>4</sup> tuzağı). (2) Bulduğun büküm noktasında teğetin eğriyi kestiğini birkaç sayıyla dene. (3) Birleşik tabloda maksimumun tümsek, minimumun çukur bölgede düştüğünü gör; düşmüyorsa bir işaret yanlış. (4) Üçüncü dereceden fonksiyonda büküm noktası ekstremumların tam ortasında olmalı. (5) Grafikten yazdığın denklemi uç davranışla ve bir başka noktayla denetle.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 25'e:</strong> Artan-azalan, kritik nokta ve birinci türev testi burada ikinci türevle tamamlandı. İkinci türev testi, birinci türev testinin kısa yoludur; sonuçsuz kaldığında yine oraya dönülür.</p>
+<p><strong>Parça 24'e:</strong> Orada teğetle yapılan yaklaşık hesabın (√26 ≈ 5,1) neden biraz fazla çıktığı sorulmuştu. Cevap bükeyliktir: √x eğrisi tümsektir, teğeti eğrinin üstünde kalır, bu yüzden teğetle yapılan tahmin fazla çıkar; çukur bir eğride eksik çıkar.</p>
+<p><strong>Parça 22, 7, 1 ve 4'e:</strong> f″ hesabı ve ivme Parça 22'den, işaret tablosu ve çift katlı kök kuralı Parça 7'den, tek fonksiyon ve öteleme (üçüncü dereceden fonksiyonun simetrisi) Parça 1 ve Parça 4'ten geldi. Parça 16'da log<sub>2</sub> x = x − 1 denkleminin en çok iki kökü olduğu bükeylik sezgisiyle söylenmişti: logaritma eğrisi her yerde tümsektir ve tümsek bir eğri bir doğruyu en çok iki noktada keser.</p>
+<p><strong>Parça 27'ye:</strong> En büyük-en küçük değer problemlerinde bulunan kritik noktanın gerçekten maksimum mu minimum mu olduğu çoğu zaman ikinci türev testiyle denetlenir.</p>
+<p><strong>Parça 31'e:</strong> İki eğri arasındaki alanı hesaplarken hangi eğrinin üstte olduğunu ve kesişim noktalarını görmek için burada öğrendiğin hızlı çizim gerekecek.</p>
+<p><strong>Öbür derslere:</strong> Fizikte konum-zaman grafiğinin çukur olması ivmenin pozitif olduğunu, tümsek olması negatif olduğunu söyler; grafik okuma sorularında bu bilgi doğrudan kullanılır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>İkinci türev neyi ölçer? f′ &gt; 0 ve f″ &lt; 0 olan bir aralıkta grafik nasıl görünür?</summary><p>Teğet eğiminin değişim hızını ölçer. f′ &gt; 0 ve f″ &lt; 0 ise fonksiyon artar ama eğimi azalır: grafik giderek yatıklaşarak yükselir, tümsektir. Günlük dille "artış yavaşlıyor".</p></details>
+<details><summary>Yukarı bükey (çukur) bir grafikte teğet nerede kalır? Neden?</summary><p>Grafiğin altında kalır. Eğim arttığı için değme noktasından sağa giderken eğri teğetten hızlı yükselir, sola giderken teğetten yavaş iner; iki yanda da eğri teğetin üstündedir.</p></details>
+<details><summary>f″(a) = 0 olması (a, f(a))'nın büküm noktası olması için yeterli midir? Bir örnek ver.</summary><p>Yeterli değildir; f″'nün a'da işaret değiştirmesi gerekir. f(x) = x<sup>4</sup> için f″(0) = 0 ama f″ = 12x<sup>2</sup> işaret değiştirmez; orijin büküm noktası değil, minimum noktasıdır.</p></details>
+<details><summary>İkinci türev testini söyle. Hangi durumda sonuç vermez?</summary><p>f′(a) = 0 iken f″(a) &gt; 0 ise yerel minimum, f″(a) &lt; 0 ise yerel maksimum vardır. f″(a) = 0 ise sonuç vermez: x<sup>3</sup>, x<sup>4</sup>, −x<sup>4</sup> üçünde de 0'da f′ = f″ = 0 ama biri büküm, biri minimum, biri maksimumdur. O zaman birinci türev testine dönülür.</p></details>
+<details><summary>Üçüncü dereceden bir polinomun büküm noktası neden simetri merkezidir? Hangi formülü verir?</summary><p>x = r + t yazınca (r = −b/(3a)) t<sup>2</sup>'li terim sıfırlanır; f(r + t) − f(r) = at<sup>3</sup> + f′(r)t tek fonksiyon olur. Bu yüzden f(r + t) + f(r − t) = 2f(r).</p></details>
+<details><summary>f′'nün grafiği verilmişse f'nin büküm noktalarını nereden okursun? Yerel ekstremumlarını nereden?</summary><p>Büküm noktaları f′'nün yerel ekstremum (tepe ya da çukur) noktalarındadır. f'nin yerel ekstremumları f′'nün x eksenini keserek geçtiği, yani işaret değiştirdiği yerlerdedir; eksene yalnızca değdiği yerde ekstremum yoktur.</p></details>
+<details><summary>Polinomun çift katlı ve üç katlı kökünde grafik x ekseninde nasıl davranır?</summary><p>Çift katlı kökte eksene teğet olur ve kesmez; işaret değişmez, orada yerel ekstremum vardır. Üç katlı kökte eksene teğet olur ve keserek geçer; orada yatay teğetli bir büküm noktası vardır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>f″:</strong> eğimin değişim hızı. Fizikte ivme. f″ &gt; 0 ⇒ f′ artan.</li>
+<li><strong>Bükeylik:</strong> f″ &gt; 0 ⇒ yukarı bükey, çukur (∪), teğet altta. f″ &lt; 0 ⇒ aşağı bükey, tümsek (∩), teğet üstte. Sözcüğe değil işarete güven.</li>
+<li><strong>Bükeylik ≠ artanlık:</strong> artanlık f′'nün, bükeylik f″'nün işaretinden okunur.</li>
+<li><strong>Büküm noktası:</strong> bükeyliğin değiştiği nokta; f″ işaret değiştirir. f″ = 0 yalnızca aday (x<sup>4</sup> tuzağı). Ordinat f'den hesaplanır. Teğet eğriyi keser.</li>
+<li><strong>İkinci türev testi:</strong> f′(a) = 0; f″(a) &gt; 0 min, f″(a) &lt; 0 maks, f″(a) = 0 sonuçsuz.</li>
+<li><strong>Parametre:</strong> büküm A(a, b) ⇒ f″(a) = 0 ve f(a) = b; sonra işaret değişimini denetle.</li>
+<li><strong>Üçüncü derece:</strong> tek büküm, r = −b/(3a); simetri merkezi: f(r + t) + f(r − t) = 2f(r). Ekstremumların ve köklerin ortası; eğimin en küçük/en büyük olduğu yer.</li>
+<li><strong>f′ grafiğinden:</strong> f′'nün işareti → f artan/azalan; f′ eksenini keserse → f'nin ekstremumu; f′ artan → f çukur; f′'nün tepe/çukuru → f'nin büküm noktası.</li>
+<li><strong>Çizim adımları:</strong> tanım kümesi, eksen kesişimleri ve katlılık, uç davranış, f′ tablosu, f″ tablosu, birleşik tablo, çizim.</li>
+<li><strong>Katlılık:</strong> tek katlı keser; çift katlı teğet, kesmez (ekstremum); üç katlı teğet ve keser (büküm).</li>
+<li><strong>Denklem yazma:</strong> f(x) = a(x − x<sub>1</sub>)<sup>k<sub>1</sub></sup>…; a'yı bir noktadan bul, uç davranışla denetle.</li>
+<li><strong>Kapsam dışı:</strong> rasyonel fonksiyon grafiği ve asimptot çizimi.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-26">
+<h3>Quiz 26</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">f(x) = x<sup>3</sup> − 6x<sup>2</sup> + 5x − 1 fonksiyonunun grafiğinin büküm noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−2, −43)</li><li>(6, 29)</li><li>(2, −7)</li><li>(4, −13)</li><li>(2, 0)</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 12x + 5, f″(x) = 6x − 12. f″ doğrusal; x = 2'de sıfır olur ve işaret değiştirir. Ordinat f'den: f(2) = 8 − 24 + 10 − 1 = −7. (−2, −43), 6x − 12 = 0'ı x = −2 diye çözmektir (işaret hatası). (6, 29), büküm apsisini −b/(3a) yerine −b/a = 6 almaktır; −b/a kökler toplamıdır. (4, −13), ikinci türevi 3x − 12 diye yanlış alıp x = 4 bulmaktır. (2, 0), ordinat olarak f″(2) = 0'ı yazmaktır; büküm noktasında f″ hep 0'dır, ordinat f(2)'dir.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = x<sup>3</sup> − 3x<sup>2</sup> + 4 fonksiyonunun grafiğinin aşağı bükey (tümsek) olduğu en geniş aralık aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−∞, 1)</li><li>(1, ∞)</li><li>(0, 2)</li><li>(−∞, 0) ∪ (2, ∞)</li><li>(−1, 2)</li></ul>
+<div class="coz"><p>f″(x) = 6x − 6; f″ &lt; 0 ⇔ x &lt; 1. Aşağı bükey (tümsek) aralık (−∞, 1). (1, ∞) çukur aralıktır; çukur ile tümseği karıştırmaktır. (0, 2), f′ = 3x(x − 2)'nin negatif olduğu, yani f'nin azalan olduğu aralıktır; bükeyliği artanlıkla karıştırmaktır. (−∞, 0) ∪ (2, ∞) f'nin artan olduğu aralıklardır. (−1, 2), f = (x + 1)(x − 2)<sup>2</sup>'nin kökleri arasıdır; f'nin işaretiyle ilgilidir, bükeylikle değil.</p></div></li>
+
+<li data-c="E"><p class="q">f(x) = x<sup>3</sup> + 3x<sup>2</sup> − 9x + 2 fonksiyonunun yerel maksimum değeri kaçtır?</p>
+<ul class="sec"><li>−3</li><li>−12</li><li>13</li><li>1</li><li>29</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> + 6x − 9 = 3(x + 3)(x − 1), kritik noktalar −3 ve 1. f″(x) = 6x + 6: f″(−3) = −12 &lt; 0, x = −3'te yerel maksimum; değeri f(−3) = −27 + 27 + 27 + 2 = 29. −3, hem maksimumun apsisi hem de f(1) = −3 yerel minimum değeridir; değer ile noktayı ya da maksimum ile minimumu karıştırmaktır. −12, f″(−3)'ü değer sanmaktır. 13, büküm noktasının (x = −1) ordinatıdır. 1, minimumun apsisidir.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = x<sup>4</sup> fonksiyonu için<br>I. f′(0) = 0 ve f″(0) = 0'dır.<br>II. (0, 0) noktası grafiğin büküm noktasıdır.<br>III. f, x = 0'da yerel minimum yapar.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız II</li><li>I ve II</li><li>I ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>f′ = 4x<sup>3</sup>, f″ = 12x<sup>2</sup>; ikisi de 0'da sıfır, I doğru. f″ = 12x<sup>2</sup> sıfırın iki yanında pozitif, işaret değişmiyor: grafik her yerde çukur, büküm noktası yok; II yanlış. f′ = 4x<sup>3</sup>'ün işareti 0'da − → + değişiyor: yerel minimum, III doğru. "I ve II" ya da "I, II ve III", f″ = 0'ı büküm için yeterli sanmaktır. "Yalnız I", ikinci türev testi sonuçsuz diye ekstremum olmadığını sanmaktır; sonuçsuz, "yok" demek değildir.</p></div></li>
+
+<li data-c="B"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + bx + 1 fonksiyonunun grafiğinin büküm noktası A(1, 4) olduğuna göre b kaçtır?</p>
+<ul class="sec"><li>8</li><li>5</li><li>6</li><li>−1</li><li>7</li></ul>
+<div class="coz"><p>f″(x) = 6x + 2a; f″(1) = 0 ⇒ a = −3. A eğri üzerinde: f(1) = 1 + a + b + 1 = 4 ⇒ 1 − 3 + b + 1 = 4 ⇒ b = 5. 8, ikinci türevi 6x + a alıp a = −6 bulmaktır (ax<sup>2</sup>'nin ikinci türevi 2a'dır). 6, f(1)'deki sabit terim 1'i unutmaktır. −1, a'yı +3 almaktır. 7, büküm koşulu yerine f′(1) = 0 yazmaktır: 3 + 2a + b = 0 ve a + b = 2'den a = −5, b = 7; f′ = 0 yatay teğet koşuludur.</p></div></li>
+
+<li data-c="C"><p class="q">Üçüncü dereceden bir f polinom fonksiyonunun grafiğinin büküm noktası B(2, 5)'tir. f(−1) = 3 olduğuna göre f(5) kaçtır?</p>
+<ul class="sec"><li>3</li><li>−3</li><li>7</li><li>13</li><li>8</li></ul>
+<div class="coz"><p>Üçüncü dereceden fonksiyon büküm noktasına göre simetriktir: f(2 + t) + f(2 − t) = 2 · 5 = 10. t = 3 için f(5) + f(−1) = 10, f(5) = 7. 3, grafiği parabol gibi x = 2 doğrusuna göre simetrik sanmaktır (eksen simetrisi değil nokta simetrisi). −3, simetriyi orijine göre almaktır; merkez orijin değil (2, 5). 13, 2 · 5 + 3 yazıp işareti karıştırmaktır. 8, 5 + 3 toplamıdır; formülün 2f(r) olduğunu unutmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir f polinom fonksiyonunun türevi f′(x) = (x + 1)<sup>2</sup>(x − 3)'tür. Buna göre f'nin yerel ekstremum noktalarının sayısı ile grafiğinin büküm noktalarının sayısı sırasıyla aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>1 ve 2</li><li>2 ve 2</li><li>2 ve 1</li><li>1 ve 1</li><li>3 ve 2</li></ul>
+<div class="coz"><p>Ekstremum: f′'nün işaret değiştirdiği yer. (x + 1)<sup>2</sup> çift katlı, işaret değiştirmez; yalnızca x = 3'te − → +: bir yerel minimum. Büküm: f″ = 2(x + 1)(x − 3) + (x + 1)<sup>2</sup> = (x + 1)(3x − 5); kökler −1 ve 5/3, ikisi de tek katlı, işaret değişir: iki büküm noktası. "2 ve 2", x = −1'i f′ = 0 diye ekstremum saymaktır. "2 ve 1" ve "1 ve 1", f′'nün çift katlı kökünde f″'nün de sıfır olduğunu ve orada büküm (yatay teğetli büküm) olduğunu kaçırmaktır. "3 ve 2", çift katlı kökü iki kez saymaktır.</p></div></li>
+
+<li data-c="E"><p class="q">Dördüncü dereceden bir f polinom fonksiyonunun grafiği x eksenini yalnızca iki noktada kesmektedir: x = −1'de eğik olarak keserek geçmekte, x = 2'de ise x eksenine teğet olup keserek geçmekte ve bu noktada büküm yapmaktadır. Grafik y eksenini (0, 4) noktasında kestiğine göre f(1) kaçtır?</p>
+<ul class="sec"><li>2</li><li>−1</li><li>−2</li><li>16</li><li>1</li></ul>
+<div class="coz"><p>x = −1 tek katlı kök; x = 2'de teğet olup keserek geçme ve büküm, üç katlı köktür. Katlılık toplamı 1 + 3 = 4, derece tutuyor: f(x) = a(x + 1)(x − 2)<sup>3</sup>. f(0) = a · 1 · (−8) = 4 ⇒ a = −1/2. f(1) = −1/2 · 2 · (−1) = 1. 2, x = 2'yi çift katlı alıp üçüncü dereceden (x + 1)(x − 2)<sup>2</sup> yazmaktır; ama çift katlı kökte eksen kesilmez. −1, a'yı +1/2 almaktır. −2, a'yı bulmayı unutup a = 1 almaktır. 16, üç katlılığı x = −1'e verip −2(x + 1)<sup>3</sup>(x − 2) yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f(x) = x<sup>3</sup> fonksiyonunun [−1, 2] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>9</li><li>3</li><li>7/3</li><li>12</li><li>1/3</li></ul>
+<div class="coz"><p>Ortalama değişim hızı (f(2) − f(−1))/(2 − (−1)) = (8 − (−1))/3 = 9/3 = 3. Bu, uç noktaları birleştiren kirişin eğimidir. 9, aralığın uzunluğuna bölmeyi unutmaktır. 7/3, f(−1)'i +1 almaktır. 12, f′(2) = 3 · 4'tür; ortalama değil anlık değişim hızıdır. 1/3, oranı ters kurmaktır (x'teki değişim bölü f'deki değişim).</p></div></li>
+
+<li data-c="D" data-k="ileri-3"><p class="q">|x<sup>2</sup> − 4| = k denkleminin tam olarak üç farklı gerçek kökü olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>0</li><li>2</li><li>8</li><li>4</li><li>−4</li></ul>
+<div class="coz"><p>y = |x<sup>2</sup> − 4| grafiği, y = x<sup>2</sup> − 4 parabolünün x ekseni altındaki kısmının (−2 &lt; x &lt; 2) yukarı katlanmasıyla çizilir; katlanan tepe (0, 4) olur. Kök sayısı, y = k doğrusunun bu grafiği kestiği nokta sayısıdır. k = 4'te doğru katlanmış tepeye x = 0'da değer ve dış kolları x = ±2√2'de keser: üç kök. 0'da yalnızca x = ±2 (iki kök), 2'de dört kök, 8'de yalnızca dış kollar (iki kök) vardır. −4, katlamadan önceki parabolün tepe ordinatıdır; mutlak değer negatif olamayacağı için k = −4'te hiç kök yoktur.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">y = 2x + k doğrusu y = x<sup>2</sup> − 4x + 7 parabolüne teğet olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>−2</li><li>2</li><li>3</li><li>4</li><li>7</li></ul>
+<div class="coz"><p>Ortak çözüm: x<sup>2</sup> − 4x + 7 = 2x + k ⇒ x<sup>2</sup> − 6x + 7 − k = 0. Teğet ⇔ Δ = 0: 36 − 4(7 − k) = 0 ⇒ 8 + 4k = 0 ⇒ k = −2. Değme noktası x = 3, y = 4. 2, işaret hatasıdır. 3 değme noktasının apsisi, 4 ordinatıdır; istenen k'dir. 7, Δ yerine sabit terimi sıfırlamaktır (7 − k = 0).</p></div></li>
+
+<li data-c="C" data-k="ileri-8"><p class="q">−17π/3 radyanlık açının esas ölçüsü kaç radyandır?</p>
+<ul class="sec"><li>5π/3</li><li>−5π/3</li><li>π/3</li><li>2π/3</li><li>4π/3</li></ul>
+<div class="coz"><p>Esas ölçü [0, 2π) aralığındadır. −17π/3'e 2π = 6π/3'ün katlarını ekle: −17π/3 + 18π/3 = π/3. 5π/3, işareti yok sayıp 17π/3 − 12π/3 almaktır. −5π/3, 4π ekleyip durmaktır; sonuç negatif olduğu için esas ölçü değildir (bir 2π daha eklenince π/3). 2π/3 ve 4π/3, π/3'ü indirgeme kurallarıyla karıştırıp π − π/3 ya da π + π/3 yazmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-10"><p class="q">f(x) = 3 sin(2x − π) + 1 fonksiyonunun esas periyodu kaçtır?</p>
+<ul class="sec"><li>2π</li><li>4π</li><li>π/2</li><li>6π</li><li>π</li></ul>
+<div class="coz"><p>y = a · sin(bx + c) + d biçiminde periyot 2π/|b| = 2π/2 = π. a = 3 (genlik), c = −π (yatay kayma) ve d = 1 (düşey kayma) periyodu değiştirmez. 2π, b'yi yok saymaktır. 4π, 2π'yi b ile bölmek yerine çarpmaktır. π/2, tanjant-kotanjant formülünü (π/|b|) kullanmaktır. 6π, genliği periyotla karıştırıp 2π · 3 almaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-13"><p class="q">sin x = −1/2 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>π</li><li>3π</li><li>7π/6</li><li>11π/6</li><li>2π</li></ul>
+<div class="coz"><p>sin x = −1/2: sinüs III. ve IV. bölgede negatif; dar açı π/6. Kökler π + π/6 = 7π/6 ve 2π − π/6 = 11π/6; toplam 18π/6 = 3π. π, +1/2'nin köklerini (π/6 ve 5π/6) almaktır; ya da −π/6'yı aralığa taşımadan 7π/6 ile toplamaktır. 7π/6 ve 11π/6, köklerden yalnızca birini vermektir. 2π, kökleri π/6 ve 11π/6 diye karıştırmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-15"><p class="q">log<sub>2</sub> 3 · log<sub>3</sub> 8 çarpımının değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>8/3</li><li>24</li><li>3</li><li>3/8</li></ul>
+<div class="coz"><p>Zincir çarpım: log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c. Burada log<sub>2</sub> 3 · log<sub>3</sub> 8 = log<sub>2</sub> 8 = 3. 1, log<sub>a</sub> b · log<sub>b</sub> a = 1 kuralıyla karıştırmaktır; içteki sayılar aynı değil. 8/3 ve 3/8, logaritma içindeki sayıları bölmektir. 24, 3 · 8 çarpımıdır; logaritma işlemini yok saymaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>3</sub> = 7 ve a<sub>7</sub> = 19 olduğuna göre a<sub>10</sub> kaçtır?</p>
+<ul class="sec"><li>28</li><li>31</li><li>26</li><li>22</li><li>30</li></ul>
+<div class="coz"><p>a<sub>7</sub> = a<sub>3</sub> + 4d ⇒ 19 = 7 + 4d ⇒ d = 3. a<sub>10</sub> = a<sub>7</sub> + 3d = 19 + 9 = 28. 31, a<sub>1</sub> = 1 bulup a<sub>10</sub> = a<sub>1</sub> + 10d yazmaktır ((n − 1)d yerine nd). 26, "3 + 7 = 10 olduğu için a<sub>3</sub> + a<sub>7</sub> = a<sub>10</sub>" sanmaktır; o kural iki yandaki indis toplamlarının eşit olmasını ister. 22, a<sub>7</sub>'ye bir kez d eklemektir. 30, 10d'dir.</p></div></li>
+
+<li data-c="C" data-k="ileri-20"><p class="q">lim<sub>x→3</sub> <span class="kes"><span>x<sup>2</sup> − 9</span><span>x<sup>2</sup> − 2x − 3</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>6</li><li>3/2</li><li>1</li><li>Limit yoktur</li></ul>
+<div class="coz"><p>Yerine koyunca 0/0 belirsizliği. Pay (x − 3)(x + 3), payda (x − 3)(x + 1). x − 3 sadeleşir (x ≠ 3): (x + 3)/(x + 1) → 6/4 = 3/2. 0, yalnızca payın sıfır olduğuna bakmaktır. 6, paydada kalan (x + 1) çarpanını unutmaktır. 1, baş katsayıların oranıdır; o kural x → ±∞ içindir. "Limit yoktur", 0/0'ı sonuç sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-22"><p class="q">f(x) = x<sup>2</sup> + a (x &lt; 1 iken), f(x) = bx (x ≥ 1 iken) biçiminde tanımlanan f fonksiyonu x = 1'de türevlenebilir olduğuna göre a + b kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>1</li><li>4</li><li>5</li></ul>
+<div class="coz"><p>Türevlenebilme için iki koşul: süreklilik ve soldan-sağdan türev eşitliği. Türevler: soldan 2x → 2, sağdan b; b = 2. Süreklilik: 1 + a = b = 2 ⇒ a = 1. a + b = 3. 2 yalnızca b, 1 yalnızca a'dır. 4, süreklilik koşulunu a = b diye kurmaktır (x<sup>2</sup>'nin 1'deki değerini unutmak). 5, sürekliliği a = b + 1 diye ters kurmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-23"><p class="q">f(x) = (x<sup>2</sup> + 1)<sup>3</sup> olduğuna göre f′(1) kaçtır?</p>
+<ul class="sec"><li>12</li><li>8</li><li>48</li><li>6</li><li>24</li></ul>
+<div class="coz"><p>Kuvvet zinciri: f′(x) = 3(x<sup>2</sup> + 1)<sup>2</sup> · 2x. x = 1'de iç değer 2: f′(1) = 3 · 4 · 2 = 24. 12, iç türevi (2x = 2) unutmaktır. 8, türev yerine f(1) = 2<sup>3</sup>'tür. 48, üssü düşürmeden 3 · 2<sup>3</sup> · 2 almaktır. 6, hem iç türevi unutup hem de üssü fazla düşürmektir: 3 · 2.</p></div></li>
+
+<li data-c="D" data-k="ileri-23"><p class="q">f(2x + 1) = x<sup>2</sup> + 4x olduğuna göre f′(3) kaçtır?</p>
+<ul class="sec"><li>6</li><li>5</li><li>10</li><li>3</li><li>1</li></ul>
+<div class="coz"><p>İki yanın türevi (solda zincir kuralı): 2 · f′(2x + 1) = 2x + 4. f′(3) için iç ifade 3 olmalı: 2x + 1 = 3, x = 1. 2f′(3) = 6, f′(3) = 3. 6, soldaki iç türevi (2) unutmaktır. 10 ve 5, "f′(3)" görüp x = 3 koymaktır (2 · 3 + 4 = 10; ikiye bölünce 5). 1, x'in değerini cevap sanmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-24"><p class="q">y = x<sup>3</sup> − 2x eğrisine apsisi 1 olan noktasında çizilen teğetin denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>y = x − 2</li><li>y = −x</li><li>y = x</li><li>y = 3x − 4</li><li>y = x − 1</li></ul>
+<div class="coz"><p>Değme noktası (1, f(1)) = (1, −1); eğim f′(1) = 3 · 1 − 2 = 1. Teğet: y + 1 = 1 · (x − 1) ⇒ y = x − 2. y = −x, eğimi −1/f′(1) = −1 alarak normal doğrusunu yazmaktır. y = x, f(1)'i +1 almaktır. y = 3x − 4, türevde −2'yi unutup eğimi 3 almaktır. y = x − 1, y = f′(1)x + f(1) yazmaktır; nokta-eğim biçimi unutulmuş.</p></div></li>
+
+<li data-c="C" data-k="ileri-24"><p class="q">y = x<sup>2</sup> + 2x eğrisinin y = 4x − 5 doğrusuna paralel olan teğetinin değme noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(2, 8)</li><li>(−3, 3)</li><li>(1, 3)</li><li>(1, −1)</li><li>(4, 24)</li></ul>
+<div class="coz"><p>Paralel doğruların eğimleri eşit: f′(x) = 2x + 2 = 4 ⇒ x = 1; değme noktası (1, f(1)) = (1, 3). (2, 8), türevi 2x alıp 2x = 4 çözmektir. (−3, 3), denklemi 2x + 2 = −4 diye kurmaktır (işaret). (1, −1), ordinatı eğriden değil verilen doğrudan hesaplamaktır. (4, 24), eğimi apsis sanıp x = 4 almaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> − 12x + 1 fonksiyonunun yerel maksimum değeri kaçtır?</p>
+<ul class="sec"><li>−15</li><li>17</li><li>−2</li><li>2</li><li>16</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 12 = 3(x − 2)(x + 2); işaret + − +. x = −2'de + → −: yerel maksimum, değeri f(−2) = −8 + 24 + 1 = 17. −15, f(2) yerel minimum değeridir. −2, maksimumun apsisidir, değeri değil. 2, minimumun apsisidir. 16, sabit terim 1'i unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + 3x − 1 fonksiyonu her x gerçek sayısı için artan olduğuna göre a'nın alabileceği kaç farklı tam sayı değeri vardır?</p>
+<ul class="sec"><li>5</li><li>13</li><li>6</li><li>7</li><li>3</li></ul>
+<div class="coz"><p>Her yerde artan ⇔ f′(x) = 3x<sup>2</sup> + 2ax + 3 ≥ 0 her x için ⇔ Δ ≤ 0: 4a<sup>2</sup> − 36 ≤ 0 ⇒ −3 ≤ a ≤ 3; tam sayılar −3, …, 3: 7 tane. 5, Δ &lt; 0 alıp ±3'ü dışarıda bırakmaktır; Δ = 0'da f′ yalnızca bir noktada sıfır olur ve f yine artandır. 13, Δ'yı b = 2a yerine b = a ile hesaplayıp a<sup>2</sup> ≤ 36 bulmaktır. 6, sınırlardan birini unutmaktır. 3, yalnızca pozitif değerleri saymaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-25">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-26">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-27">Sonraki parça: maksimum-minimum problemleri</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"ikinci türev bükeylik büküm noktası konu anlatımı AYT"</li>
+  <li>"ikinci türev testi yerel maksimum minimum soru çözümü"</li>
+  <li>"türev grafiği verilen sorular f f′ f″ grafik yorumlama"</li>
+  <li>"polinom fonksiyon grafik çizimi değişim tablosu"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 26. satıra göre yazıldı; satırdaki her alt başlık işlendi. Rasyonel fonksiyon grafiği ve asimptot çizimi, kapsam listesindeki nota uyularak yalnızca "programda yok" bilgisiyle anıldı.</li>
+  <li>Terim notu: "konveks/konkav", "içbükey/dışbükey" ve "yukarı/aşağı bükey" adları kaynaklar arasında her zaman aynı yönde kullanılmıyor. Bu parçada kapsam listesindeki eşleştirme esas alındı: f″ &gt; 0 yukarı bükey, konveks, çukur; f″ &lt; 0 aşağı bükey, konkav, tümsek. Bu eşleştirmeyi MEB ders kitabıyla satır satır karşılaştıramadım; kendi kaynağın farklı adlandırıyorsa işarete (f″) göre çevir. "Büküm noktası" yerine bazı kaynaklar "dönüm noktası" der.</li>
+  <li>Büküm noktası tanımı polinomlar için "f″'nün işaret değiştirdiği nokta" olarak verildi; genel tanımdaki teknik koşullar (teğetin varlığı, düşey teğet durumu) yalnızca anıldı.</li>
+  <li>Bütün sayısal sonuçlar (yedi çözümlü örnek, metindeki ara örnekler, üçüncü dereceden fonksiyonun simetri formülü, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; bu ortamda sympy olmadığı için polinom türevleri kesirli sayılarla (Fraction) çalışan küçük bir polinom aracıyla ve yerine koyarak hesaplandı. Simetri formülü, büküm noktası (2, 5) olan somut bir kübik kurularak sayısal olarak da denendi.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: eğrilerin noktaları formüllerden hesaplandı; Örnek 6'nın şeklinde düşey eksen, okunabilirlik için yatay eksenden farklı ölçeklendi (şekil altında belirtildi).</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (23, 24, 25) ikişer soru; daha eski 22 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 3, 6, 8, 10, 13, 15, 17, 20, 22). Parça 24 ve 25 bu parçanın yazımı sırasında arşive eklendi; tekrar soruları kapsam listesindeki konularla yazıldı, sonra o parçaların quizleriyle karşılaştırılıp aynı olan iki soru (Parça 3 ve Parça 20 tekrarları) değiştirildi. Göndermeler (birinci türev testi, "her yerde artan" koşulu Δ ≤ 0, Parça 24'teki doğrusal yaklaşım) o parçalardaki terimlerle uyumludur.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

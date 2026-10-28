@@ -1,0 +1,620 @@
+<article class="chapter ders" id="c-ileri-21">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 21 · Limit 3</div>
+<h1>Limit 3: süreklilik</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Termometre sabah 8'de 12 °C, öğlen 12'de 20 °C gösteriyor. Bu dört saat içinde sıcaklığın tam 16 °C olduğu bir an var mıdır? Hiç ölçmeden "kesinlikle var" diyebilirsin, çünkü sıcaklık 12'den 20'ye sıçrayarak değil, aradaki her değerden geçerek çıkar. Şimdi bir otoparkın ücretini düşün: ilk saat 20 TL, ikinci saat başlayınca birden 35 TL. Ücretin tam 30 TL olduğu bir an yoktur. İki durum arasındaki fark "kopma" var mı yok mu sorusudur. Matematik bu farka süreklilik der; bu parça, kopmanın limitle nasıl sınandığını ve sınavın bunu hangi kalıplarla sorduğunu anlatıyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 19 (soldan-sağdan limit, grafikten limit okuma, uç noktada limit, parçalı ve mutlak değerli fonksiyonda limit, limit kuralları), Parça 20 (0/0 belirsizliğini sadeleştirerek giderme, sayı/0 durumunda sonsuza gitme), Parça 3 (parçalı fonksiyon, dolu-boş yuvarlak, kopma sezgisi), Parça 7 (her x için pozitif olma koşulu: Δ &lt; 0), Parça 14 (logaritmanın tanım kümesi). Kâğıt kalem yanında olsun; her örnekte üç koşulu tek tek yazarak ilerle.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 19'da bir noktadaki limiti ve fonksiyon değerini <strong>ayrı ayrı</strong> okudun ve ikisinin birbirinden bağımsız olabildiğini gördün: limit var ama f(a) yok, f(a) var ama limit yok, ikisi de var ama farklı. Bu parçada ikisini yan yana koyup tek bir soru soracağız: <strong>limit, fonksiyon değerine eşit mi?</strong> Eşitse fonksiyon o noktada süreklidir. Konu yeni bir hesap tekniği getirmez; Parça 19 ve 20'de öğrendiğin limit hesaplarını bir karşılaştırma sorusuna bağlar.</p>
+
+<p>AYT'de süreklilikten gelen sorular birkaç kalıpta toplanır. Birincisi <strong>grafik okuma</strong>: verilen grafikte süreksiz olduğu noktaların sayısı ya da "limiti olduğu hâlde sürekli olmadığı" noktalar sorulur. İkincisi <strong>parçalı fonksiyonda parametre</strong>: "f her x için sürekli olduğuna göre a kaçtır?" İkinci en sık kalıp budur. Üçüncüsü <strong>süreksiz noktaların sayısı ya da toplamı</strong>: rasyonel ve parçalı fonksiyonlarda paydanın kökleri ile kritik noktalar sınanır. Dördüncüsü <strong>sürekli yapacak biçimde tanımlama</strong>: "(x<sup>2</sup> − 4)/(x − 2) fonksiyonu x = 2'de sürekli olacak biçimde tanımlanırsa f(2) kaç olur?" Beşincisi I, II, III öncüllü <strong>kavram soruları</strong>: sürekli fonksiyonların toplamı, bileşkesi, kapalı aralıkta en büyük-en küçük değer ve kökün varlığı. Her kalıpta bir <strong>hızlı yol</strong> ve bir <strong>kontrol yolu</strong> göreceksin.</p>
+
+<h2 class="s">1. Sezgi: kalemi kaldırmadan çizmek</h2>
+
+<p>Parça 3'te parçalı fonksiyonların grafiğini çizerken bir kritik noktada iki parçanın aynı yükseklikte buluşup buluşmadığına bakmıştın; buluşuyorsa grafik "kopmasız"dı, yani kalemi kâğıttan kaldırmadan çizilebiliyordu. Süreklilik bu sezginin adıdır. Bir fonksiyonun grafiği bir noktanın çevresinde kalem kaldırılmadan çizilebiliyorsa fonksiyon o noktada süreklidir.</p>
+
+<p>Sezgi iyi bir başlangıçtır ama iki yerde yetmez. Birincisi, grafiğini çizemediğin bir fonksiyon için ne diyeceksin? f(x) = (x<sup>3</sup> − 1)/(x<sup>2</sup> − 1) gibi bir ifadenin x = 1'de ve x = −1'de ne yaptığını gözle göremezsin; <strong>hesapla sınayabileceğin</strong> bir ölçüt gerekir. İkincisi, "kalem kaldırmak" tek bir noktada ne olduğunu net söylemez: grafikte tek bir noktanın eksik olması (delik) da bir koptur, çünkü o noktaya gelince kalemi kaldırıp deliğin üstünden atlamak zorundasın. Bu inceliği yakalamak için limiti kullanırız: limit "kalem bu noktaya hangi yükseklikten varıyor?" sorusunun cevabıdır, f(a) ise "nokta gerçekte hangi yükseklikte?" sorusunun. Kalem kaldırılmıyorsa bu iki cevap aynıdır.</p>
+
+<h2 class="s">2. Biçimsel tanım: üç koşul</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f fonksiyonu x = a noktasında <strong>süreklidir</strong>, ancak ve ancak şu üç koşul birlikte sağlanıyorsa:</p>
+<p><strong>(1)</strong> f(a) tanımlıdır (a tanım kümesindedir). <strong>(2)</strong> lim<sub>x→a</sub> f(x) vardır (soldan ve sağdan limit eşit ve bir gerçek sayı). <strong>(3)</strong> lim<sub>x→a</sub> f(x) = f(a).</p>
+<p>Kısaca: <strong>lim<sub>x→a</sub> f(x) = f(a)</strong>. Koşullardan biri bile bozulursa f, x = a'da <strong>süreksizdir</strong>.</p>
+<p><strong>Neden üç ayrı koşul?</strong> Çünkü "limit = değer" eşitliğinin iki yanının da var olması gerekir. Değer yoksa (1) bozulur; limit yoksa (2) bozulur; ikisi de varsa ama farklı sayılarsa (3) bozulur. Her koşul ayrı bir kopma türünü yakalar ve sınav soruları tam olarak bu üç ayrı yerden gelir.</p></div>
+
+<p>Bu tanımı sınavda kullanırken her zaman aynı sırayla ilerle. Aşağıdaki şema bunu gösteriyor; 3. bölümde süreksizliği türlerine ayırırken ve 9. bölümde grafikten sayarken aynı sırayı kullanacağız.</p>
+
+<figure>
+<svg viewBox="0 0 400 326" role="img" aria-label="x eşittir a noktasında süreklilik denetimi için karar şeması. Birinci soru: f(a) tanımlı mı? Hayırsa süreksiz. İkinci soru: x a'ya giderken limit var mı, yani soldan ve sağdan limit eşit ve sonlu mu? Hayırsa süreksiz. Üçüncü soru: limit f(a)'ya eşit mi? Hayırsa süreksiz. Üç cevap da evetse fonksiyon x eşittir a'da süreklidir.">
+  <rect class="sv-l" x="10" y="10" width="220" height="46" rx="10" />
+  <text class="sv-b" x="120" y="38" text-anchor="middle">1. f(a) tanımlı mı?</text>
+  <line class="sv-c" x1="230" y1="33" x2="280" y2="33" />
+  <text class="sv-s" x="255" y="26" text-anchor="middle">hayır</text>
+  <rect class="sv-a" x="280" y="10" width="110" height="46" rx="10" />
+  <text class="sv-b" x="335" y="30" text-anchor="middle">süreksiz</text>
+  <text class="sv-s" x="335" y="48" text-anchor="middle">f(a) yok</text>
+  <line class="sv-c" x1="120" y1="56" x2="120" y2="90" />
+  <text class="sv-s" x="128" y="77" text-anchor="start">evet</text>
+  <rect class="sv-l" x="10" y="90" width="220" height="56" rx="10" />
+  <text class="sv-b" x="120" y="113" text-anchor="middle">2. x → a iken limit var mı?</text>
+  <text class="sv-s" x="120" y="133" text-anchor="middle">(soldan = sağdan, sonlu)</text>
+  <line class="sv-c" x1="230" y1="118" x2="280" y2="118" />
+  <text class="sv-s" x="255" y="111" text-anchor="middle">hayır</text>
+  <rect class="sv-a" x="280" y="90" width="110" height="56" rx="10" />
+  <text class="sv-b" x="335" y="113" text-anchor="middle">süreksiz</text>
+  <text class="sv-s" x="335" y="133" text-anchor="middle">limit yok</text>
+  <line class="sv-c" x1="120" y1="146" x2="120" y2="180" />
+  <text class="sv-s" x="128" y="167" text-anchor="start">evet</text>
+  <rect class="sv-l" x="10" y="180" width="220" height="56" rx="10" />
+  <text class="sv-b" x="120" y="203" text-anchor="middle">3. limit = f(a) mı?</text>
+  <text class="sv-s" x="120" y="223" text-anchor="middle">(iki sayı aynı mı?)</text>
+  <line class="sv-c" x1="230" y1="208" x2="280" y2="208" />
+  <text class="sv-s" x="255" y="201" text-anchor="middle">hayır</text>
+  <rect class="sv-a" x="280" y="180" width="110" height="56" rx="10" />
+  <text class="sv-b" x="335" y="203" text-anchor="middle">süreksiz</text>
+  <text class="sv-s" x="335" y="223" text-anchor="middle">değer kaymış</text>
+  <line class="sv-c" x1="120" y1="236" x2="120" y2="270" />
+  <text class="sv-s" x="128" y="257" text-anchor="start">evet</text>
+  <rect class="sv-m" x="10" y="270" width="220" height="46" rx="10" />
+  <text class="sv-b" x="120" y="298" text-anchor="middle">x = a'da sürekli</text>
+  <text class="sv-s" x="335" y="290" text-anchor="middle">üç koşul birlikte</text>
+  <text class="sv-s" x="335" y="308" text-anchor="middle">sağlanmalı</text>
+</svg>
+<figcaption>Sıra önemlidir: f(a) yoksa öbür iki soruyu sormana gerek kalmaz. Limit yoksa üçüncü soru anlamsızdır. Sürekli demek için üç kapıdan da "evet" ile geçmen gerekir.</figcaption>
+</figure>
+
+<p>Şimdi üç koşulun her birinin bozulduğu grafiklere bak. Aşağıdaki dört küçük grafikte hep aynı x = a noktasına bakıyoruz.</p>
+
+<figure>
+<svg viewBox="0 0 400 416" role="img" aria-label="Dört küçük grafik. a: bir doğru üzerinde x eşittir a'da boş yuvarlak; f(a) tanımsız, limit var. b: bir eğri üzerinde x eşittir a'da boş yuvarlak, aynı x'te daha aşağıda dolu nokta; limit var ama f(a)'dan farklı. c: x eşittir a'da sıçrama; soldaki parça boş yuvarlakla biter, sağdaki parça daha yukarıda dolu yuvarlakla başlar; limit yok. d: x eşittir a düşey doğrusunun solunda eğri aşağı, sağında yukarı sınırsız gider; f(a) yok, limit yok.">
+  <line class="sv-c" x1="10" y1="140" x2="190" y2="140" />
+  <line class="sv-c" x1="20" y1="145" x2="20" y2="15" />
+  <line class="sv-c" x1="100" y1="140" x2="100" y2="86" />
+  <line class="sv-cl" x1="20" y1="110" x2="180" y2="50" />
+  <circle class="sv-k" cx="100" cy="80" r="4.5" />
+  <circle class="sv-cl" cx="100" cy="80" r="4.5" />
+  <text class="sv-s" x="100" y="156" text-anchor="middle">a</text>
+  <text class="sv-b" x="100" y="178" text-anchor="middle">a) delik</text>
+  <text class="sv-s" x="100" y="196" text-anchor="middle">f(a) yok · (1) bozuk</text>
+  <line class="sv-c" x1="210" y1="140" x2="390" y2="140" />
+  <line class="sv-c" x1="220" y1="145" x2="220" y2="15" />
+  <line class="sv-c" x1="300" y1="140" x2="300" y2="115" />
+  <polyline class="sv-cl" points="220.0,80.0 230.0,73.0 240.0,66.9 250.0,61.7 260.0,57.5 270.0,54.2 280.0,51.9 290.0,50.5 300.0,50.0 310.0,50.5 320.0,51.9 330.0,54.2 340.0,57.5 350.0,61.7 360.0,66.9 370.0,73.0 380.0,80.0" />
+  <circle class="sv-k" cx="300" cy="50" r="4.5" />
+  <circle class="sv-cl" cx="300" cy="50" r="4.5" />
+  <circle class="sv-t" cx="300" cy="110" r="4.5" />
+  <text class="sv-s" x="300" y="156" text-anchor="middle">a</text>
+  <text class="sv-b" x="300" y="178" text-anchor="middle">b) delik + ayrı nokta</text>
+  <text class="sv-s" x="300" y="196" text-anchor="middle">limit ≠ f(a) · (3) bozuk</text>
+  <line class="sv-c" x1="10" y1="350" x2="190" y2="350" />
+  <line class="sv-c" x1="20" y1="355" x2="20" y2="225" />
+  <line class="sv-c" x1="100" y1="350" x2="100" y2="311" />
+  <line class="sv-cl" x1="20" y1="335" x2="100" y2="305" />
+  <line class="sv-cl" x1="100" y1="275" x2="180" y2="245" />
+  <circle class="sv-k" cx="100" cy="305" r="4.5" />
+  <circle class="sv-cl" cx="100" cy="305" r="4.5" />
+  <circle class="sv-t" cx="100" cy="275" r="4.5" />
+  <text class="sv-s" x="100" y="366" text-anchor="middle">a</text>
+  <text class="sv-b" x="100" y="388" text-anchor="middle">c) sıçrama</text>
+  <text class="sv-s" x="100" y="406" text-anchor="middle">sol ≠ sağ · (2) bozuk</text>
+  <line class="sv-c" x1="210" y1="350" x2="390" y2="350" />
+  <line class="sv-c" x1="220" y1="355" x2="220" y2="225" />
+  <line class="sv-c" x1="300" y1="350" x2="300" y2="225" />
+  <polyline class="sv-cl" points="220.0,297.5 230.0,298.6 240.0,300.0 250.0,302.0 260.0,305.0 268.0,308.8 276.0,315.0 280.0,320.0 284.0,327.5 286.0,332.9 288.0,340.0 290.0,350.0" />
+  <polyline class="sv-cl" points="310.0,230.0 312.0,240.0 316.0,252.5 320.0,260.0 330.0,270.0 340.0,275.0 350.0,278.0 360.0,280.0 370.0,281.4 380.0,282.5" />
+  <text class="sv-s" x="300" y="366" text-anchor="middle">a</text>
+  <text class="sv-b" x="300" y="388" text-anchor="middle">d) sonsuz</text>
+  <text class="sv-s" x="300" y="406" text-anchor="middle">f(a) yok, limit yok</text>
+</svg>
+<figcaption>Boş yuvarlak: eğri oraya varır ama nokta fonksiyona ait değildir. Dolu yuvarlak: f(a). (a) ve (b)'de iki yandan da aynı yüksekliğe varılıyor, yani limit var; (c)'de iki yan farklı yüksekliklerde bitiyor; (d)'de eğri x = a doğrusuna yaklaştıkça sınırsız uzuyor (Parça 20, sayı/0). Dördü de süreksizdir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = x<sup>2</sup> − 1 (x &lt; 2 iken), f(2) = 4, f(x) = 2x − 1 (x &gt; 2 iken) biçiminde tanımlanıyor. f, x = 2'de sürekli midir? Değilse f(2) kaç olsaydı sürekli olurdu?</p>
+<p><strong>Adım 1.</strong> Birinci koşul: f(2) tanımlı mı?</p>
+<span class="mat">f(2) = 4 <span class="g">(ayrıca verilmiş; tanımlı)</span></span>
+<p><strong>Adım 2.</strong> İkinci koşul: limit var mı? Soldan x &lt; 2 kuralı, sağdan x &gt; 2 kuralı geçerlidir.</p>
+<span class="mat">lim<sub>x→2<sup>−</sup></sub> f(x) = 2<sup>2</sup> − 1 = 3 <span class="g">(soldaki kural, polinom: yerine koy)</span></span>
+<span class="mat">lim<sub>x→2<sup>+</sup></sub> f(x) = 2 · 2 − 1 = 3 <span class="g">(sağdaki kural)</span></span>
+<span class="mat">lim<sub>x→2</sub> f(x) = 3 <span class="g">(iki yan eşit)</span></span>
+<p><strong>Adım 3.</strong> Üçüncü koşul: limit, değere eşit mi?</p>
+<span class="mat">3 ≠ 4 <span class="g">(limit 3, f(2) = 4)</span></span>
+<p><strong>Adım 4.</strong> Değer limitten "kaymış". Değeri limite eşitlersen üç koşul birden sağlanır.</p>
+<span class="mat">f(2) = 3 olsaydı lim<sub>x→2</sub> f(x) = f(2) <span class="g">(sürekli)</span></span>
+<p><strong>Sonuç:</strong> f, x = 2'de süreksizdir (üçüncü koşul bozuk, şekildeki (b) durumu). f(2) = 3 olsaydı sürekli olurdu.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Limit varsa süreklidir" ya da "f(a) tanımlıysa süreklidir" demek.</strong> Örnek 1'de hem limit var hem f(2) tanımlı, yine de f süreksiz. Süreklilik tek bir koşul değil, iki sayının <em>eşitliğidir</em>. Ters yönde de dikkat: "f, a'da sürekliyse limit vardır ve f(a) tanımlıdır" doğrudur, çünkü eşitliğin iki yanı var olmadan eşitlik kurulamaz. I, II, III öncüllü sorularda hangi yönün sorulduğunu ayırmak puan kazandırır.</p></div>
+
+<h2 class="s">3. Süreksizlik çeşitleri: kaldırılabilir, sıçrama, sonsuz</h2>
+
+<p>Bir fonksiyonun süreksiz olduğunu bulmak yetmez; sınav çoğu zaman "bu süreksizlik giderilebilir mi?" diye de sorar. Bunun cevabı süreksizliğin türüne bağlıdır ve tür, soldan ve sağdan limitlere bakarak belirlenir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Kaldırılabilir süreksizlik:</strong> lim<sub>x→a</sub> f(x) bir gerçek sayı olarak vardır, ama f(a) ya tanımsızdır ya da limitten farklıdır. Grafikte delik vardır (şekildeki a ve b).</p>
+<p><strong>Sıçrama süreksizliği:</strong> soldan ve sağdan limitler gerçek sayı olarak vardır ama birbirinden farklıdır. Grafikte iki parça farklı yüksekliklerde biter (c).</p>
+<p><strong>Sonsuz süreksizlik:</strong> soldan ya da sağdan limitlerden en az biri +∞ ya da −∞'dur. Grafik o noktada sınırsız uzar (d).</p>
+<p><strong>Neden bu ayrım?</strong> Kaldırılabilir süreksizlikte sorun yalnızca tek bir noktanın değerindedir; o değeri limite eşitleyerek (f(a)'yı yeniden tanımlayarak) kopmayı onarırsın. Sıçramada ve sonsuz süreksizlikte ise ortada tek bir limit yoktur; f(a)'ya hangi değeri verirsen ver iki yan aynı yükseklikte buluşmaz. Bu yüzden onlar <strong>giderilemez</strong>.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Tür</th><th>Soldan limit</th><th>Sağdan limit</th><th>f(a)</th><th>Giderilebilir mi?</th><th>Tipik kaynak</th></tr>
+<tr><td>Kaldırılabilir</td><td>L</td><td>L</td><td>yok ya da ≠ L</td><td>Evet: f(a) = L tanımla</td><td>0/0 veren rasyonel ifade; ayrı tanımlı nokta</td></tr>
+<tr><td>Sıçrama</td><td>L<sub>1</sub></td><td>L<sub>2</sub> ≠ L<sub>1</sub></td><td>herhangi</td><td>Hayır</td><td>parçalı fonksiyonun kritik noktası; |x − a|/(x − a)</td></tr>
+<tr><td>Sonsuz</td><td>±∞</td><td>±∞</td><td>genellikle yok</td><td>Hayır</td><td>sayı/0 veren payda kökü</td></tr>
+<tr><td>Süreksizlik yok</td><td>L</td><td>L</td><td>L</td><td>gerekmiyor</td><td>polinom; kırılma noktası (|x|'in tepesi)</td></tr>
+</table></div>
+
+<p>Rasyonel bir fonksiyonda paydayı sıfır yapan her nokta bir süreksizliktir; hangi türden olduğunu Parça 20'deki ilk adım söyler: yerine koyduğunda 0/0 çıkıyorsa ve sadeleştirince payda artık sıfırlanmıyorsa kaldırılabilir; sayı/0 çıkıyorsa sonsuz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (a) f(x) = (x<sup>2</sup> − 4)/(x − 2) fonksiyonu x = 2'de sürekli olacak biçimde tanımlanırsa f(2) kaç olur? (b) g(x) = (x<sup>3</sup> − 1)/(x<sup>2</sup> − 1) fonksiyonunun süreksiz olduğu noktaları bulunuz. Hangisinde süreksizlik giderilebilir?</p>
+<p><strong>Adım 1.</strong> (a) f(2) tanımsız (payda 0). Limiti bul: yerine koyunca 0/0.</p>
+<span class="mat"><span class="kes"><span>(x − 2)(x + 2)</span><span>x − 2</span></span> = x + 2 <span class="g">(x ≠ 2; iki kare farkı, sadeleştir)</span></span>
+<span class="mat">lim<sub>x→2</sub> f(x) = 4 <span class="g">(x + 2'de x = 2)</span></span>
+<span class="mat">f(2) = 4 tanımlanırsa limit = değer <span class="g">(kaldırılabilir süreksizlik giderildi)</span></span>
+<p><strong>Adım 2.</strong> (b) Payda x<sup>2</sup> − 1 = (x − 1)(x + 1), kökleri 1 ve −1. g bu iki noktada tanımsız: ikisi de süreksizlik noktası.</p>
+<p><strong>Adım 3.</strong> x = 1: pay 1 − 1 = 0, payda 0. 0/0, sadeleştir.</p>
+<span class="mat"><span class="kes"><span>(x − 1)(x<sup>2</sup> + x + 1)</span><span>(x − 1)(x + 1)</span></span> = <span class="kes"><span>x<sup>2</sup> + x + 1</span><span>x + 1</span></span> <span class="g">(küp farkı)</span></span>
+<span class="mat">lim<sub>x→1</sub> g(x) = <span class="kes"><span>3</span><span>2</span></span> <span class="g">(limit var: kaldırılabilir)</span></span>
+<p><strong>Adım 4.</strong> x = −1: sadeleşmiş ifadede pay 1 − 1 + 1 = 1, payda 0.</p>
+<span class="mat">sayı/0 ⇒ sağdan ve soldan ±∞ <span class="g">(sonsuz süreksizlik)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> x = 1,01 koy: (1,030301 − 1)/(1,0201 − 1) = 0,030301/0,0201 ≈ 1,507; 3/2'ye yakın. x = −0,99 koy: pay x<sup>3</sup> − 1 ≈ −1,970, payda x<sup>2</sup> − 1 = −0,0199; bölüm yaklaşık 99. Değer bir sayıya yerleşmiyor, büyüyor: sonsuz süreksizlik.</p>
+<p><strong>Sonuç:</strong> (a) f(2) = 4. (b) g, x = 1 ve x = −1'de süreksizdir. x = 1'deki giderilebilir (g(1) = 3/2 tanımlanırsa), x = −1'deki giderilemez.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Sadeleştirip "fonksiyon her yerde süreklidir" demek.</strong> (x<sup>2</sup> − 4)/(x − 2) ifadesi x ≠ 2 için x + 2'ye eşittir, ama aynı fonksiyon değildir: x + 2 her yerde tanımlı ve süreklidir, (x<sup>2</sup> − 4)/(x − 2) ise x = 2'de tanımsızdır. Süreksiz noktaları her zaman <strong>sadeleştirmeden önceki</strong> paydadan bul; sadeleştirmeyi yalnızca limiti hesaplamak ve türü belirlemek için kullan. Sınavda "süreksiz olduğu noktaların toplamı" sorusunda sadeleşen kökü atlayan kişi yanlış seçeneği işaretler.</p></div>
+
+<h2 class="s">4. Soldan ve sağdan süreklilik, kapalı aralıkta süreklilik</h2>
+
+<p>Parça 19'da limiti soldan ve sağdan ayrı aldın. Aynı ayrımı sürekliliğe de uygulayabilirsin. Bu, iki yerde gerekir: sıçrama noktasında "fonksiyon hangi yandan bağlı?" sorusunda ve tanım aralığının uç noktalarında.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>lim<sub>x→a<sup>−</sup></sub> f(x) = f(a) ise f, a'da <strong>soldan süreklidir</strong>; lim<sub>x→a<sup>+</sup></sub> f(x) = f(a) ise <strong>sağdan süreklidir</strong>. f, a'da süreklidir ancak ve ancak hem soldan hem sağdan süreklidir.</p>
+<p>f, [a, b] <strong>kapalı aralığında süreklidir</strong> demek: (a, b) içindeki her noktada sürekli, a'da sağdan sürekli ve b'de soldan süreklidir.</p>
+<p><strong>Neden uçlarda tek yan yeter?</strong> Aralığın dışı fonksiyonun ilgilendiğimiz bölgesi değildir; a'nın solunda fonksiyon hiç tanımlı olmayabilir (√x'te x &lt; 0 gibi). Parça 19'da uç noktada limitin var olan tek yanlı limite eşit alındığını görmüştün; süreklilik de aynı kabulle uçta tek yanlı sınanır.</p></div>
+
+<p>Bir sıçrama noktasında f(a) hangi parçanın ucundaysa fonksiyon o yandan süreklidir. Şekil (c)'de dolu yuvarlak sağdaki parçanın başında: f(a) sağdan limite eşit, sola eşit değil. O hâlde f, a'da sağdan süreklidir, soldan değil; bütünüyle de sürekli değildir. Parçalı fonksiyonda bunu tanımdaki eşitlik işaretinden okursun: "x ≥ 2 iken 3x − 1" yazıyorsa f(2) sağdaki kuraldan gelir ve f, 2'de sağdan süreklidir.</p>
+
+<p>Kapalı aralık için iki tipik örnek: f(x) = √(x − 1) fonksiyonu [1, ∞) aralığında süreklidir; x = 1'de solu yoktur, sağdan limit √0 = 0 = f(1). f(x) = √(4 − x<sup>2</sup>) fonksiyonu [−2, 2] aralığında süreklidir; −2'de sağdan, 2'de soldan limit 0 ve f(±2) = 0. Bu fonksiyon için "lim<sub>x→2<sup>+</sup></sub> f(x)" sorulamaz, çünkü 2'nin sağında fonksiyon tanımlı değildir.</p>
+
+<h2 class="s">5. Hangi fonksiyon nerede sürekli?</h2>
+
+<p>Her noktada üç koşulu tek tek denetlemek zorunda değilsin. Tanıdığın fonksiyon ailelerinin nerede sürekli olduğu bellidir ve bunun gerekçesi Parça 19'da zaten kuruldu: orada "polinomda limit, yerine koyarak bulunur" dedin. Yerine koyarak bulunan limit tam olarak f(a)'dır; yani yerine koyma hakkının olduğu her yerde fonksiyon süreklidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Polinomlar</strong> her gerçek sayıda süreklidir. <strong>Rasyonel fonksiyonlar</strong> paydanın sıfır olmadığı her noktada süreklidir. <strong>Köklü fonksiyonlar:</strong> çift dereceli kök (√, ⁴√) içinin sıfır ya da pozitif olduğu yerlerde, tek dereceli kök (³√) içi sürekli olan her yerde süreklidir. <strong>Logaritmik fonksiyonlar</strong> içinin pozitif olduğu yerlerde süreklidir. <strong>Üstel fonksiyon</strong> aˣ ile sin x ve cos x her yerde süreklidir.</p>
+<p><strong>Neden?</strong> Bu fonksiyonların hepsinde, tanımlı oldukları her noktada limit yerine koyarak bulunur (Parça 19, 5. ve 6. bölümler): lim<sub>x→a</sub> f(x) = f(a). Bu eşitlik süreklilik tanımının ta kendisidir. Kısaca: <strong>temel fonksiyonlar tanım kümelerinde süreklidir</strong>; sorun yalnızca tanımın bozulduğu yerlerde çıkar.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Fonksiyon</th><th>Sürekli olduğu yer</th><th>Örnek</th></tr>
+<tr><td>Polinom</td><td>bütün gerçek sayılar</td><td>x<sup>3</sup> − 5x + 2: her yerde</td></tr>
+<tr><td>Rasyonel P/Q</td><td>Q(x) ≠ 0 olan her yer</td><td>(x + 1)/(x<sup>2</sup> − 9): x = ±3 dışında</td></tr>
+<tr><td>Çift dereceli kök √(u)</td><td>u ≥ 0</td><td>√(x − 1): [1, ∞)</td></tr>
+<tr><td>Tek dereceli kök ³√(u)</td><td>u'nun sürekli olduğu her yer</td><td>³√(x<sup>2</sup> − 4): her yerde</td></tr>
+<tr><td>Logaritma log<sub>a</sub>(u)</td><td>u &gt; 0</td><td>log(5 − x): (−∞, 5)</td></tr>
+<tr><td>Üstel aˣ, sin x, cos x</td><td>her yerde</td><td>2ˣ + cos x: her yerde</td></tr>
+<tr><td>tan x</td><td>cos x ≠ 0</td><td>x = π/2 + kπ dışında</td></tr>
+</table></div>
+
+<p><strong>Sınav dili üzerine bir not.</strong> Üniversite matematiğinde süreklilik yalnızca tanım kümesindeki noktalar için sorulur; tanımsız bir noktaya "süreksiz" denmez. Lise ders kitaplarında ve sınav sorularında ise yerleşik kullanım farklıdır: rasyonel bir fonksiyonun <strong>paydasını sıfır yapan noktalar süreksiz noktalar olarak sayılır</strong> (çevresinde fonksiyon tanımlı olduğu ve birinci koşul bozulduğu için). "f(x) = (x + 1)/(x<sup>2</sup> − 9) fonksiyonunun süreksiz olduğu noktalar" sorusunun beklenen cevabı x = −3 ve x = 3'tür. Bu parçada bu kullanımı esas alıyoruz. Kökün ve logaritmanın tanımsız olduğu koca aralıklar ise (√(x − 1) için x &lt; 1) "süreksiz noktalar" diye sayılmaz; onlar için soru "sürekli olduğu en geniş aralık" biçiminde gelir. Örneğin f(x) = √(x − 1) + log(5 − x) için iki koşul x ≥ 1 ve x &lt; 5'tir; f, [1, 5) aralığında süreklidir.</p>
+
+<h3>Paydanın hiç sıfırlanmadığı durum</h3>
+
+<p>Payda gerçek kökü olmayan ikinci dereceden bir ifadeyse rasyonel fonksiyon her yerde süreklidir: 1/(x<sup>2</sup> + 1) gibi. Parametreli soruda bu, Parça 7'deki koşula döner. "f(x) = (2x + 1)/(x<sup>2</sup> − 6x + m) her x gerçek sayısı için sürekli ise m hangi aralıktadır?" Paydanın hiç sıfır olmaması gerekir, yani diskriminant negatif olmalıdır:</p>
+<span class="mat">Δ = 36 − 4m &lt; 0 <span class="g">(payda hiç sıfırlanmasın)</span></span>
+<span class="mat">m &gt; 9 <span class="g">(4m &gt; 36)</span></span>
+<p>m = 9 alınamaz: o zaman payda (x − 3)<sup>2</sup> olur ve x = 3'te sıfırlanır. Eşitsizliğin "≤" değil "&lt;" olması bu yüzdendir.</p>
+
+<h2 class="s">6. Sürekli fonksiyonlarla işlemler</h2>
+
+<p>Karmaşık bir ifadenin sürekliliğini, onu oluşturan basit parçalardan okursun. Bunun dayanağı yine Parça 19'daki limit kurallarıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f ve g, x = a'da sürekli ise f + g, f − g, f · g, c · f (c sabit) de a'da süreklidir; g(a) ≠ 0 ise f/g de a'da süreklidir.</p>
+<p><strong>Bileşke:</strong> g, a'da sürekli ve f, g(a)'da sürekli ise f∘g, a'da süreklidir.</p>
+<p><strong>Neden?</strong> Toplamın limiti limitlerin toplamıdır: lim (f + g) = lim f + lim g = f(a) + g(a) = (f + g)(a). Çarpım ve bölüm için de aynı kural, bölümde paydanın limitinin sıfır olmaması koşuluyla çalışır. Bileşkede x, a'ya giderken g(x), g(a)'ya gider (g sürekli); dıştaki f de g(a)'nın çevresinde kopmadığı için f(g(x)) da f(g(a))'ya gider.</p></div>
+
+<p>Bu kuralla birçok soru tek bakışta çözülür. √(x<sup>2</sup> + 1) her yerde süreklidir: içteki polinom her yerde sürekli ve hep pozitif, dıştaki karekök pozitif sayılarda sürekli. log(x<sup>2</sup> − 4x + 5) her yerde süreklidir: içerinin Δ'sı 16 − 20 &lt; 0 ve baş katsayı pozitif, yani içeri hep pozitif. 1/(2ˣ − 8) ise yalnızca 2ˣ = 8, yani x = 3'te süreksizdir: pay ve payda her yerde sürekli, sorun yalnızca paydanın sıfır olduğu yerde.</p>
+
+<div class="tablo"><table>
+<tr><th>Bilinen</th><th>Sonuç</th><th>Gerekçe ya da karşı örnek</th></tr>
+<tr><td>f ve g sürekli</td><td>f + g, f · g sürekli</td><td>limit kuralları</td></tr>
+<tr><td>f sürekli, g süreksiz</td><td>f + g <strong>kesinlikle</strong> süreksiz</td><td>f + g sürekli olsaydı g = (f + g) − f de sürekli olurdu</td></tr>
+<tr><td>f ve g süreksiz</td><td>f + g sürekli <strong>olabilir</strong></td><td>f = 1 (x ≥ 0), 0 (x &lt; 0); g = 0 (x ≥ 0), 1 (x &lt; 0); f + g = 1</td></tr>
+<tr><td>f sürekli, g süreksiz</td><td>f · g sürekli <strong>olabilir</strong></td><td>f(x) = 0 ise f · g = 0, her yerde sürekli</td></tr>
+<tr><td>g(a) = 0</td><td>f/g a'da süreksiz</td><td>payda sıfır: birinci koşul bozulur</td></tr>
+</table></div>
+
+<p>Tablonun ikinci ve üçüncü satırları I, II, III öncüllü soruların gözdesidir. "Süreksiz iki fonksiyonun toplamı süreksizdir" öncülü yanlıştır (karşı örnek var); "sürekli bir fonksiyonla süreksiz bir fonksiyonun toplamı süreksizdir" öncülü ise doğrudur. Bu tür öncülleri sınarken karşı örnek aramayı alışkanlık edin: tek bir karşı örnek, bir "her zaman" cümlesini çürütmeye yeter.</p>
+
+<h2 class="s">7. Parçalı fonksiyonda süreklilik ve parametre bulma</h2>
+
+<p>Sınavın en sevdiği kalıp budur. Parçalı fonksiyonun her parçası genellikle bir polinomdur ve kendi aralığının içinde zaten süreklidir (5. bölüm). Tek tehlikeli yer kritik noktalardır; orada iki parça birleşir ve buluşup buluşmadıkları sınanmalıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Kritik nokta x = a'da sürekliliği sınamak için: soldaki kuralda x = a koy (soldan limit), sağdaki kuralda x = a koy (sağdan limit), f(a)'yı tanımdan oku. Üçünü eşitle. "f her x için sürekli" deniyorsa bunu <strong>her kritik noktada</strong> ayrı yap; her kritik nokta bir denklem verir.</p>
+<p><strong>Neden yerine koyma yeterli?</strong> Parçalar polinom olduğu için her parça kendi kuralının değerine kopmadan varır; soldan limit, soldaki kuralın a'daki değeridir (Parça 19, 7. bölüm). Bir dikkat: parçalardan biri rasyonel ya da köklü ise önce o parçanın <em>kendi aralığında</em> tanımsız bir nokta olup olmadığına bak (8. bölüm).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> f(x) = ax + 1 (x &lt; 2 iken), f(x) = x<sup>2</sup> + a (x ≥ 2 iken) fonksiyonu her x gerçek sayısı için sürekli olduğuna göre a kaçtır?</p>
+<p><strong>Adım 1.</strong> Parçalar polinom; tek kritik nokta x = 2. f(2) sağdaki kuraldan gelir (eşitlik orada).</p>
+<span class="mat">lim<sub>x→2<sup>−</sup></sub> f(x) = 2a + 1 <span class="g">(soldaki kuralda x = 2)</span></span>
+<span class="mat">lim<sub>x→2<sup>+</sup></sub> f(x) = f(2) = 4 + a <span class="g">(sağdaki kuralda x = 2)</span></span>
+<p><strong>Adım 2.</strong> Eşitle ve çöz.</p>
+<span class="mat">2a + 1 = 4 + a <span class="g">(süreklilik koşulu)</span></span>
+<span class="mat">a = 3 <span class="g">(a'ları bir yana, sayıları öbür yana topla)</span></span>
+<p><strong>Adım 3 (kontrol yolu).</strong> a = 3 koy: soldan 2 · 3 + 1 = 7, sağdan 4 + 3 = 7. Eşit.</p>
+<p><strong>Sonuç:</strong> a = 3. Hızlı yol: "iki kuralı kritik noktada eşitle" tek satırdır; kontrol yolu da tek satırdır: bulduğun değeri iki kurala koyup aynı sayının çıktığını gör. Seçeneklerde 7 görürsen o, a değil ortak değerdir; soru kökünün ne istediğine bak.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> (a) f(x) = x + a (x &lt; −1 iken), f(x) = bx<sup>2</sup> + 1 (−1 ≤ x &lt; 2 iken), f(x) = 3x − 1 (x ≥ 2 iken) fonksiyonu her yerde sürekli olduğuna göre a + b kaçtır? (b) f(x) = (x<sup>2</sup> + ax + b)/(x − 1) (x ≠ 1 iken), f(1) = 5 fonksiyonu x = 1'de sürekli olduğuna göre a ve b kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) İki kritik nokta, iki bilinmeyen: her noktadan bir denklem. İçinde yalnızca bir bilinmeyen olan noktadan başla: x = 2.</p>
+<span class="mat">b · 2<sup>2</sup> + 1 = 3 · 2 − 1 <span class="g">(x = 2'de sol kural = sağ kural)</span></span>
+<span class="mat">4b + 1 = 5 ⇒ b = 1</span>
+<p><strong>Adım 2.</strong> x = −1'de, b'yi yerine koyarak.</p>
+<span class="mat">−1 + a = 1 · (−1)<sup>2</sup> + 1 <span class="g">(x = −1'de sol kural = sağ kural)</span></span>
+<span class="mat">−1 + a = 2 ⇒ a = 3</span>
+<span class="mat">a + b = 4</span>
+<p><strong>Adım 3.</strong> (b) Payda x = 1'de sıfır. f'nin 1'de sürekli olması için limit var olmalı ve 5'e eşit olmalı. Limit bir gerçek sayı ve payda sıfır: pay da sıfır olmalı (Parça 20).</p>
+<span class="mat">1 + a + b = 0 <span class="g">(pay x = 1'de sıfır)</span></span>
+<p><strong>Adım 4.</strong> Pay x − 1 çarpanını taşıyor; başkatsayısı 1 olduğu için (x − 1)(x + c) biçimindedir.</p>
+<span class="mat">lim<sub>x→1</sub> <span class="kes"><span>(x − 1)(x + c)</span><span>x − 1</span></span> = 1 + c <span class="g">(sadeleştir, x = 1 koy)</span></span>
+<span class="mat">1 + c = 5 ⇒ c = 4 <span class="g">(limit = f(1))</span></span>
+<span class="mat">(x − 1)(x + 4) = x<sup>2</sup> + 3x − 4 ⇒ a = 3, b = −4 <span class="g">(katsayıları eşleştir)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> (a) Üç kuralı kritik noktalarda yaz: x = −1'de 2 ve 2; x = 2'de 5 ve 5. (b) 1 + 3 − 4 = 0 ve sadeleşmiş x + 4, x = 1'de 5.</p>
+<p><strong>Sonuç:</strong> (a) a + b = 4. (b) a = 3, b = −4.</p></div>
+
+<p>(b) şıkkı süreklilik ile Parça 20'nin birleştiği yerdir: "sürekli" sözcüğü iki bilgi verir, limit vardır (bu da payın sıfır olmasını zorlar) ve limit verilen değere eşittir. İki bilinmeyen için iki denklem böyle çıkar.</p>
+
+<h2 class="s">8. Süreksiz noktaların sayısı ve toplamı</h2>
+
+<p>Bu soru tipinde hiçbir noktayı atlamamak ve fazladan nokta saymamak gerekir. İkisinin de kaynağı aynıdır: hangi kuralın hangi aralıkta geçerli olduğunu gözden kaçırmak.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1.</strong> Her parçanın paydasının köklerini bul; yalnızca o parçanın <strong>kendi aralığına düşen</strong> kökleri yaz. <strong>2.</strong> Her kritik noktada sol ve sağ kuralın değerlerini ve f(a)'yı karşılaştır; eşit değilse o noktayı yaz. <strong>3.</strong> Listeyi say ya da topla.</p>
+<p><strong>Neden yalnızca kendi aralığı?</strong> Bir kural, yalnızca yazıldığı aralıkta fonksiyonu tanımlar. Kendi aralığının dışında kalan bir payda kökünde o kural hiç kullanılmaz; orada fonksiyonun değerini başka bir kural verir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f(x) = 1/(x + 2) (x &lt; 0 iken), f(x) = (x − 1)/(x<sup>2</sup> − 9) (x ≥ 0 iken) fonksiyonunun süreksiz olduğu noktaların sayısı ve apsisleri toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> Birinci parçanın paydası x + 2: kök −2. −2 &lt; 0, yani bu parçanın aralığında. Süreksiz nokta: x = −2.</p>
+<p><strong>Adım 2.</strong> İkinci parçanın paydası x<sup>2</sup> − 9: kökler 3 ve −3.</p>
+<span class="mat">x = 3 ≥ 0 <span class="g">(aralıkta: süreksiz nokta)</span></span>
+<span class="mat">x = −3 &lt; 0 <span class="g">(aralık dışında: orada f(−3) = 1/(−3 + 2) = −1, sorun yok)</span></span>
+<p><strong>Adım 3.</strong> Kritik nokta x = 0.</p>
+<span class="mat">lim<sub>x→0<sup>−</sup></sub> f(x) = <span class="kes"><span>1</span><span>0 + 2</span></span> = <span class="kes"><span>1</span><span>2</span></span> <span class="g">(soldaki kural)</span></span>
+<span class="mat">lim<sub>x→0<sup>+</sup></sub> f(x) = f(0) = <span class="kes"><span>0 − 1</span><span>0 − 9</span></span> = <span class="kes"><span>1</span><span>9</span></span> <span class="g">(sağdaki kural)</span></span>
+<span class="mat">1/2 ≠ 1/9 <span class="g">(sıçrama: süreksiz)</span></span>
+<p><strong>Adım 4.</strong> Listele: −2, 0, 3.</p>
+<span class="mat">sayı 3; toplam −2 + 0 + 3 = 1</span>
+<p><strong>Sonuç:</strong> 3 nokta, toplamları 1. −3'ü de sayan biri 4 nokta ve toplam −2 bulur; kritik noktayı unutan 2 nokta bulur. Kontrol yolu: listedeki her nokta için "bu noktada hangi kural geçerli?" sorusunu bir kez daha sor.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Payın köklerini de süreksiz nokta saymak ya da payda kökünü aralığa bakmadan yazmak.</strong> Payın sıfır olması fonksiyonun değerinin 0 olması demektir; x eksenini kestiği yerdir, kopma değildir. Payda kökünde ise önce "bu kök, bu kuralın aralığında mı?" diye sor. Örnek 5'teki −3, ikinci kuralın paydasını sıfırlar ama x = −3'te birinci kural geçerlidir. Bir de tersini unutma: sadeleşen payda kökü (Örnek 2'deki x = 1) yine de süreksiz noktadır.</p></div>
+
+<h2 class="s">9. Grafikten süreksiz noktaları saymak</h2>
+
+<p>Grafik sorularında her olaylı noktayı 2. bölümdeki üç soruyla sınarsın. Sınav burada ince ayrımlar ister: "süreksiz olduğu noktalar", "limitinin olmadığı noktalar", "limiti olduğu hâlde sürekli olmadığı noktalar", "tanımlı olduğu hâlde limitinin olmadığı noktalar". Hepsini aynı tablodan okursun.</p>
+
+<figure>
+<svg viewBox="0 0 400 280" role="img" aria-label="Eksi iki ile altı arasında tanımlı bir f fonksiyonunun grafiği. Eksi ikide dolu uç nokta. Sıfırda sıçrama: soldaki parça 4 yüksekliğinde boş yuvarlakla biter, sağdaki parça 1 yüksekliğinde dolu noktadan başlar. Birde doğru üzerinde 2 yüksekliğinde delik ve 4 yüksekliğinde ayrı dolu nokta. Üçte doğru üzerinde 4 yüksekliğinde delik. Dörtte 5 yüksekliğinde sivri bir tepe, kopma yok. Beşte soldan gelen parça 3 yüksekliğinde dolu noktada biter, sağdaki parça 1 yüksekliğinde boş yuvarlakla başlar. Altıda 2 yüksekliğinde dolu uç nokta.">
+  <line class="sv-c" x1="30" y1="250" x2="392" y2="250" />
+  <line class="sv-c" x1="130" y1="262" x2="130" y2="30" />
+  <line class="sv-cl" x1="50" y1="170" x2="130" y2="90" />
+  <line class="sv-cl" x1="130" y1="210" x2="290" y2="50" />
+  <line class="sv-cl" x1="290" y1="50" x2="330" y2="130" />
+  <line class="sv-cl" x1="330" y1="210" x2="370" y2="170" />
+  <circle class="sv-t" cx="50" cy="170" r="4.5" />
+  <circle class="sv-k" cx="130" cy="90" r="4.5" />
+  <circle class="sv-cl" cx="130" cy="90" r="4.5" />
+  <circle class="sv-t" cx="130" cy="210" r="4.5" />
+  <circle class="sv-k" cx="170" cy="170" r="4.5" />
+  <circle class="sv-cl" cx="170" cy="170" r="4.5" />
+  <circle class="sv-t" cx="170" cy="90" r="4.5" />
+  <circle class="sv-k" cx="250" cy="90" r="4.5" />
+  <circle class="sv-cl" cx="250" cy="90" r="4.5" />
+  <circle class="sv-t" cx="330" cy="130" r="4.5" />
+  <circle class="sv-k" cx="330" cy="210" r="4.5" />
+  <circle class="sv-cl" cx="330" cy="210" r="4.5" />
+  <circle class="sv-t" cx="370" cy="170" r="4.5" />
+  <text class="sv-s" x="56" y="188" text-anchor="start">(−2, 2)</text>
+  <text class="sv-s" x="122" y="82" text-anchor="end">(0, 4)</text>
+  <text class="sv-s" x="138" y="226" text-anchor="start">(0, 1)</text>
+  <text class="sv-s" x="178" y="188" text-anchor="start">(1, 2)</text>
+  <text class="sv-s" x="170" y="78" text-anchor="middle">(1, 4)</text>
+  <text class="sv-s" x="244" y="80" text-anchor="end">(3, 4)</text>
+  <text class="sv-s" x="290" y="40" text-anchor="middle">(4, 5)</text>
+  <text class="sv-s" x="338" y="128" text-anchor="start">(5, 3)</text>
+  <text class="sv-s" x="338" y="226" text-anchor="start">(5, 1)</text>
+  <text class="sv-s" x="370" y="158" text-anchor="middle">(6, 2)</text>
+  <text class="sv-s" x="50" y="266" text-anchor="middle">−2</text>
+  <text class="sv-s" x="90" y="266" text-anchor="middle">−1</text>
+  <text class="sv-s" x="124" y="266" text-anchor="end">0</text>
+  <text class="sv-s" x="170" y="266" text-anchor="middle">1</text>
+  <text class="sv-s" x="210" y="266" text-anchor="middle">2</text>
+  <text class="sv-s" x="250" y="266" text-anchor="middle">3</text>
+  <text class="sv-s" x="290" y="266" text-anchor="middle">4</text>
+  <text class="sv-s" x="330" y="266" text-anchor="middle">5</text>
+  <text class="sv-s" x="370" y="266" text-anchor="middle">6</text>
+  <text class="sv-b" x="40" y="60" text-anchor="start">y = f(x)</text>
+</svg>
+<figcaption>f, [−2, 6] aralığında tanımlı (x = 3 hariç). Kurallar: [−2, 0) aralığında x + 4; [0, 4] aralığında x + 1 (ama f(1) = 4 ve x = 3 tanım dışı); (4, 5] aralığında 13 − 2x; (5, 6] aralığında x − 4.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Grafiği verilen f için (a) süreksiz olduğu noktaların sayısını, (b) limiti olduğu hâlde sürekli olmadığı noktaları, (c) tanımlı olduğu hâlde limitinin olmadığı noktaları bulunuz.</p>
+<p><strong>Adım 1.</strong> Olaylı noktaları listele: −2, 0, 1, 3, 4, 5, 6. Her birine üç soruyu sor.</p>
+<span class="mat">x = −2: sağdan limit 2 = f(−2) <span class="g">(uç nokta; sağdan sürekli)</span></span>
+<span class="mat">x = 0: sol 4, sağ 1, f(0) = 1 <span class="g">(limit yok; sağdan sürekli; sıçrama)</span></span>
+<span class="mat">x = 1: limit 2, f(1) = 4 <span class="g">(limit var, değer farklı; kaldırılabilir)</span></span>
+<span class="mat">x = 3: limit 4, f(3) tanımsız <span class="g">(limit var, değer yok; kaldırılabilir)</span></span>
+<span class="mat">x = 4: sol 5, sağ 5, f(4) = 5 <span class="g">(sivri ama kopmasız: sürekli)</span></span>
+<span class="mat">x = 5: sol 3, sağ 1, f(5) = 3 <span class="g">(limit yok; soldan sürekli; sıçrama)</span></span>
+<span class="mat">x = 6: soldan limit 2 = f(6) <span class="g">(uç nokta; soldan sürekli)</span></span>
+<p><strong>Adım 2.</strong> Soruları tablodan oku.</p>
+<span class="mat">(a) süreksiz: 0, 1, 3, 5 ⇒ 4 nokta</span>
+<span class="mat">(b) limit var, sürekli değil: 1 ve 3</span>
+<span class="mat">(c) tanımlı, limit yok: 0 ve 5</span>
+<p><strong>Sonuç:</strong> (a) 4. (b) x = 1 ve x = 3. (c) x = 0 ve x = 5. x = 4'ü süreksiz sayan kişi "sivri" ile "kopuk"u karıştırmıştır. f, [−2, 6] kapalı aralığında sürekli <strong>değildir</strong>; uç noktalar sorunsuz olsa da içeride dört kopma var.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Grafikte gördüğün</th><th>Limit</th><th>f(a)</th><th>Sürekli mi?</th></tr>
+<tr><td>Kopmasız, düzgün geçiş</td><td>var</td><td>= limit</td><td>evet</td></tr>
+<tr><td>Sivri tepe (kırılma)</td><td>var</td><td>= limit</td><td>evet (türev yok, Parça 22)</td></tr>
+<tr><td>Delik, nokta yok</td><td>var</td><td>tanımsız</td><td>hayır</td></tr>
+<tr><td>Delik + başka yükseklikte dolu nokta</td><td>var</td><td>≠ limit</td><td>hayır</td></tr>
+<tr><td>Sıçrama</td><td>yok</td><td>tanımlı (bir yanda)</td><td>hayır (bir yandan sürekli)</td></tr>
+<tr><td>Düşey asimptot</td><td>yok (±∞)</td><td>genellikle yok</td><td>hayır</td></tr>
+</table></div>
+
+<h2 class="s">10. Mutlak değerli fonksiyonların sürekliliği</h2>
+
+<p>y = |x| grafiği Parça 3'teki V biçimidir; tepesi sivridir ama kopuk değildir. x = 0'da soldan limit lim (−x) = 0, sağdan limit lim x = 0, |0| = 0: üç koşul sağlanır. |x| her yerde süreklidir. Bileşke kuralıyla bunun sonucu hemen gelir: f sürekli ise |f(x)| de süreklidir, çünkü |f(x)|, sürekli f ile sürekli |x|'in bileşkesidir. Bu yüzden |x − 1| + |x + 2|, |x<sup>2</sup> − 4| − 3x gibi ifadeler her yerde süreklidir; sivri noktaları olabilir, kopmaları olmaz.</p>
+
+<p>Mutlak değerin süreksizlik doğurduğu durum, mutlak değerli ifadeye <strong>bölmektir</strong>. |x − 2|/(x − 2), x &gt; 2 iken 1, x &lt; 2 iken −1'dir (Parça 19); x = 2'de sıçrama vardır ve f(2)'ye ne değer verilirse verilsin giderilemez.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> f(x) = (x<sup>2</sup> − 2x)/|x − 2| (x ≠ 2 iken), f(2) = k fonksiyonu x = 2'de sürekli olacak biçimde k seçilebilir mi?</p>
+<p><strong>Adım 1.</strong> Pay x(x − 2). Sağ ve sol ayrı: mutlak değeri işaretine göre aç.</p>
+<span class="mat">x &gt; 2: |x − 2| = x − 2 ⇒ f(x) = <span class="kes"><span>x(x − 2)</span><span>x − 2</span></span> = x <span class="g">(sadeleştir)</span></span>
+<span class="mat">x &lt; 2: |x − 2| = −(x − 2) ⇒ f(x) = −x <span class="g">(eksi işareti dışarı çıkar)</span></span>
+<p><strong>Adım 2.</strong> Tek yanlı limitler.</p>
+<span class="mat">lim<sub>x→2<sup>+</sup></sub> f(x) = 2, lim<sub>x→2<sup>−</sup></sub> f(x) = −2 <span class="g">(iki yan farklı)</span></span>
+<p><strong>Adım 3.</strong> Limit yok; ikinci koşul k'den bağımsız olarak bozuk.</p>
+<p><strong>Sonuç:</strong> Hiçbir k için sürekli olmaz (sıçrama süreksizliği). Seçeneklerde "k = 2" ya da "k = 0" varsa ikisi de yanlıştır. k = 2 seçilirse f yalnızca sağdan sürekli olur.</p></div>
+
+<p>Bir ince nokta daha: |f| sürekli olduğu hâlde f süreksiz olabilir. f(x) = 1 (x ≥ 0), f(x) = −1 (x &lt; 0) fonksiyonu 0'da sıçrar, ama |f(x)| = 1 her yerde süreklidir. Yani "|f| sürekli ise f süreklidir" öncülü yanlıştır; "f sürekli ise |f| süreklidir" doğrudur.</p>
+
+<h2 class="s">11. Kapalı aralıkta sürekli fonksiyonun iki büyük sonucu</h2>
+
+<p>Sürekliliği bu kadar önemli yapan, kopmasızlıktan çıkan iki sonuçtur. Biçimsel ispatları lise düzeyinin üstündedir; burada sezgisel gerekçeleriyle veriyoruz ve sınav da onları bu düzeyde sorar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>En büyük ve en küçük değer:</strong> f, [a, b] kapalı aralığında sürekli ise bu aralıkta bir en büyük ve bir en küçük değer <strong>alır</strong>; yani aralıkta f(c) ≥ f(x) olan bir c ve f(d) ≤ f(x) olan bir d vardır.</p>
+<p><strong>Ara değer (kökün varlığı):</strong> f, [a, b]'de sürekli ve f(a) ile f(b) zıt işaretli ise (f(a) · f(b) &lt; 0) (a, b) aralığında f(c) = 0 olan <strong>en az bir</strong> c vardır. Daha genel olarak f, f(a) ile f(b) arasındaki her değeri en az bir kez alır.</p>
+<p><strong>Neden?</strong> Kalem kâğıttan kalkmadan x ekseninin altındaki bir noktadan üstündeki bir noktaya gidiyorsa, ekseni bir yerde kesmek zorundadır. Aynı kalem, kapalı bir aralıkta bir yere "kaçamaz": eğri iki uç noktası dahil sınırlı bir parçadır ve en yüksek ile en alçak noktası bu parçanın üzerindedir. İki koşul da gereklidir: <strong>süreklilik</strong> (kopma olursa eğri ekseni atlayabilir) ve <strong>kapalı aralık</strong> (uç alınmazsa en büyük değere yaklaşılıp hiç varılmayabilir).</p></div>
+
+<p>Koşulların neden gerektiğini karşı örneklerle gör. f(x) = x fonksiyonu (0, 1) açık aralığında süreklidir, ama en büyük değeri yoktur: 0,9, 0,99, 0,999 hep artar, 1'e hiç ulaşılmaz. f(x) = x (0 ≤ x &lt; 1), f(x) = 0 (1 ≤ x ≤ 2) fonksiyonu [0, 2] kapalı aralığında tanımlı ama x = 1'de süreksizdir; değerleri 1'e yaklaşır ama 1'i almaz, en büyük değeri yoktur. Ara değer için: f(x) = −1 (x &lt; 1), f(x) = 1 (x ≥ 1) fonksiyonunda f(0) = −1, f(2) = 1 zıt işaretli, ama f hiç sıfır olmaz; sıçrama ekseni atlar.</p>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="y eşittir x küp eksi 3x artı 1 fonksiyonunun eksi iki ile iki arasındaki grafiği. Eğri eksi ikide eksi birden başlar, eksi birde 3'e çıkar, birde eksi bire iner, ikide yeniden 3'e çıkar. x eksenini üç noktada keser. En büyük değer 3, eksi bir ve iki noktalarında; en küçük değer eksi bir, eksi iki ve bir noktalarında alınır.">
+  <line class="sv-c" x1="20" y1="150" x2="392" y2="150" />
+  <line class="sv-c" x1="200" y1="230" x2="200" y2="10" />
+  <line class="sv-c" x1="40" y1="30" x2="360" y2="30" />
+  <line class="sv-c" x1="40" y1="190" x2="360" y2="190" />
+  <polyline class="sv-cl" points="40.0,190.0 48.0,156.4 56.0,127.3 64.0,102.5 72.0,81.8 80.0,65.0 88.0,51.8 96.0,41.9 104.0,35.1 112.0,31.2 120.0,30.0 128.0,31.2 136.0,34.5 144.0,39.7 152.0,46.6 160.0,55.0 168.0,64.6 176.0,75.1 184.0,86.3 192.0,98.0 200.0,110.0 208.0,122.0 216.0,133.7 224.0,144.9 232.0,155.4 240.0,165.0 248.0,173.4 256.0,180.3 264.0,185.5 272.0,188.8 280.0,190.0 288.0,188.8 296.0,184.9 304.0,178.1 312.0,168.2 320.0,155.0 328.0,138.2 336.0,117.5 344.0,92.7 352.0,63.6 360.0,30.0" />
+  <circle class="sv-t" cx="40" cy="190" r="4" />
+  <circle class="sv-t" cx="120" cy="30" r="4" />
+  <circle class="sv-t" cx="280" cy="190" r="4" />
+  <circle class="sv-t" cx="360" cy="30" r="4" />
+  <circle class="sv-m" cx="49.6" cy="150" r="4" />
+  <circle class="sv-m" cx="227.8" cy="150" r="4" />
+  <circle class="sv-m" cx="322.6" cy="150" r="4" />
+  <text class="sv-s" x="120" y="20" text-anchor="middle">(−1, 3)</text>
+  <text class="sv-s" x="360" y="20" text-anchor="middle">(2, 3)</text>
+  <text class="sv-s" x="40" y="208" text-anchor="middle">(−2, −1)</text>
+  <text class="sv-s" x="280" y="208" text-anchor="middle">(1, −1)</text>
+  <text class="sv-s" x="240" y="46" text-anchor="middle">en büyük: 3</text>
+  <text class="sv-s" x="160" y="206" text-anchor="middle">en küçük: −1</text>
+  <text class="sv-b" x="200" y="248" text-anchor="middle">y = x³ − 3x + 1, [−2, 2]</text>
+</svg>
+<figcaption>Kapalı aralıkta sürekli bir fonksiyon. En büyük değer (3) hem içeride (x = −1) hem uçta (x = 2), en küçük değer (−1) hem uçta (x = −2) hem içeride (x = 1) alınıyor. Yeşil noktalar kökler: işaret −2 ile −1, 0 ile 1, 1 ile 2 arasında değiştiği için her aralıkta en az bir kök var.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> (a) x<sup>3</sup> + x − 3 = 0 denkleminin bir kökü hangi ardışık iki tam sayı arasındadır? Aralığı yarıya indirerek daralt. (b) f(x) = x<sup>3</sup> − 3x + 1 için f(x) = 0 denkleminin [−2, 2] aralığında en az kaç kökü vardır?</p>
+<p><strong>Adım 1.</strong> (a) f(x) = x<sup>3</sup> + x − 3 polinomdur, her yerde süreklidir. Tam sayılarda işaret ara.</p>
+<span class="mat">f(1) = 1 + 1 − 3 = −1 <span class="g">(negatif)</span></span>
+<span class="mat">f(2) = 8 + 2 − 3 = 7 <span class="g">(pozitif)</span></span>
+<span class="mat">f(1) · f(2) &lt; 0 ⇒ (1, 2)'de en az bir kök <span class="g">(ara değer)</span></span>
+<p><strong>Adım 2.</strong> Aralığın ortasında dene.</p>
+<span class="mat">f(1,5) = 3,375 + 1,5 − 3 = 1,875 &gt; 0 <span class="g">(işaret 1 ile 1,5 arasında değişiyor)</span></span>
+<span class="mat">f(1,25) = 1,953125 + 1,25 − 3 = 0,203125 &gt; 0 <span class="g">(kök 1 ile 1,25 arasında)</span></span>
+<p><strong>Adım 3.</strong> (b) Tam sayılarda değer tablosu kur.</p>
+<div class="tablo"><table>
+<tr><th>x</th><th>−2</th><th>−1</th><th>0</th><th>1</th><th>2</th></tr>
+<tr><td>f(x)</td><td>−1</td><td>3</td><td>1</td><td>−1</td><td>3</td></tr>
+<tr><td>işaret</td><td>−</td><td>+</td><td>+</td><td>−</td><td>+</td></tr>
+</table></div>
+<span class="mat">işaret değişimleri: (−2, −1), (0, 1), (1, 2) <span class="g">(her birinde en az bir kök)</span></span>
+<p><strong>Adım 4.</strong> n. dereceden bir polinomun en çok n gerçek kökü olabilir; üçüncü dereceden bir polinomda en az 3 kök bulunduysa tam 3 kök vardır.</p>
+<p><strong>Sonuç:</strong> (a) Kök (1, 2)'de; daraltınca (1; 1,25) aralığında (gerçek değeri yaklaşık 1,213). (b) En az 3 kök; derece 3 olduğu için tam 3.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Ara değer kuralını tersinden kullanmak.</strong> Kural "işaret değişiyorsa kök vardır" der; "kök varsa işaret değişir" ya da "işaret değişmiyorsa kök yoktur" demez. f(x) = (x − 1)<sup>2</sup> için f(0) = 1 ve f(2) = 1, ikisi de pozitif, ama x = 1 bir köktür (eğri ekseni kesmeden ona değer; Parça 5'teki teğet parabol). Örnek 8 (b)'de de −1 ile 0 arasında işaret değişmiyor; bu, orada kök olmadığını kanıtlamaz, yalnızca kural bir şey söylemez. Bir de kuralın süreklilik koşulunu unutma: f(x) = 1/x için f(−1) = −1, f(1) = 1, ama f hiç sıfır olmaz, çünkü f, [−1, 1]'de sürekli değildir.</p></div>
+
+<h2 class="s">Sınavda yol seçimi</h2>
+
+<p>Süreklilik sorusunu gördüğünde ilk on saniyede şunu sor: <strong>soru bir nokta mı, bir parametre mi, bir sayı mı istiyor?</strong> Tek bir noktaysa üç koşulu sırayla yaz. Parametreyse kritik noktada iki kuralı eşitle; rasyonel ifade varsa önce "pay da sıfır olmalı" denklemini kur. Süreksiz noktaların sayısı ya da toplamıysa önce sadeleştirmeden önceki paydaların köklerini kendi aralıklarına göre süz, sonra kritik noktaları tek tek sına. Grafik sorusunda her olaylı noktaya üç soruyu sor ve 9. bölümdeki tabloyu kafanda doldur. Kontrol yolu her zaman aynıdır: bulduğun değeri kritik noktada iki kurala koy, aynı sayıyı veriyor mu bak; ya da a'ya çok yakın bir sayı (a ± 0,01) koyup değerin f(a)'ya yakın çıkıp çıkmadığını gör.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 3, 19 ve 20'ye:</strong> Parça 3'teki "kopma" sezgisi burada biçimsel tanımına kavuştu. Parça 19'da f(a) ile limiti ayrı tutmuştun; süreklilik ikisinin eşitliğidir. Parça 20'deki delikli doğru kaldırılabilir süreksizliğin, sayı/0 durumu sonsuz süreksizliğin örneğidir; "pay da sıfır olmalı" kuralı Örnek 4 (b)'de süreklilik sorusuna dönüştü.</p>
+<p><strong>Parça 22'ye:</strong> Türevlenebilen her fonksiyon süreklidir, ama tersi doğru değildir: |x| sürekli olduğu hâlde 0'da türevi yoktur. Örnek 6'daki x = 4'teki sivri tepe de böyledir. Parçalı fonksiyonda türevlenebilme sorulurken ilk koşul her zaman bu parçadaki süreklilik koşulu olacak.</p>
+<p><strong>Parça 25 ve 27'ye:</strong> Kapalı aralıkta mutlak en büyük ve en küçük değeri bulurken "kritik noktalar ve uç noktalar karşılaştırılır" diyeceğiz. Bu yöntemin işe yarayacağının garantisi, 11. bölümdeki "kapalı aralıkta sürekli fonksiyon en büyük ve en küçük değerini alır" sonucudur.</p>
+<p><strong>Parça 30'a:</strong> Belirli integral, kapalı aralıkta sürekli fonksiyonlar için tanımlanıp hesaplanır; parçalı fonksiyonların integralinde kritik noktada bölme yine burada öğrendiğin parça parça düşünmeye dayanır.</p>
+<p><strong>Öbür derslere:</strong> Fizikte bir cismin konumu zamanla süreklidir: bir yerden başka bir yere arada hiç bulunmadan geçemez. Bu yüzden konum-zaman grafiği hiç kopmaz; hız-zaman grafiğinde ise ani bir çarpışmada keskin değişim görülebilir. Kimyada bir maddenin sıcaklığı ısıtılırken sürekli değişir; ara değer fikri, 12 °C'den 20 °C'ye çıkan sıcaklığın 16 °C'den geçmek zorunda olmasının matematiksel adıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir fonksiyonun x = a'da sürekli olması için gereken üç koşul nedir? Hangi sırayla sınarsın?</summary><p>f(a) tanımlı olmalı; x a'ya giderken limit var olmalı (soldan ve sağdan limit eşit ve gerçek sayı); limit f(a)'ya eşit olmalı. Bu sırayla sınarım: f(a) yoksa öbür iki soruya gerek kalmaz, limit yoksa eşitlik sorusu anlamsızdır.</p></details>
+<details><summary>Kaldırılabilir süreksizlik ile sıçrama süreksizliği arasındaki fark nedir? Hangisi giderilebilir, neden?</summary><p>Kaldırılabilir süreksizlikte limit vardır ama f(a) ya yoktur ya da limitten farklıdır; f(a)'yı limite eşit tanımlayınca giderilir. Sıçramada soldan ve sağdan limitler farklıdır, ortada tek bir limit yoktur; f(a)'ya hangi değer verilirse verilsin iki yan buluşmaz, giderilemez.</p></details>
+<details><summary>Bir fonksiyon [a, b] kapalı aralığında sürekli denince uç noktalarda ne istenir?</summary><p>Aralığın içindeki her noktada süreklilik, a'da yalnızca sağdan süreklilik (sağdan limit = f(a)), b'de yalnızca soldan süreklilik (soldan limit = f(b)). √(4 − x<sup>2</sup>), [−2, 2]'de bu anlamda süreklidir.</p></details>
+<details><summary>Parçalı bir fonksiyonun her yerde sürekli olması için hangi denklemleri kurarsın?</summary><p>Her kritik noktada soldaki kuralın o noktadaki değerini sağdaki kuralın değerine (ve ayrıca tanımlanmışsa f(a)'ya) eşitlerim. Her kritik nokta bir denklem verir. Parçalar polinom değilse ayrıca her parçanın kendi aralığında tanımsız noktası olmadığını denetlerim.</p></details>
+<details><summary>f sürekli, g süreksiz ise f + g için ne söylenebilir? İki süreksiz fonksiyonun toplamı için?</summary><p>f + g kesinlikle süreksizdir; sürekli olsaydı g = (f + g) − f iki sürekli fonksiyonun farkı olarak sürekli olurdu. İki süreksiz fonksiyonun toplamı ise sürekli olabilir: 0'da sıçrayan 1/0 ve 0/1 fonksiyonlarının toplamı sabit 1'dir.</p></details>
+<details><summary>Ara değer fikri ne söyler, hangi koşullar gerekir ve tersi neden doğru değildir?</summary><p>f, [a, b]'de sürekli ve f(a) ile f(b) zıt işaretliyse (a, b)'de en az bir kök vardır. Süreklilik ve kapalı aralık gerekir. Tersi doğru değildir: (x − 1)<sup>2</sup> gibi bir fonksiyon işaret değiştirmeden köke değebilir.</p></details>
+<details><summary>Rasyonel bir fonksiyonun süreksiz noktalarını ararken neden sadeleştirmeden önceki paydaya bakarsın?</summary><p>Çünkü fonksiyon, sadeleştirilmiş ifadeyle aynı değildir: sadeleşen çarpanın kökünde ilk ifade tanımsızdır. Sadeleştirme yalnızca o noktadaki limiti bulmaya ve süreksizliğin türünü (kaldırılabilir mi) belirlemeye yarar.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Tanım:</strong> f, a'da sürekli ⇔ lim<sub>x→a</sub> f(x) = f(a). Üç koşul: f(a) var, limit var, ikisi eşit. Sırayla sına.</li>
+<li><strong>Türler:</strong> kaldırılabilir (limit var, f(a) yok ya da farklı; f(a) = limit tanımlanarak giderilir), sıçrama (sol ≠ sağ), sonsuz (±∞). Son ikisi giderilemez.</li>
+<li><strong>Tek yanlı:</strong> sol limit = f(a) soldan sürekli; sağ limit = f(a) sağdan sürekli. [a, b]'de sürekli: içeride sürekli, a'da sağdan, b'de soldan.</li>
+<li><strong>Aileler:</strong> polinom her yerde; rasyonel payda ≠ 0; √ içi ≥ 0; log içi &gt; 0; aˣ, sin, cos her yerde. Temel fonksiyonlar tanım kümelerinde süreklidir.</li>
+<li><strong>Sınav dili:</strong> paydayı sıfır yapan noktalar süreksiz nokta sayılır; sadeleşen kök de dahil.</li>
+<li><strong>Payda hiç sıfırlanmasın:</strong> ikinci dereceden paydada Δ &lt; 0 (≤ değil).</li>
+<li><strong>İşlemler:</strong> sürekli ± · / (payda ≠ 0) ve bileşke süreklidir. Sürekli + süreksiz = süreksiz; süreksiz + süreksiz sürekli olabilir.</li>
+<li><strong>Parçalı parametre:</strong> her kritik noktada sol kural = sağ kural (= f(a)). Rasyonelde önce "pay da sıfır".</li>
+<li><strong>Nokta sayma:</strong> payda kökleri yalnızca kendi aralığında; kritik noktaları ayrıca sına; pay kökü süreksizlik değildir.</li>
+<li><strong>Grafik:</strong> sivri tepe süreklidir; delik, sıçrama, asimptot süreksizdir.</li>
+<li><strong>Mutlak değer:</strong> |x| ve |f| (f sürekliyse) süreklidir; |x − a|/(x − a) sıçrar. |f| sürekli ⇏ f sürekli.</li>
+<li><strong>Kapalı aralık:</strong> sürekli f, [a, b]'de en büyük ve en küçük değerini alır. f(a) · f(b) &lt; 0 ⇒ (a, b)'de en az bir kök. Tersi yok; süreklilik şart.</li>
+<li><strong>Kontrol yolu:</strong> bulduğun parametreyi iki kurala koy; aynı sayı çıkmalı.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-21">
+<h3>Quiz 21</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="D"><p class="q">f(x) = <span class="kes"><span>x − 1</span><span>x<sup>2</sup> − 4x + 3</span></span> fonksiyonunun süreksiz olduğu noktaların apsisleri toplamı kaçtır?</p>
+<ul class="sec"><li>3</li><li>−4</li><li>2</li><li>4</li><li>1</li></ul>
+<div class="coz"><p>Payda x<sup>2</sup> − 4x + 3 = (x − 1)(x − 3); kökleri 1 ve 3. f iki noktada da tanımsızdır, ikisi de süreksizlik noktasıdır: toplam 4. x = 1'de pay da sıfırdır ve süreksizlik kaldırılabilir, ama yine de süreksizliktir. 3, sadeleştirip 1/(x − 3) ifadesine bakarak x = 1'i atlamaktır. −4, kökler toplamını −b/a yerine b/a almaktır. 2, toplam yerine nokta sayısını vermektir. 1, yalnızca sadeleşen (kaldırılabilir) noktayı saymaktır.</p></div></li>
+
+<li data-c="B"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> + 2x − 15</span><span>x − 3</span></span> fonksiyonu x = 3'te sürekli olacak biçimde tanımlanırsa f(3) kaç olmalıdır?</p>
+<ul class="sec"><li>0</li><li>8</li><li>5</li><li>3</li><li>Hiçbir değer için sürekli olamaz</li></ul>
+<div class="coz"><p>x = 3'te 0/0 çıkar. Pay (x − 3)(x + 5); sadeleşince x + 5 kalır ve limit 3 + 5 = 8'dir. Limit var olduğu için süreksizlik kaldırılabilir: f(3) = 8 tanımlanırsa limit = değer olur. 0, 0/0'ı 0 sanmaktır. 5, sadeleşmiş x + 5'in yalnızca sabitini almaktır. 3, noktanın kendisini cevap sanmaktır. "Hiçbir değer için" seçeneği, "tanımsız noktada sürekli olamaz" yanılgısıdır; kaldırılabilir süreksizlik tam da tanımlayarak giderilir.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = x<sup>2</sup> − a (x &lt; 3 iken), f(x) = ax + 1 (x ≥ 3 iken) fonksiyonu her x gerçek sayısı için sürekli olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>8/3</li><li>7</li><li>5/2</li></ul>
+<div class="coz"><p>Parçalar polinom; tek kritik nokta x = 3. Soldan 9 − a, sağdan (ve f(3)) 3a + 1. Eşitle: 9 − a = 3a + 1 ⇒ 8 = 4a ⇒ a = 2. Kontrol: 9 − 2 = 7, 6 + 1 = 7. 4, soldaki −a'yı +a almaktır (9 + a = 3a + 1). 8/3, soldaki a'yı unutmaktır (9 = 3a + 1). 7, a değil, iki kuralın ortak değeridir. 5/2, sayıları bir yana toplarken 1'in işaretini karıştırmaktır (10 = 4a).</p></div></li>
+
+<li data-c="C"><p class="q">Aşağıdaki fonksiyonlardan hangisi x = 1 noktasında süreklidir?</p>
+<ul class="sec"><li>f(x) = <span class="kes"><span>x<sup>2</sup> − 1</span><span>x − 1</span></span></li><li>f(x) = <span class="kes"><span>|x − 1|</span><span>x − 1</span></span></li><li>f(x) = |x<sup>2</sup> − 1| + x</li><li>f(x) = <span class="kes"><span>1</span><span>(x − 1)<sup>2</sup></span></span></li><li>f(x) = x<sup>2</sup> (x ≠ 1 iken), f(1) = 2</li></ul>
+<div class="coz"><p>C'de |x<sup>2</sup> − 1| sürekli bir polinomun mutlak değeri olarak her yerde süreklidir (bileşke), x de süreklidir; toplamları süreklidir. Değer: |0| + 1 = 1 ve limit de 1. A'da f(1) tanımsız (kaldırılabilir süreksizlik). B'de sağdan 1, soldan −1: sıçrama. D'de sayı/0, sonsuz süreksizlik. E'de limit 1 ama f(1) = 2: değer kaymış, kaldırılabilir süreksizlik. Soru dört süreksizlik türünü ve mutlak değerin sürekliliği bozmadığını birlikte yokluyor.</p></div></li>
+
+<li data-c="E"><p class="q">Bir f fonksiyonu için şunlar biliniyor:<br>lim<sub>x→1</sub> f(x) = 2 ve f(1) = 2;<br>lim<sub>x→2</sub> f(x) = 3 ve f(2) = 1;<br>lim<sub>x→3<sup>−</sup></sub> f(x) = 1, lim<sub>x→3<sup>+</sup></sub> f(x) = 4 ve f(3) = 4;<br>lim<sub>x→4</sub> f(x) = 0 ve f(4) tanımsız.<br>Buna göre f'nin limiti olduğu hâlde sürekli olmadığı noktaların apsisleri toplamı kaçtır?</p>
+<ul class="sec"><li>9</li><li>2</li><li>4</li><li>5</li><li>6</li></ul>
+<div class="coz"><p>x = 1'de limit = değer: sürekli. x = 2'de limit 3, değer 1: limit var, sürekli değil. x = 3'te sol ≠ sağ: limit yok (sağdan sürekli). x = 4'te limit 0, değer yok: limit var, sürekli değil. İstenen noktalar 2 ve 4: toplam 6. 9, bütün süreksiz noktaları (2, 3, 4) toplamaktır; soru "limiti olduğu hâlde" diyor. 2, tanımsız noktayı saymamaktır. 4, değeri farklı olan noktayı atlamaktır. 5, x = 3'ü limit var sanıp x = 4'ü atmaktır.</p></div></li>
+
+<li data-c="C"><p class="q">f fonksiyonu [1, 5] aralığında süreklidir; f(1) = −3 ve f(5) = 2'dir. Buna göre<br>I. f(c) = 0 olacak biçimde en az bir c ∈ (1, 5) vardır.<br>II. f, [1, 5] aralığında bir en büyük ve bir en küçük değer alır.<br>III. f, [1, 5] aralığında artandır.<br>ifadelerinden hangileri kesinlikle doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız II</li><li>I ve II</li><li>I ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>I doğru: f sürekli ve uç değerler zıt işaretli (f(1) · f(5) &lt; 0); ara değer fikriyle aralıkta en az bir kök vardır. II doğru: kapalı aralıkta sürekli fonksiyon en büyük ve en küçük değerini alır. III kesin değil: f önce 10'a çıkıp sonra 2'ye inebilir; uç değerlerin sıralaması artanlığı göstermez. "Yalnız I" II'yi, "Yalnız II" I'i kaçırır; III'ü içeren seçenekler "f(1) &lt; f(5) ise f artandır" yanılgısıdır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = <span class="kes"><span>x + 2</span><span>x<sup>2</sup> − 4x + m</span></span> fonksiyonu her x gerçek sayısı için sürekli olduğuna göre m'nin alabileceği en küçük tam sayı değeri kaçtır?</p>
+<ul class="sec"><li>5</li><li>4</li><li>17</li><li>3</li><li>16</li></ul>
+<div class="coz"><p>Rasyonel fonksiyon paydanın sıfır olmadığı her yerde süreklidir; her x için sürekli olması için payda hiç sıfırlanmamalı: Δ = 16 − 4m &lt; 0 ⇒ m &gt; 4. En küçük tam sayı 5. 4, Δ ≤ 0 almaktır; m = 4'te payda (x − 2)<sup>2</sup> olur ve x = 2'de sıfırlanır. 3, eşitsizliğin yönünü ters çevirmektir. 17 ve 16, diskriminantta 4ac'nin 4'ünü unutup 16 − m &lt; 0 (ya da ≤ 0) yazmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = ax − 1 (x &lt; 1 iken), f(x) = x<sup>2</sup> + b (1 ≤ x &lt; 2 iken), f(x) = bx + a (x ≥ 2 iken) fonksiyonu her x gerçek sayısı için sürekli olduğuna göre a · b çarpımı kaçtır?</p>
+<ul class="sec"><li>0</li><li>4</li><li>5</li><li>3</li><li>2</li></ul>
+<div class="coz"><p>x = 1'de: a − 1 = 1 + b ⇒ b = a − 2. x = 2'de: 4 + b = 2b + a ⇒ b = 4 − a. İkisini eşitle: a − 2 = 4 − a ⇒ a = 3, b = 1, a · b = 3. Kontrol: x = 1'de 2 ve 2, x = 2'de 5 ve 5. 0, x = 2'de bx + a'yı 2a + b diye yazıp katsayıları karıştırmaktır (a = 2, b = 0). 4, çarpım yerine a + b'yi vermektir. 5 ve 2, x = 2 ve x = 1'deki ortak değerlerdir; parametre değil, fonksiyon değeridir.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f(x) = x<sup>3</sup> + (a − 2)x<sup>2</sup> + 5x + b − 3 polinom fonksiyonu tek fonksiyon olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>5</li><li>3</li><li>−1</li><li>1</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x); polinomda bu, çift dereceli terimlerin ve sabit terimin sıfır olması demektir (sabit terim için: tek fonksiyonda f(0) = 0). a − 2 = 0 ⇒ a = 2; b − 3 = 0 ⇒ b = 3; a + b = 5. 2, sabit terimi unutup b = 0 almaktır. 3, x<sup>2</sup>'li terimi unutup a = 0 almaktır. −1, b − 3 = 0 yerine b + 3 = 0 yazmaktır. 1, a − 2 = 0'dan a = −2 bulmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-3"><p class="q">|x<sup>2</sup> − 4| = 3 denkleminin kaç gerçek kökü vardır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>6</li><li>1</li><li>4</li></ul>
+<div class="coz"><p>|u| = 3 ⇔ u = 3 ya da u = −3. x<sup>2</sup> − 4 = 3 ⇒ x<sup>2</sup> = 7 ⇒ x = ±√7; x<sup>2</sup> − 4 = −3 ⇒ x<sup>2</sup> = 1 ⇒ x = ±1. Dört kök. Grafikle: y = |x<sup>2</sup> − 4| (alttaki kısmı yukarı katlanmış parabol, ortadaki tümseğin tepesi 4) ile y = 3 doğrusu dört noktada kesişir. 2, yalnızca u = 3 durumunu almaktır. 3, tümseğin tepesiyle kesişen y = 4 durumuyla karıştırmaktır. 6, ±√7 ve ±1'e ek olarak katlanma noktalarını (x = ±2) da çözüm saymaktır. 1, yalnızca x = 1'i görüp öbür kökleri kaçırmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-5"><p class="q">f(x) = x<sup>2</sup> − 4x + 1 fonksiyonunun [3, 6] aralığındaki en küçük değeri kaçtır?</p>
+<ul class="sec"><li>−2</li><li>−3</li><li>13</li><li>1</li><li>2</li></ul>
+<div class="coz"><p>Tepe noktasının apsisi r = −b/2a = 2; 2 aralığın dışında. [3, 6] aralığında f artandır (kollar yukarı, tepenin sağı), en küçük değer sol uçta: f(3) = 9 − 12 + 1 = −2. −3, tepe noktasının ordinatıdır; tepe aralıkta olmadığı için alınmaz. 13, f(6), yani en büyük değerdir. 1, f(4)'tür. 2, tepe noktasının apsisidir, değer değil.</p></div></li>
+
+<li data-c="D" data-k="ileri-6"><p class="q">y = 2x + m doğrusu y = x<sup>2</sup> + 3 parabolüne teğet olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>3</li><li>−2</li><li>1</li><li>2</li><li>4</li></ul>
+<div class="coz"><p>Ortak çözüm: x<sup>2</sup> + 3 = 2x + m ⇒ x<sup>2</sup> − 2x + 3 − m = 0. Teğetlik için Δ = 0: 4 − 4(3 − m) = 0 ⇒ 4m − 8 = 0 ⇒ m = 2. Değme noktası x = 1, y = 4. 3, parabolün sabit terimidir. −2, m'yi karşı tarafa geçirirken işaretini karıştırmaktır (x<sup>2</sup> − 2x + 3 + m = 0 yazıp Δ = −8 − 4m = 0). 1 ve 4, değme noktasının apsisi ve ordinatıdır; m değil.</p></div></li>
+
+<li data-c="B" data-k="ileri-8"><p class="q">−1000°'lik açının esas ölçüsü kaç derecedir?</p>
+<ul class="sec"><li>280</li><li>80</li><li>−280</li><li>−80</li><li>100</li></ul>
+<div class="coz"><p>Esas ölçü [0°, 360°) aralığındadır. Negatif açıya 360°'nin katlarını ekle: −1000° + 3 · 360° = −1000° + 1080° = 80°. 280, 1000°'nin esas ölçüsüdür (işareti atmak). −280, yalnızca 720° ekleyip durmaktır; negatif olduğu için esas ölçü değildir. −80, toplamayı ters yapmaktır (1000 − 1080). 100, 80°'yi 180°'den çıkarmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-10"><p class="q">f(x) = 4 cos(<span class="kes"><span>πx</span><span>2</span></span> − 1) + 3 fonksiyonunun en büyük değeri ile esas periyodunun toplamı kaçtır?</p>
+<ul class="sec"><li>7</li><li>8</li><li>9</li><li>3</li><li>11</li></ul>
+<div class="coz"><p>cos değeri en çok 1: en büyük değer 4 + 3 = 7. Periyot 2π/|b| = 2π/(π/2) = 4. Toplam 11. 7, periyodu eklememektir. 8, en büyük değerde +3'ü unutmaktır (4 + 4). 9, b'yi π alıp periyodu 2 bulmaktır. 3, en küçük değeri (−4 + 3 = −1) periyotla toplamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-12"><p class="q">Bir ABC üçgeninde b = 3 cm, c = 5 cm ve m(Â) = 120° olduğuna göre a kenarı kaç cm'dir?</p>
+<ul class="sec"><li>7</li><li>√19</li><li>8</li><li>√34</li><li>49</li></ul>
+<div class="coz"><p>Kosinüs teoremi: a<sup>2</sup> = b<sup>2</sup> + c<sup>2</sup> − 2bc cos A = 9 + 25 − 30 · (−1/2) = 34 + 15 = 49 ⇒ a = 7. √19, cos 120° = −1/2 yerine +1/2 almaktır. 8, kenarları toplamaktır (üçgen eşitsizliği bunu zaten yasaklar). √34, Pisagor'u uygulamaktır (açı dik değil). 49, karekök almayı unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-13"><p class="q">2cos<sup>2</sup>x − cos x − 1 = 0 denkleminin [0, 2π) aralığında kaç kökü vardır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>1</li><li>3</li><li>6</li></ul>
+<div class="coz"><p>cos x = t: 2t<sup>2</sup> − t − 1 = 0 ⇒ (2t + 1)(t − 1) = 0 ⇒ t = 1 ya da t = −1/2. cos x = 1 ⇒ x = 0 (aralıkta tek). cos x = −1/2 ⇒ x = 2π/3 ve 4π/3. Toplam 3 kök. 2, cos x = 1'i unutmaktır. 4, cos x = 1 için 0 ile 2π'yi ayrı saymaktır (2π aralıkta değil). 1, yalnızca x = 0'ı almaktır. 6, her t değeri için üç çözüm saymaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-15"><p class="q">log<sub>2</sub> 3 · log<sub>3</sub> 5 · log<sub>5</sub> 16 çarpımının değeri kaçtır?</p>
+<ul class="sec"><li>16</li><li>8</li><li>4</li><li>2</li><li>1/4</li></ul>
+<div class="coz"><p>Zincir kuralı: log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c. Çarpım log<sub>2</sub> 16 = 4. 16, son logaritmanın içini cevap sanmaktır. 8, 16'yı 2'ye bölmektir. 2, sonucu log<sub>4</sub> 16 sanmaktır. 1/4, zinciri ters kurup log<sub>16</sub> 2 yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-17"><p class="q">İlk terimi 4 ve ortak farkı 3 olan aritmetik dizinin ilk 10 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>31</li><li>175</li><li>190</li><li>350</li><li>160</li></ul>
+<div class="coz"><p>a<sub>10</sub> = 4 + 9 · 3 = 31. S<sub>10</sub> = 10 · (4 + 31)/2 = 175. 31, terimi toplamla karıştırmaktır. 190, a<sub>10</sub>'u 4 + 10 · 3 = 34 almaktır (n − 1 yerine n). 350, 2'ye bölmeyi unutmaktır. 160, a<sub>10</sub>'u 4 + 8 · 3 = 28 almaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-18"><p class="q">2, x, 18 sayıları bu sırayla pozitif terimli bir geometrik dizinin ardışık üç terimi olduğuna göre x kaçtır?</p>
+<ul class="sec"><li>10</li><li>36</li><li>9</li><li>6</li><li>16</li></ul>
+<div class="coz"><p>Geometrik ortada ortadaki terimin karesi komşuların çarpımıdır: x<sup>2</sup> = 2 · 18 = 36 ⇒ x = 6 (pozitif). Ortak çarpan 3. 10, aritmetik ortadır ((2 + 18)/2). 36, karekök almayı unutmaktır. 9, 18'i 2'ye bölmektir. 16, uçların farkıdır.</p></div></li>
+
+<li data-c="C" data-k="ileri-18"><p class="q">İlk terimi 3 ve ortak çarpanı 2 olan geometrik dizinin ilk 5 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>96</li><li>48</li><li>93</li><li>45</li><li>189</li></ul>
+<div class="coz"><p>S<sub>n</sub> = a<sub>1</sub>(rⁿ − 1)/(r − 1) = 3(2<sup>5</sup> − 1)/1 = 93. Açık yazım: 3 + 6 + 12 + 24 + 48 = 93. 96, 3 · 2<sup>5</sup>'tir (−1'i unutmak). 48, a<sub>5</sub>'tir. 45, üssü 4 alıp ilk 4 terimi toplamaktır. 189, üssü 6 alıp ilk 6 terimi toplamaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-19"><p class="q">lim<sub>x→1</sub> f(x) = 3 ve lim<sub>x→1</sub> g(x) = −2 olduğuna göre lim<sub>x→1</sub> <span class="kes"><span>[f(x)]<sup>2</sup> − 2g(x)</span><span>g(x) + 4</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>5/2</li><li>5</li><li>13/6</li><li>13</li><li>13/2</li></ul>
+<div class="coz"><p>Paydanın limiti −2 + 4 = 2 ≠ 0; bölüm kuralı çalışır. Pay: 3<sup>2</sup> − 2 · (−2) = 9 + 4 = 13. Sonuç 13/2. 5/2, −2 · (−2)'yi −4 almaktır. 5, [f(x)]<sup>2</sup>'yi 2f(x) sanmaktır ((6 + 4)/2). 13/6, paydada −2 yerine +2 almaktır. 13, paydayı unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-19"><p class="q">f(x) = 3x − 1 (x &lt; 1 iken), f(x) = x<sup>2</sup> + 4 (x ≥ 1 iken) olduğuna göre lim<sub>x→1<sup>−</sup></sub> f(x) + lim<sub>x→1<sup>+</sup></sub> f(x) toplamı kaçtır?</p>
+<ul class="sec"><li>7</li><li>10</li><li>4</li><li>5</li><li>Tanımsızdır</li></ul>
+<div class="coz"><p>Soldan limitte x &lt; 1 kuralı: 3 − 1 = 2. Sağdan limitte x ≥ 1 kuralı: 1 + 4 = 5. Toplam 7. (İki yan farklı olduğu için x = 1'de iki yanlı limit yoktur, ama soru tek yanlı limitleri istiyor.) 10, iki yanda da f(1) = 5'i almaktır. 4, iki yanda da soldaki kuralı kullanmaktır. 5, yalnızca f(1)'i yazmaktır. "Tanımsızdır", iki yanlı limitin yokluğunu tek yanlı limitlerin yokluğu sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-20"><p class="q">lim<sub>x→1</sub> <span class="kes"><span>x<sup>3</sup> − 1</span><span>x<sup>2</sup> + x − 2</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>−3</li><li>1/3</li><li>3</li></ul>
+<div class="coz"><p>0/0. Pay küp farkı: (x − 1)(x<sup>2</sup> + x + 1); payda (x − 1)(x + 2). Sadeleşince (x<sup>2</sup> + x + 1)/(x + 2) → 3/3 = 1. 0, 0/0'ı 0 sanmaktır. −3, paydayı (x − 1)(x − 2) diye yanlış ayırmaktır (3/(−1)). 1/3, küp farkının ikinci çarpanını x<sup>2</sup> − x + 1 yazmaktır (1/3). 3, paydanın x + 2 çarpanını unutmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-20"><p class="q">lim<sub>x→1</sub> <span class="kes"><span>x<sup>6</sup> − 1</span><span>x<sup>2</sup> − 1</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>6</li><li>4</li><li>3</li><li>1/3</li><li>0</li></ul>
+<div class="coz"><p>t = x<sup>2</sup> de: x → 1 ⇒ t → 1 ve ifade (t<sup>3</sup> − 1)/(t − 1) olur; xⁿ − 1 kalıbıyla 3. Ya da pay ve paydayı x − 1'e bölmüş gibi düşün: 6/2 = 3. 6, yalnızca payın hızlı yolunu uygulayıp paydayı unutmaktır. 4, üsleri çıkarmaktır (6 − 2). 1/3, oranı ters çevirmektir. 0, 0/0'ı 0 sanmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-20">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-21">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-22">Sonraki parça: türevin tanımı ve türev alma kuralları</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"süreklilik konu anlatımı AYT limit süreklilik üç koşul"</li>
+  <li>"parçalı fonksiyon süreklilik parametre bulma soru çözümü"</li>
+  <li>"süreksiz olduğu noktalar grafik soruları kaldırılabilir sıçrama"</li>
+  <li>"ara değer teoremi kapalı aralıkta sürekli fonksiyon kök varlığı"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 21. satıra göre yazıldı; satırdaki bütün alt başlıklar (tanım ve üç koşul, grafik örnekleri, üç süreksizlik türü, tek yanlı ve kapalı aralıkta süreklilik, fonksiyon ailelerinin sürekliliği, işlemler ve bileşke, parçalı parametre, süreksiz noktaların sayısı ve toplamı, sürekli yapacak biçimde tanımlama, grafikten sayma, mutlak değer, en büyük-en küçük değer ve ara değer fikri) işlendi. Kapsam dosyasının "Doğrulanamayanlar" bölümünde bu parçaya özel bir not yok; genel not (2018 programının kazanım metninin doğrudan denetlenemediği) burada da geçerli.</li>
+  <li><strong>Tanımsız noktaya "süreksiz" denmesi:</strong> Kesin (üniversite) tanımda süreklilik yalnızca tanım kümesindeki noktalar için sorulur; lise ders kitaplarında ve sınav sorularında ise paydayı sıfır yapan noktalar süreksiz nokta sayılır. Metin ve sorular (Quiz 1, 5) bu yerleşik kullanıma göre yazıldı; bu oturumda bir ders kitabıyla satır satır karşılaştırılmadı. Kaynağın farklı bir dil kullanıyorsa onu esas al.</li>
+  <li>Uç noktada süreklilik, Parça 19'daki "uç noktada limit var olan tek yanlı limittir" kabulüyle uyumlu olarak tek yanlı süreklilikle tanımlandı.</li>
+  <li>"Kapalı aralıkta en büyük-en küçük değer" ve "ara değer" sonuçları kapsam satırının istediği gibi sezgisel verildi; ispat ve teorem adları verilmedi. Üstel, sin ve cos fonksiyonlarının her yerde, tan'ın cos x ≠ 0 olan yerlerde sürekliliği yalnızca tabloda kısa bir satır olarak anıldı (Parça 19'daki yerine koyma kuralının sonucu olarak).</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, metindeki ara örnekler, değer tablosu, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; limitler ayrıca a ± 10<sup>−7</sup> noktalarında sayısal olarak sınandı, x<sup>3</sup> + x − 3 ve x<sup>3</sup> − 3x + 1'in kökleri sayısal olarak bulundu (yaklaşık 1,213 ve −1,879; 0,347; 1,532). Bu sürümde sympy yüklü olmadığı için sembolik denetim yerine kesirli sayılarla ve sayısal yaklaşımla çalışıldı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: dört küçük grafikteki eğriler (doğru, parabol yayı, iki paralel doğru, y = 2 + 0,5/(x − a) biçiminde eğri), sayma grafiğindeki parçalar ve y = x<sup>3</sup> − 3x + 1 eğrisinin noktaları formüllerden hesaplandı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (18, 19, 20) ikişer soru; daha eski 17 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 3, 5, 6, 8, 10, 12, 13, 15, 17). Sorular kapsam listesindeki konular ve terimlerle yazıldı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

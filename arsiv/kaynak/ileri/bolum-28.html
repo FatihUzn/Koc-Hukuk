@@ -1,0 +1,568 @@
+<article class="chapter ders" id="c-ileri-28">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 28 · İntegral 1</div>
+<h1>İntegral 1: belirsiz integral ve temel kurallar</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir cismin hızını her an biliyorsun: t. saniyede v(t) = 3t<sup>2</sup> − 4t + 2 metre/saniye. Cismin 2. saniyede nerede olduğunu bulabilir misin? Türev sana konumdan hıza gitmeyi öğretti. Şimdi yol ters: türevi verilmiş bir fonksiyonun kendisini arıyorsun. Bu geri dönüşün bir kuralı var mı, sonuç tek mi, ve "nerede başladı" bilgisi neden şart?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 22 (türev kuralları: xⁿ kuralı, sabit çarpan, toplam-fark; konum → hız → ivme), Parça 24 (türevin teğetin eğimi oluşu, teğet denklemi), Parça 25 (türevi her yerde 0 olan fonksiyonun sabit oluşu). Üslü ve köklü ifadeleri (√x = x<sup>1/2</sup>, 1/x<sup>2</sup> = x<sup>−2</sup>) rahatça çevirebilmen gerekiyor. Kâğıt kalem yanında olsun; her integrali bulduktan sonra türevini alıp denetle.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>İntegral ünitesi AYT Matematik'in son büyük konusudur ve bu parça onun kapısıdır. Burada öğreneceğin işlem, sonraki dört parçanın her satırında kullanılacak: değişken değiştirme (Parça 29) bu işlemin bir hilesi, belirli integral (Parça 30) bu işlemin sayıya dönüşmüş hâli, alan hesabı (Parça 31) ise onun geometrik yorumudur. Bu yüzden bu parçadaki kurallar yavaş ama kesin oturmalı.</p>
+
+<p>Sınavda bu parçanın konusundan doğrudan gelen soru kalıpları şunlardır: bir polinomun ya da köklü-kesirli üslü bir ifadenin integralini seçeneklerde bulmak; "f′(x) = … ve f(1) = 3 ise f(2) kaçtır?" gibi başlangıç koşullu sorular; "f″(x) verilmiş, eğri şu noktada şu doğruya teğet" türü iki koşullu sorular; "∫ f(x) dx = … ise f(2)" gibi türev ile integralin birbirini geri almasına dayanan sorular; ve ivmeden hıza, hızdan konuma giden hareket soruları. Hepsinin ortak noktası tek bir fikirdir: <strong>integral, türevin tersine işletilmesidir.</strong></p>
+
+<p>Bu parçanın sonunda iki alışkanlığın olmalı. Birincisi, her integralin sonuna <strong>+ C</strong> yazmak ve bunun neden gerektiğini bilmek. İkincisi, bulduğun sonucun <strong>türevini alarak</strong> soruyu kendi kendine denetlemek. Sınav hesap makinesiz; türev almak ise integral almaktan hep daha kolaydır. Bu yüzden integralde kontrol yolu neredeyse her zaman aynıdır: sonucun türevini al, integralin içindeki ifadeyi geri bulabiliyor musun, bak.</p>
+
+<h2 class="s">1. Ters yönde soru: türevi bilinen fonksiyonu bulmak</h2>
+
+<p>Parça 22'de bir fonksiyon verildiğinde türevini bulmayı öğrendin: x<sup>3</sup>'ün türevi 3x<sup>2</sup>, x<sup>2</sup> + 5x'in türevi 2x + 5. Şimdi soruyu ters çevir: <strong>türevi 2x olan fonksiyon hangisidir?</strong> Biraz düşününce x<sup>2</sup> aklına gelir, çünkü (x<sup>2</sup>)′ = 2x. Türevi 3x<sup>2</sup> olan? x<sup>3</sup>. Türevi 1 olan? x. Türevi 0 olan? Herhangi bir sabit sayı.</p>
+
+<p>Bu, toplama ile çıkarma ya da üs ile logaritma arasındaki ilişkinin benzeridir. Bir işlemi öğrendikten sonra onun "geri alınması" sorulur. Parça 14'te aˣ = b denkleminden x'i bulmak için logaritmayı tanımlamıştık; burada da türevi bilinen fonksiyonu bulma işlemine bir ad veriyoruz.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Bir aralıkta F′(x) = f(x) oluyorsa F'ye f'in bir <strong>ilkel fonksiyonu</strong> (ters türevi) denir. f'in bütün ilkel fonksiyonlarının oluşturduğu aileye f'in <strong>belirsiz integrali</strong> denir ve şöyle yazılır:</p>
+<p>∫ f(x) dx = F(x) + C &nbsp;&nbsp;(F′(x) = f(x), C herhangi bir sabit)</p>
+<p><strong>Neden "ilkel"?</strong> Türev alırken F'den f'e gidersin; F, f'in kendisinden türetildiği ilk (asıl) fonksiyondur. f ondan sonra gelen, ondan elde edilendir. "Belirsiz" sözcüğü ise sonucun tek bir fonksiyon değil, C sabiti kadar belirsizlik taşıyan bir aile olduğunu anlatır.</p></div>
+
+<p>Bu tanımın en önemli sonucu, integral kurallarının hiçbirini ezberlemen gerekmemesidir. Her kural, Parça 22'de öğrendiğin bir türev kuralının tersten okunmasıdır. Bir integral kuralını unutursan şunu sor: "Hangi fonksiyonun türevi bu ifadeyi verir?" Cevabı bulduğunda türevini alıp doğrularsın.</p>
+
+<h2 class="s">2. Neden "+ C"? Cevap bir fonksiyon değil, bir aile</h2>
+
+<p>Türevi 2x olan fonksiyon yalnızca x<sup>2</sup> değildir. x<sup>2</sup> + 1'in türevi de 2x'tir, çünkü sabitin türevi sıfırdır. x<sup>2</sup> − 7, x<sup>2</sup> + 100, x<sup>2</sup> + √3: hepsinin türevi 2x. Türev alırken sabit terim silinir ve silinen bir bilgiyi yalnızca türevden geri getiremezsin. Bu yüzden "türevi 2x olan fonksiyon" sorusunun cevabı tek bir fonksiyon değil, sonsuz bir ailedir: x<sup>2</sup> + C.</p>
+
+<p>Peki bu ailenin dışında başka bir cevap olabilir mi? Örneğin türevi 2x olan, ama x<sup>2</sup>'ye bir sabit eklenerek yazılamayan bir fonksiyon var mı? Hayır, ve nedeni Parça 25'teki bir kuraldır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>F ve G aynı f fonksiyonunun bir aralıktaki iki ilkel fonksiyonuysa aralarındaki fark sabittir: G(x) = F(x) + C.</p>
+<p><strong>Neden?</strong> H(x) = G(x) − F(x) fonksiyonunun türevi H′(x) = G′(x) − F′(x) = f(x) − f(x) = 0'dır. Parça 25'te gördüğün gibi bir aralığın her noktasında türevi sıfır olan fonksiyon o aralıkta sabittir: grafiği hiç yükselip alçalmaz, yatay bir doğrudur. O hâlde H(x) = C, yani G(x) = F(x) + C. Demek ki tek bir ilkel fonksiyon bulman, bütün aileyi bulman için yeter: sonuna + C eklersin.</p></div>
+
+<p>Bu ailenin grafikte nasıl göründüğüne bak. x<sup>2</sup> + C ailesinin her üyesi, y = x<sup>2</sup> parabolünün yukarı ya da aşağı ötelenmişidir (Parça 4'teki düşey öteleme: y = f(x) + k). Hepsinin aynı x değerindeki teğet eğimi aynıdır, çünkü türevleri aynıdır. Yani aile, birbirine "paralel" duran eğrilerden oluşur.</p>
+
+<figure>
+<svg viewBox="0 0 400 310" role="img" aria-label="y eşittir x kare artı C ailesinden beş eğri: C eşittir 2, 1, 0, eksi 1 ve eksi 2. Her eğrinin x eşittir 1 noktasındaki teğeti çizilmiş; beş teğet de eğimi 2 olan birbirine paralel doğrular.">
+  <line class="sv-c" x1="20" y1="230" x2="390" y2="230" />
+  <line class="sv-c" x1="200" y1="302" x2="200" y2="8" />
+  <text class="sv-s" x="384" y="246" text-anchor="end">x</text>
+  <text class="sv-s" x="208" y="18">y</text>
+  <polyline class="sv-c" points="68.0,24.8 74.0,37.7 80.0,50.0 86.0,61.7 92.0,72.8 98.0,83.3 104.0,93.2 110.0,102.5 116.0,111.2 122.0,119.3 128.0,126.8 134.0,133.7 140.0,140.0 146.0,145.7 152.0,150.8 158.0,155.3 164.0,159.2 170.0,162.5 176.0,165.2 182.0,167.3 188.0,168.8 194.0,169.7 200.0,170.0 206.0,169.7 212.0,168.8 218.0,167.3 224.0,165.2 230.0,162.5 236.0,159.2 242.0,155.3 248.0,150.8 254.0,145.7 260.0,140.0 266.0,133.7 272.0,126.8 278.0,119.3 284.0,111.2 290.0,102.5 296.0,93.2 302.0,83.3 308.0,72.8 314.0,61.7 320.0,50.0 326.0,37.7 332.0,24.8" />
+  <polyline class="sv-c" points="68.0,54.8 74.0,67.7 80.0,80.0 86.0,91.7 92.0,102.8 98.0,113.3 104.0,123.2 110.0,132.5 116.0,141.2 122.0,149.3 128.0,156.8 134.0,163.7 140.0,170.0 146.0,175.7 152.0,180.8 158.0,185.3 164.0,189.2 170.0,192.5 176.0,195.2 182.0,197.3 188.0,198.8 194.0,199.7 200.0,200.0 206.0,199.7 212.0,198.8 218.0,197.3 224.0,195.2 230.0,192.5 236.0,189.2 242.0,185.3 248.0,180.8 254.0,175.7 260.0,170.0 266.0,163.7 272.0,156.8 278.0,149.3 284.0,141.2 290.0,132.5 296.0,123.2 302.0,113.3 308.0,102.8 314.0,91.7 320.0,80.0 326.0,67.7 332.0,54.8" />
+  <polyline class="sv-c" points="68.0,84.8 74.0,97.7 80.0,110.0 86.0,121.7 92.0,132.8 98.0,143.3 104.0,153.2 110.0,162.5 116.0,171.2 122.0,179.3 128.0,186.8 134.0,193.7 140.0,200.0 146.0,205.7 152.0,210.8 158.0,215.3 164.0,219.2 170.0,222.5 176.0,225.2 182.0,227.3 188.0,228.8 194.0,229.7 200.0,230.0 206.0,229.7 212.0,228.8 218.0,227.3 224.0,225.2 230.0,222.5 236.0,219.2 242.0,215.3 248.0,210.8 254.0,205.7 260.0,200.0 266.0,193.7 272.0,186.8 278.0,179.3 284.0,171.2 290.0,162.5 296.0,153.2 302.0,143.3 308.0,132.8 314.0,121.7 320.0,110.0 326.0,97.7 332.0,84.8" />
+  <polyline class="sv-c" points="68.0,114.8 74.0,127.7 80.0,140.0 86.0,151.7 92.0,162.8 98.0,173.3 104.0,183.2 110.0,192.5 116.0,201.2 122.0,209.3 128.0,216.8 134.0,223.7 140.0,230.0 146.0,235.7 152.0,240.8 158.0,245.3 164.0,249.2 170.0,252.5 176.0,255.2 182.0,257.3 188.0,258.8 194.0,259.7 200.0,260.0 206.0,259.7 212.0,258.8 218.0,257.3 224.0,255.2 230.0,252.5 236.0,249.2 242.0,245.3 248.0,240.8 254.0,235.7 260.0,230.0 266.0,223.7 272.0,216.8 278.0,209.3 284.0,201.2 290.0,192.5 296.0,183.2 302.0,173.3 308.0,162.8 314.0,151.7 320.0,140.0 326.0,127.7 332.0,114.8" />
+  <polyline class="sv-c" points="68.0,144.8 74.0,157.7 80.0,170.0 86.0,181.7 92.0,192.8 98.0,203.3 104.0,213.2 110.0,222.5 116.0,231.2 122.0,239.3 128.0,246.8 134.0,253.7 140.0,260.0 146.0,265.7 152.0,270.8 158.0,275.3 164.0,279.2 170.0,282.5 176.0,285.2 182.0,287.3 188.0,288.8 194.0,289.7 200.0,290.0 206.0,289.7 212.0,288.8 218.0,287.3 224.0,285.2 230.0,282.5 236.0,279.2 242.0,275.3 248.0,270.8 254.0,265.7 260.0,260.0 266.0,253.7 272.0,246.8 278.0,239.3 284.0,231.2 290.0,222.5 296.0,213.2 302.0,203.3 308.0,192.8 314.0,181.7 320.0,170.0 326.0,157.7 332.0,144.8" />
+  <line class="sv-cl" x1="227.0" y1="173.0" x2="293.0" y2="107.0" />
+  <line class="sv-cl" x1="227.0" y1="203.0" x2="293.0" y2="137.0" />
+  <line class="sv-cl" x1="227.0" y1="233.0" x2="293.0" y2="167.0" />
+  <line class="sv-cl" x1="227.0" y1="263.0" x2="293.0" y2="197.0" />
+  <line class="sv-cl" x1="227.0" y1="293.0" x2="293.0" y2="227.0" />
+  <circle class="sv-a" cx="260.0" cy="140.0" r="4" />
+  <circle class="sv-a" cx="260.0" cy="170.0" r="4" />
+  <circle class="sv-a" cx="260.0" cy="200.0" r="4" />
+  <circle class="sv-a" cx="260.0" cy="230.0" r="4" />
+  <circle class="sv-a" cx="260.0" cy="260.0" r="4" />
+  <text class="sv-s" x="338" y="30">C = 2</text>
+  <text class="sv-s" x="338" y="60">C = 1</text>
+  <text class="sv-s" x="338" y="90">C = 0</text>
+  <text class="sv-s" x="338" y="120">C = −1</text>
+  <text class="sv-s" x="338" y="150">C = −2</text>
+  <text class="sv-b" x="24" y="24">y = x² + C</text>
+  <text class="sv-s" x="24" y="290">x = 1'de</text>
+  <text class="sv-s" x="24" y="306">hepsinin eğimi 2</text>
+</svg>
+<figcaption>∫ 2x dx = x<sup>2</sup> + C ailesinden beş üye. Eğriler birbirinin düşey ötelenmişidir; aynı x'te (burada x = 1) teğetleri paraleldir, çünkü hepsinin türevi aynı: 2x. Türev, bu beş eğriyi birbirinden ayıramaz. Hangisinin istendiğini seçmek için ek bir bilgi gerekir: eğrinin geçtiği bir nokta (Bölüm 8).</figcaption>
+</figure>
+
+<p>Bu şekil, parçanın ileriki bölümlerinin de anahtarıdır. Bir soruda "f′(x) = 2x ve f(1) = 3" denirse aileden yalnızca (1, 3) noktasından geçen eğri seçilir: 1 + C = 3, C = 2, f(x) = x<sup>2</sup> + 2. Şekilde en üstteki eğri. Ek bilgi olmadan C bulunamaz; ek bilgi verilince tek bir eğri kalır.</p>
+
+<h2 class="s">3. Gösterim: ∫ f(x) dx ve dx'in anlamı</h2>
+
+<p>∫ işareti, Latince "summa" (toplam) sözcüğünün baş harfi olan S'nin uzatılmış biçimidir. Neden toplam? Parça 30'da belirli integrali, eğri altındaki alanı çok sayıda ince dikdörtgenin alanları toplamı olarak kuracaksın; her dikdörtgenin yüksekliği f(x), genişliği çok küçük bir dx'tir. İşaret bu toplamdan gelir. Bu parçada toplam fikrini kullanmıyoruz ama gösterimin parçalarını şimdiden doğru okumalısın.</p>
+
+<div class="tablo"><table>
+<tr><th>Parça</th><th>Adı</th><th>Ne söyler?</th></tr>
+<tr><td>∫</td><td>integral işareti</td><td>"Türevi şu olan fonksiyonu bul" işleminin başladığı yer.</td></tr>
+<tr><td>f(x)</td><td>integrand (integrali alınan ifade)</td><td>Türevi aranan ifade. İşaretle dx arasında kalan her şey.</td></tr>
+<tr><td>dx</td><td>diferansiyel</td><td>İşlemin hangi değişkene göre yapıldığını gösterir ve integrandın bittiği yeri belirler.</td></tr>
+<tr><td>F(x) + C</td><td>sonuç</td><td>İlkel fonksiyon ailesi. C: integral sabiti.</td></tr>
+</table></div>
+
+<p><strong>dx neden gerekli?</strong> İlk görevi değişkeni söylemektir. ∫ 2xt dx yazılırsa değişken x'tir, t bir sabit gibi davranır: sonuç x<sup>2</sup>t + C'dir (türevini x'e göre al: 2xt). ∫ 2xt dt yazılırsa değişken t'dir, x sabittir: sonuç xt<sup>2</sup> + C'dir. Aynı integrand, farklı dx, farklı sonuç. Fizikte hız zamana göre integrallendiği için orada dt yazacağız.</p>
+
+<p>İkinci görevi, Parça 22'deki dy/dx gösteriminden gelir. y = F(x) ise dy/dx = F′(x) yazılır ve bu, dy = F′(x) dx biçiminde de okunur: x çok az, dx kadar değişince y yaklaşık F′(x) · dx kadar değişir (Parça 24'teki doğrusal yaklaşım fikri). dF(x) = F′(x) dx yazımına F'nin <strong>diferansiyeli</strong> denir. Bu yazımla ∫ f(x) dx ifadesi şöyle okunur: "diferansiyeli f(x) dx olan fonksiyonu bul." Bölüm 7'de ∫ d(F(x)) = F(x) + C eşitliğini bu okumayla anlayacaksın.</p>
+
+<h2 class="s">4. Kuvvet kuralı: üssü bir artır, yeni üsse böl</h2>
+
+<p>Türev kuralları arasında en çok kullandığın, kuvvet kuralıydı: (xⁿ)′ = n · xⁿ<sup>−1</sup>. Türev üssü bir azaltıyor ve eski üssü katsayı olarak öne indiriyor. İntegral bunu tersine yapmalı: üssü <strong>bir artırmalı</strong> ve öne inecek katsayıyı <strong>önceden yok etmeli</strong>. Bunu adım adım çıkaralım.</p>
+
+<p>xⁿ'yi veren bir fonksiyon arıyoruz. Türevi alınınca üs bir azaldığına göre aradığımız fonksiyonun üssü n + 1 olmalı. Deneyelim:</p>
+<span class="mat">(xⁿ<sup>+1</sup>)′ = (n + 1) · xⁿ <span class="g">(kuvvet kuralı)</span></span>
+<p>Neredeyse oldu, yalnızca öne (n + 1) çarpanı geldi. Bu çarpanı yok etmek için baştan (n + 1)'e bölelim:</p>
+<span class="mat">(<span class="kes"><span>xⁿ<sup>+1</sup></span><span>n + 1</span></span>)′ = <span class="kes"><span>(n + 1) · xⁿ</span><span>n + 1</span></span> = xⁿ <span class="g">(sabit çarpan türevde aynen kalır, sonra sadeleşir)</span></span>
+<p>Aradığımız ilkel fonksiyon bulundu. Ailenin tamamı için + C ekleriz.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Kuvvet kuralı.</strong> n ≠ −1 olan her gerçek sayı için</p>
+<p>∫ xⁿ dx = <span class="kes"><span>xⁿ<sup>+1</sup></span><span>n + 1</span></span> + C</p>
+<p>Sözle: <strong>üssü bir artır, yeni üsse böl, + C ekle.</strong> Özel durum n = 0: ∫ 1 dx = ∫ dx = x + C.</p>
+<p><strong>Neden n ≠ −1?</strong> n = −1 için formül x<sup>0</sup>/0 verir; sıfıra bölme tanımsızdır. Gerçekten de türevi x<sup>−1</sup> = 1/x olan fonksiyon hiçbir xᵏ kuvveti değildir: xᵏ'nin türevi k · xᵏ<sup>−1</sup>'dir ve üssün −1 olması için k = 0 gerekir, ama o zaman katsayı da 0 olur. 1/x'in ilkel fonksiyonu kuvvetler ailesinin dışında, logaritmadadır (Bölüm 12).</p></div>
+
+<p>Kural yalnızca pozitif tam sayı üsler için değil, negatif ve kesirli üsler için de geçerlidir, çünkü dayandığı türev kuralı (Parça 22) bu üslerde de geçerliydi. Sınavda köklü ve kesirli ifadeler hep bu kılıkta gelir. Yöntem tektir: <strong>önce ifadeyi xⁿ biçiminde yaz, sonra kuralı uygula, en son istersen köke geri çevir.</strong> Kökü ve kesri x<sup>…</sup> biçimine çevirmeden kural uygulanamaz; en sık hata bu çeviride yapılır.</p>
+
+<div class="tablo"><table>
+<tr><th>İfade</th><th>Üslü yazım</th><th>Üssü 1 artır</th><th>İntegral</th></tr>
+<tr><td>x<sup>4</sup></td><td>x<sup>4</sup></td><td>x<sup>5</sup></td><td><span class="kes"><span>x<sup>5</sup></span><span>5</span></span> + C</td></tr>
+<tr><td><span class="kes"><span>1</span><span>x<sup>2</sup></span></span></td><td>x<sup>−2</sup></td><td>x<sup>−1</sup></td><td><span class="kes"><span>x<sup>−1</sup></span><span>−1</span></span> + C = −<span class="kes"><span>1</span><span>x</span></span> + C</td></tr>
+<tr><td><span class="kes"><span>1</span><span>x<sup>3</sup></span></span></td><td>x<sup>−3</sup></td><td>x<sup>−2</sup></td><td><span class="kes"><span>x<sup>−2</sup></span><span>−2</span></span> + C = −<span class="kes"><span>1</span><span>2x<sup>2</sup></span></span> + C</td></tr>
+<tr><td>√x</td><td>x<sup>1/2</sup></td><td>x<sup>3/2</sup></td><td><span class="kes"><span>x<sup>3/2</sup></span><span>3/2</span></span> + C = <span class="kes"><span>2</span><span>3</span></span>x√x + C</td></tr>
+<tr><td><span class="kes"><span>1</span><span>√x</span></span></td><td>x<sup>−1/2</sup></td><td>x<sup>1/2</sup></td><td><span class="kes"><span>x<sup>1/2</sup></span><span>1/2</span></span> + C = 2√x + C</td></tr>
+<tr><td>∛(x<sup>2</sup>)</td><td>x<sup>2/3</sup></td><td>x<sup>5/3</sup></td><td><span class="kes"><span>3</span><span>5</span></span>x<sup>5/3</sup> + C</td></tr>
+</table></div>
+
+<p>Tablodaki iki ayrıntıya dikkat et. Birincisi, negatif üste "bir artırmak" sayıyı sıfıra yaklaştırır: −2'den −1'e, −3'ten −2'ye; −3'e gitmez. İkincisi, kesirli bir sayıya bölmek, o kesrin tersiyle çarpmaktır: 3/2'ye bölmek 2/3 ile, 1/2'ye bölmek 2 ile çarpmak demektir. x<sup>3/2</sup> = x · x<sup>1/2</sup> = x√x olduğu için sonuç (2/3)x√x biçiminde de yazılır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> ∫ (<span class="kes"><span>1</span><span>x<sup>2</sup></span></span> + √x + <span class="kes"><span>1</span><span>√x</span></span>) dx integralini bul.</p>
+<p><strong>Adım 1.</strong> Her terimi xⁿ biçimine çevir.</p>
+<span class="mat">∫ (x<sup>−2</sup> + x<sup>1/2</sup> + x<sup>−1/2</sup>) dx <span class="g">(1/xⁿ = x<sup>−n</sup>, √x = x<sup>1/2</sup>)</span></span>
+<p><strong>Adım 2.</strong> Toplamın integrali terimlerin integrallerinin toplamıdır (Bölüm 5'te gerekçesiyle). Her terime kuvvet kuralını uygula.</p>
+<span class="mat">x<sup>−2</sup> → <span class="kes"><span>x<sup>−1</sup></span><span>−1</span></span> = −x<sup>−1</sup> <span class="g">(−2 + 1 = −1)</span></span>
+<span class="mat">x<sup>1/2</sup> → <span class="kes"><span>x<sup>3/2</sup></span><span>3/2</span></span> = <span class="kes"><span>2</span><span>3</span></span>x<sup>3/2</sup> <span class="g">(1/2 + 1 = 3/2; 3/2'ye bölmek 2/3 ile çarpmak)</span></span>
+<span class="mat">x<sup>−1/2</sup> → <span class="kes"><span>x<sup>1/2</sup></span><span>1/2</span></span> = 2x<sup>1/2</sup> <span class="g">(−1/2 + 1 = 1/2)</span></span>
+<p><strong>Adım 3.</strong> Topla, tek bir C yaz, köke geri çevir.</p>
+<span class="mat">= −<span class="kes"><span>1</span><span>x</span></span> + <span class="kes"><span>2</span><span>3</span></span>x√x + 2√x + C <span class="g">(x<sup>3/2</sup> = x√x)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Türev al: (−x<sup>−1</sup>)′ = x<sup>−2</sup>; ((2/3)x<sup>3/2</sup>)′ = (2/3)(3/2)x<sup>1/2</sup> = x<sup>1/2</sup>; (2x<sup>1/2</sup>)′ = 2 · (1/2) · x<sup>−1/2</sup> = x<sup>−1/2</sup>. İntegrand geri geldi.</p>
+<p><strong>Sonuç:</strong> −1/x + (2/3)x√x + 2√x + C.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Türev kuralını uygulamak.</strong> ∫ x<sup>3</sup> dx için "3x<sup>2</sup>" yazmak, istenenin tersini yapmaktır: üs artmalı, azalmamalı; katsayı bölünmeli, çarpılmamalı. Hangi yönde olduğunu karıştırırsan sonucun türevini al: (3x<sup>2</sup>)′ = 6x, x<sup>3</sup> değil; demek ki yanlış. (x<sup>4</sup>/4)′ = x<sup>3</sup>; doğru.</p>
+<p><strong>Negatif üste yanlış yönde gitmek.</strong> ∫ x<sup>−2</sup> dx için üssü −3 yapmak, yine türev yönüdür. −2 + 1 = −1'dir. Sonuçta işareti de unutma: x<sup>−1</sup>/(−1) = −1/x. "1/x" yazarsan türevi −1/x<sup>2</sup> çıkar; işaret ters.</p>
+<p><strong>n = −1'e kuvvet kuralını uygulamak.</strong> ∫ (1/x) dx = x<sup>0</sup>/0 diye bir sonuç yoktur. 1/x'i görünce kuvvet kuralına değil, Bölüm 12'deki ln|x| satırına bakılır.</p></div>
+
+<h2 class="s">5. Sabit çarpan ve toplam-fark kuralları</h2>
+
+<p>Polinomların integralini alabilmek için iki kural daha gerekir. İkisi de Parça 22'deki türev kurallarının ters okunuşudur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Sabit çarpan:</strong> k bir sabitse ∫ k · f(x) dx = k · ∫ f(x) dx.</p>
+<p><strong>Toplam-fark:</strong> ∫ (f(x) ± g(x)) dx = ∫ f(x) dx ± ∫ g(x) dx.</p>
+<p><strong>Sabitin integrali:</strong> ∫ k dx = kx + C.</p>
+<p><strong>Neden?</strong> F′ = f ve G′ = g olsun. Türevde (kF)′ = kF′ = kf olduğu için kF, kf'in bir ilkel fonksiyonudur. (F ± G)′ = F′ ± G′ = f ± g olduğu için F ± G, f ± g'nin bir ilkel fonksiyonudur. Sabitin integrali de (kx)′ = k'den gelir. Her terimin kendi C'si olsa bile C<sub>1</sub> + C<sub>2</sub> + … yine bir sabittir; bu yüzden sona <strong>tek bir C</strong> yazmak yeter.</p></div>
+
+<p>Bu iki kuralla her polinomun integrali terim terim alınır: her terimin katsayısı kalır, üssü bir artar, yeni üsse bölünür. Sabit terim ise x ile çarpılır (5 → 5x), çünkü 5 = 5x<sup>0</sup> ve üssü bir artınca 5x<sup>1</sup>/1 olur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> ∫ (6x<sup>2</sup> − 4x + 5) dx integralini bul.</p>
+<p><strong>Adım 1.</strong> Toplam-fark kuralıyla terimlere ayır; sabit çarpanları dışarı al.</p>
+<span class="mat">= 6∫ x<sup>2</sup> dx − 4∫ x dx + ∫ 5 dx <span class="g">(toplam-fark ve sabit çarpan)</span></span>
+<p><strong>Adım 2.</strong> Her integrali kuvvet kuralıyla al.</p>
+<span class="mat">= 6 · <span class="kes"><span>x<sup>3</sup></span><span>3</span></span> − 4 · <span class="kes"><span>x<sup>2</sup></span><span>2</span></span> + 5x + C <span class="g">(x<sup>2</sup> → x<sup>3</sup>/3, x → x<sup>2</sup>/2, 5 → 5x)</span></span>
+<p><strong>Adım 3.</strong> Sadeleştir.</p>
+<span class="mat">= 2x<sup>3</sup> − 2x<sup>2</sup> + 5x + C <span class="g">(6/3 = 2, 4/2 = 2)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (2x<sup>3</sup> − 2x<sup>2</sup> + 5x + C)′ = 6x<sup>2</sup> − 4x + 5. Doğru.</p>
+<p><strong>Sonuç:</strong> 2x<sup>3</sup> − 2x<sup>2</sup> + 5x + C.</p></div>
+
+<p><strong>Hızlı yol.</strong> Polinomda katsayı yeni üsse bölünebiliyorsa sonuç tam sayılı çıkar ve kâğıda ara satır yazmana gerek kalmaz: 12x<sup>3</sup> → 3x<sup>4</sup>, 6x<sup>2</sup> → 2x<sup>3</sup>, 8x → 4x<sup>2</sup>. Sınav soruları çoğunlukla böyle "temiz" katsayılarla kurulur. Katsayı bölünmüyorsa kesir olarak bırak: 5x<sup>2</sup> → (5/3)x<sup>3</sup>.</p>
+
+<h2 class="s">6. Çarpımın ve bölümün integrali: önce aç, sadeleştir</h2>
+
+<p>Türevde toplam terim terim alınıyordu ama çarpım öyle değildi; (f · g)′ = f′ · g + f · g′ kuralını hatırla. İntegralde de aynı durum vardır: toplam terim terim alınır, <strong>çarpım ve bölüm alınamaz</strong>. Bunu bir örnekle gör. x · x = x<sup>2</sup> olduğuna göre ∫ x · x dx = x<sup>3</sup>/3 + C'dir. Oysa çarpanları ayrı ayrı integralleyip çarparsan (x<sup>2</sup>/2) · (x<sup>2</sup>/2) = x<sup>4</sup>/4 bulursun. Bunun türevi x<sup>3</sup>'tür, x<sup>2</sup> değil. Yanlış.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Genel olarak ∫ f(x) · g(x) dx ≠ ∫ f(x) dx · ∫ g(x) dx ve ∫ <span class="kes"><span>f(x)</span><span>g(x)</span></span> dx ≠ <span class="kes"><span>∫ f(x) dx</span><span>∫ g(x) dx</span></span>.</p>
+<p>Bu parçadaki araçlarla çarpım ve bölüm şöyle ele alınır: <strong>çarpımı aç</strong> (parantezleri dağıt), <strong>bölümü sadeleştir</strong> (payı paydaya terim terim böl ya da çarpanlara ayırıp sadeleştir), her terimi xⁿ biçimine getir, sonra terim terim integral al.</p>
+<p><strong>Neden?</strong> Türevde çarpım kuralı iki terimli bir sonuç veriyordu; bu yüzden bir çarpımın türevi "türevlerin çarpımı" değildir. İntegral türevin tersi olduğu için aynı engel ters yönde de vardır. Toplam ise türevde de integralde de terim terim işlenir; açma ve bölme işlemleri çarpımı ve bölümü toplama çevirir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Aşağıdaki integralleri bul. (a) ∫ (x + 1)(x − 2) dx &nbsp; (b) ∫ <span class="kes"><span>x<sup>3</sup> − 2√x</span><span>x</span></span> dx (x &gt; 0) &nbsp; (c) ∫ (√x + 1)<sup>2</sup> dx</p>
+<p><strong>Adım 1 (a).</strong> Parantezleri aç.</p>
+<span class="mat">(x + 1)(x − 2) = x<sup>2</sup> − 2x + x − 2 = x<sup>2</sup> − x − 2 <span class="g">(dağılma)</span></span>
+<span class="mat">∫ (x<sup>2</sup> − x − 2) dx = <span class="kes"><span>x<sup>3</sup></span><span>3</span></span> − <span class="kes"><span>x<sup>2</sup></span><span>2</span></span> − 2x + C <span class="g">(terim terim kuvvet kuralı)</span></span>
+<p><strong>Adım 2 (b).</strong> Payı paydaya terim terim böl, kökü üsse çevir.</p>
+<span class="mat"><span class="kes"><span>x<sup>3</sup></span><span>x</span></span> − <span class="kes"><span>2x<sup>1/2</sup></span><span>x</span></span> = x<sup>2</sup> − 2x<sup>−1/2</sup> <span class="g">(üsler çıkarılır: 3 − 1 = 2; 1/2 − 1 = −1/2)</span></span>
+<span class="mat">∫ (x<sup>2</sup> − 2x<sup>−1/2</sup>) dx = <span class="kes"><span>x<sup>3</sup></span><span>3</span></span> − 2 · <span class="kes"><span>x<sup>1/2</sup></span><span>1/2</span></span> + C = <span class="kes"><span>x<sup>3</sup></span><span>3</span></span> − 4√x + C <span class="g">(1/2'ye bölmek 2 ile çarpmak)</span></span>
+<p><strong>Adım 3 (c).</strong> Kareyi aç: (a + b)<sup>2</sup> = a<sup>2</sup> + 2ab + b<sup>2</sup>.</p>
+<span class="mat">(√x + 1)<sup>2</sup> = x + 2√x + 1 = x + 2x<sup>1/2</sup> + 1 <span class="g">((√x)<sup>2</sup> = x)</span></span>
+<span class="mat">∫ (x + 2x<sup>1/2</sup> + 1) dx = <span class="kes"><span>x<sup>2</sup></span><span>2</span></span> + 2 · <span class="kes"><span>2</span><span>3</span></span>x<sup>3/2</sup> + x + C = <span class="kes"><span>x<sup>2</sup></span><span>2</span></span> + <span class="kes"><span>4</span><span>3</span></span>x√x + x + C <span class="g">(terim terim)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (b) için: (x<sup>3</sup>/3 − 4x<sup>1/2</sup>)′ = x<sup>2</sup> − 2x<sup>−1/2</sup>; bunu x ile çarpınca x<sup>3</sup> − 2x<sup>1/2</sup> = x<sup>3</sup> − 2√x, yani pay geri geldi. (c) için x = 1'de integrand (1 + 1)<sup>2</sup> = 4; sonucun türevi x + 2√x + 1, x = 1'de 1 + 2 + 1 = 4. Tutarlı.</p>
+<p><strong>Sonuç:</strong> (a) x<sup>3</sup>/3 − x<sup>2</sup>/2 − 2x + C; (b) x<sup>3</sup>/3 − 4√x + C; (c) x<sup>2</sup>/2 + (4/3)x√x + x + C.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Çarpanları ayrı ayrı integrallemek.</strong> ∫ (x + 1)(x − 2) dx için (x<sup>2</sup>/2 + x)(x<sup>2</sup>/2 − 2x) yazmak, yukarıdaki x · x örneğindeki hatanın aynısıdır. Sonucun türevini al: çarpım kuralı sana (x + 1)(x − 2)'yi geri vermez. Önce aç.</p>
+<p><strong>Bölümde pay ve paydanın integralini ayrı almak.</strong> ∫ (2x<sup>3</sup> + x)/x dx için payın integralini (x<sup>4</sup>/2 + x<sup>2</sup>/2) paydanın integraline (x<sup>2</sup>/2) bölmek x<sup>2</sup> + 1 verir; türevi 2x'tir, 2x<sup>2</sup> + 1 değil. Doğrusu önce bölmek: (2x<sup>3</sup> + x)/x = 2x<sup>2</sup> + 1, integrali (2/3)x<sup>3</sup> + x + C.</p></div>
+
+<h2 class="s">7. Türev ile integral birbirini geri alır</h2>
+
+<p>Türev ve integral birbirinin tersi olan işlemlerdir, ama tam simetrik değildir: bir yönde bilgi kaybolur. Hangi sırada uygulandıklarına göre üç eşitlik vardır ve sınav bunları hem doğrudan hem de "ifadelerden hangileri doğrudur" biçiminde sorar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>(1) Önce integral, sonra türev:</strong> <span class="kes"><span>d</span><span>dx</span></span>[∫ f(x) dx] = f(x). Sabit yok.</p>
+<p><strong>(2) Önce türev, sonra integral:</strong> ∫ f′(x) dx = f(x) + C. Sabit var.</p>
+<p><strong>(3) Diferansiyelin integrali:</strong> ∫ d(f(x)) = f(x) + C. Sabit var. (Diferansiyel alırsan: d[∫ f(x) dx] = f(x) dx.)</p>
+<p><strong>Neden (1)'de C yok da (2)'de var?</strong> (1)'de önce ∫ f(x) dx = F(x) + C ailesi bulunur; sonra türev alınınca C'nin türevi 0 olur ve geriye F′(x) = f(x) kalır. Hiçbir belirsizlik kalmaz. (2)'de önce türev alınır ve f'in sabit terimi bu sırada silinir; sonra integral, silinen sabiti geri getiremez, onun yerine bilinmeyen bir C koyar. (3), (2)'nin diferansiyelle yazılışıdır, çünkü d(f(x)) = f′(x) dx.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Üç farklı fonksiyon, x küp eksi 2, x küp ve x küp artı 5, türev alınınca aynı 3x kare fonksiyonuna gider. 3x karenin integrali alınınca x küp artı C ailesi bulunur; hangi sabitle başlandığı bilgisi kaybolmuştur.">
+  <rect class="sv-k" x="10" y="16" width="110" height="38" rx="8" />
+  <rect class="sv-k" x="145" y="16" width="110" height="38" rx="8" />
+  <rect class="sv-k" x="280" y="16" width="110" height="38" rx="8" />
+  <text class="sv-t" x="65" y="40" text-anchor="middle">x³ − 2</text>
+  <text class="sv-t" x="200" y="40" text-anchor="middle">x³</text>
+  <text class="sv-t" x="335" y="40" text-anchor="middle">x³ + 5</text>
+  <line class="sv-cl" x1="65" y1="54" x2="196" y2="104" />
+  <line class="sv-cl" x1="200" y1="54" x2="200" y2="104" />
+  <line class="sv-cl" x1="335" y1="54" x2="204" y2="104" />
+  <polygon class="sv-m" points="200,110 194,100 206,100" />
+  <text class="sv-s" x="262" y="92">türev al</text>
+  <text class="sv-s" x="262" y="108">(sabit silinir)</text>
+  <rect class="sv-l" x="155" y="112" width="90" height="38" rx="8" />
+  <text class="sv-b" x="200" y="136" text-anchor="middle">3x²</text>
+  <line class="sv-cl" x1="200" y1="150" x2="200" y2="186" />
+  <polygon class="sv-m" points="200,192 194,182 206,182" />
+  <text class="sv-s" x="212" y="174">integral al</text>
+  <rect class="sv-a" x="140" y="194" width="120" height="38" rx="8" />
+  <text class="sv-b" x="200" y="218" text-anchor="middle">x³ + C</text>
+  <text class="sv-s" x="200" y="252" text-anchor="middle">Başlangıçtaki −2, 0 ya da 5 geri gelmez;</text>
+  <text class="sv-s" x="200" y="267" text-anchor="middle">onu seçmek için f(0) gibi bir bilgi gerekir.</text>
+</svg>
+<figcaption>Türev, sabitleri farklı olan fonksiyonları aynı sonuca götürür; integral bu sonuçtan geri dönerken hangisinden gelindiğini bilemez ve bütün aileyi verir. "∫ f′(x) dx = f(x) + C" eşitliğindeki C bu kaybın işaretidir.</figcaption>
+</figure>
+
+<p>Bu üç eşitliğin sınavdaki kullanımı çoğunlukla şöyledir: integral bir eşitliğin içinde verilir ve senden integrandın kendisi istenir. O zaman integral almazsın; iki yanın <strong>türevini</strong> alırsın. Örneğin ∫ f(x) dx = x<sup>3</sup> − 2x<sup>2</sup> + 5x + C ise (1) gereği f(x) = (x<sup>3</sup> − 2x<sup>2</sup> + 5x + C)′ = 3x<sup>2</sup> − 4x + 5'tir ve f(2) = 12 − 8 + 5 = 9 bulunur. İntegral sağ tarafa hazır yazılmışken bir daha integral almak, en sık yapılan yön hatasıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Verilen</th><th>Yapılacak işlem</th><th>Örnek</th></tr>
+<tr><td>∫ f(x) dx = G(x) + C</td><td>İki yanın türevi: f(x) = G′(x)</td><td>∫ f(x) dx = x<sup>4</sup> + x + C ⇒ f(x) = 4x<sup>3</sup> + 1</td></tr>
+<tr><td><span class="kes"><span>d</span><span>dx</span></span>[∫ f(x) dx]</td><td>İkisi birbirini götürür: f(x)</td><td><span class="kes"><span>d</span><span>dx</span></span>[∫ (x<sup>2</sup> + 1) dx] = x<sup>2</sup> + 1</td></tr>
+<tr><td>∫ f′(x) dx</td><td>f(x) + C; C için ek bilgi gerekir</td><td>∫ (x<sup>3</sup> − x)′ dx = x<sup>3</sup> − x + C</td></tr>
+<tr><td>∫ d(f(x))</td><td>f(x) + C</td><td>∫ d(x<sup>2</sup> + 3x) = x<sup>2</sup> + 3x + C</td></tr>
+<tr><td>f(x) = ∫ g(x) dx ve bir f değeri</td><td>İntegrali al, C'yi değerden bul (Bölüm 8)</td><td>f(x) = ∫ 2x dx, f(1) = 3 ⇒ f(x) = x<sup>2</sup> + 2</td></tr>
+</table></div>
+
+<p>Bir uyarı: ∫ (x<sup>3</sup> − x)′ dx yazıldığında içteki türevi alıp sonra integrallemek de doğru sonuca götürür (3x<sup>2</sup> − 1 → x<sup>3</sup> − x + C), ama bu boşuna iki işlemdir. Türevin integrali, fonksiyonun kendisi artı C'dir; doğrudan yaz.</p>
+
+<h2 class="s">8. Başlangıç koşulu: aileden tek eğriyi seçmek</h2>
+
+<p>Şekil 1'de gördün: f′ bilinince f'in tamamı değil, bir ailesi bilinir. Ailenin hangi üyesinin istendiğini söyleyen ek bilgiye <strong>başlangıç koşulu</strong> denir. Genellikle "f(a) = b" biçiminde, yani eğrinin geçtiği bir nokta olarak verilir. Bir bilinmeyen (C) ve bir denklem (f(a) = b) vardır; C tek türlü bulunur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1.</strong> f′(x)'in integralini al: f(x) = F(x) + C. <strong>2.</strong> Verilen koşulu yaz: F(a) + C = b. <strong>3.</strong> C'yi çöz ve f'in kuralına yerleştir. <strong>4.</strong> İstenen değeri (f(c) gibi) bu kuraldan hesapla.</p>
+<p><strong>Neden C'yi hemen bulmak gerekir?</strong> C, ailenin hangi üyesinde olduğumuzu belirler. C bilinmeden f(c) bir sayı olmaz, "bir sayı + C" olur. Bir istisna: soru yalnızca bir <strong>fark</strong> istiyorsa (f(3) − f(1) gibi) C'ler birbirini götürür ve koşul gerekmez. Bu fark fikri Parça 30'da belirli integralin temeli olacak.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> f′(x) = 6x<sup>2</sup> − 4x + 1 ve f(1) = 5 olduğuna göre f(2) kaçtır?</p>
+<p><strong>Adım 1.</strong> f′'nün integralini al.</p>
+<span class="mat">f(x) = ∫ (6x<sup>2</sup> − 4x + 1) dx = 2x<sup>3</sup> − 2x<sup>2</sup> + x + C <span class="g">(∫ f′(x) dx = f(x) + C)</span></span>
+<p><strong>Adım 2.</strong> Başlangıç koşulunu kullan.</p>
+<span class="mat">f(1) = 2 − 2 + 1 + C = 1 + C = 5 <span class="g">(x = 1 koy)</span></span>
+<span class="mat">C = 4 <span class="g">(1'i karşıya at)</span></span>
+<p><strong>Adım 3.</strong> f'in kuralını yaz ve istenen değeri hesapla.</p>
+<span class="mat">f(x) = 2x<sup>3</sup> − 2x<sup>2</sup> + x + 4 <span class="g">(C yerine 4)</span></span>
+<span class="mat">f(2) = 16 − 8 + 2 + 4 = 14 <span class="g">(x = 2 koy)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> f(1) = 2 − 2 + 1 + 4 = 5, koşul tutuyor. f′(x) = 6x<sup>2</sup> − 4x + 1, verilenle aynı. Bir tahmin denetimi de yap: f′ [1, 2] aralığında 3 ile 17 arasında değişen pozitif bir sayı; f bu aralıkta 1 birim ilerlerken 3 ile 17 arasında bir miktar artmalı. 5'ten 14'e 9 artmış; makul.</p>
+<p><strong>Sonuç:</strong> f(2) = 14.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>C'yi unutmak ya da sıfır saymak.</strong> Örnek 4'te C yazılmasaydı f(2) = 16 − 8 + 2 = 10 bulunurdu; bu sayı seçeneklerde mutlaka vardır. C yalnızca bir yazım süsü değil, bulunması gereken bir bilinmeyendir.</p>
+<p><strong>Koşulu yanlış fonksiyona koymak.</strong> f(1) = 5 bilgisi f içindir, f′ için değil. "f′(1) + C = 5" yazmak, ailenin eğimi ile noktasını karıştırmaktır. Koşulun hangi fonksiyona ait olduğunu (f mi, f′ mü) her zaman sol taraftaki harften oku.</p></div>
+
+<h2 class="s">9. f″ verilince: iki integral, iki sabit, iki koşul</h2>
+
+<p>Bazen ikinci türev verilir ve f istenir. f″'den f′'ye bir integralle, f′'den f'e bir integralle daha gidilir. Her integral kendi sabitini getirir: C<sub>1</sub> ve C<sub>2</sub>. İki bilinmeyen için iki koşul gerekir. Bu sayma her zaman geçerlidir: kaç kez integral alırsan o kadar sabit, o kadar da koşul gerekir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f″(x) = 6x − 2, f′(1) = 4 ve f(1) = 3 olduğuna göre f(2) kaçtır?</p>
+<p><strong>Adım 1.</strong> f″'nün integrali f′'dür.</p>
+<span class="mat">f′(x) = ∫ (6x − 2) dx = 3x<sup>2</sup> − 2x + C<sub>1</sub> <span class="g">(birinci integral, birinci sabit)</span></span>
+<p><strong>Adım 2.</strong> f′ ile ilgili koşulu hemen kullan.</p>
+<span class="mat">f′(1) = 3 − 2 + C<sub>1</sub> = 4 ⇒ C<sub>1</sub> = 3 <span class="g">(x = 1 koy)</span></span>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 2x + 3 <span class="g">(C<sub>1</sub> yerine 3)</span></span>
+<p><strong>Adım 3.</strong> f′'nün integrali f'tir.</p>
+<span class="mat">f(x) = ∫ (3x<sup>2</sup> − 2x + 3) dx = x<sup>3</sup> − x<sup>2</sup> + 3x + C<sub>2</sub> <span class="g">(ikinci integral, ikinci sabit)</span></span>
+<span class="mat">f(1) = 1 − 1 + 3 + C<sub>2</sub> = 3 ⇒ C<sub>2</sub> = 0 <span class="g">(x = 1 koy)</span></span>
+<p><strong>Adım 4.</strong> İstenen değer.</p>
+<span class="mat">f(2) = 8 − 4 + 6 + 0 = 10 <span class="g">(f(x) = x<sup>3</sup> − x<sup>2</sup> + 3x)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Geriye doğru türev al: f′ = 3x<sup>2</sup> − 2x + 3, f″ = 6x − 2. f′(1) = 4, f(1) = 3. Hepsi tuttu.</p>
+<p><strong>Sonuç:</strong> f(2) = 10.</p></div>
+
+<p>Sıranın önemine dikkat et: C<sub>1</sub>'i ikinci integrali almadan önce bul. C<sub>1</sub>'i bilinmeyen olarak bırakıp ikinci integrali alırsan C<sub>1</sub>x terimi oluşur. Bu yanlış değildir, yalnızca işi uzatır. Ama iki koşul da f ile ilgiliyse (örneğin f(0) ve f(1)) bu yola mecbur kalırsın. f″(x) = 6x, f(0) = 1 ve f(1) = 4 verilsin: f′ = 3x<sup>2</sup> + C<sub>1</sub>, f = x<sup>3</sup> + C<sub>1</sub>x + C<sub>2</sub>. f(0) = C<sub>2</sub> = 1; f(1) = 1 + C<sub>1</sub> + 1 = 4 ⇒ C<sub>1</sub> = 2. Sonuç f(x) = x<sup>3</sup> + 2x + 1. İki bilinmeyenli küçük bir sistem kuruldu, o kadar.</p>
+
+<h2 class="s">10. Teğet eğimi verilen eğrinin denklemi</h2>
+
+<p>Parça 24'te öğrendin: y = f(x) eğrisinin (x, f(x)) noktasındaki teğetinin eğimi f′(x)'tir. O hâlde "eğrinin her noktasındaki teğetinin eğimi m(x)'tir" cümlesi, f′(x) = m(x) demenin başka bir yoludur. Soru seni f′'den f'e götürüyor; eğrinin geçtiği nokta da başlangıç koşuludur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> y = f(x) eğrisinin her (x, y) noktasındaki teğetinin eğimi 2x − 3'tür. Eğri (2, 1) noktasından geçtiğine göre eğrinin y eksenini kestiği noktanın ordinatı kaçtır?</p>
+<p><strong>Adım 1.</strong> Eğim bilgisini türev olarak yaz ve integral al.</p>
+<span class="mat">f′(x) = 2x − 3 ⇒ f(x) = x<sup>2</sup> − 3x + C <span class="g">(teğet eğimi = türev)</span></span>
+<p><strong>Adım 2.</strong> Eğrinin geçtiği noktayı koy.</p>
+<span class="mat">f(2) = 4 − 6 + C = 1 ⇒ C = 3 <span class="g">((2, 1) eğri üzerinde)</span></span>
+<p><strong>Adım 3.</strong> y eksenini kestiği yer x = 0'dır.</p>
+<span class="mat">f(0) = 0 − 0 + 3 = 3 <span class="g">(f(x) = x<sup>2</sup> − 3x + 3)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> f(2) = 4 − 6 + 3 = 1, nokta eğri üzerinde. f′(x) = 2x − 3, verilen eğim.</p>
+<p><strong>Sonuç:</strong> Ordinat 3; eğri y eksenini (0, 3) noktasında keser.</p></div>
+
+<p>Daha zor bir kalıpta ikinci türev ve bir teğet doğrusu birlikte verilir. "Eğri x = a apsisli noktada y = mx + n doğrusuna teğettir" cümlesi Parça 24'teki gibi <strong>iki</strong> bilgi taşır: değme noktası ortaktır, yani f(a) = ma + n; eğimler eşittir, yani f′(a) = m. İki integralin iki sabiti için gereken iki koşul tek cümleden çıkar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> f″(x) = 6x ve y = f(x) eğrisi x = 1 apsisli noktasında y = 2x + 1 doğrusuna teğet olduğuna göre f(2) kaçtır?</p>
+<p><strong>Adım 1.</strong> Teğetlik cümlesini iki koşula çevir.</p>
+<span class="mat">f′(1) = 2 <span class="g">(teğetin eğimi doğrunun eğimi)</span></span>
+<span class="mat">f(1) = 2 · 1 + 1 = 3 <span class="g">(değme noktası doğrunun üzerinde)</span></span>
+<p><strong>Adım 2.</strong> Birinci integral ve C<sub>1</sub>.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> + C<sub>1</sub>; &nbsp;f′(1) = 3 + C<sub>1</sub> = 2 ⇒ C<sub>1</sub> = −1 <span class="g">(∫ 6x dx = 3x<sup>2</sup>)</span></span>
+<p><strong>Adım 3.</strong> İkinci integral ve C<sub>2</sub>.</p>
+<span class="mat">f(x) = x<sup>3</sup> − x + C<sub>2</sub>; &nbsp;f(1) = 1 − 1 + C<sub>2</sub> = 3 ⇒ C<sub>2</sub> = 3 <span class="g">(∫ (3x<sup>2</sup> − 1) dx)</span></span>
+<p><strong>Adım 4.</strong> İstenen değer.</p>
+<span class="mat">f(2) = 8 − 2 + 3 = 9 <span class="g">(f(x) = x<sup>3</sup> − x + 3)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> f′(1) = 3 − 1 = 2, f(1) = 3: (1, 3) noktası y = 2x + 1 üzerinde ve eğim 2. Teğetlik tutuyor.</p>
+<p><strong>Sonuç:</strong> f(2) = 9.</p></div>
+
+<h2 class="s">11. Hareket: ivmeden hıza, hızdan konuma</h2>
+
+<p>Parça 22'de doğrusal hareket eden bir cismin konumu s(t) ise hızının v(t) = s′(t), ivmesinin a(t) = v′(t) olduğunu gördün. Türev zinciri konum → hız → ivme yönünde ilerliyordu. İntegral aynı zinciri ters yönde yürür ve bu parçanın sorusu tam olarak buydu.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>v(t) = ∫ a(t) dt &nbsp;ve&nbsp; s(t) = ∫ v(t) dt.</p>
+<p>Her adımda bir sabit çıkar. Hız için gereken koşul genellikle <strong>ilk hız</strong> v(0) = v<sub>0</sub>, konum için gereken koşul <strong>ilk konum</strong> s(0) = s<sub>0</sub>'dır.</p>
+<p><strong>Neden?</strong> v = s′ olduğu için s, v'nin bir ilkel fonksiyonudur; a = v′ olduğu için v, a'nın bir ilkel fonksiyonudur. Fiziksel anlamı da açıktır: yalnızca hızı bilen biri cismin nereden yola çıktığını bilemez; aynı hızla hareket eden iki cisim farklı yerlerden başlamış olabilir. Konumu bulmak için başlangıç yerinin söylenmesi şarttır. C'nin fizikteki karşılığı budur.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 215" role="img" aria-label="Hareket zinciri. İvme a(t) eşittir eksi 10 kutusundan, integral alıp v(0) eşittir 20 koşulu kullanılarak hız v(t) eşittir eksi 10t artı 20 kutusuna; oradan integral alıp s(0) eşittir 5 koşuluyla konum s(t) eşittir eksi 5t kare artı 20t artı 5 kutusuna gidiliyor. Alttaki oklar ters yönde türevi gösteriyor.">
+  <rect class="sv-l" x="6" y="70" width="114" height="60" rx="10" />
+  <rect class="sv-m" x="143" y="70" width="114" height="60" rx="10" />
+  <rect class="sv-a" x="280" y="70" width="114" height="60" rx="10" />
+  <text class="sv-b" x="63" y="94" text-anchor="middle">ivme</text>
+  <text class="sv-s" x="63" y="115" text-anchor="middle">a(t) = −10</text>
+  <text class="sv-b" x="200" y="94" text-anchor="middle">hız</text>
+  <text class="sv-s" x="200" y="115" text-anchor="middle">v(t) = −10t + 20</text>
+  <text class="sv-b" x="337" y="94" text-anchor="middle">konum</text>
+  <text class="sv-s" x="337" y="115" text-anchor="middle">−5t² + 20t + 5</text>
+  <path class="sv-cl" d="M63 70 Q122 20 180 66" />
+  <polygon class="sv-cl" points="183,70 172,66 179,58" />
+  <path class="sv-cl" d="M220 70 Q279 20 337 66" />
+  <polygon class="sv-cl" points="340,70 329,66 336,58" />
+  <text class="sv-s" x="121" y="22" text-anchor="middle">∫ dt, v(0) = 20</text>
+  <text class="sv-s" x="279" y="22" text-anchor="middle">∫ dt, s(0) = 5</text>
+  <path class="sv-c" d="M337 130 Q279 180 220 134" />
+  <polygon class="sv-c" points="217,130 228,134 221,142" />
+  <path class="sv-c" d="M180 130 Q122 180 63 134" />
+  <polygon class="sv-c" points="60,130 71,134 64,142" />
+  <text class="sv-s" x="279" y="200" text-anchor="middle">türev</text>
+  <text class="sv-s" x="121" y="200" text-anchor="middle">türev</text>
+</svg>
+<figcaption>Yukarı oklar integral: her ok bir sabit getirir ve onu bulmak için bir başlangıç değeri ister. Aşağı oklar türev: hiçbir bilgi istemez ama sabitleri siler. Örnek: 5 m yükseklikten 20 m/s hızla yukarı atılan top (g = 10 m/s², yukarı yön pozitif).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Bir doğru boyunca hareket eden cismin t. saniyedeki ivmesi a(t) = 6t − 4 m/s<sup>2</sup>'dir. t = 0 anında hızı 2 m/s, konumu 1 m olduğuna göre cismin t = 2 s anındaki konumu kaç metredir?</p>
+<p><strong>Adım 1.</strong> İvmenin integrali hızdır.</p>
+<span class="mat">v(t) = ∫ (6t − 4) dt = 3t<sup>2</sup> − 4t + C<sub>1</sub> &nbsp;(m/s) <span class="g">(değişken t, bu yüzden dt)</span></span>
+<span class="mat">v(0) = C<sub>1</sub> = 2 ⇒ v(t) = 3t<sup>2</sup> − 4t + 2 <span class="g">(ilk hız)</span></span>
+<p><strong>Adım 2.</strong> Hızın integrali konumdur.</p>
+<span class="mat">s(t) = ∫ (3t<sup>2</sup> − 4t + 2) dt = t<sup>3</sup> − 2t<sup>2</sup> + 2t + C<sub>2</sub> &nbsp;(m) <span class="g">(terim terim)</span></span>
+<span class="mat">s(0) = C<sub>2</sub> = 1 ⇒ s(t) = t<sup>3</sup> − 2t<sup>2</sup> + 2t + 1 <span class="g">(ilk konum)</span></span>
+<p><strong>Adım 3.</strong> t = 2 s koy.</p>
+<span class="mat">s(2) = 8 − 8 + 4 + 1 = 5 m <span class="g">(birim: metre)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Birim denetimi: ivme m/s<sup>2</sup>, bir kez zamana göre integral m/s, bir kez daha m verir. Türev denetimi: s′(t) = 3t<sup>2</sup> − 4t + 2 = v(t), v′(t) = 6t − 4 = a(t). Ayrıca v(t)'nin diskriminantı 16 − 24 &lt; 0 olduğu için hız hep pozitif; cisim hiç geri dönmüyor ve konumu 1 m'den 5 m'ye artmış. Tutarlı.</p>
+<p><strong>Sonuç:</strong> s(2) = 5 m. (Bu parçanın başındaki sorunun cevabı: hız 3t<sup>2</sup> − 4t + 2 iken cismin yeri, başlangıç konumu bilinirse bulunur; 1 m'den başladıysa 2. saniyede 5 m'dedir.)</p></div>
+
+<p>Fizikteki sabit ivmeli hareket formüllerini de bu yolla elde edebilirsin; ezberlemen gerekmez. İvme sabit a olsun.</p>
+<span class="mat">v(t) = ∫ a dt = at + C<sub>1</sub>, &nbsp;v(0) = v<sub>0</sub> ⇒ v(t) = v<sub>0</sub> + at <span class="g">(sabitin integrali)</span></span>
+<span class="mat">s(t) = ∫ (v<sub>0</sub> + at) dt = v<sub>0</sub>t + <span class="kes"><span>1</span><span>2</span></span>at<sup>2</sup> + C<sub>2</sub>, &nbsp;s(0) = s<sub>0</sub> ⇒ s(t) = s<sub>0</sub> + v<sub>0</sub>t + <span class="kes"><span>1</span><span>2</span></span>at<sup>2</sup> <span class="g">(∫ at dt = at<sup>2</sup>/2)</span></span>
+<p>Fizik dersindeki ½at<sup>2</sup> terimindeki ½, kuvvet kuralındaki "yeni üsse böl" adımından gelir. Şekildeki topu düşün: sınav kabulüyle g = 10 m/s<sup>2</sup>, yukarı yön pozitif, a = −10 m/s<sup>2</sup>, v<sub>0</sub> = 20 m/s, s<sub>0</sub> = 5 m. Formüller v(t) = −10t + 20 ve s(t) = −5t<sup>2</sup> + 20t + 5 verir. Top en yüksek noktasında bir an durur: v(t) = 0 ⇒ t = 2 s; o anki yükseklik s(2) = −20 + 40 + 5 = 25 m. Parça 25'teki "türevin sıfır olduğu yerde tepe" fikri ile bu parçadaki integral aynı soruda buluştu.</p>
+
+<div class="tablo"><table>
+<tr><th>Verilen</th><th>İstenen</th><th>İşlem</th><th>Gereken koşul</th></tr>
+<tr><td>konum s(t)</td><td>hız, ivme</td><td>türev (bir ya da iki kez)</td><td>yok</td></tr>
+<tr><td>hız v(t)</td><td>konum</td><td>bir integral</td><td>bir konum değeri, örneğin s(0)</td></tr>
+<tr><td>ivme a(t)</td><td>hız</td><td>bir integral</td><td>bir hız değeri, örneğin v(0)</td></tr>
+<tr><td>ivme a(t)</td><td>konum</td><td>iki integral</td><td>bir hız ve bir konum değeri</td></tr>
+</table></div>
+
+<h2 class="s">12. Üstel, logaritmik ve trigonometrik fonksiyonların integralleri</h2>
+
+<p><strong>Kapsam notu: bu kısım sınav kapsamında olmayabilir.</strong> Parça 23'te bu fonksiyonların türevlerinin 2018 programında yer alıp almadığının doğrulanamadığını belirtmiştik; aynı belirsizlik integraller için de geçerli. Bu yüzden bu kuralları yalnızca kısa bir tablo olarak veriyorum. Her satır, Parça 23'teki türev tablosunun tersten okunmasıdır; bu parçanın ana fikrine uygun olarak her birini türev alarak denetleyebilirsin.</p>
+
+<div class="tablo"><table>
+<tr><th>İntegral</th><th>Sonuç</th><th>Türevle denetim</th></tr>
+<tr><td>∫ <span class="kes"><span>1</span><span>x</span></span> dx (x ≠ 0)</td><td>ln|x| + C</td><td>x &gt; 0: (ln x)′ = 1/x; x &lt; 0: (ln(−x))′ = −1/(−x) = 1/x</td></tr>
+<tr><td>∫ eˣ dx</td><td>eˣ + C</td><td>(eˣ)′ = eˣ</td></tr>
+<tr><td>∫ sin x dx</td><td>−cos x + C</td><td>(−cos x)′ = −(−sin x) = sin x</td></tr>
+<tr><td>∫ cos x dx</td><td>sin x + C</td><td>(sin x)′ = cos x</td></tr>
+</table></div>
+
+<p>İlk satırdaki mutlak değer süs değildir. ln x yalnızca x &gt; 0 için tanımlıdır (Parça 14), ama 1/x negatif x'lerde de tanımlıdır. Negatif x'ler için ilkel fonksiyon ln(−x)'tir; zincir kuralıyla türevi (−1)/(−x) = 1/x çıkar. İki durumu tek yazımda birleştiren ifade ln|x|'tir. Bu satır, Bölüm 4'te kuvvet kuralının dışında bıraktığımız n = −1 durumunun cevabıdır. Sinüs satırındaki eksi işaretine de dikkat et: cos x'in türevi −sin x olduğu için sin x'in ilkel fonksiyonu +cos x değil, −cos x'tir.</p>
+
+<h2 class="s">Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol.</strong> (1) Önce integrandın biçimine bak: toplam mı (terim terim al), çarpım mı (aç), bölüm mü (böl, sadeleştir), kök mü (üsse çevir)? (2) Polinomda katsayıyı yeni üsse kafadan böl: 12x<sup>3</sup> → 3x<sup>4</sup>. (3) Soru bir eşitliğin içinde ∫ f(x) dx veriyor ve f'i soruyorsa integral alma, türev al. (4) Başlangıç koşulu "x = 0" ise C doğrudan o değere eşittir, çünkü polinomun bütün x'li terimleri sıfırlanır: f(0) = C. (5) Seçeneklerde integral varsa, her seçeneğin türevini al ve integrandı veren seçeneği işaretle; çoğu zaman integral almaktan hızlıdır.</p>
+
+<p><strong>Kontrol yolu.</strong> (1) Sonucun türevini al; integrand geri gelmeli. Bu denetim, bu parçadaki her sorunun cevabını kesin olarak sınar. (2) + C yazdın mı? Başlangıç koşulu verildiyse C'yi buldun mu? (3) Koşulu doğru fonksiyona mı koydun (f mi, f′ mü)? (4) Hareket sorularında birim denetimi yap: m/s<sup>2</sup> → m/s → m. (5) Bulduğun f, verilen bütün koşulları sağlıyor mu? Hepsini yerine koyarak bak; bir koşul tutmuyorsa sabitlerden biri yanlıştır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 22–25'e:</strong> Her integral kuralı, Parça 22'deki bir türev kuralının tersidir; "türevi sıfır olan fonksiyon sabittir" bilgisi (Parça 25) + C'nin neden yeterli olduğunu açıkladı; teğet eğimi ve teğet doğrusu (Parça 24) eğri denklemi sorularına koşul verdi. Konum-hız-ivme zinciri Parça 22'den geldi.</p>
+<p><strong>Parça 4'e:</strong> ∫ f(x) dx ailesinin üyeleri, birbirinin düşey ötelenmişidir (y = F(x) + C).</p>
+<p><strong>Parça 29'a:</strong> Zincir kuralının tersi olan değişken değiştirme yöntemi, bu parçadaki kuvvet kuralının (x yerine bir g(x) ifadesiyle) uygulanmasıdır. Bu parçada çarpımları açmak zorunda kaldık; ∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx gibi açılması zahmetli çarpımlar orada kısa yoldan çözülecek.</p>
+<p><strong>Parça 30–32'ye:</strong> Belirli integralde ∫<sub>a</sub><sup>b</sup> f(x) dx = F(b) − F(a) yazılacak ve C, Bölüm 8'deki "fark istendiğinde C'ler birbirini götürür" gözlemi sayesinde düşecek. Alan hesabı ve hız-zaman grafiğinin altındaki alan, bu parçadaki ilkel fonksiyonlarla yapılacak.</p>
+<p><strong>Öbür derslere:</strong> Fizikteki v = v<sub>0</sub> + at ve x = x<sub>0</sub> + v<sub>0</sub>t + ½at<sup>2</sup> formülleri, sabit ivmenin iki kez integrallenmesidir; ilk hız ve ilk konum integral sabitleridir. Kimyada ve biyolojide "değişim hızı" verilip toplam miktar istenen her soru (tepkime hızından derişim, büyüme hızından nüfus) aynı fikre dayanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Belirsiz integralin sonucuna neden + C yazılır? Yalnızca bir C neden yeter?</summary><p>Sabitin türevi sıfır olduğu için türevi f olan fonksiyon tek değildir; F bir ilkel fonksiyonsa F + 1, F − 7 de öyledir. İki ilkel fonksiyonun farkının türevi sıfırdır ve türevi her yerde sıfır olan fonksiyon sabittir; bu yüzden bütün ilkel fonksiyonlar F + C biçimindedir. Terim terim integral alırken çıkan sabitlerin toplamı da bir sabit olduğu için tek C yeter.</p></details>
+<details><summary>Kuvvet kuralını türev kuralından nasıl çıkarırsın? Neden n = −1 için geçerli değildir?</summary><p>(xⁿ<sup>+1</sup>)′ = (n + 1)xⁿ olduğu için xⁿ<sup>+1</sup>/(n + 1)'in türevi xⁿ'dir; bu yüzden ∫ xⁿ dx = xⁿ<sup>+1</sup>/(n + 1) + C. n = −1 için payda sıfır olur; zaten türevi 1/x olan bir xᵏ kuvveti yoktur. 1/x'in ilkel fonksiyonu ln|x|'tir.</p></details>
+<details><summary>∫ (1/√x) dx ve ∫ (1/x<sup>3</sup>) dx nasıl alınır?</summary><p>Önce üslü yazılır: x<sup>−1/2</sup> ve x<sup>−3</sup>. Üs bir artırılır ve yeni üsse bölünür: x<sup>1/2</sup>/(1/2) = 2√x + C; x<sup>−2</sup>/(−2) = −1/(2x<sup>2</sup>) + C. Negatif üs bir artınca sıfıra yaklaşır (−3'ten −2'ye).</p></details>
+<details><summary>Neden ∫ f(x) · g(x) dx, çarpanların integrallerinin çarpımına eşit değildir? Ne yapılır?</summary><p>Çünkü çarpımın türevi türevlerin çarpımı değildir (çarpım kuralı iki terimlidir); integral bu kuralın tersi olduğu için aynı engel vardır. Örneğin ∫ x · x dx = x<sup>3</sup>/3 + C iken (x<sup>2</sup>/2)(x<sup>2</sup>/2) = x<sup>4</sup>/4 olur. Çarpım açılır, bölüm terim terim bölünür ya da sadeleştirilir, sonra terim terim integral alınır.</p></details>
+<details><summary><span class="kes"><span>d</span><span>dx</span></span>[∫ f(x) dx] ile ∫ f′(x) dx arasındaki fark nedir?</summary><p>Birincisi tam olarak f(x)'tir: integralin getirdiği C, sonraki türevde sıfır olur. İkincisi f(x) + C'dir: önce türev alınınca f'in sabit terimi silinir ve integral onu geri getiremez, yerine bilinmeyen bir C koyar.</p></details>
+<details><summary>f″ verilip f istenirse kaç koşul gerekir? "Eğri x = a'da y = mx + n doğrusuna teğettir" cümlesi hangi koşulları verir?</summary><p>İki integral alınacağı için iki sabit çıkar ve iki koşul gerekir. Teğetlik cümlesi ikisini birden verir: eğimler eşit, f′(a) = m; değme noktası ortak, f(a) = ma + n.</p></details>
+<details><summary>Hız fonksiyonundan konumu bulmak için neden ilk konum bilinmelidir?</summary><p>Konum, hızın ilkel fonksiyonudur ve integral bir sabit kadar belirsizdir. Aynı hızla hareket eden iki cisim farklı noktalardan başlamış olabilir; hız bu farkı göstermez. s(0) = s<sub>0</sub> gibi bir değer, integral sabitini belirler.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Tanım:</strong> F′ = f ise F, f'in ilkel fonksiyonudur. ∫ f(x) dx = F(x) + C bütün aileyi verir.</li>
+<li><strong>+ C:</strong> sabitin türevi 0. İki ilkel arasındaki fark sabittir (türevi 0 olan fonksiyon sabittir). Aile = düşey ötelenmiş, aynı x'te paralel teğetli eğriler.</li>
+<li><strong>dx:</strong> değişkeni gösterir. ∫ 2xt dx = x<sup>2</sup>t + C, ∫ 2xt dt = xt<sup>2</sup> + C.</li>
+<li><strong>Kuvvet kuralı:</strong> ∫ xⁿ dx = xⁿ<sup>+1</sup>/(n + 1) + C, n ≠ −1. Üssü 1 artır, yeni üsse böl. Önce kök ve kesri xⁿ'ye çevir: 1/x<sup>2</sup> → −1/x, √x → (2/3)x√x, 1/√x → 2√x.</li>
+<li><strong>Doğrusallık:</strong> ∫ kf = k∫ f; ∫ (f ± g) = ∫ f ± ∫ g; ∫ k dx = kx + C. Sona tek C.</li>
+<li><strong>Çarpım-bölüm:</strong> çarpanlara ayrı integral YOK. Aç, böl, sadeleştir, sonra terim terim.</li>
+<li><strong>Geri alma:</strong> d/dx ∫ f dx = f (C yok); ∫ f′ dx = f + C; ∫ d(f) = f + C. "∫ f dx = G + C" verilince f = G′.</li>
+<li><strong>Başlangıç koşulu:</strong> f(a) = b ile C bulunur. f(0) verilmişse polinomda C = f(0).</li>
+<li><strong>f″ verilince:</strong> iki integral, iki sabit, iki koşul. Teğetlik: f′(a) = m ve f(a) = ma + n.</li>
+<li><strong>Eğim verilen eğri:</strong> "teğetin eğimi m(x)" = f′(x) = m(x); geçtiği nokta koşuldur.</li>
+<li><strong>Hareket:</strong> v = ∫ a dt (v(0) ile), s = ∫ v dt (s(0) ile). Sabit ivme: v = v<sub>0</sub> + at, s = s<sub>0</sub> + v<sub>0</sub>t + ½at<sup>2</sup>.</li>
+<li><strong>Kapsamı belirsiz tablo:</strong> ∫ 1/x = ln|x|, ∫ eˣ = eˣ, ∫ sin x = −cos x, ∫ cos x = sin x (+ C).</li>
+<li><strong>Kontrol:</strong> her sonucun türevini al; integrand geri gelmeli.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-28">
+<h3>Quiz 28</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">∫ (3x<sup>2</sup> − 4x + 5) dx integrali aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>6x − 4 + C</li><li>x<sup>3</sup> − 2x<sup>2</sup> + 5x + C</li><li>x<sup>3</sup> − 4x<sup>2</sup> + 5x + C</li><li>x<sup>3</sup> − 2x<sup>2</sup> + C</li><li>3x<sup>3</sup> − 4x<sup>2</sup> + 5x + C</li></ul>
+<div class="coz"><p>Terim terim kuvvet kuralı: 3x<sup>2</sup> → 3 · x<sup>3</sup>/3 = x<sup>3</sup>; −4x → −4 · x<sup>2</sup>/2 = −2x<sup>2</sup>; 5 → 5x. Sonuç x<sup>3</sup> − 2x<sup>2</sup> + 5x + C; türevi 3x<sup>2</sup> − 4x + 5, doğru. 6x − 4 türev yönünde işlem yapmaktır. x<sup>3</sup> − 4x<sup>2</sup> + 5x, −4x teriminde yeni üsse (2'ye) bölmeyi unutmaktır. x<sup>3</sup> − 2x<sup>2</sup> + C, sabit terim 5'i türevdeki gibi silmektir; integralde 5, 5x olur. 3x<sup>3</sup> − 4x<sup>2</sup> + 5x, üssü artırıp hiç bölmemektir.</p></div></li>
+
+<li data-c="D"><p class="q">∫ (<span class="kes"><span>1</span><span>x<sup>2</sup></span></span> + √x) dx integrali aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>x</span></span> + <span class="kes"><span>2</span><span>3</span></span>x√x + C</li><li>−<span class="kes"><span>1</span><span>3x<sup>3</sup></span></span> + <span class="kes"><span>2</span><span>3</span></span>x√x + C</li><li>−<span class="kes"><span>1</span><span>x</span></span> + <span class="kes"><span>3</span><span>2</span></span>x√x + C</li><li>−<span class="kes"><span>1</span><span>x</span></span> + <span class="kes"><span>2</span><span>3</span></span>x√x + C</li><li>−<span class="kes"><span>2</span><span>x<sup>3</sup></span></span> + <span class="kes"><span>1</span><span>2√x</span></span> + C</li></ul>
+<div class="coz"><p>Üslü yaz: x<sup>−2</sup> + x<sup>1/2</sup>. x<sup>−2</sup> → x<sup>−1</sup>/(−1) = −1/x; x<sup>1/2</sup> → x<sup>3/2</sup>/(3/2) = (2/3)x√x. Denetim: (−x<sup>−1</sup>)′ = x<sup>−2</sup>, ((2/3)x<sup>3/2</sup>)′ = x<sup>1/2</sup>. 1/x ile başlayan seçenek, −1'e bölerken eksiyi düşürmektir; türevi −1/x<sup>2</sup> olur. −1/(3x<sup>3</sup>), negatif üssü artırmak yerine azaltmaktır (−2 → −3). (3/2)x√x, 3/2'ye bölmek yerine 3/2 ile çarpmaktır. Son seçenek iki terimin türevidir; işlem yönü ters.</p></div></li>
+
+<li data-c="A"><p class="q">x ≠ 0 olmak üzere ∫ <span class="kes"><span>2x<sup>3</sup> + x</span><span>x</span></span> dx integrali aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>2</span><span>3</span></span>x<sup>3</sup> + x + C</li><li>x<sup>2</sup> + 1 + C</li><li><span class="kes"><span>2</span><span>3</span></span>x<sup>3</sup> + C</li><li><span class="kes"><span>1</span><span>2</span></span>x<sup>4</sup> + <span class="kes"><span>1</span><span>2</span></span>x<sup>2</sup> + C</li><li>4x + C</li></ul>
+<div class="coz"><p>Önce böl: (2x<sup>3</sup> + x)/x = 2x<sup>2</sup> + 1. Sonra integral: (2/3)x<sup>3</sup> + x + C. Denetim: türevi 2x<sup>2</sup> + 1. x<sup>2</sup> + 1, payın integralini (x<sup>4</sup>/2 + x<sup>2</sup>/2) paydanın integraline (x<sup>2</sup>/2) bölmektir; bölümün integrali böyle alınmaz, türevi 2x'tir. (2/3)x<sup>3</sup> + C, x/x = 1 teriminin integralini (x) unutmaktır. (1/2)x<sup>4</sup> + (1/2)x<sup>2</sup>, paydayı görmezden gelip yalnızca payın integralini almaktır. 4x, 2x<sup>2</sup> + 1'in türevidir.</p></div></li>
+
+<li data-c="E"><p class="q">f türevlenebilir bir fonksiyon olmak üzere<br>I. <span class="kes"><span>d</span><span>dx</span></span>[∫ f(x) dx] = f(x)<br>II. ∫ f′(x) dx = f(x)<br>III. ∫ d(f(x)) = f(x) + C<br>eşitliklerinden hangileri her zaman doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>I ve II</li><li>II ve III</li><li>I, II ve III</li><li>I ve III</li></ul>
+<div class="coz"><p>I doğru: integralin getirdiği C, türev alınınca sıfır olur ve f(x) kalır. II yanlış: önce türev alınınca f'in sabit terimi silinir; integral onu geri getiremez, sonuç f(x) + C'dir (f(x) = x<sup>2</sup> + 5 için ∫ 2x dx = x<sup>2</sup> + C, x<sup>2</sup> + 5 olduğu garanti değil). III doğru: d(f(x)) = f′(x) dx ve integrali f(x) + C. "Yalnız I", III'teki diferansiyel yazımını tanımamaktır. II'yi içeren seçenekler, C'nin kaybolan bilgiyi temsil ettiğini gözden kaçırmaktır.</p></div></li>
+
+<li data-c="C"><p class="q">f′(x) = 4x<sup>3</sup> − 6x + 2 ve f(1) = 3 olduğuna göre f(2) kaçtır?</p>
+<ul class="sec"><li>8</li><li>22</li><li>11</li><li>2</li><li>5</li></ul>
+<div class="coz"><p>f(x) = x<sup>4</sup> − 3x<sup>2</sup> + 2x + C. f(1) = 1 − 3 + 2 + C = C = 3. f(2) = 16 − 12 + 4 + 3 = 11. 8, C'yi unutmaktır. 22, f(2) yerine f′(2)'yi (32 − 12 + 2) hesaplamaktır. 2, −6x'in integralini −6x<sup>2</sup> almaktır (2'ye bölmeyi unutmak): o zaman C = 6 ve f(2) = 16 − 24 + 4 + 6 = 2. 5, C'yi bulurken işaret hatası yapıp C = −3 almaktır.</p></div></li>
+
+<li data-c="B"><p class="q">f″(x) = 12x − 4, f′(1) = 5 ve f(0) = 1 olduğuna göre f(1) kaçtır?</p>
+<ul class="sec"><li>1</li><li>4</li><li>6</li><li>3</li><li>5</li></ul>
+<div class="coz"><p>f′(x) = 6x<sup>2</sup> − 4x + C<sub>1</sub>; f′(1) = 2 + C<sub>1</sub> = 5 ⇒ C<sub>1</sub> = 3. f(x) = 2x<sup>3</sup> − 2x<sup>2</sup> + 3x + C<sub>2</sub>; f(0) = C<sub>2</sub> = 1. f(1) = 2 − 2 + 3 + 1 = 4. 1, birinci sabiti (C<sub>1</sub>) hiç yazmamaktır. 6, C<sub>1</sub>'i doğrudan f′(1)'e (5'e) eşit sanmaktır; x = 1'de 6x<sup>2</sup> − 4x sıfır olmaz. 3, ikinci sabiti (C<sub>2</sub>) unutmaktır. 5, f′(1) ile f(1)'i karıştırmaktır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir doğru boyunca hareket eden bir cismin t. saniyedeki ivmesi a(t) = 6t − 6 m/s<sup>2</sup>'dir. Cismin t = 0 anındaki hızı 3 m/s ve konumu 0 m olduğuna göre t = 3 s anındaki konumu kaç metredir?</p>
+<ul class="sec"><li>0</li><li>36</li><li>12</li><li>3</li><li>9</li></ul>
+<div class="coz"><p>v(t) = ∫ (6t − 6) dt = 3t<sup>2</sup> − 6t + C<sub>1</sub>; v(0) = 3 ⇒ v(t) = 3t<sup>2</sup> − 6t + 3. s(t) = t<sup>3</sup> − 3t<sup>2</sup> + 3t + C<sub>2</sub>; s(0) = 0 ⇒ C<sub>2</sub> = 0. s(3) = 27 − 27 + 9 = 9 m. 0, ilk hızı unutup v = 3t<sup>2</sup> − 6t almaktır. 36, 6t'nin integralini 6t<sup>2</sup> yazmaktır (v = 6t<sup>2</sup> − 6t + 3, s = 2t<sup>3</sup> − 3t<sup>2</sup> + 3t). 12, konum yerine t = 3'teki hızı (v(3)) vermektir. 3, ilk hızı hıza değil konum sabitine yazmaktır (v = 3t<sup>2</sup> − 6t, s = t<sup>3</sup> − 3t<sup>2</sup> + 3).</p></div></li>
+
+<li data-c="A"><p class="q">f″(x) = 6x + 2 olmak üzere y = f(x) eğrisi, apsisi 1 olan noktasında y = 3x − 1 doğrusuna teğettir. Buna göre f(2) kaçtır?</p>
+<ul class="sec"><li>10</li><li>12</li><li>11</li><li>5</li><li>14</li></ul>
+<div class="coz"><p>Teğetlik iki koşul verir: f′(1) = 3 (eğim) ve f(1) = 3 · 1 − 1 = 2 (ortak nokta). f′(x) = 3x<sup>2</sup> + 2x + C<sub>1</sub>; 5 + C<sub>1</sub> = 3 ⇒ C<sub>1</sub> = −2. f(x) = x<sup>3</sup> + x<sup>2</sup> − 2x + C<sub>2</sub>; 1 + 1 − 2 + C<sub>2</sub> = 2 ⇒ C<sub>2</sub> = 2. f(2) = 8 + 4 − 4 + 2 = 10. 12, C<sub>1</sub>'i yazmamaktır (f = x<sup>3</sup> + x<sup>2</sup> + C<sub>2</sub>, C<sub>2</sub> = 0). 11, değme noktasının ordinatı olarak doğrunun eğimini (3) almaktır. 5, doğrunun x = 2'deki değeridir; eğri ile teğeti yalnızca değme noktasında aynı değeri verir. 14, f(2) yerine f′(2)'dir.</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">f(x) = x<sup>3</sup> + (a − 3)x<sup>2</sup> + 2x + b − 4 fonksiyonu tek fonksiyon olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>7</li><li>12</li><li>−1</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x) olmalı; polinomda bu, çift dereceli terimlerin (x<sup>2</sup> ve sabit terim) katsayılarının sıfır olması demektir. Ayrıca tek fonksiyonda f(0) = 0'dır. a − 3 = 0 ⇒ a = 3; b − 4 = 0 ⇒ b = 4; a + b = 7. 3 yalnızca a'dır, 4 yalnızca b'dir; soru toplamı istiyor. 12, a · b çarpımıdır. −1, a − b farkıdır.</p></div></li>
+
+<li data-c="D" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği (2, 5) noktasından geçmektedir. Buna göre y = 2f(x − 1) + 3 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(1, 13)</li><li>(3, 16)</li><li>(3, 8)</li><li>(3, 13)</li><li>(2, 13)</li></ul>
+<div class="coz"><p>f(2) = 5 bilgisini kullanmak için parantez içi 2 olmalı: x − 1 = 2 ⇒ x = 3. O zaman y = 2f(2) + 3 = 2 · 5 + 3 = 13; nokta (3, 13). (1, 13), yatay ötelemeyi "−1 sola" sanmaktır; f(x − h) grafiği h birim sağa kayar. (3, 16), önce 3 ekleyip sonra 2 ile çarpmaktır (2(5 + 3)). (3, 8), 2 katı almayı unutmaktır. (2, 13), yatay ötelemeyi hiç uygulamamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">Tepe noktası T(1, −4) olan ve (3, 0) noktasından geçen parabolün y eksenini kestiği noktanın ordinatı kaçtır?</p>
+<ul class="sec"><li>−3</li><li>−4</li><li>3</li><li>1</li><li>−<span class="kes"><span>15</span><span>4</span></span></li></ul>
+<div class="coz"><p>Tepe noktası verilince y = a(x − 1)<sup>2</sup> − 4 yazılır. (3, 0): 0 = 4a − 4 ⇒ a = 1. y = (x − 1)<sup>2</sup> − 4; x = 0'da y = 1 − 4 = −3. −4 tepe noktasının ordinatıdır. 3, işaret hatasıdır. 1, bulunan a katsayısıdır. −15/4, tepe noktasını y = a(x + 1)<sup>2</sup> − 4 diye yanlış işaretle yazmaktır (a = 1/4 çıkar).</p></div></li>
+
+<li data-c="E" data-k="ileri-9"><p class="q">sin x + cos x = <span class="kes"><span>7</span><span>5</span></span> olduğuna göre sin x · cos x çarpımı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>24</span><span>25</span></span></li><li><span class="kes"><span>7</span><span>10</span></span></li><li><span class="kes"><span>49</span><span>50</span></span></li><li>−<span class="kes"><span>12</span><span>25</span></span></li><li><span class="kes"><span>12</span><span>25</span></span></li></ul>
+<div class="coz"><p>İki yanın karesi: sin<sup>2</sup>x + 2 sin x cos x + cos<sup>2</sup>x = 49/25. sin<sup>2</sup>x + cos<sup>2</sup>x = 1 olduğundan 2 sin x cos x = 24/25, sin x cos x = 12/25. 24/25, 2'ye bölmeyi unutmaktır. 7/10, toplamın yarısını çarpım sanmaktır. 49/50, 1'i çıkarmayı unutup 49/25'i 2'ye bölmektir. −12/25 işaret hatasıdır.</p></div></li>
+
+<li data-c="B" data-k="ileri-11"><p class="q">sin a = <span class="kes"><span>1</span><span>3</span></span> olduğuna göre cos 2a kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>5</span><span>9</span></span></li><li><span class="kes"><span>7</span><span>9</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>8</span><span>9</span></span></li><li>−<span class="kes"><span>7</span><span>9</span></span></li></ul>
+<div class="coz"><p>Sinüs verildiği için cos 2a = 1 − 2 sin<sup>2</sup>a biçimi seçilir: 1 − 2 · (1/9) = 7/9. Bu biçimde bölgeye bakmak da gerekmez. 5/9, 2 sin<sup>2</sup>a yerine (2 sin a)<sup>2</sup> = 4/9 almaktır. 1/3, kareyi unutup 1 − 2 sin a yazmaktır. 8/9, cos<sup>2</sup>a'dır, cos 2a değil. −7/9 işaret hatasıdır.</p></div></li>
+
+<li data-c="C" data-k="ileri-14"><p class="q">f(x) = log<sub>(x − 1)</sub>(5 − x) fonksiyonunun en geniş tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(1, 5)</li><li>(2, 5)</li><li>(1, 5) − {2}</li><li>(−∞, 5)</li><li>(1, 5) − {4}</li></ul>
+<div class="coz"><p>Üç koşul: taban pozitif (x − 1 &gt; 0 ⇒ x &gt; 1), taban 1'den farklı (x − 1 ≠ 1 ⇒ x ≠ 2), içeri pozitif (5 − x &gt; 0 ⇒ x &lt; 5). Ortak çözüm (1, 5) − {2}. (1, 5), taban ≠ 1 koşulunu unutmaktır. (2, 5), tabanın 1'den büyük olması gerektiğini sanmaktır; 0 ile 1 arasındaki tabanlar da geçerlidir. (−∞, 5) yalnızca içerinin koşuludur. (1, 5) − {4}, "1'den farklı olma" koşulunu tabana değil içeriye uygulamaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-16"><p class="q">log<sub>2</sub>(x + 2) + log<sub>2</sub>(x − 2) = 5 denkleminin çözüm kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−6, 6}</li><li>{16}</li><li>{3}</li><li>{6}</li><li>{4√2}</li></ul>
+<div class="coz"><p>Kural: log<sub>2</sub>[(x + 2)(x − 2)] = 5 ⇒ x<sup>2</sup> − 4 = 2<sup>5</sup> = 32 ⇒ x = ±6. Tanım koşulları x + 2 &gt; 0 ve x − 2 &gt; 0, yani x &gt; 2; −6 atılır. Çözüm {6}. {−6, 6}, yabancı kökü atmamaktır. {16}, toplamı log(a + b) sanmaktır (2x = 32). {3}, logaritmayı atıp x<sup>2</sup> − 4 = 5 yazmaktır. {4√2}, +2 ile −2'yi "sadeleştirip" 2 log<sub>2</sub> x = 5 yazmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-19"><p class="q">f(x) = x<sup>2</sup> + 2a (x &lt; 1 iken), f(x) = 4x − a (x &gt; 1 iken) biçiminde tanımlanan f fonksiyonunun x = 1 noktasında limiti olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>1</li><li>3</li><li><span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>3</span><span>2</span></span></li><li>Hiçbir a değeri için limit yoktur.</li></ul>
+<div class="coz"><p>Limitin olması için soldan ve sağdan limitler eşit olmalı: 1 + 2a = 4 − a ⇒ 3a = 3 ⇒ a = 1 (limit 3). 3, a yerine limitin değerini vermektir. 4/3, soldaki x<sup>2</sup> terimini (1) unutup 2a = 4 − a yazmaktır. 3/2, sağ taraftaki −a'yı unutup 1 + 2a = 4 yazmaktır. Son seçenek, f'in x = 1'de tanımsız olmasını limitin yokluğu sanmaktır; limit için fonksiyonun o noktadaki değeri gerekmez.</p></div></li>
+
+<li data-c="E" data-k="ileri-21"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> − 9</span><span>x − 3</span></span> (x ≠ 3 iken) ve f(3) = k biçiminde tanımlanan f fonksiyonu x = 3'te sürekli olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>0</li><li>3</li><li>9</li><li>Hiçbir k değeri için sürekli olamaz.</li><li>6</li></ul>
+<div class="coz"><p>Süreklilik için f(3) = lim<sub>x→3</sub> f(x) olmalı. x ≠ 3 iken (x − 3)(x + 3)/(x − 3) = x + 3, limit 6; k = 6. 0, 0/0'ı 0 sanmaktır. 3, sadeleşen ifadede x + 3 yerine x almaktır. 9, payı x<sup>2</sup> sanıp 3<sup>2</sup> yazmaktır. "Sürekli olamaz", paydanın 3'te sıfır olmasını kesin süreksizlik sanmaktır; delik (kaldırılabilir süreksizlik) uygun k ile doldurulur.</p></div></li>
+
+<li data-c="B" data-k="ileri-24"><p class="q">y = x<sup>2</sup> + 1 eğrisine apsisi 1 olan noktasından çizilen normal doğrusunun x eksenini kestiği noktanın apsisi kaçtır?</p>
+<ul class="sec"><li>0</li><li>5</li><li>−3</li><li>2</li><li>1</li></ul>
+<div class="coz"><p>Nokta (1, 2), teğetin eğimi y′ = 2x ⇒ 2. Normal teğete dik: eğimi −1/2. Normal: y − 2 = −½(x − 1); y = 0 ⇒ x − 1 = 4 ⇒ x = 5. 0, normal yerine teğeti (y = 2x) kullanmaktır. −3, dik eğimde işareti unutup +1/2 almaktır. 2, dik eğimi bulurken tersini almayı unutup yalnızca işaret değiştirmektir (eğim −2). 1, değme noktasının apsisidir.</p></div></li>
+
+<li data-c="C" data-k="ileri-25"><p class="q">f(x) = 2x<sup>3</sup> − 9x<sup>2</sup> + 12x + 1 fonksiyonunun yerel maksimum değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>5</li><li>6</li><li>2</li><li>3</li></ul>
+<div class="coz"><p>f′(x) = 6x<sup>2</sup> − 18x + 12 = 6(x − 1)(x − 2). Baş katsayı pozitif: işaretler + − +; x = 1'de + → −, yerel maksimum. Değer f(1) = 2 − 9 + 12 + 1 = 6. 1, maksimum noktasının apsisidir (ya da f(0)). 5, x = 2'deki yerel minimum değeridir. 2, minimumun apsisidir. 3, iki kritik noktanın apsisleri toplamıdır.</p></div></li>
+
+<li data-c="D" data-k="ileri-25"><p class="q">f(x) = −x<sup>3</sup> + mx<sup>2</sup> − 3x + 2 fonksiyonu her x gerçek sayısı için azalan olduğuna göre m'nin alabileceği kaç tam sayı değeri vardır?</p>
+<ul class="sec"><li>5</li><li>13</li><li>4</li><li>7</li><li>6</li></ul>
+<div class="coz"><p>f′(x) = −3x<sup>2</sup> + 2mx − 3 ≤ 0 her x için olmalı: baş katsayı −3 &lt; 0 ve Δ = 4m<sup>2</sup> − 36 ≤ 0 ⇒ m<sup>2</sup> ≤ 9 ⇒ −3 ≤ m ≤ 3: 7 tam sayı. 5, Δ &lt; 0 yazıp ±3'ü atmaktır; Δ = 0 iken türev yalnızca bir noktada sıfırdır ve f yine azalandır. 13, türevdeki 2m katsayısını m alıp m<sup>2</sup> − 36 ≤ 0 yazmaktır. 4, yalnızca negatif olmayan değerleri saymaktır. 6, uçlardan yalnızca birini almaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-26"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + bx fonksiyonunun büküm noktası (1, 3) olduğuna göre b kaçtır?</p>
+<ul class="sec"><li>5</li><li>8</li><li>7</li><li>−3</li><li>2</li></ul>
+<div class="coz"><p>Büküm noktasında f″ = 0 ve nokta eğri üzerinde. f″(x) = 6x + 2a; f″(1) = 6 + 2a = 0 ⇒ a = −3. f(1) = 1 + a + b = 3 ⇒ b = 5. 8, f″'yü 6x + a yazıp a = −6 bulmaktır. 7, büküm koşulu yerine f′(1) = 0 yazmaktır (a = −5). −3, a'nın değeridir. 2, a + b toplamıdır.</p></div></li>
+
+<li data-c="E" data-k="ileri-26"><p class="q">f(x) = x<sup>4</sup> − 6x<sup>2</sup> fonksiyonunun grafiğinin aşağı bükey (konkav) olduğu en geniş aralık aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−√6, √6)</li><li>(−√3, √3)</li><li>(0, √3)</li><li>(−∞, −1) ∪ (1, ∞)</li><li>(−1, 1)</li></ul>
+<div class="coz"><p>f′(x) = 4x<sup>3</sup> − 12x, f″(x) = 12x<sup>2</sup> − 12 = 12(x − 1)(x + 1). f″ &lt; 0 olan yer (−1, 1): grafik orada aşağı bükeydir. (−√6, √6), f'in negatif olduğu yerdir. (−√3, √3), f′'nün köklerinden kurulmuştur; bükeyliğe f′ değil f″ bakar. (0, √3), f′'nün negatif olduğu (f'in azalan olduğu) aralıklardan biridir. (−∞, −1) ∪ (1, ∞), f″ &gt; 0 olan, yani yukarı bükey bölgedir.</p></div></li>
+
+<li data-c="B" data-k="ileri-27"><p class="q">x ve y pozitif gerçek sayılar ve x + y = 12 olduğuna göre x · y<sup>2</sup> çarpımının alabileceği en büyük değer kaçtır?</p>
+<ul class="sec"><li>216</li><li>256</li><li>8</li><li>32</li><li>144</li></ul>
+<div class="coz"><p>Tek değişkene indir: x = 12 − y, P(y) = (12 − y)y<sup>2</sup> = 12y<sup>2</sup> − y<sup>3</sup>, 0 &lt; y &lt; 12. P′(y) = 24y − 3y<sup>2</sup> = 3y(8 − y) = 0 ⇒ y = 8; işaret + → −, en büyük. x = 4, P = 4 · 64 = 256. 216, sayıları eşit (6 ve 6) almaktır; bu, x · y çarpımının kalıbıdır, x · y<sup>2</sup>'nin değil. 8, değer yerine y'yi vermektir. 32, x · y'yi (4 · 8) hesaplamaktır. 144, y<sup>2</sup>'yi y = 12 sınırında hesaplamaktır; o zaman x = 0 olur ve çarpım 0'dır.</p></div></li>
+
+<li data-c="C" data-k="ileri-27"><p class="q">y = √x eğrisi üzerindeki noktaların A(3, 0) noktasına en kısa uzaklığı kaç birimdir?</p>
+<ul class="sec"><li><span class="kes"><span>11</span><span>4</span></span></li><li><span class="kes"><span>5</span><span>2</span></span></li><li><span class="kes"><span>√11</span><span>2</span></span></li><li>√3</li><li>√5</li></ul>
+<div class="coz"><p>Eğri üzerindeki nokta (x, √x). Uzaklığın karesi d<sup>2</sup> = (x − 3)<sup>2</sup> + x; bunu en küçük yapmak yeter. (d<sup>2</sup>)′ = 2(x − 3) + 1 = 0 ⇒ x = 5/2; d<sup>2</sup> = 1/4 + 5/2 = 11/4, d = √11/2. 11/4, karekök almayı unutmaktır. 5/2, uzaklık yerine noktanın apsisidir. √3, A'nın tam üstündeki (3, √3) noktasını en yakın nokta sanmaktır. √5, x = 1 noktasını (1, 1) denemektir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-27">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-28">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-29">Sonraki parça: değişken değiştirme yöntemi</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"belirsiz integral konu anlatımı ilkel fonksiyon integral sabiti AYT"</li>
+  <li>"integral kuvvet kuralı köklü ve kesirli üslü ifadelerin integrali"</li>
+  <li>"integral başlangıç koşulu f üssü verilen f bulma ikinci türev verilen sorular"</li>
+  <li>"integral ile hız konum ivme soruları"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 28. satıra göre yazıldı; satırdaki her alt başlık (ilkel fonksiyon fikri, C'nin nedeni ve düşey ötelenmiş eğri ailesi, ∫ f(x) dx gösterimi ve dx'in anlamı, kuvvet kuralı ve negatif-kesirli üsler, sabit çarpan ve toplam-fark kuralları, çarpım ve bölümün integralinin çarpanların integrallerinin çarpımı-bölümü olmadığı, polinom-köklü-rasyonel üslü ifadelerin integrali, türev ile integralin birbirini geri alması ve ∫ d(f(x)), başlangıç koşuluyla C, f″'den f, teğet eğimi verilen eğri, hızdan konum ve ivmeden hız, ∫ 1/x, ∫ eˣ, ∫ sin x, ∫ cos x tablosu, türevle denetleme alışkanlığı) metinde işlendi. Değişken değiştirme Parça 29'a, belirli integral Parça 30'a bırakıldı. 2018 programıyla kazanım kazanım karşılaştırma bu oturumda yapılamadı (kapsam dosyasındaki genel not geçerli).</li>
+  <li>Kapsamı doğrulanamayan kısım: ∫ 1/x dx = ln|x| + C, ∫ eˣ dx, ∫ sin x dx, ∫ cos x dx kuralları (Bölüm 12). Kapsam dosyasındaki nota uyularak ayrı alt başlıkta, kısa tablo olarak ve "bu kısım sınav kapsamında olmayabilir" uyarısıyla verildi; quizde bu tablodan soru sorulmadı. Kesin kapsam dışıysa Bölüm 12, özetteki ilgili satır ve Bölüm 4'teki ln|x|'e yapılan iki gönderme silinebilir.</li>
+  <li>"Türevi her yerde sıfır olan fonksiyon sabittir" sonucu (C'nin yeterliliğinin gerekçesi) Parça 25'teki sezgisel gerekçeye dayandırıldı; kesin ispatı ortalama değer teoremiyle yapılır ve burada verilmedi. ∫ işaretinin "summa" sözcüğünden geldiği bilgisi yaygın kabul gören tarihsel açıklamadır. Diferansiyel (dF = F′(x) dx) yalnızca gösterimi okumak için sezgisel olarak anlatıldı; programda ayrı bir kazanım olup olmadığını bilmiyorum.</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, tablolar ve 24 quiz sorusunun cevabı) Python ile denetlendi: her integral sonucunun türevi simetrik fark bölümüyle birkaç noktada hesaplanıp integrandla karşılaştırıldı; başlangıç koşullu örneklerde bulunan fonksiyonun bütün koşulları sağladığı yerine koyarak doğrulandı; çeldiricilerin her biri çözümde anılan hata yapılarak yeniden hesaplandı ve doğru cevaptan farklı olduğu kontrol edildi. Ortamda sympy yoktu; cebirsel adımlar elle yapılıp sayısal değerle karşılaştırıldı. Hareket örneklerinde g = 10 m/s<sup>2</sup> sınav kabulü kullanıldı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: y = x<sup>2</sup> + C ailesinin beş üyesi ve x = 1'deki eğimi 2 olan teğetleri formülden hesaplanan noktalarla (x ölçeği 60, y ölçeği 30 birim; eksen ölçekleri farklı olduğu için çizimdeki açı gerçek açı değildir, ama teğetlerin paralelliği korunur). Diğer iki şekil akış şemasıdır.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (25, 26, 27) ikişer soru; daha eski 24 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 6, 9, 11, 14, 16, 19, 21, 24). Parça 26 ve 27 bu parçanın yazımı sırasında arşive eklendi; onların tekrar soruları kapsam listesindeki 26. ve 27. satırların konu ve terimleriyle (büküm noktası, aşağı bükey (konkav), optimizasyon, uzaklığın karesini en küçük yapma) yazıldı ve terim uyumu denetlendi, içerikleri satır satır karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

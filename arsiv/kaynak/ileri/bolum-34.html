@@ -1,0 +1,647 @@
+<article class="chapter ders" id="c-ileri-34">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 34 · İleri olasılık</div>
+<h1>İleri olasılık: koşullu olasılık, bağımlı-bağımsız olaylar, deneysel ve teorik olasılık</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>İki çocuklu bir aileyle tanışıyorsun ve çocuklardan en az birinin kız olduğunu öğreniyorsun. İki çocuğun da kız olma olasılığı kaçtır? Çoğu kişi hemen ½ der: "Öbür çocuk ya kızdır ya erkek." Doğru cevap ⅓'tür. Üstelik bilgiyi biraz değiştirip "büyük çocuk kız" dersen cevap gerçekten ½ olur. Aynı aile, neredeyse aynı bilgi, iki farklı olasılık. Bir bilgi olasılığı nasıl değiştirir ve bu değişikliği nasıl hesaplarsın? Bu parça bu soruyu cevaplıyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: mat Parça 46 (deney, örnek uzay, olay, P(A) = s(A)/s(E), tümleyen olay, ayrık olaylar, birleşimin olasılığı), mat Parça 47 (ağaç şeması, geri koyarak ve geri koymadan çekim, bağımsızlığın sezgisel kullanımı, tablodan olasılık), mat Parça 34–35 (kesişim, birleşim, tümleme), mat Parça 45 (kombinasyon). Kâğıt kalem yanında olsun; her örnekte önce örnek uzayı kendin yaz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Mat Parça 46 ve 47'de olasılığı "istenen durum sayısı bölü bütün durum sayısı" olarak kurdun ve art arda deneylerde dallar boyunca çarpmayı öğrendin. Orada bir şey hep sabitti: örnek uzay. Zar atıldı, altı çıktı vardı; torbadan top çekildi, bütün toplar adaydı. Bu parçada ilk kez <strong>bir bilgi</strong> geliyor: "zarın çift geldiği biliniyor", "seçilen öğrencinin gözlüklü olduğu biliniyor", "çekilen topun kırmızı olduğu görüldü". Bilgi geldiği anda bazı çıktılar elenir ve olasılıklar yeniden hesaplanır. Koşullu olasılık bu yeniden hesaplamanın adıdır.</p>
+
+<p>AYT'de bu konudan gelen sorular birkaç kalıba toplanır. "… olduğu bilindiğine göre … olma olasılığı kaçtır?" diye biten sorular (zar, kart, torba, aile, iki özellikli tablo). "A ile B bağımsız olaylar ve P(A) = …" diye başlayan, bağımsızlığın tanımını ya da "en az biri", "yalnız biri" olasılıklarını soran sorular. İki aşamalı deneyler: önce bir torba seçilir, sonra ondan top çekilir. Bunların tersi: top kırmızı çıktıysa hangi torbadan gelmiş olabilir? Son olarak deneysel ve teorik olasılık: bir tablo ya da frekans verilir, deneysel olasılık istenir ya da iki kavramın farkı yorumlatılır.</p>
+
+<p>Bu parçada sırasıyla şunları kuracağız: önce kısa bir hatırlatma, sonra koşullu olasılığın tanımı ve "bilindiğine göre" kalıbı, ardından çarpım kuralı, bağımsız ve bağımlı olaylar, bağımsızlığın ayrıklıkla karıştırılması, iki aşamalı deneyler, sonuçtan nedene giden sorular ve en sonda deneysel olasılık. Bir kapsam notu: binom dağılımı ve beklenen değer 2018 programında yoktur; burada anlatılmaz. Bu, ileri matematiğin son parçası.</p>
+
+<h2 class="s">1. Kısa hatırlatma: mat Parça 46–47</h2>
+
+<p>Koşullu olasılık bütünüyle eski kavramların üstüne kurulur. Aşağıdaki tabloyu bir kez oku; bu parçada her satırı yeniden kullanacağız.</p>
+
+<div class="tablo"><table>
+<tr><th>Kavram</th><th>Anlamı</th><th>Örnek</th></tr>
+<tr><td>Örnek uzay E</td><td>Deneyin bütün olası çıktılarının kümesi</td><td>Zar: E = {1, 2, 3, 4, 5, 6}</td></tr>
+<tr><td>Olay A</td><td>E'nin bir alt kümesi</td><td>"Çift gelir": A = {2, 4, 6}</td></tr>
+<tr><td>Olasılık</td><td>Eş olasılıklı E'de P(A) = s(A)/s(E); 0 ≤ P(A) ≤ 1</td><td>P(çift) = 3/6 = 1/2</td></tr>
+<tr><td>Tümleyen A′</td><td>A'nın gerçekleşmemesi; P(A′) = 1 − P(A)</td><td>P(çift değil) = 1/2</td></tr>
+<tr><td>Kesişim A ∩ B</td><td>A ve B'nin birlikte gerçekleşmesi ("ve")</td><td>Çift ve 4'ten küçük: {2}</td></tr>
+<tr><td>Birleşim A ∪ B</td><td>En az birinin gerçekleşmesi ("veya"); P(A ∪ B) = P(A) + P(B) − P(A ∩ B)</td><td>Çift veya 4'ten küçük: {1, 2, 3, 4, 6}</td></tr>
+<tr><td>Ayrık olaylar</td><td>Ortak çıktısı yok: A ∩ B = ∅, P(A ∩ B) = 0</td><td>"1 gelir" ile "çift gelir"</td></tr>
+<tr><td>Ağaç şeması</td><td>Dallar boyunca çarp, dallar arasında topla</td><td>Geri koymadan iki çekim</td></tr>
+</table></div>
+
+<p>Mat Parça 47'de geri koymadan çekimde ikinci dalın olasılığının birinci çekimin sonucuna göre değiştiğini görmüştün: 5 kırmızı 3 mavi toptan birincisi kırmızı çekildiyse ikinci çekimde kırmızı olasılığı 4/7 olur. Aslında o gün bir koşullu olasılık hesaplamıştın: "birincinin kırmızı olduğu bilindiğine göre ikincinin kırmızı olma olasılığı". Bu parça o sezgiye ad ve formül veriyor.</p>
+
+<h2 class="s">2. Koşullu olasılık: bilgi gelince örnek uzay daralır</h2>
+
+<p>Bir zar atıldığını, sonucu göremediğini düşün. "2'den büyük gelme" olasılığı 4/6 = 2/3'tür. Şimdi biri sonuca bakıp sana yalnızca "çift geldi" diyor. Artık 1, 3 ve 5 olası değil; geriye üç çıktı kaldı: 2, 4, 6. Bu üçü hâlâ eşit olasılıklıdır, çünkü bilgi hiçbirini öbürüne üstün kılmadı, yalnızca öbürlerini eledi. Bu üç çıktıdan 2'den büyük olanlar 4 ve 6. O hâlde yeni olasılık 2/3'tür.</p>
+
+<p>Burada olan şey şudur: bilgi, örnek uzayı E'den B = {2, 4, 6} kümesine <strong>daralttı</strong>. Artık B yeni evrendir. A olayından (2'den büyük gelme) geriye yalnızca B'nin içinde kalan kısmı, yani A ∩ B = {4, 6} kaldı. Olasılık, yeni evrende eski yöntemle hesaplanır: istenen durum sayısı bölü bütün durum sayısı.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="Koşullu olasılıkta örnek uzayın daralması. Üstte altı çıktılı örnek uzay, sağ tarafta çift sayılardan oluşan B bölgesi ve 3, 5, 4, 6'yı çeviren A çerçevesi. Altta yalnızca B kalmış; içinde 4 ve 6 A kesişim B olarak işaretli, 2 dışarıda.">
+  <text class="sv-b" x="200" y="18" text-anchor="middle">Bilgi gelmeden: E = {1, 2, 3, 4, 5, 6}</text>
+  <rect class="sv-k" x="10" y="28" width="380" height="112" rx="12" />
+  <rect class="sv-l" x="215" y="40" width="165" height="88" rx="14" />
+  <text class="sv-s" x="297" y="56" text-anchor="middle">B: çift gelir</text>
+  <rect class="sv-cl" x="78" y="70" width="245" height="44" rx="10" />
+  <text class="sv-b" x="45" y="98" text-anchor="middle">1</text>
+  <text class="sv-b" x="100" y="98" text-anchor="middle">3</text>
+  <text class="sv-b" x="155" y="98" text-anchor="middle">5</text>
+  <text class="sv-b" x="245" y="98" text-anchor="middle">4</text>
+  <text class="sv-b" x="297" y="98" text-anchor="middle">6</text>
+  <text class="sv-b" x="350" y="98" text-anchor="middle">2</text>
+  <text class="sv-s" x="140" y="132" text-anchor="middle">A: 2'den büyük gelir</text>
+  <line class="sv-c" x1="200" y1="146" x2="200" y2="168" />
+  <polygon class="sv-a" points="194,166 206,166 200,176" />
+  <text class="sv-s" x="212" y="164">bilgi: "çift geldi"</text>
+  <text class="sv-b" x="200" y="196" text-anchor="middle">Bilgi geldikten sonra: yeni evren B</text>
+  <rect class="sv-l" x="100" y="206" width="200" height="76" rx="14" />
+  <rect class="sv-m" x="112" y="218" width="122" height="52" rx="10" />
+  <text class="sv-b" x="145" y="249" text-anchor="middle">4</text>
+  <text class="sv-b" x="200" y="249" text-anchor="middle">6</text>
+  <text class="sv-b" x="267" y="249" text-anchor="middle">2</text>
+  <text class="sv-s" x="173" y="231" text-anchor="middle">A ∩ B</text>
+  <text class="sv-b" x="200" y="308" text-anchor="middle">P(A | B) = s(A ∩ B) / s(B) = 2/3</text>
+</svg>
+<figcaption>Bilgi "çift geldi" dediği anda 1, 3, 5 sahneden çıkar. Yeni evren B'dir; A'dan geriye yalnızca B'nin içinde kalan parça (A ∩ B) sayılır. Paydada artık 6 değil, 3 vardır.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Koşullu olasılık.</strong> B olayının gerçekleştiği bilindiğinde A olayının gerçekleşme olasılığına "B verildiğinde A'nın olasılığı" denir ve P(A | B) diye yazılır. Dik çizginin sağındaki olay bilinen (koşul), solundaki sorulan olaydır. P(B) &gt; 0 olmak üzere</p>
+<span class="mat">P(A | B) = <span class="kes"><span>P(A ∩ B)</span><span>P(B)</span></span> <span class="g">(genel tanım)</span></span>
+<span class="mat">P(A | B) = <span class="kes"><span>s(A ∩ B)</span><span>s(B)</span></span> <span class="g">(eş olasılıklı örnek uzayda)</span></span>
+<p><strong>Neden böyle?</strong> Bilgi geldikten sonra yalnızca B'nin çıktıları mümkündür; bu yüzden payda B olur. A'nın B dışında kalan çıktıları artık gerçekleşemez; bu yüzden payda yalnızca A ∩ B kalır. Genel tanımda P(B)'ye bölmek, "B'yi yeni evren yapıp toplam olasılığı yeniden 1'e çıkarmak"tır: B'nin içindeki çıktıların olasılıkları aynı oranda büyütülür, aralarındaki oran korunur. Eş olasılıklı uzayda P(A ∩ B) = s(A ∩ B)/s(E) ve P(B) = s(B)/s(E) olduğundan s(E)'ler sadeleşir ve ikinci formül çıkar. P(B) = 0 olamaz, çünkü hiç gerçekleşemeyecek bir olayın "gerçekleştiği bilinemez".</p></div>
+
+<p>İki formülden hangisini kullanacağın verilere bağlıdır. Durumları sayabiliyorsan (zar, kart, torba, tablo) ikincisi daha hızlıdır: yeni evreni yaz, say, böl. Olasılıklar yüzde ya da ondalık olarak verilmişse (P(A) = 0,4 gibi) birincisini kullanırsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> İki zar birlikte atılıyor. Üst yüze gelen sayıların toplamının 8 olduğu bilindiğine göre zarlardan birinin 3 olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Bilinen olayı (koşulu) belirle. "Toplamın 8 olduğu bilindiğine göre": B = toplam 8.</p>
+<span class="mat">B = {(2, 6), (3, 5), (4, 4), (5, 3), (6, 2)} <span class="g">(iki zarın 36'lık tablosundan, mat Parça 46)</span></span>
+<span class="mat">s(B) = 5 <span class="g">(yeni evrenin eleman sayısı)</span></span>
+<p><strong>Adım 2.</strong> Sorulan olayı yeni evrenin içinde ara. A = zarlardan biri 3.</p>
+<span class="mat">A ∩ B = {(3, 5), (5, 3)} <span class="g">(B'nin içinde 3 bulunan çıktılar)</span></span>
+<span class="mat">s(A ∩ B) = 2 <span class="g">((3, 5) ile (5, 3) ayrı çıktılardır)</span></span>
+<p><strong>Adım 3.</strong> Böl.</p>
+<span class="mat">P(A | B) = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(s(A ∩ B)/s(B))</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Genel tanımla da hesapla: P(A ∩ B) = 2/36, P(B) = 5/36; bölüm (2/36)/(5/36) = 2/5. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> 2/5. Dikkat: (4, 4) bir kez sayılır, (3, 5) ile (5, 3) iki kez. Mat Parça 46'daki "(1, 2) ile (2, 1) farklı çıktılardır" kuralı burada da geçerlidir.</p></div>
+
+<p>Şimdi soruyu ters çevir: "Zarlardan birinin 3 olduğu bilindiğine göre toplamın 8 olma olasılığı kaçtır?" Bu kez koşul "zarlardan biri 3" olayıdır. 36'lık tabloda en az bir zarı 3 olan çıktılar 11 tanedir (birinci zar 3: 6 çıktı; ikinci zar 3: 6 çıktı; (3, 3) iki kez sayıldığı için 6 + 6 − 1 = 11). Bunların içinde toplamı 8 olanlar yine (3, 5) ve (5, 3). Cevap 2/11'dir. Pay aynı, payda farklı: 2/5 ile 2/11.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>P(A | B) ile P(B | A)'yı aynı sanmak.</strong> İkisinin payı aynıdır (A ∩ B), paydaları farklıdır: birinde B, öbüründe A. "Toplam 8 iken birinin 3 olması" 2/5, "biri 3 iken toplamın 8 olması" 2/11. Günlük örnekle: "basketbolcu olduğu bilinen birinin uzun boylu olma olasılığı" çok yüksektir; "uzun boylu olduğu bilinen birinin basketbolcu olma olasılığı" çok düşüktür. Her soruda önce "neyi biliyorum?" diye sor; bildiğin şey paydaya gider.</p></div>
+
+<h2 class="s">3. "… olduğu bilindiğine göre" kalıbı ve iki özellikli tablo</h2>
+
+<p>Sınav koşulu farklı sözlerle verir; hepsini aynı biçimde tanıman gerekir. "… olduğu bilindiğine göre", "… olduğuna göre", "… geldiği görüldüğüne göre", "seçilen kişi … ise", "… olan öğrenciler arasından" ifadelerinin hepsi koşul bildirir. Koşul cümlesi ne söylüyorsa o, paydaya (yeni evrene) gider. Koşul yoksa ("rastgele seçilen bir öğrencinin hem kız hem gözlüklü olma olasılığı") payda bütün örnek uzaydır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Koşullu olasılık sorusunu kurmanın üç adımı.</strong></p>
+<p>1. <strong>Koşulu bul:</strong> cümlede "bilindiğine göre", "olduğuna göre" sözünün önündeki olay B'dir.</p>
+<p>2. <strong>Yeni evreni say:</strong> s(B) ya da P(B). Bütün örnek uzayı unut.</p>
+<p>3. <strong>Sorulan olayı yeni evrenin içinde say:</strong> s(A ∩ B) ya da P(A ∩ B), sonra böl.</p>
+<p><strong>Neden bu sıra?</strong> Payı paydadan önce sayarsan, A'nın B dışında kalan çıktılarını da saymaya çok yatkın olursun. Önce evreni sabitlemek, payın o evrenin içinden seçilmesini garanti eder.</p></div>
+
+<p>İki özellikli tablo (mat Parça 47'de olasılık okumak için kullandığın tablo) koşullu olasılığın en temiz görüldüğü yerdir, çünkü yeni evren tablonun bir satırı ya da bir sütunudur. Koşul bir satırsa yalnızca o satıra, bir sütunsa yalnızca o sütuna bakarsın.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>Gözlüklü</th><th>Gözlüksüz</th><th>Toplam</th></tr>
+<tr><td>Kız</td><td>6</td><td>14</td><td>20</td></tr>
+<tr><td>Erkek</td><td>9</td><td>11</td><td>20</td></tr>
+<tr><td>Toplam</td><td>15</td><td>25</td><td>40</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Tablodaki 40 kişilik sınıftan rastgele bir öğrenci seçiliyor. (a) Seçilen öğrencinin gözlüklü olduğu bilindiğine göre kız olma olasılığı kaçtır? (b) Seçilen öğrencinin kız olduğu bilindiğine göre gözlüklü olma olasılığı kaçtır? (c) Seçilen öğrencinin hem kız hem gözlüklü olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> (a)'da koşul "gözlüklü": yeni evren gözlüklü sütunu.</p>
+<span class="mat">s(gözlüklü) = 6 + 9 = 15 <span class="g">(sütun toplamı)</span></span>
+<span class="mat">s(kız ∩ gözlüklü) = 6 <span class="g">(sütunun kız satırındaki hücre)</span></span>
+<span class="mat">P(kız | gözlüklü) = <span class="kes"><span>6</span><span>15</span></span> = <span class="kes"><span>2</span><span>5</span></span> <span class="g">(3 ile sadeleşti)</span></span>
+<p><strong>Adım 2.</strong> (b)'de koşul "kız": yeni evren kız satırı.</p>
+<span class="mat">s(kız) = 6 + 14 = 20 <span class="g">(satır toplamı)</span></span>
+<span class="mat">P(gözlüklü | kız) = <span class="kes"><span>6</span><span>20</span></span> = <span class="kes"><span>3</span><span>10</span></span> <span class="g">(2 ile sadeleşti)</span></span>
+<p><strong>Adım 3.</strong> (c)'de koşul yok: payda bütün sınıf.</p>
+<span class="mat">P(kız ∩ gözlüklü) = <span class="kes"><span>6</span><span>40</span></span> = <span class="kes"><span>3</span><span>20</span></span> <span class="g">(koşulsuz olasılık)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Genel tanımla (a): P(kız ∩ gözlüklü)/P(gözlüklü) = (6/40)/(15/40) = 6/15 = 2/5. Uyuşuyor.</p>
+<p><strong>Sonuç:</strong> (a) 2/5, (b) 3/10, (c) 3/20. Üç soruda da pay aynı hücredir (6); değişen yalnızca paydadır. Sınavda bu üç sayı genellikle seçeneklerde yan yana durur; hangisinin istendiğini koşul cümlesi söyler.</p></div>
+
+<h2 class="s">4. Zar, kart, torba ve aile soruları</h2>
+
+<h3>Kart</h3>
+<p>52'lik destede dört renk (kupa, karo, maça, sinek) ve her renkte 13 kart vardır; her renkte üç resimli kart (vale, kız, papaz) bulunur, yani destede 12 resimli kart vardır. "Çekilen kartın resimli olduğu bilindiğine göre kupa olma olasılığı" sorusunda yeni evren 12 resimli karttır; bunların 3'ü kupadır. Cevap 3/12 = 1/4. Koşulsuz P(kupa) da 13/52 = 1/4'tür. Bu eşitlik rastlantı değil; 6. bölümde göreceğin "bağımsızlık" tam olarak budur.</p>
+
+<h3>Aile: iki çocuk</h3>
+<p>Parçanın sorusuna dönelim. İki çocuklu bir ailede her çocuğun kız (K) ya da erkek (E) olma olasılığı eşit kabul edilir ve çocuklar doğum sırasıyla yazılır (büyük, küçük). Örnek uzay dört eş olasılıklı çıktıdır:</p>
+<span class="mat">E = {KK, KE, EK, EE} <span class="g">(ilk harf büyük çocuk)</span></span>
+<p>"En az biri kız" bilgisi yalnızca EE'yi eler: yeni evren {KK, KE, EK}, üç çıktı. Bunlardan biri KK'dir: olasılık 1/3. "Büyük çocuk kız" bilgisi ise hem EK'yi hem EE'yi eler: yeni evren {KK, KE}, iki çıktı; olasılık 1/2. İki bilgi arasındaki fark şudur: "en az biri kız" hangi çocuğun kız olduğunu söylemez, bu yüzden KE ve EK ikisi birden evrende kalır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Öbür çocuk ya kız ya erkek, o hâlde ½" demek.</strong> Bu akıl yürütme, "öbür çocuk" diye belirli bir çocuk olduğunu varsayar. "En az biri kız" bilgisinde hangi çocuğun kastedildiği belli değildir. Doğru yol her zaman aynıdır: örnek uzayı sıralı olarak yaz, bilgiye uymayanları ele, kalanları say.</p>
+<p><strong>Kız sayısına göre üç durum yazmak.</strong> "0 kız, 1 kız, 2 kız" diye üç durum yazıp her birine 1/3 vermek yanlıştır; bu üç durum eş olasılıklı değildir ("1 kız" iki çıktıdan, KE ve EK'den oluşur). Mat Parça 46'daki "eş olasılıklı olmayan çıktıları eş saymak" hatasının bu konudaki biçimidir.</p></div>
+
+<h3>Torba</h3>
+<p>Torba sorularında koşul çoğunlukla çekilen topların bir özelliğidir ("aynı renkte oldukları görüldü", "en az biri kırmızı"). Bu durumda yeni evreni kombinasyonla (mat Parça 45, 47) sayarsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Bir torbada 5 kırmızı ve 3 mavi top vardır. Torbadan aynı anda 2 top çekiliyor. Çekilen topların aynı renkte olduğu bilindiğine göre ikisinin de kırmızı olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Koşul: iki top aynı renk. Bu, "ikisi kırmızı" ile "ikisi mavi" durumlarının birleşimidir; ikisi ayrıktır.</p>
+<span class="mat">s(ikisi kırmızı) = C(5, 2) = 10 <span class="g">(5 kırmızıdan 2 seçim)</span></span>
+<span class="mat">s(ikisi mavi) = C(3, 2) = 3 <span class="g">(3 maviden 2 seçim)</span></span>
+<span class="mat">s(aynı renk) = 10 + 3 = 13 <span class="g">(ayrık durumlar toplanır)</span></span>
+<p><strong>Adım 2.</strong> Sorulan olay (ikisi kırmızı) zaten koşulun içinde: A ∩ B = A.</p>
+<span class="mat">s(A ∩ B) = 10 <span class="g">(ikisi kırmızıysa aynı renktedir)</span></span>
+<p><strong>Adım 3.</strong> Böl.</p>
+<span class="mat">P(ikisi kırmızı | aynı renk) = <span class="kes"><span>10</span><span>13</span></span> <span class="g">(s(A ∩ B)/s(B))</span></span>
+<p><strong>Sonuç:</strong> 10/13. Paydada bütün seçimlerin sayısı C(8, 2) = 28 kullanılsaydı koşulsuz olasılık 10/28 = 5/14 bulunurdu; koşulu yok saymak, bu soru tipindeki en sık hatadır.</p></div>
+
+<h2 class="s">5. Çarpım kuralı ve ağaç şeması</h2>
+
+<p>Koşullu olasılığın tanımını iki yanı P(B) ile çarparak yeniden yazarsan, kesişimin olasılığını veren bir kural elde edersin. Bu kural, mat Parça 47'de ağaç şemasında "dallar boyunca çarp" diye kullandığın işlemin gerekçesidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çarpım kuralı.</strong></p>
+<span class="mat">P(A ∩ B) = P(B) · P(A | B) = P(A) · P(B | A) <span class="g">(tanımın iki yanı paydayla çarpıldı)</span></span>
+<p><strong>Neden?</strong> A ile B'nin birlikte gerçekleşmesi için önce birinin (örneğin A'nın) gerçekleşmesi, sonra A gerçekleşmişken öbürünün de gerçekleşmesi gerekir. Birinci adımın olasılığı P(A), ikinci adımın olasılığı (A bilinirken) P(B | A)'dır. Ağaç şemasında ikinci kattaki dallara yazdığın sayılar aslında hep koşullu olasılıklardı: "ilk top kırmızıyken ikincinin kırmızı olması" gibi. Dallar boyunca çarpmak, bu kuralı uygulamaktır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 5 kırmızı ve 3 mavi top bulunan torbadan geri koymadan art arda iki top çekiliyor. İkisinin de kırmızı olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Olayları adlandır: K<sub>1</sub> = birinci top kırmızı, K<sub>2</sub> = ikinci top kırmızı.</p>
+<span class="mat">P(K<sub>1</sub>) = <span class="kes"><span>5</span><span>8</span></span> <span class="g">(8 topun 5'i kırmızı)</span></span>
+<p><strong>Adım 2.</strong> Birinci kırmızı çekildiyse torbada 4 kırmızı, 3 mavi kalır.</p>
+<span class="mat">P(K<sub>2</sub> | K<sub>1</sub>) = <span class="kes"><span>4</span><span>7</span></span> <span class="g">(koşullu: yeni torba 7 top)</span></span>
+<p><strong>Adım 3.</strong> Çarpım kuralı.</p>
+<span class="mat">P(K<sub>1</sub> ∩ K<sub>2</sub>) = <span class="kes"><span>5</span><span>8</span></span> · <span class="kes"><span>4</span><span>7</span></span> = <span class="kes"><span>20</span><span>56</span></span> = <span class="kes"><span>5</span><span>14</span></span> <span class="g">(P(K<sub>1</sub>) · P(K<sub>2</sub> | K<sub>1</sub>))</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Aynı anda çekim ile eşdeğer olduğu için (mat Parça 47) kombinasyonla say: C(5, 2)/C(8, 2) = 10/28 = 5/14. Uyuşuyor.</p>
+<p><strong>Sonuç:</strong> 5/14. Örnek 3'teki 10/13 ile karşılaştır: aynı torba, aynı "ikisi kırmızı" olayı; ama orada "aynı renk" bilgisi verildiği için payda küçüldü ve olasılık büyüdü.</p></div>
+
+<p>Burada bir ayrıntıya dikkat et. Geri koymadan çekimde birinci çekimin sonucu ikincinin olasılığını değiştirdi: P(K<sub>2</sub> | K<sub>1</sub>) = 4/7, oysa birincinin mavi olduğu bilinseydi P(K<sub>2</sub> | M<sub>1</sub>) = 5/7 olurdu. Bir olayın gerçekleşmesi öbürünün olasılığını değiştiriyorsa bu iki olaya <strong>bağımlı</strong> olaylar denir. Şimdi bunun tersine, değiştirmeyen olaylara bakalım.</p>
+
+<h2 class="s">6. Bağımsız ve bağımlı olaylar</h2>
+
+<p>Mat Parça 47'de bağımsızlığı sezgiyle kullandın: "birinin sonucu öbürünü etkilemiyorsa çarparsın". Şimdi bu sezgiyi koşullu olasılık diliyle kesin bir tanıma çeviriyoruz. "Etkilememek" ne demek? B'nin gerçekleştiğini öğrenmek, A hakkındaki tahminini hiç değiştirmiyorsa A, B'den etkilenmiyordur: P(A | B) = P(A).</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Bağımsız olaylar.</strong> P(A) &gt; 0 ve P(B) &gt; 0 olmak üzere aşağıdaki üç eşitlik birbirine denktir; biri sağlanıyorsa öbürleri de sağlanır ve A ile B'ye <strong>bağımsız olaylar</strong> denir:</p>
+<span class="mat">P(A | B) = P(A) <span class="g">(B'yi bilmek A'nın olasılığını değiştirmez)</span></span>
+<span class="mat">P(B | A) = P(B) <span class="g">(A'yı bilmek B'nin olasılığını değiştirmez)</span></span>
+<span class="mat">P(A ∩ B) = P(A) · P(B) <span class="g">(sınamada kullanılan biçim)</span></span>
+<p>Bu eşitlik sağlanmıyorsa A ile B <strong>bağımlı</strong> olaylardır.</p>
+<p><strong>Neden denk?</strong> Çarpım kuralı P(A ∩ B) = P(B) · P(A | B) der. P(A | B) yerine P(A) yazarsan P(A ∩ B) = P(A) · P(B) çıkar. Tersine P(A ∩ B) = P(A) · P(B) ise iki yanı P(B)'ye bölünce P(A | B) = P(A) bulunur. Üçüncü biçim simetrik olduğu için A ile B'nin yerini değiştirmek bir şey bozmaz; ikinci eşitlik de buradan gelir.</p></div>
+
+<p>Sınavda bağımsızlığı sınamak için hemen her zaman üçüncü biçimi kullanırsın: P(A), P(B) ve P(A ∩ B)'yi ayrı ayrı hesapla, çarpımı kesişimle karşılaştır. Bağımsızlığın her zaman "iki ayrı deney" gerektirmediğini göstermek için tek bir zarla deneyelim.</p>
+
+<p>Bir zar atılıyor. A = çift gelir = {2, 4, 6}, P(A) = 1/2. İki farklı B olayı alalım.</p>
+<span class="mat">B = {1, 2}: P(B) = <span class="kes"><span>1</span><span>3</span></span>, A ∩ B = {2}, P(A ∩ B) = <span class="kes"><span>1</span><span>6</span></span> <span class="g">(sayarak)</span></span>
+<span class="mat">P(A) · P(B) = <span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>3</span></span> = <span class="kes"><span>1</span><span>6</span></span> = P(A ∩ B) <span class="g">(eşit: A ile B bağımsız)</span></span>
+<span class="mat">C = {1, 2, 3}: P(C) = <span class="kes"><span>1</span><span>2</span></span>, A ∩ C = {2}, P(A ∩ C) = <span class="kes"><span>1</span><span>6</span></span> <span class="g">(sayarak)</span></span>
+<span class="mat">P(A) · P(C) = <span class="kes"><span>1</span><span>4</span></span> ≠ <span class="kes"><span>1</span><span>6</span></span> <span class="g">(eşit değil: A ile C bağımlı)</span></span>
+
+<p>Anlamı: sonucun 1 ya da 2 olduğunu öğrenirsen, çift olma olasılığı hâlâ 1/2'dir (iki adaydan biri çift). Ama 1, 2 ya da 3 olduğunu öğrenirsen çift olma olasılığı 1/3'e düşer (üç adaydan yalnızca biri çift). Bağımsızlık, olayların "fiziksel olarak ayrı" olmasıyla değil, <strong>sayıların bu eşitliği sağlamasıyla</strong> tanımlanır. Desteden kart çekmede "kupa gelir" ile "as gelir" olayları da bağımsızdır: P(kupa ∩ as) = 1/52 ve P(kupa) · P(as) = (13/52) · (4/52) = (1/4) · (1/13) = 1/52.</p>
+
+<p><strong>Bağımlı olayların tipik örneği geri koymadan çekimdir.</strong> 5. bölümde gördüğün gibi birinci topun rengi torbadaki dağılımı değiştirir. Geri koyarak çekimde ise torba her seferinde başa döner; iki çekim bağımsızdır. Bir sınavdaki iki farklı öğrencinin başarısı, iki ayrı makinenin arızası, iki atıcının isabeti gibi durumlarda bağımsızlık ya soruda açıkça söylenir ("birbirinden bağımsız") ya da kurgudan anlaşılır; anlaşılmıyorsa varsayma, tanımla sına.</p>
+
+<h3>A ile B bağımsızsa A′ ile B de bağımsızdır</h3>
+
+<p>Bu özellik sezgiyle beklenir: B'yi bilmek A'nın olasılığını değiştirmiyorsa, A'nın olmama olasılığını da değiştirmemelidir. İspatı da kısadır ve "en az biri", "hiçbiri" sorularında olmama olasılıklarını neden rahatça çarpabildiğini gösterir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>A ile B bağımsızsa A′ ile B, A ile B′ ve A′ ile B′ de bağımsızdır.</p>
+<span class="mat">P(A′ ∩ B) = P(B) − P(A ∩ B) <span class="g">(B'nin içi, A'nın içi ve dışı diye ikiye bölünür)</span></span>
+<span class="mat">= P(B) − P(A) · P(B) <span class="g">(A ile B bağımsız)</span></span>
+<span class="mat">= P(B) · (1 − P(A)) <span class="g">(P(B) ortak çarpan)</span></span>
+<span class="mat">= P(B) · P(A′) <span class="g">(tümleyen kuralı)</span></span>
+<p><strong>Neden işe yarar?</strong> "Hiçbiri gerçekleşmez" olayı A′ ∩ B′'dür. Bağımsızlık tümleyenlere geçtiği için P(A′ ∩ B′) = P(A′) · P(B′) yazabilirsin; mat Parça 47'deki "en az biri = 1 − hiçbiri" kuralının dayanağı budur.</p></div>
+
+<h2 class="s">7. Bağımsız mı, ayrık mı?</h2>
+
+<p>Bu iki kavram sınavda en çok karıştırılan çifttir, çünkü ikisinin de günlük dildeki karşılığı "birbiriyle ilgisi yok" gibi duyulur. Matematikte ise neredeyse zıt şeyler söylerler. <strong>Ayrık</strong> olaylar birlikte gerçekleşemez: A ∩ B = ∅. <strong>Bağımsız</strong> olaylar birlikte gerçekleşebilir ve birinin gerçekleşmesi öbürünün olasılığını değiştirmez.</p>
+
+<p>Olasılıkları sıfırdan büyük iki ayrık olayı düşün: A gerçekleştiyse B kesinlikle gerçekleşmemiştir. Yani A'yı bilmek B'nin olasılığını P(B)'den 0'a düşürür. Bu, bağımsızlığın tam tersi, olabilecek en güçlü bağımlılıktır. Sayılarla: P(A ∩ B) = 0, ama P(A) · P(B) &gt; 0; eşitlik sağlanmaz.</p>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="Solda ayrık olaylar: örnek uzayın içinde birbirine değmeyen A ve B dikdörtgenleri. Sağda bağımsız olaylar: örnek uzay dikey çizgiyle A ve A tümleyen, yatay çizgiyle B ve B tümleyen diye bölünmüş; B, A'nın içinde de dışında da yarı payı kaplıyor.">
+  <text class="sv-b" x="100" y="20" text-anchor="middle">Ayrık</text>
+  <rect class="sv-k" x="10" y="30" width="180" height="150" rx="8" />
+  <rect class="sv-l" x="25" y="60" width="65" height="90" rx="6" />
+  <rect class="sv-a" x="110" y="60" width="65" height="90" rx="6" />
+  <text class="sv-b" x="57" y="110" text-anchor="middle">A</text>
+  <text class="sv-b" x="142" y="110" text-anchor="middle">B</text>
+  <text class="sv-s" x="100" y="200" text-anchor="middle">A olduysa B olmamıştır</text>
+  <text class="sv-s" x="100" y="218" text-anchor="middle">P(B | A) = 0 ≠ P(B)</text>
+  <text class="sv-s" x="100" y="236" text-anchor="middle">olaylar bağımlıdır</text>
+  <text class="sv-b" x="300" y="20" text-anchor="middle">Bağımsız</text>
+  <rect class="sv-k" x="210" y="30" width="180" height="150" />
+  <rect class="sv-l" x="210" y="30" width="72" height="75" />
+  <rect class="sv-m" x="210" y="105" width="72" height="75" />
+  <rect class="sv-a" x="282" y="105" width="108" height="75" />
+  <text class="sv-t" x="246" y="72" text-anchor="middle">A ∩ B′</text>
+  <text class="sv-t" x="246" y="147" text-anchor="middle">A ∩ B</text>
+  <text class="sv-t" x="336" y="147" text-anchor="middle">A′ ∩ B</text>
+  <text class="sv-t" x="336" y="72" text-anchor="middle">A′ ∩ B′</text>
+  <text class="sv-s" x="300" y="200" text-anchor="middle">B, A'nın içinde de</text>
+  <text class="sv-s" x="300" y="218" text-anchor="middle">dışında da yarı yarıya</text>
+  <text class="sv-s" x="300" y="236" text-anchor="middle">P(B | A) = P(B) = 1/2</text>
+</svg>
+<figcaption>Solda A ile B'nin ortak noktası yok; A'yı bilmek B'yi tümüyle dışarıda bırakır. Sağda örnek uzay, genişliğin %40'ı A olacak, yüksekliğin yarısı B olacak biçimde bölünmüş. A'nın içine bakınca da (sol şerit) dışına bakınca da (sağ şerit) B aynı payı, yarıyı kaplıyor. Bağımsızlık budur: A'yı bilmek B'nin payını değiştirmez. Kesişim de dolu: P(A ∩ B) = 0,4 · 0,5 = 0,2.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th></th><th>Ayrık olaylar</th><th>Bağımsız olaylar</th></tr>
+<tr><td>Anlamı</td><td>Birlikte gerçekleşemezler</td><td>Birinin gerçekleşmesi öbürünün olasılığını değiştirmez</td></tr>
+<tr><td>Kesişim</td><td>A ∩ B = ∅, P(A ∩ B) = 0</td><td>P(A ∩ B) = P(A) · P(B)</td></tr>
+<tr><td>Birleşim</td><td>P(A ∪ B) = P(A) + P(B)</td><td>P(A ∪ B) = P(A) + P(B) − P(A) · P(B)</td></tr>
+<tr><td>Koşullu</td><td>P(A | B) = 0</td><td>P(A | B) = P(A)</td></tr>
+<tr><td>Örnek (tek zar)</td><td>"1 gelir" ile "çift gelir"</td><td>"çift gelir" ile "1 ya da 2 gelir"</td></tr>
+<tr><td>Hangi işlem?</td><td>"veya" sorusunda doğrudan toplanır</td><td>"ve" sorusunda doğrudan çarpılır</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Ayrık olaylar bağımsızdır" sanmak.</strong> Olasılıkları sıfırdan büyükse ayrık iki olay hiçbir zaman bağımsız olamaz; ayrıklık en güçlü bağımlılıktır. Bir soruda "A ile B ayrık ve P(A) = 0,3, P(B) = 0,4" deniyorsa P(A ∩ B) = 0'dır, 0,12 değil. "A ile B bağımsız ve P(A) = 0,3, P(B) = 0,4" deniyorsa P(A ∩ B) = 0,12'dir, 0 değil. İki kelimeyi gördüğünde hangi işlemin geldiğini yukarıdaki tablonun son satırından hatırla.</p></div>
+
+<h2 class="s">8. Bağımsız olaylarda "ikisi de", "en az biri", "yalnız biri"</h2>
+
+<p>Bağımsız olaylarla kurulan sorular hep aynı dört sonuç üstünde döner: ikisi de olur, yalnız A olur, yalnız B olur, hiçbiri olmaz. Bu dört sonuç ayrıktır ve olasılıklarının toplamı 1'dir (yukarıdaki şekildeki dört dikdörtgen). "Ve" ile bağlanan bileşik olaylar çarpılır, ayrık parçalara bölünen "veya" olayları toplanır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>A ile B bağımsız, P(A) = p, P(B) = q olsun.</p>
+<span class="mat">P(ikisi de) = p · q <span class="g">(bağımsızlık tanımı)</span></span>
+<span class="mat">P(hiçbiri) = (1 − p)(1 − q) <span class="g">(tümleyenler de bağımsız)</span></span>
+<span class="mat">P(en az biri) = 1 − (1 − p)(1 − q) <span class="g">(en az birinin tümleyeni hiçbiri)</span></span>
+<span class="mat">P(yalnız biri) = p(1 − q) + (1 − p)q <span class="g">(iki ayrık durumun toplamı)</span></span>
+<span class="mat">P(A ∪ B) = p + q − pq <span class="g">(birleşim kuralı, P(A ∩ B) = pq)</span></span>
+<p><strong>Neden?</strong> "Yalnız A" demek "A olur ve B olmaz" demektir: A ile B′ bağımsız olduğu için p(1 − q). "En az biri" ile "A ∪ B" aynı olaydır; iki formülün aynı sonucu verdiğini açarak görebilirsin: 1 − (1 − p − q + pq) = p + q − pq. Hangisi daha kısaysa onu kullan; üç ve daha çok olayda tümleyenli biçim çok daha kısadır.</p></div>
+
+<p>Küçük bir sayısal deneme: p = 0,6 ve q = 0,5 ise P(A ∪ B) = 0,6 + 0,5 − 0,3 = 0,8; tümleyenle 1 − 0,4 · 0,5 = 1 − 0,2 = 0,8. İki yol aynı sonucu verdi; birini öbürünün kontrolü olarak kullan.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Bir atölyedeki üç makinenin bir gün içinde arıza yapma olasılıkları sırasıyla 0,1, 0,2 ve 0,3'tür. Makineler birbirinden bağımsız çalışmaktadır. Buna göre bir gün içinde (a) hiçbir makinenin arıza yapmama, (b) en az bir makinenin arıza yapma, (c) yalnızca bir makinenin arıza yapma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Arıza yapmama olasılıklarını yaz.</p>
+<span class="mat">1 − 0,1 = 0,9; 1 − 0,2 = 0,8; 1 − 0,3 = 0,7 <span class="g">(tümleyen kuralı)</span></span>
+<p><strong>Adım 2.</strong> (a) Hiçbiri arıza yapmaz: üçü de sağlam kalır.</p>
+<span class="mat">P(hiçbiri) = 0,9 · 0,8 · 0,7 = 0,504 <span class="g">(bağımsız tümleyenler çarpılır)</span></span>
+<p><strong>Adım 3.</strong> (b) En az biri arıza yapar: "hiçbiri"nin tümleyeni.</p>
+<span class="mat">P(en az biri) = 1 − 0,504 = 0,496 <span class="g">(tümleyen)</span></span>
+<p><strong>Adım 4.</strong> (c) Yalnızca biri: hangi makinenin bozulduğuna göre üç ayrık durum.</p>
+<span class="mat">yalnız 1. makine: 0,1 · 0,8 · 0,7 = 0,056 <span class="g">(1. bozuk, 2. ve 3. sağlam)</span></span>
+<span class="mat">yalnız 2. makine: 0,9 · 0,2 · 0,7 = 0,126 <span class="g">(2. bozuk, öbürleri sağlam)</span></span>
+<span class="mat">yalnız 3. makine: 0,9 · 0,8 · 0,3 = 0,216 <span class="g">(3. bozuk, öbürleri sağlam)</span></span>
+<span class="mat">P(yalnız biri) = 0,056 + 0,126 + 0,216 = 0,398 <span class="g">(ayrık durumlar toplanır)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Dört grubun toplamı 1 olmalı. Üçü birden: 0,1 · 0,2 · 0,3 = 0,006. Tam ikisi: 1 − 0,504 − 0,398 − 0,006 = 0,092; bunu doğrudan da hesapla: 0,1 · 0,2 · 0,7 + 0,1 · 0,8 · 0,3 + 0,9 · 0,2 · 0,3 = 0,014 + 0,024 + 0,054 = 0,092. Tutuyor.</p>
+<p><strong>Sonuç:</strong> (a) 0,504, (b) 0,496, (c) 0,398. (b)'yi 0,1 + 0,2 + 0,3 = 0,6 diye toplamak yanlıştır: olaylar ayrık değildir, aynı gün iki makine birden bozulabilir.</p></div>
+
+<h2 class="s">9. İki aşamalı deneyler: önce torba, sonra top</h2>
+
+<p>Bazı deneylerde ikinci aşamanın koşulları birinci aşamanın sonucuna bağlıdır: önce bir zar atılır ya da para atılır, çıkan sonuca göre bir torba seçilir, sonra o torbadan top çekilir. "Çekilen topun kırmızı olma olasılığı kaçtır?" sorusunun cevabı tek bir torbaya bakarak bulunamaz, çünkü kırmızı top iki farklı yoldan gelebilir. Ağaç şeması bu yolları ayrı ayrı gösterir.</p>
+
+<figure>
+<svg viewBox="0 0 420 385" role="img" aria-label="İki aşamalı deney için ağaç şeması. Zardan Torba I'e üçte bir, Torba II'ye üçte iki olasılıkla dal. Torba I'den kırmızı beşte üç, beyaz beşte iki; Torba II'den kırmızı dörtte bir, beyaz dörtte üç. Uçlarda çarpımlar: beşte bir, on beşte iki, altıda bir, ikide bir. Kırmızı uçların toplamı otuzda on bir, kırmızı geldiğinde Torba I'den gelmiş olma payı on birde altı.">
+  <rect class="sv-k" x="8" y="172" width="56" height="32" rx="8" />
+  <text class="sv-b" x="36" y="193" text-anchor="middle">zar</text>
+  <line class="sv-c" x1="64" y1="188" x2="110" y2="78" />
+  <line class="sv-c" x1="64" y1="188" x2="110" y2="282" />
+  <text class="sv-t" x="80" y="122" text-anchor="end">1/3</text>
+  <text class="sv-t" x="80" y="262" text-anchor="end">2/3</text>
+  <rect class="sv-l" x="110" y="62" width="72" height="32" rx="8" />
+  <text class="sv-b" x="146" y="83" text-anchor="middle">Torba I</text>
+  <rect class="sv-l" x="110" y="266" width="72" height="32" rx="8" />
+  <text class="sv-b" x="146" y="287" text-anchor="middle">Torba II</text>
+  <text class="sv-s" x="146" y="110" text-anchor="middle">3K, 2B</text>
+  <text class="sv-s" x="146" y="314" text-anchor="middle">1K, 3B</text>
+  <line class="sv-c" x1="182" y1="78" x2="240" y2="37" />
+  <line class="sv-c" x1="182" y1="78" x2="240" y2="115" />
+  <line class="sv-c" x1="182" y1="282" x2="240" y2="241" />
+  <line class="sv-c" x1="182" y1="282" x2="240" y2="319" />
+  <text class="sv-t" x="207" y="50" text-anchor="end">3/5</text>
+  <text class="sv-t" x="207" y="116" text-anchor="end">2/5</text>
+  <text class="sv-t" x="207" y="254" text-anchor="end">1/4</text>
+  <text class="sv-t" x="207" y="320" text-anchor="end">3/4</text>
+  <rect class="sv-m" x="240" y="22" width="40" height="30" rx="6" />
+  <text class="sv-b" x="260" y="42" text-anchor="middle">K</text>
+  <rect class="sv-k" x="240" y="100" width="40" height="30" rx="6" />
+  <text class="sv-b" x="260" y="120" text-anchor="middle">B</text>
+  <rect class="sv-m" x="240" y="226" width="40" height="30" rx="6" />
+  <text class="sv-b" x="260" y="246" text-anchor="middle">K</text>
+  <rect class="sv-k" x="240" y="304" width="40" height="30" rx="6" />
+  <text class="sv-b" x="260" y="324" text-anchor="middle">B</text>
+  <text class="sv-t" x="290" y="42">1/3 · 3/5 = 1/5</text>
+  <text class="sv-t" x="290" y="120">1/3 · 2/5 = 2/15</text>
+  <text class="sv-t" x="290" y="246">2/3 · 1/4 = 1/6</text>
+  <text class="sv-t" x="290" y="324">2/3 · 3/4 = 1/2</text>
+  <text class="sv-b" x="210" y="358" text-anchor="middle">P(K) = 1/5 + 1/6 = 11/30</text>
+  <text class="sv-t" x="210" y="378" text-anchor="middle">K geldiyse I'den gelme payı: (1/5) ÷ (11/30) = 6/11</text>
+</svg>
+<figcaption>Zarda 1 ya da 2 gelirse Torba I, öbür durumlarda Torba II seçiliyor. Her uçtaki sayı, o yolun baştan sona olasılığıdır (dallar boyunca çarpım). Dört uç toplamı 6/30 + 4/30 + 5/30 + 15/30 = 1. Kırmızıyla biten iki yol yeşil.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Toplam olasılık.</strong> Birinci aşamanın sonuçları T<sub>1</sub>, T<sub>2</sub>, … ise (ayrık ve hepsi birlikte bütün durumu kapsayan) ikinci aşamadaki bir K olayının olasılığı:</p>
+<span class="mat">P(K) = P(T<sub>1</sub>) · P(K | T<sub>1</sub>) + P(T<sub>2</sub>) · P(K | T<sub>2</sub>) + … <span class="g">(K ile biten bütün yollar)</span></span>
+<p><strong>Neden?</strong> K, "T<sub>1</sub> yolundan gelen K" ve "T<sub>2</sub> yolundan gelen K" diye ayrık parçalara bölünür; ayrık parçaların olasılıkları toplanır. Her parçanın olasılığı da çarpım kuralıyla P(T<sub>i</sub>) · P(K | T<sub>i</sub>)'dir. Ağaçta söylediğimiz "dallar boyunca çarp, dallar arasında topla" cümlesinin tam karşılığı budur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Torba I'de 3 kırmızı ve 2 beyaz, Torba II'de 1 kırmızı ve 3 beyaz top vardır. Bir zar atılıyor; zarda 1 ya da 2 gelirse Torba I'den, öbür durumlarda Torba II'den bir top çekiliyor. Çekilen topun kırmızı olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Birinci aşama: torba seçimi.</p>
+<span class="mat">P(I) = <span class="kes"><span>2</span><span>6</span></span> = <span class="kes"><span>1</span><span>3</span></span>, P(II) = <span class="kes"><span>4</span><span>6</span></span> = <span class="kes"><span>2</span><span>3</span></span> <span class="g">(zarın {1, 2} ve {3, 4, 5, 6} çıktıları)</span></span>
+<p><strong>Adım 2.</strong> İkinci aşama: seçilen torbadan kırmızı çekme (koşullu olasılıklar).</p>
+<span class="mat">P(K | I) = <span class="kes"><span>3</span><span>5</span></span>, P(K | II) = <span class="kes"><span>1</span><span>4</span></span> <span class="g">(torbaların içeriği)</span></span>
+<p><strong>Adım 3.</strong> İki yolun olasılıkları.</p>
+<span class="mat">P(I ∩ K) = <span class="kes"><span>1</span><span>3</span></span> · <span class="kes"><span>3</span><span>5</span></span> = <span class="kes"><span>1</span><span>5</span></span> <span class="g">(çarpım kuralı)</span></span>
+<span class="mat">P(II ∩ K) = <span class="kes"><span>2</span><span>3</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>1</span><span>6</span></span> <span class="g">(çarpım kuralı)</span></span>
+<p><strong>Adım 4.</strong> Topla.</p>
+<span class="mat">P(K) = <span class="kes"><span>1</span><span>5</span></span> + <span class="kes"><span>1</span><span>6</span></span> = <span class="kes"><span>6</span><span>30</span></span> + <span class="kes"><span>5</span><span>30</span></span> = <span class="kes"><span>11</span><span>30</span></span> <span class="g">(toplam olasılık)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Beyaz olasılığı: 1/3 · 2/5 + 2/3 · 3/4 = 2/15 + 1/2 = 4/30 + 15/30 = 19/30. 11/30 + 19/30 = 1. Ayrıca sonuç iki torbanın kırmızı oranları (3/5 = 0,6 ve 1/4 = 0,25) arasında olmalı ve seçilme olasılığı daha büyük olan Torba II'ye daha yakın düşmeli: 11/30 ≈ 0,37. Akla yatkın.</p>
+<p><strong>Sonuç:</strong> 11/30.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>İki torbanın oranlarının düz ortalamasını almak.</strong> (3/5 + 1/4)/2 = 17/40 hesabı ancak torbalar eşit olasılıkla seçilirse doğrudur. Burada Torba II iki kat sık seçildiği için onun oranı daha çok ağırlık taşır. Her yolu kendi olasılığıyla çarpmadan toplamak, bu soru tipinin en sık hatasıdır.</p>
+<p><strong>Torbaları birleştirmek.</strong> İki torbanın toplarını tek torbada düşünüp 4 kırmızı / 9 top = 4/9 demek de yanlıştır; top, toplam dokuz topun arasından eşit olasılıkla seçilmiyor: Torba I'deki her topun seçilme olasılığı (1/3) · (1/5) = 1/15, Torba II'dekilerin (2/3) · (1/4) = 1/6.</p></div>
+
+<h2 class="s">10. Sonuç biliniyor, neden soruluyor</h2>
+
+<p>Şimdi Örnek 6'yı tersinden soralım: "Çekilen topun kırmızı olduğu görüldüğüne göre bu topun Torba I'den çekilmiş olma olasılığı kaçtır?" Burada bilinen şey ikinci aşamanın sonucu (K), sorulan şey birinci aşamanın sonucu (I). Zaman sırası ters dönmüş gibi görünür ama hesap tamamen bildiğin tanımdır: koşul K olduğu için yeni evren "K ile biten yollar"dır.</p>
+
+<span class="mat">P(I | K) = <span class="kes"><span>P(I ∩ K)</span><span>P(K)</span></span> <span class="g">(koşullu olasılığın tanımı)</span></span>
+<span class="mat">= <span class="kes"><span>1/5</span><span>11/30</span></span> = <span class="kes"><span>1</span><span>5</span></span> · <span class="kes"><span>30</span><span>11</span></span> = <span class="kes"><span>6</span><span>11</span></span> <span class="g">(Örnek 6'nın ara sonuçları)</span></span>
+
+<p>Ağaçta bu, şu anlama gelir: kırmızıyla biten iki yol var; onların toplam ağırlığı 11/30. Bu ağırlığın ne kadarı Torba I yolundan geliyor? 1/5 = 6/30, yani 11 payın 6'sı. Cevap 6/11. Önceden Torba I'in seçilme olasılığı 1/3 ≈ 0,33 idi; kırmızı topu görünce 6/11 ≈ 0,55'e çıktı. Mantıklı: Torba I kırmızı bakımından daha zengin olduğu için, kırmızı top görmek "muhtemelen Torba I" yönünde bir ipucudur.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Sonuçtan nedene: oran yöntemi.</strong> Bir ağaçta sonucun (K) bilindiği ve nedenin (hangi torba, hangi makine, hangi yol) sorulduğu durumda:</p>
+<p>1. Ağacı çiz, her yolun baştan sona olasılığını (çarpımını) uca yaz.</p>
+<p>2. Bilinen sonuçla biten bütün yolları seç ve olasılıklarını topla: bu, payda.</p>
+<p>3. Bu yollardan, sorulan nedenden geçen yolun olasılığını al: bu, pay.</p>
+<p>4. Payı paydaya böl.</p>
+<p><strong>Neden?</strong> Koşul "sonuç K" olduğu için yeni evren K ile biten yollardır (2. bölümdeki daralma). Sorulan neden, bu yeni evrenin bir parçasıdır. Yöntem, koşullu olasılık tanımının ağaç üzerinde okunmasından başka bir şey değildir; ayrıca bir formül ezberlemen gerekmez.</p></div>
+
+<p>Sayılar kesir ya da yüzde olarak karışık geldiğinde bir hızlı yol çok işe yarar: <strong>somut bir kalabalık hayal et.</strong> Olasılıkları, örneğin 1000 kişilik ya da 1000 ürünlük bir grupta kaç tanesinin o yoldan geçtiğine çevir. Kesir yerine tam sayılarla çalışırsın ve oran doğrudan okunur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Bir fabrikadaki ürünlerin %60'ını A makinesi, %40'ını B makinesi üretmektedir. A makinesinin ürettiği ürünlerin %2'si, B makinesinin ürettiklerinin %5'i kusurludur. Rastgele seçilen bir ürünün kusurlu olduğu görüldüğüne göre bu ürünün A makinesinde üretilmiş olma olasılığı kaçtır?</p>
+<p><strong>Adım 1.</strong> Bilinen sonuç: kusurlu (K). Sorulan neden: A makinesi. Yolların olasılıklarını yaz.</p>
+<span class="mat">P(A ∩ K) = 0,6 · 0,02 = 0,012 <span class="g">(A'da üretilip kusurlu çıkma)</span></span>
+<span class="mat">P(B ∩ K) = 0,4 · 0,05 = 0,020 <span class="g">(B'de üretilip kusurlu çıkma)</span></span>
+<p><strong>Adım 2.</strong> Kusurlu ile biten yolları topla.</p>
+<span class="mat">P(K) = 0,012 + 0,020 = 0,032 <span class="g">(toplam olasılık)</span></span>
+<p><strong>Adım 3.</strong> Böl.</p>
+<span class="mat">P(A | K) = <span class="kes"><span>0,012</span><span>0,032</span></span> = <span class="kes"><span>12</span><span>32</span></span> = <span class="kes"><span>3</span><span>8</span></span> <span class="g">(oran yöntemi; 4 ile sadeleşti)</span></span>
+<p><strong>Adım 4 (kontrol yolu: 1000 ürün).</strong> 1000 ürünün 600'ü A'dan, 400'ü B'den gelir. A'nınkilerin %2'si: 12 kusurlu. B'ninkilerin %5'i: 20 kusurlu. Toplam 32 kusurlu ürünün 12'si A'dan: 12/32 = 3/8. Aynı sonuç, kesirsiz.</p>
+<p><strong>Sonuç:</strong> 3/8. Dikkat et: A makinesi üretimin çoğunu yaptığı hâlde kusurlu bir ürünün A'dan gelme olasılığı yarıdan azdır, çünkü B çok daha sık kusur üretiyor. Önceden bilinen %60, sonucu görünce 3/8 = %37,5'e düştü.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Yalnızca kusur oranlarını karşılaştırmak.</strong> "A'nın kusur oranı 2, B'ninki 5; o hâlde A'dan gelme olasılığı 2/7" demek, iki makinenin eşit miktarda ürettiğini varsaymaktır. Üretim payları farklıysa her kusur oranı kendi üretim payıyla çarpılmalıdır. Tersine, "A üretimin %60'ını yapıyor, o hâlde 0,6" demek de yanlıştır: bu, kusurlu olduğu bilgisini hiç kullanmamaktır. Doğru cevap ikisini birleştirir.</p></div>
+
+<h2 class="s">11. Deneysel olasılık ve teorik olasılık</h2>
+
+<p>Şimdiye kadar hesapladığın bütün olasılıklar <strong>teorik</strong> olasılıklardı: deneyi hiç yapmadan, örnek uzayın yapısından (zarın altı eş yüzü, torbadaki topların sayısı) yola çıkarak buldun. Gerçek hayatta ise çoğu zaman örnek uzayın yapısını bilmeyiz: bir raptiyenin sivri ucu yukarı mı düşer, bir basketbolcunun serbest atışı girer mi, bir ürün kusurlu mu çıkar? Bunlar için tek yol deneyi çok kez yapmak ve sonucu saymaktır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Deneysel olasılık (göreli frekans).</strong> Bir deney n kez yapıldığında A olayı k kez gözlenmişse A'nın deneysel olasılığı k/n'dir.</p>
+<span class="mat">deneysel P(A) = <span class="kes"><span>A'nın gözlendiği deneme sayısı</span><span>toplam deneme sayısı</span></span> <span class="g">(göreli frekans)</span></span>
+<p><strong>Teorik olasılık</strong>, deneye bakmadan, eş olasılıklı örnek uzayda s(A)/s(E) ile (ya da bilinen olasılık kurallarıyla) hesaplanan değerdir.</p>
+<p><strong>Neden iki ayrı kavram?</strong> Teorik olasılık bir modelin (zar hilesiz, para dengeli) sonucudur; deneysel olasılık gözlemin sonucudur. İkisi aynı şeyi ölçmeye çalışır ama aynı sayı çıkmak zorunda değildir: 6 kez atılan hilesiz bir zarda 6'nın hiç gelmemesi çok olağandır. Deneysel olasılık her yeni denemede değişebilir, teorik olasılık sabittir.</p></div>
+
+<p>Deneysel olasılık teorik olasılığa ne zaman yaklaşır? Deneme sayısı arttıkça. Az sayıda denemede şans büyük sapmalar yaratır; denemeler çoğaldıkça bu sapmalar birbirini götürür ve göreli frekans teorik değerin çevresinde dar bir bantta salınmaya başlar. Bu, deneyle sayılabilen bir gözlemdir; aşağıdaki şekil bilgisayarda yapılmış 1000 atışlık bir zar benzetiminden çizildi.</p>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Bir zarın 1000 kez atıldığı benzetimde 6 gelme oranının atış sayısına göre grafiği. İlk 10 atışta oran 0,4, 100 atışta 0,22, 500 atışta 0,154, 1000 atışta 0,161. Çizgi giderek altıda bir düzeyindeki yatay doğruya yaklaşıyor.">
+  <line class="sv-c" x1="50" y1="40" x2="50" y2="220" />
+  <line class="sv-c" x1="50" y1="220" x2="385" y2="220" />
+  <line class="sv-c" x1="46" y1="180" x2="50" y2="180" />
+  <line class="sv-c" x1="46" y1="140" x2="50" y2="140" />
+  <line class="sv-c" x1="46" y1="100" x2="50" y2="100" />
+  <line class="sv-c" x1="46" y1="60" x2="50" y2="60" />
+  <text class="sv-s" x="42" y="224" text-anchor="end">0</text>
+  <text class="sv-s" x="42" y="184" text-anchor="end">0,1</text>
+  <text class="sv-s" x="42" y="144" text-anchor="end">0,2</text>
+  <text class="sv-s" x="42" y="104" text-anchor="end">0,3</text>
+  <text class="sv-s" x="42" y="64" text-anchor="end">0,4</text>
+  <line class="sv-c" x1="132.5" y1="220" x2="132.5" y2="224" />
+  <line class="sv-c" x1="215" y1="220" x2="215" y2="224" />
+  <line class="sv-c" x1="297.5" y1="220" x2="297.5" y2="224" />
+  <line class="sv-c" x1="380" y1="220" x2="380" y2="224" />
+  <text class="sv-s" x="50" y="238" text-anchor="middle">0</text>
+  <text class="sv-s" x="132.5" y="238" text-anchor="middle">250</text>
+  <text class="sv-s" x="215" y="238" text-anchor="middle">500</text>
+  <text class="sv-s" x="297.5" y="238" text-anchor="middle">750</text>
+  <text class="sv-s" x="380" y="238" text-anchor="middle">1000</text>
+  <text class="sv-s" x="215" y="256" text-anchor="middle">atış sayısı</text>
+  <text class="sv-s" x="56" y="30">6 gelme oranı (deneysel olasılık)</text>
+  <line class="sv-c" x1="50" y1="153.3" x2="385" y2="153.3" />
+  <text class="sv-t" x="385" y="130" text-anchor="end">teorik: 1/6 ≈ 0,167</text>
+  <polyline class="sv-cl" points="53.3,60.0 56.6,80.0 59.9,113.3 63.2,130.0 66.5,116.0 69.8,106.7 73.1,122.9 76.4,135.0 79.7,131.1 83.0,132.0 86.3,129.1 89.6,120.0 92.9,121.5 96.2,122.9 99.5,124.0 102.8,127.5 106.1,130.6 109.4,135.6 112.7,133.7 116.0,136.0 119.3,138.1 122.6,140.0 125.9,143.5 129.2,146.7 132.5,149.6 135.8,152.3 139.1,151.9 142.4,151.4 145.7,153.8 149.0,156.0 152.3,155.5 155.6,152.5 158.9,154.5 162.2,156.5 165.5,158.3 168.8,158.9 172.1,160.5 175.4,157.9 178.7,157.4 182.0,157.0 185.3,157.6 188.6,157.1 191.9,156.7 195.2,155.5 198.5,155.1 201.8,156.5 205.1,156.2 208.4,156.7 211.7,157.1 215.0,158.4 218.3,156.5 221.6,156.9 224.9,155.8 228.2,156.3 231.5,156.7 234.8,155.0 238.1,156.1 241.4,156.6 244.7,156.3 248.0,156.0 251.3,156.4 254.6,156.1 257.9,156.5 261.2,157.5 264.5,158.5 267.8,158.2 271.1,158.5 274.4,158.8 277.7,158.6 281.0,158.9 284.3,158.6 287.6,158.3 290.9,157.5 294.2,157.8 297.5,157.6 300.8,157.4 304.1,157.1 307.4,156.9 310.7,155.7 314.0,155.0 317.3,155.3 320.6,155.1 323.9,154.9 327.2,155.2 330.5,155.5 333.8,155.3 337.1,155.2 340.4,155.5 343.7,155.7 347.0,155.6 350.3,156.3 353.6,156.1 356.9,155.9 360.2,155.3 363.5,155.2 366.8,155.4 370.1,155.7 373.4,155.1 376.7,155.8 380.0,155.6" />
+</svg>
+<figcaption>Her 10 atışta bir, o ana kadarki "6 sayısı / atış sayısı" oranı işaretlendi. İlk 10 atışta 4 kez 6 geldi (0,4); 100 atışta 22 (0,22); 500 atışta 77 (0,154); 1000 atışta 161 (0,161). Başta çizgi sert iniş çıkışlar yapıyor, sonra 1/6 doğrusunun çevresinde dar bir bantta kalıyor. Deney tekrar edilse çizgi başka bir yoldan gider ama aynı doğruya yaklaşır.</figcaption>
+</figure>
+
+<p>Şekilden iki ders çıkar. Birincisi, deneysel olasılık teorik olasılığa <strong>yaklaşır</strong> ama "1000 atışta tam 1000/6 kez gelir" demek yanlıştır; 1000/6 tam sayı bile değildir. İkincisi, az denemeyle yapılan çıkarım güvenilmezdir: 10 atışta 4 kez 6 gelmesi zarın hileli olduğunu göstermez.</p>
+
+<div class="tablo"><table>
+<tr><th>Gelen sayı</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>Toplam</th></tr>
+<tr><td>Kaç kez geldi</td><td>8</td><td>11</td><td>9</td><td>12</td><td>7</td><td>13</td><td>60</td></tr>
+<tr><td>Deneysel olasılık</td><td>8/60</td><td>11/60</td><td>9/60</td><td>12/60</td><td>7/60</td><td>13/60</td><td>1</td></tr>
+<tr><td>Teorik olasılık</td><td>1/6</td><td>1/6</td><td>1/6</td><td>1/6</td><td>1/6</td><td>1/6</td><td>1</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Bir zar 60 kez atılıyor ve sonuçlar yukarıdaki tabloda veriliyor. (a) Çift sayı gelmesinin deneysel olasılığı kaçtır? (b) Teorik olasılığıyla farkı kaçtır? (c) Zarın hileli olduğu söylenebilir mi? (d) Aynı zar 600 kez atılsa 6 yaklaşık kaç kez gelmesi beklenir?</p>
+<p><strong>Adım 1.</strong> (a) Çift sayıların frekanslarını topla.</p>
+<span class="mat">11 + 12 + 13 = 36 <span class="g">(2, 4 ve 6'nın gelme sayıları)</span></span>
+<span class="mat">deneysel P(çift) = <span class="kes"><span>36</span><span>60</span></span> = <span class="kes"><span>3</span><span>5</span></span> = 0,6 <span class="g">(göreli frekans)</span></span>
+<p><strong>Adım 2.</strong> (b) Teorik değer.</p>
+<span class="mat">teorik P(çift) = <span class="kes"><span>3</span><span>6</span></span> = 0,5 <span class="g">(hilesiz zar varsayımı)</span></span>
+<span class="mat">0,6 − 0,5 = 0,1 <span class="g">(fark)</span></span>
+<p><strong>Adım 3.</strong> (c) Yorum: 60 atış az bir sayıdır. Hilesiz bir zarla bile 60 atışta çift sayıların 36 kez gelmesi olağan dışı değildir; bu veriyle zarın hileli olduğu söylenemez. Karar vermek için deneme sayısını artırmak gerekir.</p>
+<p><strong>Adım 4.</strong> (d) Beklenen sayı = deneme sayısı × olasılık. Hangi olasılığı kullanacağız? Zarın hilesiz olduğuna dair bir aksi kanıt olmadığı için teorik değeri kullanırız.</p>
+<span class="mat">600 · <span class="kes"><span>1</span><span>6</span></span> = 100 <span class="g">(yaklaşık sayı, kesin değil)</span></span>
+<p><strong>Sonuç:</strong> (a) 3/5, (b) 0,1, (c) söylenemez, (d) yaklaşık 100. Soru açıkça "deneysel olasılığa göre" deseydi (d)'de 600 · 13/60 = 130 bulunurdu; hangi olasılığın istendiğini soru kökü belirler.</p></div>
+
+<h3>Hileli zar ve hileli para yorumu</h3>
+
+<p>Peki ne zaman "hileli" denebilir? Deneme sayısı büyükken deneysel olasılık teorik olasılıktan belirgin biçimde uzak kalıyorsa. Bir zar 600 kez atılıp 6 sayısı 180 kez gelirse deneysel olasılık 180/600 = 0,3'tür; hilesiz zarda beklenen 0,167 civarıdır. Şekildeki benzetimde 500 atıştan sonra oranın 0,15–0,18 bandından hiç çıkmadığını gördün; 0,3 bu bandın çok dışındadır ve zarın 6'ya eğilimli olduğundan güçlü biçimde şüphelenilir. Aynı biçimde 1000 kez atılan bir parada 620 yazı gelmesi (0,62) paranın dengesiz olduğunu düşündürür; 10 atışta 7 yazı gelmesi (0,7) ise hiçbir şey söylemez.</p>
+
+<p>Hileli bir zarda teorik olasılığı s(A)/s(E) ile hesaplayamazsın, çünkü yüzler artık eş olasılıklı değildir. Böyle bir zarın olasılıkları ya soruda verilir ("6 gelme olasılığı öbür yüzlerin her birinin iki katıdır") ya da ancak çok sayıda deneyle, deneysel olarak tahmin edilir. Örneğin "6'nın olasılığı öbürlerinin iki katı" ise öbür yüzlerin her birine p dersen 5p + 2p = 1, p = 1/7 ve P(6) = 2/7 olur; burada eş olasılık varsayımı bozulduğu için s(A)/s(E) = 1/6 yanlış olurdu.</p>
+
+<h2 class="s">12. Hızlı yol ve kontrol yolu</h2>
+
+<p>Sınav süreli ve hesap makinesiz. Bu konudaki soruların çoğu birkaç satırda çözülür; asıl tehlike yanlış paydayı seçmektir. Aşağıdaki denetimleri her soruda alışkanlık hâline getir.</p>
+
+<p><strong>Payda denetimi.</strong> Soruda "bilindiğine göre", "olduğuna göre", "görüldüğüne göre" var mı? Varsa payda o olaydır; yoksa bütün örnek uzaydır. Cevabı bulunca bir kez daha sor: "paydada neyi saydım ve soru neyi biliyor?"</p>
+
+<p><strong>Büyüklük denetimi.</strong> P(A ∩ B) hiçbir zaman P(A)'dan ya da P(B)'den büyük olamaz; P(A ∪ B) ise ikisinden de küçük olamaz. Bir olasılık 1'i geçtiyse ya ayrık olmayan olayları doğrudan topladın ya da paydayı küçük aldın.</p>
+
+<p><strong>Ağaç toplamı denetimi.</strong> Ağacın bütün uçlarındaki olasılıkların toplamı 1 olmalıdır. Bir dalın altındaki koşullu olasılıkların toplamı da 1 olmalıdır (3/5 + 2/5, 1/4 + 3/4).</p>
+
+<p><strong>Kalabalık yöntemi.</strong> Yüzdeli ve kesirli sorularda 100, 1000 ya da paydaların ortak katı kadar kişi veya nesne hayal et (Örnek 7). Kesirler tam sayılara dönüşür, koşullu olasılık bir sayma oranına dönüşür.</p>
+
+<p><strong>Yön denetimi.</strong> Bilgi, sorulan olayı daha olası mı kılıyor, daha az olası mı? Kırmızı top, kırmızısı bol torbayı daha olası kılmalı (Örnek 6'da 1/3'ten 6/11'e); kusurlu ürün, kusur oranı yüksek makineyi daha olası kılmalı (Örnek 7'de A'nın payı 0,6'dan 3/8'e düştü). Sonucun yönü sezgine ters düşüyorsa hesabı yeniden gözden geçir.</p>
+
+<p><strong>Bağımsızlık denetimi.</strong> Bir soruda bağımsızlık söylenmemişse varsayma. Tablo verilmişse P(A ∩ B) ile P(A) · P(B)'yi karşılaştır; geri koymadan çekim varsa olaylar bağımlıdır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Mat Parça 46–47'ye:</strong> Bu parçanın her formülü oradaki P(A) = s(A)/s(E), tümleyen ve ağaç şemasının üstüne kuruldu. Oradaki "dallar boyunca çarp" kuralı burada çarpım kuralı olarak gerekçelendi; "bağımsızsa çarp" sezgisi burada tanıma dönüştü. Oradaki iki özellikli tablo, burada koşullu olasılığın en temiz aracı oldu.</p>
+<p><strong>Mat Parça 34–35'e:</strong> Kesişim, birleşim ve tümleme işlemleri olaylar üzerinde aynen geçerli. Koşullu olasılık, bir kümenin başka bir kümenin içindeki payıdır.</p>
+<p><strong>İleri Parça 33'e:</strong> Mat Parça 47'deki "n atışta tam k kez yazı" soruları C(n, k) sayısıyla kuruluyordu; bu sayılar binom açılımının katsayılarıdır. Bağımsız ve her birinde başarı olasılığı aynı olan denemelerin olasılıkları bu katsayılarla yazılır; bunun genel adı (binom dağılımı) programda yoktur, ama mantığını artık biliyorsun: her diziliş bağımsız olasılıkların çarpımıdır, dizilişlerin sayısı C(n, k)'dır.</p>
+<p><strong>Öbür derslere:</strong> Biyolojide genetik çaprazlama soruları (Aa × Aa'dan aa çıkma olasılığı 1/4; iki genin bağımsız açılımında olasılıkların çarpılması) doğrudan bu parçanın bağımsızlık ve çarpım kuralını kullanır. "Aa × Aa çaprazlamasından doğan ve fenotipi baskın olduğu bilinen bir bireyin heterozigot olma olasılığı" sorusu bir koşullu olasılıktır: dört eş olasılıklı kutudan (AA, Aa, aA, aa) yeni evren baskın fenotipli üç kutudur, ikisi heterozigottur; cevap 2/3. Mat Parça 48'deki istatistik ve grafik okuma da deneysel olasılığın, yani frekans tablolarının devamıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>P(A | B) ne demektir ve neden P(A ∩ B)'nin P(B)'ye bölünmesiyle bulunur?</summary><p>B'nin gerçekleştiği bilindiğinde A'nın gerçekleşme olasılığıdır. Bilgi geldiğinde örnek uzay B'ye daralır; yeni evren B olduğu için payda B, A'dan geriye yalnızca B'nin içinde kalan kısım kaldığı için pay A ∩ B olur. Eş olasılıklı uzayda bu s(A ∩ B)/s(B)'dir.</p></details>
+<details><summary>İki çocuklu bir ailede "en az biri kız" bilindiğinde ikisinin de kız olma olasılığı neden 1/3, "büyük çocuk kız" bilindiğinde neden 1/2'dir?</summary><p>Sıralı örnek uzay {KK, KE, EK, EE}'dir. "En az biri kız" yalnızca EE'yi eler; yeni evren üç çıktıdır ve biri KK'dir: 1/3. "Büyük çocuk kız" hem EK'yi hem EE'yi eler; yeni evren {KK, KE}: 1/2.</p></details>
+<details><summary>A ile B'nin bağımsız olduğunu nasıl sınarsın? Bir örnek ver.</summary><p>P(A ∩ B) = P(A) · P(B) eşitliğine bakarım (denk biçimi P(A | B) = P(A)). Tek zarda A = çift, B = {1, 2} için P(A ∩ B) = 1/6 ve P(A) · P(B) = 1/2 · 1/3 = 1/6: bağımsız. B = {1, 2, 3} için 1/6 ≠ 1/4: bağımlı.</p></details>
+<details><summary>Ayrık olaylar neden bağımsız olamaz (olasılıkları sıfırdan büyükken)?</summary><p>Ayrık olaylarda P(A ∩ B) = 0'dır, ama P(A) · P(B) sıfırdan büyüktür; eşitlik sağlanmaz. Anlamca da A gerçekleştiyse B kesin gerçekleşmemiştir: A'yı bilmek B'nin olasılığını 0'a indirir. Bu en güçlü bağımlılıktır.</p></details>
+<details><summary>Bağımsız A ve B için P(A) = p, P(B) = q ise "en az biri" ve "yalnız biri" olasılıkları nedir?</summary><p>En az biri: 1 − (1 − p)(1 − q), ya da p + q − pq. Yalnız biri: p(1 − q) + (1 − p)q. Tümleyenler de bağımsız olduğu için olmama olasılıkları çarpılabilir.</p></details>
+<details><summary>İki aşamalı bir deneyde sonuç biliniyor, neden soruluyorsa nasıl çözersin?</summary><p>Ağacı çizer, her yolun olasılığını uca yazarım. Bilinen sonuçla biten yolların olasılıklarını toplayıp paydayı bulurum; sorulan nedenden geçen yolun olasılığını paya koyar, bölerim. Kesirler karışıksa 1000 kişilik ya da 1000 ürünlük bir kalabalık hayal edip sayarak da bulabilirim.</p></details>
+<details><summary>Deneysel olasılık ile teorik olasılık arasındaki fark nedir? Hangi durumda birbirlerine yaklaşırlar?</summary><p>Deneysel olasılık, deney n kez yapılınca olayın gözlenme sayısının n'ye oranıdır (göreli frekans) ve her yeni denemede değişebilir. Teorik olasılık deneye bakmadan, örnek uzayın yapısından hesaplanır ve sabittir. Deneme sayısı arttıkça deneysel olasılık teorik olasılığa yaklaşır, ama tam eşit olmak zorunda değildir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Koşullu olasılık:</strong> P(A | B) = P(A ∩ B)/P(B); eş olasılıklı uzayda s(A ∩ B)/s(B). Bilgi örnek uzayı B'ye daraltır.</li>
+<li><strong>Kalıp:</strong> "… olduğu bilindiğine göre" → o olay paydaya. P(A | B) ile P(B | A) farklıdır: pay aynı, payda farklı.</li>
+<li><strong>Tablo:</strong> koşul bir satır ya da sütunsa yalnızca ona bak.</li>
+<li><strong>İki çocuk:</strong> sıralı yaz (KK, KE, EK, EE). "En az biri kız" → 1/3; "büyüğü kız" → 1/2.</li>
+<li><strong>Çarpım kuralı:</strong> P(A ∩ B) = P(A) · P(B | A). Ağaçta ikinci kat dallar koşullu olasılıktır.</li>
+<li><strong>Bağımsız:</strong> P(A ∩ B) = P(A) · P(B) ⇔ P(A | B) = P(A). Sınamada çarpımı kesişimle karşılaştır. Geri koymadan çekim bağımlıdır.</li>
+<li><strong>Tümleyenler:</strong> A, B bağımsızsa A′ ile B, A ile B′, A′ ile B′ de bağımsız.</li>
+<li><strong>Ayrık ≠ bağımsız:</strong> ayrıkta P(A ∩ B) = 0 (veya'da topla); bağımsızda P(A ∩ B) = pq (ve'de çarp).</li>
+<li><strong>Bağımsız p, q:</strong> ikisi de pq; hiçbiri (1 − p)(1 − q); en az biri 1 − (1 − p)(1 − q); yalnız biri p(1 − q) + (1 − p)q.</li>
+<li><strong>Toplam olasılık:</strong> P(K) = K ile biten bütün yolların olasılıkları toplamı; düz ortalama alma, torbaları birleştirme.</li>
+<li><strong>Sonuçtan nedene:</strong> (sorulan nedenden geçen yol) ÷ (bilinen sonuçla biten bütün yollar). 1000 kişi hayal et.</li>
+<li><strong>Deneysel:</strong> k/n (göreli frekans); <strong>teorik:</strong> s(A)/s(E). n büyüdükçe yaklaşırlar, eşit olmak zorunda değiller. Az denemeyle "hileli" denmez.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-34">
+<h3>Quiz 34</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir zar atılıyor. Üst yüze gelen sayının asal sayı olduğu bilindiğine göre tek sayı olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>3</span><span>4</span></span></li><li>1</li></ul>
+<div class="coz"><p>Koşul "asal": yeni evren {2, 3, 5}, üç çıktı. Bunların tek olanları 3 ve 5: P = 2/3. 1/3, payda olarak bütün örnek uzayı (6) almaktır; bu, "hem asal hem tek" olasılığıdır, koşullu değil. 1/2, bilgiyi hiç kullanmadan P(tek)'i vermektir. 3/4, 1'i asal sayıp evreni {1, 2, 3, 5} almaktır; 1 asal değildir. 1, "bütün asallar tektir" yanılgısıdır; 2 hem asal hem çifttir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir zar 300 kez atılmış ve sonuçlar şöyle kaydedilmiştir: 1 sayısı 40 kez, 2 sayısı 45 kez, 3 sayısı 50 kez, 4 sayısı 55 kez, 5 sayısı 50 kez, 6 sayısı 60 kez. Buna göre aşağıdakilerden hangisi doğrudur?</p>
+<ul class="sec"><li>Çift sayı gelmesinin deneysel olasılığı <span class="kes"><span>8</span><span>15</span></span>'tir.</li><li>6 gelmesinin teorik olasılığı <span class="kes"><span>1</span><span>5</span></span>'tir.</li><li>Zar 300 kez daha atılırsa 6 tam 60 kez gelir.</li><li>Deneysel olasılıklar teorik olasılıklara eşit olmadığı için zar kesinlikle hilelidir.</li><li>1 gelmesinin deneysel olasılığı <span class="kes"><span>1</span><span>6</span></span>'dır.</li></ul>
+<div class="coz"><p>Çift sayılar 45 + 55 + 60 = 160 kez gelmiş; 160/300 = 8/15. B'deki 1/5, 6'nın deneysel olasılığıdır (60/300); teorik olasılık hilesiz zarda 1/6'dır, deneyle değişmez. C yanlıştır: deneysel olasılık geçmiş denemeleri özetler, gelecekteki bir denemenin sonucunu kesin olarak belirlemez. D yanlıştır: deneysel ve teorik olasılığın tam eşit çıkması beklenmez; küçük farklar hilenin kanıtı değildir. E'de 1'in deneysel olasılığı 40/300 = 2/15'tir; 1/6 teorik değerdir.</p></div></li>
+
+<li data-c="D"><p class="q">Bir okuldaki 200 öğrenciden 80'i kız, 120'si erkektir. Kızların 30'u, erkeklerin 60'ı düzenli spor yapmaktadır. Rastgele seçilen bir öğrencinin düzenli spor yaptığı bilindiğine göre kız olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>8</span></span></li><li><span class="kes"><span>3</span><span>20</span></span></li><li><span class="kes"><span>2</span><span>5</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>9</span><span>20</span></span></li></ul>
+<div class="coz"><p>Koşul "spor yapıyor": yeni evren spor yapan 30 + 60 = 90 öğrenci. Bunların 30'u kız: 30/90 = 1/3. 3/8, koşulu ters çevirip "kız olduğu bilindiğine göre spor yapma" olasılığını (30/80) hesaplamaktır. 3/20, koşulu yok sayıp "hem kız hem sporcu" olasılığını (30/200) vermektir. 2/5, rastgele seçilenin kız olma olasılığıdır (80/200); bilgi kullanılmamış. 9/20, spor yapma olasılığıdır (90/200).</p></div></li>
+
+<li data-c="B"><p class="q">A ve B aynı örnek uzayın iki olayı olmak üzere P(A) = 0,4, P(B) = 0,5 ve P(A ∩ B) = 0,2'dir.<br>I. A ile B bağımsız olaylardır.<br>II. A ile B ayrık olaylardır.<br>III. P(A′ ∩ B) = 0,3'tür.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>I ve III</li><li>Yalnız III</li><li>I ve II</li><li>I, II ve III</li></ul>
+<div class="coz"><p>P(A) · P(B) = 0,4 · 0,5 = 0,2 = P(A ∩ B): bağımsız, I doğru. P(A ∩ B) = 0,2 ≠ 0 olduğu için ortak çıktıları vardır; ayrık değildir, II yanlış. P(A′ ∩ B) = P(B) − P(A ∩ B) = 0,5 − 0,2 = 0,3; bağımsızlıktan da P(A′) · P(B) = 0,6 · 0,5 = 0,3; III doğru. "Yalnız I", III'teki tümleyen hesabını yapamamaktır. "I ve II" ile "I, II ve III", bağımsızlığı ayrıklıkla karıştırmaktır; olasılıkları sıfırdan büyük iki olay hem bağımsız hem ayrık olamaz. "Yalnız III", çarpım eşitliğini sınamamaktır.</p></div></li>
+
+<li data-c="E"><p class="q">Ayşe'nin bir sınavı geçme olasılığı <span class="kes"><span>2</span><span>3</span></span>, Burak'ın aynı sınavı geçme olasılığı <span class="kes"><span>3</span><span>5</span></span>'tir. İkisinin sonuçları birbirinden bağımsız olduğuna göre bu sınavı yalnızca birinin geçme olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>2</span><span>5</span></span></li><li><span class="kes"><span>13</span><span>15</span></span></li><li><span class="kes"><span>2</span><span>15</span></span></li><li><span class="kes"><span>4</span><span>15</span></span></li><li><span class="kes"><span>7</span><span>15</span></span></li></ul>
+<div class="coz"><p>Yalnız biri iki ayrık durumdur. Yalnız Ayşe: 2/3 · 2/5 = 4/15. Yalnız Burak: 1/3 · 3/5 = 3/15. Toplam 7/15. 2/5, ikisinin birden geçme olasılığıdır (2/3 · 3/5). 13/15, en az birinin geçme olasılığıdır (1 − 1/3 · 2/5); "en az biri" ile "yalnız biri" farklıdır, ikisinin de geçtiği durumu içerir. 2/15, hiçbirinin geçmeme olasılığıdır. 4/15, yalnızca "Ayşe geçer, Burak kalır" durumunu alıp öbür durumu unutmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">Üç çocuklu bir ailede çocuklardan en az birinin erkek olduğu bilindiğine göre çocuklardan tam ikisinin kız olma olasılığı kaçtır? (Her çocuğun kız ya da erkek olma olasılığı eşittir.)</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>7</span></span></li><li><span class="kes"><span>3</span><span>8</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>7</span></span></li><li><span class="kes"><span>1</span><span>2</span></span></li></ul>
+<div class="coz"><p>Sıralı örnek uzay 2<sup>3</sup> = 8 çıktıdır. "En az biri erkek" yalnızca KKK'yı eler: yeni evren 7 çıktı. Tam iki kız: KKE, KEK, EKK, üç çıktı (üçünde de bir erkek var, hepsi evrende). Cevap 3/7. 3/8, koşulu yok sayıp paydaya 8 yazmaktır. 1/3, "0 kız, 1 kız, 2 kız" diye eş olasılıklı olmayan üç durum yazmaktır. 1/7, tam iki kızı tek bir çıktı (KKE) saymaktır; sıralar farklı çıktılardır. 1/2, "her çocuk ya kız ya erkek" diye bilgiyi ve sayımı atlamaktır.</p></div></li>
+
+<li data-c="C"><p class="q">Bir torbada 4 kırmızı ve 6 beyaz top vardır. Torbadan geri konulmamak koşuluyla art arda iki top çekiliyor. İkinci çekilen topun kırmızı olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>9</span></span></li><li><span class="kes"><span>2</span><span>5</span></span></li><li><span class="kes"><span>2</span><span>15</span></span></li><li><span class="kes"><span>4</span><span>15</span></span></li></ul>
+<div class="coz"><p>İkinci topun kırmızı olması iki yoldan olur. Birinci kırmızı, ikinci kırmızı: 4/10 · 3/9 = 12/90. Birinci beyaz, ikinci kırmızı: 6/10 · 4/9 = 24/90. Toplam 36/90 = 2/5 (toplam olasılık). Sonuç, ilk çekimin olasılığıyla (4/10) aynıdır: birinci topu görmediğin sürece ikinci top da torbadaki herhangi bir top kadar "habersiz"dir. 1/3, birincinin kesin kırmızı olduğunu varsaymaktır (koşullu olasılık 3/9). 4/9, birincinin kesin beyaz olduğunu varsaymaktır. 2/15 ve 4/15, iki yoldan yalnızca birini almaktır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir fabrikada üretimin %70'ini A makinesi, %30'unu B makinesi yapmaktadır. A'nın ürettiklerinin %2'si, B'nin ürettiklerinin %4'ü kusurludur. Rastgele seçilen bir ürünün kusurlu olduğu görüldüğüne göre bu ürünün B makinesinde üretilmiş olma olasılığı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>7</span><span>13</span></span></li><li><span class="kes"><span>6</span><span>13</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>3</span><span>10</span></span></li><li><span class="kes"><span>3</span><span>250</span></span></li></ul>
+<div class="coz"><p>1000 ürün düşün: 700'ü A'dan, bunların %2'si 14 kusurlu; 300'ü B'den, bunların %4'ü 12 kusurlu. Toplam 26 kusurlunun 12'si B'den: 12/26 = 6/13. Olasılıkla: 0,3 · 0,04 / (0,7 · 0,02 + 0,3 · 0,04) = 0,012/0,026 = 6/13. 7/13, kusurlunun A'dan gelme olasılığıdır; soru B'yi soruyor. 2/3, yalnızca kusur oranlarını karşılaştırmaktır (4/(2 + 4)); üretim paylarını yok sayar. 3/10, B'nin üretim payıdır; kusurlu olma bilgisini kullanmaz. 3/250 = 0,012, "hem B'de üretilmiş hem kusurlu" olasılığıdır; koşullu olasılık için bunun toplam kusur olasılığına bölünmesi gerekir.</p></div></li>
+
+<li data-c="E" data-k="ileri-1"><p class="q">f(x) = (a − 2)x<sup>2</sup> + 3x + b − 1 fonksiyonu tek fonksiyon olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>−1</li><li>−3</li><li>3</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x) olmalıdır; polinomda bu, çift dereceli terimlerin (x<sup>2</sup> ve sabit terim) katsayılarının sıfır olmasıdır. a − 2 = 0 ⇒ a = 2; b − 1 = 0 ⇒ b = 1 (f(0) = 0 koşulu da bunu verir). a + b = 3. 1, b − 1 = 0'ı b = −1 diye çözmektir. 2, sabit terimin de sıfır olması gerektiğini unutup b = 0 almaktır. −1, a − 2 = 0'ı a = −2 diye çözmektir. −3, iki işaret hatasını birden yapmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği x eksenini yalnızca x = −2 ve x = 4 noktalarında kesmektedir. Buna göre y = f(2x) fonksiyonunun grafiği x eksenini hangi noktalarda keser?</p>
+<ul class="sec"><li>x = −4 ve x = 8</li><li>x = −2 ve x = 4</li><li>x = 2 ve x = −4</li><li>x = −1 ve x = 2</li><li>x = 0 ve x = 6</li></ul>
+<div class="coz"><p>f(2x) = 0 olması için 2x'in f'nin bir kökü olması gerekir: 2x = −2 ⇒ x = −1; 2x = 4 ⇒ x = 2. y = f(bx) yatay daraltmadır (b = 2): x koordinatları 2'ye bölünür. −4 ve 8, x koordinatlarını 2 ile çarpmaktır; yatay dönüşümün "ters" çalıştığını unutmaktır. −2 ve 4, dönüşümün kökleri değiştirmediğini sanmaktır. 2 ve −4, y = f(−x)'in, yani y eksenine göre yansımanın kökleridir. 0 ve 6, f(x − 2)'nin, yani 2 birim sağa ötelemenin kökleridir.</p></div></li>
+
+<li data-c="A" data-k="ileri-7"><p class="q"><span class="kes"><span>x − 4</span><span>x + 1</span></span> ≤ 0 eşitsizliğini sağlayan kaç tane tam sayı vardır?</p>
+<ul class="sec"><li>5</li><li>4</li><li>6</li><li>10</li><li>Sonsuz çoklukta</li></ul>
+<div class="coz"><p>Kritik noktalar: pay için 4, payda için −1. İşaret tablosu en sağdan + başlar ve her tek katlı kökte değişir: (−1, 4) aralığında negatif. ≤ olduğu için payın kökü 4 alınır, paydayı sıfır yapan −1 alınmaz: çözüm (−1, 4]. Tam sayılar 0, 1, 2, 3, 4: 5 tane. 4, payın kökünü (4) dışarıda bırakmaktır. 6, paydanın kökünü (−1) de almaktır; −1'de ifade tanımsızdır. 10, sayı yerine tam sayıların toplamını (0 + 1 + 2 + 3 + 4) vermektir. "Sonsuz çoklukta", işaretleri ters yerleştirip çözümü (−∞, −1) ∪ [4, ∞) sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-11"><p class="q">x dar açı ve sin x = <span class="kes"><span>3</span><span>5</span></span> olduğuna göre sin 2x kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>6</span><span>5</span></span></li><li><span class="kes"><span>24</span><span>25</span></span></li><li><span class="kes"><span>7</span><span>25</span></span></li><li><span class="kes"><span>12</span><span>25</span></span></li><li>−<span class="kes"><span>24</span><span>25</span></span></li></ul>
+<div class="coz"><p>Dik üçgen: karşı 3, hipotenüs 5, komşu 4; x dar açı olduğu için cos x = 4/5 (pozitif). sin 2x = 2 sin x cos x = 2 · 3/5 · 4/5 = 24/25. 6/5, sin 2x'i 2 sin x sanmaktır; sonuç 1'i geçtiği için zaten imkânsızdır. 7/25, cos 2x = cos<sup>2</sup>x − sin<sup>2</sup>x = 16/25 − 9/25 değeridir. 12/25, formüldeki 2 katsayısını unutmaktır. −24/25, cos x'i negatif almaktır; dar açıda cos pozitiftir.</p></div></li>
+
+<li data-c="E" data-k="ileri-14"><p class="q">f(x) = log<sub>3</sub>(x<sup>2</sup> − 4x) fonksiyonunun en geniş tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(0, 4)</li><li>(4, ∞)</li><li>R − {0, 4}</li><li>(−∞, 0] ∪ [4, ∞)</li><li>(−∞, 0) ∪ (4, ∞)</li></ul>
+<div class="coz"><p>Logaritmanın içi pozitif olmalıdır: x<sup>2</sup> − 4x = x(x − 4) &gt; 0. Kökler 0 ve 4; a = 1 &gt; 0 olduğu için ifade köklerin dışında pozitif: (−∞, 0) ∪ (4, ∞). (0, 4), işaretin negatif olduğu aralıktır. (4, ∞), x(x − 4) &gt; 0'ı yalnızca x &gt; 4 diye okuyup sol parçayı unutmaktır. R − {0, 4}, yalnızca içerinin sıfır olmaması gerektiğini düşünmektir; negatif değerler de atılmalıdır. (−∞, 0] ∪ [4, ∞), 0 ve 4'ü almaktır; log 0 tanımsızdır.</p></div></li>
+
+<li data-c="C" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>5</sub> = 14 ve a<sub>12</sub> = 35'tir. Buna göre a<sub>20</sub> kaçtır?</p>
+<ul class="sec"><li>62</li><li>56</li><li>59</li><li>3</li><li>70</li></ul>
+<div class="coz"><p>a<sub>12</sub> − a<sub>5</sub> = 7d = 21 ⇒ d = 3. a<sub>20</sub> = a<sub>12</sub> + 8d = 35 + 24 = 59 (a<sub>n</sub> = a<sub>k</sub> + (n − k)d). Kontrol: a<sub>1</sub> = 14 − 4 · 3 = 2, a<sub>20</sub> = 2 + 19 · 3 = 59. 62, genel terimi a<sub>1</sub> + n · d sanmaktır (2 + 20 · 3). 56, 12'den 20'ye 7 adım saymaktır; adım sayısı 20 − 12 = 8'dir. 3, ortak farkı vermektir. 70, a<sub>20</sub>'yi a<sub>10</sub>'un iki katı gibi düşünüp 35'i ikiyle çarpmaktır; aritmetik dizide terimler orantılı büyümez.</p></div></li>
+
+<li data-c="D" data-k="ileri-20"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>2</sup> + ax − 6</span><span>x − 2</span></span> limiti bir gerçek sayıya eşit olduğuna göre bu limitin değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>4</li><li>0</li><li>5</li><li>3</li></ul>
+<div class="coz"><p>x = 2'de payda sıfırdır; limitin gerçek sayı olması için pay da sıfır olmalıdır (0/0 belirsizliği): 4 + 2a − 6 = 0 ⇒ a = 1. Pay x<sup>2</sup> + x − 6 = (x − 2)(x + 3); sadeleştirince x + 3, x → 2'de 5. 1, a'nın değerini limit sanmaktır. 4, sadeleştirmede yanlış çarpan (x + 2) bulmaktır. 0, payın sıfır olmasından limiti 0 sanmaktır; 0/0 bir belirsizliktir, değeri sadeleştirmeyle bulunur. 3, x + 3'te x yerine 2 koymayı unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-24"><p class="q">f(x) = x<sup>2</sup> − 3x + 1 eğrisine apsisi 2 olan noktasından çizilen teğetin denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>y = x − 3</li><li>y = −x + 1</li><li>y = x − 1</li><li>y = 4x − 9</li><li>y = x − 2</li></ul>
+<div class="coz"><p>Değme noktası: f(2) = 4 − 6 + 1 = −1, nokta (2, −1). Eğim: f′(x) = 2x − 3, f′(2) = 1. Teğet: y − (−1) = 1 · (x − 2) ⇒ y = x − 3. y = −x + 1, eğimi −1/f′(2) = −1 olan normal doğrusudur. y = x − 1, noktanın ordinatını +1 alıp y − 1 = x − 2 yazmaktır. y = 4x − 9, türevde −3x'in türevini unutup eğimi 4 almaktır. y = x − 2, değme noktasının ordinatını 0 sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-27"><p class="q">Bir kenarı uzun bir duvar olan dikdörtgen biçimindeki bir bahçenin öbür üç kenarı toplam 60 metre uzunluğundaki tel ile çevrilecektir. Bahçenin alanı en çok kaç m<sup>2</sup> olabilir?</p>
+<ul class="sec"><li>400</li><li>450</li><li>225</li><li>15</li><li>30</li></ul>
+<div class="coz"><p>Duvara dik kenarlar y, duvara paralel kenar 60 − 2y olsun (0 &lt; y &lt; 30). A(y) = y(60 − 2y) = 60y − 2y<sup>2</sup>; A′(y) = 60 − 4y = 0 ⇒ y = 15, işaret + → −: maksimum. Paralel kenar 30, alan 15 · 30 = 450. 400, üç kenarı eşit (20, 20, 20) almaktır; "eşit kenarlar en büyük alanı verir" kalıbı burada geçerli değil. 225, duvarı unutup 60 metreyi dört kenara bölmektir (15 × 15 kare). 15 ve 30, alan yerine kenar uzunluklarını vermektir.</p></div></li>
+
+<li data-c="E" data-k="ileri-30"><p class="q">∫<sub>1</sub><sup>3</sup> f(x) dx = 5 ve ∫<sub>3</sub><sup>6</sup> f(x) dx = 7 olduğuna göre ∫<sub>6</sub><sup>1</sup> f(x) dx kaçtır?</p>
+<ul class="sec"><li>12</li><li>2</li><li>−2</li><li>35</li><li>−12</li></ul>
+<div class="coz"><p>Aralığı bölme özelliği: ∫<sub>1</sub><sup>6</sup> f(x) dx = ∫<sub>1</sub><sup>3</sup> + ∫<sub>3</sub><sup>6</sup> = 5 + 7 = 12. Sınırlar yer değiştirince işaret değişir: ∫<sub>6</sub><sup>1</sup> f(x) dx = −12. 12, sınırların ters yazıldığını gözden kaçırmaktır. 2 ve −2, iki integrali toplamak yerine çıkarmaktır. 35, integralleri çarpmaktır; aralık bölünürken integraller toplanır.</p></div></li>
+
+<li data-c="C" data-k="ileri-31"><p class="q">y = x<sup>2</sup> − 4 eğrisi ile x ekseni arasında kalan kapalı bölgenin alanı kaç birim karedir?</p>
+<ul class="sec"><li>−<span class="kes"><span>32</span><span>3</span></span></li><li>16</li><li><span class="kes"><span>32</span><span>3</span></span></li><li>8</li><li><span class="kes"><span>16</span><span>3</span></span></li></ul>
+<div class="coz"><p>Eğri x eksenini −2 ve 2'de keser; arada eğri x ekseninin altındadır, bu yüzden alan integralin tersidir: ∫<sub>−2</sub><sup>2</sup> (4 − x<sup>2</sup>) dx = [4x − x<sup>3</sup>/3] = (8 − 8/3) − (−8 + 8/3) = 32/3. Kısa yol: parabol ile x ekseni arasındaki alan taban × yükseklik × 2/3 = 4 · 4 · 2/3 = 32/3. −32/3, integralin değeridir; alan negatif olamaz. 16, dikdörtgen alanıdır (2/3 çarpanı unutulmuş). 8, üçgen alanıdır (taban × yükseklik / 2). 16/3, simetriden yarım alanı bulup ikiyle çarpmayı unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-31"><p class="q">y = x<sup>2</sup> ve y = 2x eğrileri arasında kalan bölgenin alanı kaç birim karedir?</p>
+<ul class="sec"><li><span class="kes"><span>8</span><span>3</span></span></li><li>4</li><li>−<span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>20</span><span>3</span></span></li></ul>
+<div class="coz"><p>Kesişim: x<sup>2</sup> = 2x ⇒ x = 0 ya da x = 2. Bu aralıkta doğru üstte (x = 1'de 2 &gt; 1). Alan ∫<sub>0</sub><sup>2</sup> (2x − x<sup>2</sup>) dx = [x<sup>2</sup> − x<sup>3</sup>/3] = 4 − 8/3 = 4/3. 8/3, yalnızca parabolün altındaki alandır. 4, yalnızca doğrunun altındaki alandır. −4/3, alttakinden üsttekini çıkarmaktır. 20/3, iki alanı çıkarmak yerine toplamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-32"><p class="q">Doğrusal bir yolda hareket eden bir aracın t saniyedeki hızı v(t) = 2t − 4 (m/s) ile verilmektedir. Araç t = 0 ile t = 5 saniyeleri arasında toplam kaç metre yol alır?</p>
+<ul class="sec"><li>13</li><li>5</li><li>9</li><li>4</li><li>6</li></ul>
+<div class="coz"><p>Hız t = 2'de sıfır olur ve işaret değiştirir: [0, 2]'de araç geri, [2, 5]'te ileri gider. Toplam yol |v|'nin integralidir: ∫<sub>0</sub><sup>2</sup> (4 − 2t) dt = 4 ve ∫<sub>2</sub><sup>5</sup> (2t − 4) dt = 9; toplam 13 m. 5, ∫<sub>0</sub><sup>5</sup> v(t) dt'dir, yani yer değiştirme (9 − 4); toplam yol değil. 9, yalnızca ileri gidilen kısmı almaktır. 4, yalnızca geri gidilen kısmı almaktır. 6, t = 5'teki hızı (v(5)) vermektir.</p></div></li>
+
+<li data-c="E" data-k="ileri-32"><p class="q">F(x) = ∫<sub>0</sub><sup>x</sup> (t<sup>2</sup> − 4t + 3) dt fonksiyonu x'in hangi değerinde yerel maksimum yapar?</p>
+<ul class="sec"><li>3</li><li>2</li><li>0</li><li><span class="kes"><span>4</span><span>3</span></span></li><li>1</li></ul>
+<div class="coz"><p>Üst sınırı değişken olan integralin türevi: F′(x) = x<sup>2</sup> − 4x + 3 = (x − 1)(x − 3). F′'nün işareti: x &lt; 1'de +, (1, 3)'te −, x &gt; 3'te +. x = 1'de + → −: yerel maksimum. 3, işaretin − → + değiştiği yerel minimum noktasıdır. 2, F″(x) = 2x − 4'ün kökü, yani büküm noktasıdır. 0, integralin alt sınırıdır; F(0) = 0 olması orayı ekstremum yapmaz. 4/3, yerel maksimum değeridir (F(1) = 1/3 − 2 + 3); soru noktanın apsisini istiyor.</p></div></li>
+
+<li data-c="B" data-k="ileri-33"><p class="q">(x − 2)<sup>5</sup> ifadesinin açılımında x<sup>2</sup>'li terimin katsayısı kaçtır?</p>
+<ul class="sec"><li>80</li><li>−80</li><li>40</li><li>10</li><li>−8</li></ul>
+<div class="coz"><p>Genel terim C(5, r) · x<sup>5 − r</sup> · (−2)<sup>r</sup>. x<sup>2</sup> için 5 − r = 2 ⇒ r = 3: C(5, 3) · (−2)<sup>3</sup> = 10 · (−8) = −80. 80, (−2)<sup>3</sup>'ün işaretini kaybetmektir; tek kuvvette eksi kalır. 40, r'yi x'in üssüyle karıştırıp r = 2 almaktır; bu x<sup>3</sup>'lü terimin katsayısıdır (10 · 4). 10, yalnızca kombinasyonu yazıp (−2)<sup>3</sup>'ü unutmaktır. −8, kombinasyon katsayısını unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-33"><p class="q">(2x<sup>2</sup> − <span class="kes"><span>1</span><span>x</span></span>)<sup>6</sup> ifadesinin açılımındaki sabit terim kaçtır?</p>
+<ul class="sec"><li>15</li><li>−60</li><li>240</li><li>60</li><li>20</li></ul>
+<div class="coz"><p>Genel terim C(6, r) · (2x<sup>2</sup>)<sup>6 − r</sup> · (−1/x)<sup>r</sup> = C(6, r) · 2<sup>6 − r</sup> · (−1)<sup>r</sup> · x<sup>12 − 3r</sup>. Sabit terim için 12 − 3r = 0 ⇒ r = 4: C(6, 4) · 2<sup>2</sup> · (−1)<sup>4</sup> = 15 · 4 · 1 = 60. 15, 2'nin kuvvetini unutmaktır. −60, (−1)<sup>4</sup>'ü negatif almaktır; çift kuvvet pozitiftir. 240, 2'nin üssünü 6 − r yerine r almaktır (15 · 2<sup>4</sup>). 20, sabit terimi ortanca terim sanmaktır (C(6, 3)); ortanca terim burada x<sup>3</sup>'lüdür.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-33">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-34">Bu bölümü okudum</button>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"koşullu olasılık konu anlatımı AYT"</li>
+  <li>"bağımsız olaylar ve ayrık olaylar farkı olasılık"</li>
+  <li>"iki aşamalı deney torba seçme olasılık ağaç şeması"</li>
+  <li>"deneysel olasılık teorik olasılık göreli frekans"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 34. satıra göre yazıldı; satırdaki her alt başlık işlendi (hatırlatma, koşullu olasılığın iki yazımı, "bilindiğine göre" kalıbı, iki özellikli tablo, zar-kart-torba-aile soruları, çarpım kuralı ve ağaç, bağımsızlığın tanımı ve sınaması, bağımlı olaylar, bağımsız-ayrık karışıklığı, tümleyenlerin bağımsızlığı, en az biri / yalnız biri / ikisi de, ve-veya ile bileşik olaylar, iki aşamalı deneyler ve toplam olasılık, sonuçtan nedene, deneysel ve teorik olasılık, hileli zar-para yorumu). Binom dağılımı ve beklenen değer, kapsam notuna uyularak anlatılmadı; Örnek 8'deki "600 atışta yaklaşık kaç kez" hesabı yalnızca deneme sayısı × olasılık biçiminde, beklenen değer kavramına girmeden kondu.</li>
+  <li>Sonuçtan nedene giden hesap (10. bölüm), kapsam listesinin "Doğrulanamayanlar" notuna uyularak formül adı verilmeden, ağaç üzerinde oran olarak anlatıldı. Üniversite kitaplarında bu hesap "Bayes kuralı" adıyla geçer; 2018 programında formül olarak yer almadığını kapsam notundan biliyorum, resmî metinden doğrulayamadım.</li>
+  <li>"Toplam olasılık" adı ders kitaplarında her zaman kullanılmaz; aynı işlem ağaç şemasında "dallar boyunca çarp, dallar arasında topla" diye anlatılır. Adı yalnızca kuralı tanımlamak için kondu.</li>
+  <li>Bağımsızlığın üç denk tanımı P(A) ve P(B) sıfırdan büyükken verildi. Bazı kaynaklar bağımsızlığı yalnızca P(A ∩ B) = P(A) · P(B) ile tanımlar (bu tanım olasılığı sıfır olan olaylara da uygulanır); sınav soruları bu sınır durumunu sormaz.</li>
+  <li>İki çocuk sorusunda her çocuğun kız ya da erkek olma olasılığı eşit ve çocukların cinsiyetleri bağımsız kabul edildi; bu, ders kitaplarının ve sınav sorularının yerleşik varsayımıdır, gerçek doğum istatistikleri tam olarak böyle değildir.</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, metindeki ara örnekler, şekillerdeki değerler ve 24 quiz sorusunun cevapları) Python ile denetlendi: koşullu olasılıklar örnek uzaylar tek tek üretilip sayılarak (iki zar, iki ve üç çocuk, tek zar olayları), kesirler Fraction ile, integral içeren tekrar soruları Simpson yöntemiyle sayısal olarak hesaplandı. Yanlış seçeneklerin her birinin gerçekten yanlış olduğu ve çözümde adı geçen hatanın sonucu olduğu aynı betikle denetlendi.</li>
+  <li>Deneysel olasılık şekli, Python'un rastgele sayı üretecinde sabit bir tohumla yapılmış 1000 atışlık bir zar benzetiminden çizildi; eğrinin noktaları ve şekil altı yazısındaki sayılar (4/10, 22/100, 77/500, 161/1000) bu benzetimin gerçek çıktısıdır. Örnek 8'deki 60 atışlık tablo ve quizdeki 300 atışlık tablo ise öğretim için uydurulmuş verilerdir. "Bu veriyle hileli denemez" yorumu sezgisel düzeyde verildi; istatistiksel sınama programda yoktur.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (31, 32, 33) ikişer soru; daha eski 30 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 7, 11, 14, 17, 20, 24, 27, 30). Parça 30–33 bu parçanın yazımı sırasında arşivde henüz yoktu; o parçaların tekrar soruları yalnızca kapsam listesindeki konulardan ve oradaki terimlerle yazıldı, o parçaların quizleriyle aynı soru olup olmadığı denetlenemedi.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

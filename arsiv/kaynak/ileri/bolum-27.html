@@ -1,0 +1,588 @@
+<article class="chapter ders" id="c-ileri-27">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 27 · Türev 6</div>
+<h1>Türev 6: maksimum-minimum (optimizasyon) problemleri</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Elinde 16 cm × 10 cm boyutlarında dikdörtgen bir karton var. Dört köşesinden eşit kareler kesip kenarları yukarı katlayarak üstü açık bir kutu yapacaksın. Küçük kareler kesersen taban geniş ama kutu sığ olur; büyük kareler kesersen kutu derin ama taban küçülür. İkisinin arasında bir yerde hacim en büyük olmalı. Deneme yanılmayla x = 1, 2, 3 cm deneyip tahmin yürütebilirsin; ama en iyi değerin tam olarak hangisi olduğunu ve daha iyisinin olmadığını nasıl kanıtlarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 25 (kritik nokta, birinci türev testi, kapalı aralıkta mutlak en büyük-en küçük değer), Parça 26 (ikinci türev testi), Parça 22–23 (türev kuralları, köklü ifadenin türevi), Parça 5–6 (tepe noktası, parabolle modelleme), geo Parça 17 (iki nokta arası uzaklık), geo Parça 22 (prizma ve silindirin hacmi ve alanı). Kâğıt kalem yanında olsun; her problemde önce bir şekil çiz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 25'te sana bir fonksiyon verildi ve "en büyük değeri nedir" diye soruldu. Bu parçada fonksiyon verilmez; bir durum anlatılır: bir çit, bir kutu, bir fiyat, bir yolculuk. Fonksiyonu <strong>senin kurman</strong> gerekir. Türev alma işi burada kolay kısımdır; asıl iş sözle anlatılan durumu tek değişkenli bir fonksiyona çevirmek ve o değişkenin hangi aralıkta anlamlı olduğunu görmektir.</p>
+
+<p>AYT'de bu konu iki biçimde gelir. Birincisinde problem sonunda ikinci dereceden bir ifadeye iner (çit, gelir, atılan top); bunları Parça 5–6'daki tepe noktasıyla türevsiz de çözebilirsin. İkincisinde üçüncü dereceden ya da köklü bir ifade çıkar (kutu, silindir, çember içindeki dikdörtgen, eğriye uzaklık); burada türev şarttır. Bu parçada her iki türü aynı şemayla çözeceğiz, sonra ikinci dereceye inenlerde kısa yolu göstereceğiz.</p>
+
+<p>Sırayla şunları kuracağız: mutlak en büyük değerin nerede aranacağı, yedi adımlık çözüm şeması, sayı problemleri, alan ve hacim problemleri, şekil içine çizilen dikdörtgenler, eğriye en kısa uzaklık, kâr ve hareket problemleri. En sonda iki tipik hatayı ayrıca ele alacağız: tanım aralığını unutmak ve bulunan noktanın en büyük mü en küçük mü olduğunu denetlememek.</p>
+
+<h2 class="s">1. Mutlak en büyük değer nerede olabilir?</h2>
+
+<p>Bir problemde istenen hep <strong>mutlak</strong> (global) en büyük ya da en küçük değerdir: "kutunun hacmi en çok kaç olabilir" sorusu, bütün olası kutular arasında en büyüğünü ister, yalnızca yakınındakilerden büyük olanı değil. Parça 25'te kapalı bir aralıkta bunun nasıl bulunduğunu gördün. Kısaca hatırla, çünkü bütün parça bu fikrin üstüne kurulu.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Sürekli bir f fonksiyonu [a, b] kapalı aralığında mutlaka bir en büyük ve bir en küçük değer alır. Bu değerler ya bir <strong>kritik noktada</strong> (f′ = 0 ya da türevin olmadığı yer) ya da bir <strong>uç noktada</strong> (a ya da b) alınır. Bu yüzden adaylar yalnızca bunlardır: hepsinde f'i hesapla, en büyüğü ve en küçüğü seç.</p>
+<p><strong>Tek kritik nokta ilkesi:</strong> f bir aralıkta (açık ya da kapalı) sürekliyse ve aralığın içinde tek bir kritik noktası varsa, o nokta yerel maksimumsa aynı zamanda mutlak maksimumdur; yerel minimumsa mutlak minimumdur.</p>
+<p><strong>Neden?</strong> Aralığın içindeki bir noktada türev sıfırdan farklıysa fonksiyon o noktanın bir yanında daha büyük değer alır; demek ki o nokta en büyük olamaz. Geriye kritik noktalar ve uçlar kalır. Tek kritik nokta ilkesinin nedeni de şudur: f, c'de yerel maksimum yapıp başka bir yerde daha yüksek bir değere çıksaydı, c'den sonra önce inip sonra yeniden yükselmesi gerekirdi; o dönüş yerinde ikinci bir kritik nokta (bir çukur) doğardı. Kritik nokta tek olduğuna göre böyle bir dönüş yoktur.</p></div>
+
+<p>Bu ilke, uygulama problemlerinde işini çok kolaylaştırır. Çoğu problemde değişken açık bir aralıkta (örneğin 0 &lt; x &lt; 5) yaşar, uçlar "kutu yok" ya da "alan sıfır" gibi anlamsız durumlardır ve içeride tek bir kritik nokta çıkar. O zaman işaret değişimini (Parça 25) ya da ikinci türevin işaretini (Parça 26) denetlemek, bulduğun noktanın istenen uçta olduğunu kanıtlamaya yeter.</p>
+
+<h2 class="s">2. Yedi adımlık çözüm şeması</h2>
+
+<p>Uygulama problemlerinde hata çoğu zaman türevde değil, kurulumda yapılır: değişken karışır, koşul unutulur, tanım aralığı yazılmaz, sonunda da istenen nicelik yerine başka bir şey cevap diye verilir. Bunları önlemenin yolu her problemde aynı sırayı izlemektir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1. Şekil çiz, değişkenleri adlandır.</strong> Değişen her uzunluğa bir harf ver (x, y, r, h).</p>
+<p><strong>2. Amaç fonksiyonunu yaz.</strong> En büyük ya da en küçük yapılacak niceliği (alan, hacim, maliyet, uzaklık, kâr) bu harflerle yaz.</p>
+<p><strong>3. Koşulla tek değişkene indir.</strong> Sabit verilen bilgiden (çevre, hacim, eğri denklemi) bir harfi öbürü cinsinden çöz ve amaç fonksiyonunda yerine koy.</p>
+<p><strong>4. Tanım aralığını belirle.</strong> Uzunluklar pozitif olmalı, kesilen parça kenardan büyük olamaz, nokta belirli bir bölgede kalmalı. Aralığı yaz.</p>
+<p><strong>5. Türevi al, sıfıra eşitle.</strong> Kökleri bul; tanım aralığının dışında kalanları at.</p>
+<p><strong>6. Denetle.</strong> Kritik noktanın çevresinde türevin işaret değişimine (+ → − ise maksimum, − → + ise minimum) ya da ikinci türevin işaretine bak; kapalı aralıksa uçları da hesapla.</p>
+<p><strong>7. Soruda isteneni ver.</strong> Soru değişkeni mi (kaç cm kesilmeli), niceliğin değerini mi (en büyük hacim), yoksa başka bir uzunluğu mu (kutunun yüksekliği) istiyor? Cevabı ona göre hesapla.</p>
+<p><strong>Neden bu sıra?</strong> Türev yalnızca tek değişkenli bir fonksiyona uygulanabilir; 3. adım bu yüzden şarttır. Türev yalnızca kritik noktaları verir, aralığı bilmez; 4. ve 6. adımlar bu boşluğu kapatır. 7. adım ise en sık puan kaybedilen yerdir: doğru x'i bulup soruda istenen alanı hesaplamayı unutmak.</p></div>
+
+<h2 class="s">3. Sayı problemleri</h2>
+
+<p>En yalın optimizasyon problemi iki sayı arasındaki bir bağıntıdan çıkar. Toplamı 20 olan iki pozitif sayının çarpımı en çok kaç olabilir? Sayılar x ve 20 − x olsun; çarpım P(x) = x(20 − x) = 20x − x<sup>2</sup>. Türev P′(x) = 20 − 2x sıfır olunca x = 10; P′ sol yanda pozitif, sağ yanda negatif olduğundan bu bir maksimumdur ve P(10) = 100. Sayılar 10 ve 10, yani eşit çıktı. Bu rastlantı değildir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>(1) İki pozitif sayının <strong>toplamı sabitse</strong>, çarpımları sayılar eşitken en büyüktür. Toplam S ise en büyük çarpım (S/2)<sup>2</sup>'dir.</p>
+<p>(2) İki pozitif sayının <strong>çarpımı sabitse</strong>, toplamları sayılar eşitken en küçüktür. Çarpım P ise en küçük toplam 2√P'dir.</p>
+<p><strong>Neden?</strong> Her iki sayı için (a + b)<sup>2</sup> − (a − b)<sup>2</sup> = 4ab özdeşliği geçerlidir. Toplam sabitken a · b = [(a + b)<sup>2</sup> − (a − b)<sup>2</sup>]/4 ifadesi, çıkarılan (a − b)<sup>2</sup> sıfır olunca, yani a = b iken en büyüktür. Çarpım sabitken (a + b)<sup>2</sup> = 4ab + (a − b)<sup>2</sup> ifadesi, eklenen (a − b)<sup>2</sup> sıfır olunca en küçüktür. Türevle de aynı sonuç çıkar; aşağıdaki örnek bunu gösteriyor.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Çarpımları 36 olan iki pozitif gerçek sayının toplamı en az kaçtır?</p>
+<p><strong>Adım 1.</strong> Değişkenler ve amaç: sayılar x ve y, en küçük yapılacak nicelik S = x + y.</p>
+<p><strong>Adım 2.</strong> Koşulla tek değişkene indir.</p>
+<span class="mat">x · y = 36 ⇒ y = <span class="kes"><span>36</span><span>x</span></span> <span class="g">(koşul)</span></span>
+<span class="mat">S(x) = x + <span class="kes"><span>36</span><span>x</span></span> <span class="g">(amaç fonksiyonu)</span></span>
+<p><strong>Adım 3.</strong> Tanım aralığı: x &gt; 0 (iki sayı da pozitif). Uç yok; x sıfıra yaklaşınca 36/x, x büyüyünce x sınırsız büyür.</p>
+<p><strong>Adım 4.</strong> Türev ve kritik nokta.</p>
+<span class="mat">S′(x) = 1 − <span class="kes"><span>36</span><span>x<sup>2</sup></span></span> <span class="g">(36x<sup>−1</sup>'in türevi −36x<sup>−2</sup>)</span></span>
+<span class="mat">1 − <span class="kes"><span>36</span><span>x<sup>2</sup></span></span> = 0 ⇒ x<sup>2</sup> = 36 ⇒ x = 6 <span class="g">(x = −6 aralık dışında)</span></span>
+<p><strong>Adım 5.</strong> Denetim: x = 4'te S′ = 1 − 36/16 &lt; 0, x = 9'da S′ = 1 − 36/81 &gt; 0. İşaret − → +, yani x = 6 minimum; tek kritik nokta olduğu için mutlak minimum.</p>
+<span class="mat">S(6) = 6 + 6 = 12 <span class="g">(y = 36/6 = 6)</span></span>
+<p><strong>Sonuç:</strong> En küçük toplam 12; sayılar 6 ve 6. Kural (2) ile: 2√36 = 12.</p></div>
+
+<p>"Sayılar eşit olunca en iyisi" kuralı yalnızca <strong>düz toplam ve düz çarpım</strong> için geçerlidir. Ağırlıklar farklıysa sonuç değişir. Toplamı 12 olan iki pozitif sayıdan birinin karesiyle öbürünün çarpımını en büyük yapalım: x + y = 12 ve P = x · y<sup>2</sup>. x = 12 − y yazınca P(y) = (12 − y)y<sup>2</sup> = 12y<sup>2</sup> − y<sup>3</sup>, P′(y) = 24y − 3y<sup>2</sup> = 3y(8 − y). Aralık 0 &lt; y &lt; 12 içinde tek kritik nokta y = 8; P′ işareti + → − olduğundan maksimum. Sayılar x = 4, y = 8 ve P = 4 · 64 = 256. Eşit sayılar (6 ve 6) yalnızca 216 verirdi. Karesi alınan sayı daha büyük pay almış; kuralı ezberleyip her yerde kullanmak yerine türeve güven.</p>
+
+<h2 class="s">4. Alan problemleri: sabit çevre ve duvar kenarındaki çit</h2>
+
+<p>Çevresi 40 m olan dikdörtgenlerin en büyük alanlısı hangisidir? Kenarlar x ve y ise 2x + 2y = 40, y = 20 − x ve A = x(20 − x). Bu tam olarak Bölüm 3'teki problemdir: toplamı 20 olan iki sayının çarpımı. Cevap x = y = 10, yani <strong>kare</strong>, ve A = 100 m<sup>2</sup>. Çevre sabitken alan en büyük karede olur.</p>
+
+<p>Bir kenar duvara yaslanınca durum değişir, çünkü duvar tarafına çit gerekmez. Sınavın en sevdiği kalıplardan biri budur ve iki yöntemi yan yana görmek için iyi bir örnektir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> 60 m uzunluğunda tel ile bir kenarı düz bir duvar olan dikdörtgen biçiminde bir bahçe çevrilecektir. Duvar tarafına tel çekilmeyecektir. Bahçenin alanı en çok kaç m<sup>2</sup> olabilir?</p>
+<p><strong>Adım 1.</strong> Duvara dik iki kenara x, duvara paralel kenara y de. Tel yalnızca üç kenara çekilir.</p>
+<span class="mat">2x + y = 60 ⇒ y = 60 − 2x <span class="g">(koşul: telin tamamı)</span></span>
+<span class="mat">A(x) = x(60 − 2x) = 60x − 2x<sup>2</sup> <span class="g">(amaç: alan)</span></span>
+<p><strong>Adım 2.</strong> Tanım aralığı: x &gt; 0 ve y = 60 − 2x &gt; 0, yani 0 &lt; x &lt; 30.</p>
+<p><strong>Adım 3 (türevle).</strong></p>
+<span class="mat">A′(x) = 60 − 4x = 0 ⇒ x = 15 <span class="g">(kritik nokta, aralığın içinde)</span></span>
+<span class="mat">A″(x) = −4 &lt; 0 <span class="g">(ikinci türev testi: maksimum)</span></span>
+<p><strong>Adım 4 (tepe noktasıyla, türevsiz).</strong> A(x) = −2x<sup>2</sup> + 60x kolları aşağı bakan bir paraboldür (Parça 5). Kökleri x = 0 ve x = 30; tepe noktası köklerin tam ortasında, x = 15. Aynı sonuç, türev almadan.</p>
+<span class="mat">y = 60 − 30 = 30 , A = 15 · 30 = 450 <span class="g">(boyutlar ve alan)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Tahminle dene: x = 14 için 14 · 32 = 448, x = 16 için 16 · 28 = 448. İki komşu değer de 450'den küçük ve birbirine eşit; tepe gerçekten 15'te.</p>
+<p><strong>Sonuç:</strong> En büyük alan 450 m<sup>2</sup>; bahçe 15 m × 30 m, uzun kenar duvar boyunca.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"En büyük alanlı dikdörtgen her zaman karedir" diye düşünmek.</strong> Örnek 2'yi kare sanan biri 60 m teli üç eşit parçaya bölüp 20 × 20 = 400 m<sup>2</sup> bulur, ya da 15 × 15 = 225 m<sup>2</sup> yazar. İkisi de 450'den küçüktür. Kare sonucu yalnızca dört kenarın hepsi aynı malzemeyle çevrildiğinde, yani amaç fonksiyonu "toplamı sabit iki sayının çarpımı" biçimine geldiğinde çıkar. Duvar varken duvara paralel kenar, dik kenarın <strong>iki katı</strong> olur (y = 2x), çünkü paralel kenara bir kez, dik kenarlara iki kez tel harcanır. Sonuç hiçbir zaman ezberle değil, kurulan fonksiyonla bulunur.</p></div>
+
+<h2 class="s">5. Kutu problemleri: en büyük hacim, en küçük yüzey</h2>
+
+<p>Şimdi parçanın başındaki soruya dönelim. Köşelerden x cm kenarlı kareler kesilince taban 16 − 2x ve 10 − 2x boyutlarında bir dikdörtgen olur (her kenardan iki kez x gider), katlanan kenarlar kutunun yüksekliği x'i verir.</p>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="16 santimetreye 10 santimetre karton. Dört köşeden x kenarlı kareler kesiliyor. Ortada kalan taban 16 eksi 2x'e 10 eksi 2x boyutunda; dört yan kenar yukarı katlanınca yüksekliği x olan üstü açık kutu oluşuyor.">
+  <rect class="sv-k" x="60" y="40" width="320" height="200" />
+  <rect class="sv-m" x="100" y="80" width="240" height="120" />
+  <rect class="sv-a" x="60" y="40" width="40" height="40" />
+  <rect class="sv-a" x="340" y="40" width="40" height="40" />
+  <rect class="sv-a" x="60" y="200" width="40" height="40" />
+  <rect class="sv-a" x="340" y="200" width="40" height="40" />
+  <text class="sv-b" x="220" y="28" text-anchor="middle">16 cm</text>
+  <text class="sv-b" x="52" y="145" text-anchor="end">10 cm</text>
+  <text class="sv-t" x="80" y="65" text-anchor="middle">x</text>
+  <text class="sv-t" x="360" y="65" text-anchor="middle">x</text>
+  <text class="sv-t" x="80" y="225" text-anchor="middle">x</text>
+  <text class="sv-t" x="360" y="225" text-anchor="middle">x</text>
+  <text class="sv-s" x="220" y="65" text-anchor="middle">yan yüz (yükseklik x)</text>
+  <text class="sv-b" x="220" y="132" text-anchor="middle">taban</text>
+  <text class="sv-s" x="220" y="152" text-anchor="middle">(16 − 2x) × (10 − 2x)</text>
+  <text class="sv-t" x="220" y="225" text-anchor="middle">16 − 2x</text>
+  <text class="sv-s" x="80" y="137" text-anchor="middle">10</text>
+  <text class="sv-s" x="80" y="153" text-anchor="middle">− 2x</text>
+  <text class="sv-s" x="200" y="262" text-anchor="middle">turuncu kareler kesilir, dört yan yüz yukarı katlanır</text>
+</svg>
+<figcaption>Kartonun açınımı (1 cm = 20 birim, gerçek ölçüyle; çizimde x = 2). Kesilen kareler her kenardan iki kez x götürür; bu yüzden taban 16 − 2x ve 10 − 2x, yükseklik x olur. 10 − 2x &gt; 0 koşulu x'in 5'ten küçük olmasını zorunlu kılar.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> 16 cm × 10 cm boyutlarındaki kartonun köşelerinden x cm kenarlı eşit kareler kesilip kenarlar katlanarak üstü açık bir kutu yapılıyor. Hacmin en büyük olması için x kaç olmalıdır ve en büyük hacim kaç cm<sup>3</sup>'tür?</p>
+<p><strong>Adım 1.</strong> Amaç fonksiyonu: hacim = taban alanı × yükseklik.</p>
+<span class="mat">V(x) = x(16 − 2x)(10 − 2x) <span class="g">(dikdörtgenler prizması)</span></span>
+<span class="mat">V(x) = 4x<sup>3</sup> − 52x<sup>2</sup> + 160x <span class="g">((16 − 2x)(10 − 2x) = 160 − 52x + 4x<sup>2</sup>, x ile çarp)</span></span>
+<p><strong>Adım 2.</strong> Tanım aralığı: x &gt; 0, 10 − 2x &gt; 0 ve 16 − 2x &gt; 0. En sıkı koşul 10 − 2x &gt; 0, yani <strong>0 &lt; x &lt; 5</strong>.</p>
+<p><strong>Adım 3.</strong> Türev ve kritik noktalar.</p>
+<span class="mat">V′(x) = 12x<sup>2</sup> − 104x + 160 <span class="g">(terim terim türev)</span></span>
+<span class="mat">12x<sup>2</sup> − 104x + 160 = 4(3x<sup>2</sup> − 26x + 40) = 0 <span class="g">(4 ortak çarpan)</span></span>
+<span class="mat">3x<sup>2</sup> − 26x + 40 = (3x − 20)(x − 2) = 0 <span class="g">(çarpımı 120, toplamı −26: −20 ve −6)</span></span>
+<span class="mat">x = 2 ya da x = <span class="kes"><span>20</span><span>3</span></span> <span class="g">(iki kök)</span></span>
+<p><strong>Adım 4.</strong> Aralık denetimi: 20/3 ≈ 6,67 &gt; 5; bu kök aralığın dışında, atılır. 6,67 cm'lik kare 10 cm'lik kenardan iki kez kesilemez (13,3 cm gerekir).</p>
+<p><strong>Adım 5.</strong> x = 2'nin türü: V′(1) = 12 − 104 + 160 = 68 &gt; 0, V′(3) = 108 − 312 + 160 = −44 &lt; 0. İşaret + → −, maksimum. Aralıkta tek kritik nokta, o hâlde mutlak maksimum. Uçlara yaklaşırken V → 0 (kutu yok olur).</p>
+<span class="mat">V(2) = 2 · 12 · 6 = 144 <span class="g">(taban 12 × 6, yükseklik 2)</span></span>
+<p><strong>Adım 6 (kontrol yolu).</strong> Komşu değerler: V(1) = 1 · 14 · 8 = 112, V(3) = 3 · 10 · 4 = 120. İkisi de 144'ten küçük.</p>
+<p><strong>Sonuç:</strong> x = 2 cm kesilmeli; en büyük hacim 144 cm<sup>3</sup>.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 310" role="img" aria-label="V(x) eşittir x çarpı 16 eksi 2x çarpı 10 eksi 2x fonksiyonunun grafiği. Sıfır ile beş arasındaki tanım aralığında grafik x eşittir 2'de 144 değeriyle tepe yapar. Beşten sonra grafik negatife iner ve x eşittir 20 bölü 3'te yerel minimum yapar; bu nokta tanım aralığının dışındadır.">
+  <line class="sv-c" x1="40" y1="200" x2="392" y2="200" />
+  <line class="sv-c" x1="50" y1="300" x2="50" y2="8" />
+  <rect class="sv-m" x="50" y="203" width="220" height="6" />
+  <line class="sv-c" x1="94" y1="197" x2="94" y2="203" />
+  <line class="sv-c" x1="138" y1="197" x2="138" y2="203" />
+  <line class="sv-c" x1="182" y1="197" x2="182" y2="203" />
+  <line class="sv-c" x1="226" y1="197" x2="226" y2="203" />
+  <line class="sv-c" x1="314" y1="197" x2="314" y2="203" />
+  <line class="sv-c" x1="358" y1="197" x2="358" y2="203" />
+  <line class="sv-c" x1="47" y1="140" x2="53" y2="140" />
+  <line class="sv-c" x1="47" y1="80" x2="53" y2="80" />
+  <line class="sv-c" x1="47" y1="260" x2="53" y2="260" />
+  <text class="sv-s" x="94" y="223" text-anchor="middle">1</text>
+  <text class="sv-s" x="138" y="223" text-anchor="middle">2</text>
+  <text class="sv-s" x="182" y="223" text-anchor="middle">3</text>
+  <text class="sv-s" x="226" y="223" text-anchor="middle">4</text>
+  <text class="sv-s" x="314" y="192" text-anchor="middle">6</text>
+  <text class="sv-s" x="358" y="192" text-anchor="middle">7</text>
+  <text class="sv-s" x="44" y="144" text-anchor="end">50</text>
+  <text class="sv-s" x="44" y="84" text-anchor="end">100</text>
+  <text class="sv-s" x="44" y="264" text-anchor="end">−50</text>
+  <text class="sv-s" x="390" y="214" text-anchor="end">x</text>
+  <text class="sv-s" x="56" y="16" text-anchor="start">V</text>
+  <line class="sv-c" x1="270" y1="14" x2="270" y2="296" />
+  <text class="sv-s" x="276" y="30" text-anchor="start">x = 5 sınırı</text>
+  <polyline class="sv-cl" points="50.0,200.0 54.4,181.4 58.8,164.1 63.2,147.9 67.6,132.9 72.0,119.0 76.4,106.2 80.8,94.5 85.2,83.9 89.6,74.2 94.0,65.6 98.4,57.9 102.8,51.2 107.2,45.3 111.6,40.3 116.0,36.2 120.4,32.9 124.8,30.4 129.2,28.6 133.6,27.5 138.0,27.2 142.4,27.5 146.8,28.5 151.2,30.1 155.6,32.3 160.0,35.0 164.4,38.3 168.8,42.0 173.2,46.2 177.6,50.9 182.0,56.0 186.4,61.5 190.8,67.3 195.2,73.4 199.6,79.9 204.0,86.6 208.4,93.6 212.8,100.7 217.2,108.1 221.6,115.6 226.0,123.2 230.4,130.9 234.8,138.7 239.2,146.5 243.6,154.4 248.0,162.2 252.4,170.0 256.8,177.7 261.2,185.3 265.6,192.7 270.0,200.0 274.4,207.1 278.8,214.0 283.2,220.6 287.6,227.0 292.0,233.0 296.4,238.7 300.8,244.0 305.2,249.0 309.6,253.5 314.0,257.6 318.4,261.2 322.8,264.3 327.2,266.8 331.6,268.8 336.0,270.2 340.4,271.0 344.8,271.1 349.2,270.5 353.6,269.2 358.0,267.2 362.4,264.4 366.8,260.8 371.2,256.4 375.6,251.1 380.0,245.0" />
+  <circle class="sv-a" cx="138" cy="27.2" r="4.5" />
+  <circle class="sv-l" cx="343.3" cy="271.1" r="4" />
+  <text class="sv-b" x="150" y="18" text-anchor="start">(2, 144) en büyük</text>
+  <text class="sv-s" x="343" y="292" text-anchor="middle">x = 20/3 (aralık dışı)</text>
+  <text class="sv-s" x="160" y="244" text-anchor="middle">tanım aralığı: 0 &lt; x &lt; 5</text>
+</svg>
+<figcaption>V(x) = x(16 − 2x)(10 − 2x) gerçek ölçüyle (y ekseni sıkıştırıldı). Türevin iki kökü var ama yalnızca x = 2 kutuya karşılık gelir. x = 20/3'teki çukur, formülün negatif "hacim" verdiği, gerçekte var olmayan bir kutudur; aralığı yazmayan biri onu da aday sayar.</figcaption>
+</figure>
+
+<p>Kare bir kartonda kısa bir sonuç vardır: a kenarlı kareden x kesilince V = x(a − 2x)<sup>2</sup>, türevi (a − 2x)(a − 6x) olur ve aralıktaki kök x = a/6'dır. 12 cm'lik kartonda x = 2, 24 cm'likte x = 4. Bunu ezberleme; türevin çarpanlarına nasıl ayrıldığını gör, gerektiğinde yeniden çıkarırsın.</p>
+
+<p>Ters yöndeki soru: hacim sabit, malzeme (yüzey alanı) en az olsun. Bu tip konserve kutusu, depo, ambalaj tasarımında karşına çıkar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Hacmi 16π cm<sup>3</sup> olan, altı ve üstü kapalı dik dairesel silindir biçiminde bir kutu en az malzemeyle yapılmak isteniyor. Taban yarıçapı ve yükseklik kaç cm olmalıdır?</p>
+<p><strong>Adım 1.</strong> Değişkenler: yarıçap r, yükseklik h. Amaç: yüzey alanı (iki taban + yanal yüz, geo Parça 22).</p>
+<span class="mat">S = 2πr<sup>2</sup> + 2πrh <span class="g">(iki daire + açınımı dikdörtgen olan yanal yüz)</span></span>
+<p><strong>Adım 2.</strong> Koşul: hacim sabit.</p>
+<span class="mat">πr<sup>2</sup>h = 16π ⇒ h = <span class="kes"><span>16</span><span>r<sup>2</sup></span></span> <span class="g">(h'yi r cinsinden yaz)</span></span>
+<span class="mat">S(r) = 2πr<sup>2</sup> + 2πr · <span class="kes"><span>16</span><span>r<sup>2</sup></span></span> = 2πr<sup>2</sup> + <span class="kes"><span>32π</span><span>r</span></span> <span class="g">(tek değişken)</span></span>
+<p><strong>Adım 3.</strong> Tanım aralığı: r &gt; 0.</p>
+<p><strong>Adım 4.</strong> Türev.</p>
+<span class="mat">S′(r) = 4πr − <span class="kes"><span>32π</span><span>r<sup>2</sup></span></span> <span class="g">(32πr<sup>−1</sup>'in türevi)</span></span>
+<span class="mat">4πr = <span class="kes"><span>32π</span><span>r<sup>2</sup></span></span> ⇒ r<sup>3</sup> = 8 ⇒ r = 2 <span class="g">(iki yanı r<sup>2</sup>/(4π) ile çarp)</span></span>
+<p><strong>Adım 5.</strong> Denetim: S″(r) = 4π + 64π/r<sup>3</sup> &gt; 0 (r &gt; 0 için hep pozitif), minimum. Tek kritik nokta, mutlak minimum.</p>
+<span class="mat">h = <span class="kes"><span>16</span><span>4</span></span> = 4 , S = 8π + 16π = 24π <span class="g">(boyutlar ve en az alan)</span></span>
+<p><strong>Sonuç:</strong> r = 2 cm, h = 4 cm. Yükseklik çapa eşit çıktı; kutunun dik kesiti bir karedir. Hacim ne olursa olsun, kapalı silindirde en az malzeme h = 2r iken harcanır (aynı adımları genel V ile yaparsan r<sup>3</sup> = V/(2π) ve h = V/(πr<sup>2</sup>) = 2r bulursun).</p></div>
+
+<p>Aynı fikir kare tabanlı, üstü açık bir kutuda da işler. Hacmi 32 cm<sup>3</sup> olsun; taban kenarı x, yükseklik h. Koşul x<sup>2</sup>h = 32, amaç S = x<sup>2</sup> + 4xh (bir taban, dört yan yüz). h = 32/x<sup>2</sup> koyunca S(x) = x<sup>2</sup> + 128/x; S′(x) = 2x − 128/x<sup>2</sup> = 0 ⇒ x<sup>3</sup> = 64 ⇒ x = 4, h = 2, S = 16 + 32 = 48 cm<sup>2</sup>. Kutu küp çıkmadı: üstü açık olduğu için yükseklik tabanın yarısı oldu. "En iyi kutu küptür" sezgisi yalnızca altı yüzün hepsinin aynı malzemeden olduğu kapalı kutuda doğrudur.</p>
+
+<h2 class="s">6. Şekil içine çizilen en büyük dikdörtgen</h2>
+
+<p>Bu kalıpta bir dikdörtgenin bir kenarı sabit bir doğru üzerinde, karşı köşeleri ise bir eğrinin (çember, doğru, parabol) üzerindedir. Koşul, köşenin eğri üzerinde olmasıdır: köşe (x, y) ise y'yi eğrinin denkleminden x cinsinden yazarsın.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Yarıçapı 5 birim olan bir yarım dairenin içine, bir kenarı çap üzerinde ve iki köşesi yay üzerinde olan dikdörtgenler çiziliyor. Bu dikdörtgenlerin alanı en çok kaç birimkaredir?</p>
+<p><strong>Adım 1.</strong> Koordinat kur: merkez orijin, çap x ekseni üzerinde. Yay x<sup>2</sup> + y<sup>2</sup> = 25 çemberinin üst yarısı. Dikdörtgen simetriktir; sağ üst köşe P(x, y), genişlik 2x, yükseklik y.</p>
+<span class="mat">y = √(25 − x<sup>2</sup>) <span class="g">(P yay üzerinde, y &gt; 0)</span></span>
+<span class="mat">A(x) = 2x · √(25 − x<sup>2</sup>) <span class="g">(genişlik × yükseklik)</span></span>
+<p><strong>Adım 2.</strong> Tanım aralığı: 0 &lt; x &lt; 5.</p>
+<p><strong>Adım 3.</strong> Kökten kurtulmak için kısa yol: A &gt; 0 olduğundan A en büyükken A<sup>2</sup> de en büyüktür (pozitif sayılarda kare almak sırayı korur).</p>
+<span class="mat">A<sup>2</sup> = 4x<sup>2</sup>(25 − x<sup>2</sup>) = 100x<sup>2</sup> − 4x<sup>4</sup> <span class="g">(kökten kurtulduk)</span></span>
+<span class="mat">(A<sup>2</sup>)′ = 200x − 16x<sup>3</sup> = 8x(25 − 2x<sup>2</sup>) = 0 <span class="g">(türev, ortak çarpan)</span></span>
+<span class="mat">x<sup>2</sup> = <span class="kes"><span>25</span><span>2</span></span> ⇒ x = <span class="kes"><span>5</span><span>√2</span></span> = <span class="kes"><span>5√2</span><span>2</span></span> <span class="g">(x = 0 aralık dışında)</span></span>
+<p><strong>Adım 4.</strong> Denetim: x<sup>2</sup> = 12,5'ten küçükken 25 − 2x<sup>2</sup> &gt; 0, büyükken &lt; 0; işaret + → −, maksimum.</p>
+<span class="mat">y = √(25 − 12,5) = √12,5 = <span class="kes"><span>5√2</span><span>2</span></span> <span class="g">(y = x çıktı)</span></span>
+<span class="mat">A = 2 · <span class="kes"><span>5√2</span><span>2</span></span> · <span class="kes"><span>5√2</span><span>2</span></span> = 2 · <span class="kes"><span>50</span><span>4</span></span> = 25 <span class="g">(alan)</span></span>
+<p><strong>Adım 5 (türevle doğrudan, karşılaştırma için).</strong> Zincir kuralıyla (Parça 23): A′(x) = 2√(25 − x<sup>2</sup>) + 2x · (−2x)/(2√(25 − x<sup>2</sup>)) = (50 − 4x<sup>2</sup>)/√(25 − x<sup>2</sup>). Pay sıfır olunca x<sup>2</sup> = 12,5; aynı sonuç, biraz daha uzun yoldan.</p>
+<p><strong>Sonuç:</strong> En büyük alan 25 birimkare = r<sup>2</sup>. Dikdörtgenin yüksekliği genişliğinin yarısıdır; yani iki yanyana kareden oluşur.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="Yarıçapı 5 olan yarım daire ve içine çizilmiş en büyük dikdörtgen. Dikdörtgenin sağ üst köşesi P, yay üzerindedir ve koordinatları x eşittir y eşittir 5 kök 2 bölü 2'dir. Merkezden P'ye çizilen yarıçap çapla 45 derece yapar.">
+  <line class="sv-c" x1="20" y1="200" x2="380" y2="200" />
+  <path class="sv-cl" d="M40 200 A160 160 0 0 1 360 200" />
+  <rect class="sv-m" x="86.9" y="86.9" width="226.3" height="113.1" />
+  <line class="sv-c" x1="200" y1="200" x2="313.1" y2="86.9" />
+  <line class="sv-c" x1="200" y1="196" x2="200" y2="204" />
+  <circle class="sv-a" cx="313.1" cy="86.9" r="4.5" />
+  <circle class="sv-a" cx="86.9" cy="86.9" r="4.5" />
+  <text class="sv-b" x="320" y="80" text-anchor="start">P(x, y)</text>
+  <text class="sv-t" x="200" y="218" text-anchor="middle">O</text>
+  <text class="sv-s" x="40" y="218" text-anchor="middle">−5</text>
+  <text class="sv-s" x="360" y="218" text-anchor="middle">5</text>
+  <text class="sv-t" x="256" y="192" text-anchor="middle">x</text>
+  <text class="sv-t" x="322" y="148" text-anchor="start">y</text>
+  <text class="sv-s" x="244" y="128" text-anchor="end">r = 5</text>
+  <text class="sv-s" x="200" y="244" text-anchor="middle">A = 2x · y, y = √(25 − x²); en büyük alan x = y iken</text>
+</svg>
+<figcaption>Örnek 5 gerçek ölçüyle. En büyük dikdörtgende köşe, yayın 45°'lik noktasındadır: x = y = 5√2/2 ≈ 3,54. Alan 2 · 3,54 · 3,54 = 25. Daha geniş bir dikdörtgen basıklaşır, daha dar bir dikdörtgen incelir; ikisinde de alan 25'in altına düşer.</figcaption>
+</figure>
+
+<p><strong>Üçgen içine dikdörtgen.</strong> Dik kenarları 6 ve 8 birim olan bir dik üçgen düşün; dik açı orijinde, dik kenarlar eksenler üzerinde olsun. Hipotenüs (6, 0) ve (0, 8) noktalarından geçen doğrudur: y = 8 − 4x/3. Bir köşesi orijinde, karşı köşesi hipotenüs üzerinde olan dikdörtgenin alanı A(x) = x(8 − 4x/3) = 8x − 4x<sup>2</sup>/3, 0 &lt; x &lt; 6. A′(x) = 8 − 8x/3 = 0 ⇒ x = 3, y = 4, A = 12. Üçgenin alanı 24'tür; en büyük dikdörtgen tam yarısını kaplar ve köşesi hipotenüsün orta noktasına düşer. Tabanı bir kenar üzerinde olan her üçgende sonuç aynıdır: dikdörtgenin yüksekliği üçgen yüksekliğinin yarısı olunca alan en büyük olur ve üçgenin yarısına eşittir. Gerekçe yine bir paraboldür: genişlik yükseklikle doğrusal olarak azalır, alan da yüksekliğin ikinci dereceden fonksiyonu olur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> y = 12 − x<sup>2</sup> parabolü ile x ekseni arasında kalan bölgeye, bir kenarı x ekseni üzerinde ve iki köşesi parabol üzerinde olan dikdörtgenler çiziliyor. En büyük alan kaç birimkaredir?</p>
+<p><strong>Adım 1.</strong> Parabol y eksenine göre simetrik; dikdörtgen de simetrik olur. Sağ üst köşe (x, 12 − x<sup>2</sup>), genişlik 2x.</p>
+<span class="mat">A(x) = 2x(12 − x<sup>2</sup>) = 24x − 2x<sup>3</sup> <span class="g">(genişlik × yükseklik)</span></span>
+<p><strong>Adım 2.</strong> Tanım aralığı: x &gt; 0 ve yükseklik 12 − x<sup>2</sup> &gt; 0, yani 0 &lt; x &lt; √12.</p>
+<p><strong>Adım 3.</strong> Türev.</p>
+<span class="mat">A′(x) = 24 − 6x<sup>2</sup> = 0 ⇒ x<sup>2</sup> = 4 ⇒ x = 2 <span class="g">(x = −2 aralık dışında)</span></span>
+<span class="mat">A″(x) = −12x ⇒ A″(2) = −24 &lt; 0 <span class="g">(maksimum)</span></span>
+<span class="mat">A(2) = 4 · (12 − 4) = 4 · 8 = 32 <span class="g">(genişlik 4, yükseklik 8)</span></span>
+<p><strong>Sonuç:</strong> En büyük alan 32 birimkare.</p></div>
+
+<p><strong>Eğri altındaki üçgen.</strong> Aynı kurulum üçgenle de gelir. y = 9 − x<sup>2</sup> eğrisinin birinci bölgedeki bir P(x, y) noktasından x eksenine dik iniliyor, dikme ayağı H olsun. OHP dik üçgeninin alanı A(x) = x(9 − x<sup>2</sup>)/2, aralık 0 &lt; x &lt; 3. A′(x) = (9 − 3x<sup>2</sup>)/2 = 0 ⇒ x = √3; A = √3 · 6/2 = 3√3. Kurulumun özü değişmedi: köşeyi eğri üzerinde (x, f(x)) diye yaz, uzunlukları x cinsinden oku.</p>
+
+<h2 class="s">7. Analitik problemler: eğriye en kısa uzaklık</h2>
+
+<p>Bir A noktasının bir eğriye uzaklığı, A'nın eğri üzerindeki noktalara olan uzaklıklarının en küçüğüdür. Eğri üzerindeki noktayı P(x, f(x)) diye yazınca, iki nokta arası uzaklık formülü (geo Parça 17) bir kök içerir: d = √((x − x<sub>A</sub>)<sup>2</sup> + (f(x) − y<sub>A</sub>)<sup>2</sup>). Bu kökün türevi uğraştırıcıdır ama gerek yoktur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Uzaklık d ≥ 0 olduğundan, d'nin en küçük olduğu nokta ile <strong>d<sup>2</sup>'nin</strong> en küçük olduğu nokta aynıdır. Bu yüzden kök içindeki ifadeyi, D(x) = d<sup>2</sup>, en küçük yap; en sonda karekök alarak d'yi bul.</p>
+<p>Ayrıca en yakın noktada <strong>eğrinin normali A'dan geçer</strong>: AP doğrusu, P'deki teğete diktir.</p>
+<p><strong>Neden?</strong> Negatif olmayan sayılarda kare alma işlemi artandır: 0 ≤ d<sub>1</sub> &lt; d<sub>2</sub> ise d<sub>1</sub><sup>2</sup> &lt; d<sub>2</sub><sup>2</sup>. Sıralama değişmediği için en küçüğün yeri de değişmez. Normal özelliğinin nedeni şudur: AP teğete dik olmasaydı, P'den teğet yönünde biraz kayınca A'ya yaklaşan bir yön bulunurdu; P en yakın nokta olamazdı (Parça 24'teki normal tanımı).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> A(0, 3) noktasının y = x<sup>2</sup> parabolüne olan en kısa uzaklığı kaç birimdir?</p>
+<p><strong>Adım 1.</strong> Parabol üzerindeki nokta P(x, x<sup>2</sup>). Uzaklığın karesi:</p>
+<span class="mat">D(x) = (x − 0)<sup>2</sup> + (x<sup>2</sup> − 3)<sup>2</sup> <span class="g">(uzaklık formülü, kare)</span></span>
+<span class="mat">D(x) = x<sup>2</sup> + x<sup>4</sup> − 6x<sup>2</sup> + 9 = x<sup>4</sup> − 5x<sup>2</sup> + 9 <span class="g">(aç, topla)</span></span>
+<p><strong>Adım 2.</strong> Tanım aralığı: x her gerçek sayı olabilir.</p>
+<p><strong>Adım 3.</strong> Türev.</p>
+<span class="mat">D′(x) = 4x<sup>3</sup> − 10x = 2x(2x<sup>2</sup> − 5) = 0 <span class="g">(ortak çarpan 2x)</span></span>
+<span class="mat">x = 0 ya da x<sup>2</sup> = <span class="kes"><span>5</span><span>2</span></span> <span class="g">(üç kritik nokta: 0 ve ±√(5/2))</span></span>
+<p><strong>Adım 4.</strong> Kritik noktaların türü. Burada üç aday var; tek kritik nokta ilkesi kullanılamaz, hepsini hesapla ya da ikinci türeve bak.</p>
+<span class="mat">D″(x) = 12x<sup>2</sup> − 10 <span class="g">(ikinci türev)</span></span>
+<span class="mat">D″(0) = −10 &lt; 0 <span class="g">(x = 0 yerel maksimum!)</span></span>
+<span class="mat">D″(±√(5/2)) = 30 − 10 = 20 &gt; 0 <span class="g">(yerel minimum)</span></span>
+<span class="mat">D(0) = 9 , D(±√(5/2)) = <span class="kes"><span>25</span><span>4</span></span> − <span class="kes"><span>25</span><span>2</span></span> + 9 = <span class="kes"><span>11</span><span>4</span></span> <span class="g">(değerleri karşılaştır)</span></span>
+<p><strong>Adım 5.</strong> En küçük D = 11/4; uzaklık için karekök al.</p>
+<span class="mat">d = √(11/4) = <span class="kes"><span>√11</span><span>2</span></span> ≈ 1,66 <span class="g">(istenen uzaklık, d<sup>2</sup> değil)</span></span>
+<p><strong>Adım 6 (kontrol yolu: normal).</strong> P(√(5/2), 5/2)'de teğetin eğimi 2x = 2√(5/2) = √10. AP'nin eğimi (5/2 − 3)/√(5/2) = −1/(2√(5/2)) = −1/√10. Çarpım √10 · (−1/√10) = −1; AP gerçekten normal.</p>
+<p><strong>Sonuç:</strong> En kısa uzaklık √11/2 birim; en yakın noktalar (±√(5/2), 5/2).</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="y eşittir x kare parabolü ve A(0, 3) noktası. A'ya en yakın parabol noktaları P ve P üssü, apsisleri artı eksi kök 5 bölü 2, ordinatları 5 bölü 2. A'dan bu noktalara uzaklık kök 11 bölü 2. A'dan tepe noktası O'ya uzaklık 3'tür ve bu yakındaki noktalar arasında en büyük uzaklıktır.">
+  <line class="sv-c" x1="20" y1="250" x2="390" y2="250" />
+  <line class="sv-c" x1="200" y1="282" x2="200" y2="10" />
+  <line class="sv-c" x1="150" y1="247" x2="150" y2="253" />
+  <line class="sv-c" x1="250" y1="247" x2="250" y2="253" />
+  <line class="sv-c" x1="100" y1="247" x2="100" y2="253" />
+  <line class="sv-c" x1="300" y1="247" x2="300" y2="253" />
+  <line class="sv-c" x1="197" y1="200" x2="203" y2="200" />
+  <line class="sv-c" x1="197" y1="150" x2="203" y2="150" />
+  <line class="sv-c" x1="197" y1="50" x2="203" y2="50" />
+  <text class="sv-s" x="150" y="268" text-anchor="middle">−1</text>
+  <text class="sv-s" x="250" y="268" text-anchor="middle">1</text>
+  <text class="sv-s" x="100" y="268" text-anchor="middle">−2</text>
+  <text class="sv-s" x="300" y="268" text-anchor="middle">2</text>
+  <text class="sv-s" x="194" y="204" text-anchor="end">1</text>
+  <text class="sv-s" x="194" y="154" text-anchor="end">2</text>
+  <text class="sv-s" x="194" y="54" text-anchor="end">4</text>
+  <text class="sv-s" x="388" y="244" text-anchor="end">x</text>
+  <text class="sv-s" x="206" y="18" text-anchor="start">y</text>
+  <polyline class="sv-cl" points="94.0,25.3 97.5,40.0 101.1,54.2 104.6,68.0 108.1,81.2 111.7,93.9 115.2,106.2 118.7,117.9 122.3,129.2 125.8,139.9 129.3,150.1 132.9,159.9 136.4,169.1 139.9,177.8 143.5,186.1 147.0,193.8 150.5,201.1 154.1,207.8 157.6,214.0 161.1,219.8 164.7,225.0 168.2,229.8 171.7,234.0 175.3,237.8 178.8,241.0 182.3,243.8 185.9,246.0 189.4,247.8 192.9,249.0 196.5,249.8 200.0,250.0 203.5,249.8 207.1,249.0 210.6,247.8 214.1,246.0 217.7,243.8 221.2,241.0 224.7,237.8 228.3,234.0 231.8,229.8 235.3,225.0 238.9,219.8 242.4,214.0 245.9,207.8 249.5,201.1 253.0,193.8 256.5,186.1 260.1,177.8 263.6,169.1 267.1,159.9 270.7,150.1 274.2,139.9 277.7,129.2 281.3,117.9 284.8,106.2 288.3,93.9 291.9,81.2 295.4,68.0 298.9,54.2 302.5,40.0 306.0,25.3" />
+  <line class="sv-c" x1="200" y1="100" x2="279.1" y2="125" />
+  <line class="sv-c" x1="200" y1="100" x2="120.9" y2="125" />
+  <circle class="sv-l" cx="200" cy="100" r="4.5" />
+  <circle class="sv-a" cx="279.1" cy="125" r="4.5" />
+  <circle class="sv-a" cx="120.9" cy="125" r="4.5" />
+  <text class="sv-b" x="192" y="92" text-anchor="end">A(0, 3)</text>
+  <text class="sv-b" x="288" y="132" text-anchor="start">P(√(5/2), 5/2)</text>
+  <text class="sv-b" x="112" y="132" text-anchor="end">P′</text>
+  <text class="sv-s" x="226" y="94" text-anchor="start">√11/2</text>
+  <text class="sv-s" x="206" y="180" text-anchor="start">3</text>
+</svg>
+<figcaption>Örnek 7 gerçek ölçüyle (iki eksende birim eşit). A'dan P ve P′'ye uzaklık √11/2 ≈ 1,66; A'dan tepe noktası O'ya uzaklık 3. D′(0) = 0 olduğu hâlde O en yakın değil, çevresindeki noktalara göre en <em>uzak</em> noktadır. AP doğrusu P'deki teğete diktir, yani parabolün P'deki normali A'dan geçer.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Bulunan kritik noktanın en küçük mü en büyük mü olduğunu denetlememek.</strong> Örnek 7'de D′(x) = 0'ı çözen ve ilk bulduğu kök olan x = 0'ı alan biri en yakın noktayı tepe noktası (0, 0) sanır ve uzaklığı 3 bulur. Oysa x = 0 bir yerel maksimumdur. Türevin sıfır olması yalnızca "burada teğet yatay" der; tepe mi çukur mu olduğunu söylemez. Her kritik noktada işaret değişimine ya da ikinci türeve bak; birden fazla aday varsa değerleri karşılaştır.</p>
+<p><strong>d<sup>2</sup>'yi cevap diye vermek.</strong> Kısa yolda en küçük yapılan D = d<sup>2</sup>'dir; bulunan 11/4 uzaklık değil, uzaklığın karesidir. Son adımda karekökü almayı unutma. Aynı uyarı Örnek 5'teki A<sup>2</sup> için de geçerlidir: en büyük A<sup>2</sup> = 625, alan 25'tir.</p></div>
+
+<p><strong>Koordinatlarla kurulan ifadeler.</strong> Sınav bazen uzaklık yerine eğri üzerindeki noktanın koordinatlarıyla kurulmuş bir ifadeyi sorar. Yöntem aynıdır: P(x, f(x)) yaz, ifadeyi x cinsinden kur, aralığı belirle. Örnek: y = 12 − x<sup>2</sup> eğrisinin birinci bölgedeki noktalarında x · y çarpımı en çok kaçtır? x · y = x(12 − x<sup>2</sup>) = 12x − x<sup>3</sup>, 0 &lt; x &lt; √12; türev 12 − 3x<sup>2</sup> = 0 ⇒ x = 2, çarpım 2 · 8 = 16. Bu, köşesi orijinde ve karşı köşesi eğri üzerinde olan dikdörtgenin alanıdır; Örnek 6'daki simetrik dikdörtgenin tam yarısı. Bir başka örnek: y = 5 − x<sup>2</sup> eğrisinde x + y toplamı en çok kaçtır? x + 5 − x<sup>2</sup> ikinci dereceden; tepe x = 1/2'de, toplam 1/2 + 5 − 1/4 = 21/4.</p>
+
+<h2 class="s">8. Ekonomi problemleri: gelir, maliyet, kâr</h2>
+
+<p>Ekonomi sorularında üç fonksiyon vardır ve hepsi üretilen ya da satılan miktar x'e bağlıdır. Terimleri doğru oturtmak, sorunun yarısıdır.</p>
+
+<div class="tablo"><table>
+<tr><th>Terim</th><th>Anlamı</th><th>Nasıl kurulur?</th></tr>
+<tr><td>Gelir R(x)</td><td>Satıştan giren toplam para</td><td>birim fiyat × satılan miktar; fiyat miktara bağlıysa p(x) · x</td></tr>
+<tr><td>Maliyet C(x)</td><td>Üretimin toplam gideri</td><td>sabit gider + birim gider × miktar (ya da verilen fonksiyon)</td></tr>
+<tr><td>Kâr K(x)</td><td>Elde kalan para</td><td>K(x) = R(x) − C(x)</td></tr>
+<tr><td>Marjinal gelir, marjinal maliyet</td><td>Bir birim daha üretmenin getirdiği gelir ve gider (yaklaşık)</td><td>R′(x) ve C′(x): değişim hızları</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">K(x) = R(x) − C(x) , K′(x) = 0 ⇔ R′(x) = C′(x)</span>
+<p>Kâr, marjinal gelirin marjinal maliyete eşit olduğu üretim düzeyinde en büyük olur (K″ &lt; 0 ise ve tanım aralığında uçlar daha iyi değilse).</p>
+<p><strong>Neden?</strong> R′ &gt; C′ iken bir birim daha üretmek giderden çok gelir getirir, kâr artar; R′ &lt; C′ iken fazladan birim zarar ettirir, kâr azalır. Kârın artmaktan azalmaya döndüğü yer, ikisinin eşitlendiği yerdir. Türev diliyle: K′ = R′ − C′ işaret değiştiriyor.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> 60 odalı bir otelde gecelik oda fiyatı 400 TL iken bütün odalar doluyor. Fiyattaki her 20 TL'lik artış 2 odanın boş kalmasına yol açıyor. Dolu her odanın otele günlük gideri 40 TL'dir. Günlük kârın en büyük olması için oda fiyatı kaç TL olmalıdır ve en büyük kâr kaçtır?</p>
+<p><strong>Adım 1.</strong> Değişken: n = yapılan 20 TL'lik artış sayısı. Fiyat 400 + 20n, dolu oda 60 − 2n.</p>
+<p><strong>Adım 2.</strong> Bir dolu odadan kalan para fiyat eksi gider: 400 + 20n − 40 = 360 + 20n.</p>
+<span class="mat">K(n) = (360 + 20n)(60 − 2n) <span class="g">(oda başı kâr × dolu oda)</span></span>
+<span class="mat">K(n) = 21600 + 480n − 40n<sup>2</sup> <span class="g">(çarpımı aç: −720n + 1200n = 480n)</span></span>
+<p><strong>Adım 3.</strong> Tanım aralığı: dolu oda sayısı negatif olamaz, 0 ≤ n ≤ 30.</p>
+<p><strong>Adım 4.</strong> Türev.</p>
+<span class="mat">K′(n) = 480 − 80n = 0 ⇒ n = 6 <span class="g">(K″ = −80 &lt; 0, maksimum)</span></span>
+<p><strong>Adım 5 (kısa yol).</strong> K(n) = (360 + 20n)(60 − 2n) parabolünün kökleri n = −18 ve n = 30; tepe köklerin ortası: (−18 + 30)/2 = 6. Aynı sonuç.</p>
+<span class="mat">fiyat = 400 + 120 = 520 , dolu oda = 60 − 12 = 48 <span class="g">(n = 6)</span></span>
+<span class="mat">K(6) = 480 · 48 = 23040 <span class="g">(oda başı 480 TL kâr)</span></span>
+<p><strong>Adım 6 (kontrol yolu).</strong> Hiç zam yapılmasa kâr 360 · 60 = 21600; n = 5 için 460 · 50 = 23000, n = 7 için 500 · 46 = 23000. Tepe gerçekten n = 6'da.</p>
+<p><strong>Sonuç:</strong> Fiyat 520 TL olmalı; en büyük günlük kâr 23 040 TL. Soru "kaç oda dolu olur" deseydi cevap 48, "kaç kez zam yapılır" deseydi 6 olurdu: 7. adımı unutma.</p></div>
+
+<p>Kâr fonksiyonu üçüncü dereceden verildiğinde tepe noktası kısa yolu işlemez ve uçların da denetlenmesi gerekir. Örneğin x yüz adetlik üretimde kâr K(x) = −x<sup>3</sup> + 6x<sup>2</sup> + 15x − 20 (bin TL) ve kapasite 0 ≤ x ≤ 8 olsun. K′(x) = −3x<sup>2</sup> + 12x + 15 = −3(x − 5)(x + 1); aralıktaki kök x = 5. K(5) = −125 + 150 + 75 − 20 = 80; uçlarda K(0) = −20, K(8) = −512 + 384 + 120 − 20 = −28. En büyük kâr 80 bin TL, x = 5'te.</p>
+
+<h2 class="s">9. Hareket problemleri: en yüksek nokta ve en büyük hız</h2>
+
+<p>Parça 22'de konum, hız ve ivme arasındaki zinciri kurdun: v(t) = s′(t), a(t) = v′(t) = s″(t). Hareket problemlerinde "en" ile başlayan her soru bu zincirde bir halkanın en büyük ya da en küçük değerini ister; hangisi olduğunu doğru seçmek gerekir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>(1) Konum (yükseklik) en büyükken, iç noktada <strong>hız sıfırdır</strong>: s′(t) = v(t) = 0.</p>
+<p>(2) Hız en büyükken, iç noktada <strong>ivme sıfırdır</strong>: v′(t) = a(t) = 0. Bu an, konum grafiğinin büküm noktasıdır (Parça 26).</p>
+<p><strong>Neden?</strong> Her biri "bir fonksiyonun en büyük değeri, türevinin sıfır olduğu yerde" kuralının kendisidir; yalnızca hangi fonksiyonun hangi fonksiyonun türevi olduğu değişir. Yukarı atılan bir taş tepede bir an durur (v = 0); hızlanan bir araç hızlanmayı bıraktığı anda (a = 0) en yüksek hızına ulaşmıştır.</p></div>
+
+<p>Yukarı atılan bir topun yüksekliği h(t) = 40t − 5t<sup>2</sup> metre olsun (g = 10 m/s<sup>2</sup> kabulüyle; t saniye). h′(t) = 40 − 10t = 0 ⇒ t = 4 s ve h(4) = 160 − 80 = 80 m. Bu, Parça 6'da tepe noktasıyla çözdüğün sorunun türev hâlidir; sonuç aynıdır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> Doğrusal bir yolda hareket eden bir cismin konumu 0 ≤ t ≤ 6 saniye aralığında s(t) = −t<sup>3</sup> + 9t<sup>2</sup> + 2t metre ile veriliyor. Cismin hızı en çok kaç m/s olur ve bu anda cisim başlangıç noktasından kaç metre uzaktadır?</p>
+<p><strong>Adım 1.</strong> Amaç fonksiyonu konum değil, hızdır.</p>
+<span class="mat">v(t) = s′(t) = −3t<sup>2</sup> + 18t + 2 <span class="g">(m/s)</span></span>
+<p><strong>Adım 2.</strong> Hızın türevi ivmedir; sıfıra eşitle.</p>
+<span class="mat">a(t) = v′(t) = −6t + 18 = 0 ⇒ t = 3 <span class="g">(m/s<sup>2</sup>; kritik an)</span></span>
+<span class="mat">v″(t) = −6 &lt; 0 <span class="g">(v için maksimum)</span></span>
+<p><strong>Adım 3.</strong> Kapalı aralık: uçları da hesapla.</p>
+<span class="mat">v(3) = −27 + 54 + 2 = 29 , v(0) = 2 , v(6) = −108 + 108 + 2 = 2 <span class="g">(m/s)</span></span>
+<p><strong>Adım 4.</strong> İstenen ikinci nicelik: o andaki konum.</p>
+<span class="mat">s(3) = −27 + 81 + 6 = 60 <span class="g">(m)</span></span>
+<p><strong>Adım 5 (birim denetimi).</strong> s metre, v = s′ metre/saniye, a = v′ metre/saniye<sup>2</sup>. Cevaplar sırasıyla m/s ve m.</p>
+<p><strong>Sonuç:</strong> En büyük hız 29 m/s (t = 3 s'de); o anda cisim 60 m uzaktadır.</p></div>
+
+<p>Bu örnekte tuzak, "hız en büyük" sözünü görüp s′(t) = 0 çözmektir. s′ = 0, konumun en büyük olduğu anı verir (burada t ≈ 6,1 s, aralığın dışında); hızın en büyük olduğu anı değil. Önce "neyin en büyüğü isteniyor?" sorusunu cevapla, türevi o fonksiyonun türevi olarak al.</p>
+
+<h2 class="s">10. İkinci dereceye inen problemler: tepe noktası kısa yolu</h2>
+
+<p>Örnek 2, Örnek 8 ve atılan top problemi, kurulumdan sonra ax<sup>2</sup> + bx + c biçiminde bir fonksiyona indi. Parça 5'te bu fonksiyonun en büyük ya da en küçük değerini tepe noktasında aldığını gördün: r = −b/2a. Türevle bulunan da aynı noktadır, çünkü 2ax + b = 0 ⇔ x = −b/2a. Yani tepe noktası formülü, ikinci dereceden fonksiyon için türevin önceden yapılmış hâlidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Amaç fonksiyonu f(x) = ax<sup>2</sup> + bx + c ise en büyük ya da en küçük değer x = −b/2a'da alınır (a &lt; 0 ise en büyük, a &gt; 0 ise en küçük). Fonksiyon a(x − x<sub>1</sub>)(x − x<sub>2</sub>) biçiminde çarpanlarına ayrılmış geliyorsa açmaya gerek yoktur: tepe köklerin ortasıdır, x = (x<sub>1</sub> + x<sub>2</sub>)/2.</p>
+<p><strong>Neden?</strong> Parabol simetri ekseni x = r'ye göre simetriktir (Parça 5); kökler eksene eşit uzaklıkta durduğu için eksen tam ortalarından geçer ve tepe eksen üzerindedir.</p></div>
+
+<div class="tablo"><table>
+<tr><th></th><th>Türev yöntemi</th><th>Tepe noktası yöntemi</th></tr>
+<tr><td>Ne zaman kullanılır?</td><td>Her problemde (3. derece, köklü, kesirli)</td><td>Yalnızca amaç fonksiyonu 2. dereceyse</td></tr>
+<tr><td>Kritik nokta</td><td>f′(x) = 0 çözülür</td><td>x = −b/2a ya da köklerin ortası</td></tr>
+<tr><td>En büyük mü en küçük mü?</td><td>İşaret tablosu ya da f″'nün işareti</td><td>a'nın işareti (kollar aşağı: en büyük)</td></tr>
+<tr><td>Hız</td><td>Bir-iki satır daha uzun</td><td>Çarpanlı biçimde en hızlısı</td></tr>
+<tr><td>Ortak tuzak</td><td colspan="2">Tepe tanım aralığının dışındaysa en iyi değer uç noktadadır (Parça 5'teki kısıtlı aralık); aralığı ikisinde de yaz.</td></tr>
+</table></div>
+
+<p>Son satır önemlidir. Örneğin Örnek 2'de tel 60 m, ama bahçenin duvar boyunca en çok 20 m olabileceği söylenseydi (y ≤ 20, yani x ≥ 20), aralık 20 ≤ x &lt; 30 olurdu. Tepe x = 15 bu aralıkta yok; parabol aralık boyunca azaldığı için en büyük alan uçta, x = 20'de: 20 · 20 = 400 m<sup>2</sup>. Hangi yöntemi kullanırsan kullan, aralık yazılmadan sonuç güvenilir değildir.</p>
+
+<h2 class="s">Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p>Sık gelen kalıpların sonuçlarını bir tabloda topla. Her satırın gerekçesi yukarıda; sınavda bu sonuçlarla seçenekleri hızla eleyebilir, sonra kısa bir hesapla doğrulayabilirsin.</p>
+
+<div class="tablo"><table>
+<tr><th>Kalıp</th><th>Amaç fonksiyonu</th><th>Sonuç</th></tr>
+<tr><td>Toplam S sabit, çarpım en büyük</td><td>x(S − x)</td><td>Sayılar eşit, çarpım (S/2)<sup>2</sup></td></tr>
+<tr><td>Çarpım P sabit, toplam en küçük</td><td>x + P/x</td><td>Sayılar eşit, toplam 2√P</td></tr>
+<tr><td>Çevre sabit dikdörtgen</td><td>x(Ç/2 − x)</td><td>Kare</td></tr>
+<tr><td>Duvar kenarında çit (tel L)</td><td>x(L − 2x)</td><td>x = L/4, duvara paralel kenar L/2</td></tr>
+<tr><td>a kenarlı kare kartondan kutu</td><td>x(a − 2x)<sup>2</sup></td><td>x = a/6</td></tr>
+<tr><td>Hacmi sabit kapalı silindir, en az alan</td><td>2πr<sup>2</sup> + 2V/r</td><td>h = 2r</td></tr>
+<tr><td>Yarım daire (yarıçap r) içinde dikdörtgen</td><td>2x√(r<sup>2</sup> − x<sup>2</sup>)</td><td>Yükseklik = genişliğin yarısı, alan r<sup>2</sup></td></tr>
+<tr><td>Üçgen içinde dikdörtgen (taban üzerinde)</td><td>doğrusal × doğrusal</td><td>Yükseklik yarı, alan üçgenin yarısı</td></tr>
+<tr><td>Noktanın eğriye uzaklığı</td><td>d<sup>2</sup> = (x − x<sub>A</sub>)<sup>2</sup> + (f(x) − y<sub>A</sub>)<sup>2</sup></td><td>d<sup>2</sup>'yi en küçük yap, sonda kök al</td></tr>
+</table></div>
+
+<p><strong>Hızlı yol.</strong> (1) Kurulum sonunda ikinci dereceden bir ifade çıktıysa türev yerine tepe noktasını kullan; çarpanlı hâldeyse köklerin ortasını al. (2) Kök içeren bir ifadeyi en büyük ya da en küçük yaparken (uzaklık, çember içindeki dikdörtgen) ifadenin karesiyle çalış. (3) Sabit çarpanları (2π, ½, 4 gibi) türev almadan önce dışarıda bırak; kritik noktayı etkilemezler.</p>
+
+<p><strong>Kontrol yolu.</strong> (1) Bulduğun değişken tanım aralığının içinde mi? (2) Komşu iki değeri hesapla (Örnek 2, 3, 8'deki gibi); ikisi de bulduğun değerden kötü olmalı. (3) Kapalı aralıkta uçları da karşılaştırdın mı? (4) Cevap soruda istenen nicelik mi, birimi doğru mu (m ile m<sup>2</sup>, cm<sup>2</sup> ile cm<sup>3</sup>)? (5) Sonuç anlamlı mı: kesilen kare kartondan büyük olamaz, uzaklık negatif olamaz, hacim sıfırdan büyük olmalı.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Tanım aralığını unutmak.</strong> Örnek 3'te V′(x) = 0'ın iki kökünden biri olan x = 20/3'ü de aday sayan biri, iki noktayı karşılaştırırken negatif bir "hacim" (−1600/27) hesaplar ya da daha kötüsü, hangisinin maksimum olduğunu yanlış seçer. Kurulumdan hemen sonra, türev almadan önce aralığı yaz: her uzunluk pozitif olmalı. Kritik nokta aralığın dışındaysa atılır; aralığın içinde hiç kritik nokta yoksa en iyi değer uçlardan birindedir.</p>
+<p><strong>İstenen niceliği vermemek.</strong> Kutu sorusunda soru "en büyük hacim" diyorsa cevap 144 cm<sup>3</sup>'tür, kesilen karenin kenarı 2 cm değil. Otel sorusunda fiyat, oda sayısı, zam sayısı ve kâr dört ayrı cevaptır. Sınav seçenekleri bu ara değerleri bilerek koyar. Son adımda soru kökünü yeniden oku.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 25–26'ya:</strong> Kritik nokta, birinci türev testi, kapalı aralıkta mutlak en büyük-en küçük ve ikinci türev testi bu parçanın bütün denetim araçlarıdır. Burada yeni olan yalnızca fonksiyonu sözlü durumdan kurmak ve aralığı problemin anlamından çıkarmaktır.</p>
+<p><strong>Parça 5–6'ya:</strong> Tepe noktası formülü ikinci dereceden amaç fonksiyonları için türevin kısaltmasıdır; Parça 6'daki çit, top ve gelir problemleri bu parçadaki şemanın ikinci dereceye inen özel durumlarıdır.</p>
+<p><strong>Parça 22–24'e:</strong> Köklü amaç fonksiyonlarında zincir kuralını, hareket problemlerinde konum-hız-ivme zincirini kullandın. En kısa uzaklıkta en yakın noktadaki normalin verilen noktadan geçmesi, Parça 24'teki normal doğrusunun bir uygulamasıdır.</p>
+<p><strong>Parça 28 ve sonrasına:</strong> İntegral parçalarında bu kez değişim hızı verilip toplam değişim istenecek; marjinal maliyetten toplam maliyete, hızdan konuma geçiş, buradaki türev yönünün tersidir. Parça 32'de integralle tanımlı bir fonksiyonun en büyük ve en küçük değerleri de aynı denetim araçlarıyla bulunacak.</p>
+<p><strong>Öbür derslere:</strong> Geometrideki alan, hacim ve uzaklık formülleri (geo Parça 14'teki yarım çember içine yerleştirilmiş dikdörtgen, geo Parça 17'deki uzaklık, geo Parça 22'deki silindir) burada amaç fonksiyonu olarak kullanıldı. Fizikte en yüksek noktada hızın sıfır olması ve hızın en büyük olduğu anda ivmenin sıfır olması, kinematik soruların bilinen kurallarıdır; burada türevle gerekçelendirildi.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir uygulama probleminde mutlak en büyük değer hangi noktalarda aranır? "Tek kritik nokta ilkesi" nedir?</summary><p>Kritik noktalarda (türevin sıfır olduğu ya da olmadığı yerler) ve tanım aralığı kapalıysa uç noktalarda aranır. Sürekli bir fonksiyonun bir aralıkta tek bir kritik noktası varsa ve orası yerel maksimumsa, aynı zamanda mutlak maksimumdur; daha yüksek bir değer olsaydı arada bir çukur, yani ikinci bir kritik nokta oluşurdu.</p></details>
+<details><summary>Yedi adımlık çözüm şemasını sırayla say.</summary><p>Şekil çiz ve değişkenleri adlandır; amaç fonksiyonunu yaz; koşulla tek değişkene indir; tanım aralığını belirle; türevi al ve sıfıra eşitle; işaret değişimi, ikinci türev ve uçlarla denetle; soruda istenen niceliği hesaplayıp ver.</p></details>
+<details><summary>Duvar kenarında L metre telle çevrilen dikdörtgen bahçede en büyük alan hangi boyutlarda elde edilir? Neden kare değildir?</summary><p>Duvara dik kenarlar L/4, duvara paralel kenar L/2 olur. Alan x(L − 2x) ve tepe x = L/4'tedir. Kare değildir çünkü paralel kenara bir kez, dik kenarlara iki kez tel harcanır; amaç fonksiyonu "toplamı sabit iki sayının çarpımı" biçiminde değildir.</p></details>
+<details><summary>Bir noktanın eğriye en kısa uzaklığını bulurken neden uzaklığın karesiyle çalışırsın? Sonunda neyi unutmamalısın?</summary><p>Uzaklık negatif olmadığı için kare alma sırayı korur; d ile d<sup>2</sup> aynı noktada en küçük olur ve d<sup>2</sup>'de kök yoktur, türevi kolaydır. Sonunda bulunan d<sup>2</sup> değerinin karekökünü almayı ve birden fazla kritik nokta varsa hangisinin minimum olduğunu denetlemeyi unutmamalıyım.</p></details>
+<details><summary>Kâr fonksiyonu nasıl kurulur? Kâr hangi koşulda en büyük olur?</summary><p>Kâr gelir eksi maliyettir: K(x) = R(x) − C(x); gelir birim fiyat çarpı satılan miktardır. Kâr, K′(x) = 0, yani marjinal gelirin marjinal maliyete eşit olduğu (R′ = C′) ve K′'nün artıdan eksiye döndüğü üretim düzeyinde en büyük olur; kapalı aralıkta uçlar da karşılaştırılır.</p></details>
+<details><summary>Bir cismin konumu s(t) ile verilmişken "hız en büyük" ve "konum en büyük" soruları için hangi denklemleri çözersin?</summary><p>Konum en büyükken (iç noktada) s′(t) = v(t) = 0 çözülür. Hız en büyükken v′(t) = a(t) = s″(t) = 0 çözülür. İkisini karıştırmamak için önce neyin en büyüğünün istendiğini belirleyip türevi o fonksiyonun türevi olarak alırım; kapalı zaman aralığında uçları da hesaplarım.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Adaylar:</strong> kritik noktalar + (kapalı aralıkta) uçlar. Tek kritik nokta yerel maks ise mutlak maks.</li>
+<li><strong>Şema:</strong> şekil → amaç fonksiyonu → koşulla tek değişken → <em>tanım aralığı</em> → f′ = 0 → işaret/f″/uç denetimi → istenen nicelik.</li>
+<li><strong>Sayılar:</strong> toplam sabit ⇒ çarpım eşitken en büyük, (S/2)<sup>2</sup>; çarpım sabit ⇒ toplam eşitken en küçük, 2√P. Ağırlıklı ifadede (x · y<sup>2</sup>) eşitlik yok, türeve güven.</li>
+<li><strong>Çevre sabit:</strong> kare. <strong>Duvar kenarı:</strong> x = L/4, paralel kenar L/2.</li>
+<li><strong>Kutu:</strong> V = x(a − 2x)(b − 2x); aralık 0 &lt; x &lt; (kısa kenar)/2; dış kökü at. Kare kartonda x = a/6.</li>
+<li><strong>Sabit hacim, en az alan:</strong> kapalı silindirde h = 2r; üstü açık kare tabanlı kutuda h = taban/2.</li>
+<li><strong>Şekil içinde dikdörtgen:</strong> köşe eğri üzerinde (x, f(x)). Yarım daire: alan r<sup>2</sup>. Üçgen: alan yarı. Parabol: 2x · f(x).</li>
+<li><strong>Uzaklık:</strong> d<sup>2</sup>'yi küçült, sonda kök al. En yakın noktada normal verilen noktadan geçer.</li>
+<li><strong>Kâr:</strong> K = R − C, R = fiyat × miktar; K′ = 0 ⇔ R′ = C′.</li>
+<li><strong>Hareket:</strong> konum en büyük ⇔ v = 0; hız en büyük ⇔ a = 0. Birimleri yaz.</li>
+<li><strong>2. derece:</strong> tepe x = −b/2a ya da köklerin ortası; tepe aralık dışındaysa cevap uçta.</li>
+<li><strong>Kontrol:</strong> aralıkta mı, komşu değerler daha kötü mü, istenen nicelik ve birim doğru mu?</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-27">
+<h3>Quiz 27</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Toplamları 18 olan iki pozitif gerçek sayının çarpımı en çok kaçtır?</p>
+<ul class="sec"><li>9</li><li>80</li><li>81</li><li>162</li><li>324</li></ul>
+<div class="coz"><p>Sayılar x ve 18 − x olsun: P(x) = x(18 − x) = 18x − x<sup>2</sup>. P′(x) = 18 − 2x = 0 ⇒ x = 9; P″ = −2 &lt; 0, maksimum. Sayılar 9 ve 9, çarpım 81. Toplam sabitken çarpım sayılar eşitken en büyüktür: (18/2)<sup>2</sup> = 81. 9, kritik noktayı (sayının kendisini) cevap vermektir. 80, sayıların farklı olması gerektiğini sanıp 8 · 10 almaktır. 162, (S/2)<sup>2</sup> yerine S<sup>2</sup>/2 hesaplamaktır; 324 ise toplamın karesidir.</p></div></li>
+
+<li data-c="A"><p class="q">80 m uzunluğundaki tel ile bir kenarı düz bir duvar olan dikdörtgen biçiminde bir alan çevrilecektir. Duvar tarafına tel çekilmeyeceğine göre çevrilen alan en çok kaç m<sup>2</sup> olur?</p>
+<ul class="sec"><li>800</li><li>400</li><li>1600</li><li>20</li><li>6400/9</li></ul>
+<div class="coz"><p>Duvara dik kenarlar x, paralel kenar 80 − 2x; A(x) = x(80 − 2x), 0 &lt; x &lt; 40. Kökler 0 ve 40, tepe ortada: x = 20 (türevle: 80 − 4x = 0). Paralel kenar 40, alan 20 · 40 = 800. 400, sonucu kare sanıp 20 × 20 almaktır. 1600, dik kenarlardan birini unutup A = x(80 − x) kurmaktır. 20, değişkeni cevap vermektir; soru alanı istiyor. 6400/9, teli üç eşit kenara bölüp (80/3)<sup>2</sup> almaktır.</p></div></li>
+
+<li data-c="D"><p class="q">Kenar uzunluğu 12 cm olan kare biçimindeki bir kartonun dört köşesinden eşit kareler kesilip kenarlar katlanarak üstü açık bir kutu yapılıyor. Bu kutunun hacmi en çok kaç cm<sup>3</sup> olabilir?</p>
+<ul class="sec"><li>108</li><li>64</li><li>2</li><li>128</li><li>256</li></ul>
+<div class="coz"><p>Kesilen karenin kenarı x ise V(x) = x(12 − 2x)<sup>2</sup>, 0 &lt; x &lt; 6. V′(x) = (12 − 2x)<sup>2</sup> − 4x(12 − 2x) = (12 − 2x)(12 − 6x); aralıktaki kök x = 2 (x = 6 uçtur, kutu yok olur). V(2) = 2 · 8<sup>2</sup> = 128. 108, x'i 12/4 = 3 alıp V(3) = 3 · 36 hesaplamaktır. 64, hacim yerine taban alanını (8 × 8) vermektir. 2, kesilen karenin kenarıdır. 256, tabanı 12 − x sanmaktır (her kenardan iki kez kesildiğini unutmak): x(12 − x)<sup>2</sup>'nin en büyüğü x = 4'te 256.</p></div></li>
+
+<li data-c="B"><p class="q">Hacmi 32 cm<sup>3</sup> olan, kare tabanlı ve üstü açık dikdörtgenler prizması biçiminde bir kutu en az malzemeyle yapılmak isteniyor. Kutunun taban kenarı kaç cm olmalıdır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>16</li><li>48</li><li>∛32</li></ul>
+<div class="coz"><p>Taban kenarı x, yükseklik h: x<sup>2</sup>h = 32, yüzey S = x<sup>2</sup> + 4xh (bir taban, dört yan yüz). h = 32/x<sup>2</sup> ile S(x) = x<sup>2</sup> + 128/x; S′(x) = 2x − 128/x<sup>2</sup> = 0 ⇒ x<sup>3</sup> = 64 ⇒ x = 4. S″ &gt; 0, minimum. 2, yüksekliktir (h = 32/16). 16, taban alanıdır. 48, en az yüzey alanının değeridir. ∛32, kutuyu küp sanmaktır; üstü açık kutuda küp en iyi biçim değildir.</p></div></li>
+
+<li data-c="E"><p class="q">y = 27 − x<sup>2</sup> parabolü ile x ekseni arasında kalan bölgeye, bir kenarı x ekseni üzerinde ve iki köşesi parabol üzerinde olan dikdörtgenler çiziliyor. Bu dikdörtgenlerden alanı en büyük olanın alanı kaç birimkaredir?</p>
+<ul class="sec"><li>54</li><li>81</li><li>18</li><li>216</li><li>108</li></ul>
+<div class="coz"><p>Sağ üst köşe (x, 27 − x<sup>2</sup>), genişlik 2x: A(x) = 2x(27 − x<sup>2</sup>) = 54x − 2x<sup>3</sup>, 0 &lt; x &lt; √27. A′(x) = 54 − 6x<sup>2</sup> = 0 ⇒ x = 3; A″(3) = −36 &lt; 0. A(3) = 6 · 18 = 108. 54, genişliği 2x yerine x almaktır (simetrik dikdörtgenin yarısı). 81, yüksekliği 27 sanıp 3 · 27 hesaplamaktır. 18, dikdörtgenin yüksekliğidir. 216, genişliği 4x almaktır.</p></div></li>
+
+<li data-c="A"><p class="q">A(4, 0) noktasının y = √(2x) eğrisine olan en kısa uzaklığı kaç birimdir?</p>
+<ul class="sec"><li>√7</li><li>7</li><li>4</li><li>√6</li><li>3</li></ul>
+<div class="coz"><p>Eğri üzerindeki nokta P(x, √(2x)), x ≥ 0. Uzaklığın karesi D(x) = (x − 4)<sup>2</sup> + 2x = x<sup>2</sup> − 6x + 16. Tepe x = 3'te (D′ = 2x − 6 = 0), D(3) = 9 − 18 + 16 = 7; uç x = 0'da D = 16 daha büyük. Uzaklık √7. 7, d<sup>2</sup>'yi cevap vermektir (kök almayı unutmak). 4, eğrinin uç noktası olan orijine uzaklıktır. √6, en yakın noktanın ordinatıdır. 3, en yakın noktanın apsisidir.</p></div></li>
+
+<li data-c="C"><p class="q">Bir fabrikada x yüz adet ürün üretildiğinde elde edilen kâr bin TL cinsinden K(x) = −x<sup>3</sup> + 3x<sup>2</sup> + 24x − 10 ile veriliyor. Üretim kapasitesi 0 ≤ x ≤ 6 olduğuna göre en büyük kâr kaç bin TL'dir?</p>
+<ul class="sec"><li>26</li><li>4</li><li>70</li><li>27</li><li>16</li></ul>
+<div class="coz"><p>K′(x) = −3x<sup>2</sup> + 6x + 24 = −3(x − 4)(x + 2); aralıktaki kök x = 4, işaret + → −. Adaylar: K(4) = −64 + 48 + 96 − 10 = 70, K(0) = −10, K(6) = −216 + 108 + 144 − 10 = 26. En büyük kâr 70. 26, en büyüğü sağ uçta sanmaktır. 4, üretim düzeyidir (değişken). 27, K′'nün en büyük değeridir (kârın en hızlı arttığı an, x = 1). 16, K″ = 0 çözüp K(1)'i hesaplamaktır; büküm noktası ekstremum değildir.</p></div></li>
+
+<li data-c="D"><p class="q">Doğrusal bir yolda hareket eden bir cismin konumu 0 ≤ t ≤ 5 saniye aralığında s(t) = −t<sup>3</sup> + 6t<sup>2</sup> + 15t + 2 metre ile veriliyor. Bu aralıkta cismin hızı en çok kaç m/s'dir?</p>
+<ul class="sec"><li>48</li><li>2</li><li>15</li><li>27</li><li>102</li></ul>
+<div class="coz"><p>Hız v(t) = s′(t) = −3t<sup>2</sup> + 12t + 15. Hızın en büyüğü için ivmeyi sıfırla: v′(t) = −6t + 12 = 0 ⇒ t = 2; v″ = −6 &lt; 0. v(2) = −12 + 24 + 15 = 27; uçlarda v(0) = 15, v(5) = 0. En büyük hız 27 m/s. 48, t = 2'deki konumdur (s(2)). 2, hızın en büyük olduğu andır. 15, başlangıç hızıdır. 102, konumun en büyük değeridir (s′ = 0 çözülünce t = 5); "hız en büyük" ile "konum en büyük" karıştırılmış.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 2x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>7/3</li><li>3</li><li>9</li><li>6</li><li>5/2</li></ul>
+<div class="coz"><p>Ortalama değişim hızı (f(4) − f(1))/(4 − 1). f(4) = 16 − 8 = 8, f(1) = 1 − 2 = −1. (8 − (−1))/3 = 9/3 = 3; bu, (1, −1) ile (4, 8) noktalarını birleştiren kirişin eğimidir. 7/3, f(1)'i +1 alıp işareti kaybetmektir. 9, farkı aralık uzunluğuna bölmeyi unutmaktır. 6, x = 4'teki anlık değişim hızıdır (türev), ortalama değil. 5/2, eğimi 3 olan teğetin değme apsisidir; soru bir sayı değeri, nokta değil istiyor.</p></div></li>
+
+<li data-c="E" data-k="ileri-3"><p class="q">f(x) = |x − 1| + |x + 3| fonksiyonunun alabileceği en küçük değer kaçtır?</p>
+<ul class="sec"><li>2</li><li>0</li><li>−1</li><li>−3</li><li>4</li></ul>
+<div class="coz"><p>Kritik noktalar −3 ve 1. Parçalı yazınca x &lt; −3 için −2x − 2, −3 ≤ x ≤ 1 için 4, x &gt; 1 için 2x + 2; grafik tekne biçimindedir ve taban yüksekliği 4'tür. Yorum: sayı doğrusunda x'in 1'e ve −3'e uzaklıkları toplamı, x iki noktanın arasındayken en küçüktür ve iki nokta arası uzaklığa (4) eşittir. 2, bu uzaklığın yarısıdır. 0, iki mutlak değerin aynı anda sıfır olabileceğini sanmaktır. −1, en küçük değerin alındığı noktalardan birinin apsisidir; −3 de bir kritik noktadır, değer değil.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">y = mx doğrusu y = x<sup>2</sup> + 3 parabolüne teğet olduğuna göre m'nin pozitif değeri kaçtır?</p>
+<ul class="sec"><li>2√3</li><li>√3</li><li>12</li><li>6</li><li>−2√3</li></ul>
+<div class="coz"><p>Ortak çözüm: x<sup>2</sup> + 3 = mx ⇒ x<sup>2</sup> − mx + 3 = 0. Teğetlik için Δ = 0: m<sup>2</sup> − 4 · 1 · 3 = 0, m<sup>2</sup> = 12, m = ±2√3; pozitif olan 2√3. √3, Δ'da 4 çarpanını unutup m<sup>2</sup> = 3 yazmaktır. 12, m<sup>2</sup>'yi cevap vermektir. 6, m<sup>2</sup> = 12'den kök almak yerine ikiye bölmektir. −2√3 de teğettir ama soru pozitif değeri istiyor.</p></div></li>
+
+<li data-c="C" data-k="ileri-8"><p class="q">135° kaç radyandır?</p>
+<ul class="sec"><li>2π/3</li><li>3π/2</li><li>3π/4</li><li>5π/6</li><li>4π/3</li></ul>
+<div class="coz"><p>D/180 = R/π ⇒ R = 135π/180 = 3π/4 (135 ile 180'in ortak böleni 45). 3π/2, 135'i 90'a bölmektir (1,5). 4π/3, oranı ters kurup 180/135 almaktır. 2π/3 120°'nin, 5π/6 ise 150°'nin radyan karşılığıdır; sık kullanılan açılar tablosunda komşu değerlerle karıştırmak.</p></div></li>
+
+<li data-c="D" data-k="ileri-11"><p class="q">a dar açı ve sin a = 3/5 olduğuna göre sin 2a kaçtır?</p>
+<ul class="sec"><li>6/5</li><li>7/25</li><li>12/25</li><li>24/25</li><li>9/25</li></ul>
+<div class="coz"><p>a dar açı olduğundan cos a pozitif: cos a = √(1 − 9/25) = 4/5. İki kat açı formülü: sin 2a = 2 sin a cos a = 2 · 3/5 · 4/5 = 24/25. 6/5, sin 2a'yı 2 sin a sanmaktır; 1'den büyük olduğu için zaten olamaz. 7/25, cos 2a = cos<sup>2</sup>a − sin<sup>2</sup>a değeridir. 12/25, formüldeki 2'yi unutmaktır. 9/25, sin<sup>2</sup>a'dır.</p></div></li>
+
+<li data-c="B" data-k="ileri-13"><p class="q">sin x = 1/2 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>π/3</li><li>π</li><li>4π/3</li><li>5π/6</li><li>2π</li></ul>
+<div class="coz"><p>sin x = 1/2'nin çözüm aileleri x = π/6 + 2kπ ve x = π − π/6 + 2kπ = 5π/6 + 2kπ. Aralıktaki kökler π/6 ve 5π/6; toplam π. π/3, yalnızca π/6'yı iki kez saymaktır. 4π/3, ikinci aileyi π + α sanıp 7π/6 almaktır (sinüs orada negatiftir). 5π/6 yalnızca ikinci köktür. 2π, kosinüsteki ±α kalıbını uygulayıp π/6 ile 11π/6'yı toplamaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-16"><p class="q">log<sub>2</sub>(x − 1) + log<sub>2</sub>(x + 1) = 3 denkleminin çözüm kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−3, 3}</li><li>{4}</li><li>{√7}</li><li>{−3}</li><li>{3}</li></ul>
+<div class="coz"><p>Tanım koşulları: x − 1 &gt; 0 ve x + 1 &gt; 0, yani x &gt; 1. Toplamı tek logaritmaya indir: log<sub>2</sub>[(x − 1)(x + 1)] = 3 ⇒ x<sup>2</sup> − 1 = 8 ⇒ x = ±3. x = −3 tanım koşulunu sağlamaz, yabancı köktür; çözüm kümesi {3}. {−3, 3}, kök denetimini yapmamaktır. {4}, log a + log b'yi log(a + b) sanıp 2x = 8 yazmaktır. {√7}, 2<sup>3</sup> yerine 2 · 3 = 6 almaktır. {−3}, geçerli kökü atıp yabancı kökü tutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-18"><p class="q">İlk terimi 3, ortak çarpanı 2 olan geometrik dizinin ilk 5 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>93</li><li>48</li><li>96</li><li>189</li><li>35</li></ul>
+<div class="coz"><p>S<sub>n</sub> = a<sub>1</sub>(r<sup>n</sup> − 1)/(r − 1) = 3(2<sup>5</sup> − 1)/1 = 3 · 31 = 93. Açık yazımla: 3 + 6 + 12 + 24 + 48 = 93. 48, toplam yerine beşinci terimdir. 96, formüldeki "− 1"i unutup 3 · 2<sup>5</sup> almaktır. 189, ilk 6 terimin toplamıdır. 35, diziyi ortak farkı 2 olan aritmetik dizi sanmaktır (3 + 5 + 7 + 9 + 11).</p></div></li>
+
+<li data-c="C" data-k="ileri-21"><p class="q">f(x) = (x<sup>2</sup> − 9)/(x − 3) (x ≠ 3 iken) ve f(3) = k biçiminde tanımlanan f fonksiyonu x = 3'te sürekli olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>0</li><li>3</li><li>6</li><li>9</li><li>k'nin hiçbir değeri için sürekli olmaz</li></ul>
+<div class="coz"><p>Süreklilik için f(3) = lim<sub>x→3</sub> f(x) olmalı. x ≠ 3 iken (x<sup>2</sup> − 9)/(x − 3) = x + 3, limit 6; o hâlde k = 6 (kaldırılabilir süreksizlik giderildi). 0, payın x = 3'teki değerini almaktır. 3, x'in yaklaştığı değeri cevap sanmaktır. 9, x<sup>2</sup>'nin x = 3'teki değeridir. Son seçenek 0/0'ı "tanımsız, giderilemez" sanmaktır; 0/0 bir belirsizliktir ve limit vardır.</p></div></li>
+
+<li data-c="B" data-k="ileri-23"><p class="q">f(x) = √(x<sup>2</sup> + 9) olduğuna göre f′(4) kaçtır?</p>
+<ul class="sec"><li>1/10</li><li>4/5</li><li>8/5</li><li>5</li><li>2/5</li></ul>
+<div class="coz"><p>Köklü ifadenin türevi (√g)′ = g′/(2√g): f′(x) = 2x/(2√(x<sup>2</sup> + 9)) = x/√(x<sup>2</sup> + 9). f′(4) = 4/√25 = 4/5. 1/10, iç türevi (2x) unutup 1/(2√25) yazmaktır. 8/5, paydadaki 2'yi unutup 2x/√(x<sup>2</sup> + 9) almaktır. 5, türev yerine f(4)'tür. 2/5, iç türevi 2x yerine x alıp x/(2√(x<sup>2</sup> + 9)) yazmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-24"><p class="q">f(x) = x<sup>3</sup> − x eğrisinin x = 1 apsisli noktasındaki teğeti y eksenini hangi ordinatlı noktada keser?</p>
+<ul class="sec"><li>2</li><li>0</li><li>1</li><li>−2</li><li>−3</li></ul>
+<div class="coz"><p>Değme noktası: f(1) = 0, yani (1, 0). Eğim: f′(x) = 3x<sup>2</sup> − 1, f′(1) = 2. Teğet y − 0 = 2(x − 1), y = 2x − 2; x = 0 konunca y = −2. 2, eğimi cevap vermektir. 0, değme noktasının ordinatıdır. 1, teğetin x eksenini kestiği noktanın apsisidir. −3, türevi 3x<sup>2</sup> alıp (−x'in türevini unutup) eğimi 3 bulmaktır: y = 3x − 3.</p></div></li>
+
+<li data-c="E" data-k="ileri-24"><p class="q">f(x) = x<sup>2</sup> − 4x eğrisinin y = 2x + 1 doğrusuna paralel olan teğetinin değme noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(3, 7)</li><li>(2, −4)</li><li>(1, −3)</li><li>(7/4, −63/16)</li><li>(3, −3)</li></ul>
+<div class="coz"><p>Paralel teğetin eğimi doğrununkine eşit: 2. f′(x) = 2x − 4 = 2 ⇒ x = 3; f(3) = 9 − 12 = −3. Değme noktası (3, −3). (3, 7), apsisi doğru, ordinatı eğri yerine doğrudan (2 · 3 + 1) almaktır. (2, −4), teğetin yatay olduğu tepe noktasıdır. (1, −3), eğimi −2 alıp 2x − 4 = −2 çözmektir. (7/4, −63/16), dik teğetin değme noktasıdır (eğim −1/2).</p></div></li>
+
+<li data-c="A" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> − 3x<sup>2</sup> − 9x + 1 fonksiyonunun azalan olduğu en geniş aralık aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−1, 3)</li><li>(−3, 1)</li><li>(−∞, −1) ∪ (3, ∞)</li><li>(1, ∞)</li><li>(−∞, 1)</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 6x − 9 = 3(x + 1)(x − 3). Kökler arasında işaret, baş katsayının (3 &gt; 0) tersidir: −1 &lt; x &lt; 3 iken f′ &lt; 0, f azalan. (−3, 1), çarpanları (x − 1)(x + 3) diye işaretleri ters ayırmaktır. (−∞, −1) ∪ (3, ∞), f′ &gt; 0 olan, yani artan aralıklardır. (1, ∞) ve (−∞, 1), f″ = 6x − 6'nın işaretinden çıkan bükeylik aralıklarıdır; artan-azalan için f′'ye bakılır.</p></div></li>
+
+<li data-c="C" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + b fonksiyonunun x = 2'de yerel ekstremumu vardır ve bu ekstremum değeri −1'dir. Buna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>−3</li><li>3</li><li>0</li><li>1</li><li>−6</li></ul>
+<div class="coz"><p>İki koşul: f′(2) = 0 ve f(2) = −1. f′(x) = 3x<sup>2</sup> + 2ax, f′(2) = 12 + 4a = 0 ⇒ a = −3. f(2) = 8 + 4a + b = 8 − 12 + b = −1 ⇒ b = 3. a + b = 0. (f″(2) = 12 + 2a = 6 &gt; 0, yerel minimum; değer −1.) −3 yalnızca a'dır, 3 yalnızca b'dir. 1, ekstremum değerini 0 sanıp f(2) = 0'dan b = 4 bulmaktır. −6, a − b'dir.</p></div></li>
+
+<li data-c="B" data-k="ileri-26"><p class="q">f(x) = x<sup>3</sup> − 6x<sup>2</sup> + 4 fonksiyonunun grafiğinin büküm noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(0, 4)</li><li>(2, −12)</li><li>(4, −28)</li><li>(2, 0)</li><li>(−2, −28)</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 12x, f″(x) = 6x − 12. f″, x = 2'de sıfır olur ve işaret değiştirir (solda negatif, sağda pozitif): büküm noktası. Ordinat f(2) = 8 − 24 + 4 = −12; nokta (2, −12). (0, 4) ve (4, −28), f′ = 0'ın kökleridir; yerel maksimum ve minimum noktalarıdır. (2, 0), ordinat yerine f″(2) değerini yazmaktır. (−2, −28), f″'yü 6x + 12 diye işaret hatasıyla kurmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-26"><p class="q">f(x) = x<sup>3</sup> − 3x + 5 fonksiyonunun yerel maksimum değeri kaçtır?</p>
+<ul class="sec"><li>3</li><li>−1</li><li>5</li><li>7</li><li>1</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 3 = 0 ⇒ x = ±1. İkinci türev testi: f″(x) = 6x; f″(−1) = −6 &lt; 0 ⇒ x = −1 yerel maksimum, f″(1) = 6 &gt; 0 ⇒ x = 1 yerel minimum. Yerel maksimum değeri f(−1) = −1 + 3 + 5 = 7. 3, yerel minimum değeridir (f(1)). −1, yerel maksimumun apsisidir; soru değeri istiyor. 5, büküm noktasının ordinatıdır (f(0)). 1, yerel minimumun apsisidir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-26">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-27">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-28">Sonraki parça: belirsiz integral ve temel kurallar</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"türev maksimum minimum problemleri konu anlatımı AYT"</li>
+  <li>"optimizasyon problemleri kutu hacmi en büyük türev"</li>
+  <li>"noktanın eğriye en kısa uzaklığı türev soru çözümü"</li>
+  <li>"türev uygulamaları kâr maliyet hız problemleri"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 27. satıra göre yazıldı; satırdaki bütün alt başlıklar (çözüm şeması, toplamı sabit sayıların çarpımı ve çarpımı sabit sayıların toplamı, sabit çevreli dikdörtgen, duvar kenarına çit, kartondan kutu, hacmi sabit silindir ve kutunun en az yüzey alanı, yarım çember ve üçgen içine dikdörtgen, parabol ile x ekseni arasında dikdörtgen, eğri altındaki üçgen, noktanın eğriye en kısa uzaklığı, koordinatların toplamı ve çarpımı, gelir-maliyet-kâr, en yüksek nokta ve en büyük hız, tepe noktası kısa yolu ve iki yöntemin karşılaştırması, tanım aralığı ve kritik noktanın türü hataları) işlendi. Kapsam dosyasının "Doğrulanamayanlar" bölümünde bu parçaya özgü bir not yok; üstel, logaritmik ve trigonometrik fonksiyonların türevi gerektiren problemlere bu yüzden girilmedi, bütün amaç fonksiyonları polinom, rasyonel ya da köklü seçildi.</li>
+  <li>"Tek kritik nokta ilkesi" ders kitaplarında bu adla geçmeyebilir; ilke, Parça 25'teki kapalı aralıkta mutlak ekstremum fikri ve birinci türev testinden sezgisel olarak gerekçelendirildi, biçimsel ispatı verilmedi. "Marjinal gelir, marjinal maliyet" terimleri ekonomideki yerleşik kullanıma göre ve yalnızca yorum amacıyla verildi; AYT'de bu adlarla sorulup sorulmadığını doğrulayamadım.</li>
+  <li>Hareket örneğinde g = 10 m/s<sup>2</sup> kabulü kullanıldı (h(t) = 40t − 5t<sup>2</sup>). Örnek 9'da "hız" işaretli hız (v) anlamında kullanıldı; seçilen aralıkta hızın büyüklüğü de aynı noktada en büyük olduğundan iki yorum aynı cevabı verir.</li>
+  <li>Bütün sayısal sonuçlar (dokuz çözümlü örnek, metindeki ara örnekler, şekillerdeki noktalar, tablodaki hazır sonuçlar, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi: her en büyük-en küçük değer hem türevin kökünden hem de tanım aralığında ince adımlı sayısal taramayla bulundu, kesirli sonuçlar Fraction ile tam hesaplandı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: karton açınımı 1 cm = 20 birim, yarım daire ve parabol şekillerinde iki eksende birim eşit; V(x) grafiğinde y ekseni okunabilirlik için sıkıştırıldı. Eğri noktaları formüllerden hesaplandı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (24, 25, 26) ikişer soru; daha eski 23 parçadan, toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 3, 6, 8, 11, 13, 16, 18, 21, 23). Parça 25 ve 26 bu parçayla aynı anda yazıldı; onların tekrar soruları kapsam listesindeki konular ve terimlerle (artan-azalan aralık, ekstremum parametre sorusu, büküm noktası, ikinci türev testi) yazıldı, o parçaların yalnızca bölüm başlıklarıyla karşılaştırıldı, metinleriyle satır satır karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

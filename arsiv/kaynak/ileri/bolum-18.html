@@ -1,0 +1,637 @@
+<article class="chapter ders" id="c-ileri-18">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 18 · Diziler 2</div>
+<h1>Diziler 2: geometrik dizi ve dizi problemleri</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>0,1 mm kalınlığındaki bir kâğıdı ikiye katlarsan kalınlık 0,2 mm olur, bir daha katlarsan 0,4 mm. Bu işi 10 kez yapabilseydin kâğıt kaç santimetre kalınlığında olurdu? 42 kez yapabilseydin? İlk cevap yaklaşık 10 cm, ikincisi yaklaşık 440 bin kilometredir; Dünya ile Ay arasındaki ortalama uzaklıktan fazla. Kâğıdı gerçekte bu kadar katlayamazsın; soru bir düşünce deneyidir. Ama sezgin neden bu kadar yanılıyor? Çünkü her adımda <strong>aynı miktarı eklemeye</strong> alışkınsın, burada ise her adımda <strong>aynı sayıyla çarpıyorsun</strong>.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 17 (dizi kavramı, genel terim, aritmetik dizi, S<sub>n</sub> ve Gauss yöntemi), Parça 14 (üstel fonksiyon), Parça 15 (logaritma kuralları), Parça 16 (üstel denklem ve eşitsizlikler, büyüme-yarılanma modelleri), mat Parça 10–11 (üslü sayılar), mat Parça 30 (yüzde ve faiz). İç içe şekiller kısmında geo Parça 3 (Pisagor) ve geo Parça 6 (benzerlik) işe yarar.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 17'de her terimi bir öncekine <strong>aynı sayıyı ekleyerek</strong> elde ettiğimiz dizileri, aritmetik dizileri gördün. Bu parçada her terimi bir öncekini <strong>aynı sayıyla çarparak</strong> elde ettiğimiz dizileri kuracağız: geometrik diziler. İki dizi türü birbirinin aynası gibidir. Aritmetik dizide fark sabittir, geometrik dizide oran sabittir. Aritmetik dizide toplama ve çıkarma ile kurulan her kuralın, geometrik dizide çarpma ve bölme ile kurulan bir eşi vardır. Bu eşlemeyi kafanda kurarsan ezberlemen gereken şey yarıya iner.</p>
+
+<p>AYT'de bu konudan gelen sorular beş kalıba toplanır. Birincisi genel terim: iki terimi verilen dizide ortak çarpanı ve istenen terimi bulmak. İkincisi terimler arası ilişki: geometrik orta ve "indisleri toplamı eşit olan terimlerin çarpımı eşittir" kuralı. Üçüncüsü toplam: ilk n terimin toplamı ve bazen çarpımı. Dördüncüsü karma sorular: aritmetik dizi oluşturan sayıların bir değişiklikle geometrik dizi oluşturması, ya da logaritma ve üs aracılığıyla bir dizi türünden öbürüne geçmek. Beşincisi gerçek yaşam ve şekil problemleri: zıplayan top, yarılanma, bileşik faiz, katlanan kâğıt, iç içe çizilen kareler ve şekil örüntüleri.</p>
+
+<p>Bir kapsam notu baştan: zıplayan topun "duruncaya kadar" aldığı yol gibi sonsuz sayıda terimin toplamı ve dizilerde limit 2018 öğretim programında yoktur; bu parçada anlatılmaz. Sınav bu yüzden soruları hep sonlu sorar: "beşinci kez yere değdiğinde", "ilk altı terimin toplamı".</p>
+
+<h2 class="s">1. Geometrik dizi: her adımda aynı sayıyla çarpmak</h2>
+
+<p>Şu dizilere bak: 3, 6, 12, 24, 48, … ve 81, 27, 9, 3, 1, … ve 2, −6, 18, −54, … İlkinde her terim öncekinin 2 katı, ikincisinde 1/3'ü, üçüncüsünde −3 katı. Ardışık iki terimin farkı sabit değil (6 − 3 = 3 ama 12 − 6 = 6), ama <strong>oranı</strong> sabit: 6/3 = 12/6 = 24/12 = 2. Bu sabit orana dizinin <strong>ortak çarpanı</strong> denir ve r ile gösterilir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Her terimi, bir önceki terimin sabit bir r sayısıyla çarpılmasıyla elde edilen diziye <strong>geometrik dizi</strong> denir: a<sub>n + 1</sub> = a<sub>n</sub> · r. r sayısına ortak çarpan (ortak oran) denir; r = <span class="kes"><span>a<sub>n + 1</sub></span><span>a<sub>n</sub></span></span> her n için aynıdır. Terimler ve r sıfırdan farklı alınır.</p>
+<p><strong>Neden sıfır dışarıda?</strong> Bir terim 0 olursa r'yi bulmak için 0'a bölmen gerekir; oran tanımsız olur. r = 0 olsaydı ikinci terimden sonra her şey 0 olurdu ve "oran sabit" sözü anlamını yitirirdi. Bu yüzden ders kitapları geometrik diziyi sıfırdan farklı terimlerle tanımlar.</p></div>
+
+<p>Tanımdaki a<sub>n + 1</sub> = a<sub>n</sub> · r bağıntısı, Parça 17'de gördüğün <strong>indirgeme bağıntısının</strong> ta kendisidir: aritmetik dizi a<sub>n + 1</sub> = a<sub>n</sub> + d ile, geometrik dizi a<sub>n + 1</sub> = a<sub>n</sub> · r ile kurulur. İkisinde de diziyi belirlemek için iki bilgi yeter: ilk terim ve adım kuralı.</p>
+
+<p>r'nin değerine göre dizinin davranışı değişir. İlk terimi pozitif alalım ve r'nin her durumunu deneyelim:</p>
+
+<div class="tablo"><table>
+<tr><th>r</th><th>Örnek (a<sub>1</sub> = 8)</th><th>Davranış</th></tr>
+<tr><td>r &gt; 1</td><td>8, 16, 32, 64, …</td><td>Terimler artar; büyüme giderek hızlanır.</td></tr>
+<tr><td>r = 1</td><td>8, 8, 8, 8, …</td><td>Sabit dizi.</td></tr>
+<tr><td>0 &lt; r &lt; 1</td><td>8, 4, 2, 1, ½, …</td><td>Terimler azalır, giderek küçülür ama hiçbir zaman 0 olmaz.</td></tr>
+<tr><td>−1 &lt; r &lt; 0</td><td>8, −4, 2, −1, ½, …</td><td>İşaret her adımda değişir; mutlak değer küçülür.</td></tr>
+<tr><td>r = −1</td><td>8, −8, 8, −8, …</td><td>İki değer arasında gidip gelir.</td></tr>
+<tr><td>r &lt; −1</td><td>8, −16, 32, −64, …</td><td>İşaret değişir; mutlak değer büyür.</td></tr>
+</table></div>
+
+<p>Tablodan bir sonuç çıkar: r negatifse dizi ne artandır ne azalan; terimler sırayla pozitif ve negatif olur. Tek sıradaki terimler (a<sub>1</sub>, a<sub>3</sub>, a<sub>5</sub>, …) a<sub>1</sub> ile aynı işaretli, çift sıradakiler ters işaretlidir. Bu bilgi, birazdan "çift kökte iki olasılık" durumunu anlamanın anahtarı olacak.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Koordinat düzleminde n eşit 1'den 5'e kadar iki dizinin terimleri. Geometrik dizi 2 üzeri n eksi 1: 1, 2, 4, 8, 16 noktaları üstel bir eğri üzerinde. Aritmetik dizi 3n eksi 2: 1, 4, 7, 10, 13 noktaları bir doğru üzerinde.">
+  <line class="sv-c" x1="40" y1="270" x2="390" y2="270" />
+  <line class="sv-c" x1="40" y1="282" x2="40" y2="20" />
+  <line class="sv-c" x1="80" y1="270" x2="358" y2="75.4" />
+  <polyline class="sv-cl" points="40.0,263.0 52.0,262.0 64.0,260.8 76.0,259.4 88.0,257.8 100.0,256.0 112.0,253.9 124.0,251.5 136.0,248.8 148.0,245.6 160.0,242.0 172.0,237.8 184.0,233.1 196.0,227.6 208.0,221.2 220.0,214.0 232.0,205.7 244.0,196.1 256.0,185.1 268.0,172.5 280.0,158.0 292.0,141.3 304.0,122.2 316.0,100.2 328.0,75.0 340.0,46.0 346.0,29.9" />
+  <circle class="sv-m" cx="100" cy="256" r="5" />
+  <circle class="sv-m" cx="160" cy="214" r="5" />
+  <circle class="sv-m" cx="220" cy="172" r="5" />
+  <circle class="sv-m" cx="280" cy="130" r="5" />
+  <circle class="sv-m" cx="340" cy="88" r="5" />
+  <circle class="sv-a" cx="100" cy="256" r="4" />
+  <circle class="sv-a" cx="160" cy="242" r="4" />
+  <circle class="sv-a" cx="220" cy="214" r="4" />
+  <circle class="sv-a" cx="280" cy="158" r="4" />
+  <circle class="sv-a" cx="340" cy="46" r="4" />
+  <text class="sv-b" x="330" y="30" text-anchor="end">aₙ = 2ⁿ⁻¹</text>
+  <text class="sv-b" x="392" y="125" text-anchor="end">bₙ = 3n − 2</text>
+  <text class="sv-s" x="100" y="290" text-anchor="middle">1</text>
+  <text class="sv-s" x="160" y="290" text-anchor="middle">2</text>
+  <text class="sv-s" x="220" y="290" text-anchor="middle">3</text>
+  <text class="sv-s" x="280" y="290" text-anchor="middle">4</text>
+  <text class="sv-s" x="340" y="290" text-anchor="middle">5</text>
+  <text class="sv-s" x="388" y="290" text-anchor="end">n</text>
+  <text class="sv-s" x="34" y="218" text-anchor="end">4</text>
+  <text class="sv-s" x="34" y="162" text-anchor="end">8</text>
+  <text class="sv-s" x="34" y="106" text-anchor="end">12</text>
+  <text class="sv-s" x="34" y="50" text-anchor="end">16</text>
+</svg>
+<figcaption>Turuncu noktalar geometrik dizi 1, 2, 4, 8, 16; yeşil noktalar aritmetik dizi 1, 4, 7, 10, 13. Aritmetik dizinin noktaları bir doğrunun üstünde durur (Parça 17), geometrik dizininkiler y = 2<sup>x − 1</sup> üstel eğrisinin üstünde (Parça 14). İkisi aynı yerden başlar; 4. terimde aritmetik önde, 5. terimde geometrik öne geçer ve bir daha yakalanmaz.</figcaption>
+</figure>
+
+<h2 class="s">2. Genel terim</h2>
+
+<p>Genel terimi örüntüden çıkaralım. İlk terimden başla ve her adımda bir kez r ile çarp:</p>
+
+<span class="mat">a<sub>2</sub> = a<sub>1</sub> · r <span class="g">(1 çarpma)</span></span>
+<span class="mat">a<sub>3</sub> = a<sub>2</sub> · r = a<sub>1</sub> · r<sup>2</sup> <span class="g">(2 çarpma)</span></span>
+<span class="mat">a<sub>4</sub> = a<sub>3</sub> · r = a<sub>1</sub> · r<sup>3</sup> <span class="g">(3 çarpma)</span></span>
+
+<p>Görüyorsun: n. terime varmak için 1. terimden n − 1 adım atarsın, her adım bir r çarpanı ekler. Üs, terimin sırasından bir eksiktir. Bu, aritmetik dizideki a<sub>n</sub> = a<sub>1</sub> + (n − 1)d formülünün tıpatıp eşidir: orada n − 1 kez d <strong>eklenir</strong>, burada n − 1 kez r ile <strong>çarpılır</strong>.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup> &nbsp;&nbsp;ve genel olarak&nbsp;&nbsp; a<sub>n</sub> = a<sub>k</sub> · r<sup>n − k</sup>.</p>
+<p><strong>Neden ikinci biçim?</strong> k. terimden n. terime n − k adım vardır; her adım bir r çarpanıdır. Bu biçim, a<sub>1</sub>'i hiç bulmadan iki terim arasında doğrudan gitmeni sağlar. Örneğin a<sub>9</sub> = a<sub>5</sub> · r<sup>4</sup>, a<sub>3</sub> = a<sub>7</sub> · r<sup>−4</sup>.</p></div>
+
+<p>İki terimin <strong>bölümü</strong> sana ortak çarpanın bir kuvvetini verir: <span class="kes"><span>a<sub>n</sub></span><span>a<sub>k</sub></span></span> = r<sup>n − k</sup>. Aritmetik dizide iki terimin <strong>farkı</strong> d'nin katını verirdi (a<sub>n</sub> − a<sub>k</sub> = (n − k)d). Yine aynı ayna: fark yerine bölüm, kat yerine kuvvet.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir geometrik dizide a<sub>2</sub> = 6 ve a<sub>5</sub> = 162'dir. (a) Ortak çarpanı ve ilk terimi bulunuz. (b) a<sub>7</sub> kaçtır? (c) 4374 bu dizinin kaçıncı terimidir?</p>
+<p><strong>Adım 1.</strong> İki terimi bölerek r'nin kuvvetini bul.</p>
+<span class="mat"><span class="kes"><span>a<sub>5</sub></span><span>a<sub>2</sub></span></span> = r<sup>5 − 2</sup> = r<sup>3</sup> <span class="g">(a<sub>n</sub> / a<sub>k</sub> = r<sup>n − k</sup>)</span></span>
+<span class="mat">r<sup>3</sup> = <span class="kes"><span>162</span><span>6</span></span> = 27 <span class="g">(değerleri koy)</span></span>
+<span class="mat">r = 3 <span class="g">(tek dereceli kökün tek değeri vardır: 3<sup>3</sup> = 27)</span></span>
+<p><strong>Adım 2.</strong> İlk terimi bul.</p>
+<span class="mat">a<sub>1</sub> = <span class="kes"><span>a<sub>2</sub></span><span>r</span></span> = <span class="kes"><span>6</span><span>3</span></span> = 2 <span class="g">(a<sub>2</sub> = a<sub>1</sub> · r)</span></span>
+<p><strong>Adım 3.</strong> (b) a<sub>5</sub>'ten iki adım ilerle.</p>
+<span class="mat">a<sub>7</sub> = a<sub>5</sub> · r<sup>2</sup> = 162 · 9 = 1458 <span class="g">(a<sub>n</sub> = a<sub>k</sub> · r<sup>n − k</sup>)</span></span>
+<p><strong>Adım 4.</strong> (c) Genel terimi 4374'e eşitle.</p>
+<span class="mat">2 · 3<sup>n − 1</sup> = 4374 <span class="g">(a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup>)</span></span>
+<span class="mat">3<sup>n − 1</sup> = 2187 = 3<sup>7</sup> <span class="g">(2'ye böl; 3<sup>7</sup> = 2187)</span></span>
+<span class="mat">n − 1 = 7 ⇒ n = 8 <span class="g">(tabanlar eşit, üsler eşit: Parça 16)</span></span>
+<p><strong>Adım 5.</strong> Kontrol: dizi 2, 6, 18, 54, 162, 486, 1458, 4374. a<sub>2</sub> = 6, a<sub>5</sub> = 162, a<sub>7</sub> = 1458, a<sub>8</sub> = 4374. Hepsi tutuyor.</p>
+<p><strong>Sonuç:</strong> r = 3, a<sub>1</sub> = 2; a<sub>7</sub> = 1458; 4374 dizinin 8. terimidir.</p></div>
+
+<h3>Ortak çarpanı iki terimden bulma: çift kökte iki olasılık</h3>
+
+<p>Örnek 1'de iki terim arasında 3 adım vardı ve r<sup>3</sup> = 27'nin tek çözümü vardı. Adım sayısı çift olursa durum değişir: r<sup>2</sup> = 9 denkleminin iki çözümü vardır, r = 3 ve r = −3. Çift kuvvet işareti siler; (−3)<sup>2</sup> de 9'dur. Bu yüzden iki terimden r bulurken üsse bak: <strong>üs tekse tek r, üs çiftse ± iki r</strong> (bölüm pozitifse; negatifse çift üste hiç gerçek r yoktur, çünkü çift kuvvet negatif olamaz).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Bir geometrik dizide a<sub>3</sub> = 4 ve a<sub>7</sub> = 64'tür. a<sub>1</sub>, a<sub>5</sub> ve a<sub>6</sub> terimlerinin alabileceği değerleri bulunuz.</p>
+<p><strong>Adım 1.</strong> Bölümü al.</p>
+<span class="mat">r<sup>4</sup> = <span class="kes"><span>a<sub>7</sub></span><span>a<sub>3</sub></span></span> = <span class="kes"><span>64</span><span>4</span></span> = 16 <span class="g">(7 − 3 = 4 adım)</span></span>
+<span class="mat">r = 2 ya da r = −2 <span class="g">(çift üs: iki işaret)</span></span>
+<p><strong>Adım 2.</strong> a<sub>1</sub> ve a<sub>5</sub>, a<sub>3</sub>'ten çift sayıda adım uzakta.</p>
+<span class="mat">a<sub>1</sub> = a<sub>3</sub> · r<sup>−2</sup> = <span class="kes"><span>4</span><span>4</span></span> = 1 <span class="g">(r = ±2 için r<sup>2</sup> = 4)</span></span>
+<span class="mat">a<sub>5</sub> = a<sub>3</sub> · r<sup>2</sup> = 4 · 4 = 16 <span class="g">(yine r<sup>2</sup>; işaret fark etmez)</span></span>
+<p><strong>Adım 3.</strong> a<sub>6</sub>, a<sub>3</sub>'ten 3 adım uzakta; tek üs işareti korur.</p>
+<span class="mat">a<sub>6</sub> = a<sub>3</sub> · r<sup>3</sup> = 4 · (±8) = ±32 <span class="g">(2<sup>3</sup> = 8, (−2)<sup>3</sup> = −8)</span></span>
+<p><strong>Adım 4.</strong> İki diziyi yaz ve denetle. r = 2: 1, 2, 4, 8, 16, 32, 64. r = −2: 1, −2, 4, −8, 16, −32, 64. İkisinde de a<sub>3</sub> = 4, a<sub>7</sub> = 64.</p>
+<p><strong>Sonuç:</strong> a<sub>1</sub> = 1 ve a<sub>5</sub> = 16 (tek değer); a<sub>6</sub> = 32 ya da −32. Soru "terimleri pozitif" deseydi yalnızca r = 2 kalırdı.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Çift kökte negatif r'yi unutmak.</strong> r<sup>4</sup> = 16'dan yalnızca r = 2 yazan, Örnek 2'de a<sub>6</sub>'nın −32 olabileceğini kaçırır. "a<sub>6</sub>'nın alabileceği değerlerin toplamı" sorulursa cevap 32 değil 0'dır. Sorunun "terimleri pozitif", "artan dizi" gibi bir koşul verip vermediğine bak; vermediyse iki r'yi de taşı. Tersine, a<sub>5</sub> gibi tek r'den bağımsız çıkan terimlerde gereksiz yere iki cevap yazma: r çift kuvvetle giriyorsa işaret siliniyor.</p></div>
+
+<h2 class="s">3. Geometrik orta ve indis kuralı</h2>
+
+<p>Aritmetik dizide ortadaki terim iki komşusunun aritmetik ortalamasıydı: b = (a + c)/2. Geometrik dizide ne olur? a, b, c geometrik dizi ise b = a · r ve c = b · r. O hâlde b/a = c/b, içler-dışlar çarpımıyla <strong>b<sup>2</sup> = a · c</strong>. Ortadaki terimin karesi, komşularının çarpımına eşittir. Pozitif sayılar için b = √(ac); bu sayıya a ile c'nin <strong>geometrik ortası</strong> denir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Geometrik orta:</strong> a<sub>n</sub><sup>2</sup> = a<sub>n − k</sub> · a<sub>n + k</sub>. Bir terimin karesi, ondan eşit uzaklıktaki iki terimin çarpımıdır.</p>
+<p><strong>İndis kuralı:</strong> p + q = s + t ise a<sub>p</sub> · a<sub>q</sub> = a<sub>s</sub> · a<sub>t</sub>.</p>
+<p><strong>Neden?</strong> Genel terimi yerine koy: a<sub>p</sub> · a<sub>q</sub> = a<sub>1</sub>r<sup>p − 1</sup> · a<sub>1</sub>r<sup>q − 1</sup> = a<sub>1</sub><sup>2</sup> · r<sup>p + q − 2</sup>. Çarpım yalnızca p + q toplamına bağlıdır. İndis toplamı aynı olan her çift aynı çarpımı verir. Geometrik orta bu kuralın özel durumudur: (n − k) + (n + k) = n + n.</p></div>
+
+<p>Parça 17'deki eşini hatırla: p + q = s + t ise a<sub>p</sub> + a<sub>q</sub> = a<sub>s</sub> + a<sub>t</sub>. Aritmetikte toplam, geometrikte çarpım. Kural yalnızca <strong>indislerin toplamına</strong> bakar; terim sayısı iki yanda aynı olmalıdır. a<sub>2</sub> · a<sub>8</sub> = a<sub>10</sub> yazamazsın, çünkü sol yanda iki terim, sağ yanda bir terim var; doğrusu a<sub>2</sub> · a<sub>8</sub> = a<sub>5</sub><sup>2</sup> = a<sub>1</sub> · a<sub>9</sub>.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (a) Pozitif terimli bir geometrik dizide a<sub>2</sub> · a<sub>8</sub> = 64 ise a<sub>3</sub> · a<sub>5</sub> · a<sub>7</sub> kaçtır? (b) x, x + 3, x + 9 sayıları bu sırayla bir geometrik dizinin ardışık üç terimi ise x ve ortak çarpan kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) İndisleri topla: 2 + 8 = 10 = 5 + 5 = 3 + 7.</p>
+<span class="mat">a<sub>5</sub><sup>2</sup> = a<sub>2</sub> · a<sub>8</sub> = 64 <span class="g">(geometrik orta)</span></span>
+<span class="mat">a<sub>5</sub> = 8 <span class="g">(terimler pozitif; −8 atılır)</span></span>
+<span class="mat">a<sub>3</sub> · a<sub>7</sub> = 64 <span class="g">(3 + 7 = 10)</span></span>
+<span class="mat">a<sub>3</sub> · a<sub>5</sub> · a<sub>7</sub> = 64 · 8 = 512 <span class="g">(çarp)</span></span>
+<p><strong>Adım 2.</strong> (b) Ortadaki terimin karesi komşuların çarpımı.</p>
+<span class="mat">(x + 3)<sup>2</sup> = x(x + 9) <span class="g">(b<sup>2</sup> = ac)</span></span>
+<span class="mat">x<sup>2</sup> + 6x + 9 = x<sup>2</sup> + 9x <span class="g">(iki yanı aç)</span></span>
+<span class="mat">9 = 3x ⇒ x = 3 <span class="g">(x<sup>2</sup>'ler sadeleşir)</span></span>
+<p><strong>Adım 3.</strong> Kontrol: sayılar 3, 6, 12; oranlar 6/3 = 12/6 = 2.</p>
+<p><strong>Sonuç:</strong> (a) 512. (b) x = 3, r = 2.</p></div>
+
+<h2 class="s">4. İki sayı arasına terim yerleştirme</h2>
+
+<p>"a ile b arasına, hepsi birlikte geometrik dizi oluşturacak biçimde k tane sayı yerleştiriliyor" sorusunda önce terim sayısını say: a ile b de diziye dahil olduğu için toplam k + 2 terim vardır. a ilk terim, b (k + 2). terimdir; aralarında k + 1 adım vardır. O hâlde <strong>b = a · r<sup>k + 1</sup></strong>. Aritmetik dizideki eşi b = a + (k + 1)d idi.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> 3 ile 768 arasına, hepsi birlikte geometrik dizi oluşturacak biçimde üç sayı yerleştiriliyor. Yerleştirilen sayıları bulunuz.</p>
+<p><strong>Adım 1.</strong> Terim sayısı 3 + 2 = 5; a<sub>1</sub> = 3, a<sub>5</sub> = 768.</p>
+<span class="mat">3 · r<sup>4</sup> = 768 <span class="g">(a<sub>5</sub> = a<sub>1</sub> · r<sup>4</sup>)</span></span>
+<span class="mat">r<sup>4</sup> = 256 ⇒ r = 4 ya da r = −4 <span class="g">(4<sup>4</sup> = 256; çift üs)</span></span>
+<p><strong>Adım 2.</strong> İki diziyi de yaz.</p>
+<span class="mat">r = 4: 3, 12, 48, 192, 768 <span class="g">(her adımda × 4)</span></span>
+<span class="mat">r = −4: 3, −12, 48, −192, 768 <span class="g">(her adımda × (−4))</span></span>
+<p><strong>Adım 3.</strong> Kontrol yolu: ortadaki terim, iki ucun geometrik ortasıdır: a<sub>3</sub><sup>2</sup> = 3 · 768 = 2304 = 48<sup>2</sup>. İki dizide de a<sub>3</sub> = 48; tek değer çıkması, 3. terimin 1. terimden çift adım uzakta olmasındandır.</p>
+<p><strong>Sonuç:</strong> 12, 48, 192 ya da −12, 48, −192. "Pozitif sayılar" denirse yalnızca ilki.</p></div>
+
+<h2 class="s">5. İlk n terimin toplamı</h2>
+
+<h3>Formülü çıkaralım: r ile çarp, çıkar</h3>
+
+<p>Parça 17'de aritmetik dizinin toplamını Gauss yöntemiyle bulmuştun: toplamı bir de tersten yazıp alt alta topladın, her sütun aynı sayıyı verdi. Geometrik dizide bu hile çalışmaz, çünkü a<sub>1</sub> + a<sub>n</sub> ile a<sub>2</sub> + a<sub>n − 1</sub> eşit değildir. Başka bir hile gerekir ve o da dizinin kendi kuralından gelir: <strong>toplamı r ile çarparsan, her terim bir sonrakine dönüşür.</strong> Yeni toplam eskisiyle neredeyse aynı terimleri içerir; çıkarınca neredeyse her şey silinir.</p>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="S n ve r çarpı S n alt alta yazılmış. Üst satır a, ar, ar kare, üç nokta, ar üzeri n eksi 1; alt satır bir sütun sağa kaymış: ar, ar kare, üç nokta, ar üzeri n eksi 1, ar üzeri n. Ortadaki dört sütun aynı ve çıkarınca siliniyor; geriye üstte a, altta ar üzeri n kalıyor.">
+  <text class="sv-b" x="62" y="57" text-anchor="end">Sₙ =</text>
+  <rect class="sv-a" x="70" y="35" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="124" y="35" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="178" y="35" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="232" y="35" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="286" y="35" width="50" height="34" rx="6" />
+  <text class="sv-t" x="95" y="57" text-anchor="middle">a</text>
+  <text class="sv-t" x="149" y="57" text-anchor="middle">ar</text>
+  <text class="sv-t" x="203" y="57" text-anchor="middle">ar²</text>
+  <text class="sv-t" x="257" y="57" text-anchor="middle">…</text>
+  <text class="sv-t" x="311" y="57" text-anchor="middle">arⁿ⁻¹</text>
+  <text class="sv-b" x="62" y="137" text-anchor="end">r·Sₙ =</text>
+  <rect class="sv-k" x="124" y="115" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="178" y="115" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="232" y="115" width="50" height="34" rx="6" />
+  <rect class="sv-k" x="286" y="115" width="50" height="34" rx="6" />
+  <rect class="sv-m" x="340" y="115" width="50" height="34" rx="6" />
+  <text class="sv-t" x="149" y="137" text-anchor="middle">ar</text>
+  <text class="sv-t" x="203" y="137" text-anchor="middle">ar²</text>
+  <text class="sv-t" x="257" y="137" text-anchor="middle">…</text>
+  <text class="sv-t" x="311" y="137" text-anchor="middle">arⁿ⁻¹</text>
+  <text class="sv-t" x="365" y="137" text-anchor="middle">arⁿ</text>
+  <line class="sv-c" x1="149" y1="72" x2="149" y2="82" />
+  <line class="sv-c" x1="149" y1="102" x2="149" y2="112" />
+  <line class="sv-c" x1="203" y1="72" x2="203" y2="82" />
+  <line class="sv-c" x1="203" y1="102" x2="203" y2="112" />
+  <line class="sv-c" x1="257" y1="72" x2="257" y2="82" />
+  <line class="sv-c" x1="257" y1="102" x2="257" y2="112" />
+  <line class="sv-c" x1="311" y1="72" x2="311" y2="82" />
+  <line class="sv-c" x1="311" y1="102" x2="311" y2="112" />
+  <text class="sv-s" x="230" y="96" text-anchor="middle">aynı terimler: çıkarınca silinir</text>
+  <text class="sv-s" x="95" y="24" text-anchor="middle">yalnız kalan</text>
+  <text class="sv-s" x="365" y="166" text-anchor="middle">yalnız kalan</text>
+  <text class="sv-t" x="200" y="196" text-anchor="middle">r·Sₙ − Sₙ = arⁿ − a</text>
+  <text class="sv-t" x="200" y="218" text-anchor="middle">Sₙ · (r − 1) = a · (rⁿ − 1)</text>
+</svg>
+<figcaption>Alt satır, üst satırın r ile çarpılmışıdır; her kutu bir sütun sağa kayar. Ortadaki bütün terimler iki satırda da vardır ve çıkarmada birbirini götürür. Geriye yalnızca ilk terim a ile, en sondaki yeni terim ar<sup>n</sup> kalır.</figcaption>
+</figure>
+
+<p>Şekildeki işlemi satır satır yazalım (a = a<sub>1</sub>):</p>
+
+<span class="mat">S<sub>n</sub> = a + ar + ar<sup>2</sup> + … + ar<sup>n − 1</sup> <span class="g">(n terim)</span></span>
+<span class="mat">r · S<sub>n</sub> = ar + ar<sup>2</sup> + … + ar<sup>n − 1</sup> + ar<sup>n</sup> <span class="g">(her terimi r ile çarp)</span></span>
+<span class="mat">r · S<sub>n</sub> − S<sub>n</sub> = ar<sup>n</sup> − a <span class="g">(alttan üstü çıkar; ortadakiler silinir)</span></span>
+<span class="mat">S<sub>n</sub>(r − 1) = a(r<sup>n</sup> − 1) <span class="g">(iki yanda ortak çarpanı paranteze al)</span></span>
+<span class="mat">S<sub>n</sub> = a<sub>1</sub> · <span class="kes"><span>r<sup>n</sup> − 1</span><span>r − 1</span></span> <span class="g">(r ≠ 1 iken r − 1'e böl)</span></span>
+
+<div class="kural"><span class="et">Formül</span>
+<p>r ≠ 1 iken: S<sub>n</sub> = a<sub>1</sub> · <span class="kes"><span>r<sup>n</sup> − 1</span><span>r − 1</span></span> = a<sub>1</sub> · <span class="kes"><span>1 − r<sup>n</sup></span><span>1 − r</span></span>. &nbsp;r = 1 iken: S<sub>n</sub> = n · a<sub>1</sub>.</p>
+<p><strong>İki biçim neden aynı?</strong> Pay ve paydayı −1 ile çarpınca birinden öbürü çıkar. r &gt; 1 iken ilkini, 0 &lt; r &lt; 1 iken ikincisini kullanmak hesapta negatif sayıları azaltır. <strong>r = 1 neden ayrı?</strong> Son adımda r − 1'e böldük; r = 1 iken bu sıfıra bölmedir. Ama o durumda dizi sabittir (a, a, a, …) ve n tane a'nın toplamı doğrudan n · a'dır.</p></div>
+
+<p>Formülde üs <strong>n</strong>'dir, n − 1 değil; çünkü r<sup>n</sup>, son terimin bir sonrasıdır (ar<sup>n − 1</sup> · r). Genel terimle karıştırmamak için şunu hatırla: genel terimde üs "sıra eksi bir", toplamda üs "terim sayısı". Son terim biliniyorsa formülün bir başka biçimi işe yarar: ar<sup>n</sup> = a<sub>n</sub> · r olduğu için S<sub>n</sub> = <span class="kes"><span>a<sub>n</sub> · r − a<sub>1</sub></span><span>r − 1</span></span>. Bu biçimde n'yi bulmana bile gerek kalmaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (a) 3 + 6 + 12 + … + 384 toplamı kaçtır? (b) 32 + 16 + 8 + … biçiminde devam eden toplamın ilk 6 teriminin toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) a<sub>1</sub> = 3, r = 6/3 = 2. Terim sayısını bul.</p>
+<span class="mat">3 · 2<sup>n − 1</sup> = 384 <span class="g">(son terimi genel terime eşitle)</span></span>
+<span class="mat">2<sup>n − 1</sup> = 128 = 2<sup>7</sup> ⇒ n = 8 <span class="g">(3'e böl; üsleri eşitle)</span></span>
+<p><strong>Adım 2.</strong> Formülü uygula.</p>
+<span class="mat">S<sub>8</sub> = 3 · <span class="kes"><span>2<sup>8</sup> − 1</span><span>2 − 1</span></span> = 3 · 255 = 765 <span class="g">(2<sup>8</sup> = 256)</span></span>
+<p><strong>Adım 3.</strong> Kontrol yolu: son terimli biçim. S = (384 · 2 − 3)/(2 − 1) = 768 − 3 = 765. Aynı sonuç; üstelik n'yi bulmaya gerek kalmadı.</p>
+<p><strong>Adım 4.</strong> (b) a<sub>1</sub> = 32, r = 1/2 &lt; 1; ikinci biçimi kullan.</p>
+<span class="mat">S<sub>6</sub> = 32 · <span class="kes"><span>1 − (1/2)<sup>6</sup></span><span>1 − 1/2</span></span> <span class="g">(0 &lt; r &lt; 1 biçimi)</span></span>
+<span class="mat">= 32 · <span class="kes"><span>63/64</span><span>1/2</span></span> = 32 · <span class="kes"><span>63</span><span>32</span></span> = 63 <span class="g">(1 − 1/64 = 63/64; 1/2'ye bölmek 2 ile çarpmak)</span></span>
+<p><strong>Adım 5.</strong> Kontrol: 32 + 16 + 8 + 4 + 2 + 1 = 63. Terimleri tek tek toplamak, 6 terim için hızlı bir denetimdir.</p>
+<p><strong>Sonuç:</strong> (a) 765. (b) 63.</p></div>
+
+<p><strong>Hızlı yol ve kontrol yolu.</strong> Sınav hesap makinesiz olduğu için birkaç kuvveti hazır bilmek zaman kazandırır: 2<sup>10</sup> = 1024, 3<sup>5</sup> = 243, 3<sup>7</sup> = 2187, 4<sup>4</sup> = 256, 5<sup>4</sup> = 625. r = 2 olan dizide toplam için ayrıca bir kısa yol var: son terimli biçimde payda 1 olduğu için S<sub>n</sub> = 2a<sub>n</sub> − a<sub>1</sub>, yani toplam son terimin iki katından ilk terim çıkarılarak bulunur (Örnek 5a'da 2 · 384 − 3 = 765). Denetim için de üç yol kullan: (1) terim sayısı küçükse terimleri tek tek yazıp topla; (2) toplamın son terimden büyük, son terimin r/(r − 1) katından küçük olduğuna bak (r &gt; 1, pozitif terimler); (3) bulduğun a<sub>1</sub> ve r ile soruda verilen terimleri yeniden üret.</p>
+
+<p><strong>Hızlı yol: iki toplamın oranı.</strong> S<sub>2n</sub>'i iki parçaya ayır: ilk n terim S<sub>n</sub>'dir; sonraki n terimin her biri ilk n terimin karşılığının r<sup>n</sup> katıdır (a<sub>n + 1</sub> = a<sub>1</sub> · r<sup>n</sup>, a<sub>n + 2</sub> = a<sub>2</sub> · r<sup>n</sup>, …). O hâlde S<sub>2n</sub> = S<sub>n</sub> + r<sup>n</sup> · S<sub>n</sub> = S<sub>n</sub>(1 + r<sup>n</sup>). Örnek: S<sub>3</sub> = 7 ve S<sub>6</sub> = 63 ise 63 = 7(1 + r<sup>3</sup>), r<sup>3</sup> = 8, r = 2. a<sub>1</sub>'i hiç bulmadın. Kontrol: 1 + 2 + 4 = 7 ve 1 + 2 + 4 + 8 + 16 + 32 = 63.</p>
+
+<h3>Toplamdan diziyi tanıma</h3>
+
+<p>Parça 17'de a<sub>n</sub> = S<sub>n</sub> − S<sub>n − 1</sub> bağıntısını gördün: ilk n terimin toplamından ilk n − 1 terimin toplamını çıkarınca n. terim kalır (n ≥ 2 için; a<sub>1</sub> = S<sub>1</sub>). Orada S<sub>n</sub> ikinci dereceden bir ifadeyse dizinin aritmetik olduğunu bulmuştun. Geometrik dizide formül bize S<sub>n</sub> = c · r<sup>n</sup> − c biçimini verir (c = a<sub>1</sub>/(r − 1)): <strong>üstel kısmın katsayısı ile sabit terim zıt işaretli ve eşit</strong> olmalıdır.</p>
+
+<p>Örnek: S<sub>n</sub> = 3<sup>n</sup> − 1 ise a<sub>1</sub> = S<sub>1</sub> = 2, a<sub>2</sub> = 9 − 1 − 2 = 6, a<sub>3</sub> = 26 − 8 = 18: 2, 6, 18, 54, … ortak çarpanı 3 olan geometrik dizi; genel terim a<sub>n</sub> = 2 · 3<sup>n − 1</sup>. Ama S<sub>n</sub> = 3<sup>n</sup> + 1 olsaydı a<sub>1</sub> = 4, a<sub>2</sub> = 6, a<sub>3</sub> = 18 çıkardı: 6/4 ≠ 18/6. İkinci terimden sonrası geometrik ama ilk terim uymaz, dizi geometrik değildir. Bu soru tipinde a<sub>1</sub>'i ayrıca S<sub>1</sub>'den hesaplamayı unutma.</p>
+
+<h2 class="s">6. İlk n terimin çarpımı</h2>
+
+<p>Aritmetik dizide toplam için Gauss'un eşleştirme fikri işe yaramıştı: baştan ve sondan eşit uzaklıktaki terimlerin toplamı sabitti. Geometrik dizide aynı eşleştirme <strong>çarpım</strong> için çalışır, çünkü 3. bölümdeki indis kuralına göre a<sub>1</sub> · a<sub>n</sub> = a<sub>2</sub> · a<sub>n − 1</sub> = a<sub>3</sub> · a<sub>n − 2</sub> = … (indis toplamları hep n + 1).</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>Geometrik dizinin ilk n teriminin çarpımı: P<sub>n</sub> = a<sub>1</sub> · a<sub>2</sub> · … · a<sub>n</sub> = a<sub>1</sub><sup>n</sup> · r<sup>0 + 1 + 2 + … + (n − 1)</sup> = a<sub>1</sub><sup>n</sup> · r<sup><span class="kes"><span>n(n − 1)</span><span>2</span></span></sup>.</p>
+<p><strong>Neden?</strong> Her terimde bir a<sub>1</sub> çarpanı vardır (n tane) ve r'nin üsleri 0, 1, 2, …, n − 1'dir. Üsler toplanır ve bu toplam, Parça 17'deki aritmetik dizi toplamıdır: n(0 + n − 1)/2. Terim sayısı tekse pratik biçim: P<sub>n</sub> = (ortanca terim)<sup>n</sup>; çünkü her eşleşen çift, ortanca terimin karesini verir.</p></div>
+
+<p>Örnek: Bir geometrik dizide a<sub>4</sub> = 2 ise ilk 7 terimin çarpımı kaçtır? 7 terimin ortancası 4. terimdir: a<sub>1</sub> · a<sub>7</sub> = a<sub>2</sub> · a<sub>6</sub> = a<sub>3</sub> · a<sub>5</sub> = a<sub>4</sub><sup>2</sup> = 4. Çarpım 4 · 4 · 4 · 2 = 2<sup>7</sup> = 128. r'yi bilmeden çözdün; r = 3, r = 1/2 ya da r = −2 alıp dizileri yazarsan hepsinde çarpım 128 çıkar. Bir de doğrudan formül: a<sub>1</sub> = 3, r = 2 dizisinin ilk 5 teriminin çarpımı 3<sup>5</sup> · 2<sup>10</sup> = 243 · 1024 = 248 832; ortanca terimle 12<sup>5</sup> = 248 832 (a<sub>3</sub> = 12). Aynı.</p>
+
+<h2 class="s">7. Aritmetik mi, geometrik mi?</h2>
+
+<h3>Sınama</h3>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Bir dizinin türünü anlamak için ardışık terimlere bak: a<sub>n + 1</sub> − a<sub>n</sub> her n için aynı sayıysa (n'den bağımsızsa) dizi aritmetiktir. <span class="kes"><span>a<sub>n + 1</sub></span><span>a<sub>n</sub></span></span> her n için aynı sayıysa dizi geometriktir. İkisi de değişiyorsa dizi ikisi de değildir.</p>
+<p><strong>Neden genel terimle?</strong> İlk üç terime bakıp karar vermek tehlikelidir; üç terim tesadüfen uyabilir. Genel terimle hesaplanan fark ya da oranın içinde n kalmıyorsa kural bütün terimler için geçerlidir.</p></div>
+
+<p>Örnekler: a<sub>n</sub> = 3 · 2<sup>n + 1</sup> için oran 3 · 2<sup>n + 2</sup> / (3 · 2<sup>n + 1</sup>) = 2; geometrik (ilk terim 12, r = 2). a<sub>n</sub> = 5 − 2n için fark −2; aritmetik. a<sub>n</sub> = n · 3<sup>n</sup> için oran 3(n + 1)/n; içinde n kaldı, geometrik değil. a<sub>n</sub> = 2<sup>n</sup> + 1 için terimler 3, 5, 9, 17: farklar 2, 4, 8, oranlar 5/3, 9/5; ikisi de değil. Genel olarak <strong>a<sub>n</sub> = A · B<sup>n</sup> biçimindeki her dizi geometriktir</strong> (A, B ≠ 0), ortak çarpanı B'dir; a<sub>n</sub> = A + B · n biçimindeki her dizi aritmetiktir, ortak farkı B'dir.</p>
+
+<p><strong>Hem aritmetik hem geometrik dizi.</strong> Fark da oran da sabitse ne olur? a, b, c için hem 2b = a + c hem b<sup>2</sup> = ac olsun. Birincisinden b = (a + c)/2, ikincisine koy: (a + c)<sup>2</sup>/4 = ac, a<sup>2</sup> + 2ac + c<sup>2</sup> = 4ac, (a − c)<sup>2</sup> = 0, a = c ve buradan b = a. Yani yalnızca <strong>sabit dizi</strong> (5, 5, 5, …) iki türden birden olabilir: fark 0, oran 1. Sıfır dizisi (0, 0, 0, …) aritmetiktir (d = 0) ama oranı tanımsız olduğu için geometrik sayılmaz.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>Aritmetik dizi (Parça 17)</th><th>Geometrik dizi</th></tr>
+<tr><td>Adım kuralı</td><td>a<sub>n + 1</sub> = a<sub>n</sub> + d</td><td>a<sub>n + 1</sub> = a<sub>n</sub> · r</td></tr>
+<tr><td>Sabit olan</td><td>Fark: a<sub>n + 1</sub> − a<sub>n</sub> = d</td><td>Oran: a<sub>n + 1</sub> / a<sub>n</sub> = r</td></tr>
+<tr><td>Genel terim</td><td>a<sub>n</sub> = a<sub>1</sub> + (n − 1)d</td><td>a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup></td></tr>
+<tr><td>İki terimden</td><td>a<sub>n</sub> − a<sub>k</sub> = (n − k)d</td><td>a<sub>n</sub> / a<sub>k</sub> = r<sup>n − k</sup></td></tr>
+<tr><td>Ortanca terim</td><td>b = (a + c)/2</td><td>b<sup>2</sup> = a · c</td></tr>
+<tr><td>p + q = s + t ise</td><td>a<sub>p</sub> + a<sub>q</sub> = a<sub>s</sub> + a<sub>t</sub></td><td>a<sub>p</sub> · a<sub>q</sub> = a<sub>s</sub> · a<sub>t</sub></td></tr>
+<tr><td>Araya k terim</td><td>b = a + (k + 1)d</td><td>b = a · r<sup>k + 1</sup></td></tr>
+<tr><td>İlk n terim toplamı</td><td>n(a<sub>1</sub> + a<sub>n</sub>)/2</td><td>a<sub>1</sub>(r<sup>n</sup> − 1)/(r − 1)</td></tr>
+<tr><td>Bağlı olduğu fonksiyon</td><td>Doğrusal: y = mx + n</td><td>Üstel: y = c · r<sup>x</sup></td></tr>
+<tr><td>Simetrik üç terim yazımı</td><td>a − d, a, a + d</td><td>a/r, a, a · r</td></tr>
+</table></div>
+
+<h3>Üç sayı: aritmetikken bir değişiklikle geometrik</h3>
+
+<p>Sınavın sevdiği bir kalıp: "Üç sayı aritmetik dizi oluşturuyor, toplamları şu; şu sayılara şunlar eklenince geometrik dizi oluşuyor." İki bilinmeyenli bir sistem gibi görünür ama doğru yazımla tek bilinmeyene iner. Aritmetik üçlüyü <strong>a − d, a, a + d</strong> diye yaz: toplam 3a olur, d sadeleşir ve a doğrudan bulunur. Geometrik üçlü için simetrik yazım <strong>a/r, a, a · r</strong>'dir: çarpım a<sup>3</sup> olur, r sadeleşir. Soru toplamı veriyorsa aritmetik yazımı, çarpımı veriyorsa geometrik yazımı seç.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Toplamları 15 olan üç sayı bu sırayla aritmetik dizi oluşturuyor. Birinci sayıya 1, ikincisine 3, üçüncüsüne 9 eklenince bu sırayla geometrik dizi oluşuyor. Sayıları bulunuz.</p>
+<p><strong>Adım 1.</strong> Sayıları a − d, a, a + d diye yaz ve toplamdan a'yı bul.</p>
+<span class="mat">(a − d) + a + (a + d) = 3a = 15 ⇒ a = 5 <span class="g">(d'ler sadeleşir)</span></span>
+<p><strong>Adım 2.</strong> Eklemeleri yap.</p>
+<span class="mat">6 − d, &nbsp;8, &nbsp;14 + d <span class="g">(5 − d + 1; 5 + 3; 5 + d + 9)</span></span>
+<p><strong>Adım 3.</strong> Geometrik orta koşulunu yaz.</p>
+<span class="mat">8<sup>2</sup> = (6 − d)(14 + d) <span class="g">(b<sup>2</sup> = ac)</span></span>
+<span class="mat">64 = 84 − 8d − d<sup>2</sup> <span class="g">(çarp: 84 + 6d − 14d − d<sup>2</sup>)</span></span>
+<span class="mat">d<sup>2</sup> + 8d − 20 = 0 <span class="g">(bir yana topla)</span></span>
+<span class="mat">(d + 10)(d − 2) = 0 ⇒ d = 2 ya da d = −10 <span class="g">(çarpımı −20, toplamı 8)</span></span>
+<p><strong>Adım 4.</strong> İki değeri de denetle. d = 2: sayılar 3, 5, 7; eklemelerle 4, 8, 16, oran 2. d = −10: sayılar 15, 5, −5; eklemelerle 16, 8, 4, oran 1/2. İkisi de koşulları sağlıyor.</p>
+<p><strong>Sonuç:</strong> 3, 5, 7 ya da 15, 5, −5. Soru "artan" ya da "pozitif" deseydi yalnızca 3, 5, 7 kalırdı. İkinci denklemden çıkan iki kökü de koşullara sokmadan birini atma.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Aritmetik orta ile geometrik ortayı karıştırmak.</strong> Örnek 6'nın üçüncü adımında 2 · 8 = (6 − d) + (14 + d) yazan, 16 = 20 gibi bir çelişkiye ya da anlamsız bir sonuca varır. Dizinin türüne göre doğru koşulu seç: aritmetikte <strong>iki kat orta = uçların toplamı</strong> (2b = a + c), geometrikte <strong>ortanın karesi = uçların çarpımı</strong> (b<sup>2</sup> = ac). Soru iki türü birden içeriyorsa her koşulu hangi üçlüye uyguladığını ayrıca yaz.</p></div>
+
+<h2 class="s">8. Üs ve logaritma: bir dizi türünden öbürüne</h2>
+
+<p>Parça 15'teki kuralları hatırla: üslerde çarpma toplamaya döner (2<sup>m</sup> · 2<sup>k</sup> = 2<sup>m + k</sup>), logaritmada çarpım toplama döner (log xy = log x + log y). Aritmetik dizi "toplama dizisi", geometrik dizi "çarpma dizisi" olduğuna göre, üs ve logaritma bu iki türü birbirine çevirmelidir. Gerçekten de öyle.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Aritmetikten geometriğe:</strong> (a<sub>n</sub>) ortak farkı d olan aritmetik dizi ve c &gt; 0, c ≠ 1 ise b<sub>n</sub> = c<sup>a<sub>n</sub></sup> geometrik dizidir; ortak çarpanı c<sup>d</sup>'dir.</p>
+<p><strong>Geometrikten aritmetiğe:</strong> (a<sub>n</sub>) ortak çarpanı r olan, terimleri pozitif bir geometrik dizi ise b<sub>n</sub> = log<sub>c</sub> a<sub>n</sub> aritmetik dizidir; ortak farkı log<sub>c</sub> r'dir.</p>
+<p><strong>Neden?</strong> Birincide oran: c<sup>a<sub>n + 1</sub></sup> / c<sup>a<sub>n</sub></sup> = c<sup>a<sub>n + 1</sub> − a<sub>n</sub></sup> = c<sup>d</sup>, n'den bağımsız. İkincide fark: log<sub>c</sub> a<sub>n + 1</sub> − log<sub>c</sub> a<sub>n</sub> = log<sub>c</sub>(a<sub>n + 1</sub>/a<sub>n</sub>) = log<sub>c</sub> r, n'den bağımsız. Terimlerin pozitif olması gerekir, çünkü negatif sayının logaritması tanımsızdır (Parça 14).</p></div>
+
+<p>Bu bağın bir de grafik yüzü var. a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup> = <span class="kes"><span>a<sub>1</sub></span><span>r</span></span> · r<sup>n</sup> yazılabilir; r &gt; 0 iken bu, f(x) = <span class="kes"><span>a<sub>1</sub></span><span>r</span></span> · r<sup>x</sup> üstel fonksiyonunun x = 1, 2, 3, … noktalarındaki değerleridir. Geometrik dizi, üstel fonksiyonun pozitif tam sayılardaki "fotoğrafıdır"; aritmetik dizi de doğrusal fonksiyonunki. Birinci şekildeki noktalar bunu gösteriyordu. Bu yüzden Parça 16'daki her üstel model (bakteri, yarı ömür, bileşik faiz), zaman tam dönemlerle sayıldığında bir geometrik dizidir; "kaçıncı terim 1000'i geçer" sorusu da Parça 16'daki üstel eşitsizlikle çözülür.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> İlk terimi 2, ortak çarpanı 4 olan geometrik dizide log<sub>2</sub> a<sub>1</sub> + log<sub>2</sub> a<sub>2</sub> + … + log<sub>2</sub> a<sub>10</sub> toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> Logaritmalar aritmetik dizi oluşturur; ilk terimi ve farkı bul.</p>
+<span class="mat">b<sub>1</sub> = log<sub>2</sub> 2 = 1 <span class="g">(log<sub>a</sub> a = 1)</span></span>
+<span class="mat">d = log<sub>2</sub> 4 = 2 <span class="g">(fark = log<sub>c</sub> r)</span></span>
+<span class="mat">b<sub>10</sub> = 1 + 9 · 2 = 19 <span class="g">(b<sub>n</sub> = b<sub>1</sub> + (n − 1)d)</span></span>
+<p><strong>Adım 2.</strong> Aritmetik dizinin toplamı (Parça 17).</p>
+<span class="mat">S<sub>10</sub> = <span class="kes"><span>10 · (1 + 19)</span><span>2</span></span> = 100 <span class="g">(n(b<sub>1</sub> + b<sub>n</sub>)/2)</span></span>
+<p><strong>Adım 3.</strong> Kontrol yolu: logaritmaların toplamı çarpımın logaritmasıdır. Çarpım P<sub>10</sub> = 2<sup>10</sup> · 4<sup>45</sup> = 2<sup>10</sup> · 2<sup>90</sup> = 2<sup>100</sup> (6. bölümdeki formül: r'nin üssü 10 · 9/2 = 45). log<sub>2</sub> 2<sup>100</sup> = 100.</p>
+<p><strong>Sonuç:</strong> 100. Logaritmalar 1, 3, 5, …, 19: ilk 10 tek sayı, toplamları 10<sup>2</sup>.</p></div>
+
+<p>Ters yön de aynı kolaylıkla çalışır: 1, 4, 7, 10, … aritmetik dizisinin (d = 3) terimlerini 2'nin üssüne koyarsan 2, 16, 128, 1024, … geometrik dizisi çıkar; ortak çarpan 2<sup>3</sup> = 8.</p>
+
+<h2 class="s">9. Dizi problemleri</h2>
+
+<p>Gerçek yaşam problemlerinin hepsi aynı kalıba oturur: bir nicelik her adımda <strong>aynı oranla</strong> değişiyorsa geometrik dizi vardır. Problemi çözmeden önce üç şeyi yaz: ilk terim ne, ortak çarpan ne, sorulan şey kaçıncı terim (ya da kaç terimin toplamı)? Hataların çoğu üçüncü sorudadır: dizinin 1. terimi "başlangıç" mı, "ilk adımdan sonrası" mı?</p>
+
+<div class="tablo"><table>
+<tr><th>Problem</th><th>Ortak çarpan</th><th>Dikkat edilecek yer</th></tr>
+<tr><td>Zıplayan top</td><td>Sıçrama oranı (ör. 2/3)</td><td>İlk düşüş bir kez, sonraki her yükseklik iki kez (çıkış + iniş) sayılır.</td></tr>
+<tr><td>Yarılanma</td><td>1/2</td><td>Bir dönem = bir yarı ömür; k dönem sonra m<sub>0</sub> · (1/2)<sup>k</sup>.</td></tr>
+<tr><td>Bileşik faiz</td><td>1 + yüzde/100</td><td>n yıl sonra A · (1 + r)<sup>n</sup>; başlangıç 0. yıldır, 1. terim değil.</td></tr>
+<tr><td>Katlanan kâğıt</td><td>2</td><td>n katlamada kalınlık ve kat sayısı 2<sup>n</sup> ile çarpılır.</td></tr>
+<tr><td>İç içe kareler (orta noktalar)</td><td>Kenar 1/√2, alan 1/2</td><td>Alan oranı, kenar oranının karesidir.</td></tr>
+<tr><td>İç içe üçgenler (orta noktalar)</td><td>Kenar 1/2, alan 1/4</td><td>Orta taban, kenarın yarısıdır (geo Parça 6).</td></tr>
+</table></div>
+
+<h3>Zıplayan top</h3>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> 27 m yükseklikten bırakılan bir top, yere her çarptığında bir önceki düştüğü yüksekliğin 2/3'ü kadar yükseğe sıçrıyor. (a) Top üçüncü sıçrayışında kaç metre yükselir? (b) Top dördüncü kez yere değdiği ana kadar toplam kaç metre yol almıştır?</p>
+<p><strong>Adım 1.</strong> Sıçrama yükseklikleri geometrik dizi: ilk sıçrama 27 · 2/3, her sonraki 2/3 katı.</p>
+<span class="mat">h<sub>1</sub> = 27 · <span class="kes"><span>2</span><span>3</span></span> = 18, &nbsp;h<sub>2</sub> = 12, &nbsp;h<sub>3</sub> = 8 <span class="g">(her adımda × 2/3)</span></span>
+<span class="mat">h<sub>3</sub> = 27 · (2/3)<sup>3</sup> = 27 · <span class="kes"><span>8</span><span>27</span></span> = 8 <span class="g">(genel terimle kontrol)</span></span>
+<p><strong>Adım 2.</strong> (b) Yolu parçalara ayır. Topun hareketi: 27 m düşer (1. değme), 18 m çıkar ve 18 m iner (2. değme), 12 m çıkar ve iner (3. değme), 8 m çıkar ve iner (4. değme).</p>
+<span class="mat">Yol = 27 + 2 · (18 + 12 + 8) <span class="g">(ilk düşüş bir kez, sıçramalar iki kez)</span></span>
+<span class="mat">18 + 12 + 8 = 18 · <span class="kes"><span>1 − (2/3)<sup>3</sup></span><span>1 − 2/3</span></span> = 18 · <span class="kes"><span>19/27</span><span>1/3</span></span> = 38 <span class="g">(üç terimli geometrik toplam)</span></span>
+<span class="mat">Yol = 27 + 76 = 103 m <span class="g">(2 · 38 = 76)</span></span>
+<p><strong>Adım 3.</strong> Kontrol: değme sayısı ile sıçrama sayısını eşle. 4. değmeye kadar 3 tam sıçrama (çıkış + iniş) var; 4. sıçrama henüz başlamadı. Şekilde dört değme noktasını say.</p>
+<p><strong>Sonuç:</strong> (a) 8 m. (b) 103 m.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 260" role="img" aria-label="Zıplayan top: 27 metreden düşüş, ardından 18, 12, 8 metrelik sıçramalar ve daha küçük bir dördüncü sıçrama. Yere değme noktaları 1'den 5'e kadar numaralı.">
+  <line class="sv-c" x1="10" y1="230" x2="392" y2="230" />
+  <line class="sv-cl" x1="30" y1="41" x2="30" y2="230" />
+  <circle class="sv-a" cx="30" cy="41" r="6" />
+  <path class="sv-cl" d="M30 230 Q80 -22 130 230" />
+  <path class="sv-cl" d="M130 230 Q172.5 62 215 230" />
+  <path class="sv-cl" d="M215 230 Q250 118 285 230" />
+  <path class="sv-c" d="M285 230 Q312.5 155.3 340 230" />
+  <text class="sv-s" x="40" y="45" text-anchor="start">27 m</text>
+  <text class="sv-t" x="80" y="97" text-anchor="middle">18 m</text>
+  <text class="sv-t" x="172" y="139" text-anchor="middle">12 m</text>
+  <text class="sv-t" x="250" y="167" text-anchor="middle">8 m</text>
+  <text class="sv-s" x="312" y="186" text-anchor="middle">16/3 m</text>
+  <text class="sv-s" x="30" y="248" text-anchor="middle">1</text>
+  <text class="sv-s" x="130" y="248" text-anchor="middle">2</text>
+  <text class="sv-s" x="215" y="248" text-anchor="middle">3</text>
+  <text class="sv-s" x="285" y="248" text-anchor="middle">4</text>
+  <text class="sv-s" x="340" y="248" text-anchor="middle">5</text>
+  <text class="sv-s" x="392" y="248" text-anchor="end">yere değme</text>
+</svg>
+<figcaption>Yükseklikler gerçek orana göre çizildi (1 m = 7 birim). 4. değmeye kadar yol: 27'lik düşüş bir kez, 18, 12 ve 8'lik sıçramalar ikişer kez. Soluk çizilen 16/3 m'lik sıçrama 4. değmeden sonradır, yola girmez.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Yolu sayarken iniş-çıkışı karıştırmak.</strong> Üç tipik yanlış: (1) sıçramaları bir kez saymak (27 + 18 + 12 + 8 = 65); top her sıçramada çıktığı kadar iner. (2) İlk düşüşü de iki kez saymak (2 · 27 + …); top 27 m'ye hiç çıkmadı, oradan bırakıldı. (3) Değme sayısı ile sıçrama sayısını eşit sanmak; n. değmeye kadar n − 1 sıçrama vardır. Her soruda küçük bir çizim yap ve değmeleri numarala; şekildeki gibi.</p>
+<p><strong>Not:</strong> "Top duruncaya kadar toplam kaç metre yol alır?" sorusu sonsuz sayıda terimin toplamını ister. Bu, 2018 programında olmayan sonsuz geometrik toplam konusudur; sınavın bu biçimde sormasını beklememelisin.</p></div>
+
+<h3>Yarılanma ve bileşik faiz: dizi diliyle Parça 16</h3>
+
+<p>Yarı ömrü 6 saat olan bir ilaçtan vücutta 400 mg varsa, 6 saatlik dönemlerin sonundaki miktarlar 200, 100, 50, 25, … geometrik dizisidir (r = 1/2). "Kaçıncı dönemin sonunda miktar ilk kez 10 mg'ın altına düşer?" sorusu, 400 · (1/2)<sup>k</sup> &lt; 10, yani 2<sup>k</sup> &gt; 40 eşitsizliğidir; 2<sup>5</sup> = 32 &lt; 40 &lt; 64 = 2<sup>6</sup> olduğu için k = 6. Burada k "geçen dönem sayısı"dır; diziyi a<sub>1</sub> = 400 diye başlatırsan aynı miktar a<sub>7</sub> olur. Hangi sayımı kullandığını baştan yaz.</p>
+
+<p>Bileşik faizde de durum aynıdır. 10 000 TL yıllık %10 bileşik faizle yatırılırsa yıl sonlarındaki tutarlar 11 000, 12 100, 13 310, … olur: her yıl 1,1 ile çarpılır, r = 1,1. n. yıl sonundaki tutar 10 000 · 1,1<sup>n</sup>'dir. Mat Parça 30'daki A(1 + n/100)<sup>t</sup> formülü budur. Toplam formülü de burada iş görür: Biri her yılın başında 1000 TL yatırıyorsa 3. yılın sonunda ilk yatırım 3 yıl, ikincisi 2 yıl, üçüncüsü 1 yıl faiz almıştır: 1000 · (1,1 + 1,1<sup>2</sup> + 1,1<sup>3</sup>) = 1000 · 1,1 · <span class="kes"><span>1,1<sup>3</sup> − 1</span><span>0,1</span></span> = 1100 + 1210 + 1331 = 3641 TL.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Oranla büyümeyi farkla büyüme sanmak.</strong> "%10 faizle 3 yılda para %30 artar" demek yanlıştır: 10 000 TL 13 000 değil 13 310 TL olur, çünkü her yıl faiz bir önceki yılın faizine de işler. Aynı yanılgı girişteki kâğıtta da vardır: her katlamada bir kâğıt kalınlığı eklendiğini sanan 10 katlama için 0,1 + 10 · 0,1 = 1,1 mm bulur; doğrusu 0,1 · 2<sup>10</sup> = 102,4 mm'dir. Sabit oranla değişen her nicelik geometrik dizidir; adım sayısı büyüdükçe aritmetik tahminle arasındaki fark hızla açılır.</p></div>
+
+<p><strong>Girişteki sorunun cevabı.</strong> n katlamadan sonra kalınlık 0,1 · 2<sup>n</sup> mm'dir. 1 metreyi (1000 mm) geçmek için 2<sup>n</sup> ≥ 10 000 gerekir. 2<sup>13</sup> = 8192 yetmez, 2<sup>14</sup> = 16 384 yeter: 14 katlama (kalınlık 1638,4 mm). Parça 16'daki hızlı yol burada da çalışır: 2<sup>10</sup> ≈ 1000 olduğu için her 10 katlama kalınlığı yaklaşık 1000 kat artırır. 40 katlama 0,1 mm'yi yaklaşık 10<sup>11</sup> mm'ye, yani 100 bin kilometreye taşır; iki katlama daha 400 bin kilometrenin üstüne çıkarır.</p>
+
+<h3>İç içe kareler ve üçgenler</h3>
+
+<p>Bir karenin kenar orta noktalarını birleştirirsen içte yeni bir kare oluşur. Yeni karenin kenarı, eski karenin köşesinde oluşan dik üçgenin hipotenüsüdür: dik kenarlar a/2 ve a/2, hipotenüs √(a<sup>2</sup>/4 + a<sup>2</sup>/4) = a/√2 (geo Parça 3, Pisagor). Kenar her adımda 1/√2 ile, alan (1/√2)<sup>2</sup> = 1/2 ile çarpılır. Alanın yarıya inmesini şekilden de görebilirsin: dışarıda kalan dört üçgeni içeri katlarsan iç kareyi tam örterler. Bu iki oran farkı önemlidir: <strong>kenarlar dizisinin ortak çarpanı 1/√2, alanlar dizisininki 1/2</strong>. Benzer şekillerde alan oranı, uzunluk oranının karesidir (geo Parça 6).</p>
+
+<figure>
+<svg viewBox="0 0 400 240" role="img" aria-label="Kenarı 8 olan bir karenin içine kenar orta noktaları birleştirilerek çizilmiş dört kare daha. Sağda kenar ve alan listesi: 8 ve 64, 4 kök 2 ve 32, 4 ve 16, 2 kök 2 ve 8, 2 ve 4.">
+  <rect class="sv-k" x="20" y="20" width="200" height="200" />
+  <polygon class="sv-l" points="120,20 220,120 120,220 20,120" />
+  <rect class="sv-m" x="70" y="70" width="100" height="100" />
+  <polygon class="sv-a" points="170,120 120,170 70,120 120,70" />
+  <rect class="sv-k" x="95" y="95" width="50" height="50" />
+  <text class="sv-b" x="236" y="40">kenar · alan</text>
+  <rect class="sv-k" x="236" y="58" width="12" height="12" />
+  <text class="sv-t" x="256" y="69">1.  8 · 64</text>
+  <rect class="sv-l" x="236" y="88" width="12" height="12" />
+  <text class="sv-t" x="256" y="99">2.  4√2 · 32</text>
+  <rect class="sv-m" x="236" y="118" width="12" height="12" />
+  <text class="sv-t" x="256" y="129">3.  4 · 16</text>
+  <rect class="sv-a" x="236" y="148" width="12" height="12" />
+  <text class="sv-t" x="256" y="159">4.  2√2 · 8</text>
+  <rect class="sv-k" x="236" y="178" width="12" height="12" />
+  <text class="sv-t" x="256" y="189">5.  2 · 4</text>
+  <text class="sv-s" x="236" y="218">kenar × 1/√2, alan × 1/2</text>
+</svg>
+<figcaption>Kenarı 8 birim olan kare ve orta noktalarla çizilen dört kare, gerçek ölçüyle (1 birim = 25 birim çizim). Her kare bir öncekinin 45° döndürülmüş ve küçültülmüş hâlidir; iki adımda bir kenar tam yarıya iner (8 → 4 → 2).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> Kenarı 8 cm olan bir karenin kenar orta noktaları birleştirilerek ikinci kare, onunkiler birleştirilerek üçüncü kare çiziliyor ve işlem böyle sürüyor. (a) 6. karenin alanı kaç cm<sup>2</sup>'dir? (b) İlk 5 karenin alanları toplamı kaç cm<sup>2</sup>'dir? (c) Kaçıncı karenin kenarı 1 cm'dir?</p>
+<p><strong>Adım 1.</strong> Alanlar dizisi: A<sub>1</sub> = 64, r = 1/2.</p>
+<span class="mat">A<sub>6</sub> = 64 · (1/2)<sup>5</sup> = <span class="kes"><span>64</span><span>32</span></span> = 2 <span class="g">(A<sub>n</sub> = A<sub>1</sub> · r<sup>n − 1</sup>)</span></span>
+<p><strong>Adım 2.</strong> (b) Toplam.</p>
+<span class="mat">S<sub>5</sub> = 64 · <span class="kes"><span>1 − (1/2)<sup>5</sup></span><span>1 − 1/2</span></span> = 64 · <span class="kes"><span>31/32</span><span>1/2</span></span> = 124 <span class="g">(64 + 32 + 16 + 8 + 4)</span></span>
+<p><strong>Adım 3.</strong> (c) Kenarlar dizisi: a<sub>1</sub> = 8, r = 1/√2. Kenarı 1 olan karenin alanı 1'dir; alanlar dizisinde aramak daha kolay (kök yok).</p>
+<span class="mat">64 · (1/2)<sup>n − 1</sup> = 1 ⇒ 2<sup>n − 1</sup> = 64 = 2<sup>6</sup> <span class="g">(alan = kenar<sup>2</sup>)</span></span>
+<span class="mat">n − 1 = 6 ⇒ n = 7 <span class="g">(üsleri eşitle)</span></span>
+<p><strong>Adım 4.</strong> Kontrol: kenarlar 8, 4√2, 4, 2√2, 2, √2, 1. Yedinci terim 1.</p>
+<p><strong>Sonuç:</strong> (a) 2 cm<sup>2</sup>. (b) 124 cm<sup>2</sup>. (c) 7. kare.</p></div>
+
+<p>Eşkenar üçgende de aynı işlem yapılır: kenar orta noktalarını birleştiren doğru parçaları (orta tabanlar) tabana paraleldir ve onun yarısıdır (geo Parça 6). İçteki üçgenin kenarı her adımda 1/2, alanı 1/4 ile çarpılır. Kenarı 16 olan eşkenar üçgenle başlarsan kenarlar 16, 8, 4, 2, … olur.</p>
+
+<h3>Şekil örüntüleri</h3>
+
+<p>Şekil örüntüsü sorularında önce ilk üç-dört adımı say, sonra ardışık sayıların farkına ve oranına bak (7. bölümdeki sınama). Oran sabitse geometrik dizi vardır ve genel terimi a<sub>1</sub> · r<sup>n − 1</sup> diye yazarsın.</p>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="Üç adımlı üçgen örüntüsü. Birinci adımda bir dolu üçgen, ikinci adımda ortası boşaltılmış üç dolu üçgen, üçüncü adımda dokuz dolu üçgen.">
+  <polygon class="sv-m" points="20,150 120,150 70,63.4" />
+  <polygon class="sv-k" points="150,150 250,150 200,63.4" />
+  <polygon class="sv-m" points="150,150 200,150 175,106.7" />
+  <polygon class="sv-m" points="200,150 250,150 225,106.7" />
+  <polygon class="sv-m" points="175,106.7 225,106.7 200,63.4" />
+  <polygon class="sv-k" points="280,150 380,150 330,63.4" />
+  <polygon class="sv-m" points="280,150 305,150 292.5,128.3" />
+  <polygon class="sv-m" points="305,150 330,150 317.5,128.3" />
+  <polygon class="sv-m" points="292.5,128.3 317.5,128.3 305,106.7" />
+  <polygon class="sv-m" points="330,150 355,150 342.5,128.3" />
+  <polygon class="sv-m" points="355,150 380,150 367.5,128.3" />
+  <polygon class="sv-m" points="342.5,128.3 367.5,128.3 355,106.7" />
+  <polygon class="sv-m" points="305,106.7 330,106.7 317.5,85" />
+  <polygon class="sv-m" points="330,106.7 355,106.7 342.5,85" />
+  <polygon class="sv-m" points="317.5,85 342.5,85 330,63.4" />
+  <text class="sv-b" x="70" y="176" text-anchor="middle">1. adım</text>
+  <text class="sv-b" x="200" y="176" text-anchor="middle">2. adım</text>
+  <text class="sv-b" x="330" y="176" text-anchor="middle">3. adım</text>
+  <text class="sv-s" x="70" y="194" text-anchor="middle">1 üçgen</text>
+  <text class="sv-s" x="200" y="194" text-anchor="middle">3 üçgen</text>
+  <text class="sv-s" x="330" y="194" text-anchor="middle">9 üçgen</text>
+</svg>
+<figcaption>Her adımda her dolu üçgenin kenar orta noktaları birleştirilir ve ortadaki üçgen boşaltılır. Dolu üçgen sayısı her adımda 3 ile, her bir üçgenin alanı 1/4 ile, dolu alanın toplamı 3/4 ile çarpılır.</figcaption>
+</figure>
+
+<p>Şekildeki örüntüde dolu üçgen sayıları 1, 3, 9, …: farklar 2, 6 (sabit değil), oranlar 3, 3. Genel terim a<sub>n</sub> = 3<sup>n − 1</sup>. "Kaçıncı adımda 729 dolu üçgen olur?" sorusu 3<sup>n − 1</sup> = 729 = 3<sup>6</sup>, n = 7 verir. Her küçük üçgenin alanı bir öncekinin 1/4'ü olduğu için n. adımdaki dolu alan, ilk alanın 3<sup>n − 1</sup> · (1/4)<sup>n − 1</sup> = (3/4)<sup>n − 1</sup> katıdır: iki geometrik dizinin terim terim çarpımı yine geometrik dizidir ve ortak çarpanı iki çarpanın çarpımıdır.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 17'ye:</strong> Bu parçadaki her kural oradaki bir kuralın çarpma ile yazılmış eşidir: fark yerine oran, toplam yerine çarpım, kat yerine kuvvet. Çarpım formülündeki r'nin üssü bir aritmetik dizi toplamıdır.</p>
+<p><strong>Parça 14, 15 ve 16'ya:</strong> Geometrik dizi, üstel fonksiyonun tam sayılardaki değerleridir. Logaritma geometrik diziyi aritmetiğe, üs aritmetik diziyi geometriğe çevirir. "Kaçıncı terim … değerini geçer" soruları ve bütün büyüme-yarılanma modelleri Parça 16'nın üstel denklem ve eşitsizlikleriyle çözülür.</p>
+<p><strong>Parça 19'a:</strong> Limitin ne demek olduğunu fonksiyonlar üzerinden kuracağız. Dizilerde limit ve sonsuz geometrik toplam programda olmadığı için o köprü burada kurulmadı; ama 0 &lt; r &lt; 1 iken terimlerin "giderek küçülmesi" sezgisi, limit fikrinin ilk örneğidir.</p>
+<p><strong>Öbür derslere:</strong> Geometride iç içe kareler (geo Parça 11) ve benzer şekillerde alan oranının k<sup>2</sup> oluşu (geo Parça 6) burada dizi diliyle geri geldi. Kimya ve fizikte yarı ömür, biyolojide her bölünmede sayısı ikiye katlanan hücreler (1 hücreden n bölünme sonunda 2<sup>n</sup> hücre), mat Parça 30'daki bileşik faiz hep geometrik dizidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Geometrik dizinin genel teriminde üs neden n − 1'dir?</summary><p>Çünkü 1. terimden n. terime n − 1 adım vardır ve her adımda bir kez r ile çarpılır. a<sub>2</sub> = a<sub>1</sub> · r'de bir, a<sub>3</sub> = a<sub>1</sub> · r<sup>2</sup>'de iki çarpma vardır. Aritmetik dizide aynı nedenle n − 1 tane d eklenir.</p></details>
+<details><summary>a<sub>3</sub> ve a<sub>7</sub> verildiğinde r neden iki değer alabilir, a<sub>2</sub> ve a<sub>5</sub> verildiğinde neden tek değer alır?</summary><p>a<sub>7</sub>/a<sub>3</sub> = r<sup>4</sup>; çift kuvvet işareti siler, r<sup>4</sup> = 16'nın iki gerçek çözümü vardır (±2). a<sub>5</sub>/a<sub>2</sub> = r<sup>3</sup>; tek kuvvet işareti korur, r<sup>3</sup> = 27'nin tek gerçek çözümü vardır (3).</p></details>
+<details><summary>Geometrik dizide p + q = s + t ise hangi eşitlik vardır ve neden?</summary><p>a<sub>p</sub> · a<sub>q</sub> = a<sub>s</sub> · a<sub>t</sub>. Çünkü a<sub>p</sub> · a<sub>q</sub> = a<sub>1</sub><sup>2</sup> · r<sup>p + q − 2</sup> yalnızca indislerin toplamına bağlıdır. Aritmetik dizide aynı koşulda toplamlar eşittir.</p></details>
+<details><summary>Toplam formülünü çıkarırken hangi hileyi kullandık ve r = 1 neden ayrı tutulur?</summary><p>Toplamı r ile çarpıp asıl toplamdan çıkardık; her terim bir sonrakine dönüştüğü için ortadakiler silindi ve S<sub>n</sub>(r − 1) = a<sub>1</sub>(r<sup>n</sup> − 1) kaldı. Son adımda r − 1'e bölündüğü için r = 1 (sıfıra bölme) ayrı tutulur; o zaman dizi sabittir ve S<sub>n</sub> = n · a<sub>1</sub>.</p></details>
+<details><summary>Pozitif terimli bir geometrik dizinin terimlerinin logaritmaları nasıl bir dizi oluşturur?</summary><p>Aritmetik dizi oluşturur; ortak farkı log r'dir. Çünkü log a<sub>n + 1</sub> − log a<sub>n</sub> = log(a<sub>n + 1</sub>/a<sub>n</sub>) = log r, n'den bağımsızdır.</p></details>
+<details><summary>Zıplayan top n. kez yere değdiğinde alınan yolda hangi yükseklik bir kez, hangileri iki kez sayılır?</summary><p>Bırakıldığı ilk yükseklik bir kez sayılır (yalnızca düşer). Ondan sonraki n − 1 sıçrama yüksekliğinin her biri iki kez sayılır (çıkış ve iniş).</p></details>
+<details><summary>Hem aritmetik hem geometrik olan diziler hangileridir?</summary><p>Sıfırdan farklı sabit diziler (5, 5, 5, … gibi): fark 0, oran 1. 2b = a + c ve b<sup>2</sup> = ac birlikte (a − c)<sup>2</sup> = 0 verir, yani a = b = c.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Tanım:</strong> a<sub>n + 1</sub> = a<sub>n</sub> · r; oran sabit. Terimler ve r sıfırdan farklı.</li>
+<li><strong>Genel terim:</strong> a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup> = a<sub>k</sub> · r<sup>n − k</sup>. İki terimin bölümü a<sub>n</sub>/a<sub>k</sub> = r<sup>n − k</sup>.</li>
+<li><strong>Çift üs:</strong> r<sup>4</sup> = 16 ⇒ r = ±2. Koşul yoksa iki r'yi de taşı; tek uzaklıktaki terimler iki değer alır.</li>
+<li><strong>Geometrik orta:</strong> b<sup>2</sup> = ac; a<sub>n</sub><sup>2</sup> = a<sub>n − k</sub> · a<sub>n + k</sub>. p + q = s + t ⇒ a<sub>p</sub>a<sub>q</sub> = a<sub>s</sub>a<sub>t</sub>.</li>
+<li><strong>Araya k terim:</strong> b = a · r<sup>k + 1</sup> (toplam k + 2 terim).</li>
+<li><strong>Toplam:</strong> S<sub>n</sub> = a<sub>1</sub>(r<sup>n</sup> − 1)/(r − 1); r = 1 ise n · a<sub>1</sub>. Son terimle: (a<sub>n</sub>r − a<sub>1</sub>)/(r − 1). S<sub>2n</sub> = S<sub>n</sub>(1 + r<sup>n</sup>).</li>
+<li><strong>Toplamdan tanıma:</strong> a<sub>n</sub> = S<sub>n</sub> − S<sub>n − 1</sub>, a<sub>1</sub> = S<sub>1</sub>. S<sub>n</sub> = c · r<sup>n</sup> − c ⇒ geometrik.</li>
+<li><strong>Çarpım:</strong> P<sub>n</sub> = a<sub>1</sub><sup>n</sup> · r<sup>n(n − 1)/2</sup>; n tekse (ortanca terim)<sup>n</sup>.</li>
+<li><strong>Sınama:</strong> fark sabit → aritmetik; oran sabit → geometrik; ikisi de → sabit dizi. A · B<sup>n</sup> biçimi geometriktir.</li>
+<li><strong>Üç sayı:</strong> toplam verilirse a − d, a, a + d; çarpım verilirse a/r, a, ar. Çıkan iki kökü de denetle.</li>
+<li><strong>Dönüşüm:</strong> aritmetik → c<sup>a<sub>n</sub></sup> geometrik (r = c<sup>d</sup>); pozitif geometrik → log a<sub>n</sub> aritmetik (d = log r).</li>
+<li><strong>Problemler:</strong> top: ilk yükseklik 1 kez, sıçramalar 2 kez. Faiz: n yıl sonra A · (1 + r)<sup>n</sup>. İç içe kare: kenar × 1/√2, alan × 1/2. Orta noktalı üçgen: kenar × 1/2, alan × 1/4.</li>
+<li><strong>Kapsam dışı:</strong> sonsuz geometrik toplam, dizilerde limit.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-18">
+<h3>Quiz 18</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">İlk terimi 3, ortak çarpanı 2 olan geometrik dizinin 6. terimi kaçtır?</p>
+<ul class="sec"><li>192</li><li>96</li><li>13</li><li>48</li><li>36</li></ul>
+<div class="coz"><p>a<sub>6</sub> = a<sub>1</sub> · r<sup>5</sup> = 3 · 32 = 96. Kontrol: 3, 6, 12, 24, 48, 96. 192, üssü n − 1 yerine n almaktır (3 · 2<sup>6</sup>). 48, bir adım eksik saymaktır (5. terim). 13, diziyi aritmetik sanıp 3 + 5 · 2 hesaplamaktır. 36 ise r'yi üs yerine çarpan gibi kullanmaktır (3 · 2 · 6). Genel terimde üs, terimin sırasından bir eksiktir.</p></div></li>
+
+<li data-c="C"><p class="q">Genel terimi aşağıdakilerden hangisi olan dizi bir geometrik dizidir?</p>
+<ul class="sec"><li>a<sub>n</sub> = 2n + 1</li><li>a<sub>n</sub> = n<sup>2</sup></li><li>a<sub>n</sub> = 3 · 2<sup>n + 1</sup></li><li>a<sub>n</sub> = 2<sup>n</sup> + 1</li><li>a<sub>n</sub> = n · 3<sup>n</sup></li></ul>
+<div class="coz"><p>Oranı hesapla: 3 · 2<sup>n + 2</sup> / (3 · 2<sup>n + 1</sup>) = 2, n'den bağımsız; dizi 12, 24, 48, … geometriktir. 2n + 1 aritmetiktir (fark 2, oran 5/3, 7/5 … değişir). n<sup>2</sup>'de oranlar 4, 9/4, … değişir. 2<sup>n</sup> + 1'de terimler 3, 5, 9, 17; oranlar 5/3 ve 9/5, sabit değil: üstel kısma eklenen sabit geometrikliği bozar. n · 3<sup>n</sup>'de oran 3(n + 1)/n, içinde n kalıyor. A · B<sup>n</sup> biçimi geometriktir.</p></div></li>
+
+<li data-c="A"><p class="q">Bir geometrik dizide a<sub>3</sub> = 4 ve a<sub>7</sub> = 64'tür. a<sub>6</sub> teriminin alabileceği değerlerin toplamı kaçtır?</p>
+<ul class="sec"><li>0</li><li>32</li><li>64</li><li>−32</li><li>16</li></ul>
+<div class="coz"><p>r<sup>4</sup> = 64/4 = 16, r = 2 ya da r = −2. a<sub>6</sub> = a<sub>3</sub> · r<sup>3</sup> = 4 · (±8) = ±32; toplam 0. 32 yalnızca pozitif r'yi, −32 yalnızca negatif r'yi almaktır. 64, iki değeri de 32 sanıp toplamaktır. 16, a<sub>5</sub>'tir (a<sub>3</sub> · r<sup>2</sup>; işaretten bağımsız). Soruda "pozitif terimli" gibi bir koşul yokken çift üsten iki r çıkar.</p></div></li>
+
+<li data-c="D"><p class="q">Pozitif terimli bir geometrik dizide a<sub>2</sub> · a<sub>8</sub> = 64 olduğuna göre a<sub>3</sub> · a<sub>5</sub> · a<sub>7</sub> çarpımı kaçtır?</p>
+<ul class="sec"><li>64</li><li>8</li><li>4096</li><li>512</li><li>192</li></ul>
+<div class="coz"><p>İndis toplamı 2 + 8 = 10 = 3 + 7 = 5 + 5. O hâlde a<sub>3</sub> · a<sub>7</sub> = 64 ve a<sub>5</sub><sup>2</sup> = 64, a<sub>5</sub> = 8 (pozitif). Çarpım 64 · 8 = 512. 64, a<sub>5</sub>'i unutmaktır; 8 yalnızca a<sub>5</sub>'tir. 4096, a<sub>5</sub>'i de 64 sanmaktır (64 · 64). 192 ise çarpmak yerine 64'ü üç kez toplamaktır.</p></div></li>
+
+<li data-c="E"><p class="q">2 + 6 + 18 + … + 486 toplamı kaçtır?</p>
+<ul class="sec"><li>242</li><li>1464</li><li>2186</li><li>1456</li><li>728</li></ul>
+<div class="coz"><p>a<sub>1</sub> = 2, r = 3. 2 · 3<sup>n − 1</sup> = 486 ⇒ 3<sup>n − 1</sup> = 243 = 3<sup>5</sup> ⇒ n = 6. S<sub>6</sub> = 2(3<sup>6</sup> − 1)/(3 − 1) = 728. Kontrol (son terimli biçim): (486 · 3 − 2)/2 = 728. 242, n'yi 5 almaktır; 2186, n'yi 7 almaktır. 1456, r − 1 = 2'ye bölmeyi unutmaktır. 1464, aritmetik dizi formülünü (6 · (2 + 486)/2) kullanmaktır.</p></div></li>
+
+<li data-c="C"><p class="q">32 m yükseklikten bırakılan bir top, yere her çarptığında bir önceki düştüğü yüksekliğin 3/4'ü kadar yükseğe sıçramaktadır. Top üçüncü kez yere değdiği ana kadar toplam kaç metre yol almıştır?</p>
+<ul class="sec"><li>74</li><li>98</li><li>116</li><li>84</li><li>143</li></ul>
+<div class="coz"><p>Sıçramalar 24 ve 18 m. Hareket: 32 m düşüş (1. değme), 24 çıkış + 24 iniş (2. değme), 18 çıkış + 18 iniş (3. değme). Yol 32 + 48 + 36 = 116. 74, sıçramaları bir kez saymaktır. 98, son sıçramanın inişini unutmaktır. 84, ilk düşüşü hiç saymamaktır (2 · (24 + 18)). 143, bir sıçrama fazla saymaktır (13,5'lik sıçramayı da eklemek, 4. değme).</p></div></li>
+
+<li data-c="B"><p class="q">İlk terimi 4, ortak çarpanı 2 olan geometrik dizide log<sub>2</sub> a<sub>1</sub> + log<sub>2</sub> a<sub>2</sub> + … + log<sub>2</sub> a<sub>8</sub> toplamı kaçtır?</p>
+<ul class="sec"><li>36</li><li>44</li><li>52</li><li>28</li><li>88</li></ul>
+<div class="coz"><p>log<sub>2</sub> a<sub>n</sub> = log<sub>2</sub>(4 · 2<sup>n − 1</sup>) = n + 1: 2, 3, …, 9 aritmetik dizi. Toplam 8 · (2 + 9)/2 = 44. 36, log<sub>2</sub> a<sub>n</sub>'yi n sanmaktır (a<sub>1</sub>'in katkısını 1 almak). 52, genel terimde üssü n − 1 yerine n almaktır. 28, a<sub>1</sub> = 4'ün katkısını (8 · 2 = 16) unutup yalnızca r'nin üslerini toplamaktır. 88, aritmetik toplamda 2'ye bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">Toplamları 18 olan üç sayı bu sırayla artan bir aritmetik dizi oluşturmaktadır. Birinci sayıya 1, üçüncü sayıya 2 eklenirse bu sırayla bir geometrik dizi oluşmaktadır. Aritmetik dizinin en büyük terimi kaçtır?</p>
+<ul class="sec"><li>12</li><li>11</li><li>6</li><li>10</li><li>4</li></ul>
+<div class="coz"><p>Sayılar 6 − d, 6, 6 + d (toplam 3 · 6 = 18). Değişiklikten sonra 7 − d, 6, 8 + d; geometrik orta: 36 = (7 − d)(8 + d) ⇒ d<sup>2</sup> + d − 20 = 0 ⇒ d = 4 ya da d = −5. Dizi artan olduğu için d = 4: sayılar 2, 6, 10 (geometrik: 3, 6, 12). En büyük 10. 11, "artan" koşulunu atlayıp d = −5'i almaktır (11, 6, 1). 12, geometrik dizinin terimini vermektir. 6 ortadaki terim, 4 ise ortak farktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 2x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>3</li><li>9</li><li><span class="kes"><span>7</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>8</span><span>3</span></span></li></ul>
+<div class="coz"><p>Ortalama değişim hızı (f(4) − f(1))/(4 − 1). f(4) = 16 − 8 = 8, f(1) = 1 − 2 = −1. (8 − (−1))/3 = 9/3 = 3. 9, aralık uzunluğuna bölmeyi unutmaktır. 7/3, f(1)'i +1 almaktır. 8/3, f(1)'i 0 sanmaktır. 1/3 ise oranı ters kurmaktır (3/9). Ortalama değişim hızı, iki noktadan geçen kirişin eğimidir.</p></div></li>
+
+<li data-c="E" data-k="ileri-2"><p class="q">f(2x + 1) = 6x − 1 olduğuna göre f<sup>−1</sup>(5) kaçtır?</p>
+<ul class="sec"><li>1</li><li>11</li><li>29</li><li><span class="kes"><span>1</span><span>11</span></span></li><li>3</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(5) = a demek f(a) = 5 demektir. 6x − 1 = 5 ⇒ x = 1, bu x için içerideki 2x + 1 = 3; yani f(3) = 5 ve f<sup>−1</sup>(5) = 3. Kontrol: u = 2x + 1 ⇒ f(u) = 3u − 4, f(3) = 5. 1, x'i cevap sanmaktır; içteki ifadeyi hesaplamak gerekir. 11, f(5)'tir. 29, verilen ifadeye doğrudan 5 koymaktır. 1/11, ters fonksiyonu 1/f sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği (2, 5) noktasından geçmektedir. Buna göre y = f(x − 3) + 1 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(−1, 6)</li><li>(5, 4)</li><li>(5, 6)</li><li>(−1, 4)</li><li>(2, 6)</li></ul>
+<div class="coz"><p>f(x − 3) grafiği f'yi 3 birim sağa, "+1" 1 birim yukarı taşır: (2, 5) → (5, 6). Kontrol: x = 5 için f(5 − 3) + 1 = f(2) + 1 = 6. (−1, 6), yatay ötelemenin yönünü ters almaktır ("x − 3" sağa taşır). (5, 4) ve (−1, 4) düşey ötelemenin yönünü ters almaktır. (2, 6) yalnızca düşey ötelemeyi yapmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-5"><p class="q">y = −x<sup>2</sup> + 4x + m parabolünün tepe noktası x ekseni üzerinde olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>4</li><li>−4</li><li>2</li><li>−2</li><li>0</li></ul>
+<div class="coz"><p>Tepenin apsisi r = −b/2a = −4/(−2) = 2. Tepe x ekseni üzerindeyse ordinatı 0: f(2) = −4 + 8 + m = 4 + m = 0 ⇒ m = −4. Kontrol: y = −(x − 2)<sup>2</sup>, tepe (2, 0). 4, son adımda işareti kaçırmaktır. 2, tepenin apsisini m sanmaktır; −2 apsisin işaret hatasıdır. 0, "orijinden geçer" koşuluyla (c = 0) karıştırmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-7"><p class="q"><span class="kes"><span>x − 4</span><span>x + 2</span></span> ≤ 0 eşitsizliğini sağlayan tam sayıların toplamı kaçtır?</p>
+<ul class="sec"><li>5</li><li>7</li><li>6</li><li>9</li><li>−3</li></ul>
+<div class="coz"><p>Kritik noktalar 4 (pay) ve −2 (payda). En sağda işaret +, 4 ile −2 arası −. ≤ 0 için pay kökü 4 alınır, payda kökü −2 alınmaz: −2 &lt; x ≤ 4. Tam sayılar −1, 0, 1, 2, 3, 4; toplam 9. 5, 4'ü dışlamaktır; 7, −2'yi de almaktır (payda sıfır olamaz). 6, tam sayıların sayısıdır, toplamı değil. −3, kritik noktaların işaretini ters alıp (−4, 2] aralığında toplamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-8"><p class="q"><span class="kes"><span>47π</span><span>6</span></span> radyanlık açının esas ölçüsü kaç radyandır?</p>
+<ul class="sec"><li><span class="kes"><span>11π</span><span>6</span></span></li><li><span class="kes"><span>5π</span><span>6</span></span></li><li><span class="kes"><span>23π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>6</span></span></li><li>−<span class="kes"><span>π</span><span>6</span></span></li></ul>
+<div class="coz"><p>2π = 12π/6. 47 = 3 · 12 + 11, yani 47π/6 = 3 · 2π + 11π/6; esas ölçü [0, 2π) aralığındaki 11π/6. 5π/6, 7π çıkarmaktır; π'nin tek katı tam tur değildir. 23π/6, yalnızca iki tur çıkarmaktır; [0, 2π) dışında. −π/6, dört tur çıkarmaktır; esas ölçü negatif olmaz. π/6, −π/6'nın işaretini atmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-10"><p class="q">f(x) = 3 sin(2x − π) + 1 fonksiyonunun görüntü kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[−3, 3]</li><li>[0, 2]</li><li>[−4, 2]</li><li>[−1, 1]</li><li>[−2, 4]</li></ul>
+<div class="coz"><p>−1 ≤ sin(2x − π) ≤ 1; 3 ile çarp: −3 ≤ 3 sin(…) ≤ 3; 1 ekle: −2 ≤ f(x) ≤ 4. Görüntü kümesi [−2, 4]. b = 2 ve c = −π yalnızca periyodu ve yatay kaymayı etkiler, görüntü kümesini değiştirmez. [−3, 3], düşey kaymayı (+1) unutmaktır; [−4, 2] onu ters yönde uygulamaktır. [0, 2], genliği (3) unutmaktır; [−1, 1] sinüsün kendi görüntü kümesidir.</p></div></li>
+
+<li data-c="C" data-k="ileri-11"><p class="q">cos<sup>2</sup> 15° − sin<sup>2</sup> 15° ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>2</span></span></li><li>1</li><li><span class="kes"><span>√3</span><span>2</span></span></li><li><span class="kes"><span>√3</span><span>4</span></span></li><li><span class="kes"><span>√2</span><span>2</span></span></li></ul>
+<div class="coz"><p>İki kat açı formülü: cos 2a = cos<sup>2</sup>a − sin<sup>2</sup>a. a = 15° için cos 30° = √3/2. 1/2, sin 30° yazmaktır (sin 2a ile karıştırmak). 1, ifadeyi sin<sup>2</sup> + cos<sup>2</sup> = 1 sanmaktır; aradaki işaret eksi. √3/4, sin a cos a = (sin 2a)/2'deki 1/2 çarpanını buraya taşımaktır. √2/2, açıyı 45° sanmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-13"><p class="q">tan x = √3 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>5π</span><span>3</span></span></li><li><span class="kes"><span>π</span><span>3</span></span></li><li><span class="kes"><span>4π</span><span>3</span></span></li><li>π</li><li>2π</li></ul>
+<div class="coz"><p>tan x = √3'ün genel çözümü x = π/3 + kπ. [0, 2π)'de k = 0 ve k = 1: π/3 ve 4π/3; toplam 5π/3. π/3 ve 4π/3, köklerden yalnızca birini almaktır; tanjantın periyodu π olduğu için aralıkta iki kök var. π, sinüsteki simetriyle (α ve π − α) karıştırmaktır; 2π, kosinüsteki simetriyle (α ve 2π − α).</p></div></li>
+
+<li data-c="B" data-k="ileri-14"><p class="q">f(x) = 3<sup>x + 1</sup> − 2 fonksiyonunun görüntü kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(0, ∞)</li><li>(−2, ∞)</li><li>(−∞, −2)</li><li>R</li><li>(1, ∞)</li></ul>
+<div class="coz"><p>3<sup>x + 1</sup> her x için pozitiftir ve her pozitif değeri alır: görüntü kümesi (0, ∞). 2 çıkarınca (−2, ∞); grafiğin yatay asimptotu y = −2'dir. (0, ∞), düşey ötelemeyi unutmaktır. (−∞, −2), ötelemeyle birlikte yönü de çevirmektir. R, üstel fonksiyonun tanım kümesidir, görüntü kümesi değil. (1, ∞), y eksenini kestiği değeri (f(0) = 1) alt sınır sanmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-15"><p class="q">log<sub>2</sub> 5 · log<sub>5</sub> 8 çarpımının değeri kaçtır?</p>
+<ul class="sec"><li>8</li><li><span class="kes"><span>1</span><span>3</span></span></li><li>40</li><li>3</li><li>13</li></ul>
+<div class="coz"><p>Zincir kuralı: log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c. log<sub>2</sub> 5 · log<sub>5</sub> 8 = log<sub>2</sub> 8 = 3. 8, zincirin sonundaki sayıyı cevap sanmaktır; o sayının logaritması istenir. 1/3, zinciri ters kurmaktır (log<sub>8</sub> 2). 40, logaritmaları atıp 5 · 8 hesaplamaktır; 13 ise çarpımı toplam sanmaktır (5 + 8).</p></div></li>
+
+<li data-c="E" data-k="ileri-15"><p class="q">log 2 = a olduğuna göre log 25 ifadesinin a türünden eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>2a</li><li>(1 − a)<sup>2</sup></li><li>1 − 2a</li><li>2 + 2a</li><li>2 − 2a</li></ul>
+<div class="coz"><p>log 5 = log(10/2) = 1 − a. log 25 = log 5<sup>2</sup> = 2 log 5 = 2 − 2a. 2a, log 4'tür. (1 − a)<sup>2</sup>, log x<sup>2</sup>'yi (log x)<sup>2</sup> sanmaktır. 1 − 2a, 2'yi yalnızca a ile çarpıp 1'i unutmaktır. 2 + 2a, log 5'i 1 + a sanmaktır (log 20).</p></div></li>
+
+<li data-c="A" data-k="ileri-16"><p class="q">4<sup>x</sup> − 5 · 2<sup>x</sup> + 4 = 0 denkleminin kökler toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>5</li><li>4</li><li>0</li><li>3</li></ul>
+<div class="coz"><p>t = 2<sup>x</sup> (t &gt; 0): t<sup>2</sup> − 5t + 4 = 0, t = 1 ya da t = 4. 2<sup>x</sup> = 1 ⇒ x = 0; 2<sup>x</sup> = 4 ⇒ x = 2. Toplam 2. 5 ve 4, t'lerin toplamı ve çarpımıdır; soru x'leri soruyor. 0, yalnızca ilk kökü almaktır. 3, 2<sup>x</sup> = 1'den x = 1 bulmaktır; 2<sup>0</sup> = 1'dir.</p></div></li>
+
+<li data-c="C" data-k="ileri-16"><p class="q">log<sub>2</sub>(x − 1) &lt; 3 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>8</li><li>Sonsuz çoklukta</li><li>7</li><li>6</li><li>2</li></ul>
+<div class="coz"><p>Tanım koşulu x − 1 &gt; 0. Taban 2 &gt; 1, yön korunur: x − 1 &lt; 2<sup>3</sup> = 8. Kesişim 1 &lt; x &lt; 9; tam sayılar 2, 3, …, 8, yedi tane. 8, x = 1'i de saymaktır (orada logaritma tanımsız). "Sonsuz çoklukta", tanım koşulunu kesiştirmemektir. 6, x − 1 &lt; 8 yerine x &lt; 8 yazmaktır. 2, tanıma çevirmeyi unutup x − 1 &lt; 3 yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>3</sub> = 7 ve a<sub>8</sub> = 22 olduğuna göre a<sub>15</sub> kaçtır?</p>
+<ul class="sec"><li>46</li><li>43</li><li>40</li><li><span class="kes"><span>79</span><span>2</span></span></li><li>45</li></ul>
+<div class="coz"><p>a<sub>8</sub> − a<sub>3</sub> = 5d = 15, d = 3. a<sub>15</sub> = a<sub>8</sub> + 7d = 22 + 21 = 43. Kontrol: a<sub>1</sub> = 7 − 2 · 3 = 1, a<sub>15</sub> = 1 + 14 · 3 = 43. 46 bir adım fazla, 40 bir adım eksik saymaktır. 79/2, d'yi 15/6 bulmaktır (terim sayısını adım sayısı sanmak). 45, genel terimi a<sub>n</sub> = n · d sanmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-17"><p class="q">İlk terimi 2, ortak farkı 3 olan aritmetik dizinin ilk 10 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>310</li><li>29</li><li>170</li><li>140</li><li>155</li></ul>
+<div class="coz"><p>a<sub>10</sub> = 2 + 9 · 3 = 29. S<sub>10</sub> = 10 · (2 + 29)/2 = 155. 310, 2'ye bölmeyi unutmaktır. 29, son terimdir, toplam değildir. 170, son terimi a<sub>1</sub> + 10d = 32 almaktır; 140, a<sub>1</sub> + 8d = 26 almaktır. Son terimde d'nin katsayısı n − 1'dir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-17">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-18">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-19">Sonraki parça: limit kavramı, soldan-sağdan limit ve limit kuralları</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"geometrik dizi genel terim ortak çarpan konu anlatımı AYT"</li>
+  <li>"geometrik dizi ilk n terim toplamı formülü ispatı"</li>
+  <li>"aritmetik ve geometrik dizi karışık sorular üç sayı"</li>
+  <li>"geometrik dizi problemleri zıplayan top iç içe kareler"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 18. satıra göre yazıldı (2018 Ortaöğretim Matematik Öğretim Programı, 12. sınıf diziler ünitesi). Bu oturumda bir MEB ders kitabıyla satır satır karşılaştırmadım; kapsam dosyasındaki genel not geçerlidir. Sonsuz geometrik toplamın ve dizilerde limitin programda olmadığı bilgisi de kapsam dosyasından alındı ve orada ikincil kaynaklara dayandığı belirtiliyor.</li>
+  <li>Parça 17'ye yapılan göndermeler (indirgeme bağıntısı, Gauss yöntemi, a<sub>n</sub> = S<sub>n</sub> − S<sub>n − 1</sub>, p + q = s + t kuralı) kapsam listesindeki 17. satıra göre yazıldı ve yazımın sonunda Parça 17'nin gösterimiyle karşılaştırıldı; terimler ve semboller aynı.</li>
+  <li>Geometrik dizinin tanımında terimlerin ve r'nin sıfırdan farklı alınması yaygın ders kitabı tanımıdır; bazı kaynaklar sıfır dizisini de geometrik sayar. "Hem aritmetik hem geometrik olan dizi" sorularında bu yüzden sıfırdan farklı sabit dizi esas alındı.</li>
+  <li>Bütün sayısal sonuçlar (dokuz çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları ve her çeldiricinin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; şekillerdeki noktalar (2<sup>n − 1</sup> eğrisi, top yükseklikleri, iç içe kareler, üçgen örüntüsü) formüllerden hesaplanıp gerçek ölçüyle çizildi.</li>
+  <li>Girişteki kâğıt örneğinde 0,1 · 2<sup>42</sup> mm ≈ 439 800 km hesaplandı; Dünya-Ay ortalama uzaklığını yaklaşık 384 400 km olarak bellekten yazdım. Kâğıdın gerçekte bu kadar katlanamayacağı metinde belirtildi.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

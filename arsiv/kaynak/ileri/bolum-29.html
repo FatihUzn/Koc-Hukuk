@@ -1,0 +1,596 @@
+<article class="chapter ders" id="c-ileri-29">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 29 · İntegral 2</div>
+<h1>İntegral 2: değişken değiştirme yöntemi</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx integralini Parça 28'deki kurallarla almak istersen önce (x<sup>2</sup> + 1)<sup>5</sup>'i açman, sonra çıkan altı terimi x ile çarpman, sonra her terimin integralini tek tek alman gerekir. Oysa Parça 23'te (x<sup>2</sup> + 1)<sup>6</sup>'nın türevini tek satırda bulmuştun: 6(x<sup>2</sup> + 1)<sup>5</sup> · 2x. Bu sonuç sorudaki ifadeye çok benziyor. Türevi tek satırda alınan bir şeyin integrali neden tek satırda alınamasın? Bu parça, zincir kuralını tersinden okumayı öğretiyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 28 (ters türev, integral sabiti C, kuvvet kuralı, sabit çarpan ve toplam kuralı, sonucu türev alarak denetleme, başlangıç koşuluyla C'yi bulma), Parça 23 (zincir kuralı, kuvvet zinciri, köklü ifadelerin türevi, dy/dx = dy/du · du/dx gösterimi), Parça 22 (türev kuralları). Kâğıt kalem yanında olsun; her örneğin sonunda türev alarak denetlemeyi kendin de yap.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 28'de integrali türevin tersi olarak kurdun ve bir temel kural öğrendin: ∫ xⁿ dx = xⁿ<sup>+1</sup>/(n + 1) + C. Orada bir uyarı da vardı: çarpımın integrali, çarpanların integrallerinin çarpımı değildir. Bu yüzden bir çarpımla karşılaşınca tek çaren onu açıp terim terim integral almaktı. Bu, (x<sup>2</sup> + 1)<sup>2</sup> gibi küçük ifadelerde iş görür; (x<sup>2</sup> + 1)<sup>5</sup>'te zahmetlidir; √(x<sup>3</sup> + 1) gibi köklü ifadelerde ise hiç işe yaramaz, çünkü kökün içi açılmaz.</p>
+
+<p>Değişken değiştirme, bu çarpımların büyük bir bölümünü tek bir fikirle çözer: integralin içinde bir ifade ve onun türevi birlikte duruyorsa, o ifadeye yeni bir ad (u) verirsin ve integral, kuvvet kuralıyla alınabilen basit bir integrale dönüşür. Yöntemin dayanağı yeni bir şey değil, Parça 23'teki zincir kuralının ters yönden okunmasıdır.</p>
+
+<p>Sınav bu konuyu şu kalıplarla sorar: ∫ (ax + b)ⁿ dx türü integraller; ∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx, ∫ x<sup>2</sup>√(x<sup>3</sup> + 1) dx gibi "iç ifade ve türevi" içeren integraller; paydasında kuvvet bulunan kesirler; f ve g'nin yalnızca adıyla verildiği soyut integraller (∫ f′(x) · f(x)<sup>2</sup> dx gibi); "u = … dönüşümü yapılırsa integral hangisine dönüşür?" soruları; başlangıç koşuluyla birleşen sorular ve belirli integralde sınırların değişmesi. Bu parçadan sonra gelen belirli integral, alan ve uygulama parçalarının (Parça 30–32) her birinde bu yöntem yeniden karşına çıkacak.</p>
+
+<p>Bir kapsam notu: kısmi integrasyon, basit kesirlere ayırma ve trigonometrik değişken değiştirme 2018 programında yoktur; bu parçada anlatılmaz. Hangi integrallerin bu yüzden "çözülemez" kaldığını Bölüm 9'da göreceksin.</p>
+
+<h2 class="s">1. Zincir kuralını tersinden okumak</h2>
+
+<p>Parça 23'te bileşke bir fonksiyonun türevini almayı öğrendin: dıştakinin türevi (içerisi olduğu gibi bırakılarak) çarpı içtekinin türevi. Şimdi bu kuralla birkaç türev al ve sonuçları bir kenara yaz:</p>
+
+<span class="mat">((x<sup>2</sup> + 1)<sup>6</sup>)′ = 6(x<sup>2</sup> + 1)<sup>5</sup> · 2x = 12x(x<sup>2</sup> + 1)<sup>5</sup> <span class="g">(kuvvet zinciri, iç türev 2x)</span></span>
+<span class="mat">((x<sup>3</sup> + 1)<sup>3/2</sup>)′ = <span class="kes"><span>3</span><span>2</span></span>(x<sup>3</sup> + 1)<sup>1/2</sup> · 3x<sup>2</sup> = <span class="kes"><span>9</span><span>2</span></span>x<sup>2</sup>√(x<sup>3</sup> + 1) <span class="g">(iç türev 3x<sup>2</sup>)</span></span>
+<span class="mat">((3x − 2)<sup>5</sup>)′ = 5(3x − 2)<sup>4</sup> · 3 = 15(3x − 2)<sup>4</sup> <span class="g">(iç türev 3)</span></span>
+
+<p>Integral türevin tersi olduğuna göre bu üç satır, üç integral sonucunu da hazır verir. Türevi 12x(x<sup>2</sup> + 1)<sup>5</sup> olan fonksiyon (x<sup>2</sup> + 1)<sup>6</sup>'dır, o hâlde ∫ 12x(x<sup>2</sup> + 1)<sup>5</sup> dx = (x<sup>2</sup> + 1)<sup>6</sup> + C. Sabit çarpanı (Parça 28) integral işaretinin dışına alabildiğin için, iki yanı 12'ye bölünce ∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx = (x<sup>2</sup> + 1)<sup>6</sup>/12 + C olur. Parçanın sorusu, hiçbir şey açmadan çözüldü.</p>
+
+<p>Bu üç türevin ortak yapısına bak. Her birinde sonuç iki parçalı bir çarpım: dış fonksiyonun türevi, içine iç fonksiyon konmuş olarak (6(x<sup>2</sup> + 1)<sup>5</sup>) ve iç fonksiyonun türevi (2x). İntegral alırken senden istenen, bu yapıyı verilen ifadede <strong>tanımak</strong>tır: integralin içinde bir g(x) ifadesi ve onun türevi g′(x) çarpan olarak duruyorsa, sonuç F(g(x)) biçimindedir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Değişken değiştirme kuralı.</strong> F′ = f ise (yani F, f'nin bir ters türevi ise)</p>
+<span class="mat">∫ f(g(x)) · g′(x) dx = F(g(x)) + C</span>
+<p><strong>Neden?</strong> Sağ yanın türevini zincir kuralıyla al: (F(g(x)))′ = F′(g(x)) · g′(x) = f(g(x)) · g′(x). Bu, sol yandaki integralin içindeki ifadenin ta kendisidir. İntegral türevin tersi olduğu için eşitlik doğrudur. Kural yeni bir bilgi değil; Parça 23'teki zincir kuralının sağdan sola okunmasıdır.</p></div>
+
+<p>Kuralı ezberlemek yerine bir alışkanlık olarak kullanacaksın: iç ifadeye u adını verip integrali u cinsinden yazacaksın. Bunun nasıl yapıldığını görmek için önce "du" yazımını anlaman gerekiyor.</p>
+
+<h2 class="s">2. u ve du: integrali yeni değişkene taşımak</h2>
+
+<p>Parça 23'te türevi Leibniz gösterimiyle de yazdın: u = g(x) ise <span class="kes"><span>du</span><span>dx</span></span> = g′(x). Değişken değiştirmede bu eşitlik şu biçimde kullanılır:</p>
+
+<span class="mat">du = g′(x) dx <span class="g">(du/dx = g′(x) eşitliğinin "dx ile çarpılmış" yazımı)</span></span>
+
+<p>Bu satırı bir hesap kaydı gibi düşün: "x biraz değişince u, g′(x) katı kadar değişir." Parça 28'de dx'in, integralin hangi değişkene göre alındığını gösterdiğini söylemiştik; du da aynı görevi u için görür. Bu yazımı gerçek bir kesirmiş gibi kullanmanın neden güvenli olduğunu Bölüm 1'deki kural söylüyor: sonunda bulduğun F(g(x))'in türevi her zaman integralin içini verir. Yani du yazımı, zincir kuralının kısa bir hesap kâğıdıdır.</p>
+
+<p>Sayıyla görmek istersen: u = x<sup>2</sup> + 1 al ve x'i 1'den 1,01'e çıkar. u, 2'den 2,0201'e çıkar; değişim 0,0201. du = 2x dx formülü x = 1 ve dx = 0,01 için 2 · 1 · 0,01 = 0,02 verir. İkisi neredeyse aynı; dx küçüldükçe fark da kaybolur. du = 2x dx, "x'teki küçük bir adımın u'da kaç katına çıktığını" kaydeden satırdır. İntegralde x dx gibi bir parça gördüğünde, onun aslında "u'daki adımın yarısı" olduğunu bu satır sayesinde söyleyebilirsin.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Değişken değiştirmenin beş adımı.</strong></p>
+<p>1. <strong>u'yu seç:</strong> integralin içinde türevi de (sabit kat farkıyla) çarpan olarak bulunan ifadeyi u yap. Çoğu zaman bu, bir kuvvetin ya da kökün içindeki ifadedir.</p>
+<p>2. <strong>du'yu yaz:</strong> u'nun türevini al ve du = u′ dx biçiminde yaz. Sonra integralde gerçekten bulunan parçayı yalnız bırak (örneğin x dx = du/2).</p>
+<p>3. <strong>İntegrali tamamen u cinsinden yaz:</strong> integralin içinde hiç x, dx kalmamalı.</p>
+<p>4. <strong>u'ya göre integral al:</strong> artık Parça 28'deki kurallarla alınabilen bir integral var.</p>
+<p>5. <strong>Geri dön ve denetle:</strong> u yerine g(x)'i yaz, + C ekle. Sonucun türevini al; integralin içi çıkmalıdır.</p>
+<p><strong>Neden bu sırayla?</strong> Üçüncü adım yöntemin kalbidir: x ile u aynı integralde bir arada kalırsa, u'ya göre integral alırken x'i sabit sanmış olursun ve sonuç yanlış çıkar. Beşinci adım gereklidir çünkü soru x cinsinden sorulmuştur; cevap da x cinsinden olmalıdır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Değişken değiştirmenin döngüsü. Sol üstte x cinsinden integral, aşağı okla u eşittir x kare artı 1 dönüşümüyle sol alttaki u cinsinden integrale geçiliyor, sağa okla kuvvet kuralı uygulanıyor, yukarı okla u yerine x kare artı 1 yazılarak sağ üstteki sonuca dönülüyor. Üstteki sola dönük ok sonucun türevini alarak denetlemeyi gösteriyor.">
+  <rect class="sv-l" x="10" y="20" width="150" height="56" rx="10" />
+  <text class="sv-b" x="85" y="45" text-anchor="middle">∫ x(x² + 1)⁵ dx</text>
+  <text class="sv-s" x="85" y="64" text-anchor="middle">x dünyası: soru</text>
+  <rect class="sv-m" x="240" y="20" width="150" height="56" rx="10" />
+  <text class="sv-b" x="315" y="45" text-anchor="middle">(x² + 1)⁶/12 + C</text>
+  <text class="sv-s" x="315" y="64" text-anchor="middle">x dünyası: cevap</text>
+  <rect class="sv-l" x="10" y="200" width="150" height="56" rx="10" />
+  <text class="sv-b" x="85" y="225" text-anchor="middle">½ ∫ u⁵ du</text>
+  <text class="sv-s" x="85" y="244" text-anchor="middle">u dünyası: kolay integral</text>
+  <rect class="sv-m" x="240" y="200" width="150" height="56" rx="10" />
+  <text class="sv-b" x="315" y="225" text-anchor="middle">u⁶/12 + C</text>
+  <text class="sv-s" x="315" y="244" text-anchor="middle">u dünyası: sonuç</text>
+  <line class="sv-cl" x1="85" y1="76" x2="85" y2="190" />
+  <polygon class="sv-a" points="79,188 91,188 85,198" />
+  <text class="sv-t" x="95" y="124" text-anchor="start">u = x² + 1</text>
+  <text class="sv-t" x="95" y="142" text-anchor="start">x dx = du/2</text>
+  <line class="sv-cl" x1="160" y1="228" x2="230" y2="228" />
+  <polygon class="sv-a" points="228,222 228,234 238,228" />
+  <text class="sv-s" x="200" y="272" text-anchor="middle">kuvvet kuralı</text>
+  <text class="sv-s" x="200" y="288" text-anchor="middle">(Parça 28)</text>
+  <line class="sv-cl" x1="315" y1="200" x2="315" y2="86" />
+  <polygon class="sv-a" points="309,88 321,88 315,78" />
+  <text class="sv-t" x="305" y="124" text-anchor="end">u yerine</text>
+  <text class="sv-t" x="305" y="142" text-anchor="end">x² + 1 yaz</text>
+  <line class="sv-c" x1="240" y1="48" x2="170" y2="48" />
+  <polygon class="sv-a" points="172,42 172,54 162,48" />
+  <text class="sv-s" x="200" y="38" text-anchor="middle">türev al</text>
+  <text class="sv-s" x="200" y="66" text-anchor="middle">denetle</text>
+</svg>
+<figcaption>Yöntem bir döngüdür: x dünyasındaki zor integrali u dünyasına indir, orada kuvvet kuralıyla al, sonra x dünyasına geri çık. Üstteki kısa ok denetimdir: cevabın türevi soruyu, yani x(x<sup>2</sup> + 1)<sup>5</sup>'i vermelidir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> ∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx integralini değişken değiştirme yöntemiyle bulun.</p>
+<p><strong>Adım 1.</strong> u'yu seç. Kuvvetin içinde x<sup>2</sup> + 1 var; türevi 2x, integralde de x var (sabit kat farkıyla aynı).</p>
+<span class="mat">u = x<sup>2</sup> + 1 <span class="g">(kuvvetin içi)</span></span>
+<p><strong>Adım 2.</strong> du'yu yaz ve integralde bulunan parçayı yalnız bırak.</p>
+<span class="mat">du = 2x dx <span class="g">(u′ = 2x)</span></span>
+<span class="mat">x dx = <span class="kes"><span>du</span><span>2</span></span> <span class="g">(iki yanı 2'ye böldük)</span></span>
+<p><strong>Adım 3.</strong> İntegrali u cinsinden yaz. (x<sup>2</sup> + 1)<sup>5</sup> yerine u<sup>5</sup>, x dx yerine du/2.</p>
+<span class="mat">∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx = ∫ u<sup>5</sup> · <span class="kes"><span>du</span><span>2</span></span> = <span class="kes"><span>1</span><span>2</span></span> ∫ u<sup>5</sup> du <span class="g">(sabit çarpan dışarı)</span></span>
+<p><strong>Adım 4.</strong> Kuvvet kuralı.</p>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>u<sup>6</sup></span><span>6</span></span> + C = <span class="kes"><span>u<sup>6</sup></span><span>12</span></span> + C <span class="g">(üs bir artar, yeni üsse bölünür)</span></span>
+<p><strong>Adım 5.</strong> Geri dön.</p>
+<span class="mat">∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx = <span class="kes"><span>(x<sup>2</sup> + 1)<sup>6</sup></span><span>12</span></span> + C <span class="g">(u = x<sup>2</sup> + 1)</span></span>
+<p><strong>Adım 6 (kontrol yolu).</strong> Türev al: <span class="kes"><span>1</span><span>12</span></span> · 6(x<sup>2</sup> + 1)<sup>5</sup> · 2x = <span class="kes"><span>12</span><span>12</span></span> x(x<sup>2</sup> + 1)<sup>5</sup> = x(x<sup>2</sup> + 1)<sup>5</sup>. İntegralin içi geldi.</p>
+<p><strong>Sonuç:</strong> (x<sup>2</sup> + 1)<sup>6</sup>/12 + C. Paydadaki 12'nin iki kaynağı var: 6, kuvvet kuralından (yeni üs); 2, iç türevdeki eksik sabitten. Sınavda bu ikisinden birini unutan, yanlış seçeneklerden birini işaretler.</p></div>
+
+<h2 class="s">3. Tanıma ölçütü: hangi integral bu yönteme uygun?</h2>
+
+<p>Yöntemin işleyip işlemeyeceğine u'yu seçmeden önce karar verebilirsin. Ölçüt tek cümledir ve nedeni de sabit çarpan kuralındadır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Tanıma ölçütü.</strong> İntegralin içinde bir g(x) ifadesi (çoğunlukla bir kuvvetin, kökün ya da paydanın içinde) ve onun türevi g′(x) <strong>sabit bir kat farkıyla</strong> çarpan olarak bulunuyorsa u = g(x) seçimi işe yarar. Türevden geriye bir <strong>sabit</strong> eksik ya da fazla kalabilir; bir <strong>x</strong> eksik ya da fazla kalamaz.</p>
+<p><strong>Neden?</strong> Eksik bir sabiti (2, 3, ½) integral işaretinin dışına alıp dengelersin, çünkü Parça 28'deki sabit çarpan kuralı ∫ k · f(x) dx = k ∫ f(x) dx der. Ama x bir sabit değildir; integral işaretinin dışına çıkamaz. x eksikse du yazıldığında dengelenemez; fazlaysa u cinsine çevrilmesi gerekir (Bölüm 6).</p></div>
+
+<div class="tablo"><table>
+<tr><th>İntegral</th><th>u</th><th>u′</th><th>İçeride bulunan</th><th>Ayar</th></tr>
+<tr><td>∫ x(x<sup>2</sup> + 1)<sup>5</sup> dx</td><td>x<sup>2</sup> + 1</td><td>2x</td><td>x</td><td>x dx = du/2</td></tr>
+<tr><td>∫ x<sup>2</sup>√(x<sup>3</sup> + 1) dx</td><td>x<sup>3</sup> + 1</td><td>3x<sup>2</sup></td><td>x<sup>2</sup></td><td>x<sup>2</sup> dx = du/3</td></tr>
+<tr><td>∫ (x + 1)(x<sup>2</sup> + 2x + 5)<sup>4</sup> dx</td><td>x<sup>2</sup> + 2x + 5</td><td>2x + 2</td><td>x + 1</td><td>(x + 1) dx = du/2</td></tr>
+<tr><td>∫ (2x + 1)/(x<sup>2</sup> + x)<sup>3</sup> dx</td><td>x<sup>2</sup> + x</td><td>2x + 1</td><td>2x + 1</td><td>ayar gerekmez</td></tr>
+<tr><td>∫ x<sup>3</sup>/(x<sup>4</sup> − 2)<sup>2</sup> dx</td><td>x<sup>4</sup> − 2</td><td>4x<sup>3</sup></td><td>x<sup>3</sup></td><td>x<sup>3</sup> dx = du/4</td></tr>
+<tr><td>∫ (x<sup>2</sup> + 1)<sup>5</sup> dx</td><td>x<sup>2</sup> + 1</td><td>2x</td><td>hiçbir şey</td><td>x eksik: uygun değil, aç</td></tr>
+<tr><td>∫ x<sup>2</sup>(x<sup>2</sup> + 1)<sup>5</sup> dx</td><td>x<sup>2</sup> + 1</td><td>2x</td><td>x<sup>2</sup></td><td>fazladan x kalır: uygun değil, aç</td></tr>
+</table></div>
+
+<p>Tablodaki son iki satır, ölçütün sınırını gösteriyor. (x<sup>2</sup> + 1)<sup>5</sup>'in tek başına integralinde u = x<sup>2</sup> + 1 seçersen dx = du/(2x) olur ve integralde bir 1/x kalır; u cinsine çeviremezsin. x<sup>2</sup>(x<sup>2</sup> + 1)<sup>5</sup>'te ise du = 2x dx bir x'i karşılar, ama geriye bir x daha kalır ve o x'i u cinsinden yazmak (x = √(u − 1)) integrali kolaylaştırmaz, zorlaştırır. Bu iki integral polinomdur; açıp (binom açılımı, Parça 33) kuvvet kuralıyla alınır. Değişken değiştirme her şeyi çözen bir anahtar değil, belirli bir yapıyı açan anahtardır.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Eksik x'i de sabit gibi "bölerek" uydurmak.</strong> ∫ (x<sup>2</sup> + 1)<sup>5</sup> dx için "u = x<sup>2</sup> + 1, du = 2x dx, o hâlde dx = du/(2x), sonuç (x<sup>2</sup> + 1)<sup>6</sup>/(12x) + C" yazmak çok yaygın bir hatadır. Denetle: x = 1'de integralin içi 2<sup>5</sup> = 32 eder; bulunan ifadenin x = 1'deki türevi ise yaklaşık 26,7'dir. Eşit değiller, cevap yanlış. Hatanın kaynağı, u'ya göre integral alırken 1/(2x)'i sabit sanmaktır; oysa x değiştikçe 1/(2x) de değişir. Kural açık: integral işaretinin dışına yalnızca <strong>sabit</strong> çıkar.</p></div>
+
+<h2 class="s">4. Sabit katsayıyı ayarlamak</h2>
+
+<p>Gerçek sorularda iç türev nadiren tam olarak hazırdır; çoğunlukla bir sabit kadar eksik ya da fazladır. Ayarın yolu her zaman aynıdır: du = u′ dx satırını yaz, sonra iki yanı integralde bulunan parçayı yalnız bırakacak biçimde bir sayıya böl. Burada en sık yapılan iş, bölmek yerine çarpmaktır; o yüzden adımı her seferinde açıkça yaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> ∫ x<sup>2</sup>√(x<sup>3</sup> + 1) dx integralini bulun.</p>
+<p><strong>Adım 1.</strong> Kökün içi x<sup>3</sup> + 1; türevi 3x<sup>2</sup>, integralde x<sup>2</sup> var. Sabit kat farkı: uygun.</p>
+<span class="mat">u = x<sup>3</sup> + 1 <span class="g">(kökün içi)</span></span>
+<p><strong>Adım 2.</strong> du ve ayar.</p>
+<span class="mat">du = 3x<sup>2</sup> dx <span class="g">(u′ = 3x<sup>2</sup>)</span></span>
+<span class="mat">x<sup>2</sup> dx = <span class="kes"><span>du</span><span>3</span></span> <span class="g">(iki yanı 3'e böldük; 3 ile çarpmadık)</span></span>
+<p><strong>Adım 3.</strong> u cinsinden yaz; kökü kesirli üs olarak yaz.</p>
+<span class="mat">∫ √u · <span class="kes"><span>du</span><span>3</span></span> = <span class="kes"><span>1</span><span>3</span></span> ∫ u<sup>1/2</sup> du <span class="g">(√u = u<sup>1/2</sup>)</span></span>
+<p><strong>Adım 4.</strong> Kuvvet kuralı: üs ½ + 1 = 3/2, 3/2'ye bölmek 2/3 ile çarpmaktır.</p>
+<span class="mat"><span class="kes"><span>1</span><span>3</span></span> · <span class="kes"><span>2</span><span>3</span></span> u<sup>3/2</sup> + C = <span class="kes"><span>2</span><span>9</span></span> u<sup>3/2</sup> + C <span class="g">(kesirleri çarptık)</span></span>
+<p><strong>Adım 5.</strong> Geri dön.</p>
+<span class="mat">∫ x<sup>2</sup>√(x<sup>3</sup> + 1) dx = <span class="kes"><span>2</span><span>9</span></span>(x<sup>3</sup> + 1)<sup>3/2</sup> + C = <span class="kes"><span>2</span><span>9</span></span>(x<sup>3</sup> + 1)√(x<sup>3</sup> + 1) + C <span class="g">(u<sup>3/2</sup> = u · √u)</span></span>
+<p><strong>Adım 6 (kontrol yolu).</strong> Türev: <span class="kes"><span>2</span><span>9</span></span> · <span class="kes"><span>3</span><span>2</span></span>(x<sup>3</sup> + 1)<sup>1/2</sup> · 3x<sup>2</sup> = <span class="kes"><span>18</span><span>18</span></span> x<sup>2</sup>√(x<sup>3</sup> + 1). İntegralin içi geldi.</p>
+<p><strong>Sonuç:</strong> (2/9)(x<sup>3</sup> + 1)<sup>3/2</sup> + C. Ayarı ters yapan biri (x<sup>2</sup> dx = 3 du) 2(x<sup>3</sup> + 1)<sup>3/2</sup> bulur; denetimde türev 9x<sup>2</sup>√(x<sup>3</sup> + 1) çıkar, yani 9 kat büyük.</p></div>
+
+<p>Ayarı ezbersiz yapmanın bir yolu daha var: sonucu önce "kabaca" yaz, sonra türevini alıp eksik sabiti düzelt. ∫ x<sup>2</sup>√(x<sup>3</sup> + 1) dx için kaba tahmin (x<sup>3</sup> + 1)<sup>3/2</sup> olsun; türevi (3/2) · (x<sup>3</sup> + 1)<sup>1/2</sup> · 3x<sup>2</sup> = (9/2)x<sup>2</sup>√(x<sup>3</sup> + 1). İstenenin 9/2 katı çıktı; tahmini 9/2'ye böl: (2/9)(x<sup>3</sup> + 1)<sup>3/2</sup>. Bu "tahmin et ve düzelt" yolu, sınavda hızlı yoldur ve aynı anda kontrol yoludur.</p>
+
+<h2 class="s">5. ∫ (ax + b)ⁿ dx: doğrusal içte kısa yol</h2>
+
+<p>İç ifade doğrusal olduğunda (ax + b), türevi yalnızca a sabitidir. Bu yüzden tanıma ölçütü her zaman sağlanır: içeride x bulunması gerekmez, eksik olan yalnızca bir sabittir. Her seferinde u yazmak yerine sonucu doğrudan yazabilirsin.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">∫ (ax + b)ⁿ dx = <span class="kes"><span>(ax + b)ⁿ<sup>+1</sup></span><span>a(n + 1)</span></span> + C <span class="g">(a ≠ 0, n ≠ −1)</span></span>
+<p><strong>Neden?</strong> u = ax + b dersen du = a dx, yani dx = du/a. ∫ uⁿ du/a = (1/a) · uⁿ<sup>+1</sup>/(n + 1). Türevde zincir kuralı iç türev a ile <strong>çarptırıyordu</strong> (Parça 23); integralde aynı a'ya <strong>böldürür</strong>. İki işlem birbirinin aynası. n = −1 durumunda kuvvet kuralı işlemez (paydada 0 olur); orada sonuç logaritmalıdır, aşağıdaki nota bak.</p></div>
+
+<p>Üç örnek; her birinde önce üssü bir artır, sonra hem yeni üsse hem a'ya böl:</p>
+
+<span class="mat">∫ (3x − 2)<sup>4</sup> dx = <span class="kes"><span>(3x − 2)<sup>5</sup></span><span>3 · 5</span></span> + C = <span class="kes"><span>(3x − 2)<sup>5</sup></span><span>15</span></span> + C <span class="g">(a = 3, n = 4)</span></span>
+<span class="mat">∫ √(2x + 1) dx = <span class="kes"><span>(2x + 1)<sup>3/2</sup></span><span>2 · (3/2)</span></span> + C = <span class="kes"><span>(2x + 1)<sup>3/2</sup></span><span>3</span></span> + C <span class="g">(a = 2, n = ½)</span></span>
+<span class="mat">∫ <span class="kes"><span>dx</span><span>(4x + 1)<sup>3</sup></span></span> = ∫ (4x + 1)<sup>−3</sup> dx = <span class="kes"><span>(4x + 1)<sup>−2</sup></span><span>4 · (−2)</span></span> + C = −<span class="kes"><span>1</span><span>8(4x + 1)<sup>2</sup></span></span> + C <span class="g">(a = 4, n = −3)</span></span>
+
+<p>Üçüncü örnekte iki tuzak var. Birincisi, paydadaki kuvveti negatif üs olarak yukarı almadan kural uygulanmaz. İkincisi, negatif üs bir artınca −3 + 1 = −2 olur (−4 değil); üssü "büyütmek" sanıp −4 yazmak, türevdeki "üs bir azalır" kuralını integrale taşımaktır. Kontrol yolu: −(1/8)(4x + 1)<sup>−2</sup>'nin türevi −(1/8) · (−2)(4x + 1)<sup>−3</sup> · 4 = (4x + 1)<sup>−3</sup>. Doğru.</p>
+
+<p><strong>n = −1 notu (bu kısım sınav kapsamında olmayabilir).</strong> ∫ dx/(ax + b) ve genel olarak ∫ g′(x)/g(x) dx integrallerinde u'ya geçince ∫ du/u çıkar. Parça 28'de "kapsamı doğrulanamadı" notuyla verilen ∫ 1/x dx = ln|x| + C kuralına göre sonuç ln|g(x)| + C'dir: örneğin ∫ (2x + 1)/(x<sup>2</sup> + x) dx = ln|x<sup>2</sup> + x| + C. Aynı biçimde, Parça 28'deki eˣ, sin x, cos x kuralları kapsamdaysa yöntem ∫ 2x · e<sup>x²</sup> dx gibi integrallere de uygulanır. Programın türev ve integrali polinom, rasyonel ve köklü ifadelerle sınırladığı doğruysa bu integraller sınavda gelmez.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Doğrusal içte a'ya bölmeyi unutmak ya da a ile çarpmak.</strong> ∫ (2x − 3)<sup>4</sup> dx = (2x − 3)<sup>5</sup>/5 + C yazmak, iç ifadeyi x sanmaktır. Türevini alırsan 5(2x − 3)<sup>4</sup> · 2/5 = 2(2x − 3)<sup>4</sup> çıkar: iki kat fazla. Ters yöne giden hata, türevdeki alışkanlıkla a ile çarpıp 2(2x − 3)<sup>5</sup>/5 yazmaktır; türevi 4(2x − 3)<sup>4</sup> çıkar. Doğrusu (2x − 3)<sup>5</sup>/10 + C. Akılda tutma yolu: türevde iç türev çarpan olarak <strong>eklenir</strong>, integralde bölen olarak <strong>eklenir</strong>.</p></div>
+
+<h2 class="s">6. Köklü ifadeler: u = kök içi mi, u = kökün kendisi mi?</h2>
+
+<p>Kök içeren integrallerde iki seçim yapılabilir. Birincisi, şimdiye kadar yaptığın gibi kökün <strong>içini</strong> u almaktır. İkincisi, kökün <strong>kendisini</strong> u almaktır; o zaman iki yanın karesi alınır ve kök tamamen ortadan kalkar. İkisi de doğru sonuca götürür; hangisinin daha kısa olduğu integrale bağlıdır.</p>
+
+<p><strong>Aynı integral, iki yol.</strong> ∫ x/√(x<sup>2</sup> + 4) dx'i iki biçimde de çöz.</p>
+
+<p>Birinci yol, u = x<sup>2</sup> + 4: du = 2x dx, x dx = du/2. İntegral (1/2) ∫ u<sup>−1/2</sup> du = (1/2) · 2u<sup>1/2</sup> = √u olur. Sonuç √(x<sup>2</sup> + 4) + C.</p>
+
+<p>İkinci yol, u = √(x<sup>2</sup> + 4): kare al, u<sup>2</sup> = x<sup>2</sup> + 4. İki yanın türevini al (sol yanda zincir kuralı): 2u du = 2x dx, yani x dx = u du. İntegral ∫ (u du)/u = ∫ du = u olur. Sonuç yine √(x<sup>2</sup> + 4) + C. Kontrol yolu: türevi 2x/(2√(x<sup>2</sup> + 4)) = x/√(x<sup>2</sup> + 4).</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>u = kök içi</th><th>u = kökün kendisi</th></tr>
+<tr><td>Yazım</td><td>u = g(x), du = g′(x) dx</td><td>u<sup>2</sup> = g(x), 2u du = g′(x) dx</td></tr>
+<tr><td>Kök ne olur?</td><td>√u = u<sup>1/2</sup> olarak kalır</td><td>tamamen kaybolur</td></tr>
+<tr><td>x'i u ile yazmak</td><td>x = u − b (doğrusal içte)</td><td>x = u<sup>2</sup> − b (doğrusal içte)</td></tr>
+<tr><td>dx</td><td>dx = du (doğrusal içte, a = 1)</td><td>dx = 2u du</td></tr>
+<tr><td>Ne zaman rahat?</td><td>iç türev zaten hazırsa; kesirli üslerle çalışmaktan çekinmiyorsan</td><td>kesirli üsle uğraşmak istemiyorsan; sonuç tam sayı üslü polinom çıkar</td></tr>
+</table></div>
+
+<p>Asıl fark, iç türevin hazır olmadığı ama kök içinin <strong>doğrusal</strong> olduğu durumda ortaya çıkar. ∫ x√(x + 1) dx'te kök içi x + 1'in türevi 1'dir; du = dx olur ve dışarıdaki x hâlâ ortadadır. Bölüm 3'teki ölçüte göre "fazladan x" vardır. Ama bu kez fazladan x'i u cinsinden yazmak kolaydır, çünkü u = x + 1 doğrusaldır: x = u − 1. Kapsamın "x'in u cinsinden yazılması gereken durumlar" dediği kalıp budur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> ∫ x√(x + 1) dx integralini bulun.</p>
+<p><strong>Adım 1.</strong> u = kök içi seç ve x'i u ile yaz.</p>
+<span class="mat">u = x + 1 <span class="g">(kökün içi, doğrusal)</span></span>
+<span class="mat">x = u − 1 <span class="g">(u'nun tanımından)</span></span>
+<span class="mat">dx = du <span class="g">(u′ = 1)</span></span>
+<p><strong>Adım 2.</strong> Bütün x'leri değiştir: dışarıdaki x de u − 1 olur.</p>
+<span class="mat">∫ x√(x + 1) dx = ∫ (u − 1) · u<sup>1/2</sup> du <span class="g">(içeride hiç x kalmadı)</span></span>
+<p><strong>Adım 3.</strong> Çarpımı aç: artık iki kuvvetin toplamı var.</p>
+<span class="mat">∫ (u<sup>3/2</sup> − u<sup>1/2</sup>) du <span class="g">(u · u<sup>1/2</sup> = u<sup>3/2</sup>)</span></span>
+<p><strong>Adım 4.</strong> Her terime kuvvet kuralı.</p>
+<span class="mat"><span class="kes"><span>2</span><span>5</span></span> u<sup>5/2</sup> − <span class="kes"><span>2</span><span>3</span></span> u<sup>3/2</sup> + C <span class="g">(5/2'ye ve 3/2'ye böldük)</span></span>
+<p><strong>Adım 5.</strong> Geri dön.</p>
+<span class="mat">∫ x√(x + 1) dx = <span class="kes"><span>2</span><span>5</span></span>(x + 1)<sup>5/2</sup> − <span class="kes"><span>2</span><span>3</span></span>(x + 1)<sup>3/2</sup> + C <span class="g">(u = x + 1)</span></span>
+<p><strong>Adım 6 (ikinci yol: u = √(x + 1)).</strong> u<sup>2</sup> = x + 1, x = u<sup>2</sup> − 1, dx = 2u du. İntegral ∫ (u<sup>2</sup> − 1) · u · 2u du = ∫ (2u<sup>4</sup> − 2u<sup>2</sup>) du = (2/5)u<sup>5</sup> − (2/3)u<sup>3</sup> + C. u<sup>5</sup> = (x + 1)<sup>5/2</sup> ve u<sup>3</sup> = (x + 1)<sup>3/2</sup> olduğu için aynı sonuç çıkar.</p>
+<p><strong>Adım 7 (kontrol yolu).</strong> Türev: (x + 1)<sup>3/2</sup> − (x + 1)<sup>1/2</sup> = (x + 1)<sup>1/2</sup>[(x + 1) − 1] = x√(x + 1). İntegralin içi geldi.</p>
+<p><strong>Sonuç:</strong> (2/5)(x + 1)<sup>5/2</sup> − (2/3)(x + 1)<sup>3/2</sup> + C. Aynı fikir ∫ x<sup>2</sup>√(x + 1) dx'te de işler: x<sup>2</sup> = (u − 1)<sup>2</sup> açılır ve üç kuvvetin integrali alınır.</p></div>
+
+<p><strong>u her zaman en içteki ifade değildir.</strong> u'yu seçerken "en içte ne var?" diye değil, "türevi dışarıda duran ifade hangisi?" diye bak. ∫ √(1 + √x)/√x dx'e bak: en içte x var, ama x'in türevi 1'dir ve bir işe yaramaz. Kökün içindeki 1 + √x'in türevi ise 1/(2√x)'tir ve paydada 1/√x zaten duruyor. O hâlde u = 1 + √x, du = dx/(2√x), yani dx/√x = 2 du. İntegral 2 ∫ u<sup>1/2</sup> du = 2 · (2/3)u<sup>3/2</sup> = (4/3)(1 + √x)<sup>3/2</sup> + C olur. Kontrol yolu: türevi (4/3) · (3/2)(1 + √x)<sup>1/2</sup> · 1/(2√x) = √(1 + √x)/√x. Doğru. Kural şudur: aday bir u seçtiğinde du'yu yaz ve integralde du'nun parçalarını ara; parçalar bulunuyorsa doğru u'yu seçmişsindir, bulunmuyorsa başka bir aday dene.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Yarım çeviri: integralde hem x hem u bırakmak.</strong> ∫ x√(x + 1) dx'te u = x + 1 yazıp ∫ x√u du deyip x'i sabit gibi dışarı almak, x · (2/3)u<sup>3/2</sup> sonucunu verir. Türevini alırsan fazladan bir (2/3)(x + 1)<sup>3/2</sup> terimi çıkar; cevap yanlıştır. u'ya göre integral alırken x sabit değildir, çünkü x ile u birbirine bağlıdır (x = u − 1). Yöntemin üçüncü adımı bu yüzden zorunludur: integralin içinde x kalmayacak. Benzer bir karışıklık, u = √(x + 1) seçip dx'i 2u du'ya çevirmeyi unutmaktır; o zaman ∫ (u<sup>2</sup> − 1)u du gibi eksik bir integral yazılır.</p></div>
+
+<h2 class="s">7. Rasyonel ifadeler: paydada bir kuvvet</h2>
+
+<p>Paydada bir ifadenin kuvveti, payda da o ifadenin türevi (sabit kat farkıyla) varsa yöntem aynen işler. Payda kuvvetini negatif üs olarak düşün: ∫ g′(x)/[g(x)]ⁿ dx = ∫ g′(x) · [g(x)]<sup>−n</sup> dx.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> ∫ <span class="kes"><span>2x + 1</span><span>(x<sup>2</sup> + x)<sup>3</sup></span></span> dx integralini bulun.</p>
+<p><strong>Adım 1.</strong> Paydadaki kuvvetin içi x<sup>2</sup> + x; türevi 2x + 1, payda tam olarak bu var.</p>
+<span class="mat">u = x<sup>2</sup> + x, du = (2x + 1) dx <span class="g">(ayar gerekmiyor)</span></span>
+<p><strong>Adım 2.</strong> u cinsinden yaz ve kuvveti yukarı al.</p>
+<span class="mat">∫ <span class="kes"><span>du</span><span>u<sup>3</sup></span></span> = ∫ u<sup>−3</sup> du <span class="g">(paydadaki kuvvet negatif üs olur)</span></span>
+<p><strong>Adım 3.</strong> Kuvvet kuralı: −3 + 1 = −2.</p>
+<span class="mat"><span class="kes"><span>u<sup>−2</sup></span><span>−2</span></span> + C = −<span class="kes"><span>1</span><span>2u<sup>2</sup></span></span> + C <span class="g">(negatif üs yeniden paydaya)</span></span>
+<p><strong>Adım 4.</strong> Geri dön.</p>
+<span class="mat">∫ <span class="kes"><span>2x + 1</span><span>(x<sup>2</sup> + x)<sup>3</sup></span></span> dx = −<span class="kes"><span>1</span><span>2(x<sup>2</sup> + x)<sup>2</sup></span></span> + C <span class="g">(u = x<sup>2</sup> + x)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> −(1/2)(x<sup>2</sup> + x)<sup>−2</sup>'nin türevi: −(1/2) · (−2)(x<sup>2</sup> + x)<sup>−3</sup> · (2x + 1) = (2x + 1)/(x<sup>2</sup> + x)<sup>3</sup>. Doğru.</p>
+<p><strong>Sonuç:</strong> −1/(2(x<sup>2</sup> + x)<sup>2</sup>) + C. Sonuçtaki eksi işaretini kaybetmek bu tipte en sık hatadır; negatif üs bir artınca hâlâ negatiftir ve onunla bölmek işareti çevirir.</p></div>
+
+<p>Pay ile iç türev arasında sabit fark varsa ayar aynı biçimde yapılır. ∫ x<sup>3</sup>/(x<sup>4</sup> − 2)<sup>2</sup> dx'te u = x<sup>4</sup> − 2, du = 4x<sup>3</sup> dx, x<sup>3</sup> dx = du/4; integral (1/4) ∫ u<sup>−2</sup> du = (1/4)(−u<sup>−1</sup>) = −1/(4(x<sup>4</sup> − 2)) + C. Payda kuvvet olmayıp yalnızca g(x) olsaydı (n = 1), Bölüm 5'teki n = −1 notuna düşerdin.</p>
+
+<h2 class="s">8. Soyut fonksiyonlarla verilen integraller</h2>
+
+<p>AYT, yöntemi kuralı bilinmeyen fonksiyonlarla da sorar: f, g yalnızca adıyla verilir. Bu sorular ilk bakışta korkutucudur ama hesap yoktur; yalnızca Bölüm 1'deki kuralın kalıbını tanırsın. u'yu f(x) ya da iç fonksiyon olarak seçmek, her şeyi çözer.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">∫ f′(x) · [f(x)]ⁿ dx = <span class="kes"><span>[f(x)]ⁿ<sup>+1</sup></span><span>n + 1</span></span> + C <span class="g">(n ≠ −1)</span></span>
+<span class="mat">∫ f(g(x)) · g′(x) dx = F(g(x)) + C <span class="g">(F′ = f)</span></span>
+<p><strong>Neden?</strong> Birincisinde u = f(x) dersen du = f′(x) dx olur ve integral ∫ uⁿ du'ya dönüşür. İkincisi Bölüm 1'deki kuralın kendisidir; u = g(x) dersen ∫ f(u) du = F(u) olur. İkisinin de türevini zincir kuralıyla alınca integralin içi geri gelir.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Verilen</th><th>u</th><th>Sonuç</th></tr>
+<tr><td>∫ f′(x) · f(x) dx</td><td>f(x)</td><td>[f(x)]<sup>2</sup>/2 + C</td></tr>
+<tr><td>∫ f′(x)/[f(x)]<sup>2</sup> dx</td><td>f(x)</td><td>−1/f(x) + C</td></tr>
+<tr><td>∫ f′(x)/√(f(x)) dx</td><td>f(x)</td><td>2√(f(x)) + C</td></tr>
+<tr><td>∫ f′(3x) dx</td><td>3x</td><td>f(3x)/3 + C</td></tr>
+<tr><td>∫ x · f(x<sup>2</sup>) dx (F′ = f)</td><td>x<sup>2</sup></td><td>F(x<sup>2</sup>)/2 + C</td></tr>
+<tr><td>∫ x · f′(x<sup>2</sup> + 1) dx</td><td>x<sup>2</sup> + 1</td><td>f(x<sup>2</sup> + 1)/2 + C</td></tr>
+</table></div>
+
+<p>Tablonun son üç satırına dikkat et. ∫ f′(3x) dx'te türevi alınmış f′ içeride duruyor; integral onu f'ye geri çevirir. u = 3x, du = 3 dx, dx = du/3 ve ∫ f′(u) du/3 = f(u)/3. Burada yaygın karışıklık, f′ yerine f, f yerine F yazmaktır: integral bir "basamak geri" gider; f′'nün integrali f, f'nin integrali F'dir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f türevlenebilir bir fonksiyon, f(1) = 3 ve f(4) = −3'tür. G(x) = ∫ f′(x) · [f(x)]<sup>2</sup> dx ve G(1) = 5 olduğuna göre G(4) kaçtır?</p>
+<p><strong>Adım 1.</strong> Kalıbı tanı: içeride f(x) ve onun türevi f′(x) var.</p>
+<span class="mat">u = f(x), du = f′(x) dx <span class="g">(u'nun türevi)</span></span>
+<p><strong>Adım 2.</strong> İntegrali al.</p>
+<span class="mat">G(x) = ∫ u<sup>2</sup> du = <span class="kes"><span>u<sup>3</sup></span><span>3</span></span> + C = <span class="kes"><span>[f(x)]<sup>3</sup></span><span>3</span></span> + C <span class="g">(kuvvet kuralı, geri dönüş)</span></span>
+<p><strong>Adım 3.</strong> Başlangıç koşuluyla C'yi bul (Parça 28'deki gibi).</p>
+<span class="mat">G(1) = <span class="kes"><span>3<sup>3</sup></span><span>3</span></span> + C = 9 + C <span class="g">(f(1) = 3)</span></span>
+<span class="mat">9 + C = 5 ⇒ C = −4 <span class="g">(G(1) = 5)</span></span>
+<p><strong>Adım 4.</strong> G(4)'ü hesapla.</p>
+<span class="mat">G(4) = <span class="kes"><span>(−3)<sup>3</sup></span><span>3</span></span> − 4 = −9 − 4 = −13 <span class="g">(tek kuvvette eksi korunur)</span></span>
+<p><strong>Sonuç:</strong> G(4) = −13. Kontrol yolu: G′(x) = 3[f(x)]<sup>2</sup> · f′(x)/3 = f′(x)[f(x)]<sup>2</sup>; doğru. C'yi bulmayı unutan −9, (−3)<sup>3</sup>'ü +27 alan 9 − 4 = 5 bulur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> − 2x olmak üzere H(x) = ∫ x · f′(x<sup>2</sup> + 1) dx ve H(0) = 0 olduğuna göre H(1) kaçtır?</p>
+<p><strong>Adım 1.</strong> f′'yü açıp çarpmak yerine kalıbı tanı: içeride x<sup>2</sup> + 1 ve türevinin (2x) yarısı var.</p>
+<span class="mat">u = x<sup>2</sup> + 1, du = 2x dx, x dx = <span class="kes"><span>du</span><span>2</span></span> <span class="g">(ayar)</span></span>
+<p><strong>Adım 2.</strong> İntegral, f′'nün integralidir; bir basamak geri gidip f'ye döner.</p>
+<span class="mat">H(x) = <span class="kes"><span>1</span><span>2</span></span> ∫ f′(u) du = <span class="kes"><span>1</span><span>2</span></span> f(u) + C = <span class="kes"><span>1</span><span>2</span></span> f(x<sup>2</sup> + 1) + C <span class="g">(f′'nün ters türevi f)</span></span>
+<p><strong>Adım 3.</strong> C'yi bul.</p>
+<span class="mat">f(1) = 1 − 2 = −1 <span class="g">(x = 0'da u = 1)</span></span>
+<span class="mat">H(0) = −<span class="kes"><span>1</span><span>2</span></span> + C = 0 ⇒ C = <span class="kes"><span>1</span><span>2</span></span></span>
+<p><strong>Adım 4.</strong> H(1)'i hesapla.</p>
+<span class="mat">f(2) = 8 − 4 = 4 <span class="g">(x = 1'de u = 2)</span></span>
+<span class="mat">H(1) = <span class="kes"><span>4</span><span>2</span></span> + <span class="kes"><span>1</span><span>2</span></span> = <span class="kes"><span>5</span><span>2</span></span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Uzun yoldan: f′(t) = 3t<sup>2</sup> − 2, yani integralin içi x(3(x<sup>2</sup> + 1)<sup>2</sup> − 2). Bunu açıp 0'dan 1'e integral almak da 5/2 verir; ama soru açmadan, tek satırda çözülüyor.</p>
+<p><strong>Sonuç:</strong> H(1) = 5/2. f'nin kuralı verilmiş olsa bile önce kalıba bakmak, işlemi kısaltır.</p></div>
+
+<h2 class="s">9. Belirli integralde sınırlar da değişir</h2>
+
+<p>Belirli integrali ve analizin temel teoremini Parça 30'da kuracaksın. Şimdilik yalnızca şu kadarını bil: ∫<sub>a</sub><sup>b</sup> f(x) dx yazımında a ve b, x'in alt ve üst sınırlarıdır ve sonuç, bir ters türev F için F(b) − F(a) farkıyla hesaplanır. Bu bölümün tek amacı, değişken değiştirince bu sınırlara ne olduğunu görmektir; nedenini ve öbür ayrıntıları Parça 30 verecek.</p>
+
+<p>Sınırlar x'in sınırlarıdır. Integrali u cinsine geçirdiğinde artık u'ya göre integral alıyorsun; bu yüzden sınırlar da u'nun sınırları olmalıdır. Her sınır, u = g(x) bağıntısıyla çevrilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<span class="mat">∫<sub>a</sub><sup>b</sup> f(g(x)) · g′(x) dx = ∫<sub>g(a)</sub><sup>g(b)</sup> f(u) du</span>
+<p><strong>Neden?</strong> Sol yanın değeri F(g(b)) − F(g(a))'dır (Bölüm 1'deki kural, sınırlarda hesaplanmış). Sağ yanın değeri F(u)'nun u = g(b) ile u = g(a)'daki farkıdır; yani aynı sayı. Sınırları çevirmek, geri dönüş adımını gereksiz kılar: x'e dönmeden u'nun sınırlarında hesaplarsın. İstersen sınırları çevirmeden x'e geri dönüp eski sınırları kullanabilirsin; iki yolu karıştırmak (u'da kalıp x'in sınırlarını kullanmak) yasaktır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> ∫<sub>0</sub><sup>1</sup> 2x(x<sup>2</sup> + 1)<sup>2</sup> dx integralinin değerini bulun.</p>
+<p><strong>Adım 1.</strong> u ve du.</p>
+<span class="mat">u = x<sup>2</sup> + 1, du = 2x dx <span class="g">(iç türev tam hazır)</span></span>
+<p><strong>Adım 2.</strong> Sınırları çevir.</p>
+<span class="mat">x = 0 ⇒ u = 0<sup>2</sup> + 1 = 1 <span class="g">(alt sınır)</span></span>
+<span class="mat">x = 1 ⇒ u = 1<sup>2</sup> + 1 = 2 <span class="g">(üst sınır)</span></span>
+<p><strong>Adım 3.</strong> Yeni integral ve hesap.</p>
+<span class="mat">∫<sub>1</sub><sup>2</sup> u<sup>2</sup> du = <span class="kes"><span>2<sup>3</sup></span><span>3</span></span> − <span class="kes"><span>1<sup>3</sup></span><span>3</span></span> <span class="g">(F(u) = u<sup>3</sup>/3, üst eksi alt)</span></span>
+<span class="mat">= <span class="kes"><span>8</span><span>3</span></span> − <span class="kes"><span>1</span><span>3</span></span> = <span class="kes"><span>7</span><span>3</span></span></span>
+<p><strong>Adım 4 (ikinci yol, kontrol).</strong> Sınırları çevirmeden x'e dön: ters türev (x<sup>2</sup> + 1)<sup>3</sup>/3. x = 1'de 8/3, x = 0'da 1/3; fark 7/3. Aynı.</p>
+<p><strong>Sonuç:</strong> 7/3. Sınırları çevirmeyi unutup ∫<sub>0</sub><sup>1</sup> u<sup>2</sup> du hesaplayan 1/3 bulur; bu, sınavın en sevdiği çeldiricidir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 265" role="img" aria-label="Aynı ölçekle çizilmiş iki grafik. Solda y eşittir 2x çarpı x kare artı 1'in karesi eğrisinin altında x eşittir 0 ile 1 arasındaki taralı bölge; eğri 0'dan 8'e dik biçimde yükseliyor. Sağda y eşittir u kare eğrisinin altında u eşittir 1 ile 2 arasındaki taralı bölge; eğri 1'den 4'e yükseliyor. İki taralı bölgenin alanı da 7 bölü 3'tür.">
+  <text class="sv-b" x="40" y="18" text-anchor="start">x ile</text>
+  <text class="sv-b" x="215" y="18" text-anchor="start">u ile</text>
+  <polygon class="sv-m" points="40.0,200.0 43.8,198.0 47.5,195.9 51.2,193.7 55.0,191.3 58.8,188.7 62.5,185.7 66.2,182.4 70.0,178.5 73.8,174.0 77.5,168.8 81.2,162.7 85.0,155.6 88.8,147.4 92.5,137.8 96.2,126.8 100.0,113.9 103.8,99.1 107.5,82.1 111.2,62.5 115.0,40.0 115.0,200.0" />
+  <line class="sv-c" x1="30" y1="200" x2="150" y2="200" />
+  <line class="sv-c" x1="40" y1="208" x2="40" y2="30" />
+  <line class="sv-c" x1="115" y1="196" x2="115" y2="204" />
+  <text class="sv-s" x="115" y="216" text-anchor="middle">1</text>
+  <text class="sv-s" x="40" y="216" text-anchor="middle">0</text>
+  <line class="sv-c" x1="36" y1="160" x2="44" y2="160" />
+  <line class="sv-c" x1="36" y1="120" x2="44" y2="120" />
+  <line class="sv-c" x1="36" y1="80" x2="44" y2="80" />
+  <line class="sv-c" x1="36" y1="40" x2="44" y2="40" />
+  <text class="sv-s" x="32" y="164" text-anchor="end">2</text>
+  <text class="sv-s" x="32" y="124" text-anchor="end">4</text>
+  <text class="sv-s" x="32" y="84" text-anchor="end">6</text>
+  <text class="sv-s" x="32" y="44" text-anchor="end">8</text>
+  <polyline class="sv-cl" points="40.0,200.0 43.8,198.0 47.5,195.9 51.2,193.7 55.0,191.3 58.8,188.7 62.5,185.7 66.2,182.4 70.0,178.5 73.8,174.0 77.5,168.8 81.2,162.7 85.0,155.6 88.8,147.4 92.5,137.8 96.2,126.8 100.0,113.9 103.8,99.1 107.5,82.1 111.2,62.5 115.0,40.0" />
+  <text class="sv-t" x="122" y="52" text-anchor="start">y = 2x(x² + 1)²</text>
+  <polygon class="sv-m" points="290.0,200.0 290.0,180.0 293.8,177.9 297.5,175.8 301.2,173.6 305.0,171.2 308.8,168.8 312.5,166.2 316.2,163.6 320.0,160.8 323.8,157.9 327.5,155.0 331.2,151.9 335.0,148.8 338.8,145.6 342.5,142.2 346.2,138.8 350.0,135.2 353.8,131.6 357.5,127.8 361.2,124.0 365.0,120.0 365.0,200.0" />
+  <line class="sv-c" x1="205" y1="200" x2="392" y2="200" />
+  <line class="sv-c" x1="215" y1="208" x2="215" y2="100" />
+  <line class="sv-c" x1="290" y1="196" x2="290" y2="204" />
+  <line class="sv-c" x1="365" y1="196" x2="365" y2="204" />
+  <text class="sv-s" x="215" y="216" text-anchor="middle">0</text>
+  <text class="sv-s" x="290" y="216" text-anchor="middle">1</text>
+  <text class="sv-s" x="365" y="216" text-anchor="middle">2</text>
+  <line class="sv-c" x1="211" y1="160" x2="219" y2="160" />
+  <line class="sv-c" x1="211" y1="120" x2="219" y2="120" />
+  <text class="sv-s" x="207" y="164" text-anchor="end">2</text>
+  <text class="sv-s" x="207" y="124" text-anchor="end">4</text>
+  <polyline class="sv-cl" points="215.0,200.0 218.8,199.9 222.5,199.8 226.2,199.6 230.0,199.2 233.8,198.8 237.5,198.2 241.2,197.6 245.0,196.8 248.8,195.9 252.5,195.0 256.2,193.9 260.0,192.8 263.8,191.6 267.5,190.2 271.2,188.8 275.0,187.2 278.8,185.6 282.5,183.8 286.2,181.9 290.0,180.0 293.8,177.9 297.5,175.8 301.2,173.6 305.0,171.2 308.8,168.8 312.5,166.2 316.2,163.6 320.0,160.8 323.8,157.9 327.5,155.0 331.2,151.9 335.0,148.8 338.8,145.6 342.5,142.2 346.2,138.8 350.0,135.2 353.8,131.6 357.5,127.8 361.2,124.0 365.0,120.0 368.8,116.0 372.5,111.8" />
+  <text class="sv-t" x="380" y="100" text-anchor="end">y = u²</text>
+  <text class="sv-t" x="78" y="238" text-anchor="middle">x: 0 → 1</text>
+  <text class="sv-t" x="328" y="238" text-anchor="middle">u: 1 → 2</text>
+  <text class="sv-b" x="78" y="258" text-anchor="middle">değer 7/3</text>
+  <text class="sv-b" x="328" y="258" text-anchor="middle">değer 7/3</text>
+</svg>
+<figcaption>Örnek 6'nın iki integrali, iki eksende de aynı ölçekle. Solda dar ve dik bir bölge (x: 0'dan 1'e), sağda daha alçak bir bölge (u: 1'den 2'ye); biçimleri farklı ama ikisinin değeri de 7/3. Değişken değiştirme integralin "görünüşünü" değiştirir, değerini değiştirmez; yeter ki sınırlar da çevrilsin. Sağda u: 0'dan 1'e alınsaydı (sınır çevrilmeseydi) yalnızca 1/3'lük, taralı olmayan küçük parça hesaplanırdı. Belirli integralin bir alan olarak yorumunu Parça 30 ve 31'de göreceksin.</figcaption>
+</figure>
+
+<p>Bir örnek daha, bu kez kökle: ∫<sub>0</sub><sup>3</sup> x/√(x<sup>2</sup> + 16) dx. u = x<sup>2</sup> + 16, x dx = du/2; x = 0 ⇒ u = 16, x = 3 ⇒ u = 25. İntegral (1/2) ∫<sub>16</sub><sup>25</sup> u<sup>−1/2</sup> du = [√u]<sub>16</sub><sup>25</sup> = 5 − 4 = 1. Sınırları çevirmeyen biri √3 − 0 ≈ 1,73 bulurdu. Kontrol yolu: ters türev √(x<sup>2</sup> + 16), x = 3'te 5, x = 0'da 4; fark 1.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>u'ya geçip x'in sınırlarını korumak.</strong> Bu hata, integralin içini doğru çevirip sınırları unutmaktır; sonuç her zaman yanlış çıkar, çünkü artık başka bir aralıkta integral alıyorsun. Kendini korumanın yolu: u'yu yazdığın satırın hemen altına "x = a ⇒ u = …, x = b ⇒ u = …" satırını yazmak ve yeni integrale geçerken sınırları o satırdan almak. Sınırlar bazen yer değiştirebilir (u = 1 − x gibi azalan bir u'da alt sınır büyük çıkar); bu bir hata değildir, olduğu gibi yazılır.</p></div>
+
+<h2 class="s">10. Hangi integraller bu yöntemle çözülemez?</h2>
+
+<p>Yöntemin sınırını bilmek, sınavda boşuna zaman harcamamanı sağlar. Bir integralin önünde durup u aramadan önce kendine Bölüm 3'teki soruyu sor: içeride bir ifade ve türevi var mı? Yoksa ya başka bir yol vardır (açma, sadeleştirme) ya da integral programın dışındadır.</p>
+
+<div class="tablo"><table>
+<tr><th>İntegral</th><th>Neden değişken değiştirme işlemez?</th><th>Ne yapılır?</th></tr>
+<tr><td>∫ (x<sup>2</sup> + 1)<sup>5</sup> dx</td><td>İç türev 2x yok; x eksik</td><td>Aç (binom), terim terim kuvvet kuralı</td></tr>
+<tr><td>∫ (x<sup>3</sup> + x)/x dx</td><td>Gerek yok</td><td>Sadeleştir: ∫ (x<sup>2</sup> + 1) dx</td></tr>
+<tr><td>∫ √(x<sup>2</sup> + 1) dx</td><td>Kök içinin türevi 2x yok; açılamaz</td><td>Trigonometrik değişken değiştirme ister; programda yok</td></tr>
+<tr><td>∫ 1/(x<sup>2</sup> + 1) dx</td><td>Paydanın türevi 2x payda değil</td><td>Ters trigonometrik fonksiyon (arctan) ister; programda yok</td></tr>
+<tr><td>∫ 1/((x − 1)(x + 2)) dx</td><td>Payda iç türev yok</td><td>Basit kesirlere ayırma ister; programda yok</td></tr>
+<tr><td>∫ (2x + 1)/(x<sup>2</sup> + x) dx</td><td>Yöntem işler ama ∫ du/u çıkar</td><td>ln|x<sup>2</sup> + x| + C (kapsamı doğrulanamadı)</td></tr>
+</table></div>
+
+<figure>
+<svg viewBox="0 0 400 400" role="img" aria-label="Bir integralde hangi yolun seçileceğini gösteren karar şeması. Birinci soru: içeride bir ifade ve türevi sabit kat farkıyla var mı? Evetse u eşittir o ifade. Hayırsa ikinci soru: kök içi doğrusal ve dışarıda x'in polinomu mu var? Evetse u eşittir kök içi, x'i u ile yaz. Hayırsa üçüncü soru: açılabiliyor ya da sadeleşiyor mu? Evetse aç ve kuvvet kuralı. Hayırsa bu yöntemle çözülmez.">
+  <rect class="sv-l" x="10" y="10" width="232" height="62" rx="10" />
+  <text class="sv-t" x="126" y="32" text-anchor="middle">İçeride bir ifade ve onun türevi</text>
+  <text class="sv-t" x="126" y="49" text-anchor="middle">(sabit kat farkıyla) çarpan</text>
+  <text class="sv-t" x="126" y="66" text-anchor="middle">olarak var mı?</text>
+  <line class="sv-c" x1="242" y1="41" x2="282" y2="41" />
+  <polygon class="sv-a" points="280,35 280,47 290,41" />
+  <text class="sv-s" x="264" y="33" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="290" y="16" width="102" height="50" rx="10" />
+  <text class="sv-b" x="341" y="38" text-anchor="middle">u = o ifade</text>
+  <text class="sv-s" x="341" y="56" text-anchor="middle">Bölüm 2–5, 7–8</text>
+  <line class="sv-c" x1="126" y1="72" x2="126" y2="100" />
+  <polygon class="sv-a" points="120,98 132,98 126,108" />
+  <text class="sv-s" x="134" y="92" text-anchor="start">hayır</text>
+  <rect class="sv-l" x="10" y="108" width="232" height="62" rx="10" />
+  <text class="sv-t" x="126" y="130" text-anchor="middle">Kök içi doğrusal ve dışarıda</text>
+  <text class="sv-t" x="126" y="147" text-anchor="middle">x'in bir polinomu mu var?</text>
+  <text class="sv-s" x="126" y="164" text-anchor="middle">(x√(x + 1) gibi)</text>
+  <line class="sv-c" x1="242" y1="139" x2="282" y2="139" />
+  <polygon class="sv-a" points="280,133 280,145 290,139" />
+  <text class="sv-s" x="264" y="131" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="290" y="114" width="102" height="50" rx="10" />
+  <text class="sv-b" x="341" y="136" text-anchor="middle">u = kök içi</text>
+  <text class="sv-s" x="341" y="154" text-anchor="middle">x'i u ile yaz</text>
+  <line class="sv-c" x1="126" y1="170" x2="126" y2="198" />
+  <polygon class="sv-a" points="120,196 132,196 126,206" />
+  <text class="sv-s" x="134" y="190" text-anchor="start">hayır</text>
+  <rect class="sv-l" x="10" y="206" width="232" height="62" rx="10" />
+  <text class="sv-t" x="126" y="228" text-anchor="middle">Çarpım açılabiliyor ya da</text>
+  <text class="sv-t" x="126" y="245" text-anchor="middle">bölüm sadeleşiyor mu?</text>
+  <text class="sv-s" x="126" y="262" text-anchor="middle">((x² + 1)⁵, (x³ + x)/x gibi)</text>
+  <line class="sv-c" x1="242" y1="237" x2="282" y2="237" />
+  <polygon class="sv-a" points="280,231 280,243 290,237" />
+  <text class="sv-s" x="264" y="229" text-anchor="middle">evet</text>
+  <rect class="sv-m" x="290" y="212" width="102" height="50" rx="10" />
+  <text class="sv-b" x="341" y="234" text-anchor="middle">aç, sadeleştir</text>
+  <text class="sv-s" x="341" y="252" text-anchor="middle">kuvvet kuralı</text>
+  <line class="sv-c" x1="126" y1="268" x2="126" y2="296" />
+  <polygon class="sv-a" points="120,294 132,294 126,304" />
+  <text class="sv-s" x="134" y="288" text-anchor="start">hayır</text>
+  <rect class="sv-a" x="10" y="304" width="232" height="50" rx="10" />
+  <text class="sv-b" x="126" y="326" text-anchor="middle">Bu yöntemle çözülmez;</text>
+  <text class="sv-t" x="126" y="344" text-anchor="middle">gereken yol programın dışında</text>
+  <text class="sv-s" x="10" y="384" text-anchor="start">Hangi yoldan gelirsen gel: sonucun türevini al, integralin içi çıkmalı.</text>
+</svg>
+<figcaption>Bir integrale bakınca soracağın üç soru, bu sırayla. İlk "evet" seni yönteme götürür. Sınav sorularında son kutuya düşen bir integral neredeyse hiç gelmez; düştüysen büyük olasılıkla bir şeyi yanlış okumuşsundur (örneğin içerideki türev çarpanını gözden kaçırmışsındır).</figcaption>
+</figure>
+
+<h2 class="s">11. Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol 1: kalıbı doğrudan yaz.</strong> İçeride g′ ile g'nin bir kuvveti varsa u yazmadan sonucu yazabilirsin: ∫ g′ · gⁿ dx = gⁿ<sup>+1</sup>/(n + 1) + C. Sabit eksikse önce dengele. ∫ (x + 1)(x<sup>2</sup> + 2x + 5)<sup>4</sup> dx'te iç türev 2x + 2, içeride x + 1, yani yarısı var: sonuç (1/2) · (x<sup>2</sup> + 2x + 5)<sup>5</sup>/5 = (x<sup>2</sup> + 2x + 5)<sup>5</sup>/10 + C.</p>
+
+<p><strong>Hızlı yol 2: tahmin et ve düzelt.</strong> Sonucun biçimini (kuvveti bir artmış iç ifade) yaz, türevini al, istenenle karşılaştırıp aradaki sabite böl. Bölüm 4'teki örnekte gördün; özellikle kesirli üslerde hata payını düşürür.</p>
+
+<p><strong>Hızlı yol 3: önce iskelete bak.</strong> Bir integralle karşılaşınca ilk 10 saniyede şu üç soruyu sırayla sor: polinom mu (açıp kuvvet kuralı), içeride bir ifade ve türevi var mı (değişken değiştirme), kök içi doğrusal mı (u = kök içi, x'i u ile yaz)? Bu sıra, Bölüm 10'daki karar şemasının kısaltılmış biçimidir. Soruların çoğunda ikinci sorunun cevabı "evet"tir; sınav bu parçadan soru sorduğunda neredeyse her zaman iç türevi bir yere saklamıştır. Saklandığı yer çoğunlukla paydır, bazen de paydadaki bir kökün altıdır (1/√x gibi).</p>
+
+<p><strong>Kontrol yolu 1: türev al.</strong> Parça 28'deki alışkanlık burada daha da önemlidir, çünkü sabit ayarında hata yapmak kolaydır. Türevi almak 20 saniye sürer ve cevabın doğru olup olmadığını kesin söyler.</p>
+
+<p><strong>Kontrol yolu 2: seçenekleri türevle ele.</strong> Çoktan seçmeli soruda integrali hiç almadan, seçeneklerin türevini alıp integralin içini vereni bulabilirsin. Seçeneklerin çoğu yalnızca bir sabitle ayrıldığından, bir tanesinin türevini alıp hangi katla saptığını görmek çoğu zaman yeter: türev istenenin 2 katıysa doğru cevap o seçeneğin yarısıdır.</p>
+
+<p><strong>Kontrol yolu 3: bir sayıda dene.</strong> Belirli integralde sonucu kabaca tahmin et. Örnek 6'da integralin içi [0, 1] aralığında 0'dan 8'e çıkıyor; değerin 0 ile 8 arasında olması, hatta eğri çoğunlukla alçakta kaldığı için 8'in yarısından küçük olması gerekir. 7/3 ≈ 2,3 uygun; 1/3 ise, eğrinin son kısmının 8'e kadar çıktığını düşününce fazla küçük görünür. Bu tahmin, sınırları çevirmeyi unuttuğun durumu yakalar.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 23'e:</strong> Değişken değiştirme, zincir kuralının ters okunuşudur. Zincir kuralı iç türevle çarptırıyordu, değişken değiştirme o çarpanı integralin içinde arar. Orada kurduğun "iç ve dış" ayrımı burada u seçimidir.</p>
+<p><strong>Parça 28'e:</strong> u'ya geçtikten sonraki her integral, oradaki kuvvet kuralıyla alınır; başlangıç koşuluyla C bulma ve türev alarak denetleme alışkanlığı buraya aynen taşınır.</p>
+<p><strong>Parça 30'a:</strong> Belirli integralin tanımını ve analizin temel teoremini kuracaksın; "değişken değiştirince sınırlar da değişir" kuralı orada sürekli kullanılacak. ∫ f(2x) dx, ∫ f(x + 1) dx türü sorular da aslında bu parçadaki u = 2x, u = x + 1 dönüşümleridir.</p>
+<p><strong>Parça 31 ve 32'ye:</strong> Alan hesabında ve hız-konum, değişim hızı problemlerinde integralin içinde (2t + 1)<sup>3</sup> gibi ifadeler çıktığında bu yöntem kullanılır.</p>
+<p><strong>Öbür derslere:</strong> Fizikte hızı v(t) = (2t + 1)<sup>2</sup> m/s gibi bir bileşke ifadeyle verilen bir cismin konumunu bulmak, burada yaptığın ∫ (ax + b)ⁿ dx hesabının aynısıdır. Geometride ve analitik düzlemde değişkene yeni ad vermek (koordinat kaydırma) aynı düşüncenin başka bir yüzüdür: problemi, hesabın kolaylaştığı bir değişkene taşırsın.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Değişken değiştirme yöntemi hangi türev kuralının tersidir ve neden doğru sonuç verir?</summary><p>Zincir kuralının tersidir. F′ = f ise F(g(x))'in türevi zincir kuralıyla f(g(x)) · g′(x)'tir; bu yüzden ∫ f(g(x)) · g′(x) dx = F(g(x)) + C olur. Sonucun türevi integralin içini verdiği için yöntem doğrudur.</p></details>
+<details><summary>Bir integralin bu yönteme uygun olduğunu nasıl anlarsın? Neden sabit kat farkı sorun değildir ama eksik bir x sorundur?</summary><p>İçeride bir ifade ve onun türevi çarpan olarak bulunmalıdır. Eksik ya da fazla bir sabit, sabit çarpan kuralıyla integralin dışına alınıp dengelenebilir. x sabit olmadığı için integralin dışına çıkamaz; x eksikse dengelenemez.</p></details>
+<details><summary>∫ (ax + b)ⁿ dx'in kısa yolu nedir? a ile neden bölünür?</summary><p>(ax + b)ⁿ<sup>+1</sup>/(a(n + 1)) + C, n ≠ −1. u = ax + b için du = a dx, dx = du/a olur; türevde iç türev a ile çarpıldığı için integralde a'ya bölünür.</p></details>
+<details><summary>∫ x√(x + 1) dx'te u = x + 1 seçince dışarıdaki x ne olur?</summary><p>u cinsinden yazılır: x = u − 1. İntegral ∫ (u − 1)u<sup>1/2</sup> du olur; açılıp her terime kuvvet kuralı uygulanır. x'i olduğu gibi bırakıp sabit gibi dışarı almak yanlıştır.</p></details>
+<details><summary>∫ f′(x) · [f(x)]ⁿ dx ve ∫ f′(3x) dx neye eşittir?</summary><p>Birincisi u = f(x) ile [f(x)]ⁿ<sup>+1</sup>/(n + 1) + C (n ≠ −1). İkincisi u = 3x, dx = du/3 ile f(3x)/3 + C.</p></details>
+<details><summary>Belirli integralde değişken değiştirince sınırlara ne yapılır? Yapılmazsa ne olur?</summary><p>Her sınır u = g(x) bağıntısıyla u'nun sınırına çevrilir: x = a ⇒ u = g(a), x = b ⇒ u = g(b). Yapılmazsa başka bir aralıkta integral alınmış olur ve sonuç yanlış çıkar (Örnek 6'da 7/3 yerine 1/3). Öbür seçenek x'e geri dönüp eski sınırları kullanmaktır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Dayanak:</strong> ∫ f(g(x)) · g′(x) dx = F(g(x)) + C; zincir kuralının tersi.</li>
+<li><strong>Beş adım:</strong> u'yu seç → du = u′ dx yaz, ayarla → integrali tamamen u ile yaz (hiç x kalmasın) → u'ya göre integral al → geri dön, + C, türevle denetle.</li>
+<li><strong>Tanıma:</strong> içeride bir ifade ve türevi. Sabit eksikse dengele (böl), x eksikse yöntem işlemez.</li>
+<li><strong>Ayar:</strong> du = 3x<sup>2</sup> dx ⇒ x<sup>2</sup> dx = du/3. Bölmeyi çarpmayla karıştırma.</li>
+<li><strong>Doğrusal iç:</strong> ∫ (ax + b)ⁿ dx = (ax + b)ⁿ<sup>+1</sup>/(a(n + 1)) + C, n ≠ −1.</li>
+<li><strong>Kök:</strong> u = kök içi (kesirli üs kalır) ya da u = kökün kendisi (u<sup>2</sup> = …, 2u du = …; kök kaybolur). Kök içi doğrusalsa dışarıdaki x'i u ile yaz.</li>
+<li><strong>Payda kuvveti:</strong> negatif üse çevir: ∫ g′/gⁿ dx = g<sup>1−n</sup>/(1 − n) + C; işarete dikkat.</li>
+<li><strong>Soyut:</strong> ∫ f′ · fⁿ dx = fⁿ<sup>+1</sup>/(n + 1) + C; ∫ f′(3x) dx = f(3x)/3 + C; ∫ x f(x<sup>2</sup>) dx = F(x<sup>2</sup>)/2 + C.</li>
+<li><strong>Belirli integral:</strong> sınırları da çevir: x = a ⇒ u = g(a). Ya u'da kal ve yeni sınırları kullan ya da x'e dön ve eskileri; karıştırma.</li>
+<li><strong>Çözülemeyenler:</strong> ∫ √(x<sup>2</sup> + 1) dx, ∫ 1/(x<sup>2</sup> + 1) dx, basit kesir isteyenler programda yok; polinom çarpımları açılır.</li>
+<li><strong>Kontrol:</strong> sonucun türevini al; seçeneklerde türevle ele; belirli integralde kaba tahmin.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-29">
+<h3>Quiz 29</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">∫ (2x − 3)<sup>4</sup> dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li><span class="kes"><span>(2x − 3)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>(2x − 3)<sup>5</sup></span><span>10</span></span> + C</li><li><span class="kes"><span>2(2x − 3)<sup>5</sup></span><span>5</span></span> + C</li><li>8(2x − 3)<sup>3</sup> + C</li><li><span class="kes"><span>(2x − 3)<sup>5</sup></span><span>2</span></span> + C</li></ul>
+<div class="coz"><p>İç ifade doğrusal: u = 2x − 3, du = 2 dx, dx = du/2. ∫ u<sup>4</sup> du/2 = u<sup>5</sup>/10, yani (2x − 3)<sup>5</sup>/10 + C. Kontrol: türevi 5(2x − 3)<sup>4</sup> · 2/10 = (2x − 3)<sup>4</sup>. A, iç türevi unutup iç ifadeyi x gibi görmektir; türevi istenenin 2 katı çıkar. C, türevdeki alışkanlıkla a = 2 ile bölmek yerine çarpmaktır. D, integral yerine türev almaktır (4 · (2x − 3)<sup>3</sup> · 2). E, yalnızca a'ya bölüp yeni üsse (5) bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">∫ x(x<sup>2</sup> + 4)<sup>3</sup> dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li><span class="kes"><span>(x<sup>2</sup> + 4)<sup>4</sup></span><span>4</span></span> + C</li><li><span class="kes"><span>(x<sup>2</sup> + 4)<sup>4</sup></span><span>2</span></span> + C</li><li><span class="kes"><span>x<sup>2</sup>(x<sup>2</sup> + 4)<sup>4</sup></span><span>8</span></span> + C</li><li><span class="kes"><span>(x<sup>2</sup> + 4)<sup>4</sup></span><span>8</span></span> + C</li><li><span class="kes"><span>x(x<sup>2</sup> + 4)<sup>4</sup></span><span>8</span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>2</sup> + 4, du = 2x dx, x dx = du/2. İntegral (1/2) ∫ u<sup>3</sup> du = u<sup>4</sup>/8, yani (x<sup>2</sup> + 4)<sup>4</sup>/8 + C. Kontrol: türevi 4(x<sup>2</sup> + 4)<sup>3</sup> · 2x/8 = x(x<sup>2</sup> + 4)<sup>3</sup>. A, x dx = du/2 ayarındaki 1/2'yi unutmaktır. B, 2'ye bölmek yerine 2 ile çarpmaktır. C, çarpanların integrallerini ayrı ayrı alıp çarpmaktır (x<sup>2</sup>/2 · (x<sup>2</sup> + 4)<sup>4</sup>/4); çarpımın integrali böyle alınmaz. E, x dx'i du/2'ye çevirdikten sonra x'i bir de dışarıda bırakmaktır (yarım çeviri).</p></div></li>
+
+<li data-c="A"><p class="q">∫ <span class="kes"><span>x<sup>2</sup></span><span>√(x<sup>3</sup> + 1)</span></span> dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li><span class="kes"><span>2</span><span>3</span></span>√(x<sup>3</sup> + 1) + C</li><li>2√(x<sup>3</sup> + 1) + C</li><li>6√(x<sup>3</sup> + 1) + C</li><li><span class="kes"><span>2</span><span>9</span></span>(x<sup>3</sup> + 1)√(x<sup>3</sup> + 1) + C</li><li><span class="kes"><span>1</span><span>6</span></span>√(x<sup>3</sup> + 1) + C</li></ul>
+<div class="coz"><p>u = x<sup>3</sup> + 1, du = 3x<sup>2</sup> dx, x<sup>2</sup> dx = du/3. İntegral (1/3) ∫ u<sup>−1/2</sup> du = (1/3) · 2u<sup>1/2</sup> = (2/3)√(x<sup>3</sup> + 1) + C. Kontrol: türevi (2/3) · 3x<sup>2</sup>/(2√(x<sup>3</sup> + 1)) = x<sup>2</sup>/√(x<sup>3</sup> + 1). B, 1/3 ayarını unutmaktır. C, 3'e bölmek yerine 3 ile çarpmaktır (x<sup>2</sup> dx = 3 du). D, paydadaki kökü payda sanıp ∫ u<sup>1/2</sup> almaktır; bu, Örnek 2'nin cevabıdır. E, u<sup>−1/2</sup>'nin integralinde 1/2'ye bölmek yerine 2'ye bölmektir (u<sup>1/2</sup>/2).</p></div></li>
+
+<li data-c="C"><p class="q">∫ x√(x − 2) dx integralinde u = x − 2 dönüşümü yapılırsa integral aşağıdakilerden hangisine dönüşür?</p>
+<ul class="sec"><li>∫ (u<sup>3/2</sup> − 2u<sup>1/2</sup>) du</li><li>∫ u<sup>3/2</sup> du</li><li>∫ (u<sup>3/2</sup> + 2u<sup>1/2</sup>) du</li><li>∫ x · u<sup>1/2</sup> du</li><li>∫ (u<sup>2</sup> + 2)u du</li></ul>
+<div class="coz"><p>u = x − 2 ise x = u + 2 ve dx = du. İntegral ∫ (u + 2)u<sup>1/2</sup> du = ∫ (u<sup>3/2</sup> + 2u<sup>1/2</sup>) du olur. A, x'i u − 2 diye yazmaktır (u = x − 2'den x = u + 2 çıkar; işaret hatası). B, dışarıdaki x'i de u sanmaktır. D, integralde hem x hem u bırakmaktır; u'ya göre integral alınırken x sabit değildir. E, öbür seçimle (u = √(x − 2), x = u<sup>2</sup> + 2) karıştırıp dx = 2u du çevirisini unutmaktır; o seçimde doğrusu ∫ (u<sup>2</sup> + 2) · u · 2u du olurdu.</p></div></li>
+
+<li data-c="E"><p class="q">∫ <span class="kes"><span>x + 1</span><span>(x<sup>2</sup> + 2x)<sup>3</sup></span></span> dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li>−<span class="kes"><span>1</span><span>2(x<sup>2</sup> + 2x)<sup>2</sup></span></span> + C</li><li><span class="kes"><span>1</span><span>4(x<sup>2</sup> + 2x)<sup>2</sup></span></span> + C</li><li>−<span class="kes"><span>1</span><span>8(x<sup>2</sup> + 2x)<sup>4</sup></span></span> + C</li><li>−<span class="kes"><span>x + 1</span><span>2(x<sup>2</sup> + 2x)<sup>2</sup></span></span> + C</li><li>−<span class="kes"><span>1</span><span>4(x<sup>2</sup> + 2x)<sup>2</sup></span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>2</sup> + 2x, du = (2x + 2) dx, (x + 1) dx = du/2. İntegral (1/2) ∫ u<sup>−3</sup> du = (1/2) · u<sup>−2</sup>/(−2) = −1/(4u<sup>2</sup>), yani −1/(4(x<sup>2</sup> + 2x)<sup>2</sup>) + C. A, 1/2 ayarını unutmaktır. B, negatif üsse bölerken işareti kaybetmektir. C, üssü bir artırmak yerine bir azaltmaktır (−3 − 1 = −4); bu türevin kuralıdır. D, paydaki x + 1'i du'ya çevirmeyip sonuçta bırakmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">F′(x) = f(x) olmak üzere ∫ x<sup>2</sup> · f(x<sup>3</sup>) dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li><span class="kes"><span>F(x<sup>3</sup>)</span><span>3</span></span> + C</li><li>3F(x<sup>3</sup>) + C</li><li>F(x<sup>3</sup>) + C</li><li><span class="kes"><span>f(x<sup>3</sup>)</span><span>3</span></span> + C</li><li><span class="kes"><span>x<sup>3</sup> · F(x<sup>3</sup>)</span><span>3</span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>3</sup>, du = 3x<sup>2</sup> dx, x<sup>2</sup> dx = du/3. İntegral (1/3) ∫ f(u) du = F(u)/3, yani F(x<sup>3</sup>)/3 + C. Kontrol: türevi F′(x<sup>3</sup>) · 3x<sup>2</sup>/3 = x<sup>2</sup>f(x<sup>3</sup>). B, 3'e bölmek yerine 3 ile çarpmaktır. C, iç türevdeki 3'ü hiç hesaba katmamaktır. D, f'nin integralini f sanmaktır; integral bir basamak geri gider, f'nin integrali F'dir. E, x<sup>2</sup>'yi du'ya çevirmeyip ayrıca integral almaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f′(x) = x(x<sup>2</sup> − 3)<sup>2</sup> ve f(2) = 1 olduğuna göre f(1) kaçtır?</p>
+<ul class="sec"><li>−<span class="kes"><span>4</span><span>3</span></span></li><li>−2</li><li><span class="kes"><span>13</span><span>6</span></span></li><li>−<span class="kes"><span>1</span><span>2</span></span></li><li>−<span class="kes"><span>7</span><span>2</span></span></li></ul>
+<div class="coz"><p>u = x<sup>2</sup> − 3, x dx = du/2: f(x) = (1/2) · u<sup>3</sup>/3 + C = (x<sup>2</sup> − 3)<sup>3</sup>/6 + C. f(2) = 1<sup>3</sup>/6 + C = 1 ⇒ C = 5/6. f(1) = (−2)<sup>3</sup>/6 + 5/6 = −8/6 + 5/6 = −1/2. A, C'yi bulmayı unutup f(1) = −8/6 = −4/3 yazmaktır. B, 1/2 ayarını unutup (x<sup>2</sup> − 3)<sup>3</sup>/3 almaktır (C = 2/3, f(1) = −2). C, (−2)<sup>3</sup>'ü +8 almaktır. E, yeni üsse (3) bölmeyi unutup (x<sup>2</sup> − 3)<sup>3</sup>/2 almaktır (C = 1/2, f(1) = −7/2).</p></div></li>
+
+<li data-c="B"><p class="q">∫<sub>0</sub><sup>1</sup> x(x<sup>2</sup> + 1)<sup>3</sup> dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>8</span></span></li><li><span class="kes"><span>15</span><span>8</span></span></li><li><span class="kes"><span>15</span><span>4</span></span></li><li>2</li><li><span class="kes"><span>17</span><span>8</span></span></li></ul>
+<div class="coz"><p>u = x<sup>2</sup> + 1, x dx = du/2; sınırlar x = 0 ⇒ u = 1, x = 1 ⇒ u = 2. İntegral (1/2) ∫<sub>1</sub><sup>2</sup> u<sup>3</sup> du = (1/2) · (2<sup>4</sup> − 1<sup>4</sup>)/4 = (1/2) · 15/4 = 15/8. A, sınırları çevirmeyip u'yu 0'dan 1'e almaktır: (1/2) · 1/4 = 1/8. C, 1/2 ayarını unutmaktır. D, yalnızca üst sınırdaki değeri (2<sup>4</sup>/8 = 2) alıp alt sınırdakini çıkarmamaktır. E, üst ve alt sınırdaki değerleri çıkarmak yerine toplamaktır (2 + 1/8).</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 4x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>3</li><li>−1</li><li>1</li><li><span class="kes"><span>1</span><span>3</span></span></li><li>4</li></ul>
+<div class="coz"><p>Ortalama değişim hızı (f(4) − f(1))/(4 − 1). f(4) = 16 − 16 = 0, f(1) = 1 − 4 = −3; (0 − (−3))/3 = 1. Bu, (1, −3) ile (4, 0) noktalarını birleştiren kirişin eğimidir. 3, aralığın uzunluğuna bölmeyi unutmaktır. −1, farkı ters sırayla alıp (f(1) − f(4)) payda sırasını korumaktır. 1/3, oranı ters kurmaktır (x'teki değişim bölü f'deki değişim). 4, uç noktadaki anlık hızdır (f′(4) = 2 · 4 − 4); ortalama değil.</p></div></li>
+
+<li data-c="E" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği üzerindeki (2, 5) noktası, y = f(x − 3) + 1 fonksiyonunun grafiğinde hangi noktaya taşınır?</p>
+<ul class="sec"><li>(−1, 6)</li><li>(5, 4)</li><li>(−1, 4)</li><li>(5, 5)</li><li>(5, 6)</li></ul>
+<div class="coz"><p>f(x − 3)'te x yerine 5 koyunca f(2) hesaplanır; yani grafik 3 birim sağa kayar. + 1 düşey olarak 1 birim yukarı taşır. (2, 5) → (2 + 3, 5 + 1) = (5, 6). Denetim: x = 5'te f(5 − 3) + 1 = f(2) + 1 = 6. (−1, 6), parantez içindeki "−3"ü sola kayma sanmaktır; yönün neden "ters" göründüğü Parça 4'ün ana konusudur. (5, 4), düşey ötelemenin yönünü çevirmektir. (−1, 4) iki yönü de çevirmektir. (5, 5), düşey ötelemeyi unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">Tepe noktası T(1, −4) olan ve (3, 0) noktasından geçen parabol y eksenini hangi noktada keser?</p>
+<ul class="sec"><li>(0, −3)</li><li>(0, −4)</li><li>(0, 3)</li><li>(0, −15/4)</li><li>(0, −1)</li></ul>
+<div class="coz"><p>Tepe noktası verildiği için y = a(x − 1)<sup>2</sup> − 4 yaz. (3, 0) için 0 = 4a − 4 ⇒ a = 1. x = 0'da y = 1 − 4 = −3. (0, −4), tepe noktasının ordinatını y kesişimi sanmaktır. (0, 3), tepe ordinatını +4 alıp y = a(x − 1)<sup>2</sup> + 4 yazmaktır (a = −1, y(0) = 3). (0, −15/4), tepe apsisinin işaretini çevirip y = a(x + 1)<sup>2</sup> − 4 yazmaktır (a = 1/4). (0, −1), simetriden bulunan öbür x kesişimini (x = −1) y kesişimi sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-9"><p class="q">sin x = 3/5 ve x ikinci bölgede bir açı olduğuna göre tan x kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>4</span></span></li><li>−<span class="kes"><span>3</span><span>4</span></span></li><li>−<span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>3</span></span></li><li>−<span class="kes"><span>4</span><span>5</span></span></li></ul>
+<div class="coz"><p>Dik üçgen çiz: karşı 3, hipotenüs 5, komşu 4 (3-4-5 üçgeni). İkinci bölgede x koordinatı (cos) negatif, y koordinatı (sin) pozitif; cos x = −4/5. tan x = sin x/cos x = (3/5)/(−4/5) = −3/4. 3/4, işareti bölgeden almayı unutmaktır. −4/3, tan yerine cot hesaplamaktır. 4/3 hem oranı ters hem işareti yanlış almaktır. −4/5, cos x değeridir.</p></div></li>
+
+<li data-c="D" data-k="ileri-12"><p class="q">Bir ABC üçgeninde |AB| = 8 cm, |AC| = 5 cm ve m(A) = 60°'dir. Buna göre |BC| kaç cm'dir?</p>
+<ul class="sec"><li>√129</li><li>√89</li><li>13</li><li>7</li><li>3</li></ul>
+<div class="coz"><p>İki kenar ve aralarındaki açı verilmiş: kosinüs teoremi. a<sup>2</sup> = b<sup>2</sup> + c<sup>2</sup> − 2bc · cos A = 25 + 64 − 2 · 5 · 8 · ½ = 89 − 40 = 49, a = 7. √129, cos 60°'yi −½ alıp çıkarmak yerine eklemektir. √89, son terimi unutup Pisagor uygulamaktır; açı 90° değil. 13, iki kenarı toplamaktır; üçgen eşitsizliği gereği bu bile olamaz. 3, cos 60°'yi 1 alıp 89 − 80 = 9 bulmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-14"><p class="q">f(x) = 2<sup>x − 1</sup> + 3 fonksiyonunun tersi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>f<sup>−1</sup>(x) = log<sub>2</sub>(x + 3) − 1</li><li>f<sup>−1</sup>(x) = log<sub>2</sub>(x − 3) − 1</li><li>f<sup>−1</sup>(x) = log<sub>2</sub>(x − 1) + 3</li><li>f<sup>−1</sup>(x) = 2<sup>x + 1</sup> − 3</li><li>f<sup>−1</sup>(x) = log<sub>2</sub>(x − 3) + 1</li></ul>
+<div class="coz"><p>y = 2<sup>x − 1</sup> + 3 ⇒ y − 3 = 2<sup>x − 1</sup> ⇒ x − 1 = log<sub>2</sub>(y − 3) ⇒ x = log<sub>2</sub>(y − 3) + 1. Değişkenlerin adını değiştirince f<sup>−1</sup>(x) = log<sub>2</sub>(x − 3) + 1. Denetim: f(2) = 2 + 3 = 5, f<sup>−1</sup>(5) = log<sub>2</sub> 2 + 1 = 2. A, iki işlemin de işaretini çevirmeyi yanlış yere uygulamaktır. B, yalnız sondaki işareti yanlış almaktır. C, sayıların yerini karıştırmaktır. D, üstel ifadenin tersini logaritma yerine yine üstel ifadeyle yazmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>3</sub> = 7 ve a<sub>8</sub> = 22'dir. Buna göre dizinin ilk 10 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>290</li><li>205</li><li>145</li><li>117</li><li>28</li></ul>
+<div class="coz"><p>a<sub>8</sub> − a<sub>3</sub> = 5d = 15 ⇒ d = 3; a<sub>1</sub> = a<sub>3</sub> − 2d = 1; a<sub>10</sub> = 1 + 9 · 3 = 28. S<sub>10</sub> = 10(a<sub>1</sub> + a<sub>10</sub>)/2 = 10 · 29/2 = 145. 290, formüldeki 2'ye bölmeyi unutmaktır. 205, a<sub>3</sub> = 7'yi ilk terim sanmaktır (10(14 + 27)/2). 117, ilk 9 terimin toplamıdır. 28, toplam yerine 10. terimi vermektir.</p></div></li>
+
+<li data-c="A" data-k="ileri-20"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>2</sup> − 4</span><span>x<sup>2</sup> − 3x + 2</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>4</li><li>0</li><li>2</li><li>−4</li><li>Limit yoktur.</li></ul>
+<div class="coz"><p>x = 2 koyunca 0/0 belirsizliği çıkar; pay ve payda (x − 2) çarpanını içerir. (x − 2)(x + 2)/((x − 2)(x − 1)) = (x + 2)/(x − 1), x → 2'de 4/1 = 4. 0, payın sıfır olduğunu görüp limiti 0 sanmaktır. 2, sadeleştirdikten sonra paydaki x + 2 yerine x'i almaktır. −4, paydayı (x − 2)(x + 1) diye yanlış çarpanlara ayırmaktır. "Limit yoktur", 0/0'ı "tanımsız" ile karıştırmaktır; 0/0 bir belirsizliktir, giderilir.</p></div></li>
+
+<li data-c="B" data-k="ileri-22"><p class="q">f(x) = x<sup>3</sup> − x olduğuna göre lim<sub>h→0</sub> <span class="kes"><span>f(2 + h) − f(2)</span><span>h</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>6</li><li>11</li><li>12</li><li>0</li><li>13</li></ul>
+<div class="coz"><p>Bu ifade türevin limit tanımıdır: f′(2). f′(x) = 3x<sup>2</sup> − 1, f′(2) = 12 − 1 = 11. 6, türev yerine fonksiyonun değerini (f(2) = 8 − 2) almaktır. 12, −x teriminin türevini unutmaktır. 0, h → 0'da payın sıfıra gittiğini görüp paydayı unutmaktır. 13, −x'in türevini +1 almaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> − 3x + 2 fonksiyonunun yerel minimum değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>4</li><li>−1</li><li>0</li><li>2</li></ul>
+<div class="coz"><p>f′(x) = 3x<sup>2</sup> − 3 = 3(x − 1)(x + 1); kritik noktalar −1 ve 1. İşaret: x &lt; −1'de +, (−1, 1)'de −, x &gt; 1'de +. x = 1'de − → +: yerel minimum, değeri f(1) = 1 − 3 + 2 = 0. 1, minimum noktasının apsisidir; değer değil. 4, yerel maksimum değeridir (f(−1) = −1 + 3 + 2). −1, maksimumun apsisidir. 2, y eksenini kestiği değerdir (f(0)).</p></div></li>
+
+<li data-c="E" data-k="ileri-26"><p class="q">f(x) = x<sup>3</sup> + 3x<sup>2</sup> − 2 fonksiyonunun grafiğinin büküm noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(1, 2)</li><li>(−2, 2)</li><li>(0, −2)</li><li>(−3, −2)</li><li>(−1, 0)</li></ul>
+<div class="coz"><p>f″(x) = 6x + 6; x = −1'de sıfır olur ve işaret değiştirir. Ordinat f(−1) = −1 + 3 − 2 = 0: büküm noktası (−1, 0). (1, 2), 6x + 6 = 0'ı x = 1 diye çözmektir. (−2, 2) ve (0, −2), f′ = 3x(x + 2)'nin kökleri, yani yerel maksimum ve minimum noktalarıdır; ekstremumu bükümle karıştırmaktır. (−3, −2), apsisi −b/(3a) yerine −b/a almaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-26"><p class="q">f(x) = x<sup>4</sup> − 4x<sup>3</sup> fonksiyonu için<br>I. (0, 0) noktası grafiğin büküm noktasıdır.<br>II. f, x = 3'te yerel minimum yapar.<br>III. Grafiğin x = 2'de büküm noktası vardır.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız II</li><li>I ve II</li><li>I, II ve III</li><li>II ve III</li><li>Yalnız III</li></ul>
+<div class="coz"><p>f′ = 4x<sup>3</sup> − 12x<sup>2</sup> = 4x<sup>2</sup>(x − 3); f″ = 12x<sup>2</sup> − 24x = 12x(x − 2). f″'nün kökleri 0 ve 2, ikisi de tek katlı: işaret iki yerde de değişir, iki büküm noktası var; I ve III doğru. f′'nün işareti x = 3'te − → +: yerel minimum, II doğru. x = 0'da f′ = 0 olmasına rağmen x<sup>2</sup> çift katlı olduğundan f′ işaret değiştirmez; orası ekstremum değil, yatay teğetli büküm noktasıdır. "II ve III" ve "Yalnız II", f′ = 0 olan noktada büküm olamayacağını sanmaktır. "I ve II", x = 2'yi kaçırmaktır. "Yalnız III", her iki türev bilgisini de eksik okumaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-27"><p class="q">x ve y pozitif gerçek sayılar ve x + 2y = 20'dir. Buna göre x · y çarpımının alabileceği en büyük değer kaçtır?</p>
+<ul class="sec"><li>50</li><li>100</li><li><span class="kes"><span>400</span><span>9</span></span></li><li>5</li><li>10</li></ul>
+<div class="coz"><p>Koşulla tek değişkene indir: x = 20 − 2y, P(y) = (20 − 2y)y = 20y − 2y<sup>2</sup>, 0 &lt; y &lt; 10. P′(y) = 20 − 4y = 0 ⇒ y = 5; P′ + → − değiştirdiği için maksimum. x = 10, P = 50. 100, koşulu x + y = 20 sanıp 10 · 10 almaktır. 400/9, "çarpım, sayılar eşitken en büyüktür" kalıbını katsayıya bakmadan uygulayıp x = y = 20/3 almaktır. 5 ve 10, istenen değer yerine değişkenlerin değerini vermektir.</p></div></li>
+
+<li data-c="B" data-k="ileri-27"><p class="q">Bir kenarı 12 cm olan kare biçimindeki bir kartonun dört köşesinden kenarı x cm olan eş kareler kesilip kenarlar yukarı katlanarak üstü açık bir kutu yapılıyor. Kutunun hacmi en çok kaç cm<sup>3</sup> olur?</p>
+<ul class="sec"><li>108</li><li>128</li><li>2</li><li>256</li><li>0</li></ul>
+<div class="coz"><p>Taban kenarı 12 − 2x, yükseklik x: V(x) = x(12 − 2x)<sup>2</sup>, 0 &lt; x &lt; 6. V′(x) = (12 − 2x)<sup>2</sup> − 4x(12 − 2x) = (12 − 2x)(12 − 6x); kritik noktalar 2 ve 6. x = 6 tanım aralığının ucunda ve V = 0; x = 2'de V′ + → −, maksimum: V(2) = 2 · 64 = 128. 108, x = 3 almaktır (V(3) = 3 · 36). 2, hacim yerine x'i vermektir. 256, taban kenarını 12 − 2x yerine 12 − x almaktır (iki köşeden kesildiğini unutmak). 0, x = 6 kritik noktasını tanım aralığına bakmadan almaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-28"><p class="q">∫ (<span class="kes"><span>2</span><span>√x</span></span> − 3x<sup>2</sup>) dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li>2√x − x<sup>3</sup> + C</li><li>−<span class="kes"><span>1</span><span>x√x</span></span> − 6x + C</li><li><span class="kes"><span>4</span><span>3</span></span>x√x − x<sup>3</sup> + C</li><li>4√x − x<sup>3</sup> + C</li><li>√x − x<sup>3</sup> + C</li></ul>
+<div class="coz"><p>2/√x = 2x<sup>−1/2</sup>; kuvvet kuralı: 2 · x<sup>1/2</sup>/(1/2) = 4x<sup>1/2</sup> = 4√x. ∫ 3x<sup>2</sup> dx = x<sup>3</sup>. Sonuç 4√x − x<sup>3</sup> + C. Kontrol: türevi 4 · 1/(2√x) − 3x<sup>2</sup> = 2/√x − 3x<sup>2</sup>. A, 1/2'ye bölmek yerine 2'ye bölmektir ya da hiç bölmemektir. B, integral yerine türev almaktır. C, paydadaki kökü payda sanıp 2x<sup>1/2</sup>'nin integralini almaktır. E, katsayı 2'yi kaybetmektir.</p></div></li>
+
+<li data-c="E" data-k="ileri-28"><p class="q">f′(x) = 6x<sup>2</sup> − 2x ve f(1) = 4 olduğuna göre f(2) kaçtır?</p>
+<ul class="sec"><li>12</li><li>16</li><li>20</li><li>9</li><li>15</li></ul>
+<div class="coz"><p>f(x) = 2x<sup>3</sup> − x<sup>2</sup> + C. f(1) = 2 − 1 + C = 4 ⇒ C = 3. f(2) = 16 − 4 + 3 = 15. 12, C'yi bulmayı unutmaktır. 16, f(1) = 4 bilgisini doğrudan C = 4 sanmaktır. 20, f(2) yerine f′(2) = 24 − 4 hesaplamaktır. 9, C'yi bulurken işareti çevirip C = −3 almaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-28">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-29">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-30">Sonraki parça: belirli integral ve analizin temel teoremi</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"integralde değişken değiştirme yöntemi konu anlatımı AYT"</li>
+  <li>"değişken değiştirme soru çözümü kök içi u seçimi"</li>
+  <li>"belirli integralde değişken değiştirme sınırların değişmesi"</li>
+  <li>"f′(x) f(x) üssü n integrali soyut fonksiyon soruları"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 29. satıra göre yazıldı; satırdaki her alt başlık işlendi. Kısmi integrasyon, basit kesirlere ayırma ve trigonometrik değişken değiştirme, kapsam listesindeki nota uyularak yalnızca "programda yok" bilgisiyle anıldı. Belirli integralde sınırların değişmesi, Parça 30'un konusuna girmemek için yalnızca F(b) − F(a) hesabı varsayılarak ve kısa tutularak verildi.</li>
+  <li>n = −1 durumu (∫ du/u = ln|u| + C) ile üstel ve trigonometrik ifadelere uygulama, Parça 28'deki kurallar "kapsamı doğrulanamadı" notu taşıdığı için burada da yalnızca bir paragrafta ve "bu kısım sınav kapsamında olmayabilir" notuyla anıldı. 2018 programının integrali polinom, rasyonel ve köklü fonksiyonlarla sınırladığını resmî metinden doğrulayamadım.</li>
+  <li>"u = kökün kendisi" seçimi ve "tahmin et ve düzelt" yolu ders kitaplarında her zaman ayrıca anlatılmaz; aynı sonucu veren, denetlenebilir yöntemler olarak kondu.</li>
+  <li>Bütün sayısal sonuçlar ve ters türevler (yedi çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları) Python ile denetlendi: bu ortamda sympy olmadığı için her ters türevin sayısal türevi birkaç noktada integralin içiyle karşılaştırıldı, belirli integraller Simpson yöntemiyle sayısal olarak hesaplandı, kesirli sonuçlar Fraction ile bulundu. Yanlış seçeneklerin her birinin de gerçekten yanlış olduğu (türevinin integralin içini vermediği) ve adı geçen hatanın sonucu olduğu aynı yolla denetlendi.</li>
+  <li>Belirli integral şekli gerçek ölçüyle çizildi: eğrilerin noktaları formüllerden hesaplandı ve iki panel aynı ölçekle (yatayda birim başına 75, düşeyde 20 birim) çizildi.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (26, 27, 28) ikişer soru; daha eski 25 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 6, 9, 12, 14, 17, 20, 22, 25). Parça 27 ve 28 bu parçanın yazımı sırasında arşivde henüz yoktu; o parçaların tekrar soruları yalnızca kapsam listesindeki konulardan ve oradaki terimlerle yazıldı, o parçaların quizleriyle aynı soru olup olmadığı denetlenemedi.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

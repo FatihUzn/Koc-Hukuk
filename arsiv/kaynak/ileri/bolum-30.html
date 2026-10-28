@@ -1,0 +1,596 @@
+<article class="chapter ders" id="c-ileri-30">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 30 · İntegral 3</div>
+<h1>İntegral 3: belirli integral ve analizin temel teoremi</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir araba durduğu yerden kalkıyor ve t. saniyedeki hızı v(t) = t<sup>2</sup> metre/saniye oluyor. İlk 2 saniyede kaç metre yol alır? Hız sabit olsaydı cevap "hız × süre", yani bir dikdörtgenin alanı olurdu. Hız her an değiştiği için tek dikdörtgen yetmiyor: aranan sayı, v = t<sup>2</sup> eğrisinin altında, t = 0 ile t = 2 arasında kalan bölgenin alanı. Bu parçada bu alanı önce ince dikdörtgenlerle yaklaşık bulacaksın, sonra Parça 28'deki ters türevle iki satırda kesin değerini (<span class="kes"><span>8</span><span>3</span></span> metre) hesaplayacaksın. Alan ile ters türev arasındaki bu beklenmedik bağın adı <strong>analizin temel teoremi</strong>dir.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 28 (ters türev, integral sabiti C, kuvvet kuralı, ∫ f′(x) dx = f(x) + C), Parça 29 (değişken değiştirme: u = g(x), du = g′(x) dx), Parça 22–23 (türevin limit tanımı, anlık değişim hızı, zincir kuralı), Parça 19–20 (limit, sonsuzda rasyonel ifadenin limiti), Parça 1 (tek ve çift fonksiyon), Parça 3 (parçalı ve mutlak değerli fonksiyonda kritik nokta), Parça 4 (yatay öteleme ve daraltma); ayrıca üçgen, yamuk ve daire alanı. Kâğıt kalem yanında olsun; her sonucu bir kontrol yoluyla da denetle.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>AYT'deki integral sorularının çoğu belirli integral sorusudur ve kalıpları bellidir: bir polinomun ya da köklü ifadenin iki sınır arasındaki integralini hesaplamak; ∫ f(x) dx değerleri verilip ∫ (2f(x) + 3) dx, ∫ f(2x) dx, ∫ f(x + 1) dx gibi başka integralleri istemek; mutlak değerli ya da parçalı bir fonksiyonun integrali; simetrik aralıkta tek-çift fonksiyon kısa yolu; grafiği verilen bir fonksiyonun integralini üçgen, yamuk, yarım daire alanlarından bulmak; ∫ f′(x) dx = f(b) − f(a) ile bir fonksiyon değeri bulmak.</p>
+
+<p>Bunların hepsi iki fikre dayanır. Birincisi: <strong>belirli integral, eğri ile x ekseni arasındaki işaretli alandır</strong> ve ince dikdörtgenlerle tanımlanır. İkincisi: <strong>bu alan, ters türevin iki uçtaki değerlerinin farkıdır.</strong> Birinci fikir neyi hesapladığını, ikincisi nasıl hesaplayacağını söyler. Sınav hesap makinesiz olduğu için her başlıkta bir <strong>hızlı yol</strong> ve bir <strong>kontrol yolu</strong> göreceksin. En kullanışlı kontrol yolları üç tanedir: bulduğun ters türevin türevini almak, sonucu dikdörtgenlerle kaba tahmin etmek ve grafik basitse geometriyle karşılaştırmak.</p>
+
+<h2 class="s">1. Eğri altındaki alanı dikdörtgenlerle yaklaşık bulmak</h2>
+
+<p>Dikdörtgenin, üçgenin, yamuğun alanını biliyorsun; hepsinin kenarları düz. Bir kenarı eğri olan bölgenin alanı için hazır formül yoktur. Çıkış yolu şudur: bölgeyi dik şeritlere böl, her şeridi bir dikdörtgenle değiştir, dikdörtgenlerin alanlarını topla. Dikdörtgenler inceldikçe eğriyle aralarındaki boşluk küçülür ve toplam gerçek alana yaklaşır.</p>
+
+<p>Ask kutusundaki örnekle çalışalım: f(x) = x<sup>2</sup> eğrisinin altında, x = 0 ile x = 2 arasındaki bölge. Aralığı 4 eşit parçaya böl. Her parçanın genişliği Δx = (2 − 0)/4 = 0,5 olur (Δx, "x'teki değişim" diye okunur; Parça 1'deki gösterim). Her parçaya bir dikdörtgen oturt; genişliği 0,5, yüksekliği için iki doğal seçim var: parçadaki en küçük değer ya da en büyük değer.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>[a, b] aralığını n eşit parçaya böl; her parçanın genişliği Δx = <span class="kes"><span>b − a</span><span>n</span></span> olsun. Her parçada yüksekliği, fonksiyonun o parçadaki <strong>en küçük</strong> değeri olan dikdörtgenlerin alanları toplamına <strong>alt toplam</strong>, <strong>en büyük</strong> değeri olanlarınkine <strong>üst toplam</strong> denir. Her parçadan herhangi bir x<sub>i</sub> noktası seçip f(x<sub>1</sub>) · Δx + f(x<sub>2</sub>) · Δx + … + f(x<sub>n</sub>) · Δx toplamını kurarsan buna <strong>Riemann toplamı</strong> denir; değeri her zaman alt toplam ile üst toplam arasındadır.</p>
+<p><strong>Neden iki toplam?</strong> Alt toplamın dikdörtgenleri eğrinin altında kalır, gerçek alandan küçüktür; üst toplamınkiler eğriyi aşar, gerçek alandan büyüktür. Gerçek alan ikisinin arasına sıkışır. İki toplam birbirine yaklaştıkça arada kalan sayı kesinleşir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = x<sup>2</sup> için [0, 2] aralığını 4 eşit parçaya bölerek alt toplamı ve üst toplamı hesapla.</p>
+<p><strong>Adım 1.</strong> Parçalar: [0; 0,5], [0,5; 1], [1; 1,5], [1,5; 2]. Δx = 0,5.</p>
+<p><strong>Adım 2.</strong> x<sup>2</sup>, [0, 2]'de artandır; her parçada en küçük değer sol uçta, en büyük değer sağ uçtadır.</p>
+<span class="mat">alt toplam = (0 + 0,25 + 1 + 2,25) · 0,5 <span class="g">(sol uçlar: 0<sup>2</sup>, 0,5<sup>2</sup>, 1<sup>2</sup>, 1,5<sup>2</sup>)</span></span>
+<span class="mat">= 3,5 · 0,5 = 1,75 <span class="g">(ortak genişliği dışarı al)</span></span>
+<span class="mat">üst toplam = (0,25 + 1 + 2,25 + 4) · 0,5 <span class="g">(sağ uçlar: 0,5<sup>2</sup>, 1<sup>2</sup>, 1,5<sup>2</sup>, 2<sup>2</sup>)</span></span>
+<span class="mat">= 7,5 · 0,5 = 3,75 <span class="g">(ortak genişliği dışarı al)</span></span>
+<p><strong>Adım 3 (kontrol yolu).</strong> Alan, kenarları 2 ve 4 olan dikdörtgenin (alanı 8) içinde ve köşegenin altında kalan üçgenden (alanı 4) küçük olmalı, çünkü x<sup>2</sup> eğrisi [0, 2]'de 2x doğrusunun altındadır. 1,75 ile 3,75 arası bu sınırlarla uyumlu.</p>
+<p><strong>Sonuç:</strong> 1,75 &lt; gerçek alan &lt; 3,75.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="y eşittir x kare eğrisi, 0 ile 2 arasında dört dikdörtgenle. Yeşil dikdörtgenler sol uç yükseklikli alt toplam, yeşil ve turuncunun birlikte oluşturduğu dikdörtgenler sağ uç yükseklikli üst toplam. Eğri ikisinin arasından geçiyor.">
+<line class="sv-c" x1="40" y1="255" x2="385" y2="255" />
+<line class="sv-c" x1="60" y1="270" x2="60" y2="20" />
+<rect class="sv-a" x="60.0" y="242.5" width="75" height="12.5" />
+<rect class="sv-a" x="135.0" y="205.0" width="75" height="50.0" />
+<rect class="sv-a" x="210.0" y="142.5" width="75" height="112.5" />
+<rect class="sv-a" x="285.0" y="55.0" width="75" height="200.0" />
+<rect class="sv-m" x="135.0" y="242.5" width="75" height="12.5" />
+<rect class="sv-m" x="210.0" y="205.0" width="75" height="50.0" />
+<rect class="sv-m" x="285.0" y="142.5" width="75" height="112.5" />
+<polyline class="sv-cl" points="60.0,255.0 63.8,255.0 67.5,254.9 71.2,254.7 75.0,254.5 78.8,254.2 82.5,253.9 86.2,253.5 90.0,253.0 93.8,252.5 97.5,251.9 101.2,251.2 105.0,250.5 108.8,249.7 112.5,248.9 116.2,248.0 120.0,247.0 123.8,246.0 127.5,244.9 131.2,243.7 135.0,242.5 138.8,241.2 142.5,239.9 146.2,238.5 150.0,237.0 153.8,235.5 157.5,233.9 161.2,232.2 165.0,230.5 168.8,228.7 172.5,226.9 176.2,225.0 180.0,223.0 183.8,221.0 187.5,218.9 191.2,216.7 195.0,214.5 198.8,212.2 202.5,209.9 206.2,207.5 210.0,205.0 213.8,202.5 217.5,199.9 221.2,197.2 225.0,194.5 228.8,191.7 232.5,188.9 236.2,186.0 240.0,183.0 243.8,180.0 247.5,176.9 251.2,173.7 255.0,170.5 258.8,167.2 262.5,163.9 266.2,160.5 270.0,157.0 273.8,153.5 277.5,149.9 281.2,146.2 285.0,142.5 288.8,138.7 292.5,134.9 296.2,131.0 300.0,127.0 303.8,123.0 307.5,118.9 311.2,114.7 315.0,110.5 318.8,106.2 322.5,101.9 326.2,97.5 330.0,93.0 333.8,88.5 337.5,83.9 341.2,79.2 345.0,74.5 348.8,69.7 352.5,64.9 356.2,60.0 360.0,55.0 363.8,50.0 367.5,44.9 371.2,39.7 375.0,34.5" />
+<text class="sv-s" x="135.0" y="272" text-anchor="middle">0,5</text>
+<text class="sv-s" x="210" y="272" text-anchor="middle">1</text>
+<text class="sv-s" x="285.0" y="272" text-anchor="middle">1,5</text>
+<text class="sv-s" x="360" y="272" text-anchor="middle">2</text>
+<line class="sv-c" x1="56" y1="205" x2="64" y2="205" />
+<text class="sv-s" x="52" y="210" text-anchor="end">1</text>
+<line class="sv-c" x1="56" y1="155" x2="64" y2="155" />
+<text class="sv-s" x="52" y="160" text-anchor="end">2</text>
+<line class="sv-c" x1="56" y1="105" x2="64" y2="105" />
+<text class="sv-s" x="52" y="110" text-anchor="end">3</text>
+<line class="sv-c" x1="56" y1="55" x2="64" y2="55" />
+<text class="sv-s" x="52" y="60" text-anchor="end">4</text>
+  <text class="sv-s" x="75" y="30" text-anchor="start">yeşil: alt toplam = 1,75</text>
+  <text class="sv-s" x="75" y="48" text-anchor="start">yeşil + turuncu: üst toplam = 3,75</text>
+  <text class="sv-b" x="75" y="70" text-anchor="start">y = x²</text>
+</svg>
+<figcaption>Her dikdörtgenin genişliği 0,5. Yeşil kısımlar eğrinin altında kalıyor (alt toplam), turuncu ekler eğriyi aşıyor. Gerçek alan, eğrinin altındaki bölge; iki toplamın arasında. Turuncu parçaların toplamı tam 2: en sağdaki uzun sütunun turuncu kısmına (4 − 2,25 = 1,75) öbür turuncuları üst üste koyarsan 4 · 0,5 = 2 eder.</figcaption>
+</figure>
+
+<p>Parça sayısını artıralım. Aynı hesap n = 8, 100, 1000 için şu tabloyu verir (değerler hesaplanarak denetlendi):</p>
+
+<div class="tablo"><table>
+<tr><th>Parça sayısı n</th><th>Δx</th><th>Alt toplam</th><th>Üst toplam</th><th>Fark</th></tr>
+<tr><td>4</td><td>0,5</td><td>1,75</td><td>3,75</td><td>2</td></tr>
+<tr><td>8</td><td>0,25</td><td>2,1875</td><td>3,1875</td><td>1</td></tr>
+<tr><td>100</td><td>0,02</td><td>2,6268</td><td>2,7068</td><td>0,08</td></tr>
+<tr><td>1000</td><td>0,002</td><td>2,662668</td><td>2,670668</td><td>0,008</td></tr>
+</table></div>
+
+<p>Farkın hep 8/n olduğuna dikkat et. Nedeni şekilde görünüyor: x<sup>2</sup> artan olduğu için üst toplamın yükseklikleri, alt toplamınkilerin bir parça sağa kaymış hâlidir. Ortak yükseklikler sadeleşir; geriye (en sağdaki yükseklik − en soldaki yükseklik) · Δx = (4 − 0) · <span class="kes"><span>2</span><span>n</span></span> = <span class="kes"><span>8</span><span>n</span></span> kalır. n büyüdükçe fark 0'a gider ve iki toplam aynı sayıya sıkışır. O sayıyı tablodan sezebilirsin: 2,666…, yani 8/3.</p>
+
+<p>Bunu kesin olarak görmek istersen (sınavda bu hesap istenmez; yalnızca tanımın gerçekten bir sayıya gittiğini görmek için): n parçada üst toplam (2/n)<sup>2</sup> · <span class="kes"><span>2</span><span>n</span></span> · (1<sup>2</sup> + 2<sup>2</sup> + … + n<sup>2</sup>) olur. Ardışık karelerin toplamı n(n + 1)(2n + 1)/6 formülüyle bu ifade <span class="kes"><span>4(n + 1)(2n + 1)</span><span>3n<sup>2</sup></span></span> biçimine iner. Parça 20'de gördüğün gibi pay ile paydanın derecesi eşit olduğu için n → ∞ iken limit baş katsayıların oranıdır: <span class="kes"><span>4 · 2</span><span>3</span></span> = <span class="kes"><span>8</span><span>3</span></span>.</p>
+
+<p>Fonksiyon azalan olsaydı roller yer değiştirirdi: her parçada en küçük değer sağ uçta, en büyük değer sol uçta olur. Örneğin f(x) = 4 − x<sup>2</sup> için [0, 2]'de alt toplam sağ uçlarla, üst toplam sol uçlarla kurulur. Bu yüzden "sol uç = alt toplam" diye ezberleme; her soruda fonksiyonun o aralıkta artan mı azalan mı olduğuna bak (Parça 25). Fonksiyon aralığın ortasında yön değiştiriyorsa en küçük ve en büyük değer bir parçanın içinde de olabilir; sınav bu durumda genellikle "sol uç" ya da "sağ uç" diye açıkça söyler.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f, [a, b] aralığında sürekli olsun. [a, b]'yi n eşit parçaya bölüp kurulan Riemann toplamının, n → ∞ iken yaklaştığı sayıya f'in a'dan b'ye <strong>belirli integrali</strong> denir ve ∫<sub>a</sub><sup>b</sup> f(x) dx ile gösterilir.</p>
+<p><strong>Neden bu limit var?</strong> Sürekli bir fonksiyonda parçalar inceldikçe her parçadaki en büyük ve en küçük değer birbirine yaklaşır; alt ve üst toplam aynı sayıya sıkışır, her Riemann toplamı da ikisinin arasında kaldığı için aynı sayıya gider. Bu parçadaki her fonksiyon (polinom, kök, parçalı tanımlı sürekli ya da sonlu sıçramalı fonksiyon) bu koşulu sağlar.</p></div>
+
+<h2 class="s">2. Gösterim: ∫<sub>a</sub><sup>b</sup> f(x) dx neyi anlatır?</h2>
+
+<p>Gösterimin her parçası tanımdaki bir şeye karşılık gelir. ∫ işareti, uzatılmış bir S harfidir: "toplam" (Latince summa) fikrinden gelir. f(x) dikdörtgenin yüksekliği, dx ise sonsuz incelmiş genişliğidir; f(x) dx bir ince şeridin alanıdır. Aşağıdaki a <strong>alt sınır</strong>, yukarıdaki b <strong>üst sınır</strong>dır: toplamanın nereden başlayıp nerede bittiği.</p>
+
+<p>Parça 28'deki belirsiz integralle farkı iyi oturt. ∫ x<sup>2</sup> dx = <span class="kes"><span>x<sup>3</sup></span><span>3</span></span> + C bir <strong>fonksiyon ailesidir</strong>. ∫<sub>0</sub><sup>2</sup> x<sup>2</sup> dx = <span class="kes"><span>8</span><span>3</span></span> ise bir <strong>sayıdır</strong>; içinde x de C de kalmaz.</p>
+
+<p><strong>Birimlerle kontrol.</strong> f(x) dx bir çarpım olduğu için integralin birimi, f'in birimi çarpı x'in birimidir. Ask kutusunda hız metre/saniye, dt saniye; çarpım metre çıkar, yani integral bir uzunluktur. Bir depoya akan suyun hızı litre/dakika, dt dakika ise integral litre çıkar. Fizikte ve modelleme sorularında "integral neyi ölçüyor?" sorusunu böyle cevaplarsın; birim tutmuyorsa yanlış nicelikleri çarpıyorsundur.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Belirli integralde integral değişkeninin adı sonucu değiştirmez: ∫<sub>0</sub><sup>2</sup> x<sup>2</sup> dx = ∫<sub>0</sub><sup>2</sup> t<sup>2</sup> dt = ∫<sub>0</sub><sup>2</sup> u<sup>2</sup> du = <span class="kes"><span>8</span><span>3</span></span>.</p>
+<p><strong>Neden?</strong> Sonuç bir sayıdır; aynı eğrinin aynı aralıktaki alanını, yatay eksene x de desen t de desen aynı bulursun. Değişken yalnızca hesap sırasında kullanılıp sonunda sınırlarla yer değiştiren bir "yer tutucudur". Önemli olan d'den sonra hangi harfin yazdığıdır: ∫<sub>0</sub><sup>2</sup> x<sup>2</sup> dt ifadesinde toplama t'ye göredir ve x sabit sayılır; sonuç x<sup>2</sup> · (2 − 0) = 2x<sup>2</sup> olur. Sınavda bu ayrım, Bölüm 9'daki ∫ f(t) dt yazımında karşına çıkacak.</p></div>
+
+<h2 class="s">3. Analizin temel teoremi</h2>
+
+<p>Her integral için dikdörtgen toplayıp limit almak yorucu olurdu. Neyse ki alan ile türev arasında bir bağ var. Bu bağı adım adım kuralım.</p>
+
+<p><strong>Alan fonksiyonu.</strong> a sabit dursun. a'dan x'e kadar eğrinin altında kalan alana A(x) diyelim. x sağa kaydıkça alan değişir; A bir fonksiyondur. İki değeri hemen belli: A(a) = 0 (genişlik yok) ve A(b) = aradığımız integral.</p>
+
+<p><strong>A'nın türevi.</strong> x'i küçük bir h kadar artır. Alan, x ile x + h arasındaki ince şerit kadar büyür: A(x + h) − A(x) = şeridin alanı. Şerit çok ince olduğu için yaklaşık bir dikdörtgendir; yüksekliği f(x), genişliği h: A(x + h) − A(x) ≈ f(x) · h. İki yanı h'ye böl: <span class="kes"><span>A(x + h) − A(x)</span><span>h</span></span> ≈ f(x). h → 0 iken yaklaşıklık eşitliğe döner (f sürekli olduğu için şeridin yüksekliği f(x)'ten giderek az sapar). Sol taraf Parça 22'deki türev tanımının ta kendisidir: <strong>A′(x) = f(x).</strong></p>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Pozitif bir f fonksiyonunun grafiği. a ile x arasında eğrinin altı mor taralı, adı A(x). x ile x artı h arasında turuncu ince bir dikdörtgen şerit; yüksekliği f(x), genişliği h.">
+<polygon class="sv-l" points="67.5,235.0 67.5,158.2 73.0,155.1 78.5,152.2 84.0,149.3 89.5,146.5 95.0,143.8 100.5,141.2 106.0,138.7 111.5,136.3 117.0,134.0 122.5,131.8 128.0,129.7 133.5,127.7 139.0,125.8 144.5,123.9 150.0,122.2 155.5,120.6 161.0,119.0 166.5,117.6 172.0,116.2 177.5,115.0 183.0,113.8 188.5,112.8 194.0,111.8 199.5,111.0 205.0,110.2 210.5,109.5 216.0,109.0 221.5,108.5 227.0,108.1 232.5,107.8 232.5,235.0" />
+<rect class="sv-a" x="232.5" y="107.8" width="33.0" height="127.2" />
+<line class="sv-c" x1="20" y1="235" x2="390" y2="235" />
+<line class="sv-c" x1="40" y1="250" x2="40" y2="20" />
+<polyline class="sv-cl" points="40.0,175.0 42.8,173.2 45.5,171.4 48.2,169.7 51.0,168.0 53.8,166.3 56.5,164.6 59.2,163.0 62.0,161.4 64.8,159.8 67.5,158.2 70.2,156.7 73.0,155.1 75.8,153.6 78.5,152.2 81.2,150.7 84.0,149.3 86.8,147.9 89.5,146.5 92.2,145.1 95.0,143.8 97.8,142.5 100.5,141.2 103.2,139.9 106.0,138.7 108.8,137.5 111.5,136.3 114.2,135.1 117.0,134.0 119.8,132.9 122.5,131.8 125.2,130.7 128.0,129.7 130.8,128.7 133.5,127.7 136.2,126.7 139.0,125.8 141.8,124.8 144.5,123.9 147.2,123.1 150.0,122.2 152.8,121.4 155.5,120.6 158.2,119.8 161.0,119.0 163.8,118.3 166.5,117.6 169.2,116.9 172.0,116.2 174.8,115.6 177.5,115.0 180.2,114.4 183.0,113.8 185.8,113.3 188.5,112.8 191.2,112.3 194.0,111.8 196.8,111.4 199.5,111.0 202.2,110.6 205.0,110.2 207.8,109.9 210.5,109.5 213.2,109.2 216.0,109.0 218.8,108.7 221.5,108.5 224.2,108.3 227.0,108.1 229.8,107.9 232.5,107.8 235.2,107.7 238.0,107.6 240.8,107.5 243.5,107.5 246.2,107.5 249.0,107.5 251.8,107.5 254.5,107.6 257.2,107.7 260.0,107.8 262.8,107.9 265.5,108.1 268.2,108.3 271.0,108.5 273.8,108.7 276.5,109.0 279.2,109.2 282.0,109.5 284.8,109.9 287.5,110.2 290.2,110.6 293.0,111.0 295.8,111.4 298.5,111.8 301.2,112.3 304.0,112.8 306.8,113.3 309.5,113.8 312.2,114.4 315.0,115.0 317.8,115.6 320.5,116.2 323.2,116.9 326.0,117.6 328.8,118.3 331.5,119.0 334.2,119.8 337.0,120.6 339.8,121.4 342.5,122.2 345.2,123.1 348.0,123.9 350.8,124.8 353.5,125.8 356.2,126.7 359.0,127.7 361.8,128.7 364.5,129.7 367.2,130.7 370.0,131.8" />
+<text class="sv-s" x="67.5" y="252" text-anchor="middle">a</text>
+<text class="sv-s" x="232.5" y="252" text-anchor="middle">x</text>
+<text class="sv-s" x="269.5" y="252" text-anchor="start">x + h</text>
+  <text class="sv-b" x="150" y="195" text-anchor="middle">A(x)</text>
+  <text class="sv-s" x="100" y="122" text-anchor="middle">y = f(x)</text>
+  <text class="sv-s" x="330" y="180" text-anchor="middle">şerit ≈ f(x) · h</text>
+</svg>
+<figcaption>Mor bölge a'dan x'e kadarki alan A(x). x, h kadar sağa gidince alana turuncu şerit eklenir; şerit yaklaşık olarak yüksekliği f(x), genişliği h olan bir dikdörtgendir. Eklenen alanın h'ye oranı f(x)'e gider: alanın değişim hızı, eğrinin o noktadaki yüksekliğidir.</figcaption>
+</figure>
+
+<p><strong>Ters türevle bağ.</strong> A′ = f demek, A'nın f'in bir ters türevi olması demektir. Parça 28'de gördün: aynı fonksiyonun iki ters türevi yalnızca bir sabit kadar farklıdır. F, f'in herhangi bir ters türevi ise A(x) = F(x) + C. x = a koy: 0 = F(a) + C, yani C = −F(a). O hâlde A(x) = F(x) − F(a) ve x = b'de A(b) = F(b) − F(a).</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Analizin temel teoremi.</strong> f, [a, b]'de sürekli ve F′ = f ise</p>
+<span class="mat">∫<sub>a</sub><sup>b</sup> f(x) dx = F(b) − F(a) = [F(x)]<sub>a</sub><sup>b</sup> <span class="g">(üst sınırdaki değer eksi alt sınırdaki değer)</span></span>
+<p><strong>Neden C yazılmaz?</strong> F yerine F + C alsan (F(b) + C) − (F(a) + C) = F(b) − F(a) bulursun; sabit çıkarmada sadeleşir. Bu yüzden ailenin hangi üyesini seçtiğin önemsizdir; en sade olanı (C = 0) al.</p></div>
+
+<p>Ask kutusundaki soruya dön: ∫<sub>0</sub><sup>2</sup> t<sup>2</sup> dt = [<span class="kes"><span>t<sup>3</sup></span><span>3</span></span>]<sub>0</sub><sup>2</sup> = <span class="kes"><span>8</span><span>3</span></span> − 0 = <span class="kes"><span>8</span><span>3</span></span>. Tablodaki toplamların sıkıştığı sayı bu. Araba ilk 2 saniyede 8/3 ≈ 2,67 metre yol alır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1.</strong> Ters türevi bul (Parça 28 kuralları; kökleri ve paydaları önce üslü yaz). <strong>2.</strong> [F(x)] parantezini yaz, sınırları sağa koy. <strong>3.</strong> F(b)'yi hesapla. <strong>4.</strong> F(a)'yı hesapla. <strong>5.</strong> F(b) − F(a); F(a)'yı parantez içinde çıkar.</p>
+<p><strong>Kontrol yolu.</strong> F′'nün integralin içindeki ifadeyi verdiğini denetle. Sonra kaba tahmin yap: aralıkta f'in en küçük değeri m, en büyüğü M ise m · (b − a) ≤ ∫<sub>a</sub><sup>b</sup> f(x) dx ≤ M · (b − a) olmalıdır (tek dikdörtgenlik alt ve üst toplam).</p></div>
+
+<p><strong>Hızlı yol.</strong> Alt sınır 0 ve integrand sabit terimi de içeren bir polinomsa, ters türevin her teriminde en az bir x çarpanı bulunur; F(0) = 0 olur ve yalnızca F(b)'yi hesaplarsın. Örneğin ∫<sub>0</sub><sup>3</sup> (x<sup>2</sup> + 2) dx = 9 + 6 = 15. Bu kısa yol yalnızca ters türev bir polinomken geçerlidir; (2x + 1)<sup>3</sup>/6 gibi bir ifadede F(0) sıfır değildir (aşağıdaki hata kutusu). Alt sınır 1 ise kısa yol yoktur, F(1)'i mutlaka hesapla.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> ∫<sub>1</sub><sup>3</sup> (3x<sup>2</sup> − 2x + 1) dx integralinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Ters türev, terim terim kuvvet kuralıyla.</p>
+<span class="mat">F(x) = x<sup>3</sup> − x<sup>2</sup> + x <span class="g">(3 · x<sup>3</sup>/3, −2 · x<sup>2</sup>/2, 1 · x)</span></span>
+<p><strong>Adım 2.</strong> Sınırları koy.</p>
+<span class="mat">F(3) = 27 − 9 + 3 = 21 <span class="g">(üst sınır)</span></span>
+<span class="mat">F(1) = 1 − 1 + 1 = 1 <span class="g">(alt sınır)</span></span>
+<span class="mat">∫<sub>1</sub><sup>3</sup> (3x<sup>2</sup> − 2x + 1) dx = 21 − 1 = 20 <span class="g">(üst eksi alt)</span></span>
+<p><strong>Adım 3 (kontrol yolu).</strong> F′(x) = 3x<sup>2</sup> − 2x + 1, içerideki ifade. Tahmin: f′(x) = 6x − 2 &gt; 0 olduğu için f, [1, 3]'te artan; m = f(1) = 2, M = f(3) = 22. 2 · 2 = 4 ≤ 20 ≤ 22 · 2 = 44. Tutarlı.</p>
+<p><strong>Sonuç:</strong> 20.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> ∫<sub>1</sub><sup>4</sup> (3√x − <span class="kes"><span>4</span><span>x<sup>2</sup></span></span>) dx integralinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Üslü yaz (mat Parça 10–12).</p>
+<span class="mat">3√x − <span class="kes"><span>4</span><span>x<sup>2</sup></span></span> = 3x<sup>1/2</sup> − 4x<sup>−2</sup> <span class="g">(√x = x<sup>1/2</sup>, 1/x<sup>2</sup> = x<sup>−2</sup>)</span></span>
+<p><strong>Adım 2.</strong> Kuvvet kuralı: üssü 1 artır, yeni üsse böl.</p>
+<span class="mat">∫ 3x<sup>1/2</sup> dx = 3 · <span class="kes"><span>x<sup>3/2</sup></span><span>3/2</span></span> = 2x<sup>3/2</sup> = 2x√x <span class="g">(1/2 + 1 = 3/2)</span></span>
+<span class="mat">∫ −4x<sup>−2</sup> dx = −4 · <span class="kes"><span>x<sup>−1</sup></span><span>−1</span></span> = <span class="kes"><span>4</span><span>x</span></span> <span class="g">(−2 + 1 = −1)</span></span>
+<p><strong>Adım 3.</strong> Sınırları koy.</p>
+<span class="mat">[2x√x + <span class="kes"><span>4</span><span>x</span></span>]<sub>1</sub><sup>4</sup> = (2 · 4 · 2 + 1) − (2 + 4) <span class="g">(√4 = 2, 4/4 = 1)</span></span>
+<span class="mat">= 17 − 6 = 11 <span class="g">(üst eksi alt)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (2x<sup>3/2</sup>)′ = 3x<sup>1/2</sup>, (4/x)′ = −4/x<sup>2</sup>: doğru. Tahmin: hem 3√x hem −4/x<sup>2</sup> artan olduğundan f artan; f(1) = −1, f(4) = 6 − 0,25 = 5,75; −1 · 3 = −3 ≤ 11 ≤ 5,75 · 3 = 17,25.</p>
+<p><strong>Sonuç:</strong> 11.</p></div>
+
+<h3>Değişken değiştirmeli belirli integral</h3>
+
+<p>Parça 29'daki yöntem belirli integralde de çalışır; tek yeni şey sınırlardır. x'ten u'ya geçtiğinde integral artık u'ya göre toplanır; sınırlar da "u'nun hangi değerden hangi değere gittiği" olmalıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>u = g(x) ile değiştirirken sınırları da çevir: x = a iken u = g(a), x = b iken u = g(b). Ya yeni sınırlarla u'da bitir ya da ters türevi x cinsinden geri yazıp eski sınırları kullan; ikisi aynı sonucu verir.</p>
+<p><strong>Neden?</strong> Dikdörtgenlerin "nerede başlayıp bittiği" artık u ekseninde ölçülüyor. x = 0'dan 1'e giderken u = x<sup>2</sup> + 1, 1'den 2'ye gider; u'ya göre integralde sınırlar 1 ve 2 olur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> ∫<sub>0</sub><sup>1</sup> x(x<sup>2</sup> + 1)<sup>3</sup> dx integralinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> İçeride x<sup>2</sup> + 1 ve dışarıda onun türevinin (2x) sabit katı var: u = x<sup>2</sup> + 1.</p>
+<span class="mat">du = 2x dx ⇒ x dx = <span class="kes"><span>du</span><span>2</span></span> <span class="g">(eksik 2 çarpanını ayarla)</span></span>
+<p><strong>Adım 2.</strong> Sınırları çevir.</p>
+<span class="mat">x = 0 ⇒ u = 1; x = 1 ⇒ u = 2 <span class="g">(u = x<sup>2</sup> + 1'e koy)</span></span>
+<p><strong>Adım 3.</strong> u'da hesapla.</p>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> ∫<sub>1</sub><sup>2</sup> u<sup>3</sup> du = <span class="kes"><span>1</span><span>2</span></span> [<span class="kes"><span>u<sup>4</sup></span><span>4</span></span>]<sub>1</sub><sup>2</sup> <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">= <span class="kes"><span>1</span><span>2</span></span> · (<span class="kes"><span>16</span><span>4</span></span> − <span class="kes"><span>1</span><span>4</span></span>) = <span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>15</span><span>4</span></span> = <span class="kes"><span>15</span><span>8</span></span> <span class="g">(üst eksi alt)</span></span>
+<p><strong>Adım 4 (kontrol yolu: x'e geri dön).</strong> F(x) = <span class="kes"><span>(x<sup>2</sup> + 1)<sup>4</sup></span><span>8</span></span>. F(1) − F(0) = <span class="kes"><span>16</span><span>8</span></span> − <span class="kes"><span>1</span><span>8</span></span> = <span class="kes"><span>15</span><span>8</span></span>. Aynı.</p>
+<p><strong>Sonuç:</strong> <span class="kes"><span>15</span><span>8</span></span>.</p></div>
+
+<p><strong>Hızlı yol.</strong> İçerisi doğrusal olan kuvvetlerde Parça 29'daki kısa yolu kullan: ∫ (ax + b)<sup>n</sup> dx = <span class="kes"><span>(ax + b)<sup>n+1</sup></span><span>a(n + 1)</span></span> + C. Örneğin ∫<sub>0</sub><sup>1</sup> (2x + 1)<sup>2</sup> dx = [<span class="kes"><span>(2x + 1)<sup>3</sup></span><span>6</span></span>]<sub>0</sub><sup>1</sup> = <span class="kes"><span>27</span><span>6</span></span> − <span class="kes"><span>1</span><span>6</span></span> = <span class="kes"><span>13</span><span>3</span></span>. Kontrol: açarsan 4x<sup>2</sup> + 4x + 1 olur; ters türevi <span class="kes"><span>4x<sup>3</sup></span><span>3</span></span> + 2x<sup>2</sup> + x, 1'de <span class="kes"><span>4</span><span>3</span></span> + 3 = <span class="kes"><span>13</span><span>3</span></span>, 0'da 0. Aynı.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Alt sınır 0 ise F(0) = 0 sanmak.</strong> Polinomun ters türevinde sabit terim yoksa F(0) = 0'dır, ama her zaman değil. Yukarıdaki örnekte F(x) = (2x + 1)<sup>3</sup>/6 için F(0) = 1/6'dır; onu atlayan 27/6 = 9/2 bulur. Alt sınırı her zaman açıkça yerine koy.</p>
+<p><strong>u'ya geçip x sınırlarını kullanmak.</strong> Örnek 4'te u'ya geçtikten sonra sınırları 0 ve 1 bırakırsan <span class="kes"><span>1</span><span>2</span></span> · <span class="kes"><span>1</span><span>4</span></span> = <span class="kes"><span>1</span><span>8</span></span> bulursun. Sınırlar ya çevrilir ya da x'e geri dönülür; ikisinin karışımı yanlıştır.</p>
+<p><strong>Çıkarmayı parantezsiz yapmak.</strong> F(a) birden çok terimliyse tamamı çıkarılır: 21 − (1 − 1 + 1), 21 − 1 + 1 − 1 değil. F(a)'yı her zaman parantezle yaz.</p></div>
+
+<h2 class="s">4. Belirli integralin özellikleri</h2>
+
+<p>Özelliklerin hepsi teoremden, yani F(b) − F(a) yazımından birer satırda çıkar. Gerekçeyi bilirsen ezberlemen gerekmez.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>1.</strong> ∫<sub>a</sub><sup>a</sup> f(x) dx = 0. <strong>2.</strong> ∫<sub>b</sub><sup>a</sup> f(x) dx = −∫<sub>a</sub><sup>b</sup> f(x) dx. <strong>3.</strong> ∫<sub>a</sub><sup>b</sup> f(x) dx + ∫<sub>b</sub><sup>c</sup> f(x) dx = ∫<sub>a</sub><sup>c</sup> f(x) dx (b, a ile c'nin arasında olmak zorunda değil). <strong>4.</strong> ∫<sub>a</sub><sup>b</sup> k · f(x) dx = k · ∫<sub>a</sub><sup>b</sup> f(x) dx. <strong>5.</strong> ∫<sub>a</sub><sup>b</sup> (f(x) ± g(x)) dx = ∫<sub>a</sub><sup>b</sup> f(x) dx ± ∫<sub>a</sub><sup>b</sup> g(x) dx. <strong>6.</strong> ∫<sub>a</sub><sup>b</sup> k dx = k(b − a).</p>
+<p><strong>Neden?</strong> 1: F(a) − F(a) = 0; genişliği sıfır şeridin alanı yok. 2: F(a) − F(b) = −(F(b) − F(a)); sağdan sola giderken Δx negatif olur. 3: (F(b) − F(a)) + (F(c) − F(b)) = F(c) − F(a); F(b) sadeleşir, b nerede olursa olsun. 4 ve 5: (kF)′ = kf ve (F ± G)′ = f ± g (Parça 22). 6: yüksekliği k, genişliği b − a olan dikdörtgen.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Örnek</th><th>Tek satırlık gerekçe</th></tr>
+<tr><td>Aynı sınır</td><td>∫<sub>2</sub><sup>2</sup> (x<sup>5</sup> + 7) dx = 0</td><td>F(2) − F(2)</td></tr>
+<tr><td>Sınırları değiştir</td><td>∫<sub>3</sub><sup>1</sup> f = −∫<sub>1</sub><sup>3</sup> f</td><td>F(1) − F(3) = −(F(3) − F(1))</td></tr>
+<tr><td>Aralığı böl</td><td>∫<sub>0</sub><sup>1</sup> f + ∫<sub>1</sub><sup>4</sup> f = ∫<sub>0</sub><sup>4</sup> f</td><td>Ortadaki F(1) sadeleşir</td></tr>
+<tr><td>Sabit çarpan, toplam</td><td>∫ (2f + 3g) = 2∫ f + 3∫ g</td><td>Türevin doğrusallığı</td></tr>
+<tr><td>Sabitin integrali</td><td>∫<sub>1</sub><sup>4</sup> 3 dx = 9</td><td>3 × (4 − 1) dikdörtgen</td></tr>
+<tr><td>Tahmin</td><td>2 ≤ f ≤ 5 ise 2 · 3 ≤ ∫<sub>1</sub><sup>4</sup> f ≤ 5 · 3</td><td>Tek dikdörtgenlik alt-üst toplam</td></tr>
+<tr><td><strong>Olmayan</strong> kural</td><td>∫<sub>0</sub><sup>1</sup> x · x dx = <span class="kes"><span>1</span><span>3</span></span>, ama (∫<sub>0</sub><sup>1</sup> x dx)<sup>2</sup> = <span class="kes"><span>1</span><span>4</span></span></td><td>Çarpımın türevi çarpım değildir</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> ∫<sub>1</sub><sup>5</sup> f(x) dx = 7 ve ∫<sub>3</sub><sup>5</sup> f(x) dx = 4 olduğuna göre (a) ∫<sub>3</sub><sup>1</sup> f(x) dx ve (b) ∫<sub>1</sub><sup>3</sup> (2f(x) + 3) dx kaçtır?</p>
+<p><strong>Adım 1.</strong> Aralığı böl: [1, 5] = [1, 3] + [3, 5].</p>
+<span class="mat">∫<sub>1</sub><sup>3</sup> f(x) dx = 7 − 4 = 3 <span class="g">(özellik 3)</span></span>
+<p><strong>Adım 2.</strong> (a) Sınırlar yer değiştirince işaret değişir.</p>
+<span class="mat">∫<sub>3</sub><sup>1</sup> f(x) dx = −3 <span class="g">(özellik 2)</span></span>
+<p><strong>Adım 3.</strong> (b) Toplamı ayır, sabiti dışarı al.</p>
+<span class="mat">∫<sub>1</sub><sup>3</sup> (2f(x) + 3) dx = 2 · ∫<sub>1</sub><sup>3</sup> f(x) dx + ∫<sub>1</sub><sup>3</sup> 3 dx <span class="g">(özellik 4 ve 5)</span></span>
+<span class="mat">= 2 · 3 + 3 · (3 − 1) = 6 + 6 = 12 <span class="g">(özellik 6: sabitin integrali dikdörtgen)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Koşullara uyan basit bir fonksiyon dene: f(x) = ax + b için ∫<sub>3</sub><sup>5</sup> f = 8a + 2b = 4 ve ∫<sub>1</sub><sup>5</sup> f = 12a + 4b = 7; buradan a = <span class="kes"><span>1</span><span>4</span></span>, b = 1. ∫<sub>1</sub><sup>3</sup> (<span class="kes"><span>x</span><span>2</span></span> + 5) dx = [<span class="kes"><span>x<sup>2</sup></span><span>4</span></span> + 5x]<sub>1</sub><sup>3</sup> = (<span class="kes"><span>9</span><span>4</span></span> + 15) − (<span class="kes"><span>1</span><span>4</span></span> + 5) = 12. Tuttu (cevap yalnızca ∫<sub>1</sub><sup>3</sup> f = 3 bilgisine bağlı olduğu için bu deneme geçerlidir).</p>
+<p><strong>Sonuç:</strong> (a) −3, (b) 12.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Sabitin integralini sabitin kendisi sanmak.</strong> ∫<sub>1</sub><sup>3</sup> 3 dx = 3 yazarsan Örnek 5(b)'de 2 · 3 + 3 = 9 bulursun. 3, dikdörtgenin yüksekliğidir; alan için genişlikle (3 − 1 = 2) çarpılmalıdır.</p>
+<p><strong>Çarpımın integralini integrallerin çarpımı sanmak.</strong> Tablodaki son satır: ∫ f · g ≠ ∫ f · ∫ g. Çarpım varsa önce aç (Parça 28).</p></div>
+
+<h2 class="s">5. Parçalı ve mutlak değerli fonksiyonlar: kritik noktada böl</h2>
+
+<p>Parçalı bir fonksiyonun tek bir kuralı olmadığı için tek bir ters türevi de yazılamaz. Ama aralığı bölme özelliği tam bu iş içindir: aralığı kuralın değiştiği noktadan (kritik nokta, Parça 3) böl, her parçada o parçanın kuralını kullan, sonuçları topla. Mutlak değerli fonksiyon da bir parçalı fonksiyondur: |x − 1|, x ≥ 1 iken x − 1, x &lt; 1 iken 1 − x.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>1.</strong> Kritik noktaları bul (parçalıda kuralın değiştiği yer; mutlak değerde içinin sıfır olduğu yer). <strong>2.</strong> Yalnızca integral aralığının içinde kalanlarla aralığı böl. <strong>3.</strong> Her parçada mutlak değeri işaretine göre aç ya da o parçanın kuralını yaz. <strong>4.</strong> Her parçanın integralini al, topla.</p>
+<p><strong>Neden kritik noktada?</strong> Kural yalnızca orada değişir; her parçanın içinde fonksiyon tek bir polinomdur ve teorem doğrudan uygulanır. Sınırdaki tek bir noktanın değeri sonucu değiştirmez, çünkü genişliği sıfır olan bir şeridin alanı yoktur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> ∫<sub>0</sub><sup>4</sup> |x − 1| dx integralinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Kritik nokta x = 1, aralığın içinde. Böl.</p>
+<span class="mat">∫<sub>0</sub><sup>4</sup> |x − 1| dx = ∫<sub>0</sub><sup>1</sup> (1 − x) dx + ∫<sub>1</sub><sup>4</sup> (x − 1) dx <span class="g">(x &lt; 1'de içi negatif, işaret değişir)</span></span>
+<p><strong>Adım 2.</strong> Parçaları hesapla.</p>
+<span class="mat">[x − <span class="kes"><span>x<sup>2</sup></span><span>2</span></span>]<sub>0</sub><sup>1</sup> = <span class="kes"><span>1</span><span>2</span></span> − 0 = <span class="kes"><span>1</span><span>2</span></span> <span class="g">(sol parça)</span></span>
+<span class="mat">[<span class="kes"><span>x<sup>2</sup></span><span>2</span></span> − x]<sub>1</sub><sup>4</sup> = (8 − 4) − (<span class="kes"><span>1</span><span>2</span></span> − 1) = 4 + <span class="kes"><span>1</span><span>2</span></span> = <span class="kes"><span>9</span><span>2</span></span> <span class="g">(sağ parça)</span></span>
+<span class="mat"><span class="kes"><span>1</span><span>2</span></span> + <span class="kes"><span>9</span><span>2</span></span> = 5 <span class="g">(topla)</span></span>
+<p><strong>Adım 3 (kontrol yolu: geometri).</strong> y = |x − 1| grafiği V biçimlidir. [0, 1]'de dik kenarları 1 ve 1 olan üçgen (alan 1/2), [1, 4]'te dik kenarları 3 ve 3 olan üçgen (alan 9/2). Toplam 5.</p>
+<p><strong>Sonuç:</strong> 5.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> f(x) = 3x<sup>2</sup> (x ≤ 1 iken), f(x) = 2x + 1 (x &gt; 1 iken) olduğuna göre ∫<sub>0</sub><sup>3</sup> f(x) dx kaçtır?</p>
+<p><strong>Adım 1.</strong> Kural x = 1'de değişiyor; aralığı orada böl.</p>
+<span class="mat">∫<sub>0</sub><sup>3</sup> f(x) dx = ∫<sub>0</sub><sup>1</sup> 3x<sup>2</sup> dx + ∫<sub>1</sub><sup>3</sup> (2x + 1) dx <span class="g">(her parçada kendi kuralı)</span></span>
+<p><strong>Adım 2.</strong> Hesapla.</p>
+<span class="mat">[x<sup>3</sup>]<sub>0</sub><sup>1</sup> = 1 <span class="g">(sol parça)</span></span>
+<span class="mat">[x<sup>2</sup> + x]<sub>1</sub><sup>3</sup> = 12 − 2 = 10 <span class="g">(sağ parça)</span></span>
+<p><strong>Adım 3 (kontrol yolu).</strong> Sağ parça bir yamuk: x = 1'de yükseklik 3, x = 3'te 7, genişlik 2; alan (3 + 7)/2 · 2 = 10. Tuttu.</p>
+<p><strong>Sonuç:</strong> 1 + 10 = 11.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Mutlak değeri atmak ya da sonucun mutlak değerini almak.</strong> ∫<sub>0</sub><sup>4</sup> (x − 1) dx = (8 − 4) − 0 = 4 bulunur; |4| = 4 de aynıdır, ama doğru cevap 5'tir. Mutlak değer integralin <em>içinde</em> her noktada etki eder: x ekseninin altına düşen kısmı yukarı katlar (Parça 3). Bu yüzden önce kritik noktada bölmek zorunludur.</p>
+<p><strong>Parçalı fonksiyonda tek kuralı bütün aralığa uygulamak.</strong> Örnek 7'de yalnız 3x<sup>2</sup> kullanan 27, yalnız 2x + 1 kullanan 12 bulur. Her kural yalnızca kendi aralığında geçerlidir.</p></div>
+
+<h2 class="s">6. Simetrik aralıkta tek ve çift fonksiyonlar</h2>
+
+<p>Parça 1'de tek fonksiyonun (f(−x) = −f(x)) grafiğinin orijine göre, çift fonksiyonun (f(−x) = f(x)) grafiğinin y eksenine göre simetrik olduğunu gördün. [−a, a] gibi simetrik bir aralıkta bu simetri integrali doğrudan verir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f tek fonksiyon ise ∫<sub>−a</sub><sup>a</sup> f(x) dx = 0. f çift fonksiyon ise ∫<sub>−a</sub><sup>a</sup> f(x) dx = 2 · ∫<sub>0</sub><sup>a</sup> f(x) dx.</p>
+<p><strong>Neden?</strong> Tek fonksiyonda [−a, 0]'daki parça, [0, a]'daki parçanın orijine göre yansımasıdır: alanı aynı, ama x ekseninin öbür yanında. İşaretli alanlar eşit büyüklükte ve zıt işaretli olduğu için toplam 0'dır. Çift fonksiyonda iki yarı y eksenine göre aynadır: aynı alan, aynı işaret; toplam bir yarının iki katıdır.</p></div>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 260" role="img" aria-label="Solda y eşittir x küp grafiği, eksi a ile a arasında: sağda x ekseninin üstünde yeşil alan S, solda altında turuncu alan eksi S; integral sıfır. Sağda y eşittir x kare grafiği: iki yanda aynı yeşil alan S; integral 2S.">
+  <line class="sv-c" x1="20" y1="130" x2="300" y2="130" />
+  <line class="sv-c" x1="160" y1="250" x2="160" y2="10" />
+  <line class="sv-c" x1="330" y1="200" x2="630" y2="200" />
+  <line class="sv-c" x1="480" y1="232" x2="480" y2="40" />
+<polygon class="sv-m" points="160.0,130.0 160.0,130.0 166.3,130.0 172.6,129.9 178.9,129.7 185.2,129.3 191.5,128.6 197.8,127.6 204.1,126.2 210.4,124.4 216.7,122.0 223.0,119.0 229.3,115.4 235.6,111.0 241.9,105.9 248.2,99.9 254.5,93.0 260.8,85.0 267.1,76.1 273.4,66.0 279.7,54.7 286.0,42.2 286.0,130.0" />
+<polygon class="sv-a" points="34.0,130.0 34.0,217.8 40.3,205.3 46.6,194.0 52.9,183.9 59.2,175.0 65.5,167.0 71.8,160.1 78.1,154.1 84.4,149.0 90.7,144.6 97.0,141.0 103.3,138.0 109.6,135.6 115.9,133.8 122.2,132.4 128.5,131.4 134.8,130.7 141.1,130.3 147.4,130.1 153.7,130.0 160.0,130.0" />
+<polyline class="sv-cl" points="20.5,249.2 27.5,232.2 34.5,216.9 41.4,203.2 48.4,191.0 55.4,180.3 62.4,170.9 69.3,162.7 76.3,155.7 83.3,149.8 90.2,144.9 97.2,140.9 104.2,137.6 111.2,135.1 118.1,133.2 125.1,131.9 132.1,131.0 139.1,130.4 146.1,130.1 153.0,130.0 160.0,130.0 167.0,130.0 173.9,129.9 180.9,129.6 187.9,129.0 194.9,128.1 201.9,126.8 208.8,124.9 215.8,122.4 222.8,119.1 229.8,115.1 236.7,110.2 243.7,104.3 250.7,97.3 257.6,89.1 264.6,79.7 271.6,69.0 278.6,56.8 285.5,43.1 292.5,27.8 299.5,10.8" />
+<polygon class="sv-m" points="480.0,200.0 480.0,200.0 473.7,199.7 467.4,198.8 461.1,197.4 454.8,195.3 448.5,192.7 442.2,189.4 435.9,185.6 429.6,181.2 423.3,176.2 417.0,170.6 410.7,164.4 404.4,157.7 398.1,150.3 391.8,142.4 385.5,133.8 379.2,124.7 372.9,115.0 366.6,104.7 360.3,93.9 354.0,82.4 354.0,200.0" />
+<polygon class="sv-m" points="480.0,200.0 480.0,200.0 486.3,199.7 492.6,198.8 498.9,197.4 505.2,195.3 511.5,192.7 517.8,189.4 524.1,185.6 530.4,181.2 536.7,176.2 543.0,170.6 549.3,164.4 555.6,157.7 561.9,150.3 568.2,142.4 574.5,133.8 580.8,124.7 587.1,115.0 593.4,104.7 599.7,93.9 606.0,82.4 606.0,200.0" />
+<polyline class="sv-cl" points="336.0,46.4 343.2,61.4 350.4,75.6 357.6,89.0 364.8,101.7 372.0,113.6 379.2,124.7 386.4,135.1 393.6,144.7 400.8,153.5 408.0,161.6 415.2,168.9 422.4,175.4 429.6,181.2 436.8,186.2 444.0,190.4 451.2,193.9 458.4,196.5 465.6,198.5 472.8,199.6 480.0,200.0 487.2,199.6 494.4,198.5 501.6,196.5 508.8,193.9 516.0,190.4 523.2,186.2 530.4,181.2 537.6,175.4 544.8,168.9 552.0,161.6 559.2,153.5 566.4,144.7 573.6,135.1 580.8,124.7 588.0,113.6 595.2,101.7 602.4,89.0 609.6,75.6 616.8,61.4 624.0,46.4" />
+  <text class="sv-b" x="30" y="26" text-anchor="start">y = x³ (tek)</text>
+  <text class="sv-b" x="480" y="26" text-anchor="middle">y = x² (çift)</text>
+  <text class="sv-b" x="255" y="122" text-anchor="middle">+S</text>
+  <text class="sv-b" x="68" y="155" text-anchor="middle">−S</text>
+  <text class="sv-s" x="34" y="122" text-anchor="middle">−a</text>
+  <text class="sv-s" x="286" y="148" text-anchor="middle">a</text>
+  <text class="sv-s" x="200" y="245" text-anchor="middle">toplam: S − S = 0</text>
+  <text class="sv-b" x="410" y="188" text-anchor="middle">S</text>
+  <text class="sv-b" x="550" y="188" text-anchor="middle">S</text>
+  <text class="sv-s" x="354" y="218" text-anchor="middle">−a</text>
+  <text class="sv-s" x="606" y="218" text-anchor="middle">a</text>
+  <text class="sv-s" x="480" y="248" text-anchor="middle">toplam: 2S</text>
+</svg>
+<figcaption>Tek fonksiyonda iki yarının işaretli alanları birbirini götürür; çift fonksiyonda iki yarı birbirinin aynısıdır. Dikkat: tek fonksiyonda integral 0'dır ama boyalı bölgelerin toplam alanı 0 değil, 2S'dir. Alan ile integral farkı Parça 31'in konusu.</figcaption>
+</figure>
+
+<p><strong>Polinomda hızlı yol.</strong> x, x<sup>3</sup>, x<sup>5</sup> gibi tek kuvvetli terimler tek, sabit, x<sup>2</sup>, x<sup>4</sup> gibi çift kuvvetli terimler çift fonksiyondur (sabit terim x<sup>0</sup> sayılır, çifttir). Simetrik aralıkta tek kuvvetli terimleri sil, kalan çift kısmın 0'dan a'ya integralinin iki katını al.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> ∫<sub>−2</sub><sup>2</sup> (x<sup>3</sup> + 3x<sup>2</sup> − 4x + 1) dx integralinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Aralık simetrik. Tek kuvvetli terimleri (x<sup>3</sup> ve −4x) ayır: integralleri 0.</p>
+<span class="mat">∫<sub>−2</sub><sup>2</sup> (x<sup>3</sup> − 4x) dx = 0 <span class="g">(tek fonksiyon, simetrik aralık)</span></span>
+<p><strong>Adım 2.</strong> Kalan çift kısım.</p>
+<span class="mat">∫<sub>−2</sub><sup>2</sup> (3x<sup>2</sup> + 1) dx = 2 · ∫<sub>0</sub><sup>2</sup> (3x<sup>2</sup> + 1) dx <span class="g">(çift fonksiyon)</span></span>
+<span class="mat">= 2 · [x<sup>3</sup> + x]<sub>0</sub><sup>2</sup> = 2 · (8 + 2) = 20 <span class="g">(F(0) = 0)</span></span>
+<p><strong>Adım 3 (kontrol yolu: doğrudan hesap).</strong> F(x) = <span class="kes"><span>x<sup>4</sup></span><span>4</span></span> + x<sup>3</sup> − 2x<sup>2</sup> + x. F(2) = 4 + 8 − 8 + 2 = 6, F(−2) = 4 − 8 − 8 − 2 = −14. 6 − (−14) = 20.</p>
+<p><strong>Sonuç:</strong> 20.</p></div>
+
+<p>Kural yalnızca <strong>simetrik</strong> aralıkta geçerlidir: ∫<sub>0</sub><sup>2</sup> x<sup>3</sup> dx = 4, sıfır değildir. Sabit terimi tek sanıp atmak da sık yapılan bir hatadır: 1 = x<sup>0</sup>, çift kuvvettir.</p>
+
+<h2 class="s">7. İşaretli alan ve geometriyle integral hesabı</h2>
+
+<p>Riemann toplamında yükseklik f(x<sub>i</sub>)'dir; f negatifse "dikdörtgenin alanı" f(x<sub>i</sub>) · Δx de negatif çıkar. Demek ki x ekseninin altında kalan bölgeler integrale <strong>eksi</strong> katkı yapar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f ≥ 0 olan aralıkta ∫ f(x) dx = eğri altındaki alan; f ≤ 0 olan aralıkta ∫ f(x) dx = −(eğri ile eksen arasındaki alan). f işaret değiştiriyorsa ∫<sub>a</sub><sup>b</sup> f(x) dx = (x ekseninin üstündeki alanlar) − (altındaki alanlar).</p>
+<p><strong>Neden?</strong> İntegral, yükseklik × genişlik çarpımlarının toplamının limitidir; eksen altında yükseklik negatif olduğu için çarpım negatiftir. "Alan" ise her zaman pozitif bir büyüklüktür; integral onu işaretiyle sayar.</p></div>
+
+<p><strong>Hızlı yol.</strong> Grafik doğru parçalarından ve çember yaylarından oluşuyorsa ters türev aramana gerek yok: bölgeleri üçgen (½ · taban · yükseklik), yamuk ((alt + üst)/2 · yükseklik), dikdörtgen, yarım daire (πr<sup>2</sup>/2) ve çeyrek daire (πr<sup>2</sup>/4) olarak hesapla, eksen altındakilere eksi koy. Bazen bu tek yoldur: y = √(4 − x<sup>2</sup>), x<sup>2</sup> + y<sup>2</sup> = 4 çemberinin üst yarısıdır ve ∫<sub>−2</sub><sup>2</sup> √(4 − x<sup>2</sup>) dx = <span class="kes"><span>π · 4</span><span>2</span></span> = 2π; bu fonksiyonun ters türevi bu ünitenin araçlarıyla bulunamaz, sınav da böyle integralleri yalnızca geometriyle sorar.</p>
+
+<figure>
+<svg viewBox="0 0 400 250" role="img" aria-label="f fonksiyonunun grafiği: 0 ile 4 arasında merkezi (2, 0), yarıçapı 2 olan yarım çember, x ekseninin üstünde, yeşil; 4 ile 7 arasında köşesi (5, eksi 2) olan üçgen, x ekseninin altında, turuncu.">
+  <path class="sv-m" d="M40,130 A90,90 0 0 1 220,130 Z" />
+  <polygon class="sv-a" points="220,130 265,220 355,130" />
+  <line class="sv-c" x1="20" y1="130" x2="385" y2="130" />
+  <line class="sv-c" x1="40" y1="240" x2="40" y2="25" />
+  <path class="sv-cl" d="M40,130 A90,90 0 0 1 220,130" />
+  <polyline class="sv-cl" points="220,130 265,220 355,130" />
+  <line class="sv-c" x1="36" y1="40" x2="44" y2="40" />
+  <line class="sv-c" x1="36" y1="220" x2="44" y2="220" />
+  <text class="sv-s" x="32" y="45" text-anchor="end">2</text>
+  <text class="sv-s" x="32" y="225" text-anchor="end">−2</text>
+  <text class="sv-s" x="46" y="148" text-anchor="start">0</text>
+  <text class="sv-s" x="130" y="148" text-anchor="middle">2</text>
+  <text class="sv-s" x="216" y="148" text-anchor="end">4</text>
+  <text class="sv-s" x="265" y="122" text-anchor="middle">5</text>
+  <text class="sv-s" x="355" y="122" text-anchor="middle">7</text>
+  <text class="sv-b" x="130" y="100" text-anchor="middle">+2π</text>
+  <text class="sv-b" x="282" y="158" text-anchor="middle">−3</text>
+  <text class="sv-s" x="265" y="240" text-anchor="middle">(5, −2)</text>
+  <text class="sv-s" x="320" y="50" text-anchor="middle">y = f(x)</text>
+</svg>
+<figcaption>Yarım dairenin alanı π · 2<sup>2</sup>/2 = 2π, eksen üstünde: integrale +2π. Üçgenin tabanı 3, yüksekliği 2, alanı 3, eksen altında: integrale −3. Ölçekler eşit çizildi; yarım daire gerçekten yarım dairedir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> Grafiği şekildeki gibi olan f için ∫<sub>0</sub><sup>7</sup> f(x) dx, ∫<sub>0</sub><sup>2</sup> f(x) dx ve ∫<sub>2</sub><sup>5</sup> f(x) dx değerlerini bul.</p>
+<p><strong>Adım 1.</strong> [0, 7]: yarım daire (üstte) ve üçgen (altta).</p>
+<span class="mat">∫<sub>0</sub><sup>7</sup> f(x) dx = <span class="kes"><span>π · 2<sup>2</sup></span><span>2</span></span> − <span class="kes"><span>3 · 2</span><span>2</span></span> = 2π − 3 <span class="g">(üstteki alan − alttaki alan)</span></span>
+<p><strong>Adım 2.</strong> [0, 2]: yarım dairenin sol yarısı, yani çeyrek daire.</p>
+<span class="mat">∫<sub>0</sub><sup>2</sup> f(x) dx = <span class="kes"><span>π · 2<sup>2</sup></span><span>4</span></span> = π <span class="g">(çeyrek daire)</span></span>
+<p><strong>Adım 3.</strong> [2, 5]: çeyrek daire (üstte) ve köşeleri (4, 0), (5, 0), (5, −2) olan dik üçgen (altta).</p>
+<span class="mat">∫<sub>2</sub><sup>5</sup> f(x) dx = π − <span class="kes"><span>1 · 2</span><span>2</span></span> = π − 1 <span class="g">(alttaki dik üçgenin alanı 1)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Aralığı bölme: ∫<sub>0</sub><sup>2</sup> + ∫<sub>2</sub><sup>5</sup> + ∫<sub>5</sub><sup>7</sup> = π + (π − 1) + (−2) = 2π − 3 olmalı. [5, 7]'deki dik üçgenin alanı 2 · 2/2 = 2, eksen altında: −2. Tuttu. Sayıyla: 2π − 3 ≈ 3,28.</p>
+<p><strong>Sonuç:</strong> 2π − 3; π; π − 1.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Negatif sonuç görünce hata yaptığını sanmak.</strong> Belirli integral negatif çıkabilir: ∫<sub>0</sub><sup>1</sup> (x − 1) dx = <span class="kes"><span>1</span><span>2</span></span> − 1 = −<span class="kes"><span>1</span><span>2</span></span>, çünkü [0, 1]'de grafik tamamen x ekseninin altındadır. "Alan" sorulmadıkça sonucu pozitife çevirme.</p>
+<p><strong>İntegral 0 ise fonksiyon da 0'dır sanmak.</strong> ∫<sub>−1</sub><sup>1</sup> x dx = 0 ama x fonksiyonu sıfır değildir; eksen üstündeki ve altındaki alanlar eşittir. İntegralin 0 olması yalnızca işaretli alanların dengelendiğini söyler.</p></div>
+
+<p>Aynı grafikte f ile x ekseni arasındaki <strong>toplam alan</strong> 2π + 3'tür: alan hep pozitif sayılır. İntegral değeri ile alanın bu farkı, Parça 31'de iki eğri arası alan sorularının temeli olacak. Doğrusal fonksiyonda yamuk her zaman iyi bir kontrol yoludur: ∫<sub>1</sub><sup>3</sup> (x + 1) dx = [<span class="kes"><span>x<sup>2</sup></span><span>2</span></span> + x]<sub>1</sub><sup>3</sup> = 7,5 − 1,5 = 6, yamuk ile (2 + 4)/2 · 2 = 6.</p>
+
+<h2 class="s">8. Net değişim: ∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a)</h2>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a) <span class="g">(değişim hızının integrali = toplam değişim)</span></span>
+<p><strong>Neden?</strong> f, f′'nün bir ters türevidir (Parça 28: ∫ f′(x) dx = f(x) + C). Teoremi F = f ile uygula. Yorum: f′ anlık değişim hızıdır (Parça 22); her ince şeritte f′(x) · dx o küçük aralıktaki değişimdir, hepsinin toplamı a'dan b'ye toplam değişimi verir. Bir depoya dakikada r(t) litre su akıyorsa ∫<sub>0</sub><sup>10</sup> r(t) dt, ilk 10 dakikada depodaki suyun ne kadar değiştiğidir; başlangıçtaki miktarı bilirsen sondakini bulursun.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 10</span>
+<p><strong>Soru:</strong> f′(x) = 2x + 1 ve f(0) = 5 olduğuna göre f(3) kaçtır?</p>
+<p><strong>Adım 1.</strong> Net değişimi hesapla.</p>
+<span class="mat">f(3) − f(0) = ∫<sub>0</sub><sup>3</sup> (2x + 1) dx = [x<sup>2</sup> + x]<sub>0</sub><sup>3</sup> = 12 <span class="g">(net değişim)</span></span>
+<p><strong>Adım 2.</strong> Başlangıç değerini ekle.</p>
+<span class="mat">f(3) = 5 + 12 = 17 <span class="g">(f(0) = 5)</span></span>
+<p><strong>Adım 3 (kontrol yolu: Parça 28 yolu).</strong> f(x) = x<sup>2</sup> + x + C, f(0) = C = 5; f(3) = 9 + 3 + 5 = 17. Aynı.</p>
+<p><strong>Sonuç:</strong> 17. Hız-zaman grafiğinin altındaki alanın yer değiştirme olması bu formülün fizikteki karşılığıdır; ayrıntısı Parça 32'de.</p></div>
+
+<h2 class="s">9. Üst sınırı değişken olan integralin türevi (kısa)</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir</strong>: 2018 programında ayrı bir kazanım olup olmadığı doğrulanamadı. Yine de AYT tarzı sorularda görüldüğü ve Bölüm 3'teki fikrin doğrudan sonucu olduğu için kısaca veriyoruz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f sürekli ise <strong>d/dx ∫<sub>a</sub><sup>x</sup> f(t) dt = f(x)</strong>. Üst sınır x yerine g(x) ise zincir kuralıyla: <strong>d/dx ∫<sub>a</sub><sup>g(x)</sup> f(t) dt = f(g(x)) · g′(x)</strong>.</p>
+<p><strong>Neden?</strong> ∫<sub>a</sub><sup>x</sup> f(t) dt, Bölüm 3'teki alan fonksiyonu A(x)'tir ve orada A′(x) = f(x) bulduk. İçeride t yazılmasının nedeni x'in zaten sınır olarak kullanılmasıdır; değişkenin adı önemsiz olduğu için (Bölüm 2) t seçilir. Üst sınır g(x) ise bu, A(g(x)) bileşkesidir; türevi A′(g(x)) · g′(x) = f(g(x)) · g′(x) (Parça 23). Alt sınır a sabit olduğu için türevde iz bırakmaz.</p></div>
+
+<p>Değişken sınır altta ise önce Bölüm 4'teki özellikle sınırları yer değiştir: ∫<sub>x</sub><sup>b</sup> f(t) dt = −∫<sub>b</sub><sup>x</sup> f(t) dt olduğu için türevi −f(x)'tir. İki sınır da sabitse integral bir sayıdır ve türevi 0'dır; ∫<sub>0</sub><sup>2</sup> t<sup>2</sup> dt = 8/3 sabitinin türevini f(2) sanmak sık görülen bir dikkatsizliktir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 11</span>
+<p><strong>Soru:</strong> F(x) = ∫<sub>2</sub><sup>x<sup>2</sup></sup> (t + 3) dt olduğuna göre F′(1) kaçtır?</p>
+<p><strong>Adım 1.</strong> Zincirli kural: iç fonksiyon g(x) = x<sup>2</sup>, g′(x) = 2x.</p>
+<span class="mat">F′(x) = (x<sup>2</sup> + 3) · 2x <span class="g">(t yerine üst sınırı koy, sınırın türeviyle çarp)</span></span>
+<span class="mat">F′(1) = 4 · 2 = 8 <span class="g">(x = 1)</span></span>
+<p><strong>Adım 2 (kontrol yolu: önce integrali al).</strong> F(x) = [<span class="kes"><span>t<sup>2</sup></span><span>2</span></span> + 3t]<sub>2</sub><sup>x<sup>2</sup></sup> = <span class="kes"><span>x<sup>4</sup></span><span>2</span></span> + 3x<sup>2</sup> − 8. F′(x) = 2x<sup>3</sup> + 6x, F′(1) = 8. Aynı.</p>
+<p><strong>Sonuç:</strong> 8.</p></div>
+
+<h2 class="s">10. ∫ f(kx + m) dx türü sorular</h2>
+
+<p>Sınav çoğu zaman f'i vermez; yalnızca bir integral değerini verip içi değiştirilmiş başka bir integrali sorar. Bunun aracı Parça 29'daki değişken değiştirmedir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<span class="mat">∫<sub>a</sub><sup>b</sup> f(kx + m) dx = <span class="kes"><span>1</span><span>k</span></span> · ∫<sub>ka+m</sub><sup>kb+m</sup> f(u) du <span class="g">(u = kx + m, du = k dx)</span></span>
+<p><strong>Neden?</strong> u = kx + m dersen dx = du/k olur ve sınırlar x = a'da u = ka + m, x = b'de u = kb + m'ye döner. Grafikle de görebilirsin (Parça 4): y = f(2x) grafiği y = f(x)'in yatayda yarıya daraltılmış hâlidir; yükseklikler aynı, genişlikler yarı, alan yarı. y = f(x + 1) ise 1 birim sola ötelenmiştir; şekil değişmez, yalnızca sınırlar kayar, alan aynı kalır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 12</span>
+<p><strong>Soru:</strong> ∫<sub>0</sub><sup>4</sup> f(x) dx = 12 olduğuna göre (a) ∫<sub>0</sub><sup>2</sup> f(2x) dx, (b) ∫<sub>−1</sub><sup>3</sup> f(x + 1) dx kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) u = 2x, du = 2 dx; x = 0 ⇒ u = 0, x = 2 ⇒ u = 4.</p>
+<span class="mat">∫<sub>0</sub><sup>2</sup> f(2x) dx = <span class="kes"><span>1</span><span>2</span></span> ∫<sub>0</sub><sup>4</sup> f(u) du = <span class="kes"><span>1</span><span>2</span></span> · 12 = 6 <span class="g">(değişken adı önemsiz: ∫ f(u) du = ∫ f(x) dx)</span></span>
+<p><strong>Adım 2.</strong> (b) u = x + 1, du = dx; x = −1 ⇒ u = 0, x = 3 ⇒ u = 4.</p>
+<span class="mat">∫<sub>−1</sub><sup>3</sup> f(x + 1) dx = ∫<sub>0</sub><sup>4</sup> f(u) du = 12 <span class="g">(k = 1, yalnızca sınırlar kaydı)</span></span>
+<p><strong>Adım 3 (kontrol yolu: koşula uyan bir f seç).</strong> f(x) = x + 1 için ∫<sub>0</sub><sup>4</sup> (x + 1) dx = 8 + 4 = 12; koşulu sağlıyor. ∫<sub>0</sub><sup>2</sup> (2x + 1) dx = 4 + 2 = 6 ve ∫<sub>−1</sub><sup>3</sup> (x + 2) dx = (4,5 + 6) − (0,5 − 2) = 12. İkisi de tuttu. (Bu deneme yalnızca denetimdir; cevap gerçekten f'e bağlı olmadığı için işe yarar.)</p>
+<p><strong>Sonuç:</strong> (a) 6, (b) 12.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>1/k çarpanını unutmak ya da k ile çarpmak.</strong> Örnek 12(a)'da 12 ya da 24 bulan, du = 2 dx bağıntısını atlamıştır. Grafikle düşün: daraltılmış grafiğin alanı küçülür, büyümez.</p>
+<p><strong>Sınırları çevirmeden yazmak.</strong> ∫<sub>0</sub><sup>2</sup> f(2x) dx = <span class="kes"><span>1</span><span>2</span></span> ∫<sub>0</sub><sup>2</sup> f(u) du yazarsan elinde bilinmeyen bir integral kalır. Sınırlar da u'ya çevrilmelidir.</p></div>
+
+<h2 class="s">Toplu bakış: hangi soruya hangi hamle?</h2>
+
+<div class="tablo"><table>
+<tr><th>Soru kalıbı</th><th>İlk hamle</th><th>Kontrol yolu</th></tr>
+<tr><td>Polinom, köklü ifade</td><td>Üslü yaz, ters türev, F(b) − F(a)</td><td>F′ = f mi; m(b − a) ≤ ∫ ≤ M(b − a)</td></tr>
+<tr><td>İçeride ifade ve türevi</td><td>u = g(x), sınırları çevir</td><td>x'e geri dönüp eski sınırlarla hesapla</td></tr>
+<tr><td>∫ f değerleri verilmiş</td><td>Aralığı böl, sabit çarpanı ve toplamı ayır</td><td>Koşula uyan basit bir f dene</td></tr>
+<tr><td>|…| ya da parçalı</td><td>Kritik noktada böl</td><td>Doğrusal parçalarda üçgen, yamuk</td></tr>
+<tr><td>[−a, a] aralığı</td><td>Tek terimleri sil, çift kısmı 2 · ∫<sub>0</sub><sup>a</sup></td><td>Doğrudan F(a) − F(−a)</td></tr>
+<tr><td>Grafik verilmiş</td><td>Geometrik alanlar, eksen altına eksi</td><td>Aralık bölme toplamı tutuyor mu</td></tr>
+<tr><td>f′ ve f(a) verilmiş</td><td>f(b) = f(a) + ∫<sub>a</sub><sup>b</sup> f′(x) dx</td><td>f'i C ile bulup yerine koy</td></tr>
+<tr><td>∫ f(kx + m) dx</td><td>u = kx + m, 1/k çarpanı, yeni sınırlar</td><td>Basit bir f ile dene</td></tr>
+</table></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 28 ve 29'a:</strong> Ters türev ve değişken değiştirme burada hesap aracı oldu; belirsiz integraldeki C'nin belirli integralde neden sadeleştiğini gördün.</p>
+<p><strong>Parça 1, 3, 4, 20 ve 22'ye:</strong> Tek-çift fonksiyon simetrisi integrali kısalttı; parçalı ve mutlak değerli fonksiyonlarda kritik noktada bölme Parça 3'ten, f(2x) ve f(x + 1)'in grafik yorumu Parça 4'ten geldi. Dikdörtgen toplamlarının limiti Parça 20'deki rasyonel limitle hesaplandı; temel teoremin ispatı Parça 22'deki türev tanımına dayandı.</p>
+<p><strong>Parça 31 ve 32'ye:</strong> İşaretli alan ile gerçek alan farkı ve iki eğri arasındaki alan Parça 31'in konusu. Net değişim, hız-zaman grafiği, F(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt fonksiyonunun artan-azalan aralıkları ve f′ grafiğinden f değerleri Parça 32'de.</p>
+<p><strong>Öbür derslere:</strong> Fizikte hız-zaman grafiğinin altındaki alan yer değiştirme, kuvvet-yol grafiğinin altındaki alan iştir: ikisi de "yükseklik × genişlik"lerin toplamı, yani belirli integraldir. Geometride yamuk, üçgen ve daire alanları burada integral hesaplamanın kısa yolu oldu.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Alt toplam ile üst toplam nedir ve belirli integral bunlarla nasıl tanımlanır?</summary><p>Aralığı n eşit parçaya bölüp her parçada yüksekliği fonksiyonun en küçük değeri olan dikdörtgenlerin alanları toplamı alt toplam, en büyük değeri olanlarınki üst toplamdır. Gerçek alan ikisinin arasındadır; n → ∞ iken ikisi aynı sayıya yaklaşır, o sayı belirli integraldir.</p></details>
+<details><summary>Analizin temel teoremi neden doğrudur? Alan fonksiyonuyla açıkla.</summary><p>A(x), a'dan x'e kadarki alan olsun. x, h kadar artınca alan yaklaşık f(x) · h artar; bu yüzden A′(x) = f(x), yani A bir ters türevdir: A(x) = F(x) + C. A(a) = 0'dan C = −F(a), dolayısıyla A(b) = F(b) − F(a).</p></details>
+<details><summary>Belirli integralde neden + C yazılmaz?</summary><p>Ters türevin hangi üyesi seçilirse seçilsin (F(b) + C) − (F(a) + C) = F(b) − F(a) olur; sabit çıkarmada sadeleşir. Sonuç bir sayıdır.</p></details>
+<details><summary>Değişken değiştirirken sınırlara ne olur?</summary><p>Sınırlar da yeni değişkene çevrilir: x = a iken u = g(a), x = b iken u = g(b). Ya u'da yeni sınırlarla bitirilir ya da ters türev x cinsinden geri yazılıp eski sınırlar kullanılır; ikisini karıştırmak yanlış sonuç verir.</p></details>
+<details><summary>Tek bir fonksiyonun simetrik aralıktaki integrali neden 0'dır? Alanı da 0 mıdır?</summary><p>Grafik orijine göre simetrik olduğu için iki yarının alanı eşit ama biri x ekseninin üstünde, öbürü altındadır; işaretli alanlar birbirini götürür. Alan ise 0 değildir, iki yarının alanlarının toplamıdır.</p></details>
+<details><summary>∫<sub>1</sub><sup>4</sup> 5 dx kaçtır ve neden 5 değildir?</summary><p>15'tir. Sabit fonksiyonun grafiği yatay bir doğrudur; altında yüksekliği 5, genişliği 4 − 1 = 3 olan bir dikdörtgen kalır.</p></details>
+<details><summary>∫<sub>0</sub><sup>6</sup> f(x) dx = 10 ise ∫<sub>0</sub><sup>3</sup> f(2x) dx kaçtır? Neden?</summary><p>5'tir. u = 2x ile du = 2 dx ve sınırlar 0 ile 6 olur: (1/2) · 10. Grafikte f(2x), f'in yatayda yarıya daraltılmışıdır; yükseklikler aynı kalır, genişlikler yarıya iner, alan yarıya iner.</p></details>
+
+<details><summary>∫<sub>0</sub><sup>1</sup> (x − 1) dx negatif çıkıyor. Bu bir hesap hatası mıdır?</summary><p>Hayır. [0, 1] aralığında x − 1 ≤ 0, yani grafik x ekseninin altındadır; belirli integral işaretli alandır ve eksen altındaki bölgeyi eksi sayar. Sonuç −1/2'dir. Soru "alan" isteseydi cevap 1/2 olurdu.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Tanım:</strong> [a, b]'yi n parçaya böl, Δx = (b − a)/n; f(x<sub>1</sub>)Δx + … + f(x<sub>n</sub>)Δx toplamının n → ∞ limiti ∫<sub>a</sub><sup>b</sup> f(x) dx. Alt toplam ≤ integral ≤ üst toplam.</li>
+<li><strong>Belirli integral bir sayıdır</strong>; değişkenin adı önemsiz: ∫ f(x) dx = ∫ f(t) dt (aynı sınırlarla).</li>
+<li><strong>Temel teorem:</strong> F′ = f ise ∫<sub>a</sub><sup>b</sup> f(x) dx = F(b) − F(a). C yazılmaz, sadeleşir. Gerekçe: alan fonksiyonunun türevi f.</li>
+<li><strong>Hesap:</strong> üslü yaz → ters türev → üst sınır → alt sınır (parantezle) → çıkar. F(0)'ı her zaman hesapla.</li>
+<li><strong>Değişken değiştirme:</strong> sınırları da çevir ya da x'e geri dön.</li>
+<li><strong>Özellikler:</strong> ∫<sub>a</sub><sup>a</sup> = 0; sınır değişince işaret değişir; aralık bölünür; sabit çarpan ve toplam ayrılır; ∫<sub>a</sub><sup>b</sup> k dx = k(b − a). Çarpım ayrılmaz.</li>
+<li><strong>Parçalı ve |…|:</strong> kritik noktada böl, her parçada kendi kuralı.</li>
+<li><strong>Simetrik aralık:</strong> tek ⇒ 0; çift ⇒ 2 · ∫<sub>0</sub><sup>a</sup>. Polinomda tek kuvvetli terimleri sil; sabit çifttir.</li>
+<li><strong>İşaretli alan:</strong> eksen üstü +, altı −. Grafik basitse üçgen, yamuk, yarım-çeyrek daire.</li>
+<li><strong>Net değişim:</strong> ∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a).</li>
+<li><strong>Üst sınır değişken (kısa):</strong> d/dx ∫<sub>a</sub><sup>x</sup> f(t) dt = f(x); üst sınır g(x) ise f(g(x)) · g′(x).</li>
+<li><strong>∫<sub>a</sub><sup>b</sup> f(kx + m) dx = (1/k) ∫<sub>ka+m</sub><sup>kb+m</sup> f(u) du</strong>. Daralan grafiğin alanı küçülür.</li>
+<li><strong>Kontrol:</strong> F′ = f; m(b − a) ≤ ∫ ≤ M(b − a); geometri; koşula uyan basit bir f.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-30">
+<h3>Quiz 30</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">f(x) = x + 1 fonksiyonu için [0, 2] aralığı 4 eşit parçaya bölünüyor. Her parçada yüksekliği parçanın sol ucundaki fonksiyon değeri olan dikdörtgenlerin alanları toplamı kaçtır?</p>
+<ul class="sec"><li>4</li><li>3,5</li><li>4,5</li><li>7</li><li>1,5</li></ul>
+<div class="coz"><p>Δx = 0,5; sol uçlar 0; 0,5; 1; 1,5 ve yükseklikler 1; 1,5; 2; 2,5. Toplam (1 + 1,5 + 2 + 2,5) · 0,5 = 7 · 0,5 = 3,5. f artan olduğu için bu alt toplamdır ve gerçek integralden küçüktür. 4, gerçek integraldir (∫<sub>0</sub><sup>2</sup> (x + 1) dx = 2 + 2); soru yaklaşık toplamı istiyor. 4,5, sağ uçlarla kurulan üst toplamdır. 7, yükseklikleri toplayıp genişlikle çarpmayı unutmaktır. 1,5, fonksiyonu x sanıp +1'i unutmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">∫<sub>1</sub><sup>2</sup> (6x<sup>2</sup> − 2x) dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li>12</li><li>16</li><li>13</li><li>11</li><li>8</li></ul>
+<div class="coz"><p>Ters türev F(x) = 2x<sup>3</sup> − x<sup>2</sup>. F(2) = 16 − 4 = 12, F(1) = 2 − 1 = 1; sonuç 12 − 1 = 11. 12, alt sınırdaki değeri çıkarmayı unutmaktır. 16, ters türev yerine fonksiyonun kendisini sınırlarda hesaplamaktır (f(2) − f(1) = 20 − 4). 13, F(2) ile F(1)'i toplamaktır. 8, −2x'in ters türevini −2x<sup>2</sup> sanmaktır ((16 − 8) − (2 − 2)).</p></div></li>
+
+<li data-c="A"><p class="q">∫<sub>1</sub><sup>4</sup> f(x) dx = 5 olduğuna göre ∫<sub>1</sub><sup>4</sup> (2f(x) + 3) dx kaçtır?</p>
+<ul class="sec"><li>19</li><li>13</li><li>14</li><li>25</li><li>10</li></ul>
+<div class="coz"><p>Toplamı ayır, sabiti dışarı al: 2 · ∫<sub>1</sub><sup>4</sup> f(x) dx + ∫<sub>1</sub><sup>4</sup> 3 dx = 2 · 5 + 3 · (4 − 1) = 10 + 9 = 19. 13, sabitin integralini 3 sanmaktır (genişlik 3 ile çarpılmalı). 14, 2 çarpanını unutmaktır (5 + 9). 25, (2 + 3) · 5 yazıp sabiti de f'in integraliyle çarpmaktır. 10, sabit terimin katkısını hiç yazmamaktır.</p></div></li>
+
+<li data-c="C"><p class="q">∫<sub>−1</sub><sup>1</sup> (x<sup>3</sup> + 3x<sup>2</sup> − 5x + 2) dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li>3</li><li>0</li><li>6</li><li>2</li><li>4</li></ul>
+<div class="coz"><p>Aralık simetrik. x<sup>3</sup> ve −5x tek kuvvetli: katkıları 0. Kalan 3x<sup>2</sup> + 2 çift: 2 · ∫<sub>0</sub><sup>1</sup> (3x<sup>2</sup> + 2) dx = 2 · [x<sup>3</sup> + 2x]<sub>0</sub><sup>1</sup> = 2 · 3 = 6. 3, iki katını almayı unutmaktır. 0, bütün ifadeyi tek fonksiyon sanmaktır. 2, sabit terimi tek sanıp silmektir (2 · ∫<sub>0</sub><sup>1</sup> 3x<sup>2</sup> dx = 2); oysa sabit x<sup>0</sup>'dır, çifttir. 4, 3x<sup>2</sup>'yi silip yalnızca sabiti iki katlamaktır (2 · ∫<sub>0</sub><sup>1</sup> 2 dx = 4).</p></div></li>
+
+<li data-c="E"><p class="q">∫<sub>0</sub><sup>3</sup> |x − 2| dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>2</span></span></li><li>−<span class="kes"><span>3</span><span>2</span></span></li><li>2</li><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>5</span><span>2</span></span></li></ul>
+<div class="coz"><p>Kritik nokta x = 2. [0, 2]'de |x − 2| = 2 − x, integrali [2x − x<sup>2</sup>/2]<sub>0</sub><sup>2</sup> = 2; [2, 3]'te x − 2, integrali [x<sup>2</sup>/2 − 2x]<sub>2</sub><sup>3</sup> = (4,5 − 6) − (2 − 4) = 1/2. Toplam 5/2 (geometri: dik kenarları 2 ve 2, 1 ve 1 olan iki üçgen). −3/2, mutlak değeri atıp ∫<sub>0</sub><sup>3</sup> (x − 2) dx hesaplamaktır; 3/2 o sonucun mutlak değerini almaktır. 2 yalnızca sol parça, 1/2 yalnızca sağ parçadır.</p></div></li>
+
+<li data-c="B"><p class="q">∫<sub>−3</sub><sup>3</sup> √(9 − x<sup>2</sup>) dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li>9π</li><li><span class="kes"><span>9π</span><span>2</span></span></li><li><span class="kes"><span>9π</span><span>4</span></span></li><li>3π</li><li>6π</li></ul>
+<div class="coz"><p>y = √(9 − x<sup>2</sup>) ⇒ y ≥ 0 ve x<sup>2</sup> + y<sup>2</sup> = 9: merkezi orijin, yarıçapı 3 olan çemberin üst yarısı. [−3, 3] aralığında altındaki bölge yarım dairedir: π · 9/2 = 9π/2. 9π, dairenin tamamıdır. 9π/4, çeyrek dairedir (yalnızca [0, 3]). 3π, yarım çemberin uzunluğudur (πr); alan değil. 6π, çemberin tam uzunluğudur (2πr).</p></div></li>
+
+<li data-c="A"><p class="q">f′(x) = 3x<sup>2</sup> − 4x ve f(1) = 2 olduğuna göre f(3) kaçtır?</p>
+<ul class="sec"><li>12</li><li>10</li><li>8</li><li>11</li><li>15</li></ul>
+<div class="coz"><p>Net değişim: f(3) − f(1) = ∫<sub>1</sub><sup>3</sup> (3x<sup>2</sup> − 4x) dx = [x<sup>3</sup> − 2x<sup>2</sup>]<sub>1</sub><sup>3</sup> = (27 − 18) − (1 − 2) = 9 + 1 = 10. f(3) = 2 + 10 = 12. 10, değişimi değer sanıp f(1)'i eklememektir. 8, f(1)'i eklemek yerine çıkarmaktır. 11, F(1) = −1'i çıkarmayı unutup 9 + 2 yazmaktır. 15, f′(3) = 27 − 12'dir; türevin değeri, fonksiyonun değeri değildir.</p></div></li>
+
+<li data-c="D"><p class="q">∫<sub>1</sub><sup>5</sup> f(x) dx = 8 olduğuna göre ∫<sub>0</sub><sup>2</sup> f(2x + 1) dx kaçtır?</p>
+<ul class="sec"><li>8</li><li>16</li><li>2</li><li>4</li><li>Bu bilgilerle bulunamaz.</li></ul>
+<div class="coz"><p>u = 2x + 1, du = 2 dx. x = 0 ⇒ u = 1, x = 2 ⇒ u = 5. ∫<sub>0</sub><sup>2</sup> f(2x + 1) dx = (1/2) ∫<sub>1</sub><sup>5</sup> f(u) du = (1/2) · 8 = 4. 8, 1/2 çarpanını unutmaktır. 16, 2'ye bölmek yerine 2 ile çarpmaktır. 2, yarıya bölmeyi iki kez yapmaktır. "Bulunamaz" diyen, sınırların tam 1 ve 5'e dönüştüğünü görmemiştir; f'i bilmek gerekmez.</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">Aşağıdaki fonksiyonlardan hangisi tek fonksiyondur?</p>
+<ul class="sec"><li>f(x) = x<sup>2</sup> + x</li><li>f(x) = x<sup>3</sup> + 1</li><li>f(x) = x<sup>3</sup> + x</li><li>f(x) = |x|</li><li>f(x) = x<sup>4</sup> − x<sup>2</sup></li></ul>
+<div class="coz"><p>Tek fonksiyon: f(−x) = −f(x). x<sup>3</sup> + x için f(−x) = −x<sup>3</sup> − x = −(x<sup>3</sup> + x): tek, grafiği orijine göre simetrik. x<sup>2</sup> + x'te x<sup>2</sup> çift, x tek; f(−x) = x<sup>2</sup> − x, ne f(x) ne −f(x): ne tek ne çift. x<sup>3</sup> + 1'de sabit 1 çift terimdir, tekliği bozar (f(0) = 1 ≠ 0; tek fonksiyonda f(0) = 0 olmalı). |x| ve x<sup>4</sup> − x<sup>2</sup> çift fonksiyonlardır, y eksenine göre simetriktir.</p></div></li>
+
+<li data-c="E" data-k="ileri-4"><p class="q">y = f(x) grafiği (2, 5) noktasından geçmektedir. Buna göre y = f(x − 3) + 1 grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(−1, 6)</li><li>(5, 4)</li><li>(−1, 4)</li><li>(2, 6)</li><li>(5, 6)</li></ul>
+<div class="coz"><p>f(x − 3) grafiği f'in 3 birim sağa ötelenmişidir: x − 3 = 2 ⇒ x = 5'te f(2) = 5 değeri alınır. +1 grafiği 1 birim yukarı taşır: nokta (5, 6). Denetim: y(5) = f(2) + 1 = 6. (−1, 6), yatay ötelemenin yönünü ters almaktır ("−3 sola" sanmak). (5, 4), düşey ötelemenin yönünü ters almaktır. (−1, 4) iki yönü de ters alır. (2, 6) yalnızca düşey ötelemeyi uygular.</p></div></li>
+
+<li data-c="A" data-k="ileri-7"><p class="q">x<sup>2</sup> − 2x − 8 &lt; 0 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>5</li><li>7</li><li>6</li><li>3</li><li>4</li></ul>
+<div class="coz"><p>x<sup>2</sup> − 2x − 8 = (x − 4)(x + 2); kökler −2 ve 4. a = 1 &gt; 0 olduğu için ifade kökler arasında negatiftir: −2 &lt; x &lt; 4. Tam sayılar −1, 0, 1, 2, 3: 5 tane. 7, eşitsizliği ≤ sanıp kökleri de saymaktır. 6, köklerden yalnızca birini dahil etmektir. 3, yalnızca pozitif tam sayıları saymaktır. 4, 0'ı saymayı unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-9"><p class="q">sin x = <span class="kes"><span>3</span><span>5</span></span> ve x, II. bölgede bir açı olduğuna göre tan x kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>4</span></span></li><li>−<span class="kes"><span>3</span><span>4</span></span></li><li>−<span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>3</span></span></li><li>−<span class="kes"><span>4</span><span>5</span></span></li></ul>
+<div class="coz"><p>Dik üçgen: karşı 3, hipotenüs 5, komşu √(25 − 9) = 4. II. bölgede kosinüs negatif: cos x = −4/5. tan x = sin x / cos x = (3/5)/(−4/5) = −3/4. 3/4, işareti bölgeden almayı unutmaktır. −4/3, cot x'tir. 4/3 onun işaretsiz hâlidir. −4/5, cos x'tir.</p></div></li>
+
+<li data-c="D" data-k="ileri-12"><p class="q">Bir ABC üçgeninde |BC| = a = 6 birim ve m(A) = 30° olduğuna göre üçgenin çevrel çemberinin yarıçapı kaç birimdir?</p>
+<ul class="sec"><li>12</li><li>3</li><li>2√3</li><li>6</li><li>4√3</li></ul>
+<div class="coz"><p>Sinüs teoremi: a / sin A = 2R. 6 / (1/2) = 12 = 2R ⇒ R = 6. 12, 2R'yi R sanmaktır. 3, oranı ters kurup a · sin A hesaplamaktır. 2√3 ve 4√3, sinüs yerine kosinüs kullanmaktır (6 / (√3/2) = 4√3 = 2R, R = 2√3).</p></div></li>
+
+<li data-c="C" data-k="ileri-15"><p class="q">log 2 = a ve log 3 = b olduğuna göre log 12 ifadesinin a ve b türünden eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>a<sup>2</sup> + b</li><li>2ab</li><li>2a + b</li><li>a + 2b</li><li>a + b</li></ul>
+<div class="coz"><p>12 = 2<sup>2</sup> · 3. Çarpımın logaritması toplam, üs başa çarpan olarak iner: log 12 = 2 log 2 + log 3 = 2a + b. a<sup>2</sup> + b, log 2<sup>2</sup>'yi (log 2)<sup>2</sup> sanmaktır. 2ab, toplamı çarpım sanmaktır. a + 2b, log 18'dir (2 ile 3'ün rolleri karışmış). a + b, log 6'dır; 2'nin karesini unutmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-18"><p class="q">Bir geometrik dizide a<sub>2</sub> = 6 ve a<sub>5</sub> = 48 olduğuna göre ilk 4 terimin toplamı kaçtır?</p>
+<ul class="sec"><li>93</li><li>24</li><li>90</li><li>21</li><li>45</li></ul>
+<div class="coz"><p>a<sub>5</sub> = a<sub>2</sub> · r<sup>3</sup> ⇒ 48 = 6r<sup>3</sup> ⇒ r<sup>3</sup> = 8 ⇒ r = 2; a<sub>1</sub> = 6/2 = 3. S<sub>4</sub> = 3 · (2<sup>4</sup> − 1)/(2 − 1) = 45 (3 + 6 + 12 + 24). 93, ilk 5 terimin toplamıdır. 24, 4. terimdir. 90, a<sub>2</sub>'yi ilk terim sanmaktır (6 · 15). 21, ilk 3 terimin toplamıdır.</p></div></li>
+
+<li data-c="A" data-k="ileri-20"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>2</sup> − 4</span><span>x<sup>2</sup> − 3x + 2</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>4</li><li>0</li><li>1</li><li><span class="kes"><span>4</span><span>3</span></span></li><li>Limit yoktur.</li></ul>
+<div class="coz"><p>x = 2'de 0/0 belirsizliği. Çarpanlara ayır: (x − 2)(x + 2) / ((x − 2)(x − 1)) = (x + 2)/(x − 1), x = 2'de 4/1 = 4. 0 ve 1, 0/0'ı bir sayı sanmaktır. 4/3, paydayı (x − 2)(x + 1) diye yanlış ayırmaktır. "Limit yoktur", belirsizliği tanımsızlıkla karıştırmaktır; sadeleşince limit vardır.</p></div></li>
+
+<li data-c="B" data-k="ileri-23"><p class="q">f(x) = √(x<sup>2</sup> + 5) olduğuna göre f′(2) kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>6</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>3</span></span></li><li>3</li><li>4</li></ul>
+<div class="coz"><p>(√(g(x)))′ = g′(x) / (2√(g(x))). g(x) = x<sup>2</sup> + 5, g′(x) = 2x. f′(2) = 4 / (2 · 3) = 2/3. 1/6, içtekinin türevini (4) unutmaktır. 4/3, paydadaki 2'yi unutmaktır. 3, f(2)'dir. 4, yalnızca içtekinin türevidir.</p></div></li>
+
+<li data-c="D" data-k="ileri-26"><p class="q">f(x) = x<sup>3</sup> − 6x<sup>2</sup> + 5 fonksiyonunun büküm noktasının ordinatı kaçtır?</p>
+<ul class="sec"><li>2</li><li>−27</li><li>5</li><li>−11</li><li>−12</li></ul>
+<div class="coz"><p>f″(x) = 6x − 12 = 0 ⇒ x = 2 ve f″ burada işaret değiştirir (− → +). Ordinat f(2) = 8 − 24 + 5 = −11. 2, apsistir. −27, f′ = 3x<sup>2</sup> − 12x'in köküne (x = 4, yerel minimum) bakmaktır. 5, f(0)'dır (öbür kritik nokta, yerel maksimum). −12, f′(2)'dir; büküm noktasındaki teğetin eğimi, ordinat değil.</p></div></li>
+
+<li data-c="E" data-k="ileri-27"><p class="q">x ve y pozitif gerçek sayılar ve x + y = 12 olduğuna göre x · y<sup>2</sup> çarpımının alabileceği en büyük değer kaçtır?</p>
+<ul class="sec"><li>216</li><li>128</li><li>64</li><li>8</li><li>256</li></ul>
+<div class="coz"><p>x = 12 − y yaz: P(y) = (12 − y)y<sup>2</sup> = 12y<sup>2</sup> − y<sup>3</sup>, 0 &lt; y &lt; 12. P′(y) = 24y − 3y<sup>2</sup> = 3y(8 − y) = 0 ⇒ y = 8; işaret + → −, maksimum. x = 4, P = 4 · 64 = 256. 216, sayıları eşit bölmektir (6 · 36); bu, x · y için doğru olan kalıptır. 128, x ile y'nin değerlerini karıştırmaktır (8 · 16). 64, y<sup>2</sup>'dir. 8, maksimumun gerçekleştiği y değeridir, istenen değer değil.</p></div></li>
+
+<li data-c="C" data-k="ileri-27"><p class="q">Bir kenarı 12 cm olan kare biçimindeki kartonun dört köşesinden x cm kenarlı eş kareler kesilip kenarlar yukarı kıvrılarak üstü açık bir kutu yapılıyor. Kutunun hacmi en çok kaç cm<sup>3</sup> olur?</p>
+<ul class="sec"><li>108</li><li>64</li><li>128</li><li>2</li><li>0</li></ul>
+<div class="coz"><p>V(x) = x(12 − 2x)<sup>2</sup>, 0 &lt; x &lt; 6. V′(x) = (12 − 2x)<sup>2</sup> − 4x(12 − 2x) = (12 − 2x)(12 − 6x) = 0 ⇒ x = 2 (x = 6 aralıkta değil). V(2) = 2 · 64 = 128. 108, x = 3 almaktır (3 · 36). 64, taban alanıdır (8<sup>2</sup>). 2, hacmi en büyük yapan x'tir, hacim değil. 0, tanım aralığı dışındaki x = 6 kökünü almaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-28"><p class="q">∫ (4x<sup>3</sup> − 6x + 2) dx aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>12x<sup>2</sup> − 6 + C</li><li>x<sup>4</sup> − 3x<sup>2</sup> + 2x + C</li><li>x<sup>4</sup> − 6x<sup>2</sup> + 2x + C</li><li>x<sup>4</sup> − 3x<sup>2</sup> + C</li><li>4x<sup>4</sup> − 3x<sup>2</sup> + 2x + C</li></ul>
+<div class="coz"><p>Kuvvet kuralı terim terim: 4 · x<sup>4</sup>/4 = x<sup>4</sup>, −6 · x<sup>2</sup>/2 = −3x<sup>2</sup>, 2 · x = 2x. Sonuç x<sup>4</sup> − 3x<sup>2</sup> + 2x + C (türevi alınınca 4x<sup>3</sup> − 6x + 2). 12x<sup>2</sup> − 6 + C türevdir, integral değil. x<sup>4</sup> − 6x<sup>2</sup> + 2x + C, −6x'te 2'ye bölmeyi unutmaktır. x<sup>4</sup> − 3x<sup>2</sup> + C, sabit 2'nin integralini 0 sanmaktır. 4x<sup>4</sup> − …, ilk terimde yeni üsse bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-28"><p class="q">f′(x) = 6x − 2 ve f(1) = 4 olduğuna göre f(2) kaçtır?</p>
+<ul class="sec"><li>11</li><li>10</li><li>8</li><li>3</li><li>20</li></ul>
+<div class="coz"><p>f(x) = 3x<sup>2</sup> − 2x + C. f(1) = 3 − 2 + C = 4 ⇒ C = 3. f(2) = 12 − 4 + 3 = 11. 10, f′(2)'dir. 8, C'yi bulup eklemeyi unutmaktır. 3, C'nin kendisidir. 20, 6x'in ters türevini 6x<sup>2</sup> sanmaktır (f = 6x<sup>2</sup> − 2x + C, C = 0, f(2) = 20).</p></div></li>
+
+<li data-c="E" data-k="ileri-29"><p class="q">∫ x(x<sup>2</sup> + 1)<sup>4</sup> dx aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>(x<sup>2</sup> + 1)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>x(x<sup>2</sup> + 1)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>x<sup>2</sup>(x<sup>2</sup> + 1)<sup>5</sup></span><span>10</span></span> + C</li><li><span class="kes"><span>2x(x<sup>2</sup> + 1)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>(x<sup>2</sup> + 1)<sup>5</sup></span><span>10</span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>2</sup> + 1, du = 2x dx ⇒ x dx = du/2. ∫ u<sup>4</sup> du/2 = u<sup>5</sup>/10 + C = (x<sup>2</sup> + 1)<sup>5</sup>/10 + C. Denetim: türevi 5(x<sup>2</sup> + 1)<sup>4</sup> · 2x / 10 = x(x<sup>2</sup> + 1)<sup>4</sup>. /5'li seçenek, du'daki 2 çarpanını ayarlamayı unutmaktır. x'i dışarıda bırakan seçenek, x'i sabit sanmaktır. x<sup>2</sup> içeren seçenek, x'in integralini ayrıca alıp çarpmaktır. 2x'li seçenek, du'ya bölmek yerine onunla çarpmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-29"><p class="q">∫ <span class="kes"><span>2x + 1</span><span>(x<sup>2</sup> + x)<sup>3</sup></span></span> dx aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>2(x<sup>2</sup> + x)<sup>2</sup></span></span> + C</li><li>−<span class="kes"><span>1</span><span>4(x<sup>2</sup> + x)<sup>4</sup></span></span> + C</li><li>−<span class="kes"><span>1</span><span>(x<sup>2</sup> + x)<sup>2</sup></span></span> + C</li><li>−<span class="kes"><span>1</span><span>2(x<sup>2</sup> + x)<sup>2</sup></span></span> + C</li><li>−<span class="kes"><span>2x + 1</span><span>2(x<sup>2</sup> + x)<sup>2</sup></span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>2</sup> + x, du = (2x + 1) dx. ∫ u<sup>−3</sup> du = u<sup>−2</sup>/(−2) + C = −1/(2(x<sup>2</sup> + x)<sup>2</sup>) + C. Denetim: türevi −(1/2) · (−2)(x<sup>2</sup> + x)<sup>−3</sup> · (2x + 1) = (2x + 1)/(x<sup>2</sup> + x)<sup>3</sup>. İşaretsiz seçenek, −2'ye bölerken eksiyi düşürmektir. −1/(4u<sup>4</sup>), üssü 1 artırmak yerine 1 azaltmaktır (−3 − 1 = −4). −1/u<sup>2</sup>, 2'ye bölmeyi unutmaktır. (2x + 1)'li seçenek, du'nun içinde zaten bulunan türevi sonuçta bırakmaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-29">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-30">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-31">Sonraki parça: belirli integral ile alan hesabı</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"belirli integral konu anlatımı AYT analizin temel teoremi"</li>
+  <li>"Riemann toplamı alt toplam üst toplam eğri altındaki alan"</li>
+  <li>"belirli integral özellikleri mutlak değer parçalı tek çift fonksiyon"</li>
+  <li>"belirli integralde değişken değiştirme sınırların değişmesi f(2x) integrali"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 30. satıra göre yazıldı; satırdaki her alt başlık (dikdörtgenlerle yaklaşık alan, alt-üst toplam ve Riemann toplamı fikri, belirli integralin limitle tanımı, gösterim ve sınırlar, analizin temel teoremi ve C'nin düşmesi, polinom-köklü-değişken değiştirmeli hesap örnekleri, özellikler, parçalı ve mutlak değerli fonksiyonlar, tek-çift fonksiyon simetrisi, işaretli alan ve geometriyle hesap, net değişim, üst sınırı değişken integralin türevi ve zincirli biçimi, ∫ f(2x) dx ve ∫ f(x + 1) dx türü sorular, değişkenin adının önemsizliği) metinde işlendi. Alan hesabı Parça 31'e, hareket ve F(x) = ∫ f(t) dt fonksiyonunun incelenmesi Parça 32'ye bırakıldı.</li>
+  <li>Kapsam dosyasındaki "Doğrulanamayanlar" notuna uyularak üst sınırı değişken integralin türevi kısa tutuldu ve metinde "bu kısım sınav kapsamında olmayabilir" diye işaretlendi. Üstel, logaritmik ve trigonometrik fonksiyonların integrali (kapsamı doğrulanamayan Parça 28 alt başlığı) bu parçada kullanılmadı. 2018 programıyla kazanım kazanım karşılaştırma bu oturumda yapılamadı.</li>
+  <li>Teoremin gerekçesi alan fonksiyonu ve ince şerit sezgisiyle verildi; kesin ispat (integraller için ortalama değer teoremi) anlatılmadı. Belirli integralin tanımında eşit parçalı bölüntü kullanıldı; genel tanım eşit olmayan bölüntülere de izin verir, sınav düzeyinde fark yaratmaz. Ardışık karelerin toplam formülü yalnızca tanımın 8/3'e gittiğini göstermek için anıldı. "Riemann toplamı" adı kimi ders kitaplarında geçmeyebilir; alt ve üst toplam adları yerleşiktir.</li>
+  <li>Tartışmalı ya da dikkat isteyen noktalar: Ask kutusundaki araba örneği, hız pozitif olduğu için yol = yer değiştirmedir; işaret değiştiren hızda ikisi ayrışır (Parça 32).</li>
+  <li>Bütün sayısal sonuçlar (12 çözümlü örnek, alt-üst toplam tablosu ve 24 quiz sorusunun cevabı) Python ile denetlendi: belirli integraller Simpson yöntemiyle sayısal olarak, alt ve üst toplamlar doğrudan ve kesirli formülle, türevler simetrik fark bölümüyle, optimizasyon soruları sık ızgarada tarayarak hesaplandı; her çeldiricinin çözümde anılan hatanın sonucu olduğu ve doğru cevaptan farklı olduğu tek tek kontrol edildi. Ortamda sympy yoktu; cebirsel adımlar elle yapılıp sayısal değerle karşılaştırıldı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: y = x<sup>2</sup>'nin [0, 2]'deki dört alt ve üst dikdörtgeni, alan fonksiyonu şekli için f(x) = 1 + 0,6x − 0,08x<sup>2</sup>, x<sup>3</sup> ve x<sup>2</sup>'nin [−1,4; 1,4] aralığındaki simetrik bölgeleri ve Örnek 9'daki yarım daire ile üçgen (iki eksende aynı ölçek) koordinatları formüllerden hesaplandı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (27, 28, 29) ikişer soru; daha eski 26 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 7, 9, 12, 15, 18, 20, 23, 26). Parça 27, 28 ve 29 yazımın başında arşivde yoktu, sonunda eklendi; bu üç parçanın tekrar soruları kapsam listesindeki 27–29. satırların konu ve terimleriyle yazıldı, sonradan yalnızca başlık uyumu denetlendi, metinleriyle satır satır karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,616 @@
+<article class="chapter ders" id="c-ileri-16">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 16 · Üstel ve logaritmik fonksiyonlar 3</div>
+<h1>Üstel ve logaritmik fonksiyonlar 3: denklemler, eşitsizlikler ve uygulamalar</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir laboratuvarda bakteri sayısı her 20 dakikada ikiye katlanıyor. Sayının başlangıçtakinin 1000 katı olması kaç dakika sürer? Bilinmeyen süre bir üssün içinde duruyor: 2<sup>t/20</sup> = 1000. Bilinmeyeni üsten nasıl indirirsin? Aynı soru bir tasarruf hesabının ne zaman ikiye katlanacağını, bir ilacın vücuttan ne zaman atılacağını, bir depremin öbüründen kaç kat güçlü olduğunu sorarken de karşına çıkar.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 14 (üstel fonksiyonun artan-azalan oluşu, logaritmanın tanımı a<sup>x</sup> = b ⇔ x = log<sub>a</sub> b, tanım kümesi koşulları), Parça 15 (logaritma kuralları, taban değiştirme), Parça 7 (ikinci dereceden eşitsizlik ve işaret tablosu), mat Parça 10–11 (üslü sayılar ve üslü denklemler), mat Parça 41–42 (ikinci dereceden denklem, kök-katsayı bağıntıları). Kâğıt kalem yanında olsun; her örnekte bulduğun kökü yerine koyup denetlemeyi alışkanlık yap.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 14'te üstel fonksiyonu ve logaritmayı tanıdın, Parça 15'te logaritmanın kurallarını kurdun. Bu parçada o araçlar iş görür: <strong>bilinmeyeni üste ya da logaritmanın içine saklanmış denklemleri ve eşitsizlikleri çözeceğiz</strong>, sonra bunları gerçek yaşamdan gelen modellerde kullanacağız.</p>
+
+<p>AYT'de bu konudan gelen sorular dört kalıba toplanır. Birincisi üstel denklemler: tabanları eşitleyerek, 2<sup>x</sup> = t gibi bir değişken değiştirmeyle ikinci dereceden denkleme çevirerek ya da iki yanın logaritmasını alarak çözülür. İkincisi logaritmik denklemler: tanıma çevirerek, kurallarla tek logaritmaya indirerek çözülür ve sonunda <strong>tanım koşulu</strong> denetlenir. Üçüncüsü eşitsizlikler: tabanın 1'den büyük mü küçük mü olduğuna göre yönün korunup korunmadığı ve çoğunlukla "kaç tam sayı çözümü vardır" sorusu. Dördüncüsü modeller: bir formül verilir (nüfus, bakteri, yarı ömür, faiz, pH, desibel, deprem büyüklüğü) ve senden bir süre ya da oran istenir.</p>
+
+<p>Bütün bu kalıpların arkasında tek bir fikir var: üstel ve logaritmik fonksiyonlar <strong>bire birdir</strong> ve <strong>ya hep artan ya hep azalandır</strong>. Bire bir oluş denklemleri, artan-azalan oluş eşitsizlikleri çözdürür. Bu fikri sağlam kurarsan ezberlemen gereken kural sayısı ikiye iner. Sınav hesap makinesiz olduğu için sayısal sorularda log 2 ≈ 0,30 ve log 3 ≈ 0,48 gibi değerler soruda verilir; bunları kendin ezberlemen beklenmez ama tanıman işini hızlandırır.</p>
+
+<h2 class="s">1. Ortak anahtar: bire bir fonksiyonda "değerler eşitse girdiler eşittir"</h2>
+
+<p>Parça 14'te gördün: a &gt; 0 ve a ≠ 1 iken f(x) = a<sup>x</sup> bire birdir; farklı iki üs asla aynı sonucu vermez. Grafiğine yatay bir doğru çizersen en çok bir noktada keser. O hâlde iki kuvvetin değeri eşitse, üsleri de eşit olmak zorundadır. Logaritma fonksiyonu da üstel fonksiyonun tersi olduğu için bire birdir; aynı mantık onda da işler.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>a &gt; 0 ve a ≠ 1 olmak üzere:</p>
+<p>a<sup>f(x)</sup> = a<sup>g(x)</sup> ⇔ f(x) = g(x).</p>
+<p>log<sub>a</sub> f(x) = log<sub>a</sub> g(x) ⇔ f(x) = g(x), <strong>ve</strong> f(x) &gt; 0, g(x) &gt; 0.</p>
+<p><strong>Neden?</strong> Üstel ve logaritmik fonksiyon bire birdir: aynı çıktıyı yalnızca aynı girdi verir. Logaritmadaki ek koşul, logaritmanın yalnızca pozitif sayılar için tanımlı olmasından gelir; eşitliğin iki yanı da tanımlı olmalıdır.</p></div>
+
+<p>Taban koşulunun neden önemli olduğunu bir örnekle gör: 1<sup>3</sup> = 1<sup>7</sup>, ama 3 ≠ 7. Taban 1 olunca fonksiyon sabittir, bire bir değildir; kural çöker. Parça 14'te tabana a ≠ 1 koşulunu koymamızın bir nedeni de buydu.</p>
+
+<h2 class="s">2. Üstel denklemler</h2>
+
+<h3>2a. Tabanları eşitleme</h3>
+
+<p>İlk iş her iki yanı <strong>aynı tabanın kuvveti</strong> olarak yazmaktır. Bunun için tabanları asal çarpanlarına ayır: 4 = 2<sup>2</sup>, 8 = 2<sup>3</sup>, 9 = 3<sup>2</sup>, 27 = 3<sup>3</sup>, 1/8 = 2<sup>−3</sup>, √2 = 2<sup>1/2</sup>. Sonra (a<sup>m</sup>)<sup>n</sup> = a<sup>mn</sup> kuralıyla üsleri çarp ve kuralı uygula.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> (a) 8<sup>x − 1</sup> = 4<sup>x + 1</sup> denklemini çözünüz. (b) 3<sup>x + 2</sup> − 3<sup>x</sup> = 72 denklemini çözünüz.</p>
+<p><strong>Adım 1.</strong> (a) İki tabanı da 2'nin kuvveti olarak yaz.</p>
+<span class="mat">(2<sup>3</sup>)<sup>x − 1</sup> = (2<sup>2</sup>)<sup>x + 1</sup> <span class="g">(8 = 2³, 4 = 2²)</span></span>
+<span class="mat">2<sup>3x − 3</sup> = 2<sup>2x + 2</sup> <span class="g">(üssün üssü: üsler çarpılır, parantez dağıtılır)</span></span>
+<p><strong>Adım 2.</strong> Tabanlar eşit, fonksiyon bire bir: üsleri eşitle.</p>
+<span class="mat">3x − 3 = 2x + 2 <span class="g">(bire bir oluş)</span></span>
+<span class="mat">x = 5 <span class="g">(2x'i sola, −3'ü sağa geçir)</span></span>
+<p><strong>Adım 3.</strong> Kontrol: 8<sup>4</sup> = 4096 ve 4<sup>6</sup> = 4096. Eşit.</p>
+<p><strong>Adım 4.</strong> (b) Burada tabanlar zaten aynı ama iki terim toplanıyor; toplamın üssü birleştirilemez. Ortak çarpanı paranteze al: 3<sup>x + 2</sup> = 3<sup>x</sup> · 3<sup>2</sup>.</p>
+<span class="mat">9 · 3<sup>x</sup> − 3<sup>x</sup> = 72 <span class="g">(a<sup>m + n</sup> = a<sup>m</sup> · a<sup>n</sup>)</span></span>
+<span class="mat">8 · 3<sup>x</sup> = 72 <span class="g">(3<sup>x</sup> ortak çarpan: 9 − 1 = 8)</span></span>
+<span class="mat">3<sup>x</sup> = 9 = 3<sup>2</sup> <span class="g">(8'e böl)</span></span>
+<span class="mat">x = 2 <span class="g">(bire bir oluş)</span></span>
+<p><strong>Sonuç:</strong> (a) x = 5. (b) x = 2; kontrol: 3<sup>4</sup> − 3<sup>2</sup> = 81 − 9 = 72.</p></div>
+
+<p><strong>Farklı tabanlar, aynı üs.</strong> 2<sup>x − 3</sup> = 5<sup>x − 3</sup> gibi bir denklemde tabanları eşitleyemezsin. İki yanı 5<sup>x − 3</sup>'e böl: (2/5)<sup>x − 3</sup> = 1. Pozitif ve 1'den farklı bir tabanın kuvvetini 1 yapan tek üs 0'dır (bire bir oluş: a<sup>u</sup> = a<sup>0</sup>). Demek ki x − 3 = 0, x = 3. Kısa yol: <strong>tabanlar farklı, üsler aynıysa üs sıfırdır.</strong></p>
+
+<h3>2b. Değişken değiştirme</h3>
+
+<p>Bazı denklemlerde aynı kuvvet hem kendisi hem karesiyle görünür: 4<sup>x</sup> = (2<sup>2</sup>)<sup>x</sup> = (2<sup>x</sup>)<sup>2</sup>. O zaman 2<sup>x</sup>'e yeni bir ad verirsen denklem tanıdığın ikinci dereceden denkleme döner.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>Denklemde a<sup>x</sup> ve a<sup>2x</sup> (ya da a<sup>−x</sup>) birlikte varsa t = a<sup>x</sup> de. Not et: <strong>t &gt; 0</strong>. Denklemi t'de çöz, negatif ya da sıfır çıkan t değerlerini at, kalanlardan a<sup>x</sup> = t ile x'i bul.</p>
+<p><strong>Neden t &gt; 0?</strong> Parça 14'ten: a<sup>x</sup> fonksiyonunun görüntü kümesi (0, ∞)'dur. Hiçbir x için 2<sup>x</sup> negatif ya da sıfır olamaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> 4<sup>x</sup> − 3 · 2<sup>x</sup> + 2 = 0 denkleminin çözüm kümesini bulunuz.</p>
+<p><strong>Adım 1.</strong> 4<sup>x</sup>'i 2<sup>x</sup> cinsinden yaz.</p>
+<span class="mat">4<sup>x</sup> = (2<sup>2</sup>)<sup>x</sup> = (2<sup>x</sup>)<sup>2</sup> <span class="g">(üsler yer değiştirebilir: 2 · x = x · 2)</span></span>
+<p><strong>Adım 2.</strong> t = 2<sup>x</sup> (t &gt; 0) de.</p>
+<span class="mat">t<sup>2</sup> − 3t + 2 = 0 <span class="g">(yerine koy)</span></span>
+<span class="mat">(t − 1)(t − 2) = 0 <span class="g">(çarpımı 2, toplamı 3 olan sayılar 1 ve 2)</span></span>
+<span class="mat">t = 1 ya da t = 2 <span class="g">(ikisi de pozitif, ikisi de geçerli)</span></span>
+<p><strong>Adım 3.</strong> Geri dön.</p>
+<span class="mat">2<sup>x</sup> = 1 = 2<sup>0</sup> ⇒ x = 0 <span class="g">(bire bir oluş)</span></span>
+<span class="mat">2<sup>x</sup> = 2 = 2<sup>1</sup> ⇒ x = 1 <span class="g">(bire bir oluş)</span></span>
+<p><strong>Adım 4.</strong> Kontrol: x = 0 için 1 − 3 + 2 = 0; x = 1 için 4 − 6 + 2 = 0.</p>
+<p><strong>Sonuç:</strong> Ç = {0, 1}.</p></div>
+
+<p>Aynı yöntem a<sup>−x</sup> içeren denklemlerde de çalışır. 2<sup>x</sup> + 2<sup>2 − x</sup> = 5 denkleminde 2<sup>2 − x</sup> = 4 / 2<sup>x</sup> = 4/t olur: t + 4/t = 5, iki yanı t ile çarp (t &gt; 0 olduğu için sıfırla çarpma tehlikesi yok): t<sup>2</sup> − 5t + 4 = 0, t = 1 ya da t = 4, yani x = 0 ya da x = 2. Kontrol: 1 + 4 = 5 ve 4 + 1 = 5.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Negatif t'yi atmamak.</strong> 9<sup>x</sup> − 2 · 3<sup>x</sup> − 3 = 0 denkleminde t = 3<sup>x</sup> dersen t<sup>2</sup> − 2t − 3 = 0, (t − 3)(t + 1) = 0, t = 3 ya da t = −1 çıkar. 3<sup>x</sup> = −1 olamaz; o kökten x üretmeye çalışan "log<sub>3</sub>(−1)" gibi tanımsız bir ifadeye varır. Doğrusu: yalnızca t = 3, yani x = 1. Ç = {1}. "Kökler toplamı" soruluyorsa cevap 1'dir; t'lerin toplamı olan 2 değildir, iki x'in toplamı hiç değildir, çünkü ikinci x yoktur.</p></div>
+
+<h3>2c. Tabanlar eşitlenemiyorsa: iki yanın logaritmasını al</h3>
+
+<p>2<sup>x</sup> = 5 denkleminde 5'i 2'nin tam ya da kesirli bir kuvveti olarak yazamazsın. Ama logaritmanın tanımı tam olarak bu soruyu cevaplamak için kuruldu (Parça 14): "2'nin kaçıncı kuvveti 5'tir?" Cevap log<sub>2</sub> 5'tir. Bu bir sayıdır ve tam cevaptır; sınav çoğu zaman cevabı bu biçimde bırakır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>a<sup>x</sup> = b (b &gt; 0) ⇒ x = log<sub>a</sub> b = <span class="kes"><span>log b</span><span>log a</span></span>.</p>
+<p><strong>Neden?</strong> İki yanın onluk logaritmasını al: log a<sup>x</sup> = log b. Parça 15'teki kuvvet kuralıyla x · log a = log b. a ≠ 1 olduğu için log a ≠ 0, iki yanı ona bölebilirsin. Sonuç, taban değiştirme kuralının ta kendisidir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> log 2 ≈ 0,30 ve log 3 ≈ 0,48 alarak (a) 2<sup>x</sup> = 5 ve (b) 2<sup>x</sup> = 3<sup>x − 1</sup> denklemlerinin köklerini yaklaşık bulunuz.</p>
+<p><strong>Adım 1.</strong> (a) Tanımdan x = log<sub>2</sub> 5. Taban değiştir.</p>
+<span class="mat">x = <span class="kes"><span>log 5</span><span>log 2</span></span> <span class="g">(taban değiştirme)</span></span>
+<span class="mat">log 5 = log <span class="kes"><span>10</span><span>2</span></span> = 1 − log 2 ≈ 0,70 <span class="g">(bölümün logaritması; log 10 = 1)</span></span>
+<span class="mat">x ≈ <span class="kes"><span>0,70</span><span>0,30</span></span> ≈ 2,33 <span class="g">(böl)</span></span>
+<p><strong>Adım 2.</strong> Tahminle kontrol: 2<sup>2</sup> = 4 &lt; 5 &lt; 8 = 2<sup>3</sup>, o hâlde 2 &lt; x &lt; 3 olmalı. 2,33 bu aralıkta. (Daha duyarlı değerlerle x ≈ 2,32 çıkar.)</p>
+<p><strong>Adım 3.</strong> (b) İki yanın logaritmasını al.</p>
+<span class="mat">x · log 2 = (x − 1) · log 3 <span class="g">(log a<sup>n</sup> = n · log a)</span></span>
+<span class="mat">x · log 2 = x · log 3 − log 3 <span class="g">(dağıt)</span></span>
+<span class="mat">log 3 = x · (log 3 − log 2) <span class="g">(x'li terimleri bir yanda topla)</span></span>
+<span class="mat">x = <span class="kes"><span>log 3</span><span>log 3 − log 2</span></span> <span class="g">(paranteze böl; log 3 ≠ log 2)</span></span>
+<span class="mat">x ≈ <span class="kes"><span>0,48</span><span>0,18</span></span> ≈ 2,67 <span class="g">(sayıları koy)</span></span>
+<p><strong>Adım 4.</strong> Kontrol: x = 3 için sol 8, sağ 9; x = 2 için sol 4, sağ 3. Sol taraf x = 2'de büyük, x = 3'te küçük; kök 2 ile 3 arasında olmalı. 2,67 uygun. (Daha duyarlı değerlerle 2,71.)</p>
+<p><strong>Sonuç:</strong> (a) x = log<sub>2</sub> 5 ≈ 2,3. (b) x = <span class="kes"><span>log 3</span><span>log 3 − log 2</span></span> = log<sub>3/2</sub> 3 ≈ 2,7.</p></div>
+
+<p>Son satırdaki log<sub>3/2</sub> 3 yazımı, log 3 − log 2 = log(3/2) olduğu için taban değiştirmenin tersinden gelir. Sınav seçeneklerde cevabı bu biçimde verebilir; ikisinin aynı sayı olduğunu tanıman gerekir.</p>
+
+<h2 class="s">3. Logaritmik denklemler</h2>
+
+<h3>3a. Her şeyden önce: tanım koşulu</h3>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Denklemde geçen her log<sub>a</sub> f(x) için <strong>f(x) &gt; 0</strong>; taban x içeriyorsa ayrıca <strong>taban &gt; 0 ve taban ≠ 1</strong>. Bu koşulları çözmeye başlamadan yaz, bulduğun her kökü sonunda bu koşullara sok, sağlamayanı at.</p>
+<p><strong>Neden?</strong> Çözerken kullandığın kurallar (log u + log v = log uv gibi) denklemin tanım kümesini sessizce genişletir. uv &gt; 0 olması için u ile v'nin ikisi de negatif olabilir; ama o durumda log u ve log v hiç tanımlı değildir. Genişleyen kümeden gelen ve asıl denklemi sağlamayan köke <strong>yabancı kök</strong> denir.</p></div>
+
+<h3>3b. Tanıma çevirme ve eşit logaritmalar</h3>
+
+<p>En basit biçim log<sub>a</sub> f(x) = b'dir. Parça 14'teki tanımı tersinden oku: "a'nın b'inci kuvveti f(x)'tir", yani <strong>f(x) = a<sup>b</sup></strong>. Örnek: log<sub>2</sub>(x − 1) = 3 ise x − 1 = 2<sup>3</sup> = 8, x = 9. Bu biçimde tanım koşulu kendiliğinden sağlanır, çünkü a<sup>b</sup> her zaman pozitiftir. Örnek: log<sub>3</sub>(x<sup>2</sup> − 7) = 2 ise x<sup>2</sup> − 7 = 9, x<sup>2</sup> = 16, x = −4 ya da x = 4. İkisinde de x<sup>2</sup> − 7 = 9 &gt; 0; <strong>ikisi de köktür</strong>. Negatif bir kökü "negatif çıktı" diye atmak da hatadır: koşul x'in değil, logaritmanın içinin pozitif olmasıdır.</p>
+
+<p>İki yanda aynı tabanlı logaritma varsa bire bir oluşla içleri eşitlersin. log(2x − 1) = log(x + 3) ise 2x − 1 = x + 3, x = 4; kontrol: iki iç de 7 &gt; 0. Ama log(x − 5) = log(2x − 3) denkleminde x − 5 = 2x − 3'ten x = −2 çıkar; bu değerde x − 5 = −7 &lt; 0 olduğu için logaritma tanımsızdır. Çözüm kümesi boştur. Cebir sana bir sayı verdi diye denklemin kökü olduğunu varsayma.</p>
+
+<h3>3c. Kurallarla tek logaritmaya indirme</h3>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> (a) log<sub>2</sub> x + log<sub>2</sub>(x − 2) = 3 ve (b) log<sub>3</sub>(x + 1) − log<sub>3</sub>(x − 1) = 1 denklemlerini çözünüz.</p>
+<p><strong>Adım 1.</strong> (a) Koşulları yaz: x &gt; 0 ve x − 2 &gt; 0. Ortak koşul x &gt; 2.</p>
+<p><strong>Adım 2.</strong> Sol yanı tek logaritmaya indir ve tanıma çevir.</p>
+<span class="mat">log<sub>2</sub>[x(x − 2)] = 3 <span class="g">(çarpımın logaritması, Parça 15)</span></span>
+<span class="mat">x(x − 2) = 2<sup>3</sup> = 8 <span class="g">(tanım)</span></span>
+<span class="mat">x<sup>2</sup> − 2x − 8 = 0 <span class="g">(dağıt, bir yana topla)</span></span>
+<span class="mat">(x − 4)(x + 2) = 0 <span class="g">(çarpımı −8, toplamı −2 olan sayılar −4 ve 2)</span></span>
+<span class="mat">x = 4 ya da x = −2 <span class="g">(adaylar)</span></span>
+<p><strong>Adım 3.</strong> Koşula sok: x = −2 için log<sub>2</sub>(−2) tanımsız; at. x = 4 &gt; 2, geçerli. Kontrol: log<sub>2</sub> 4 + log<sub>2</sub> 2 = 2 + 1 = 3.</p>
+<p><strong>Adım 4.</strong> (b) Koşul: x + 1 &gt; 0 ve x − 1 &gt; 0, ortak koşul x &gt; 1.</p>
+<span class="mat">log<sub>3</sub> <span class="kes"><span>x + 1</span><span>x − 1</span></span> = 1 <span class="g">(bölümün logaritması)</span></span>
+<span class="mat"><span class="kes"><span>x + 1</span><span>x − 1</span></span> = 3<sup>1</sup> = 3 <span class="g">(tanım)</span></span>
+<span class="mat">x + 1 = 3x − 3 <span class="g">(içler-dışlar; x − 1 ≠ 0)</span></span>
+<span class="mat">x = 2 <span class="g">(4 = 2x)</span></span>
+<p><strong>Adım 5.</strong> 2 &gt; 1, koşul sağlanıyor. Kontrol: log<sub>3</sub> 3 − log<sub>3</sub> 1 = 1 − 0 = 1.</p>
+<p><strong>Sonuç:</strong> (a) Ç = {4}; −2 yabancı köktür. (b) Ç = {2}.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Kuvvet kuralını körü körüne uygulayıp kök kaybetmek.</strong> log x<sup>2</sup> = 2 denkleminde tanım koşulu x<sup>2</sup> &gt; 0, yani yalnızca x ≠ 0'dır. Tanımdan x<sup>2</sup> = 100, x = ±10; ikisi de köktür. Önce "log x<sup>2</sup> = 2 log x" yazarsan 2 log x = 2, x = 10 bulur ve −10'u kaybedersin. Neden? log x<sup>n</sup> = n · log x kuralı yalnızca x &gt; 0 iken geçerlidir; x negatifken sağ taraf tanımsız, sol taraf tanımlıdır. Çift kuvvette doğru yazım log x<sup>2</sup> = 2 log |x|'tir. Kural: <strong>kurallar tanım kümesini genişletirse yabancı kök, daraltırsa kayıp kök doğar</strong>; ikisine karşı da tek ilaç, en baştaki denklemin tanım koşulunu yazmak ve bulduklarını orada denemektir.</p></div>
+
+<h3>3d. Değişken değiştirme</h3>
+
+<p>log x hem kendisi hem karesiyle görünüyorsa t = log x de. Burada t'ye işaret koşulu <strong>yoktur</strong>: logaritmanın görüntü kümesi bütün gerçek sayılardır (Parça 14), t negatif de çıkabilir. Koşul x'tedir: x &gt; 0.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (log x)<sup>2</sup> − 3 log x + 2 = 0 denkleminin köklerini ve kökler çarpımını bulunuz.</p>
+<p><strong>Adım 1.</strong> Koşul: x &gt; 0. t = log x de.</p>
+<span class="mat">t<sup>2</sup> − 3t + 2 = 0 <span class="g">(yerine koy)</span></span>
+<span class="mat">(t − 1)(t − 2) = 0 ⇒ t = 1 ya da t = 2 <span class="g">(çarpanlara ayır)</span></span>
+<p><strong>Adım 2.</strong> Geri dön: log x = 1 ⇒ x = 10<sup>1</sup> = 10; log x = 2 ⇒ x = 10<sup>2</sup> = 100. İkisi de pozitif.</p>
+<p><strong>Adım 3.</strong> Kökler çarpımı 10 · 100 = 1000.</p>
+<p><strong>Adım 4.</strong> Hızlı yol: kökleri bulmadan, t'lerin toplamı kök-katsayıdan 3'tür. log x<sub>1</sub> + log x<sub>2</sub> = 3 ⇒ log(x<sub>1</sub>x<sub>2</sub>) = 3 ⇒ x<sub>1</sub>x<sub>2</sub> = 10<sup>3</sup>. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> Ç = {10, 100}, kökler çarpımı 1000.</p></div>
+
+<p>Bir de taban ile içerinin yer değiştirdiği tip var: log<sub>2</sub> x + log<sub>x</sub> 2 = 5/2. Parça 15'ten log<sub>x</sub> 2 = 1 / log<sub>2</sub> x. t = log<sub>2</sub> x dersen t + 1/t = 5/2, 2t<sup>2</sup> − 5t + 2 = 0, t = 2 ya da t = 1/2; x = 4 ya da x = √2. Koşullar: x &gt; 0 ve x ≠ 1 (x burada taban). İkisi de sağlıyor.</p>
+
+<h3>3e. Üssünde logaritma olan denklemler</h3>
+
+<p>x<sup>log x</sup> = 100 gibi bir denklemde x hem tabanda hem üste. Tabanları eşitleyemezsin, t dönüşümü doğrudan görünmez. Çare yine logaritmadır: iki yanın logaritmasını alınca üs aşağı iner ve log x'te ikinci dereceden bir denklem kalır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (a) x<sup>log x</sup> = 100 ve (b) x<sup>log x</sup> = 100x denklemlerinin köklerini bulunuz.</p>
+<p><strong>Adım 1.</strong> Koşul: taban x olduğu için x &gt; 0. (a) İki yanın onluk logaritmasını al.</p>
+<span class="mat">log x · log x = log 100 <span class="g">(üs önce çarpan olarak iner)</span></span>
+<span class="mat">(log x)<sup>2</sup> = 2 <span class="g">(log 100 = 2)</span></span>
+<span class="mat">log x = √2 ya da log x = −√2 <span class="g">(karekök; iki işaret)</span></span>
+<span class="mat">x = 10<sup>√2</sup> ya da x = 10<sup>−√2</sup> <span class="g">(tanım)</span></span>
+<p><strong>Adım 2.</strong> İki kök de pozitif. Kökler çarpımı 10<sup>√2 + (−√2)</sup> = 10<sup>0</sup> = 1. Kontrol: (10<sup>√2</sup>)<sup>√2</sup> = 10<sup>2</sup> = 100.</p>
+<p><strong>Adım 3.</strong> (b) Aynı işlem; sağ yanda çarpımın logaritması toplam olur.</p>
+<span class="mat">(log x)<sup>2</sup> = log 100 + log x = 2 + log x <span class="g">(log(100x) = log 100 + log x)</span></span>
+<span class="mat">t<sup>2</sup> − t − 2 = 0, t = log x <span class="g">(bir yana topla)</span></span>
+<span class="mat">(t − 2)(t + 1) = 0 ⇒ t = 2 ya da t = −1 <span class="g">(çarpanlara ayır)</span></span>
+<span class="mat">x = 100 ya da x = <span class="kes"><span>1</span><span>10</span></span> <span class="g">(tanım)</span></span>
+<p><strong>Adım 4.</strong> Kontrol: x = 100 için 100<sup>2</sup> = 10000 = 100 · 100. x = 1/10 için (1/10)<sup>−1</sup> = 10 = 100 · (1/10). İkisi de sağlıyor.</p>
+<p><strong>Sonuç:</strong> (a) x = 10<sup>√2</sup> ya da 10<sup>−√2</sup>, kökler çarpımı 1. (b) Ç = {1/10, 100}, kökler çarpımı 10.</p></div>
+
+<p><strong>Hızlı yol ve kontrol yolu.</strong> Logaritmik denklemde en hızlı denetim, bulduğun sayıyı en baştaki denkleme koymaktır; logaritmaların içleri çoğu zaman 2, 4, 8, 10, 100 gibi tanıdık sayılara çıkar ve hesap birkaç saniye sürer. Çoktan seçmeli soruda bu yöntemi tersinden de kullanabilirsin: önce tanım koşulunu yaz ve onu sağlamayan seçenekleri ele; sonra kalan seçenekleri denklemde dene. Tanım koşulu çoğu zaman seçeneklerin yarısını tek başına eler. Kökler toplamı ya da çarpımı sorulduğunda ise kökleri tek tek bulmadan önce t'deki ikinci dereceden denklemin kök-katsayı bağıntısına bak; Örnek 5'teki gibi sonuç doğrudan çıkar.</p>
+
+<p>Bu tipteki kalıp şudur: <strong>x üste ve tabanda birlikteyse iki yanın logaritmasını al, log x'e t de.</strong> Kökler çarpımı soruluyorsa t'lerin toplamını kök-katsayıdan oku ve 10'u o kuvvete yükselt.</p>
+
+<div class="tablo"><table>
+<tr><th>Denklemin biçimi</th><th>Yöntem</th><th>Sonunda denetle</th></tr>
+<tr><td>a<sup>f(x)</sup> = a<sup>g(x)</sup> (tabanlar eşitlenebiliyor)</td><td>Üsleri eşitle: f(x) = g(x)</td><td>Yerine koy</td></tr>
+<tr><td>a<sup>f(x)</sup> = b<sup>f(x)</sup>, a ≠ b</td><td>Üs sıfırdır: f(x) = 0</td><td>—</td></tr>
+<tr><td>a<sup>2x</sup>, a<sup>x</sup>, a<sup>−x</sup> birlikte</td><td>t = a<sup>x</sup>, ikinci dereceden denklem</td><td>t &gt; 0 olmayanı at</td></tr>
+<tr><td>a<sup>x</sup> = b, b a'nın kuvveti değil</td><td>x = log<sub>a</sub> b = log b / log a</td><td>Tahmin: hangi iki tam sayı arasında?</td></tr>
+<tr><td>log<sub>a</sub> f(x) = b</td><td>Tanım: f(x) = a<sup>b</sup></td><td>Öbür logaritmaların içi &gt; 0</td></tr>
+<tr><td>log<sub>a</sub> f(x) = log<sub>a</sub> g(x)</td><td>f(x) = g(x)</td><td>f(x) &gt; 0 ve g(x) &gt; 0</td></tr>
+<tr><td>Birden çok logaritma toplanıyor ya da çıkıyor</td><td>Kurallarla tek logaritmaya indir</td><td>Yabancı kök: her içi ayrı denetle</td></tr>
+<tr><td>(log x)<sup>2</sup>, log x birlikte</td><td>t = log x (işaret koşulu yok)</td><td>x &gt; 0</td></tr>
+<tr><td>x<sup>log x</sup> = …</td><td>İki yanın logaritmasını al, t = log x</td><td>x &gt; 0</td></tr>
+</table></div>
+
+<h2 class="s">4. Eşitsizlikler: yön ne zaman korunur, ne zaman döner?</h2>
+
+<h3>4a. Nedeni: artan fonksiyon sırayı korur, azalan çevirir</h3>
+
+<p>Parça 1'deki tanımı hatırla: f artansa x<sub>1</sub> &lt; x<sub>2</sub> ⇒ f(x<sub>1</sub>) &lt; f(x<sub>2</sub>); azalansa x<sub>1</sub> &lt; x<sub>2</sub> ⇒ f(x<sub>1</sub>) &gt; f(x<sub>2</sub>). Parça 14'te gördün: a &gt; 1 iken a<sup>x</sup> artan, 0 &lt; a &lt; 1 iken azalandır. Yani bir eşitsizliğin iki yanını "a'nın üssü olarak yazmak" ya da "logaritmasını almak", iki yana aynı fonksiyonu uygulamaktır. Fonksiyon artansa yön korunur, azalansa döner. Mat Parça 19'da eşitsizliği negatif bir sayıyla çarpınca yönün dönmesi de aynı nedenle olur: x ↦ −x azalan bir fonksiyondur.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Aynı koordinat düzleminde y eşittir 2 üzeri x artan, y eşittir 1 bölü 2 üzeri x azalan eğrisi. Sağda x eşit 1 ve 2 için 2 ve 4 değerleri, solda x eşit eksi 2 ve eksi 1 için 4 ve 2 değerleri işaretli.">
+  <line class="sv-c" x1="20" y1="270" x2="385" y2="270" />
+  <line class="sv-c" x1="200" y1="285" x2="200" y2="20" />
+  <polyline class="sv-cl" points="35.0,266.2 48.8,265.5 62.5,264.7 76.2,263.7 90.0,262.5 103.8,261.1 117.5,259.4 131.2,257.4 145.0,255.0 158.8,252.2 172.5,248.8 186.2,244.8 200.0,240.0 213.8,234.3 227.5,227.6 241.2,219.5 255.0,210.0 268.8,198.6 282.5,185.1 296.2,169.1 310.0,150.0 323.8,127.3 337.5,100.3 351.2,68.2 365.0,30.0" />
+  <polyline class="sv-c" points="35.0,30.0 48.8,68.2 62.5,100.3 76.2,127.3 90.0,150.0 103.8,169.1 117.5,185.1 131.2,198.6 145.0,210.0 158.8,219.5 172.5,227.6 186.2,234.3 200.0,240.0 213.8,244.8 227.5,248.8 241.2,252.2 255.0,255.0 268.8,257.4 282.5,259.4 296.2,261.1 310.0,262.5 323.8,263.7 337.5,264.7 351.2,265.5 365.0,266.2" />
+  <line class="sv-c" x1="255" y1="210" x2="255" y2="270" />
+  <line class="sv-c" x1="310" y1="150" x2="310" y2="270" />
+  <line class="sv-c" x1="145" y1="210" x2="145" y2="270" />
+  <line class="sv-c" x1="90" y1="150" x2="90" y2="270" />
+  <circle class="sv-a" cx="255" cy="210" r="4" />
+  <circle class="sv-a" cx="310" cy="150" r="4" />
+  <circle class="sv-m" cx="145" cy="210" r="4" />
+  <circle class="sv-m" cx="90" cy="150" r="4" />
+  <text class="sv-s" x="249" y="206" text-anchor="end">(1, 2)</text>
+  <text class="sv-s" x="304" y="146" text-anchor="end">(2, 4)</text>
+  <text class="sv-s" x="151" y="206" text-anchor="start">(−1, 2)</text>
+  <text class="sv-s" x="96" y="146" text-anchor="start">(−2, 4)</text>
+  <text class="sv-b" x="345" y="58" text-anchor="end">y = 2ˣ (artan)</text>
+  <text class="sv-b" x="55" y="58" text-anchor="start">y = (½)ˣ (azalan)</text>
+  <text class="sv-s" x="90" y="288" text-anchor="middle">−2</text>
+  <text class="sv-s" x="145" y="288" text-anchor="middle">−1</text>
+  <text class="sv-s" x="255" y="288" text-anchor="middle">1</text>
+  <text class="sv-s" x="310" y="288" text-anchor="middle">2</text>
+  <text class="sv-s" x="380" y="288" text-anchor="end">x</text>
+</svg>
+<figcaption>Sağda: 1 &lt; 2 ve 2<sup>1</sup> = 2 &lt; 4 = 2<sup>2</sup>; artan fonksiyon sırayı korur. Solda: −2 &lt; −1 ama (½)<sup>−2</sup> = 4 &gt; 2 = (½)<sup>−1</sup>; azalan fonksiyon sırayı çevirir. Eşitsizlikte yönün dönmesi bu çevrilmedir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Üstel eşitsizlik.</strong> a &gt; 1 ise a<sup>u</sup> &lt; a<sup>v</sup> ⇔ u &lt; v (yön korunur). 0 &lt; a &lt; 1 ise a<sup>u</sup> &lt; a<sup>v</sup> ⇔ u &gt; v (yön döner).</p>
+<p><strong>Logaritmik eşitsizlik.</strong> a &gt; 1 ise log<sub>a</sub> u &lt; log<sub>a</sub> v ⇔ 0 &lt; u &lt; v. 0 &lt; a &lt; 1 ise log<sub>a</sub> u &lt; log<sub>a</sub> v ⇔ u &gt; v &gt; 0.</p>
+<p><strong>Neden?</strong> Taban 1'den büyükken iki fonksiyon da artan, 0 ile 1 arasındayken ikisi de azalandır. Logaritmada ek olarak içlerin pozitif olması gerekir; eşitsizlik bunu kendisi söylemez, sen eklersin.</p></div>
+
+<h3>4b. Üstel eşitsizlikler</h3>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> (a) (1/2)<sup>x − 3</sup> &gt; 4 ve (b) 3<sup>x<sup>2</sup> − 2x</sup> &lt; 27 eşitsizliklerini çözünüz; (b)'nin tam sayı çözümlerini sayınız.</p>
+<p><strong>Adım 1.</strong> (a) Sağ yanı da 1/2 tabanında yaz: 4 = 2<sup>2</sup> = (1/2)<sup>−2</sup>.</p>
+<span class="mat">(1/2)<sup>x − 3</sup> &gt; (1/2)<sup>−2</sup> <span class="g">(aynı taban)</span></span>
+<span class="mat">x − 3 &lt; −2 <span class="g">(taban 1/2 &lt; 1: fonksiyon azalan, yön döner)</span></span>
+<span class="mat">x &lt; 1 <span class="g">(3 ekle)</span></span>
+<p><strong>Adım 2.</strong> Kontrol yolu: aynı soruyu 2 tabanında çöz. (1/2)<sup>x − 3</sup> = 2<sup>3 − x</sup> olduğundan 2<sup>3 − x</sup> &gt; 2<sup>2</sup>, taban 2 &gt; 1, yön korunur: 3 − x &gt; 2, x &lt; 1. Aynı sonuç. Bir de sayı dene: x = 0 için (1/2)<sup>−3</sup> = 8 &gt; 4, doğru; x = 1 için (1/2)<sup>−2</sup> = 4, "&gt; 4" değil; sınır dahil değil.</p>
+<p><strong>Adım 3.</strong> (b) 27 = 3<sup>3</sup>; taban 3 &gt; 1, yön korunur.</p>
+<span class="mat">x<sup>2</sup> − 2x &lt; 3 <span class="g">(üsleri karşılaştır)</span></span>
+<span class="mat">x<sup>2</sup> − 2x − 3 &lt; 0 <span class="g">(bir yana topla)</span></span>
+<span class="mat">(x − 3)(x + 1) &lt; 0 <span class="g">(çarpanlara ayır)</span></span>
+<span class="mat">−1 &lt; x &lt; 3 <span class="g">(Parça 7: a &gt; 0 olan parabol kökler arasında negatif)</span></span>
+<p><strong>Adım 4.</strong> Tam sayılar: 0, 1, 2. Uçlar dahil değil.</p>
+<p><strong>Sonuç:</strong> (a) x &lt; 1. (b) −1 &lt; x &lt; 3; üç tam sayı çözüm.</p></div>
+
+<p>Değişken değiştirme eşitsizlikte de çalışır. 4<sup>x</sup> − 3 · 2<sup>x</sup> + 2 &lt; 0 için t = 2<sup>x</sup> dersen (t − 1)(t − 2) &lt; 0, yani 1 &lt; 2<sup>x</sup> &lt; 2. Üç yanı 2'nin kuvveti olarak yaz: 2<sup>0</sup> &lt; 2<sup>x</sup> &lt; 2<sup>1</sup>, taban 2 &gt; 1, yön korunur: 0 &lt; x &lt; 1. Örnek 2'nin kökleri burada aralığın uçları olarak geri döndü.</p>
+
+<h3>4c. Logaritmik eşitsizlikler</h3>
+
+<p>Logaritmik eşitsizliği dört adımda çöz: (1) her logaritmanın içi için tanım koşulunu yaz; (2) sağdaki sayıyı aynı tabanda logaritma olarak yaz, b = log<sub>a</sub> a<sup>b</sup>; (3) tabana bakıp yönü koru ya da çevir; (4) bulduğun aralığı tanım koşuluyla kesiştir. Dördüncü adım unutulursa çözüm kümesi sonsuza uzar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> (a) log<sub>1/2</sub>(x − 1) &gt; −2 eşitsizliğinin tam sayı çözümlerini bulunuz. (b) 1 &lt; log<sub>2</sub> x &lt; 3 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<p><strong>Adım 1.</strong> (a) Tanım koşulu: x − 1 &gt; 0, yani x &gt; 1.</p>
+<p><strong>Adım 2.</strong> −2'yi 1/2 tabanında logaritma olarak yaz.</p>
+<span class="mat">−2 = log<sub>1/2</sub> (1/2)<sup>−2</sup> = log<sub>1/2</sub> 4 <span class="g">(log<sub>a</sub> a<sup>b</sup> = b; (1/2)<sup>−2</sup> = 2<sup>2</sup>)</span></span>
+<span class="mat">log<sub>1/2</sub>(x − 1) &gt; log<sub>1/2</sub> 4 <span class="g">(aynı taban)</span></span>
+<span class="mat">x − 1 &lt; 4 ⇒ x &lt; 5 <span class="g">(taban &lt; 1: yön döner)</span></span>
+<p><strong>Adım 3.</strong> Kesiştir: x &gt; 1 ve x &lt; 5 ⇒ 1 &lt; x &lt; 5. Tam sayılar 2, 3, 4.</p>
+<p><strong>Adım 4.</strong> Kontrol: x = 3 için log<sub>1/2</sub> 2 = −1 &gt; −2, doğru. x = 6 için log<sub>1/2</sub> 5, −2 ile −3 arasında bir sayıdır (çünkü 4 &lt; 5 &lt; 8); −2'den küçük, doğru olarak dışarıda.</p>
+<p><strong>Adım 5.</strong> (b) Üç yanı 2 tabanında yaz: 1 = log<sub>2</sub> 2, 3 = log<sub>2</sub> 8. Taban 2 &gt; 1, yön korunur.</p>
+<span class="mat">log<sub>2</sub> 2 &lt; log<sub>2</sub> x &lt; log<sub>2</sub> 8 ⇒ 2 &lt; x &lt; 8 <span class="g">(artan fonksiyon)</span></span>
+<p><strong>Adım 6.</strong> Tanım koşulu x &gt; 0 zaten sağlanıyor. Tam sayılar 3, 4, 5, 6, 7.</p>
+<p><strong>Sonuç:</strong> (a) Ç = (1, 5); tam sayı çözümleri 2, 3, 4 (üç tane). (b) Beş tam sayı.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 230" role="img" aria-label="Üç sayı doğrusu. Birincide tanım koşulu x büyüktür 1, ikincide eşitsizliğin verdiği x küçüktür 5, üçüncüde ortak çözüm 1 ile 5 arası ve 2, 3, 4 tam sayıları işaretli.">
+  <text class="sv-s" x="20" y="38">1) Tanım: x − 1 &gt; 0 ⇒ x &gt; 1</text>
+  <line class="sv-c" x1="20" y1="60" x2="385" y2="60" />
+  <line class="sv-cl" x1="100" y1="60" x2="385" y2="60" />
+  <circle class="sv-k" cx="100" cy="60" r="5" />
+  <text class="sv-s" x="20" y="103">2) Taban &lt; 1, yön döner: x − 1 &lt; 4 ⇒ x &lt; 5</text>
+  <line class="sv-c" x1="20" y1="125" x2="385" y2="125" />
+  <line class="sv-cl" x1="20" y1="125" x2="260" y2="125" />
+  <circle class="sv-k" cx="260" cy="125" r="5" />
+  <text class="sv-s" x="20" y="168">3) Ortak çözüm: 1 &lt; x &lt; 5</text>
+  <line class="sv-c" x1="20" y1="190" x2="385" y2="190" />
+  <line class="sv-cl" x1="100" y1="190" x2="260" y2="190" />
+  <circle class="sv-k" cx="100" cy="190" r="5" />
+  <circle class="sv-k" cx="260" cy="190" r="5" />
+  <circle class="sv-a" cx="140" cy="190" r="4" />
+  <circle class="sv-a" cx="180" cy="190" r="4" />
+  <circle class="sv-a" cx="220" cy="190" r="4" />
+  <text class="sv-s" x="60" y="214" text-anchor="middle">0</text>
+  <text class="sv-s" x="100" y="214" text-anchor="middle">1</text>
+  <text class="sv-s" x="140" y="214" text-anchor="middle">2</text>
+  <text class="sv-s" x="180" y="214" text-anchor="middle">3</text>
+  <text class="sv-s" x="220" y="214" text-anchor="middle">4</text>
+  <text class="sv-s" x="260" y="214" text-anchor="middle">5</text>
+  <text class="sv-s" x="300" y="214" text-anchor="middle">6</text>
+  <text class="sv-s" x="340" y="214" text-anchor="middle">7</text>
+</svg>
+<figcaption>log<sub>1/2</sub>(x − 1) &gt; −2 için iki ayrı bilgi kesiştirilir. Yalnızca ikinci satıra bakan, x = 0, −5, −100 gibi logaritmanın tanımsız olduğu sayıları da çözüm sanar. Boş yuvarlak: uç dahil değil.</figcaption>
+</figure>
+
+<p><strong>Hızlı yol: tabanı 1'den büyük yap.</strong> Parça 15'teki taban kuralından log<sub>1/a</sub> u = −log<sub>a</sub> u'dur, çünkü 1/a = a<sup>−1</sup>. Yani log<sub>1/2</sub>(x − 1) &gt; −2 eşitsizliği −log<sub>2</sub>(x − 1) &gt; −2, iki yanı −1 ile çarpınca log<sub>2</sub>(x − 1) &lt; 2 olur; taban artık 2 &gt; 1 ve yön korunur: x − 1 &lt; 4. Aynı sonuç. Yönün neden döndüğünü bu biçimde görmek, kuralı ezberden kurtarır: 1'den küçük taban, gizli bir eksi işaretidir. Kontrol yolu ise her zaman aynıdır: çözüm aralığının içinden bir sayı ve dışından bir sayı seç, ikisini de asıl eşitsizlikte dene.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Tabana bakmadan yönü korumak.</strong> log<sub>1/2</sub>(x − 1) &gt; −2'de "x − 1 &gt; 4" yazan x &gt; 5 bulur; kontrol için x = 6 koy: log<sub>1/2</sub> 5 ≈ −2,3, bu −2'den büyük değil. Tek bir deneme hatayı yakalar. Tabanın 1/2, 1/3, 0,2 gibi 1'den küçük bir sayı olduğunu gördüğün anda yönü çevir.</p>
+<p><strong>Tanım koşulunu kesiştirmemek.</strong> log<sub>2</sub>(x − 3) ≤ 2 eşitsizliğinden yalnızca x − 3 ≤ 4, x ≤ 7 yazan, sonsuz çoklukta tam sayıyı çözüm sanır. Doğrusu 0 &lt; x − 3 ≤ 4, yani 3 &lt; x ≤ 7; tam sayılar 4, 5, 6, 7.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Taban</th><th>a<sup>u</sup> &lt; a<sup>v</sup> ise</th><th>log<sub>a</sub> u &lt; log<sub>a</sub> v ise</th><th>Nedeni</th></tr>
+<tr><td>a &gt; 1</td><td>u &lt; v</td><td>0 &lt; u &lt; v</td><td>İki fonksiyon da artan: sıra korunur</td></tr>
+<tr><td>0 &lt; a &lt; 1</td><td>u &gt; v</td><td>u &gt; v &gt; 0</td><td>İki fonksiyon da azalan: sıra çevrilir</td></tr>
+<tr><td>a = 1 ya da a ≤ 0</td><td colspan="2">Üstel fonksiyon ve logaritma tanımlı değil (Parça 14)</td><td>Bire bir değil ya da tanımsız</td></tr>
+</table></div>
+
+<h2 class="s">5. Cebirle çözülemeyen denklemler: grafikle çözüm sayısı</h2>
+
+<p>2<sup>x</sup> = 3 − x denklemine bak. x hem üste hem dışarıda; tabanları eşitleyemezsin, logaritma alınca da log(3 − x) gibi açılamayan bir ifade kalır. Bu tür denklemleri lise düzeyinde cebirle çözmenin yolu yoktur. Sınav bu yüzden onları başka biçimde sorar: <strong>kaç kökü var?</strong> Ya da tek kök deneyerek bulunacak kadar basittir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>f(x) = g(x) denkleminin gerçek kök sayısı, y = f(x) ile y = g(x) grafiklerinin kesişim noktası sayısına eşittir. Biri artan, öbürü azalan iki fonksiyonun grafikleri <strong>en çok bir kez</strong> kesişir.</p>
+<p><strong>Neden?</strong> Kesişim noktası, aynı x için iki fonksiyonun aynı değeri aldığı yerdir. Artan biri ile azalan biri bir kez buluştuktan sonra sağda artan hep üstte, solda hep altta kalır; ikinci kez buluşamazlar.</p></div>
+
+<p><strong>2<sup>x</sup> = 3 − x.</strong> Sol taraf artan, sağ taraf azalan: en çok bir kök. x = 1 dene: 2<sup>1</sup> = 2 ve 3 − 1 = 2. Tek kök x = 1'dir. Bu tür sorularda önce artan-azalan durumuna bak, sonra küçük tam sayıları dene.</p>
+
+<p><strong>log<sub>2</sub> x = x − 1.</strong> İkisi de artan; yukarıdaki kural işe yaramaz. Dene: x = 1 için log<sub>2</sub> 1 = 0 = 1 − 1; x = 2 için log<sub>2</sub> 2 = 1 = 2 − 1. İki kök var. Logaritma eğrisi giderek yavaşlayarak büküldüğü için bir doğruyu en çok iki noktada keser; bunun kesin gerekçesini Parça 26'da bükeylikle göreceksin. Kökler 1 ve 2'dir.</p>
+
+<p><strong>2<sup>x</sup> = x<sup>2</sup>.</strong> Sınavın sevdiği tuzak. Deneme ile x = 2 (4 = 4) ve x = 4 (16 = 16) bulunur ve çoğu kişi "iki kök" der. Negatif tarafa bak: x = −1 için 2<sup>−1</sup> = 0,5 ile (−1)<sup>2</sup> = 1; sol küçük. x = 0 için 2<sup>0</sup> = 1 ile 0; sol büyük. Fark işaret değiştirdiğine göre −1 ile 0 arasında bir kesişim daha vardır (Parça 21'de "ara değer" fikri olarak görülecek). Üçüncü kök yaklaşık −0,77'dir. x &gt; 4 için 2<sup>x</sup> her adımda iki katına çıkarken x<sup>2</sup> çok daha yavaş büyür; bir daha kesişmezler. Toplam üç kök.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="y eşittir 2 üzeri x ve y eşittir x kare grafikleri. Üç kesişim noktası: x yaklaşık eksi 0,77, x eşit 2 ve x eşit 4.">
+  <line class="sv-c" x1="30" y1="300" x2="390" y2="300" />
+  <line class="sv-c" x1="136" y1="315" x2="136" y2="35" />
+  <polyline class="sv-c" points="40.0,244.0 49.4,254.4 58.7,263.7 68.1,272.0 77.5,279.2 86.8,285.3 96.2,290.4 105.5,294.4 114.9,297.3 124.3,299.2 133.6,300.0 143.0,299.7 152.4,298.4 161.7,296.0 171.1,292.5 180.5,288.0 189.8,282.4 199.2,275.7 208.6,268.0 217.9,259.2 227.3,249.4 236.6,238.5 246.0,226.5 255.4,213.4 264.7,199.3 274.1,184.1 283.5,167.9 292.8,150.6 302.2,132.2 311.6,112.7 320.9,92.2 330.3,70.6 339.6,48.0" />
+  <polyline class="sv-cl" points="40.0,296.5 49.3,296.0 58.5,295.4 67.8,294.8 77.0,294.0 86.3,293.2 95.5,292.2 104.8,291.1 114.0,289.8 123.3,288.3 132.5,286.7 141.8,284.8 151.1,282.6 160.3,280.1 169.6,277.3 178.8,274.0 188.1,270.3 197.3,266.1 206.6,261.2 215.8,255.7 225.1,249.3 234.4,242.1 243.6,233.8 252.9,224.3 262.1,213.5 271.4,201.1 280.6,187.0 289.9,170.8 299.1,152.3 308.4,131.2 317.6,107.1 326.9,79.5 336.2,48.0" />
+  <circle class="sv-a" cx="99.2" cy="291.8" r="4.5" />
+  <circle class="sv-a" cx="232" cy="244" r="4.5" />
+  <circle class="sv-a" cx="328" cy="76" r="4.5" />
+  <text class="sv-b" x="48" y="232" text-anchor="start">y = x²</text>
+  <text class="sv-b" x="294" y="196" text-anchor="start">y = 2ˣ</text>
+  <text class="sv-s" x="240" y="262" text-anchor="start">(2, 4)</text>
+  <text class="sv-s" x="320" y="72" text-anchor="end">(4, 16)</text>
+  <text class="sv-s" x="99" y="320" text-anchor="middle">x ≈ −0,77</text>
+  <text class="sv-s" x="146" y="316" text-anchor="start">0</text>
+  <text class="sv-s" x="232" y="316" text-anchor="middle">2</text>
+  <text class="sv-s" x="328" y="316" text-anchor="middle">4</text>
+</svg>
+<figcaption>Kalın eğri 2<sup>x</sup>, ince eğri x<sup>2</sup>. 2 ile 4 arasında x<sup>2</sup> üstte (x = 3'te 9 &gt; 8), dışında 2<sup>x</sup> üstte. Soldaki kesişim deneme ile bulunmaz; işaret değişimiyle fark edilir.</figcaption>
+</figure>
+
+<p>Parametreli sorularda da aynı fikir kullanılır: 2<sup>x</sup> = k denkleminin k &gt; 0 iken bir kökü, k ≤ 0 iken hiç kökü yoktur, çünkü yatay y = k doğrusu y = 2<sup>x</sup> grafiğini yalnızca x ekseninin üstünde keser. Parça 4'teki dönüşümlerle ötelenmiş grafikler için de (y = 2<sup>x − 1</sup> + 3 gibi) önce asimptotu bul; y = k doğrusu asimptotun hangi yanındaysa kesişim sayısı ona göre değişir.</p>
+
+<h2 class="s">6. Gerçek yaşam modelleri</h2>
+
+<h3>6a. Büyüme ve azalma: tek formül, farklı kılıklar</h3>
+
+<p>Nüfus, bakteri, radyoaktif madde, bankadaki para... Hepsinde ortak olan şey, her eşit zaman aralığında miktarın <strong>aynı oranla</strong> çarpılmasıdır. Doğrusal büyümede her adımda aynı miktar eklenir; üstel büyümede aynı sayıyla çarpılır. Bu yüzden hepsi aynı kalıba oturur.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>A(t) = A<sub>0</sub> · k<sup>t/T</sup></p>
+<p>A<sub>0</sub>: başlangıçtaki miktar (t = 0'da A(0) = A<sub>0</sub> · k<sup>0</sup> = A<sub>0</sub>). k: bir dönemde miktarın çarpıldığı sayı. T: dönemin uzunluğu. İkiye katlanma için k = 2, yarı ömür için k = 1/2, dönem başına %r artış için k = 1 + r/100, %r azalış için k = 1 − r/100. Bileşik faizde dönem bir yıl ise A = A<sub>0</sub>(1 + r/100)<sup>n</sup>.</p>
+<p><strong>Neden üs t/T?</strong> t/T, geçen sürenin içinde kaç tam dönem olduğunu sayar. 60 dakikada, 20 dakikalık dönemden 60/20 = 3 tane vardır; miktar 3 kez çarpılır.</p></div>
+
+<p>Bilinmeyen süreyi bulmak için hep aynı üç adım: (1) kuvvetli terimi yalnız bırak (k<sup>t/T</sup> = A/A<sub>0</sub>); (2) sağ taraf k'nin bilinen bir kuvvetiyse üsleri eşitle; değilse iki yanın logaritmasını al; (3) t'yi çek. Bazı modeller e tabanıyla verilir (N = N<sub>0</sub> · e<sup>rt</sup>); orada iki yanın ln'ini alırsın ve ln e = 1 olduğu için üs doğrudan iner (Parça 15).</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> Girişteki soru: bakteri sayısı N(t) = N<sub>0</sub> · 2<sup>t/20</sup> (t dakika). Sayı kaç dakikada başlangıçtakinin 1000 katı olur? (log 2 ≈ 0,30)</p>
+<p><strong>Adım 1.</strong> N(t) = 1000 · N<sub>0</sub> yaz ve N<sub>0</sub>'ı sadeleştir.</p>
+<span class="mat">N<sub>0</sub> · 2<sup>t/20</sup> = 1000 · N<sub>0</sub> ⇒ 2<sup>t/20</sup> = 1000 <span class="g">(N<sub>0</sub> ≠ 0, iki yanı böl)</span></span>
+<p><strong>Adım 2.</strong> 1000, 2'nin tam kuvveti değil: onluk logaritma al.</p>
+<span class="mat"><span class="kes"><span>t</span><span>20</span></span> · log 2 = log 1000 = 3 <span class="g">(kuvvet kuralı; 1000 = 10<sup>3</sup>)</span></span>
+<span class="mat"><span class="kes"><span>t</span><span>20</span></span> = <span class="kes"><span>3</span><span>0,30</span></span> = 10 <span class="g">(log 2'ye böl)</span></span>
+<span class="mat">t = 200 dakika <span class="g">(20 ile çarp)</span></span>
+<p><strong>Adım 3.</strong> Hızlı yol ve kontrol: 2<sup>10</sup> = 1024 ≈ 1000. Yani yaklaşık 10 katlanma gerekir; her biri 20 dakika, toplam 200 dakika. Birim denetimi: t/20 birimsiz bir sayı (dönem sayısı), t dakika.</p>
+<p><strong>Sonuç:</strong> Yaklaşık 200 dakika (3 saat 20 dakika). Daha duyarlı log 2 değeriyle 199,3 dakika.</p></div>
+
+<p><strong>Yüzdeyle büyüme.</strong> Bir şehrin nüfusu her yıl %20 artıyorsa N = N<sub>0</sub> · 1,2<sup>t</sup>. İki katına çıkma süresi: 1,2<sup>t</sup> = 2, t = log 2 / log 1,2. Burada log 1,2'yi verilen değerlerden kurmayı bilmelisin: log 1,2 = log(12/10) = log 12 − 1 = 2 log 2 + log 3 − 1 ≈ 0,60 + 0,48 − 1 = 0,08. O hâlde t ≈ 0,30 / 0,08 = 3,75 yıl. Artış yıl sonlarında ekleniyorsa: 1,2<sup>3</sup> = 1,728 &lt; 2 &lt; 2,0736 = 1,2<sup>4</sup>; nüfus 4. yılın sonunda ilk kez iki katını geçer. Bu "kaçıncı yılın sonunda" ayrımı bileşik faiz sorularında da aynen geçerlidir.</p>
+
+<h3>6b. Yarı ömür</h3>
+
+<div class="orn"><span class="et">Çözümlü örnek 10</span>
+<p><strong>Soru:</strong> Yarı ömrü 8 gün olan radyoaktif bir maddeden 160 g var. Kalan kütle m(t) = 160 · (1/2)<sup>t/8</sup> gramdır (t gün). (a) Kaç gün sonra 10 g kalır? (b) Kaç gün sonra 30 g kalır? (log 2 ≈ 0,30, log 3 ≈ 0,48)</p>
+<p><strong>Adım 1.</strong> (a) Kuvvetli terimi yalnız bırak.</p>
+<span class="mat">(1/2)<sup>t/8</sup> = <span class="kes"><span>10</span><span>160</span></span> = <span class="kes"><span>1</span><span>16</span></span> = (1/2)<sup>4</sup> <span class="g">(160'a böl; 16 = 2<sup>4</sup>)</span></span>
+<span class="mat"><span class="kes"><span>t</span><span>8</span></span> = 4 ⇒ t = 32 gün <span class="g">(bire bir oluş)</span></span>
+<p><strong>Adım 2.</strong> Kontrol yolu: yarılanmaları say. 160 → 80 → 40 → 20 → 10: dört yarılanma, 4 · 8 = 32 gün.</p>
+<p><strong>Adım 3.</strong> (b) Aynı başlangıç: (1/2)<sup>t/8</sup> = 30/160 = 3/16. 3/16, 1/2'nin tam kuvveti değil. Tersini alıp 2 tabanına geç: 2<sup>t/8</sup> = 16/3.</p>
+<span class="mat"><span class="kes"><span>t</span><span>8</span></span> · log 2 = log 16 − log 3 = 4 log 2 − log 3 <span class="g">(log al; bölüm ve kuvvet kuralları)</span></span>
+<span class="mat"><span class="kes"><span>t</span><span>8</span></span> = <span class="kes"><span>1,20 − 0,48</span><span>0,30</span></span> = <span class="kes"><span>0,72</span><span>0,30</span></span> = 2,4 <span class="g">(sayıları koy)</span></span>
+<span class="mat">t = 19,2 gün <span class="g">(8 ile çarp)</span></span>
+<p><strong>Adım 4.</strong> Tahminle kontrol: 30 g, 40 g (16. gün) ile 20 g (24. gün) arasında; t de 16 ile 24 arasında olmalı. 19,2 uygun.</p>
+<p><strong>Sonuç:</strong> (a) 32 gün. (b) Yaklaşık 19,2 gün (duyarlı değerlerle 19,3).</p></div>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Yarı ömür grafiği: 160 gramdan başlayan kütle her 8 günde yarıya iniyor; 8, 16, 24 ve 32. günlerde 80, 40, 20 ve 10 gram.">
+  <line class="sv-c" x1="50" y1="250" x2="385" y2="250" />
+  <line class="sv-c" x1="50" y1="255" x2="50" y2="30" />
+  <polyline class="sv-cl" points="50.0,50.0 66.0,81.8 82.0,108.6 98.0,131.1 114.0,150.0 130.0,165.9 146.0,179.3 162.0,190.5 178.0,200.0 194.0,208.0 210.0,214.6 226.0,220.3 242.0,225.0 258.0,229.0 274.0,232.3 290.0,235.1 306.0,237.5 322.0,239.5 338.0,241.2 354.0,242.6 370.0,243.8" />
+  <line class="sv-c" x1="114" y1="150" x2="114" y2="250" />
+  <line class="sv-c" x1="178" y1="200" x2="178" y2="250" />
+  <line class="sv-c" x1="242" y1="225" x2="242" y2="250" />
+  <line class="sv-c" x1="306" y1="237.5" x2="306" y2="250" />
+  <circle class="sv-a" cx="50" cy="50" r="4" />
+  <circle class="sv-a" cx="114" cy="150" r="4" />
+  <circle class="sv-a" cx="178" cy="200" r="4" />
+  <circle class="sv-a" cx="242" cy="225" r="4" />
+  <circle class="sv-a" cx="306" cy="237.5" r="4" />
+  <text class="sv-t" x="58" y="46">160 g</text>
+  <text class="sv-t" x="122" y="144">80 g</text>
+  <text class="sv-t" x="186" y="194">40 g</text>
+  <text class="sv-t" x="250" y="218">20 g</text>
+  <text class="sv-t" x="314" y="230">10 g</text>
+  <text class="sv-s" x="50" y="268" text-anchor="middle">0</text>
+  <text class="sv-s" x="114" y="268" text-anchor="middle">8</text>
+  <text class="sv-s" x="178" y="268" text-anchor="middle">16</text>
+  <text class="sv-s" x="242" y="268" text-anchor="middle">24</text>
+  <text class="sv-s" x="306" y="268" text-anchor="middle">32</text>
+  <text class="sv-s" x="385" y="284" text-anchor="end">zaman (gün)</text>
+  <text class="sv-s" x="56" y="24">kütle</text>
+</svg>
+<figcaption>Her 8 günde kütle yarıya iner ama hiçbir zaman sıfır olmaz: eğri y = 0'a yaklaşır (Parça 14'teki yatay asimptot). Eşit zaman aralıklarında düşen miktar giderek küçülür, düşüş oranı hep aynı kalır.</figcaption>
+</figure>
+
+<h3>6c. Logaritmik ölçekler: deprem, pH, desibel</h3>
+
+<p>Bazı nicelikler çok geniş bir aralıkta değişir: fısıltı ile jet motoru arasında ses şiddeti trilyonlarca kat fark eder. Böyle niceliklerde sayının kendisi yerine <strong>logaritması</strong> kullanılır; ölçekte bir birim artış, niceliğin 10 katına çıkması demektir. Bu ölçeklerde soru hep iki kalıptan biridir: değeri hesapla ya da iki değerin oranını bul. Oran için iki değerin farkını alırsın, çünkü log A<sub>1</sub> − log A<sub>2</sub> = log(A<sub>1</sub>/A<sub>2</sub>).</p>
+
+<div class="tablo"><table>
+<tr><th>Model</th><th>Tipik formül (sınavda verilir)</th><th>Logaritmanın işi</th></tr>
+<tr><td>Nüfus, bakteri</td><td>N = N<sub>0</sub> · 2<sup>t/T</sup> ya da N<sub>0</sub>(1 + r)<sup>t</sup></td><td>Bilinmeyen süreyi üsten indirir</td></tr>
+<tr><td>Radyoaktif bozunma</td><td>m = m<sub>0</sub> · (1/2)<sup>t/T</sup>, T yarı ömür</td><td>Kalan miktardan geçen süreyi bulur</td></tr>
+<tr><td>Bileşik faiz</td><td>A = A<sub>0</sub>(1 + r)<sup>n</sup></td><td>Paranın kaç yılda katlanacağını bulur</td></tr>
+<tr><td>Deprem büyüklüğü (basitleştirilmiş)</td><td>M = log(A/A<sub>0</sub>), A dalga genliği</td><td>1 birim fark = genlikte 10 kat</td></tr>
+<tr><td>pH</td><td>pH = −log[H<sup>+</sup>]</td><td>pH 1 azalınca H<sup>+</sup> derişimi 10 katına çıkar</td></tr>
+<tr><td>Ses düzeyi</td><td>L = 10 · log(I/I<sub>0</sub>) desibel</td><td>10 dB fark = şiddette 10 kat</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 11</span>
+<p><strong>Soru:</strong> (a) Ses düzeyi L = 10 · log(I/I<sub>0</sub>) ile verilir. 60 dB'lik bir ortamla 90 dB'lik bir ortamın ses şiddetleri oranı kaçtır? (b) [H<sup>+</sup>] = 2 · 10<sup>−5</sup> mol/L olan bir çözeltinin pH'ı yaklaşık kaçtır? (log 2 ≈ 0,30) (c) Büyüklüğü 7 olan bir depremin dalga genliği, büyüklüğü 5 olanınkinin kaç katıdır (M = log(A/A<sub>0</sub>) modeliyle)?</p>
+<p><strong>Adım 1.</strong> (a) İki düzeyi yaz ve çıkar; I<sub>0</sub> sadeleşir.</p>
+<span class="mat">90 − 60 = 10 · log(I<sub>2</sub>/I<sub>0</sub>) − 10 · log(I<sub>1</sub>/I<sub>0</sub>) = 10 · log(I<sub>2</sub>/I<sub>1</sub>) <span class="g">(farkın logaritması bölüm)</span></span>
+<span class="mat">log(I<sub>2</sub>/I<sub>1</sub>) = 3 ⇒ I<sub>2</sub>/I<sub>1</sub> = 10<sup>3</sup> = 1000 <span class="g">(10'a böl; tanım)</span></span>
+<p><strong>Adım 2.</strong> (b) Tanımı uygula.</p>
+<span class="mat">pH = −log(2 · 10<sup>−5</sup>) = −(log 2 + log 10<sup>−5</sup>) <span class="g">(çarpımın logaritması)</span></span>
+<span class="mat">= −(0,30 − 5) = 4,7 <span class="g">(log 10<sup>−5</sup> = −5)</span></span>
+<p><strong>Adım 3.</strong> Kontrol: [H<sup>+</sup>] = 10<sup>−5</sup> olsaydı pH 5, 10<sup>−4</sup> olsaydı pH 4 olurdu. 2 · 10<sup>−5</sup> ikisinin arasında, pH de 4 ile 5 arasında. Derişim arttıkça pH azalır; eksi işaretinin işi budur.</p>
+<p><strong>Adım 4.</strong> (c) M<sub>1</sub> − M<sub>2</sub> = log(A<sub>1</sub>/A<sub>2</sub>) ⇒ 7 − 5 = 2 ⇒ A<sub>1</sub>/A<sub>2</sub> = 10<sup>2</sup> = 100.</p>
+<p><strong>Sonuç:</strong> (a) 1000 kat. (b) pH ≈ 4,7. (c) 100 kat. Hiçbiri "30 kat", "2 kat" gibi doğrusal bir fark değildir; ölçek logaritmiktir.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Logaritmik ölçekte farkı oran sanmak.</strong> "90 dB, 60 dB'nin 1,5 katı ses" ya da "7 büyüklüğündeki deprem 5'likten 2 birim, yani biraz güçlü" demek yanlıştır. Ölçekteki her birim (desibelde her 10 birim) niceliği 10 ile çarpar. Doğrusu: farkı al, o farkı 10'un üssüne koy. Ters yön de aynı: bir sesin şiddeti iki katına çıkarsa düzey 10 · log 2 ≈ 3 dB artar, iki katına çıkmaz.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 14 ve 15'e:</strong> Her yöntem oradaki iki bilgiye dayandı: üstel ve logaritmik fonksiyonların bire bir ve artan-azalan oluşu (denklemler ve eşitsizlikler), logaritma kuralları (tek logaritmaya indirme, üssü aşağı indirme, taban değiştirme).</p>
+<p><strong>Parça 7'ye ve Parça 13'e:</strong> t = 2<sup>x</sup> ya da t = log x dönüşümünden sonra kalan iş, Parça 7'deki ikinci dereceden denklem ve eşitsizliktir. Parça 13'te sin x = t dönüşümünde t'nin [−1, 1] aralığında olması gerekiyordu; burada t = a<sup>x</sup> için koşul t &gt; 0'dır. İkisi aynı fikir: yeni değişkenin alabileceği değerleri sınırla.</p>
+<p><strong>Parça 18'e:</strong> Geometrik dizinin genel terimi a<sub>n</sub> = a<sub>1</sub> · r<sup>n − 1</sup> bir üstel ifadedir; "kaçıncı terim 1000'i geçer" sorusu bu parçadaki üstel eşitsizlikle çözülür. Zıplayan top, yarılanma ve bileşik faiz problemleri orada dizi diliyle geri gelecek.</p>
+<p><strong>Öbür derslere:</strong> Kimyada pH ve radyoaktif bozunmada yarı ömür, fizikte ses şiddeti düzeyi, coğrafyada deprem büyüklüğü bu parçadaki formüllerle hesaplanır. Mat Parça 30'daki faiz konusunun bileşik biçimi de buradaki A = A<sub>0</sub>(1 + r)<sup>n</sup> modelidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>a<sup>f(x)</sup> = a<sup>g(x)</sup> ise neden f(x) = g(x) yazabiliyorsun? Hangi taban için bu çöker?</summary><p>Çünkü a &gt; 0 ve a ≠ 1 iken a<sup>x</sup> bire birdir: aynı değeri yalnızca aynı üs verir. Taban 1 olursa fonksiyon sabittir (1<sup>3</sup> = 1<sup>7</sup>), bire bir değildir ve kural çöker.</p></details>
+<details><summary>t = 3<sup>x</sup> dönüşümünde t = −2 çıkarsa ne yaparsın? t = log x dönüşümünde t = −2 çıkarsa?</summary><p>Birincide atarım, çünkü 3<sup>x</sup> her zaman pozitiftir. İkincide tutarım: log x = −2 ise x = 10<sup>−2</sup> = 0,01, pozitif ve geçerli. Logaritmanın görüntü kümesi bütün gerçek sayılardır.</p></details>
+<details><summary>Yabancı kök nedir ve logaritmik denklemde nereden gelir?</summary><p>Çözüm sırasında bulunan ama asıl denklemi sağlamayan köktür. log u + log v = log(uv) gibi kurallar tanım kümesini genişletir: uv &gt; 0 iken u ve v ikisi de negatif olabilir. Bu yüzden bulunan her kök, en baştaki denklemin tanım koşullarına sokulur.</p></details>
+<details><summary>0 &lt; a &lt; 1 tabanlı bir üstel ya da logaritmik eşitsizlikte yön neden döner?</summary><p>Çünkü taban 0 ile 1 arasındayken a<sup>x</sup> ve log<sub>a</sub> x azalan fonksiyonlardır. Azalan bir fonksiyon büyük girdiye küçük çıktı verir; sırayı çevirir. Eşitsizliğin iki yanına azalan bir fonksiyon uygulamak, negatif sayıyla çarpmak gibi yönü değiştirir.</p></details>
+<details><summary>Logaritmik eşitsizlikte hangi adımı unutursan çözüm kümesi sonsuza uzar?</summary><p>Tanım koşulunu (logaritmanın içi &gt; 0) bulduğun aralıkla kesiştirmeyi. Örneğin log<sub>2</sub>(x − 3) ≤ 2'de yalnızca x ≤ 7 yazarsan bütün küçük sayılar çözüm gibi görünür; doğrusu 3 &lt; x ≤ 7'dir.</p></details>
+<details><summary>2<sup>x</sup> = 3 − x denkleminin neden tek kökü olduğunu ve kökünü söyle.</summary><p>Sol taraf artan, sağ taraf azalan; artan ile azalan iki grafik en çok bir kez kesişir. x = 1 denemesi 2 = 2 verir; tek kök x = 1'dir.</p></details>
+<details><summary>Desibel ölçeğinde 30 dB fark şiddette kaç kat fark demektir? Neden?</summary><p>1000 kat. L = 10 · log(I/I<sub>0</sub>) olduğu için iki düzeyin farkı 10 · log(I<sub>2</sub>/I<sub>1</sub>)'dir; 30 = 10 · log(I<sub>2</sub>/I<sub>1</sub>) ⇒ I<sub>2</sub>/I<sub>1</sub> = 10<sup>3</sup>.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Ana fikir:</strong> a<sup>x</sup> ve log<sub>a</sub> x bire bir (denklem) ve ya artan ya azalandır (eşitsizlik).</li>
+<li><strong>Üstel denklem:</strong> tabanları eşitle → üsleri eşitle. Ortak çarpanı paranteze al (3<sup>x + 2</sup> = 9 · 3<sup>x</sup>). Farklı taban, aynı üs → üs = 0.</li>
+<li><strong>Değişken değiştirme:</strong> t = a<sup>x</sup>, <strong>t &gt; 0</strong>; negatif t'yi at. t = log x'te işaret koşulu yok, koşul x &gt; 0.</li>
+<li><strong>Tabanlar eşitlenmiyorsa:</strong> a<sup>x</sup> = b ⇒ x = log<sub>a</sub> b = log b / log a. Tahminle aralığını denetle.</li>
+<li><strong>Logaritmik denklem:</strong> önce tanım koşulu (her iç &gt; 0; değişken tabanda taban &gt; 0, ≠ 1). log<sub>a</sub> f = b ⇒ f = a<sup>b</sup>. Tek logaritmaya indir, en sonda kökleri koşula sok.</li>
+<li><strong>Kayıp kök:</strong> log x<sup>2</sup> = 2 log |x|; 2 log x yazma.</li>
+<li><strong>x<sup>log x</sup> tipi:</strong> iki yanın logaritmasını al, t = log x. Kökler çarpımı = 10<sup>(t'lerin toplamı)</sup>.</li>
+<li><strong>Eşitsizlik:</strong> taban &gt; 1 yön korunur; 0 &lt; taban &lt; 1 yön döner. Logaritmada ayrıca iç &gt; 0 ile kesiştir.</li>
+<li><strong>Grafikle:</strong> kök sayısı = kesişim sayısı. Artan × azalan → en çok 1. 2<sup>x</sup> = x<sup>2</sup> → 3 kök (−0,77; 2; 4).</li>
+<li><strong>Model:</strong> A = A<sub>0</sub> · k<sup>t/T</sup>. Kuvveti yalnız bırak, log al, t'yi çek. 2<sup>10</sup> ≈ 1000 hızlı yolu.</li>
+<li><strong>Logaritmik ölçek:</strong> fark → oran. Richter 1 birim = 10 kat genlik; pH 1 birim = 10 kat derişim; 10 dB = 10 kat şiddet.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-16">
+<h3>Quiz 16</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">27<sup>x − 1</sup> = 9<sup>x + 1</sup> olduğuna göre x kaçtır?</p>
+<ul class="sec"><li>−5</li><li>2</li><li>5</li><li>4</li><li>3</li></ul>
+<div class="coz"><p>Tabanları 3'e çevir: 3<sup>3(x − 1)</sup> = 3<sup>2(x + 1)</sup>, yani 3x − 3 = 2x + 2, x = 5. Kontrol: 27<sup>4</sup> = 3<sup>12</sup> ve 9<sup>6</sup> = 3<sup>12</sup>. −5, üsleri karıştırıp 2(x − 1) = 3(x + 1) yazmaktan; 4, 2(x + 1)'i dağıtırken +1'i 2 ile çarpmayı unutmaktan (3x − 3 = 2x + 1); 2 ise parantezin yalnızca ilk terimini çarpmaktan (3x − 1 = 2x + 1) çıkar. 3 hiçbir eşitliği sağlamaz. Üssün üssünde parantezin tamamı çarpılır.</p></div></li>
+
+<li data-c="A"><p class="q">9<sup>x</sup> − 4 · 3<sup>x</sup> + 3 = 0 denkleminin kökler toplamı kaçtır?</p>
+<ul class="sec"><li>1</li><li>4</li><li>3</li><li>2</li><li>0</li></ul>
+<div class="coz"><p>t = 3<sup>x</sup> dersen t<sup>2</sup> − 4t + 3 = 0, (t − 1)(t − 3) = 0, t = 1 ya da t = 3. İkisi de pozitif. 3<sup>x</sup> = 1 ⇒ x = 0; 3<sup>x</sup> = 3 ⇒ x = 1. Kökler toplamı 0 + 1 = 1. 4, t'lerin toplamıdır; 3, t'lerin çarpımıdır; soru x'leri soruyor. 2 kök sayısıdır, toplamı değil. 0 yalnızca bir kökü almaktır. Dönüşümden sonra geri dönmeyi unutma.</p></div></li>
+
+<li data-c="D"><p class="q">log<sub>2</sub>(x + 1) + log<sub>2</sub>(x − 1) = 3 denkleminin çözüm kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−3, 3}</li><li>{4}</li><li>{√7}</li><li>{3}</li><li>∅</li></ul>
+<div class="coz"><p>Koşul: x + 1 &gt; 0 ve x − 1 &gt; 0, yani x &gt; 1. Çarpımın logaritmasıyla log<sub>2</sub>(x<sup>2</sup> − 1) = 3, x<sup>2</sup> − 1 = 8, x = ±3. x = −3 koşulu sağlamaz (log<sub>2</sub>(−2) tanımsız), yabancı köktür; Ç = {3}. Kontrol: log<sub>2</sub> 4 + log<sub>2</sub> 2 = 3. {−3, 3} koşulu denetlememektir; {4} içleri çarpmak yerine toplamaktır ((x + 1) + (x − 1) = 8); {√7} ise 2<sup>3</sup> yerine 2 · 3 = 6 yazmaktır. Bir kök geçerli olduğu için ∅ da yanlıştır.</p></div></li>
+
+<li data-c="B"><p class="q">x<sup>log x</sup> = 1000 · x<sup>2</sup> denkleminin kökler çarpımı kaçtır?</p>
+<ul class="sec"><li>1000</li><li>100</li><li>0,001</li><li>1000,1</li><li>0,1</li></ul>
+<div class="coz"><p>Koşul x &gt; 0. İki yanın logaritması: (log x)<sup>2</sup> = 3 + 2 log x. t = log x ile t<sup>2</sup> − 2t − 3 = 0, (t − 3)(t + 1) = 0, t = 3 ya da t = −1; x = 1000 ya da x = 0,1. Çarpım 100. Hızlı yol: t'lerin toplamı 2, x<sub>1</sub>x<sub>2</sub> = 10<sup>2</sup>. 1000 ve 0,1 köklerden yalnızca birini almaktır; 1000,1 kökler toplamıdır; 0,001 ise t'lerin çarpımını (−3) üs yapmaktır. Çarpımda üsler toplanır, çarpılmaz.</p></div></li>
+
+<li data-c="E"><p class="q">(1/3)<sup>x<sup>2</sup> − 3</sup> ≥ (1/9)<sup>x</sup> eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>2</li><li>Sonsuz çoklukta</li><li>5</li></ul>
+<div class="coz"><p>(1/9)<sup>x</sup> = (1/3)<sup>2x</sup>. Taban 1/3 &lt; 1, yön döner: x<sup>2</sup> − 3 ≤ 2x, x<sup>2</sup> − 2x − 3 ≤ 0, (x − 3)(x + 1) ≤ 0, −1 ≤ x ≤ 3. Tam sayılar −1, 0, 1, 2, 3: beş tane. 3, uçları dışlamaktır (eşitsizlik ≥, uçlar dahil); 4, 1/9'u 1/3 tabanına çevirmeyi unutup üsleri doğrudan karşılaştırmaktan (x<sup>2</sup> − 3 ≤ x) çıkar. "Sonsuz çoklukta", yönü çevirmeyip x ≤ −1 ya da x ≥ 3 bulmaktır. 2, yalnızca eşitlik durumunu çözüp sınır değerlerini (−1 ve 3) saymaktır.</p></div></li>
+
+<li data-c="C"><p class="q">log<sub>1/3</sub>(x − 1) ≥ −2 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>8</li><li>Sonsuz çoklukta</li><li>9</li><li>0</li><li>10</li></ul>
+<div class="coz"><p>Koşul x − 1 &gt; 0. −2 = log<sub>1/3</sub> 9, çünkü (1/3)<sup>−2</sup> = 9. Taban &lt; 1, yön döner: x − 1 ≤ 9. Kesişim 0 &lt; x − 1 ≤ 9, yani 1 &lt; x ≤ 10; tam sayılar 2, 3, …, 10, dokuz tane. 8, 10'u dışarıda bırakmaktır (≥ olduğu için dahil). 10, x = 1'i de saymaktır; orada logaritma tanımsız. "Sonsuz çoklukta", yönü çevirmemekten (x ≥ 10) ya da koşulu kesiştirmemekten çıkar. 0, (1/3)<sup>−2</sup> yerine (1/3)<sup>2</sup> = 1/9 kullanmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir kültürdeki bakteri sayısı N(t) = N<sub>0</sub> · 2<sup>t/3</sup> modeline göre artmaktadır (t saat). Bakteri sayısı yaklaşık kaç saat sonra başlangıçtakinin 10 katı olur? (log 2 ≈ 0,3)</p>
+<ul class="sec"><li>10</li><li>0,9</li><li><span class="kes"><span>10</span><span>3</span></span></li><li>30</li><li>9</li></ul>
+<div class="coz"><p>2<sup>t/3</sup> = 10. Logaritma al: (t/3) · log 2 = log 10 = 1, t/3 = 1/0,3 = 10/3, t = 10 saat. Kontrol: 2<sup>3</sup> = 8 ≈ 10 sayılırsa yaklaşık 3,3 katlanma, her biri 3 saat: yaklaşık 10 saat. 10/3, t/3'ü bulup 3 ile çarpmayı unutmaktır; 0,9, log 2'ye bölmek yerine onunla çarpmaktır (3 · 0,3). 30, "10 katı" demeyi "10 dönem" sanmaktır. 9, 2<sup>3</sup> = 8'i 10'a eşit sayıp 3 katlanmayla durmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">2<sup>x</sup> = x<sup>2</sup> denkleminin kaç gerçek kökü vardır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>
+<div class="coz"><p>Deneme ile x = 2 (4 = 4) ve x = 4 (16 = 16). Negatif tarafta x = −1'de 2<sup>−1</sup> = 0,5 &lt; 1 = (−1)<sup>2</sup>, x = 0'da 1 &gt; 0; fark işaret değiştirdiği için −1 ile 0 arasında üçüncü bir kök vardır (yaklaşık −0,77). x &gt; 4 için 2<sup>x</sup> x<sup>2</sup>'den hızlı büyür, 2 ile 4 arasında x<sup>2</sup> üstte kalır (x = 3'te 9 &gt; 8); başka kesişim yok. "2" en sık verilen yanlış cevaptır: negatif kökü görmemek. 0 ve 1, grafikleri hiç çizmemekten; 4 ise x = 2 ve x = 4'ün çevresinde ek kesişim varsaymaktan gelir.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f tek fonksiyon ve f(3) = 5 olduğuna göre f(−3) + f(0) toplamı kaçtır?</p>
+<ul class="sec"><li>5</li><li>−5</li><li>0</li><li>10</li><li>−10</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x), yani f(−3) = −5. Ayrıca x = 0 koyunca f(0) = −f(0), 2f(0) = 0, f(0) = 0 (0 tanım kümesindeyse). Toplam −5 + 0 = −5. 5, çift fonksiyon kuralını (f(−x) = f(x)) uygulamaktır; 0, f(−3) ile f(3)'ü toplamaktır; −10 ve 10, f(0)'ı da ±5 sanmaktan çıkar. Tek fonksiyonun grafiği orijine göre simetriktir ve 0 tanımlıysa orijinden geçer.</p></div></li>
+
+<li data-c="E" data-k="ileri-2"><p class="q">f(x) = <span class="kes"><span>2x + 3</span><span>x − 2</span></span> olduğuna göre f<sup>−1</sup>(4) kaçtır?</p>
+<ul class="sec"><li>4</li><li><span class="kes"><span>2</span><span>11</span></span></li><li><span class="kes"><span>11</span><span>6</span></span></li><li>−<span class="kes"><span>11</span><span>2</span></span></li><li><span class="kes"><span>11</span><span>2</span></span></li></ul>
+<div class="coz"><p>f(x) = (ax + b)/(cx − a) biçiminde (a = 2, c = 1): tersi kendisine eşittir. f<sup>−1</sup>(4) = f(4) = (8 + 3)/(4 − 2) = 11/2. Kontrol: f(11/2) = (11 + 3)/(11/2 − 2) = 14/(7/2) = 4. 2/11, değeri ters çevirmektir (f<sup>−1</sup> ile 1/f karışıklığı). 4, girdiyi aynen yazmaktır. −11/2 işaret hatasıdır; 11/6 ise f(4) hesaplarken paydadaki −2'yi +2 almaktır (11/(4 + 2)).</p></div></li>
+
+<li data-c="A" data-k="ileri-3"><p class="q">|x<sup>2</sup> − 4| = 3 denkleminin kaç farklı gerçek kökü vardır?</p>
+<ul class="sec"><li>4</li><li>2</li><li>3</li><li>1</li><li>0</li></ul>
+<div class="coz"><p>|u| = 3 ⇔ u = 3 ya da u = −3. x<sup>2</sup> − 4 = 3 ⇒ x = ±√7; x<sup>2</sup> − 4 = −3 ⇒ x = ±1. Dört farklı kök. Grafikle: y = |x<sup>2</sup> − 4|, parabolün x ekseni altındaki kısmının yukarı katlanmasıdır; tepesi (0, 4)'e çıkar ve y = 3 doğrusu bu W biçimini dört noktada keser. 2, yalnızca u = 3 durumunu almaktır. 3, y = 4 doğrusuyla karıştırmaktır (orada x = 0 ortak kök olur). 1 ve 0, grafiği çizmeden ya da iki durumu hiç ayırmadan tahmin etmekten gelir.</p></div></li>
+
+<li data-c="C" data-k="ileri-5"><p class="q">f(x) = x<sup>2</sup> − 6x + 5 parabolünün tepe noktası aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−3, 32)</li><li>(3, 4)</li><li>(3, −4)</li><li>(6, 5)</li><li>(−3, −4)</li></ul>
+<div class="coz"><p>r = −b/2a = 6/2 = 3, k = f(3) = 9 − 18 + 5 = −4. Tepe (3, −4). Kontrol: kökler 1 ve 5, simetri ekseni (1 + 5)/2 = 3. (−3, 32), r'yi −b/2a yerine b/2a almaktır; (3, 4), k'nin işaretini kaçırmaktır. (6, 5), b ve c'yi koordinat sanmaktır; (−3, −4) ise r'nin işaret hatası ile doğru k'yi karıştırmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-6"><p class="q">y = x + n doğrusu y = x<sup>2</sup> − x + 3 parabolüne teğet olduğuna göre n kaçtır?</p>
+<ul class="sec"><li>3</li><li>−2</li><li>1</li><li>2</li><li><span class="kes"><span>11</span><span>4</span></span></li></ul>
+<div class="coz"><p>Ortak çözüm: x<sup>2</sup> − x + 3 = x + n ⇒ x<sup>2</sup> − 2x + 3 − n = 0. Teğetlik için Δ = 0: 4 − 4(3 − n) = 0 ⇒ 3 − n = 1 ⇒ n = 2. Teğet noktası x = 1, y = 3. 1 teğet noktasının apsisi, 3 ise ordinatıdır; ikisi de n değildir. −2, n'yi sol yana geçirirken işaretini değiştirmemektir (3 + n). 11/4, x terimini sol yana geçirmeyi unutup x<sup>2</sup> − x + 3 − n = 0 denkleminin Δ'sını sıfırlamaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-7"><p class="q"><span class="kes"><span>(x − 2)<sup>2</sup> · (x + 1)</span><span>x − 4</span></span> ≤ 0 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>4</li><li>5</li><li>6</li><li>3</li><li>2</li></ul>
+<div class="coz"><p>Kritik noktalar −1, 2 (çift katlı) ve 4 (payda; çözüme alınmaz). En sağda (x &gt; 4) işaret +. 4'ü geçince −; 2 çift katlı kök olduğu için işaret değişmez, −1 ile 4 arası hep −; −1'den sonra +. ≤ 0 ve pay kökleri dahil: [−1, 4). Tam sayılar −1, 0, 1, 2, 3: beş tane. 6, 4'ü de almaktır (payda sıfır olamaz). 4, x = 2'yi atmaktır; oysa orada ifade 0'dır ve ≤ 0'ı sağlar. 3 ve 2, çift katlı kökte işareti değiştirip aralığı bölmekten çıkar.</p></div></li>
+
+<li data-c="E" data-k="ileri-8"><p class="q">−1000° lik açının esas ölçüsü kaç derecedir?</p>
+<ul class="sec"><li>280°</li><li>100°</li><li>−280°</li><li>440°</li><li>80°</li></ul>
+<div class="coz"><p>Negatif açıya 360°'nin katlarını ekleyerek [0°, 360°) aralığına getir: −1000° + 3 · 360° = 80°. Kısa yol: 1000 = 2 · 360 + 280, yani −1000° ≡ −280° ≡ 80°. 280°, işareti yok sayıp 1000°'nin esas ölçüsünü yazmaktır. −280°, iki tur ekleyip durmaktır; esas ölçü [0°, 360°) aralığında olmalı. 440°, bir tur fazla eklemektir. 100° ise 360 yerine 180'e bölmekten çıkar (1000 = 5 · 180 + 100).</p></div></li>
+
+<li data-c="A" data-k="ileri-10"><p class="q">arcsin(sin <span class="kes"><span>5π</span><span>6</span></span>) ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>π</span><span>6</span></span></li><li><span class="kes"><span>5π</span><span>6</span></span></li><li>−<span class="kes"><span>π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>3</span></span></li><li><span class="kes"><span>7π</span><span>6</span></span></li></ul>
+<div class="coz"><p>sin(5π/6) = 1/2. arcsin'in görüntü kümesi [−π/2, π/2] olduğu için arcsin(1/2) = π/6. 5π/6 bu aralıkta olmadığı için cevap olamaz; "arcsin ile sin birbirini götürür" tuzağıdır. −π/6, sinüsün ikinci bölgede negatif olduğunu sanmaktır; π/3, sinüs yerine kosinüsün mutlak değerini (√3/2) alıp arcsin(√3/2) bulmaktır; 7π/6 da aralık dışındadır.</p></div></li>
+
+<li data-c="C" data-k="ileri-11"><p class="q">sin 15° · cos 15° çarpımının değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>1</span><span>2</span></span></li><li><span class="kes"><span>√3</span><span>4</span></span></li><li><span class="kes"><span>1</span><span>4</span></span></li><li><span class="kes"><span>1</span><span>8</span></span></li><li><span class="kes"><span>√2</span><span>4</span></span></li></ul>
+<div class="coz"><p>sin 2a = 2 sin a cos a ⇒ sin a cos a = (sin 2a)/2. a = 15° için sin 15° cos 15° = (sin 30°)/2 = (1/2)/2 = 1/4. 1/2, 2'ye bölmeyi unutup sin 30° yazmaktır; √3/4, sin 30° yerine cos 30° almaktır; 1/8, iki kez 2'ye bölmektir. √2/4, açıyı 45° sanmaktan gelir.</p></div></li>
+
+<li data-c="D" data-k="ileri-12"><p class="q">İki kenarının uzunluğu 6 ve 8 birim, bu kenarlar arasındaki açının ölçüsü 150° olan üçgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>24</li><li>12√3</li><li>24√3</li><li>12</li><li>−12√3</li></ul>
+<div class="coz"><p>A = ½ · b · c · sin A = ½ · 6 · 8 · sin 150° = 24 · ½ = 12. sin 150° = sin 30° = 1/2 (bütünler açılarda sinüs aynı). 12√3 ve −12√3, sinüs yerine kosinüs kullanmaktır (cos 150° = −√3/2; alan negatif olamaz). 24, ½ çarpanını unutmaktır; 24√3 hem ½'yi unutmak hem kosinüsle karıştırmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-13"><p class="q">sin x = <span class="kes"><span>1</span><span>2</span></span> denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>π</span><span>3</span></span></li><li>π</li><li>2π</li><li><span class="kes"><span>5π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>6</span></span></li></ul>
+<div class="coz"><p>sin x = 1/2'nin iki çözüm ailesi x = π/6 + 2kπ ve x = π − π/6 + 2kπ'dir. [0, 2π)'de kökler π/6 ve 5π/6; toplam π. Birim çemberde iki kök y eksenine göre simetriktir, toplamları hep π'dir. π/6 yalnızca ilk kökü almak; 5π/6 yalnızca ikinciyi almak; π/3, π/6'yı iki kez saymaktır (ikinci aileyi π − α yerine α sanmak). 2π, kosinüsteki simetriyle (x ve 2π − x) karıştırmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-13"><p class="q">2cos<sup>2</sup>x − cos x − 1 = 0 denkleminin [0, 2π) aralığında kaç kökü vardır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>4</li><li>5</li><li>3</li></ul>
+<div class="coz"><p>t = cos x ile 2t<sup>2</sup> − t − 1 = 0, (2t + 1)(t − 1) = 0, t = 1 ya da t = −1/2. cos x = 1 ⇒ x = 0 (tek kök, eksen açısı). cos x = −1/2 ⇒ x = 2π/3 ya da 4π/3. Toplam üç kök. 4, cos x = 1 için de iki kök (0 ve 2π) saymaktır; 2π aralığın dışındadır. 2, t'lerin sayısını kök sanmaktır; 1 ve 5 ise çözüm ailelerini eksik ya da fazla saymaktan çıkar.</p></div></li>
+
+<li data-c="A" data-k="ileri-14"><p class="q">f(x) = log<sub>3</sub>(x<sup>2</sup> − 4x) fonksiyonunun en geniş tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−∞, 0) ∪ (4, ∞)</li><li>(0, 4)</li><li>(4, ∞)</li><li>[0, 4]</li><li>R − {0, 4}</li></ul>
+<div class="coz"><p>Logaritmanın içi pozitif olmalı: x<sup>2</sup> − 4x = x(x − 4) &gt; 0. Kökler 0 ve 4; a &gt; 0 olan parabol köklerin dışında pozitiftir: x &lt; 0 ya da x &gt; 4. (0, 4), işareti ters okumaktır (orada içi negatif). (4, ∞) yalnızca x &gt; 4 dalını almaktır. [0, 4] hem ters hem uçlu; R − {0, 4} ise yalnızca "sıfır olmasın" demektir, negatif içleri de bırakır.</p></div></li>
+
+<li data-c="C" data-k="ileri-14"><p class="q">f(x) = 2<sup>x − 1</sup> + 3 olduğuna göre f<sup>−1</sup>(11) kaçtır?</p>
+<ul class="sec"><li>3</li><li>5</li><li>4</li><li>2</li><li>1027</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(11) = a ise f(a) = 11: 2<sup>a − 1</sup> + 3 = 11, 2<sup>a − 1</sup> = 8 = 2<sup>3</sup>, a − 1 = 3, a = 4. Ters fonksiyon: f<sup>−1</sup>(x) = log<sub>2</sub>(x − 3) + 1, f<sup>−1</sup>(11) = log<sub>2</sub> 8 + 1 = 4. 3, son adımdaki +1'i unutmaktır; 2, +1 yerine −1 yazmaktır. 5, üstel ifadeyi doğrusal sanıp (11 − 3)/2 + 1 hesaplamaktır; 1027 ise f<sup>−1</sup>(11) yerine f(11) = 2<sup>10</sup> + 3 hesaplamaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-15"><p class="q">log 2 = a ve log 3 = b olduğuna göre log 12 ifadesinin a ve b türünden eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>a + b</li><li>2a + b</li><li>2ab</li><li>a<sup>2</sup>b</li><li>a + 2b</li></ul>
+<div class="coz"><p>12 = 2<sup>2</sup> · 3. log 12 = log 2<sup>2</sup> + log 3 = 2 log 2 + log 3 = 2a + b. a + b, log 6'dır (12'yi 2 · 3 sanmak). 2ab ve a<sup>2</sup>b, çarpımın logaritmasını logaritmaların çarpımı sanmaktır; log(xy) = log x + log y'dir. a + 2b, log 18'dir (2 · 3<sup>2</sup>).</p></div></li>
+
+<li data-c="D" data-k="ileri-15"><p class="q">log 2 ≈ 0,301 olduğuna göre 2<sup>40</sup> sayısı kaç basamaklıdır?</p>
+<ul class="sec"><li>12</li><li>40</li><li>14</li><li>13</li><li>41</li></ul>
+<div class="coz"><p>log 2<sup>40</sup> = 40 · 0,301 = 12,04. 10<sup>12</sup> ≤ 2<sup>40</sup> &lt; 10<sup>13</sup> olduğu için sayı 12 + 1 = 13 basamaklıdır (karakteristik + 1). 12, karakteristiğe 1 eklemeyi unutmaktır; 14, yuvarlayıp bir de 1 eklemektir. 40 ve 41, üssü basamak sayısı sanmaktır. Kontrol: 2<sup>10</sup> ≈ 10<sup>3</sup>, 2<sup>40</sup> ≈ 10<sup>12</sup>, yani 1'in ardından 12 sıfırlı sayı düzeyinde, 13 basamak.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-15">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-16">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-17">Sonraki parça: dizi kavramı ve aritmetik dizi</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"üstel denklemler değişken değiştirme konu anlatımı AYT"</li>
+  <li>"logaritmik denklemler yabancı kök tanım kümesi"</li>
+  <li>"üstel ve logaritmik eşitsizlikler taban 1'den küçük yön değişimi"</li>
+  <li>"logaritma gerçek hayat problemleri yarı ömür pH desibel"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 16. satıra göre yazıldı (2018 Ortaöğretim Matematik Öğretim Programı, 11. sınıf üstel ve logaritmik fonksiyonlar ünitesi). Bu oturumda bir MEB ders kitabıyla satır satır karşılaştırmadım; kapsam dosyasındaki genel not geçerlidir: programın kazanım metni doğrudan denetlenemedi.</li>
+  <li>Bütün sayısal sonuçlar (on bir çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi. Yaklaşık değerler log 2 ≈ 0,30, log 3 ≈ 0,48 ile hesaplandı; duyarlı değerlerle çıkan sonuçlar (2,32; 2,71; 199,3 dakika; 3,80 yıl; 19,3 gün) metinde ayrıca yazıldı. 2<sup>x</sup> = x<sup>2</sup>'nin negatif kökü (≈ −0,767) sayısal olarak bulundu.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: y = 2<sup>x</sup>, y = (1/2)<sup>x</sup>, y = x<sup>2</sup> ve yarı ömür eğrisinin noktaları formüllerden hesaplandı.</li>
+  <li>"log<sub>2</sub> x = x − 1 denkleminin en çok iki kökü olduğu" bilgisi burada bükeylik sezgisiyle verildi; kesin gerekçesi ikinci türev konusundadır (Parça 26).</li>
+  <li>Deprem büyüklüğü için kullanılan M = log(A/A<sub>0</sub>) modeli, sınav sorularındaki basitleştirilmiş biçimdir; gerçek ölçekler (Richter ve moment büyüklüğü) uzaklık düzeltmesi gibi ek terimler içerir ve enerjiyle ilişkileri farklıdır. Metinde yalnızca genlik oranı söylendi. pH tanımı ve ses düzeyi formülü (I<sub>0</sub> işitme eşiği, yaygın olarak 10<sup>−12</sup> W/m<sup>2</sup>) ders kitaplarındaki yerleşik biçimiyle yazıldı.</li>
+  <li>e tabanlı modellerin (N = N<sub>0</sub> · e<sup>rt</sup>) sınavda ne sıklıkla geldiğini doğrulayamadım; bu yüzden yalnızca ln ile nasıl çözüleceği anıldı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

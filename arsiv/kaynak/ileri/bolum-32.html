@@ -1,0 +1,581 @@
+<article class="chapter ders" id="c-ileri-32">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 32 · İntegral 5</div>
+<h1>İntegral 5: uygulamalar ve karma sorular</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Bir aracın yol sayacı bozuk, ama hız göstergesi her saniyenin hızını kaydetmiş. Araç 8 saniye boyunca bir doğru üzerinde gidip geliyor; bir ara geri geri de gidiyor. Yalnızca hız kaydına bakarak aracın başladığı yerden ne kadar uzakta durduğunu ve toplam kaç metre yol yaptığını bulabilir misin? İkisi neden farklı sayılar çıkar? Bu parça, integralin "bir hızı toplayıp toplam değişimi veren işlem" olarak gerçek hayatta ve sınav sorularında nasıl kullanıldığını topluyor.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 30 (belirli integral, analizin temel teoremi, ∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a), üst sınırı değişken integralin türevi), Parça 31 (integral değeri ile alan farkı), Parça 25 (türevin işaretiyle artan-azalan ve yerel ekstremum), Parça 22 (konum, hız, ivme), Parça 29 (değişken değiştirme ve sınırların değişmesi). Kâğıt kalem yanında olsun; her örnekte birimi de yaz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 28'den 31'e kadar integralin hesabını kurdun: ters türev, değişken değiştirme, belirli integral, alan. Bu parçada yeni bir hesap kuralı yok. Yeni olan, integralin <strong>ne anlattığını</strong> okumaktır. AYT'nin integral sorularının önemli bir bölümü hesap değil yorum ister: "Bu integral neyi ifade eder?", "Grafiği verilen f′ için f(6) − f(2) kaçtır?", "Araç hangi anda başlangıç noktasından en uzaktadır?", "F(x) = ∫<sub>1</sub><sup>x</sup> f(t) dt fonksiyonu hangi aralıkta azalandır?"</p>
+
+<p>Bu soruların hepsi tek bir fikre dayanır: <strong>bir niceliğin değişim hızını integrallersen, o niceliğin toplam değişimini bulursun.</strong> Hız integrallenince yer değiştirme, suyun akış hızı integrallenince depoya giren su, marjinal maliyet integrallenince toplam maliyet artışı, f′ integrallenince f'teki değişim çıkar. Parçanın ilk yarısı bu fikri hareket ve gerçek yaşam problemlerinde kullanıyor; ikinci yarısı türev ile integralin birlikte sorulduğu karma kalıpları (f′ grafiği, integralle tanımlı fonksiyon, integral denklemleri, limit içinde integral) topluyor. Sonda AYT'de sık gelen kalıpların bir tablosu var.</p>
+
+<p>Kapsam notu: hesaplarda yalnızca polinom ve köklü ifadeler kullanılıyor. Fonksiyonun ortalama değeri ve ∫<sub>a</sub><sup>b</sup> f(a + b − x) dx simetrisi programda açık bir kazanım olarak bulunmayabilir; ikisi de kısa tutuldu ve yerinde işaretlendi.</p>
+
+<h2 class="s">1. Tek fikir: değişim hızının integrali toplam değişimdir</h2>
+
+<p>Parça 30'da analizin temel teoremini gördün: F, f'nin bir ters türevi ise ∫<sub>a</sub><sup>b</sup> f(x) dx = F(b) − F(a). Şimdi bu teoremi özel bir f için yaz: integrallenen fonksiyon bir Q fonksiyonunun türevi, yani Q′ olsun. Q′'nün ters türevi Q'nun kendisidir (Parça 28: ∫ f′(x) dx = f(x) + C). O hâlde:</p>
+
+<span class="mat">∫<sub>a</sub><sup>b</sup> Q′(t) dt = Q(b) − Q(a) <span class="g">(Q′'nün ters türevi Q; temel teorem)</span></span>
+
+<p>Sağ yan, Q'nun a anından b anına kadarki <strong>değişimidir</strong>: son değer eksi ilk değer. Sol yan ise değişim hızının integralidir. Bu eşitliğin neden "doğal" olduğunu dikdörtgenlerle de görebilirsin. [a, b] aralığını çok kısa Δt parçalarına böl. Kısa bir parçada hız neredeyse sabittir; o parçadaki değişim yaklaşık "hız × süre", yani Q′(t) · Δt olur. Bütün parçaların değişimlerini toplayınca toplam değişim çıkar. Bu toplam, Parça 30'daki Riemann toplamının ta kendisidir; parçalar küçüldükçe integrale yaklaşır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Net değişim teoremi.</strong> Bir Q niceliğinin değişim hızı Q′ ise</p>
+<span class="mat">Q(b) = Q(a) + ∫<sub>a</sub><sup>b</sup> Q′(t) dt <span class="g">(son değer = ilk değer + toplam değişim)</span></span>
+<p><strong>Neden?</strong> Temel teoremden ∫<sub>a</sub><sup>b</sup> Q′(t) dt = Q(b) − Q(a); Q(a)'yı karşıya atınca bu biçim çıkar. İntegral yalnızca <strong>değişimi</strong> verir; niceliğin kendisini bulmak için başlangıç değerini eklemen gerekir. Bu, Parça 28'de integral sabiti C'yi başlangıç koşuluyla bulmanın belirli integraldeki karşılığıdır.</p></div>
+
+<p>"Net" sözcüğü önemlidir. Hız bazı anlarda negatifse (su boşalıyor, araç geri gidiyor, sıcaklık düşüyor), o anların katkısı eksi olarak toplanır. İntegral artışlarla azalışları birbirinden düşer ve geriye kalan farkı verir. Parça 31'deki "integral değeri işaretli alandır" bilgisi burada fiziksel bir anlam kazanıyor.</p>
+
+<p>Bir de birim denetimi var ve sınavda kontrol yolu olarak çok işe yarar. İntegral "hız × süre" toplamı olduğu için sonucun birimi, hızın birimi ile değişkenin biriminin çarpımıdır. Litre/dakika ile dakika çarpılınca litre, m/s ile s çarpılınca m çıkar. Sonucun birimi beklediğin nicelikle uyuşmuyorsa yanlış şeyi integrallemişsin demektir.</p>
+
+<div class="tablo"><table>
+<tr><th>Değişim hızı (birimi)</th><th>Değişken</th><th>∫<sub>a</sub><sup>b</sup> … neyi verir?</th><th>Sonucun birimi</th></tr>
+<tr><td>hız v(t) (m/s)</td><td>t (s)</td><td>a ile b arasındaki yer değiştirme</td><td>m</td></tr>
+<tr><td>ivme a(t) (m/s<sup>2</sup>)</td><td>t (s)</td><td>hızdaki değişim v(b) − v(a)</td><td>m/s</td></tr>
+<tr><td>akış hızı r(t) (L/dk)</td><td>t (dk)</td><td>bu sürede akan su miktarı</td><td>L</td></tr>
+<tr><td>nüfus artış hızı P′(t) (kişi/yıl)</td><td>t (yıl)</td><td>bu yıllar arasındaki nüfus değişimi</td><td>kişi</td></tr>
+<tr><td>marjinal maliyet C′(x) (TL/adet)</td><td>x (adet)</td><td>üretim a'dan b'ye çıkınca maliyet artışı</td><td>TL</td></tr>
+<tr><td>sıcaklık değişim hızı T′(t) (°C/saat)</td><td>t (saat)</td><td>bu saatler arasındaki sıcaklık değişimi</td><td>°C</td></tr>
+</table></div>
+
+<h2 class="s">2. Hareket: yer değiştirme ve alınan toplam yol</h2>
+
+<p>Parça 22'de konumdan hıza, hızdan ivmeye türevle indin: v(t) = s′(t), a(t) = v′(t). İntegral bu merdiveni ters yönde çıkar. Hız, konumun değişim hızı olduğuna göre net değişim teoremi doğrudan şunu söyler: ∫<sub>t₁</sub><sup>t₂</sup> v(t) dt = s(t₂) − s(t₁). Bu fark <strong>yer değiştirmedir</strong>: cismin son konumu ile ilk konumu arasındaki işaretli fark.</p>
+
+<p>Ama cisim yolda dönüp geri geldiyse, yer değiştirme yapılan yolu göstermez. 5 m ileri gidip 3 m geri gelen birinin yer değiştirmesi 2 m'dir, yürüdüğü yol 8 m. İntegralde de aynı şey olur: v &lt; 0 olan zaman aralığının katkısı eksi gelir ve ileri giderken yapılan yoldan düşülür. Yol ise yön dinlemez; her metreyi artı sayar. Bu yüzden toplam yol için hızın büyüklüğünü, yani |v(t)|'yi integrallersin.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<span class="mat">yer değiştirme = ∫<sub>t₁</sub><sup>t₂</sup> v(t) dt = s(t₂) − s(t₁) <span class="g">(işaretli; geri gidiş düşülür)</span></span>
+<span class="mat">alınan toplam yol = ∫<sub>t₁</sub><sup>t₂</sup> |v(t)| dt <span class="g">(her parça artı sayılır)</span></span>
+<p><strong>Neden?</strong> Birincisi net değişim teoremidir. İkincisinde |v| hızın büyüklüğüdür (sürat); "sürat × süre" her zaman yapılan yolu verir. Hesapta |v|'yi Parça 30'daki gibi ele alırsın: v'nin işaret değiştirdiği anları (v = 0) bul, aralığı orada böl, her parçanın integralini ayrı al ve mutlak değerlerini topla. v hiç işaret değiştirmiyorsa ikisi aynı sayıdır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Hız-zaman grafiği. Hız 0 ile 2. saniye arasında 0'dan 4 metre bölü saniyeye doğrusal artıyor, 2 ile 4. saniye arasında 4'te sabit kalıyor, 4 ile 8. saniye arasında 4'ten eksi 4'e doğrusal azalıyor ve 6. saniyede sıfırı kesiyor. Eksenin üstündeki parçaların alanları 4, 8 ve 4; altındaki üçgenin alanı 4. Yer değiştirme 12 metre, toplam yol 20 metre.">
+  <polygon class="sv-m" points="40,120 120,40 200,40 280,120" />
+  <polygon class="sv-a" points="280,120 360,200 360,120" />
+  <line class="sv-c" x1="120" y1="40" x2="120" y2="120" />
+  <line class="sv-c" x1="200" y1="40" x2="200" y2="120" />
+  <line class="sv-c" x1="30" y1="120" x2="392" y2="120" />
+  <line class="sv-c" x1="40" y1="215" x2="40" y2="24" />
+  <polyline class="sv-cl" points="40,120 120,40 200,40 360,200" />
+  <line class="sv-c" x1="36" y1="40" x2="44" y2="40" />
+  <line class="sv-c" x1="36" y1="200" x2="44" y2="200" />
+  <text class="sv-s" x="32" y="44" text-anchor="end">4</text>
+  <text class="sv-s" x="32" y="204" text-anchor="end">−4</text>
+  <text class="sv-s" x="32" y="124" text-anchor="end">0</text>
+  <text class="sv-s" x="120" y="136" text-anchor="middle">2</text>
+  <text class="sv-s" x="200" y="136" text-anchor="middle">4</text>
+  <text class="sv-s" x="276" y="136" text-anchor="middle">6</text>
+  <text class="sv-s" x="352" y="112" text-anchor="middle">8</text>
+  <text class="sv-s" x="396" y="112" text-anchor="end">t (s)</text>
+  <text class="sv-s" x="48" y="20" text-anchor="start">v (m/s)</text>
+  <text class="sv-b" x="98" y="104" text-anchor="middle">4</text>
+  <text class="sv-b" x="160" y="86" text-anchor="middle">8</text>
+  <text class="sv-b" x="224" y="104" text-anchor="middle">4</text>
+  <text class="sv-b" x="334" y="152" text-anchor="middle">4</text>
+  <text class="sv-t" x="200" y="234" text-anchor="middle">yer değiştirme: 4 + 8 + 4 − 4 = 12 m</text>
+  <text class="sv-t" x="200" y="254" text-anchor="middle">toplam yol: 4 + 8 + 4 + 4 = 20 m</text>
+</svg>
+<figcaption>Bu parçanın sorusundaki aracın hız kaydı (gerçek ölçek: yatayda saniye başına 40, düşeyde m/s başına 20 birim). Yeşil bölgeler araç ileri giderken, turuncu üçgen geri giderken yapılan yoldur. Alanları üçgen ve dikdörtgen formülleriyle bulursun; integral almana gerek yok. Yer değiştirmede turuncu alan çıkarılır, toplam yolda eklenir.</figcaption>
+</figure>
+
+<p>Şekildeki grafik parçanın sorusunu cevaplıyor. 0–2 saniye arasındaki üçgenin alanı ½ · 2 · 4 = 4, 2–4 arasındaki dikdörtgenin alanı 2 · 4 = 8, 4–6 arasındaki üçgenin alanı ½ · 2 · 4 = 4: araç toplam 16 m ileri gidiyor. 6–8 arasında hız negatif; üçgenin alanı ½ · 2 · 4 = 4, yani araç 4 m geri geliyor. Yer değiştirme 16 − 4 = 12 m, toplam yol 16 + 4 = 20 m. Bir soru daha: araç başlangıç noktasından en uzakta hangi anda? Konum, hız pozitifken artar, negatifken azalır (Parça 25'teki işaret fikri). Hız 6. saniyede artıdan eksiye geçtiği için konum orada yerel maksimum yapar: en uzak an t = 6 s, uzaklık 16 m.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir doğru üzerinde hareket eden cismin hızı v(t) = t<sup>2</sup> − 4t + 3 (m/s) ile veriliyor. Cismin [0, 4] saniye aralığındaki yer değiştirmesini ve aldığı toplam yolu bulun.</p>
+<p><strong>Adım 1.</strong> Hızın işaret değiştirdiği anları bul.</p>
+<span class="mat">t<sup>2</sup> − 4t + 3 = (t − 1)(t − 3) = 0 ⇒ t = 1, t = 3 <span class="g">(çarpanlara ayırma)</span></span>
+<p><strong>Adım 2.</strong> İşaret tablosu (Parça 7): baş katsayı pozitif, kökler dışında artı, arasında eksi. [0, 1)'de v &gt; 0, (1, 3)'te v &lt; 0, (3, 4]'te v &gt; 0.</p>
+<p><strong>Adım 3.</strong> Bir ters türev yaz.</p>
+<span class="mat">S(t) = <span class="kes"><span>t<sup>3</sup></span><span>3</span></span> − 2t<sup>2</sup> + 3t <span class="g">(kuvvet kuralı)</span></span>
+<p><strong>Adım 4.</strong> Her parçanın integralini ayrı hesapla.</p>
+<span class="mat">S(0) = 0, S(1) = <span class="kes"><span>1</span><span>3</span></span> − 2 + 3 = <span class="kes"><span>4</span><span>3</span></span>, S(3) = 9 − 18 + 9 = 0, S(4) = <span class="kes"><span>64</span><span>3</span></span> − 32 + 12 = <span class="kes"><span>4</span><span>3</span></span> <span class="g">(yerine koyma)</span></span>
+<span class="mat">∫<sub>0</sub><sup>1</sup> v dt = <span class="kes"><span>4</span><span>3</span></span> − 0 = <span class="kes"><span>4</span><span>3</span></span> <span class="g">(ileri)</span></span>
+<span class="mat">∫<sub>1</sub><sup>3</sup> v dt = 0 − <span class="kes"><span>4</span><span>3</span></span> = −<span class="kes"><span>4</span><span>3</span></span> <span class="g">(geri)</span></span>
+<span class="mat">∫<sub>3</sub><sup>4</sup> v dt = <span class="kes"><span>4</span><span>3</span></span> − 0 = <span class="kes"><span>4</span><span>3</span></span> <span class="g">(yeniden ileri)</span></span>
+<p><strong>Adım 5.</strong> Yer değiştirme: parçaları işaretleriyle topla (ya da doğrudan S(4) − S(0)).</p>
+<span class="mat"><span class="kes"><span>4</span><span>3</span></span> − <span class="kes"><span>4</span><span>3</span></span> + <span class="kes"><span>4</span><span>3</span></span> = <span class="kes"><span>4</span><span>3</span></span> m <span class="g">(S(4) − S(0) ile aynı)</span></span>
+<p><strong>Adım 6.</strong> Toplam yol: mutlak değerleri topla.</p>
+<span class="mat"><span class="kes"><span>4</span><span>3</span></span> + <span class="kes"><span>4</span><span>3</span></span> + <span class="kes"><span>4</span><span>3</span></span> = 4 m <span class="g">(geri gidiş de artı sayıldı)</span></span>
+<p><strong>Sonuç:</strong> Yer değiştirme 4/3 m, toplam yol 4 m. Kontrol yolu: birim m/s × s = m. Tahmin: hızın en büyük değeri aralığın uçlarında 3 m/s; 4 saniyede 12 m'den fazla yol yapılamaz, 4 m bu sınırın altında. Yalnızca ∫<sub>0</sub><sup>4</sup> v dt hesaplayıp onu "yol" diye işaretlemek, bu sorunun klasik tuzağıdır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Toplam yol" sorulduğunda hızın integralini doğrudan almak.</strong> Örnek 1'de ∫<sub>0</sub><sup>4</sup> v dt = 4/3 bulunur ve "yol 4/3 m" denir. Bu, cismin 1. ve 3. saniyeler arasında geri gittiğini görmemektir. Soru "yer değiştirme", "konumdaki değişim", "başlangıca uzaklık" diyorsa işaretli integral; "aldığı yol", "kat ettiği mesafe", "toplam yol" diyorsa |v|'nin integrali istenir. Kendini korumanın yolu: hareket sorusunda integrale başlamadan önce her zaman v = 0 denklemini çöz ve kökün aralığın içinde olup olmadığına bak.</p></div>
+
+<h3>İvmeden hıza, hızdan konuma</h3>
+
+<p>İvme verildiğinde merdivenin iki basamağını çıkarsın. Her basamakta bir integral sabiti doğar ve her biri bir başlangıç koşuluyla bulunur: hızın sabiti v(0) ile, konumun sabiti s(0) ile. Parça 28'deki "f″ verilip f'in bulunması (iki sabit, iki koşul)" kalıbı budur; burada sabitlerin fiziksel adları var.</p>
+
+<p>Fizikten bildiğin sabit ivmeli hareket denklemleri de buradan çıkar. a sabitse v(t) = ∫ a dt = at + C ve t = 0'da v = v₀ olduğu için v(t) = v₀ + at. Bir kez daha integral: s(t) = v₀t + ½at<sup>2</sup> + s₀. Yani fizikte ezberlenen formüller, iki basit integralin sonucudur. İvme sabit değilse formüller işlemez, ama integral yöntemi aynen işler.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Doğrusal yolda giden bir aracın ivmesi a(t) = 6 − 2t (m/s<sup>2</sup>), ilk hızı v(0) = 7 m/s ve başlangıç konumu s(0) = 0'dır. Aracın 3. saniyedeki konumunu ve durduğu anı bulun.</p>
+<p><strong>Adım 1.</strong> İvmenin integrali hızı verir.</p>
+<span class="mat">v(t) = ∫ (6 − 2t) dt = 6t − t<sup>2</sup> + C₁ <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">v(0) = C₁ = 7 ⇒ v(t) = 7 + 6t − t<sup>2</sup> <span class="g">(ilk hız koşulu)</span></span>
+<p><strong>Adım 2.</strong> Hızın integrali konumu verir.</p>
+<span class="mat">s(t) = ∫ (7 + 6t − t<sup>2</sup>) dt = 7t + 3t<sup>2</sup> − <span class="kes"><span>t<sup>3</sup></span><span>3</span></span> + C₂ <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">s(0) = C₂ = 0 <span class="g">(başlangıç konumu)</span></span>
+<p><strong>Adım 3.</strong> t = 3'te konum.</p>
+<span class="mat">s(3) = 21 + 27 − 9 = 39 m <span class="g">(yerine koyma)</span></span>
+<p><strong>Adım 4.</strong> Durma anı: hız sıfır.</p>
+<span class="mat">7 + 6t − t<sup>2</sup> = 0 ⇒ t<sup>2</sup> − 6t − 7 = 0 ⇒ (t − 7)(t + 1) = 0 <span class="g">(çarpanlara ayırma)</span></span>
+<span class="mat">t = 7 s <span class="g">(t = −1 zaman olarak anlamsız)</span></span>
+<p><strong>Sonuç:</strong> s(3) = 39 m, araç t = 7 s'de durur. [0, 3] aralığında v hep pozitif olduğu için 39 m aynı zamanda alınan yoldur. Kontrol yolu: s′(t) = 7 + 6t − t<sup>2</sup> = v(t), v′(t) = 6 − 2t = a(t). C₁'i unutan s(3) = 27 − 9 = 18 m bulur; ilk hızın 3 saniyede kattığı 21 m kaybolur.</p></div>
+
+<h2 class="s">3. Değişim hızı verilen nicelikler: depo, nüfus, maliyet, sıcaklık</h2>
+
+<p>Hareketteki her şey, değişim hızı verilen başka niceliklere aynen taşınır. Sorunun dili değişir, matematiği değişmez: hızı integralle, başlangıç değerini ekle. Değişim hızı negatife dönüyorsa nicelik azalmaya başlar; değişim hızının sıfırlandığı ve işaret değiştirdiği anda nicelik en büyük ya da en küçük değerine ulaşır (Parça 25).</p>
+
+<p><strong>Depoya akan su.</strong> Depoya giren suyun hızı r₁(t), çıkan suyun hızı r₂(t) ise depodaki su miktarının değişim hızı net hızdır: V′(t) = r₁(t) − r₂(t). Giren ve çıkan ayrı ayrı integrallenip farkı alınabilir ya da önce fark alınıp tek integral yazılır; integralin toplama kuralı yüzünden ikisi aynıdır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> İçinde 100 L su bulunan bir depoya t. dakikada r(t) = 20 − 2t (L/dk) hızla su giriyor; aynı anda depodan sabit 6 L/dk hızla su çıkıyor (0 ≤ t ≤ 10). Depodaki su en çok kaç litre olur? 10. dakikanın sonunda depoda kaç litre su vardır?</p>
+<p><strong>Adım 1.</strong> Net değişim hızını yaz.</p>
+<span class="mat">V′(t) = (20 − 2t) − 6 = 14 − 2t <span class="g">(giren − çıkan)</span></span>
+<p><strong>Adım 2.</strong> Net değişim teoremiyle V(t).</p>
+<span class="mat">V(t) = 100 + ∫<sub>0</sub><sup>t</sup> (14 − 2u) du = 100 + 14t − t<sup>2</sup> <span class="g">(ilk değer + değişim)</span></span>
+<p><strong>Adım 3.</strong> En büyük değer: V′(t) = 0.</p>
+<span class="mat">14 − 2t = 0 ⇒ t = 7 <span class="g">(V′, 7'de + → − değişir: maksimum)</span></span>
+<span class="mat">V(7) = 100 + 98 − 49 = 149 L <span class="g">(yerine koyma)</span></span>
+<p><strong>Adım 4.</strong> 10. dakikanın sonu.</p>
+<span class="mat">V(10) = 100 + 140 − 100 = 140 L <span class="g">(yerine koyma)</span></span>
+<p><strong>Sonuç:</strong> En çok 149 L (7. dakikada), 10. dakikada 140 L. Kontrol yolu: ayrı ayrı hesapla. Giren su ∫<sub>0</sub><sup>10</sup> (20 − 2t) dt = 200 − 100 = 100 L, çıkan su 6 · 10 = 60 L; 100 + 100 − 60 = 140. Dikkat: 7. dakikadan sonra giren su hâlâ var (r(8) = 4 L/dk), ama çıkan sudan az olduğu için depo boşalmaya başlamıştır. Su miktarı, giriş durduğunda değil, <strong>giriş hızı çıkış hızına eşitlendiğinde</strong> en büyüktür.</p></div>
+
+<p><strong>Nüfus artışı.</strong> Bir kasabanın nüfusu t. yılda P′(t) = 300 + 60t (kişi/yıl) hızla artıyorsa, ilk 5 yıldaki artış ∫<sub>0</sub><sup>5</sup> (300 + 60t) dt = 1500 + 750 = 2250 kişidir. Bugünkü nüfus 12 000 ise 5 yıl sonraki nüfus 14 250 olur. Gerçek nüfus modelleri çoğu zaman üsteldir (Parça 16); burada değişim hızı doğrudan verildiği için yalnızca integral gerekir.</p>
+
+<p><strong>Marjinal maliyet.</strong> Ekonomide C(x), x adet ürünün toplam maliyetidir; C′(x)'e marjinal maliyet denir ve "bir adet daha üretmenin yaklaşık maliyeti" diye yorumlanır. C(0), hiç üretim yokken ödenen maliyettir: kira, makine gibi <strong>sabit maliyet</strong>. Marjinal maliyetin integrali yalnızca üretime bağlı kısmı verir; toplam maliyet için sabit maliyet eklenir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> Bir atölyede marjinal maliyet C′(x) = 2x + 40 (TL/adet), sabit maliyet 500 TL'dir. 20 adet ürünün toplam maliyeti kaç TL'dir? Üretimi 10 adetten 20 adede çıkarmak maliyeti kaç TL artırır?</p>
+<p><strong>Adım 1.</strong> Net değişim teoremini yaz; ilk değer sabit maliyettir.</p>
+<span class="mat">C(20) = C(0) + ∫<sub>0</sub><sup>20</sup> (2x + 40) dx <span class="g">(C(0) = 500)</span></span>
+<p><strong>Adım 2.</strong> İntegrali hesapla.</p>
+<span class="mat">∫<sub>0</sub><sup>20</sup> (2x + 40) dx = [x<sup>2</sup> + 40x]<sub>0</sub><sup>20</sup> = 400 + 800 = 1200 <span class="g">(temel teorem)</span></span>
+<span class="mat">C(20) = 500 + 1200 = 1700 TL <span class="g">(sabit maliyet eklendi)</span></span>
+<p><strong>Adım 3.</strong> 10'dan 20'ye artış: yalnızca integral, sabit maliyet yok.</p>
+<span class="mat">∫<sub>10</sub><sup>20</sup> (2x + 40) dx = (400 + 800) − (100 + 400) = 700 TL <span class="g">(üst − alt)</span></span>
+<p><strong>Sonuç:</strong> C(20) = 1700 TL; 10'dan 20'ye çıkmak 700 TL artış getirir. Kontrol yolu: C(x) = x<sup>2</sup> + 40x + 500 yaz; C(20) − C(10) = 1700 − 1000 = 700. Artış sorusunda sabit maliyeti de eklemek (1200) ya da toplam maliyet sorusunda unutmak (1200) en yaygın iki hatadır; ikisi de aynı yanlış sayıyı verdiği için soruyu yazan bu sayıyı mutlaka seçeneğe koyar.</p></div>
+
+<p><strong>Sıcaklık değişimi.</strong> Bir odanın sıcaklığı sabah t. saatte T′(t) = 3 − t (°C/saat) hızla değişiyorsa, ilk 2 saatteki değişim ∫<sub>0</sub><sup>2</sup> (3 − t) dt = 6 − 2 = 4 °C'dir: oda 4 derece ısınmıştır. [0, 6] aralığında ise ∫<sub>0</sub><sup>6</sup> (3 − t) dt = 18 − 18 = 0 çıkar. Bu, sıcaklığın 6 saat boyunca hiç değişmediği anlamına gelmez; 3 saat ısınıp 3 saat soğuduğu ve 6. saatte başladığı dereceye döndüğü anlamına gelir. Net değişimin sıfır olması "hiçbir şey olmadı" demek değildir.</p>
+
+<h2 class="s">4. "Bu integral neyi ifade eder?": yorum soruları</h2>
+
+<p>Sınav bazen hiç hesap istemez; bir integralin, bir türevin ya da bir değerin gerçek durumda neyi anlattığını sorar. Doğru cevabı bulmanın yolu her ifadeyi üç soruyla okumaktır: Bu bir <strong>hız</strong> mı, bir <strong>miktar</strong> mı, bir <strong>miktar değişimi</strong> mi? Birimi ne? Hangi zaman aralığından söz ediyor?</p>
+
+<div class="tablo"><table>
+<tr><th>İfade (r(t): depoya giriş hızı, L/dk; V(t): depodaki su, L)</th><th>Anlamı</th><th>Birim</th></tr>
+<tr><td>r(5)</td><td>5. dakikadaki (o andaki) giriş hızı</td><td>L/dk</td></tr>
+<tr><td>∫<sub>0</sub><sup>5</sup> r(t) dt</td><td>ilk 5 dakikada depoya giren su miktarı</td><td>L</td></tr>
+<tr><td>∫<sub>2</sub><sup>5</sup> r(t) dt</td><td>2. ile 5. dakikalar arasında giren su</td><td>L</td></tr>
+<tr><td>V(0) + ∫<sub>0</sub><sup>5</sup> r(t) dt</td><td>5. dakikada depodaki su (çıkış yoksa)</td><td>L</td></tr>
+<tr><td>r′(5)</td><td>5. dakikada giriş hızının değişim hızı (hız artıyor mu?)</td><td>L/dk<sup>2</sup></td></tr>
+<tr><td><span class="kes"><span>1</span><span>5</span></span> ∫<sub>0</sub><sup>5</sup> r(t) dt</td><td>ilk 5 dakikadaki ortalama giriş hızı (Bölüm 9)</td><td>L/dk</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>∫<sub>0</sub><sup>5</sup> r(t) dt'yi "5. dakikada depodaki su" diye okumak.</strong> İntegral yalnızca bu 5 dakikada <strong>eklenen</strong> suyu verir; depoda başta su varsa o eklenmez. Benzer biçimde "∫<sub>0</sub><sup>5</sup> v(t) dt, cismin 5. saniyedeki konumudur" ifadesi yalnızca s(0) = 0 ise doğrudur; genelde bu integral konumdaki değişimdir. Bir başka karışıklık r(5) ile integrali karıştırmaktır: r(5) bir anlık hızdır (L/dk), integral bir miktardır (L). Birimleri yan yana yazmak bu iki hatayı da hemen ortaya çıkarır.</p></div>
+
+<h2 class="s">5. f′ grafiği verilen sorular: alanlardan f'in değerlerine</h2>
+
+<p>AYT'nin en sevdiği karma soru tipi budur: f'in kendisi değil, <strong>türevinin grafiği</strong> verilir; grafiğin x ekseniyle arasında kalan bölgelerin alanları yazılır ve f'in değerleri, ekstremumları ya da sıralaması sorulur. Bu soruda iki bilgiyi aynı anda kullanırsın:</p>
+
+<p><strong>Alan bilgisi (Parça 30–31):</strong> ∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a). Bölge x ekseninin üstündeyse integral artı alandır, f o aralıkta alan kadar <strong>artar</strong>; altındaysa eksi alandır, f alan kadar <strong>azalır</strong>.</p>
+
+<p><strong>İşaret bilgisi (Parça 25):</strong> f′ &gt; 0 olan aralıkta f artan, f′ &lt; 0 olan aralıkta azalandır. f′'nün x eksenini artıdan eksiye geçerek kestiği yerde f yerel maksimum, eksiden artıya geçerek kestiği yerde yerel minimum yapar.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>f′ grafiğiyle çalışmanın üç adımı.</strong> 1) f′'nün x eksenini kestiği noktaları işaretle; bunlar f'in ekstremum adaylarıdır. 2) Bilinen bir f değerinden başlayıp soldan sağa yürü: üstteki her alanı ekle, alttaki her alanı çıkar; böylece her kesişim noktasında f'in değerini bul. 3) İstenen sıralamayı ya da en büyük-en küçük değeri bu değerlerden oku. Kapalı aralıkta mutlak ekstremum için uç noktaları da listeye kat (Parça 25).</p>
+<p><strong>Neden?</strong> İkinci adım, net değişim teoreminin aralık aralık uygulanmasıdır: f(b) = f(a) + ∫<sub>a</sub><sup>b</sup> f′(x) dx. Birinci adım ise türevin işaretiyle artanlık-azalanlık bağıntısıdır. Grafiğin tepe ve çukur noktaları (f′'nün kendi ekstremumları) f'in ekstremumu değildir; onlar f'in büküm noktalarıdır (Parça 26).</p></div>
+
+<figure>
+<svg viewBox="0 0 400 368" role="img" aria-label="Üstte y eşittir f türev x grafiği, 6 çarpı x eksi 1 çarpı x eksi 4 parabolü, 0 ile 5 arasında. x eksenini 1 ve 4'te kesiyor. 0 ile 1 arasında eksenin üstünde alanı 11 olan bölge, 1 ile 4 arasında eksenin altında alanı 27 olan bölge, 4 ile 5 arasında üstte alanı 11 olan bölge var. Altta aynı yatay ölçekle y eşittir f x grafiği: f 0'da 20, 1'de en büyük değer 31, 4'te en küçük değer 4, 5'te 15.">
+  <polygon class="sv-m" points="50.0,110.0 50.0,38.0 56.0,46.8 62.0,55.3 68.0,63.4 74.0,71.1 80.0,78.5 86.0,85.5 92.0,92.2 98.0,98.5 104.0,104.4 110.0,110.0" />
+  <polygon class="sv-a" points="110.0,110.0 116.0,115.2 122.0,120.1 128.0,124.6 134.0,128.7 140.0,132.5 146.0,135.9 152.0,139.0 158.0,141.7 164.0,144.0 170.0,146.0 176.0,147.6 182.0,148.9 188.0,149.8 194.0,150.3 200.0,150.5 206.0,150.3 212.0,149.8 218.0,148.9 224.0,147.6 230.0,146.0 236.0,144.0 242.0,141.7 248.0,139.0 254.0,135.9 260.0,132.5 266.0,128.7 272.0,124.6 278.0,120.1 284.0,115.2 290.0,110.0" />
+  <polygon class="sv-m" points="290.0,110.0 296.0,104.4 302.0,98.5 308.0,92.2 314.0,85.5 320.0,78.5 326.0,71.1 332.0,63.4 338.0,55.3 344.0,46.8 350.0,38.0 350.0,110.0" />
+  <line class="sv-c" x1="40" y1="110" x2="372" y2="110" />
+  <line class="sv-c" x1="50" y1="160" x2="50" y2="24" />
+  <polyline class="sv-cl" points="50.0,38.0 56.0,46.8 62.0,55.3 68.0,63.4 74.0,71.1 80.0,78.5 86.0,85.5 92.0,92.2 98.0,98.5 104.0,104.4 110.0,110.0 116.0,115.2 122.0,120.1 128.0,124.6 134.0,128.7 140.0,132.5 146.0,135.9 152.0,139.0 158.0,141.7 164.0,144.0 170.0,146.0 176.0,147.6 182.0,148.9 188.0,149.8 194.0,150.3 200.0,150.5 206.0,150.3 212.0,149.8 218.0,148.9 224.0,147.6 230.0,146.0 236.0,144.0 242.0,141.7 248.0,139.0 254.0,135.9 260.0,132.5 266.0,128.7 272.0,124.6 278.0,120.1 284.0,115.2 290.0,110.0 296.0,104.4 302.0,98.5 308.0,92.2 314.0,85.5 320.0,78.5 326.0,71.1 332.0,63.4 338.0,55.3 344.0,46.8 350.0,38.0" />
+  <text class="sv-b" x="68" y="102" text-anchor="middle">+11</text>
+  <text class="sv-b" x="200" y="136" text-anchor="middle">−27</text>
+  <text class="sv-b" x="332" y="102" text-anchor="middle">+11</text>
+  <text class="sv-t" x="210" y="34" text-anchor="middle">y = f′(x)</text>
+  <line class="sv-c" x1="110" y1="110" x2="110" y2="340" />
+  <line class="sv-c" x1="290" y1="110" x2="290" y2="340" />
+  <line class="sv-c" x1="40" y1="340" x2="372" y2="340" />
+  <line class="sv-c" x1="50" y1="345" x2="50" y2="196" />
+  <polyline class="sv-cl" points="50.0,260.0 56.0,251.0 62.0,243.1 68.0,236.4 74.0,230.7 80.0,226.0 86.0,222.3 92.0,219.5 98.0,217.5 104.0,216.4 110.0,216.0 116.0,216.4 122.0,217.4 128.0,219.0 134.0,221.2 140.0,224.0 146.0,227.2 152.0,230.9 158.0,234.9 164.0,239.3 170.0,244.0 176.0,248.9 182.0,254.0 188.0,259.3 194.0,264.6 200.0,270.0 206.0,275.4 212.0,280.7 218.0,286.0 224.0,291.1 230.0,296.0 236.0,300.7 242.0,305.1 248.0,309.1 254.0,312.8 260.0,316.0 266.0,318.8 272.0,321.0 278.0,322.6 284.0,323.6 290.0,324.0 296.0,323.6 302.0,322.5 308.0,320.5 314.0,317.7 320.0,314.0 326.0,309.3 332.0,303.6 338.0,296.9 344.0,289.0 350.0,280.0" />
+  <circle class="sv-a" cx="50" cy="260" r="4" />
+  <circle class="sv-a" cx="110" cy="216" r="4" />
+  <circle class="sv-a" cx="290" cy="324" r="4" />
+  <circle class="sv-a" cx="350" cy="280" r="4" />
+  <text class="sv-s" x="58" y="278" text-anchor="start">20</text>
+  <text class="sv-s" x="118" y="208" text-anchor="start">31 (en büyük)</text>
+  <text class="sv-s" x="298" y="336" text-anchor="start">4 (en küçük)</text>
+  <text class="sv-s" x="358" y="284" text-anchor="start">15</text>
+  <text class="sv-t" x="262" y="236" text-anchor="middle">y = f(x)</text>
+  <text class="sv-s" x="50" y="358" text-anchor="middle">0</text>
+  <text class="sv-s" x="110" y="358" text-anchor="middle">1</text>
+  <text class="sv-s" x="170" y="358" text-anchor="middle">2</text>
+  <text class="sv-s" x="230" y="358" text-anchor="middle">3</text>
+  <text class="sv-s" x="290" y="358" text-anchor="middle">4</text>
+  <text class="sv-s" x="350" y="358" text-anchor="middle">5</text>
+</svg>
+<figcaption>Üstte f′(x) = 6(x − 1)(x − 4), altta f(0) = 20 olan f; iki grafik aynı yatay ölçekte (birim başına 60) ve gerçek değerlerle çizildi. f′'nün üstteki alanı f'i yükseltir, alttaki alanı alçaltır. Kesikli çizgiler f′'nün sıfırlarıdır: f orada yön değiştirir. f′'nün en alçak noktası (x = 2,5) f'in ekstremumu değil, f'in bükümünün yön değiştirdiği yerdir.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> [0, 5] aralığında tanımlı f fonksiyonunun türevinin grafiği şekildeki gibidir; f′ x eksenini yalnızca x = 1 ve x = 4'te kesmektedir. f′ grafiği ile x ekseni arasında kalan bölgelerin alanları [0, 1]'de 11 (eksenin üstünde), [1, 4]'te 27 (altında), [4, 5]'te 11 (üstünde) birim karedir. f(0) = 20 olduğuna göre f'in [0, 5]'teki en büyük ve en küçük değerlerini bulun; f(0), f(1), f(4), f(5)'i sıralayın.</p>
+<p><strong>Adım 1.</strong> Kesişim noktaları ve işaret: [0, 1)'de f′ &gt; 0 (f artan), (1, 4)'te f′ &lt; 0 (f azalan), (4, 5]'te f′ &gt; 0 (f artan). x = 1'de + → −: yerel maksimum; x = 4'te − → +: yerel minimum.</p>
+<p><strong>Adım 2.</strong> f(0)'dan başlayıp soldan sağa yürü.</p>
+<span class="mat">f(1) = f(0) + 11 = 31 <span class="g">(üstteki alan: artış)</span></span>
+<span class="mat">f(4) = f(1) − 27 = 4 <span class="g">(alttaki alan: azalış)</span></span>
+<span class="mat">f(5) = f(4) + 11 = 15 <span class="g">(üstteki alan: artış)</span></span>
+<p><strong>Adım 3.</strong> Mutlak ekstremum: aday noktalar uçlar (0 ve 5) ile kritik noktalar (1 ve 4). Değerler 20, 31, 4, 15.</p>
+<span class="mat">en büyük f(1) = 31, en küçük f(4) = 4 <span class="g">(adayların karşılaştırması)</span></span>
+<p><strong>Adım 4.</strong> Sıralama.</p>
+<span class="mat">f(4) &lt; f(5) &lt; f(0) &lt; f(1) <span class="g">(4 &lt; 15 &lt; 20 &lt; 31)</span></span>
+<p><strong>Sonuç:</strong> En büyük değer 31, en küçük değer 4; f(4) &lt; f(5) &lt; f(0) &lt; f(1). Kontrol yolu: f(5) − f(0) = 11 − 27 + 11 = −5 olmalı; 15 − 20 = −5. Şekildeki f′, 6x<sup>2</sup> − 30x + 24'tür; f(x) = 2x<sup>3</sup> − 15x<sup>2</sup> + 24x + 20 için f(1) = 31, f(4) = 4, f(5) = 15 çıkıyor, alanlar da gerçekten 11, 27, 11. Sınavda bu kuralı bilmen gerekmez: soru alanları verir ve hesap yalnızca toplama-çıkarmadır.</p></div>
+
+<p>Bu örnekte iki uçtaki alanların eşit (11 ve 11) olması bir tuzak kurar: "üstteki alanlar 11 + 11 = 22, alttaki 27; demek ki f(5) &lt; f(0)" sonucu doğrudur, ama "f(5) = f(1) çünkü alanlar eşit" gibi bir kısa yol yanlıştır. f(1)'den f(5)'e giderken önce 27 iner, sonra 11 çıkarsın. Her zaman bir noktadan başlayıp sırayla yürü.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>f′ grafiğini f grafiği gibi okumak.</strong> f′ grafiğinin en alçak noktasına (x = 2,5) bakıp "f burada en küçük" demek, grafiğin neyin grafiği olduğunu unutmaktır. f′'nün en küçük olduğu yer, f'in en hızlı azaldığı yerdir; f azalmayı x = 4'e kadar sürdürür. Benzer biçimde f′'nün pozitif ama azalan olduğu bir aralıkta f hâlâ artandır; "grafik iniyor, demek ki f azalıyor" yanlıştır. f′ grafiğinde bakacağın tek şey grafiğin <strong>x eksenine göre konumudur</strong> (üstte mi altta mı) ve aradaki alanlardır.</p></div>
+
+<h2 class="s">6. İntegralle tanımlı fonksiyon: F(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt</h2>
+
+<p>Belirli integralin üst sınırı bir sayı değil de x olunca sonuç bir sayı değil, x'e bağlı bir fonksiyondur. Parça 30'da bu fonksiyonun türevini gördün: d/dx ∫<sub>a</sub><sup>x</sup> f(t) dt = f(x). Bunun nedeni de net değişim teoremidir: G, f'nin bir ters türeviyse F(x) = G(x) − G(a) ve türevi G′(x) = f(x). O hâlde F için f, "türev grafiği" rolündedir ve Bölüm 5'teki her şey aynen geçerlidir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>F(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt ise (f sürekli):</p>
+<span class="mat">F′(x) = f(x), F(a) = 0 <span class="g">(temel teorem; boş aralığın integrali 0)</span></span>
+<p>Buna göre f &gt; 0 olan aralıkta F artan, f &lt; 0 olan aralıkta F azalandır; f'nin artıdan eksiye geçtiği yerde F yerel maksimum, eksiden artıya geçtiği yerde yerel minimum yapar. F'nin ekstremum değerleri ise integral hesaplanarak (ya da alanlardan) bulunur. Ayrıca F″(x) = f′(x) olduğu için F'nin büküm noktaları, f'nin yerel ekstremum noktalarıdır.</p>
+<p><strong>Neden F(a) = 0?</strong> ∫<sub>a</sub><sup>a</sup> f(t) dt aralığı sıfır uzunlukta olan bir integraldir (Parça 30). Bu bilgi, sorulardaki bilinmeyen sabiti bulmanın anahtarıdır (Bölüm 8).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> F(x) = ∫<sub>1</sub><sup>x</sup> (t<sup>2</sup> − 2t − 3) dt fonksiyonunun artan ve azalan olduğu aralıkları, yerel ekstremum noktalarını ve değerlerini bulun.</p>
+<p><strong>Adım 1.</strong> Türev.</p>
+<span class="mat">F′(x) = x<sup>2</sup> − 2x − 3 = (x + 1)(x − 3) <span class="g">(üst sınırı değişken integralin türevi)</span></span>
+<p><strong>Adım 2.</strong> İşaret: kökler −1 ve 3; dışarıda artı, arada eksi.</p>
+<span class="mat">F, (−∞, −1) ve (3, ∞)'da artan; (−1, 3)'te azalan <span class="g">(F′'nün işareti)</span></span>
+<p><strong>Adım 3.</strong> Ekstremum noktaları: x = −1'de + → − (yerel maksimum), x = 3'te − → + (yerel minimum).</p>
+<p><strong>Adım 4.</strong> Değerler için integrali hesapla. Ters türev G(t) = t<sup>3</sup>/3 − t<sup>2</sup> − 3t.</p>
+<span class="mat">G(1) = <span class="kes"><span>1</span><span>3</span></span> − 1 − 3 = −<span class="kes"><span>11</span><span>3</span></span>, G(−1) = −<span class="kes"><span>1</span><span>3</span></span> − 1 + 3 = <span class="kes"><span>5</span><span>3</span></span>, G(3) = 9 − 9 − 9 = −9 <span class="g">(yerine koyma)</span></span>
+<span class="mat">F(−1) = G(−1) − G(1) = <span class="kes"><span>5</span><span>3</span></span> + <span class="kes"><span>11</span><span>3</span></span> = <span class="kes"><span>16</span><span>3</span></span> <span class="g">(yerel maksimum değeri)</span></span>
+<span class="mat">F(3) = G(3) − G(1) = −9 + <span class="kes"><span>11</span><span>3</span></span> = −<span class="kes"><span>16</span><span>3</span></span> <span class="g">(yerel minimum değeri)</span></span>
+<p><strong>Sonuç:</strong> Yerel maksimum (−1, 16/3), yerel minimum (3, −16/3). F'nin değerini istemeden önce alt sınırı denetle: F(1) = 0 olmalı; G(1) − G(1) = 0. Sınırlar ters yazıldığında (x &lt; 1 için ∫<sub>1</sub><sup>x</sup>, "büyükten küçüğe" integraldir) işaret kendiliğinden doğru çıkar; F(−1)'i hesaplarken aralığı çevirip işareti unutmak, −16/3 gibi yanlış bir değer verir.</p></div>
+
+<p>Kısa bir uzantı: üst sınır x değil de x'in bir fonksiyonuysa zincir kuralı devreye girer (Parça 23). H(x) = ∫<sub>0</sub><sup>x²</sup> f(t) dt ise H(x) = F(x<sup>2</sup>) biçimindedir ve H′(x) = f(x<sup>2</sup>) · 2x olur. Bu türev de artan-azalan sorularında aynı biçimde kullanılır; yalnızca 2x çarpanının işaretini de tabloya katarsın.</p>
+
+<h2 class="s">7. Belirli integralde değişken değiştirmenin ileri kullanımı</h2>
+
+<p>Parça 29'da değişken değiştirince sınırların da değiştiğini, Parça 30'da ∫ f(2x) dx türü soruları gördün. Burada aynı fikri genel bir kalıba bağlıyoruz; f'nin kuralı bilinmese de integral değeri bilinen bir integrale indirgemek mümkündür.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">∫<sub>p</sub><sup>q</sup> f(ax + b) dx = <span class="kes"><span>1</span><span>a</span></span> ∫<sub>ap + b</sub><sup>aq + b</sup> f(u) du <span class="g">(a ≠ 0)</span></span>
+<p><strong>Neden?</strong> u = ax + b dersen du = a dx, dx = du/a; sınırlar x = p ⇒ u = ap + b, x = q ⇒ u = aq + b. Parça 29'daki yöntemin tamamı tek satırda. Geometrik olarak: x yerine 2x yazmak grafiği yatayda yarıya sıkıştırır (Parça 4); alan da yarıya iner, 1/a çarpanı bunu söyler.</p></div>
+
+<p>Örnek: ∫<sub>0</sub><sup>4</sup> f(x) dx = 12 ise ∫<sub>0</sub><sup>2</sup> f(2x) dx'te u = 2x, sınırlar 0 ve 4; sonuç (1/2) · 12 = 6. Aynı bilgiyle ∫<sub>1</sub><sup>3</sup> f(2x − 2) dx de 6'dır, çünkü u = 2x − 2 için sınırlar yine 0 ve 4 olur. Sınavda yapılacak iş her zaman önce yeni sınırları hesaplamaktır: yeni sınırlar bilinen integralin sınırlarıyla aynı çıkıyorsa soru çözülmüştür.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Simetri (kısa; bu kısım sınav kapsamında olmayabilir).</strong></p>
+<span class="mat">∫<sub>a</sub><sup>b</sup> f(x) dx = ∫<sub>a</sub><sup>b</sup> f(a + b − x) dx</span>
+<p><strong>Neden?</strong> u = a + b − x dersen du = −dx; x = a ⇒ u = b, x = b ⇒ u = a. Sağ yan ∫<sub>b</sub><sup>a</sup> f(u) (−du) = ∫<sub>a</sub><sup>b</sup> f(u) du olur (eksi işareti sınırları geri çevirir). Geometrik olarak f(a + b − x), f'nin grafiğinin aralığın orta noktasındaki x = (a + b)/2 düşey doğrusuna göre yansımasıdır; yansıyan bölgenin alanı değişmez.</p></div>
+
+<p>Bu eşitlik iki yerde işe yarar. Birincisi, açılması zahmetli bir çarpımı kolaylaştırmak: ∫<sub>0</sub><sup>1</sup> x(1 − x)<sup>5</sup> dx'te x yerine 1 − x yazınca ∫<sub>0</sub><sup>1</sup> (1 − x)x<sup>5</sup> dx = ∫<sub>0</sub><sup>1</sup> (x<sup>5</sup> − x<sup>6</sup>) dx = 1/6 − 1/7 = 1/42 olur; (1 − x)<sup>5</sup>'i açmaya gerek kalmaz. İkincisi, başka yolla alınamayan bir integrali hesaplamak. I = ∫<sub>0</sub><sup>2</sup> √x/(√x + √(2 − x)) dx için simetri, I = ∫<sub>0</sub><sup>2</sup> √(2 − x)/(√(2 − x) + √x) dx verir. İki yazımı toplayınca paylar paydayı tamamlar: 2I = ∫<sub>0</sub><sup>2</sup> 1 dx = 2, yani I = 1. Bu "topla ve 2'ye böl" kalıbı sorularda tanınmak için vardır; çıkış noktası her zaman aynı eşitliktir.</p>
+
+<h2 class="s">8. İntegral içeren denklemler: iki yanın türevini almak</h2>
+
+<p>Bazı sorularda bilinmeyen f, bir integralin içinde verilir: "∫<sub>2</sub><sup>x</sup> f(t) dt = x<sup>2</sup> + kx − 2 olduğuna göre f(3) kaçtır?" f'yi integralin içinden çıkarmanın yolu, integrali "geri alan" işlemi, yani türevi uygulamaktır. Ama türev bir bilgiyi yok eder: sabitler. O yüzden türevle birlikte bir de alt sınırı yerine koyarsın.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Değişken sınırlı integral denklemi.</strong> ∫<sub>a</sub><sup>x</sup> f(t) dt = g(x) verilmişse:</p>
+<span class="mat">1) x = a koy: 0 = g(a) <span class="g">(sol yan boş aralığın integrali; parametre buradan çıkar)</span></span>
+<span class="mat">2) iki yanın türevini al: f(x) = g′(x) <span class="g">(üst sınırı değişken integralin türevi)</span></span>
+<p><strong>Sabit sınırlı integral.</strong> f(x) = h(x) + ∫<sub>p</sub><sup>q</sup> f(t) dt biçiminde bir eşitlikte integralin iki sınırı da sayıysa, integralin değeri bir <strong>sayıdır</strong>. Ona c de: f(x) = h(x) + c. Sonra bu f'yi integrale geri koyup c'yi bulursun.</p>
+<p><strong>Neden?</strong> Türev alınınca g'nin sabit terimi kaybolur; denklemi yalnızca türevle çözersen kaybolan bilgi parametrenin kendisi olabilir. x = a koymak bu bilgiyi geri getirir. Sabit sınırlı integralde ise x yalnızca integralin dışındadır; t integrallenip sınırlar konunca geriye x'ten bağımsız bir sayı kalır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru (a):</strong> ∫<sub>2</sub><sup>x</sup> f(t) dt = x<sup>2</sup> + kx − 2 olduğuna göre k'yı ve f(3)'ü bulun.</p>
+<p><strong>Adım 1.</strong> x = 2 koy; sol yan sıfırdır.</p>
+<span class="mat">0 = 4 + 2k − 2 ⇒ k = −1 <span class="g">(∫<sub>2</sub><sup>2</sup> = 0)</span></span>
+<p><strong>Adım 2.</strong> İki yanın türevini al.</p>
+<span class="mat">f(x) = 2x + k = 2x − 1 <span class="g">(F′ = f)</span></span>
+<span class="mat">f(3) = 6 − 1 = 5 <span class="g">(yerine koyma)</span></span>
+<p><strong>Soru (b):</strong> f(x) = x + ∫<sub>0</sub><sup>2</sup> f(t) dt olduğuna göre f(x)'i bulun.</p>
+<p><strong>Adım 3.</strong> Sabit sınırlı integral bir sayıdır.</p>
+<span class="mat">c = ∫<sub>0</sub><sup>2</sup> f(t) dt ⇒ f(x) = x + c <span class="g">(c, x'e bağlı değil)</span></span>
+<p><strong>Adım 4.</strong> Bu f'yi tanıma geri koy.</p>
+<span class="mat">c = ∫<sub>0</sub><sup>2</sup> (t + c) dt = 2 + 2c <span class="g">([t<sup>2</sup>/2 + ct]<sub>0</sub><sup>2</sup>)</span></span>
+<span class="mat">c = 2 + 2c ⇒ c = −2 <span class="g">(birinci dereceden denklem)</span></span>
+<p><strong>Sonuç:</strong> (a) k = −1, f(3) = 5. (b) f(x) = x − 2. Kontrol yolu (b): ∫<sub>0</sub><sup>2</sup> (t − 2) dt = 2 − 4 = −2 = c; f(x) = x + (−2) tutarlı. (a)'da x = 2 koymayı atlayan biri k'yı bulamaz ve f(3) = 6 + k'da takılır; türev almadan g(3) = 9 + 3k − 2 değerini f(3) sanan ise integralle integrali alınan fonksiyonu karıştırmıştır.</p></div>
+
+<h2 class="s">9. Bir fonksiyonun bir aralıktaki ortalama değeri (kısa)</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir</strong>; programda ayrı bir kazanım olup olmadığı doğrulanamadı. Ama fikir, sınavdaki yorum sorularında işe yarar ve Parça 1'deki ortalama değişim hızıyla güzel bir bağ kurar.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">f<sub>ort</sub> = <span class="kes"><span>1</span><span>b − a</span></span> ∫<sub>a</sub><sup>b</sup> f(x) dx</span>
+<p><strong>Neden?</strong> n sayının ortalaması "toplam bölü adet"tir. Sürekli bir fonksiyonda "toplam" integral, "adet" aralığın uzunluğudur. Geometrik olarak f<sub>ort</sub>, tabanı [a, b] olan ve eğri altındaki işaretli alanla aynı alana sahip dikdörtgenin yüksekliğidir.</p></div>
+
+<p>f(x) = x<sup>2</sup>'nin [0, 3]'teki ortalama değeri (1/3) · ∫<sub>0</sub><sup>3</sup> x<sup>2</sup> dx = (1/3) · 9 = 3'tür. Dikkat: uç değerlerin ortalaması (0 + 9)/2 = 4,5 değildir; o yalnızca doğrusal fonksiyonda doğru sonuç verir. Hareket diliyle: ortalama hız = (1/(t₂ − t₁)) ∫ v dt = yer değiştirme / süre. Formülü f′'ye uygularsan (1/(b − a)) · (f(b) − f(a)) çıkar; bu, Parça 1'deki ortalama değişim hızının ta kendisidir. Yani "türevin ortalama değeri, ortalama değişim hızıdır." Örnek 5'te f′'nün [0, 5]'teki ortalama değeri (11 − 27 + 11)/5 = −1, f'in ortalama değişim hızı (15 − 20)/5 = −1'dir.</p>
+
+<h2 class="s">10. Limit, türev ve integral bir arada</h2>
+
+<p>AYT'nin son sorularından biri sık sık üç konuyu birleştirir: içinde integral olan bir limit, ya da türevi alınması gereken bir integral. Bunları çözmenin anahtarı, ifadeyi Parça 22'deki <strong>türevin limit tanımına</strong> benzetmektir. L'Hôpital kuralı programda yok; ama buna gerek de yok.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> lim<sub>x→2</sub> <span class="kes"><span>1</span><span>x − 2</span></span> ∫<sub>2</sub><sup>x</sup> (t<sup>3</sup> + 1) dt limitinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Yerine koyunca pay ∫<sub>2</sub><sup>2</sup> = 0, payda 0: 0/0 belirsizliği (Parça 20). Doğrudan cevap verilemez.</p>
+<p><strong>Adım 2.</strong> İntegrale bir ad ver.</p>
+<span class="mat">F(x) = ∫<sub>2</sub><sup>x</sup> (t<sup>3</sup> + 1) dt, F(2) = 0, F′(x) = x<sup>3</sup> + 1 <span class="g">(Bölüm 6)</span></span>
+<p><strong>Adım 3.</strong> Limiti türev tanımı biçiminde yaz.</p>
+<span class="mat"><span class="kes"><span>F(x)</span><span>x − 2</span></span> = <span class="kes"><span>F(x) − F(2)</span><span>x − 2</span></span> <span class="g">(F(2) = 0 eklemek bir şey değiştirmez)</span></span>
+<span class="mat">lim<sub>x→2</sub> <span class="kes"><span>F(x) − F(2)</span><span>x − 2</span></span> = F′(2) <span class="g">(türevin limit tanımı, Parça 22)</span></span>
+<p><strong>Adım 4.</strong> Hesapla.</p>
+<span class="mat">F′(2) = 2<sup>3</sup> + 1 = 9 <span class="g">(F′(x) = x<sup>3</sup> + 1)</span></span>
+<p><strong>Sonuç:</strong> 9. Kontrol yolu: integrali açıkça hesapla. F(x) = x<sup>4</sup>/4 + x − 6; x = 2,001 için F(x)/(x − 2) ≈ 9,006. Payda x<sup>2</sup> − 4 olsaydı, (x − 2)(x + 2) diye ayırıp sonucu 9/4 bulurdun: türev tanımındaki x − 2'yi ayıkla, kalan çarpanın limitini ayrıca al.</p></div>
+
+<p>Karma sorularda nereden başlayacağını şu sırayla seçersin. Şekildeki dört kutu, bu parçanın dört karma kalıbıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Karma integral sorularında yol seçme şeması. Dört satır var. Değişim hızı verilmişse net değişim, integral eşittir son eksi ilk. Üst sınır değişkense türev al, F türev eşittir f. Sabit sınırlı integralin içinde bilinmeyen f varsa o bir sayıdır, c de. Limitin içinde integral varsa ve 0 bölü 0 çıkıyorsa türev tanımına çevir. En altta her yolun sonunda birim, işaret ve x eşittir a denetimi yapılır.">
+  <rect class="sv-k" x="10" y="8" width="380" height="36" rx="10" />
+  <text class="sv-b" x="200" y="31" text-anchor="middle">Soruda integral nerede duruyor?</text>
+  <rect class="sv-l" x="10" y="60" width="222" height="50" rx="10" />
+  <text class="sv-t" x="121" y="81" text-anchor="middle">Değişim hızı verilmiş</text>
+  <text class="sv-s" x="121" y="99" text-anchor="middle">(v, r, C′ ya da f′ grafiği)</text>
+  <line class="sv-cl" x1="232" y1="85" x2="252" y2="85" />
+  <polygon class="sv-a" points="250,79 250,91 260,85" />
+  <rect class="sv-m" x="260" y="60" width="130" height="50" rx="10" />
+  <text class="sv-b" x="325" y="81" text-anchor="middle">Net değişim</text>
+  <text class="sv-t" x="325" y="99" text-anchor="middle">∫ = son − ilk</text>
+  <rect class="sv-l" x="10" y="124" width="222" height="50" rx="10" />
+  <text class="sv-t" x="121" y="145" text-anchor="middle">Üst sınır değişken:</text>
+  <text class="sv-s" x="121" y="163" text-anchor="middle">F(x) = ∫ₐˣ f(t) dt</text>
+  <line class="sv-cl" x1="232" y1="149" x2="252" y2="149" />
+  <polygon class="sv-a" points="250,143 250,155 260,149" />
+  <rect class="sv-m" x="260" y="124" width="130" height="50" rx="10" />
+  <text class="sv-b" x="325" y="145" text-anchor="middle">Türev al</text>
+  <text class="sv-t" x="325" y="163" text-anchor="middle">F′(x) = f(x)</text>
+  <rect class="sv-l" x="10" y="188" width="222" height="50" rx="10" />
+  <text class="sv-t" x="121" y="209" text-anchor="middle">Sabit sınırlı integralin</text>
+  <text class="sv-s" x="121" y="227" text-anchor="middle">içinde bilinmeyen f var</text>
+  <line class="sv-cl" x1="232" y1="213" x2="252" y2="213" />
+  <polygon class="sv-a" points="250,207 250,219 260,213" />
+  <rect class="sv-m" x="260" y="188" width="130" height="50" rx="10" />
+  <text class="sv-b" x="325" y="209" text-anchor="middle">Bir sayıdır</text>
+  <text class="sv-t" x="325" y="227" text-anchor="middle">c de, c'yi bul</text>
+  <rect class="sv-l" x="10" y="252" width="222" height="50" rx="10" />
+  <text class="sv-t" x="121" y="273" text-anchor="middle">Limitin içinde integral,</text>
+  <text class="sv-s" x="121" y="291" text-anchor="middle">yerine koyunca 0/0</text>
+  <line class="sv-cl" x1="232" y1="277" x2="252" y2="277" />
+  <polygon class="sv-a" points="250,271 250,283 260,277" />
+  <rect class="sv-m" x="260" y="252" width="130" height="50" rx="10" />
+  <text class="sv-b" x="325" y="273" text-anchor="middle">Türev tanımı</text>
+  <text class="sv-t" x="325" y="291" text-anchor="middle">F′(a) = f(a)</text>
+  <text class="sv-s" x="200" y="322" text-anchor="middle">Her yolun sonunda: birim, işaret ve x = a denetimi.</text>
+</svg>
+<figcaption>Karma sorularda ilk 10 saniyede integralin yerine bak ve satırını seç. Bir soru birden çok satıra girebilir (Örnek 8 hem ikinci hem dördüncü satırdadır); o zaman satırları yukarıdan aşağı uygula.</figcaption>
+</figure>
+
+<p>Aşağıdaki tablo, integral bölümünün (Parça 28–32) AYT'de en sık gelen kalıplarını ve her birinde ilk yapılacak işi topluyor. Sınavdan önceki son tekrarda bu tabloyu kendi örneklerinle doldurman, bölümün tamamını gözden geçirmenin en kısa yoludur.</p>
+
+<div class="tablo"><table>
+<tr><th>Kalıp</th><th>İlk hamle</th><th>Tuzak</th></tr>
+<tr><td>∫ f(x) dx (belirsiz)</td><td>Aç, sadeleştir; kuvvet kuralı; + C (Parça 28)</td><td>Çarpımın integralini çarpanların integrallerinin çarpımı sanmak</td></tr>
+<tr><td>İçeride ifade ve türevi</td><td>u = iç ifade (Parça 29)</td><td>Eksik sabiti bölme yerine çarpmak</td></tr>
+<tr><td>∫<sub>a</sub><sup>b</sup> (belirli)</td><td>F(b) − F(a) (Parça 30)</td><td>Değişken değiştirince sınırları çevirmemek</td></tr>
+<tr><td>Alan</td><td>Kökleri bul, böl, mutlak değer (Parça 31)</td><td>İntegral değerini alan sanmak</td></tr>
+<tr><td>Hız → yer değiştirme / yol</td><td>v = 0'ı çöz; v ya da |v| integrali</td><td>Yol yerine yer değiştirme vermek</td></tr>
+<tr><td>Değişim hızı → miktar</td><td>İlk değer + ∫ hız</td><td>İlk değeri (sabit maliyet, başlangıç suyu) unutmak</td></tr>
+<tr><td>f′ grafiği ve alanlar</td><td>Bilinen değerden yürü: üst +, alt −</td><td>f′'nün tepe noktasını f'in ekstremumu sanmak</td></tr>
+<tr><td>F(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt</td><td>F′ = f, F(a) = 0</td><td>F'nin ekstremumunu f'nin ekstremumunda aramak</td></tr>
+<tr><td>∫ f(ax + b) dx</td><td>Yeni sınırları hesapla, 1/a ile çarp</td><td>1/a çarpanını unutmak</td></tr>
+<tr><td>∫<sub>a</sub><sup>x</sup> f = g(x)</td><td>x = a koy, sonra türev al</td><td>Sabit terimi türevle kaybetmek</td></tr>
+<tr><td>Limit içinde ∫, 0/0</td><td>Türev tanımına çevir</td><td>0/0'ı 0 ya da "limit yok" sanmak</td></tr>
+<tr><td>Tek-çift, simetrik aralık</td><td>Tek terimleri at, çift terimleri 2 ∫<sub>0</sub><sup>a</sup> (Parça 30)</td><td>Tek fonksiyonun integralini iki katına çıkarmak</td></tr>
+</table></div>
+
+<h2 class="s">11. Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p><strong>Hızlı yol 1: grafik varsa integral alma, alan say.</strong> Hız-zaman ya da f′ grafiği doğru parçalarından oluşuyorsa alanlar üçgen, dikdörtgen ve yamuk formülleriyle bulunur. Şekil 1'deki gibi bir soruda integral yazmak zaman kaybıdır.</p>
+
+<p><strong>Hızlı yol 2: değişim hızı soruları için tek satır.</strong> "Son = ilk + ∫ hız" satırını yaz, bilinmeyeni yerleştir. En büyük-en küçük isteniyorsa önce hızın sıfır olduğu anı bul; ancak o anki değeri hesapla.</p>
+
+<p><strong>Hızlı yol 3: integral denkleminde önce x = a.</strong> Parametre neredeyse her zaman alt sınırı yerine koyunca çıkar; türevi sonra al.</p>
+
+<p><strong>Kontrol yolu 1: birim.</strong> Sonucun birimini yaz. Litre bulman gereken yerde L/dk çıkıyorsa integral almayı unutmuşsun, m/s<sup>2</sup> çıkıyorsa türev almışsın.</p>
+
+<p><strong>Kontrol yolu 2: kaba sınır.</strong> Hız en çok M ise T sürede alınan yol en çok M · T'dir. Örnek 1'de bu sınır 3 · 4 = 12 m, bulunan 4 m. Sınırı aşan bir sonuç kesinlikle yanlıştır.</p>
+
+<p><strong>Kontrol yolu 3: yol ≥ |yer değiştirme|.</strong> Toplam yol hiçbir zaman yer değiştirmenin mutlak değerinden küçük olamaz; ikisi yalnızca hız işaret değiştirmiyorsa eşittir. Seçeneklerde hangisinin hangisi olduğunu bu eşitsizlikle ayırt edersin.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 22 ve 25'e:</strong> Konum-hız-ivme merdivenini türevle inmiştin; burada integralle çıktın. f′'nün işaretinden f'in artanlığını okumak Parça 25'in yöntemidir; burada ona alan bilgisi eklendi ve f'in değerleri de bulunabilir oldu.</p>
+<p><strong>Parça 30 ve 31'e:</strong> Net değişim teoremi, temel teoremin "Q′'nün integrali" biçimidir; yer değiştirme-yol ayrımı, integral değeri-alan ayrımının hareketteki adıdır.</p>
+<p><strong>Parça 1'e:</strong> Ortalama değişim hızı, türevin ortalama değeridir; integral bölümü, fonksiyonlar bölümünün ilk parçasındaki fikre böyle bağlanıyor.</p>
+<p><strong>Parça 33'e:</strong> Bir sonraki parça binom açılımı. ∫<sub>0</sub><sup>1</sup> x(1 − x)<sup>5</sup> dx gibi bir integrali simetri olmadan almak isteseydin (1 − x)<sup>5</sup>'i açman gerekirdi; o açılımın katsayılarını orada kuracaksın.</p>
+<p><strong>Öbür derslere:</strong> Fizikte hız-zaman grafiğinin altındaki alanın yer değiştirme olması ve sabit ivmeli hareket denklemleri buradaki integrallerin sonucudur; ivme-zaman grafiğinin altındaki alan da hız değişimidir. Kimyada tepkime hızından üretilen madde miktarını bulmak, coğrafyada nüfus artış hızından nüfus değişimini tahmin etmek aynı "hızın toplamı değişimdir" fikrine dayanır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Net değişim teoremi ne söyler ve hangi teoremden çıkar?</summary><p>Bir niceliğin değişim hızının a'dan b'ye integrali, o niceliğin bu aralıktaki değişimidir: ∫ Q′(t) dt = Q(b) − Q(a). Analizin temel teoreminden çıkar, çünkü Q′'nün ters türevi Q'dur. Niceliğin kendisi için başlangıç değeri eklenir: Q(b) = Q(a) + ∫ Q′(t) dt.</p></details>
+<details><summary>Yer değiştirme ile alınan toplam yol arasındaki fark nedir? Hangisi için neyin integrali alınır?</summary><p>Yer değiştirme son konum ile ilk konumun işaretli farkıdır; hızın kendisinin integralidir ve geri gidişleri düşer. Toplam yol yön dinlemez; hızın mutlak değerinin integralidir. Hesapta v = 0 anlarında aralık bölünür ve parçaların mutlak değerleri toplanır. Hız işaret değiştirmiyorsa ikisi eşittir.</p></details>
+<details><summary>Marjinal maliyet verilen bir soruda toplam maliyeti bulurken ne eklenir, maliyet artışını bulurken neden eklenmez?</summary><p>Toplam maliyet için sabit maliyet C(0) eklenir, çünkü marjinal maliyetin integrali yalnızca üretimle oluşan değişimi verir. Maliyet artışı C(b) − C(a) ise bir farktır; sabit maliyet iki terimde de bulunduğu için sadeleşir.</p></details>
+<details><summary>f′ grafiği ve alanlar verilmişse f'in değerlerini nasıl bulursun? f'in yerel ekstremumları nerededir?</summary><p>Bilinen bir f değerinden başlayıp soldan sağa yürürüm: eksenin üstündeki her alanı eklerim, altındakini çıkarırım. f'in yerel maksimumu f′'nün x eksenini artıdan eksiye geçerek kestiği yerde, yerel minimumu eksiden artıya geçerek kestiği yerdedir. f′'nün kendi tepe ve çukurları f'in ekstremumu değildir.</p></details>
+<details><summary>F(x) = ∫ₐˣ f(t) dt ise F′ ve F(a) neye eşittir? F'nin ekstremumları nasıl bulunur?</summary><p>F′(x) = f(x) ve F(a) = 0'dır. F'nin ekstremum noktaları f'nin işaret değiştirdiği yerlerdir; ekstremum değerleri integral hesaplanarak ya da alanlardan bulunur.</p></details>
+<details><summary>∫ₐˣ f(t) dt = g(x) biçimindeki bir denklemde parametre nasıl bulunur, f nasıl bulunur?</summary><p>x = a konur: sol yan sıfır olduğu için g(a) = 0 denklemi parametreyi verir. Sonra iki yanın türevi alınır: f(x) = g′(x). Sabit sınırlı bir integral varsa o bir sayıdır; c denir ve f yerine konup c bulunur.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Net değişim:</strong> ∫<sub>a</sub><sup>b</sup> Q′(t) dt = Q(b) − Q(a); son değer = ilk değer + ∫ hız. Birim = hız birimi × değişken birimi.</li>
+<li><strong>Hareket:</strong> v = s′, a = v′. Yer değiştirme ∫ v dt (işaretli), toplam yol ∫ |v| dt (v = 0'da böl, mutlak değerleri topla). En uzak an: v'nin + → − geçtiği an.</li>
+<li><strong>İvmeden konuma:</strong> iki integral, iki sabit: v(0) ve s(0).</li>
+<li><strong>Depo:</strong> V′ = giren − çıkan; su miktarı giriş hızı çıkışa eşitlenince en büyük.</li>
+<li><strong>Maliyet:</strong> C(x) = sabit maliyet + ∫<sub>0</sub><sup>x</sup> C′; artış C(b) − C(a)'da sabit maliyet yok.</li>
+<li><strong>Yorum:</strong> r(5) anlık hız; ∫<sub>0</sub><sup>5</sup> r eklenen miktar; başlangıç eklenmeden "depodaki su" olmaz.</li>
+<li><strong>f′ grafiği:</strong> üstteki alan f'i artırır, alttaki azaltır; f′'nün sıfırları f'in ekstremum adayları; uçları da karşılaştır.</li>
+<li><strong>F(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt:</strong> F′ = f, F(a) = 0, F″ = f′.</li>
+<li><strong>Değişken değiştirme:</strong> ∫<sub>p</sub><sup>q</sup> f(ax + b) dx = (1/a) ∫ f(u) du, yeni sınırlar ap + b ve aq + b. Simetri: ∫<sub>a</sub><sup>b</sup> f(x) dx = ∫<sub>a</sub><sup>b</sup> f(a + b − x) dx (kısa).</li>
+<li><strong>İntegral denklemi:</strong> önce x = a (parametre), sonra türev (f). Sabit sınırlı integral = sayı (c).</li>
+<li><strong>Ortalama değer (kısa):</strong> (1/(b − a)) ∫ f; f′'nün ortalaması = ortalama değişim hızı.</li>
+<li><strong>Limit + integral:</strong> 0/0 ise (F(x) − F(a))/(x − a) biçimine getir: sonuç F′(a) = f(a).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-32">
+<h3>Quiz 32</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir doğru üzerinde hareket eden cismin hızı v(t) = 6 − 2t (m/s) ile veriliyor. Cismin [0, 5] saniye aralığındaki yer değiştirmesi kaç metredir?</p>
+<ul class="sec"><li>13</li><li>9</li><li>5</li><li>−4</li><li>30</li></ul>
+<div class="coz"><p>Yer değiştirme hızın integralidir: ∫<sub>0</sub><sup>5</sup> (6 − 2t) dt = [6t − t<sup>2</sup>]<sub>0</sub><sup>5</sup> = 30 − 25 = 5 m. Cisim 3. saniyeye kadar ileri gidip 9 m yol yapar, sonra 4 m geri gelir; 9 − 4 = 5. 13, toplam yoldur (9 + 4); soru yer değiştirmeyi istiyor. 9, yalnızca durma anına kadarki kısmı almaktır. −4, 5. saniyedeki hızdır (v(5)); bir anlık hız, yer değiştirme değildir. 30, t<sup>2</sup> teriminin integralini unutup yalnızca 6t'yi hesaplamaktır.</p></div></li>
+
+<li data-c="A"><p class="q">Bir doğru üzerinde hareket eden cismin hızı v(t) = 3t<sup>2</sup> − 12t (m/s) ile veriliyor. Cismin [0, 5] saniye aralığında aldığı toplam yol kaç metredir?</p>
+<ul class="sec"><li>39</li><li>25</li><li>−25</li><li>32</li><li>7</li></ul>
+<div class="coz"><p>Önce v = 0: 3t(t − 4) = 0 ⇒ t = 4. [0, 4]'te v &lt; 0, [4, 5]'te v &gt; 0. Ters türev t<sup>3</sup> − 6t<sup>2</sup>: ∫<sub>0</sub><sup>4</sup> v dt = 64 − 96 = −32, ∫<sub>4</sub><sup>5</sup> v dt = (125 − 150) − (−32) = 7. Toplam yol |−32| + 7 = 39 m. 25, yer değiştirmenin mutlak değeridir (−32 + 7 = −25); geri ve ileri gidişleri birbirinden düşmektir. −25, yer değiştirmenin kendisidir. 32 ve 7, yalnızca bir parçayı almaktır. Kontrol: yol ≥ |yer değiştirme|, 39 ≥ 25.</p></div></li>
+
+<li data-c="D"><p class="q">Bir depoya t. dakikada r(t) litre/dakika hızla su girmektedir. ∫<sub>2</sub><sup>6</sup> r(t) dt = 80 olduğuna göre aşağıdakilerden hangisi kesinlikle doğrudur?</p>
+<ul class="sec"><li>6. dakikada depoda 80 litre su vardır.</li><li>6. dakikada suyun giriş hızı 80 litre/dakikadır.</li><li>2. ile 6. dakikalar arasında suyun giriş hızı her an 20 litre/dakikadır.</li><li>2. ile 6. dakikalar arasında depoya 80 litre su girmiştir.</li><li>İlk 6 dakikada depoya 80 litre su girmiştir.</li></ul>
+<div class="coz"><p>Akış hızının bir zaman aralığındaki integrali, o aralıkta akan su miktarıdır (birim: L/dk × dk = L). Aralık [2, 6] olduğu için 2. ile 6. dakikalar arasında 80 L su girmiştir. A, eklenen suyu depodaki toplam su sanmaktır; başta su olabilir, ilk 2 dakikada da su girmiş olabilir. B, miktarı hızla karıştırmaktır; birimi bile uymaz. C, ortalama giriş hızının 80/4 = 20 L/dk olduğunu söyler, ama hızın her an 20 olduğunu söylemez. E, alt sınırı 0 sanmaktır.</p></div></li>
+
+<li data-c="B"><p class="q">Bir üretimde marjinal maliyet C′(x) = 6x + 20 (TL/adet) ve sabit maliyet 200 TL'dir. Buna göre 10 adet ürünün toplam maliyeti kaç TL'dir?</p>
+<ul class="sec"><li>500</li><li>700</li><li>80</li><li>1000</li><li>280</li></ul>
+<div class="coz"><p>C(10) = C(0) + ∫<sub>0</sub><sup>10</sup> (6x + 20) dx = 200 + [3x<sup>2</sup> + 20x]<sub>0</sub><sup>10</sup> = 200 + 300 + 200 = 700 TL. 500, sabit maliyeti eklemeyi unutmaktır; integral yalnızca üretimle oluşan maliyeti verir. 80, onuncu adetteki marjinal maliyettir (C′(10)); toplam değil. 1000, 6x'in integralini 6x<sup>2</sup> sanmaktır (üsse bölmeyi unutmak). 280, marjinal maliyete sabit maliyeti eklemektir; hız ile miktarı toplamak anlamsızdır.</p></div></li>
+
+<li data-c="E"><p class="q">[0, 8] aralığında tanımlı f fonksiyonunun türevinin grafiği x eksenini yalnızca x = 2 ve x = 6'da kesmektedir. f′ grafiği ile x ekseni arasında kalan bölgelerin alanları [0, 2]'de 5 (eksenin üstünde), [2, 6]'da 8 (altında), [6, 8]'de 4 (üstünde) birim karedir. f(0) = 3 olduğuna göre f(8) kaçtır?</p>
+<ul class="sec"><li>20</li><li>1</li><li>0</li><li>2</li><li>4</li></ul>
+<div class="coz"><p>f(8) = f(0) + ∫<sub>0</sub><sup>8</sup> f′(x) dx; üstteki alanlar artı, alttaki eksi: 3 + 5 − 8 + 4 = 4. 20, bütün alanları artı sayıp toplamaktır; integral alan değil, işaretli alandır. 1, f(0)'ı eklemeyi unutup yalnızca integrali vermektir. 0, x = 6'da durmaktır: f(6) = 3 + 5 − 8 = 0; bu aynı zamanda f'in [0, 8]'deki en küçük değeridir. 2, işaretleri ters çevirmektir (3 − 5 + 8 − 4).</p></div></li>
+
+<li data-c="C"><p class="q">F(x) = ∫<sub>0</sub><sup>x</sup> (t<sup>2</sup> − 6t + 8) dt fonksiyonunun yerel minimum değeri kaçtır?</p>
+<ul class="sec"><li>4</li><li><span class="kes"><span>20</span><span>3</span></span></li><li><span class="kes"><span>16</span><span>3</span></span></li><li>0</li><li>2</li></ul>
+<div class="coz"><p>F′(x) = x<sup>2</sup> − 6x + 8 = (x − 2)(x − 4). x = 2'de + → − (yerel maksimum), x = 4'te − → + (yerel minimum). F(4) = [t<sup>3</sup>/3 − 3t<sup>2</sup> + 8t]<sub>0</sub><sup>4</sup> = 64/3 − 48 + 32 = 16/3. 4, minimum noktasının apsisidir; değer istenmiş. 20/3, yerel maksimum değeridir (F(2) = 8/3 − 12 + 16). 0, F yerine integrali alınan fonksiyonun x = 4'teki değerini (F′(4) = 0) vermektir. 2, maksimumun apsisidir.</p></div></li>
+
+<li data-c="A"><p class="q">∫<sub>1</sub><sup>x</sup> f(t) dt = x<sup>3</sup> + ax<sup>2</sup> − 2 olduğuna göre f(2) kaçtır?</p>
+<ul class="sec"><li>16</li><li>12</li><li>10</li><li>8</li><li>0</li></ul>
+<div class="coz"><p>x = 1 koy: sol yan ∫<sub>1</sub><sup>1</sup> = 0, sağ yan 1 + a − 2. Buradan a = 1. İki yanın türevi: f(x) = 3x<sup>2</sup> + 2ax = 3x<sup>2</sup> + 2x; f(2) = 12 + 4 = 16. 12, a'yı bulmadan (a = 0 sanarak) türev almaktır. 10, türev almadan sağ yanın x = 2'deki değerini (8 + 4 − 2) vermektir; bu f(2) değil, ∫<sub>1</sub><sup>2</sup> f'tir. 8, a'yı −1 bulmaktır (işaret hatası). 0, 1 + a − 2 = 0 denklemini 1 + a + 2 = 0 diye kurup a = −3 bulmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">lim<sub>x→1</sub> <span class="kes"><span>1</span><span>x<sup>2</sup> − 1</span></span> ∫<sub>1</sub><sup>x</sup> (t<sup>3</sup> + 3) dt limitinin değeri kaçtır?</p>
+<ul class="sec"><li>4</li><li>0</li><li>Limit yoktur.</li><li>2</li><li><span class="kes"><span>1</span><span>2</span></span></li></ul>
+<div class="coz"><p>F(x) = ∫<sub>1</sub><sup>x</sup> (t<sup>3</sup> + 3) dt dersen F(1) = 0, F′(x) = x<sup>3</sup> + 3. İfade F(x)/((x − 1)(x + 1)) = [(F(x) − F(1))/(x − 1)] · 1/(x + 1). Birinci çarpan F′(1) = 4'e, ikincisi 1/2'ye gider; limit 4 · 1/2 = 2. 4, payda x<sup>2</sup> − 1'i x − 1 sanıp (x + 1) çarpanını unutmaktır. 0, payın sıfır olduğunu görüp paydayı unutmaktır. "Limit yoktur", 0/0'ı tanımsızlık sanmaktır; 0/0 bir belirsizliktir. 1/2, integralin içindeki +3'ü unutup F′(1) = 1 almaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f tek fonksiyon, g çift fonksiyondur. f(2) = 3 ve g(2) = 5 olduğuna göre f(−2) · g(−2) çarpımı kaçtır?</p>
+<ul class="sec"><li>15</li><li>−15</li><li>2</li><li>8</li><li>−8</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x): f(−2) = −3. Çift fonksiyonda g(−x) = g(x): g(−2) = 5. Çarpım −3 · 5 = −15. 15, f'nin tek olduğunu kullanmayıp f(−2) = 3 almaktır. 2 ve 8, çarpım yerine toplam almaktır (−3 + 5 = 2; 3 + 5 = 8). −8, iki fonksiyonun da işaret değiştirdiğini sanıp −3 + (−5) toplamını almaktır. Tek fonksiyon orijine, çift fonksiyon y eksenine göre simetriktir.</p></div></li>
+
+<li data-c="E" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun tanım kümesi [−2, 6]'dır. Buna göre y = f(2x − 2) fonksiyonunun tanım kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>[−6, 10]</li><li>[−1, 3]</li><li>[0, 8]</li><li>[−2, 2]</li><li>[0, 4]</li></ul>
+<div class="coz"><p>f'nin içine giden ifade f'nin tanım kümesinde olmalı: −2 ≤ 2x − 2 ≤ 6 ⇒ 0 ≤ 2x ≤ 8 ⇒ 0 ≤ x ≤ 4. Dönüşüm diliyle f(2x − 2) = f(2(x − 1)): önce yatayda yarıya sıkıştır ([−1, 3]), sonra 1 birim sağa kaydır ([0, 4]). [−6, 10], uç noktaları 2x − 2'ye koymaktır (ters yön). [−1, 3], kaydırmayı unutmaktır. [0, 8], yalnızca 2 birim sağa kaydırıp sıkıştırmayı unutmaktır. [−2, 2], kaydırmayı sola yapmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-7"><p class="q">x<sup>2</sup> − x − 6 &lt; 0 eşitsizliğini sağlayan tam sayıların toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>4</li><li>−2</li><li>−3</li></ul>
+<div class="coz"><p>x<sup>2</sup> − x − 6 = (x − 3)(x + 2); kökler −2 ve 3. Baş katsayı pozitif olduğundan ifade kökler arasında negatiftir: −2 &lt; x &lt; 3. Tam sayılar −1, 0, 1, 2; toplam 2. 3, eşitsizliği ≤ sanıp −2 ve 3'ü de katmaktır. 4, toplam yerine tam sayıların sayısını vermektir. −2, kökleri 2 ve −3 diye ters işaretle bulmaktır (−2, −1, 0, 1). −3, hem kökleri ters alıp hem uçları katmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-10"><p class="q">y = 2 cos(3x) − 1 fonksiyonunun periyodu ve görüntü kümesi aşağıdakilerden hangisinde birlikte doğru verilmiştir?</p>
+<ul class="sec"><li><span class="kes"><span>2π</span><span>3</span></span> ve [−1, 1]</li><li>6π ve [−3, 1]</li><li><span class="kes"><span>2π</span><span>3</span></span> ve [−3, 1]</li><li><span class="kes"><span>π</span><span>3</span></span> ve [−3, 1]</li><li><span class="kes"><span>2π</span><span>3</span></span> ve [−2, 2]</li></ul>
+<div class="coz"><p>y = a cos(bx) + d biçiminde periyot 2π/|b| = 2π/3. −1 ≤ cos 3x ≤ 1 olduğundan −2 ≤ 2 cos 3x ≤ 2 ve −3 ≤ y ≤ 1. A, genliği ve kaymayı hiç hesaba katmamaktır. B, 2π'yi 3'e bölmek yerine 3 ile çarpmaktır. D, tan-cot için geçerli π/|b| formülünü kosinüse uygulamaktır. E, düşey kaymayı (−1) unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-13"><p class="q">2 sin x − 1 = 0 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>π</span><span>6</span></span></li><li>2π</li><li>3π</li><li>π</li><li><span class="kes"><span>5π</span><span>6</span></span></li></ul>
+<div class="coz"><p>sin x = 1/2. Birim çemberde sinüsü 1/2 olan iki açı var: x = π/6 ve x = π − π/6 = 5π/6. Toplam π. π/6 ve 5π/6, iki çözümden yalnızca birini almaktır; sinüs denkleminin ikinci ailesi π − α'dır. 2π, kosinüs denklemi gibi ±α kullanıp π/6 ile 11π/6'yı almaktır. 3π, sin x = −1/2'nin köklerini (7π/6, 11π/6) toplamaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-16"><p class="q">log<sub>2</sub>(x − 1) + log<sub>2</sub>(x + 1) = 3 denkleminin çözüm kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−3, 3}</li><li>{3}</li><li>{−3}</li><li>{√7}</li><li>{√10}</li></ul>
+<div class="coz"><p>Tanım koşulu: x − 1 &gt; 0 ve x + 1 &gt; 0, yani x &gt; 1. Çarpım kuralıyla log<sub>2</sub>((x − 1)(x + 1)) = 3 ⇒ x<sup>2</sup> − 1 = 2<sup>3</sup> = 8 ⇒ x = ±3. x = −3 tanım koşulunu sağlamaz (yabancı kök); çözüm kümesi {3}. Denetim: log<sub>2</sub> 2 + log<sub>2</sub> 4 = 1 + 2 = 3. A, yabancı kökü atmamaktır. C, yanlış kökü tutmaktır. D, 2<sup>3</sup> yerine 2 · 3 = 6 almaktır. E, 2<sup>3</sup> yerine 3<sup>2</sup> = 9 almaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-19"><p class="q">f(x) = x<sup>2</sup> + a (x &lt; 2 için), f(x) = 3x − 1 (x ≥ 2 için) biçiminde tanımlanan f fonksiyonunun x = 2'de limiti olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>2</li><li>−1</li><li>5</li><li>3</li><li>1</li></ul>
+<div class="coz"><p>Limitin var olması için soldan ve sağdan limitler eşit olmalı. Soldan: 4 + a. Sağdan: 3 · 2 − 1 = 5. 4 + a = 5 ⇒ a = 1. 2, sağdan limitte −1'i unutup 6 almaktır. −1, eşitlikte işareti çevirmektir. 5, a yerine sağdan limitin değerini vermektir. 3, sağdan limiti hesaplarken −1'i +1 alıp 4 + a = 7 yazmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-22"><p class="q">f(x) = (x<sup>2</sup> + 1)(2x − 3) olduğuna göre f′(1) kaçtır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>−2</li><li>−6</li><li>5</li></ul>
+<div class="coz"><p>Çarpım kuralı: f′(x) = 2x(2x − 3) + (x<sup>2</sup> + 1) · 2. x = 1: 2 · (−1) + 2 · 2 = −2 + 4 = 2. 4, çarpımın türevini türevlerin çarpımı sanmaktır (2x · 2). −2, türev yerine f(1) = 2 · (−1) değerini vermektir. −6, bölüm kuralındaki eksi işaretini çarpım kuralında kullanmaktır. 5, önce açıp (2x<sup>3</sup> − 3x<sup>2</sup> + 2x − 3) −3x<sup>2</sup>'nin türevini −3x almaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + 3x + 1 fonksiyonu her x gerçek sayısı için artan olduğuna göre a'nın alabileceği kaç tam sayı değeri vardır?</p>
+<ul class="sec"><li>5</li><li>13</li><li>7</li><li>4</li><li>3</li></ul>
+<div class="coz"><p>Her yerde artan olması için f′(x) = 3x<sup>2</sup> + 2ax + 3 ≥ 0 olmalı; baş katsayı pozitif, Δ ≤ 0: (2a)<sup>2</sup> − 4 · 3 · 3 ≤ 0 ⇒ 4a<sup>2</sup> ≤ 36 ⇒ −3 ≤ a ≤ 3. Tam sayılar −3, …, 3: 7 tane. 5, Δ &lt; 0 alıp uçları atmaktır; Δ = 0 iken f′ yalnızca bir noktada sıfır olur, f yine artandır. 13, b'yi 2a yerine a alıp a<sup>2</sup> ≤ 36 bulmaktır. 4, yalnızca negatif olmayan değerleri saymaktır. 3, yalnızca pozitifleri saymaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-28"><p class="q">Bir eğrinin her (x, y) noktasındaki teğetinin eğimi 6x − 2'dir. Eğri (1, 4) noktasından geçtiğine göre x = 2 apsisli noktasının ordinatı kaçtır?</p>
+<ul class="sec"><li>10</li><li>8</li><li>12</li><li>5</li><li>11</li></ul>
+<div class="coz"><p>Teğet eğimi y′'dür: y = ∫ (6x − 2) dx = 3x<sup>2</sup> − 2x + C. (1, 4): 3 − 2 + C = 4 ⇒ C = 3. y(2) = 12 − 4 + 3 = 11. 10, ordinat yerine x = 2'deki eğimi (y′(2)) vermektir. 8, C'yi bulmayı unutmaktır. 12, C'yi doğrudan 4 sanmaktır. 5, C'yi bulurken işareti çevirip −3 almaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-29"><p class="q">∫ x<sup>2</sup>(x<sup>3</sup> − 2)<sup>4</sup> dx integrali aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li><span class="kes"><span>(x<sup>3</sup> − 2)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>(x<sup>3</sup> − 2)<sup>5</sup></span><span>15</span></span> + C</li><li><span class="kes"><span>3(x<sup>3</sup> − 2)<sup>5</sup></span><span>5</span></span> + C</li><li><span class="kes"><span>(x<sup>3</sup> − 2)<sup>5</sup></span><span>3</span></span> + C</li><li><span class="kes"><span>x<sup>3</sup>(x<sup>3</sup> − 2)<sup>5</sup></span><span>15</span></span> + C</li></ul>
+<div class="coz"><p>u = x<sup>3</sup> − 2, du = 3x<sup>2</sup> dx, x<sup>2</sup> dx = du/3. İntegral (1/3) ∫ u<sup>4</sup> du = u<sup>5</sup>/15 + C = (x<sup>3</sup> − 2)<sup>5</sup>/15 + C. Kontrol: türevi 5(x<sup>3</sup> − 2)<sup>4</sup> · 3x<sup>2</sup>/15 = x<sup>2</sup>(x<sup>3</sup> − 2)<sup>4</sup>. A, 1/3 ayarını unutmaktır. C, 3'e bölmek yerine 3 ile çarpmaktır. D, yeni üsse (5) bölmeyi unutmaktır. E, x<sup>2</sup>'yi du'ya çevirmeyip x<sup>3</sup>/3 diye ayrıca integral almaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-29"><p class="q">∫<sub>1</sub><sup>2</sup> 2x(x<sup>2</sup> − 1)<sup>2</sup> dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>7</span><span>3</span></span></li><li><span class="kes"><span>9</span><span>2</span></span></li><li>27</li><li>9</li><li>3</li></ul>
+<div class="coz"><p>u = x<sup>2</sup> − 1, du = 2x dx (ayar gerekmiyor). Sınırlar: x = 1 ⇒ u = 0, x = 2 ⇒ u = 3. İntegral ∫<sub>0</sub><sup>3</sup> u<sup>2</sup> du = 27/3 = 9. 7/3, sınırları çevirmeyip u'yu 1'den 2'ye almaktır (8/3 − 1/3). 9/2, iç türev tam hazırken gereksiz bir 1/2 ayarı yapmaktır. 27, kuvvet kuralında yeni üsse bölmeyi unutmaktır. 3, u<sup>2</sup> yerine u'nun sınır farkını almaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-30"><p class="q">∫<sub>1</sub><sup>5</sup> f(x) dx = 12 olduğuna göre ∫<sub>0</sub><sup>2</sup> f(2x + 1) dx kaçtır?</p>
+<ul class="sec"><li>6</li><li>12</li><li>24</li><li>13</li><li>4</li></ul>
+<div class="coz"><p>u = 2x + 1, du = 2 dx, dx = du/2. Sınırlar: x = 0 ⇒ u = 1, x = 2 ⇒ u = 5. İntegral (1/2) ∫<sub>1</sub><sup>5</sup> f(u) du = 12/2 = 6. 12, 1/2 çarpanını unutmaktır; sınırlar aynı çıktı diye integralin de aynı olduğunu sanmaktır. 24, 2'ye bölmek yerine 2 ile çarpmaktır. 13, içerideki "+1"i sonuca eklemektir. 4, 12'yi 3'e bölmektir (aralık uzunluklarını karıştırmak).</p></div></li>
+
+<li data-c="C" data-k="ileri-30"><p class="q">∫<sub>−2</sub><sup>2</sup> (x<sup>3</sup> + 3x<sup>2</sup> − x) dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>8</li><li>16</li><li>32</li><li>20</li></ul>
+<div class="coz"><p>Simetrik aralıkta tek fonksiyonların (x<sup>3</sup> ve −x) integrali 0'dır. Çift olan 3x<sup>2</sup> için ∫<sub>−2</sub><sup>2</sup> 3x<sup>2</sup> dx = 2 ∫<sub>0</sub><sup>2</sup> 3x<sup>2</sup> dx = 2 · 8 = 16. 0, bütün ifadeyi tek fonksiyon sanmaktır. 8, çift fonksiyonda 2 çarpanını unutmaktır. 32, 2 çarpanını iki kez uygulamaktır. 20, tek terimleri de çift gibi iki katına çıkarmaktır (16 + 8 − 4).</p></div></li>
+
+<li data-c="E" data-k="ileri-31"><p class="q">y = x<sup>2</sup> parabolü ile y = 2x doğrusu arasında kalan sınırlı bölgenin alanı kaç birim karedir?</p>
+<ul class="sec"><li>−<span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>8</span><span>3</span></span></li><li>4</li><li><span class="kes"><span>20</span><span>3</span></span></li><li><span class="kes"><span>4</span><span>3</span></span></li></ul>
+<div class="coz"><p>Kesişim: x<sup>2</sup> = 2x ⇒ x = 0, x = 2. Bu aralıkta doğru üstte (x = 1'de 2 &gt; 1). Alan ∫<sub>0</sub><sup>2</sup> (2x − x<sup>2</sup>) dx = 4 − 8/3 = 4/3. −4/3, "alttaki eksi üstteki" yazmaktır; alan negatif olamaz. 8/3, yalnızca parabolün altındaki alandır. 4, yalnızca doğrunun altındaki alandır. 20/3, iki alanı çıkarmak yerine toplamaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-31"><p class="q">y = x<sup>2</sup> − 4 eğrisi, x ekseni, x = 0 ve x = 3 doğruları arasında kalan bölgelerin alanları toplamı kaç birim karedir?</p>
+<ul class="sec"><li>3</li><li><span class="kes"><span>23</span><span>3</span></span></li><li>−3</li><li><span class="kes"><span>16</span><span>3</span></span></li><li><span class="kes"><span>7</span><span>3</span></span></li></ul>
+<div class="coz"><p>Eğri x = 2'de x eksenini keser: [0, 2]'de eksenin altında, [2, 3]'te üstünde. Alan = −∫<sub>0</sub><sup>2</sup> (x<sup>2</sup> − 4) dx + ∫<sub>2</sub><sup>3</sup> (x<sup>2</sup> − 4) dx = 16/3 + 7/3 = 23/3. −3, aralığı bölmeden integral almaktır (9 − 12); bu integral değeridir, alan değil. 3, o integralin mutlak değerini almaktır; parçalar birbirini götürmüş olarak kalır. 16/3 ve 7/3, yalnızca bir parçanın alanıdır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-31">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-32">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-33">Sonraki parça: binom açılımı ve Pascal üçgeni</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"integral uygulamaları hız zaman grafiği yer değiştirme toplam yol AYT"</li>
+  <li>"türev grafiği verilen fonksiyon alan soruları f(b) − f(a)"</li>
+  <li>"üst sınırı değişken integral türevi artan azalan ekstremum"</li>
+  <li>"integral karma soru çözümü limit türev integral AYT"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 32. satıra göre yazıldı; satırdaki her alt başlık işlendi (hareket, depo-nüfus-maliyet-sıcaklık, yorum soruları, f′ grafiği, integralle tanımlı fonksiyon, ∫ f(ax + b) ve simetri, integral denklemleri, ortalama değer, birleşik soru sırası ve kalıp tablosu).</li>
+  <li>Kapsamı doğrulanamayanlar: fonksiyonun ortalama değeri ve ∫<sub>a</sub><sup>b</sup> f(a + b − x) dx simetrisi, kapsam listesinin "Doğrulanamayanlar" notuna uyularak kısa tutuldu ve metinde "bu kısım sınav kapsamında olmayabilir" diye işaretlendi. Üst sınırı değişken integralin türevi de aynı notu taşıyor; bu parçada Parça 30'dan bilindiği varsayılarak kullanıldı. 2018 programının integrali polinom, rasyonel ve köklü fonksiyonlarla sınırladığını resmî metinden doğrulayamadım; bu yüzden bütün örnekler polinom ve köklü ifadelerle kuruldu, nüfus modelinde bile üstel fonksiyon integrallenmedi.</li>
+  <li>"Net değişim teoremi" adı bazı ders kitaplarında geçmez; aynı içerik "∫<sub>a</sub><sup>b</sup> f′(x) dx = f(b) − f(a)" biçiminde temel teoremin sonucu olarak verilir. "Marjinal maliyet" teriminin ekonomideki tanımı (bir birim fazla üretmenin yaklaşık maliyeti) burada sezgisel olarak kullanıldı.</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları) Python ile denetlendi: polinom integralleri Fraction ile tam olarak, köklü ve limit içeren ifadeler Simpson yöntemi ve küçük h değerleriyle sayısal olarak hesaplandı. Her yanlış seçeneğin, çözümde adı geçen hatanın verdiği sayı olduğu aynı betikle denetlendi.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: hız-zaman grafiğinin köşe noktaları ve f′, f eğrilerinin noktaları formüllerden hesaplandı (f′(x) = 6(x − 1)(x − 4), f(x) = 2x<sup>3</sup> − 15x<sup>2</sup> + 24x + 20); şekildeki alanlar (11, 27, 11) ve değerler (20, 31, 4, 15) bu fonksiyonların gerçek değerleridir.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (29, 30, 31) ikişer soru; daha eski 28 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 7, 10, 13, 16, 19, 22, 25, 28). Parça 30 ve 31 bu parçanın yazımı sırasında arşivde henüz yoktu; o parçaların tekrar soruları yalnızca kapsam listesindeki konulardan ve oradaki terimlerle yazıldı, o parçaların quizleriyle aynı soru olup olmadığı denetlenemedi.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

@@ -1,0 +1,657 @@
+<article class="chapter ders" id="c-ileri-22">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 22 · Türev 1</div>
+<h1>Türev 1: türevin tanımı, anlamı ve türev alma kuralları</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Arabanın göstergesi tam şu anda "72 km/sa" diyor. Hız "alınan yol bölü geçen süre"dir; ama tek bir anda ne yol alınır ne süre geçer, hesap 0/0 olur. Gösterge neyi ölçüyor? Aynı soru geometride de var: bir eğrinin tek bir noktasındaki "dikliği", yani o noktadaki teğetin eğimi nasıl hesaplanır? Eğim için iki nokta gerekir, elinde bir tane var. Bu parçada ikisinin aynı soru olduğunu ve cevabın Parça 20'deki 0/0 limitlerinden geldiğini göreceksin.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (ortalama değişim hızı, kirişin eğimi), Parça 3 (parçalı ve mutlak değerli fonksiyonlar), Parça 19–20 (soldan-sağdan limit, 0/0 belirsizliği ve sadeleştirme, eşlenikle çarpma), Parça 21 (süreklilik), mat Parça 10–12 (üslü ve köklü sayılar: x<sup>−n</sup> = 1/x<sup>n</sup>, √x = x<sup>1/2</sup>), geo Parça 18 (doğrunun eğimi). Kâğıt kalem yanında olsun; her örnekte sonucu bulduktan sonra kontrol yolunu da kendin yap.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Türev, AYT Matematik'in en ağır ünitesidir; limit ve integral sorularıyla birlikte testin önemli bir bölümünü oluşturur. Bu parça ünitenin temelidir: türevin <strong>ne olduğu</strong> (bir limit), <strong>ne anlattığı</strong> (teğetin eğimi, anlık hız), <strong>ne zaman var olduğu</strong> (türevlenebilme) ve <strong>nasıl hesaplandığı</strong> (kurallar). Sonraki beş parça (zincir kuralı, teğet, artan-azalan, bükeylik, maksimum-minimum) hep bu parçadaki kurallarla hesap yapacak.</p>
+
+<p>Bu parçadan gelen soru kalıpları şunlardır: bir polinomun, rasyonel ya da köklü bir ifadenin bir noktadaki türev değeri; lim<sub>h→0</sub> (f(2 + 3h) − f(2))/h gibi limit biçiminde yazılmış bir ifadenin türev olarak tanınması; parçalı bir fonksiyonun türevlenebilmesi için parametre bulma; bir grafikte türevin olmadığı noktaları sayma; "türevlenebilen fonksiyon süreklidir" türünden öncüllü kavram soruları; konum fonksiyonundan hız ve ivme. Sınav hesap makinesiz ve süreli olduğu için her başlıkta bir <strong>hızlı yol</strong> ve bir <strong>kontrol yolu</strong> göreceksin. Kontrol yolu hep aynı fikre dayanır: türev bir eğimdir; a'nın iki yanında çok yakın iki noktayla kaba bir eğim hesaplarsan, (f(a + 0,01) − f(a − 0,01))/0,02, sonuç bulduğun türeve yakın çıkmalıdır.</p>
+
+<h2 class="s">1. Ortalama değişim hızından anlık değişim hızına</h2>
+
+<p>Parça 1'de bir fonksiyonun [a, b] aralığındaki <strong>ortalama değişim hızını</strong> gördün: (f(b) − f(a))/(b − a). Grafikte bu sayı, (a, f(a)) ile (b, f(b)) noktalarını birleştiren <strong>kirişin eğimidir</strong> (geo Parça 18: eğim = dikey değişim / yatay değişim). Şimdi b'yi a'ya yaklaştıralım. Yazımı kolaylaştırmak için b = a + h diyelim; h, iki nokta arasındaki yatay uzaklıktır ve sıfırdan farklıdır (h negatif de olabilir; o zaman ikinci nokta solda kalır).</p>
+
+<span class="mat">ortalama değişim hızı = <span class="kes"><span>f(a + h) − f(a)</span><span>h</span></span> <span class="g">(kirişin eğimi; payda b − a = h)</span></span>
+
+<p>Somut bir örnekte, f(x) = x<sup>2</sup> ve a = 1 için h'yi küçültelim. Her satırı kendin de hesapla: (1 + h)<sup>2</sup> − 1'i bul ve h'ye böl.</p>
+
+<div class="tablo"><table>
+<tr><th>h</th><th>2</th><th>1</th><th>0,5</th><th>0,1</th><th>0,01</th><th>−0,01</th><th>−0,1</th></tr>
+<tr><td>ikinci nokta</td><td>(3, 9)</td><td>(2, 4)</td><td>(1,5; 2,25)</td><td>(1,1; 1,21)</td><td>(1,01; 1,0201)</td><td>(0,99; 0,9801)</td><td>(0,9; 0,81)</td></tr>
+<tr><td>kirişin eğimi</td><td>4</td><td>3</td><td>2,5</td><td>2,1</td><td>2,01</td><td>1,99</td><td>1,9</td></tr>
+</table></div>
+
+<p>h sıfıra iki yandan yaklaştıkça eğimler 2'ye yaklaşıyor. Cebirle nedenini gör: (1 + h)<sup>2</sup> − 1 = 2h + h<sup>2</sup>; h ≠ 0 olduğu için h'ye bölünce 2 + h kalır ve h → 0 iken 2 + h → 2. Bu, Parça 20'deki 0/0 belirsizliğinin tam olarak kendisidir: h = 0 koysan pay da payda da sıfırdır, ama sadeleştirince limit 2 çıkar.</p>
+
+<p>Geometride ne oluyor? İkinci nokta Q, eğri üzerinde kayarak P(1, 1)'e yaklaştıkça PQ kirişi P'nin çevresinde döner ve bir son konuma yerleşir. Kirişlerin yerleştiği bu son doğruya P'deki <strong>teğet</strong> denir. Teğetin eğimi, kiriş eğimlerinin limitidir: 2.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="y eşittir x kare parabolü, P(1, 1) noktası ve P den geçen üç kiriş ile teğet. Kirişlerin ikinci uçları Q1(3, 9), Q2(2, 4), Q3(1,5; 2,25); eğimleri 4, 3 ve 2,5. Q noktası P ye yaklaştıkça kiriş, eğimi 2 olan teğet doğrusuna yaklaşıyor.">
+  <line class="sv-c" x1="10" y1="290" x2="392" y2="290" />
+  <line class="sv-c" x1="60" y1="312" x2="60" y2="8" />
+  <polyline class="sv-cl" points="12.5,283.0 17.2,284.3 22.0,285.5 26.8,286.6 31.5,287.5 36.2,288.2 41.0,288.9 45.8,289.4 50.5,289.7 55.2,289.9 60.0,290.0 64.8,289.9 69.5,289.7 74.2,289.4 79.0,288.9 83.8,288.2 88.5,287.5 93.2,286.6 98.0,285.5 102.8,284.3 107.5,283.0 112.2,281.5 117.0,279.9 121.8,278.2 126.5,276.3 131.2,274.2 136.0,272.1 140.8,269.8 145.5,267.3 150.2,264.7 155.0,262.0 159.8,259.1 164.5,256.1 169.2,253.0 174.0,249.7 178.8,246.2 183.5,242.7 188.2,239.0 193.0,235.1 197.8,231.1 202.5,227.0 207.2,222.7 212.0,218.3 216.8,213.8 221.5,209.1 226.2,204.2 231.0,199.3 235.8,194.2 240.5,188.9 245.2,183.5 250.0,178.0 254.7,172.3 259.5,166.5 264.2,160.6 269.0,154.5 273.8,148.2 278.5,141.9 283.2,135.4 288.0,128.7 292.8,121.9 297.5,115.0 302.2,107.9 307.0,100.7 311.8,93.4 316.5,85.9 321.2,78.2 326.0,70.5 330.8,62.6 335.5,54.5 340.2,46.3 345.0,38.0 349.8,29.5 354.5,20.9" />
+  <line class="sv-c" x1="117.0" y1="306.8" x2="373.5" y2="4.4" />
+  <line class="sv-c" x1="104.3" y1="306.8" x2="278.5" y2="152.8" />
+  <line class="sv-c" x1="94.2" y1="306.8" x2="231.0" y2="206.0" />
+  <line class="sv-cl" x1="79.0" y1="306.8" x2="354.5" y2="144.4" />
+  <circle class="sv-m" cx="345.0" cy="38.0" r="4" />
+  <circle class="sv-m" cx="250.0" cy="178.0" r="4" />
+  <circle class="sv-m" cx="202.5" cy="227.0" r="4" />
+  <circle class="sv-a" cx="155.0" cy="262.0" r="5" />
+  <text class="sv-b" x="146" y="254" text-anchor="end">P</text>
+  <text class="sv-b" x="336" y="38" text-anchor="end">Q₁</text>
+  <text class="sv-b" x="258" y="182" text-anchor="start">Q₂</text>
+  <text class="sv-b" x="214" y="252" text-anchor="start">Q₃</text>
+  <text class="sv-s" x="72" y="30" text-anchor="start">P(1, 1) sabit, Q noktası P'ye yaklaşıyor</text>
+  <text class="sv-s" x="72" y="50" text-anchor="start">PQ₁: Q₁(3, 9), eğim 4</text>
+  <text class="sv-s" x="72" y="70" text-anchor="start">PQ₂: Q₂(2, 4), eğim 3</text>
+  <text class="sv-s" x="72" y="90" text-anchor="start">PQ₃: Q₃(1,5; 2,25), eğim 2,5</text>
+  <text class="sv-s" x="72" y="110" text-anchor="start">teğet (kalın doğru): eğim 2</text>
+  <text class="sv-s" x="155" y="305" text-anchor="middle">1</text>
+  <text class="sv-s" x="250" y="305" text-anchor="middle">2</text>
+  <text class="sv-s" x="345" y="305" text-anchor="middle">3</text>
+  <text class="sv-s" x="388" y="305" text-anchor="end">x</text>
+  <text class="sv-b" x="380" y="230" text-anchor="end">y = x²</text>
+</svg>
+<figcaption>Q noktası eğri üzerinde P'ye yaklaştıkça kirişin eğimi 4, 3, 2,5 diye azalıyor ve kirişler kalın çizilen teğete yaklaşıyor. Teğetin eğimi kiriş eğimlerinin limitidir: 2. Bu sayıya f'in 1'deki türevi diyeceğiz.</figcaption>
+</figure>
+
+<p>Teğeti "eğriye tek noktada değen doğru" diye tanımlamak yetmez. Örneğin y = x<sup>3</sup> eğrisinin (1, 1)'deki teğeti y = 3x − 2 doğrusudur ve bu doğru eğriyi x = −2'de bir kez daha keser (x<sup>3</sup> − 3x + 2 = (x − 1)<sup>2</sup>(x + 2)). Doğru tanım yukarıdaki gibidir: teğet, kirişlerin limit konumudur. Teğet denklemi yazmayı Parça 24'te işleyeceğiz; bu parçada yalnızca teğetin <strong>eğimi</strong> bizi ilgilendiriyor.</p>
+
+<h2 class="s">2. Türevin tanımı</h2>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f fonksiyonunun x = a noktasındaki <strong>türevi</strong>, aşağıdaki limit bir gerçek sayı olarak varsa o sayıdır ve f′(a) ile gösterilir ("f üssü a" değil, "f türev a" diye okunur):</p>
+<span class="mat">f′(a) = lim<sub>h→0</sub> <span class="kes"><span>f(a + h) − f(a)</span><span>h</span></span> <span class="g">(birinci biçim)</span></span>
+<span class="mat">f′(a) = lim<sub>x→a</sub> <span class="kes"><span>f(x) − f(a)</span><span>x − a</span></span> <span class="g">(ikinci biçim)</span></span>
+<p>Limit varsa f, a noktasında <strong>türevlenebilir</strong> (türevli) denir. Limit yoksa ya da ±∞ çıkıyorsa f'in a'da türevi yoktur.</p>
+<p><strong>Neden iki biçim aynıdır?</strong> İkinci biçimde x = a + h yaz. O zaman x − a = h olur ve x → a demek h → 0 demektir (Parça 20'deki değişken değiştirme). İki ifade aynı limitin iki yazılışıdır; hangisi hesabı kolaylaştırıyorsa onu kullanırsın.</p></div>
+
+<p>Türev limitinde yerine koyunca <strong>her zaman</strong> 0/0 çıkar, çünkü h = 0'da pay f(a) − f(a) = 0'dır. Bu yüzden türev hesabı, Parça 20'de öğrendiğin sadeleştirme becerisinin ta kendisidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = x<sup>2</sup> için f′(3)'ü iki biçimle de tanımdan hesapla. Sonra her x için f′(x)'i bul.</p>
+<p><strong>Adım 1.</strong> Birinci biçim: önce f(3 + h)'yi aç.</p>
+<span class="mat">f(3 + h) = 9 + 6h + h<sup>2</sup> <span class="g">((3 + h)<sup>2</sup> açılımı)</span></span>
+<span class="mat">f(3 + h) − f(3) = 6h + h<sup>2</sup> <span class="g">(f(3) = 9 çıkar)</span></span>
+<span class="mat"><span class="kes"><span>6h + h<sup>2</sup></span><span>h</span></span> = 6 + h <span class="g">(h ≠ 0, sadeleşir)</span></span>
+<span class="mat">lim<sub>h→0</sub> (6 + h) = 6 <span class="g">(şimdi yerine koy)</span></span>
+<p><strong>Adım 2.</strong> İkinci biçim.</p>
+<span class="mat"><span class="kes"><span>x<sup>2</sup> − 9</span><span>x − 3</span></span> = <span class="kes"><span>(x − 3)(x + 3)</span><span>x − 3</span></span> = x + 3 <span class="g">(iki kare farkı, x ≠ 3)</span></span>
+<span class="mat">lim<sub>x→3</sub> (x + 3) = 6 <span class="g">(aynı sonuç)</span></span>
+<p><strong>Adım 3.</strong> Genel x için birinci biçimi kullan; a yerine x yaz.</p>
+<span class="mat">(x + h)<sup>2</sup> − x<sup>2</sup> = 2xh + h<sup>2</sup> <span class="g">(x<sup>2</sup>'ler gider)</span></span>
+<span class="mat"><span class="kes"><span>2xh + h<sup>2</sup></span><span>h</span></span> = 2x + h → 2x <span class="g">(h → 0)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> f′(x) = 2x formülünde x = 3 koy: 6, Adım 1 ile aynı. x = 1 koy: 2, tablodaki kirişlerin yaklaştığı değer.</p>
+<p><strong>Sonuç:</strong> f′(3) = 6 ve her x için f′(x) = 2x.</p></div>
+
+<p>Son adım önemli bir şey söylüyor: türev yalnızca bir sayı değil, bir <strong>fonksiyondur</strong>. Her x'e o noktadaki teğetin eğimini karşılık getiren f′ fonksiyonuna f'in <strong>türev fonksiyonu</strong> denir. f′(3) gibi bir değer istendiğinde ya tanımdan doğrudan hesaplarsın ya da önce f′(x)'i bulup x = 3 koyarsın; ikinci yol çoğu zaman daha hızlıdır.</p>
+
+<h2 class="s">3. Tanımla türev: x<sup>3</sup>, 1/x ve √x</h2>
+
+<p>Kuralları ezberlemeden önce, tanımı üç fonksiyonda daha kullanalım. Bu üç hesap, aşağıda vereceğimiz kuvvet kuralının gerekçesi olacak.</p>
+
+<p><strong>f(x) = x<sup>3</sup>.</strong> (x + h)<sup>3</sup>'ü aç: (x + h)<sup>2</sup> = x<sup>2</sup> + 2xh + h<sup>2</sup>'yi bir kez daha (x + h) ile çarp.</p>
+<span class="mat">(x + h)<sup>3</sup> = x<sup>3</sup> + 3x<sup>2</sup>h + 3xh<sup>2</sup> + h<sup>3</sup> <span class="g">(çarpımı aç, benzer terimleri topla)</span></span>
+<span class="mat"><span class="kes"><span>(x + h)<sup>3</sup> − x<sup>3</sup></span><span>h</span></span> = 3x<sup>2</sup> + 3xh + h<sup>2</sup> <span class="g">(x<sup>3</sup> gider, h'ye böl)</span></span>
+<span class="mat">→ 3x<sup>2</sup> <span class="g">(h → 0 iken h'li terimler sıfıra gider)</span></span>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Tanımı kullanarak (a) f(x) = 1/x için f′(x)'i ve f′(2)'yi, (b) g(x) = √x için (x &gt; 0) g′(x)'i ve g′(4)'ü bul.</p>
+<p><strong>Adım 1.</strong> (a) Farkı tek kesre topla.</p>
+<span class="mat"><span class="kes"><span>1</span><span>x + h</span></span> − <span class="kes"><span>1</span><span>x</span></span> = <span class="kes"><span>x − (x + h)</span><span>x(x + h)</span></span> = <span class="kes"><span>−h</span><span>x(x + h)</span></span> <span class="g">(payda eşitle)</span></span>
+<p><strong>Adım 2.</strong> h'ye böl ve limiti al.</p>
+<span class="mat"><span class="kes"><span>−h</span><span>x(x + h) · h</span></span> = <span class="kes"><span>−1</span><span>x(x + h)</span></span> <span class="g">(h sadeleşir)</span></span>
+<span class="mat">→ <span class="kes"><span>−1</span><span>x<sup>2</sup></span></span> ⇒ f′(2) = −<span class="kes"><span>1</span><span>4</span></span> <span class="g">(h → 0, sonra x = 2)</span></span>
+<p><strong>Adım 3.</strong> (b) Pay köklü; Parça 20'deki gibi eşlenikle çarp.</p>
+<span class="mat"><span class="kes"><span>√(x + h) − √x</span><span>h</span></span> · <span class="kes"><span>√(x + h) + √x</span><span>√(x + h) + √x</span></span> = <span class="kes"><span>(x + h) − x</span><span>h(√(x + h) + √x)</span></span> <span class="g">(iki kare farkı)</span></span>
+<span class="mat">= <span class="kes"><span>1</span><span>√(x + h) + √x</span></span> → <span class="kes"><span>1</span><span>2√x</span></span> <span class="g">(h sadeleşir, sonra h → 0)</span></span>
+<span class="mat">g′(4) = <span class="kes"><span>1</span><span>2 · 2</span></span> = <span class="kes"><span>1</span><span>4</span></span> <span class="g">(x = 4 koy)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (a) h = 0,01: (1/2,01 − 0,5)/0,01 ≈ −0,2488, −0,25'e yakın. (b) (√4,01 − 2)/0,01 ≈ 0,2498, 0,25'e yakın. 1/x azalan bir fonksiyon olduğu için türevinin negatif çıkması da beklenen bir şeydir.</p>
+<p><strong>Sonuç:</strong> (1/x)′ = −1/x<sup>2</sup>, f′(2) = −1/4; (√x)′ = 1/(2√x), g′(4) = 1/4.</p></div>
+
+<p>Şimdi dört sonucu üslü yazımla (mat Parça 10–12) yan yana koy. Bir örüntü görünüyor:</p>
+
+<div class="tablo"><table>
+<tr><th>f(x)</th><th>üslü yazım</th><th>tanımdan f′(x)</th><th>üslü yazımla f′(x)</th></tr>
+<tr><td>x<sup>2</sup></td><td>x<sup>2</sup></td><td>2x</td><td>2 · x<sup>1</sup></td></tr>
+<tr><td>x<sup>3</sup></td><td>x<sup>3</sup></td><td>3x<sup>2</sup></td><td>3 · x<sup>2</sup></td></tr>
+<tr><td>1/x</td><td>x<sup>−1</sup></td><td>−1/x<sup>2</sup></td><td>(−1) · x<sup>−2</sup></td></tr>
+<tr><td>√x</td><td>x<sup>1/2</sup></td><td>1/(2√x)</td><td>½ · x<sup>−1/2</sup></td></tr>
+</table></div>
+
+<p>Dört satırda da üs başa katsayı olarak iniyor ve üs bir azalıyor: x<sup>n</sup>'nin türevi n · x<sup>n−1</sup>. Bunu birazdan kural olarak ispatlayacağız.</p>
+
+<h2 class="s">4. Gösterimler</h2>
+
+<p>Türev için üç gösterim kullanılır ve sınav hepsini kullanır. y = f(x) ise f′(x), y′ ve <span class="kes"><span>dy</span><span>dx</span></span> aynı şeyi anlatır. Sonuncusu "de ye bölü de iks" diye okunur ve kökenini taşır: y'deki değişim Δy'nin x'teki değişim Δx'e oranının, Δx → 0 iken limiti. Δy/Δx bir kesirdir (kirişin eğimi); dy/dx onun limitidir. Bir ifadenin türevini almayı anlatmak için <span class="kes"><span>d</span><span>dx</span></span>(x<sup>3</sup>) = 3x<sup>2</sup> gibi de yazılır. Bir noktadaki değer f′(2) ya da "dy/dx'in x = 2'deki değeri" diye söylenir. Gösterim değişse de hesap değişmez.</p>
+
+<h2 class="s">5. Türevin iki yorumu: teğetin eğimi ve anlık hız</h2>
+
+<p><strong>Geometrik yorum.</strong> f′(a), y = f(x) grafiğinin (a, f(a)) noktasındaki teğetinin eğimidir. Bu yorumdan hemen şu sonuçlar çıkar: f′(a) &gt; 0 ise grafik o noktada yükselir, f′(a) &lt; 0 ise alçalır, f′(a) = 0 ise teğet yataydır (örneğin bir parabolün tepe noktası: y = x<sup>2</sup> için f′(0) = 0). Bu bağlantıyı Parça 25'te artan-azalan fonksiyonlarda kullanacağız. Doğrusal bir fonksiyonda (y = mx + n) bütün kirişler doğrunun kendisidir; türev her yerde m'dir. Bu, Parça 1'de gördüğün "doğrusal fonksiyonun ortalama değişim hızı sabittir" bilgisinin türevdeki karşılığıdır.</p>
+
+<p><strong>Fiziksel yorum.</strong> Bir cismin t anındaki konumu s(t) olsun. [t, t + h] aralığındaki ortalama hız (s(t + h) − s(t))/h'dir; h → 0 iken limiti cismin t anındaki <strong>anlık hızıdır</strong>: v(t) = s′(t). Göstergenin ölçtüğü budur. Örneğin serbest düşen bir taş (g = 10 m/s<sup>2</sup> kabulüyle) t saniyede s(t) = 5t<sup>2</sup> metre düşer. Örnek 1'deki hesabın aynısıyla s′(t) = 10t bulunur; t = 2 s'de anlık hız 20 m/s'dir (Parça 20'de 0/0 olarak gördüğün sonuç).</p>
+
+<p>Genel olarak f′(a), f'in a'daki <strong>anlık değişim hızıdır</strong>: x bir birim artarken f'in, o noktada, kaç birim değiştiğini gösterir. Bir dairenin alanının yarıçapa göre, bir ürünün maliyetinin üretim miktarına göre değişim hızı da hep türevdir; bu problemleri Parça 23'te göreceksin.</p>
+
+<h2 class="s">6. Soldan ve sağdan türev; türevlenebilme</h2>
+
+<p>Türev bir limit olduğuna göre, Parça 19'daki gibi soldan ve sağdan da bakabiliriz. h'nin yalnızca pozitif değerlerle sıfıra gitmesi, ikinci noktanın hep sağda kalması demektir; yalnızca negatif değerlerle gitmesi, hep solda kalması.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Soldan türev:</strong> f′(a<sup>−</sup>) = lim<sub>h→0<sup>−</sup></sub> (f(a + h) − f(a))/h. <strong>Sağdan türev:</strong> f′(a<sup>+</sup>) = lim<sub>h→0<sup>+</sup></sub> (f(a + h) − f(a))/h.</p>
+<p>f, a'da türevlenebilir ⇔ soldan ve sağdan türev vardır (gerçek sayıdır) ve <strong>birbirine eşittir</strong>. Tanım kümesinin her noktasında türevlenebilen fonksiyona <strong>türevlenebilir fonksiyon</strong> denir.</p>
+<p><strong>Neden?</strong> Parça 19'da bir limitin var olması için soldan ve sağdan limitin eşit olması gerektiğini gördün; türev de bir limit olduğu için aynı koşul geçerlidir. Geometrik anlamı: soldaki kirişler ile sağdaki kirişler aynı doğruya yerleşmelidir.</p></div>
+
+<p>En önemli örnek f(x) = |x|'in x = 0'daki durumudur. f(0 + h) − f(0) = |h| olduğu için fark bölümü |h|/h'dir. h &gt; 0 iken |h| = h ve bölüm 1; h &lt; 0 iken |h| = −h ve bölüm −1 (Parça 19'daki |x − 2|/(x − 2) örneğinin aynısı).</p>
+
+<span class="mat">f′(0<sup>+</sup>) = 1, f′(0<sup>−</sup>) = −1 <span class="g">(sağdan ve soldan türev farklı)</span></span>
+
+<p>İki tek yanlı türev var ama eşit değil; f(x) = |x|'in x = 0'da türevi yoktur. Grafikte bu, V harfinin dibindeki sivri uçtur: soldan gelen doğrunun eğimi −1, sağa giden doğrunun eğimi 1; tek bir teğet yerleşmez.</p>
+
+<h2 class="s">7. Türevlenebilme ve süreklilik</h2>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f, a noktasında türevlenebilir ise a'da süreklidir. Tersi doğru <strong>değildir</strong>: sürekli bir fonksiyonun türevi olmayabilir.</p>
+<p><strong>Neden?</strong> x ≠ a için f(x) − f(a)'yı (x − a) ile hem çarpıp hem böl:</p>
+<span class="mat">f(x) − f(a) = <span class="kes"><span>f(x) − f(a)</span><span>x − a</span></span> · (x − a) <span class="g">(x − a ≠ 0, ifade değişmedi)</span></span>
+<span class="mat">→ f′(a) · 0 = 0 <span class="g">(x → a: birinci çarpan f′(a)'ya, ikinci 0'a gider)</span></span>
+<p>Yani lim<sub>x→a</sub> f(x) = f(a); bu Parça 21'deki süreklilik tanımıdır. Tersinin yanlış olduğunu |x| gösteriyor: x = 0'da süreklidir (grafik kopmuyor) ama türevi yoktur.</p></div>
+
+<p>Kuralın en kullanışlı biçimi tersten okunuşudur: <strong>süreksiz olduğu noktada fonksiyonun türevi yoktur.</strong> Bir grafikte türevin olmadığı noktaları sayarken önce süreksiz noktaları (delik, sıçrama, sonsuza gitme) işaretlersin; sonra sürekli olduğu hâlde türevin olmadığı iki tür noktaya bakarsın:</p>
+
+<figure>
+<svg class="genis" viewBox="0 0 640 250" role="img" aria-label="Türevin olmadığı üç nokta türü. Birinci panel: y eşittir mutlak x, orijinde sivri köşe; soldan eğim eksi 1, sağdan eğim artı 1. İkinci panel: y eşittir küp kök x, orijinde teğet düşey. Üçüncü panel: x eşittir 1 de sıçrama; fonksiyon sürekli değil.">
+  <rect class="sv-k" x="6" y="6" width="200" height="238" rx="10" />
+  <text class="sv-b" x="106" y="28" text-anchor="middle">sivri uç (köşe)</text>
+  <text class="sv-s" x="106" y="214" text-anchor="middle">y = |x|: soldan eğim −1,</text>
+  <text class="sv-s" x="106" y="232" text-anchor="middle">sağdan +1; sürekli, türev yok</text>
+  <line class="sv-c" x1="18" y1="170" x2="194" y2="170" />
+  <line class="sv-c" x1="106" y1="190" x2="106" y2="44" />
+  <polyline class="sv-cl" points="18,82 106,170 194,82" />
+  <circle class="sv-a" cx="106" cy="170" r="4" />
+  <rect class="sv-k" x="220" y="6" width="200" height="238" rx="10" />
+  <text class="sv-b" x="320" y="28" text-anchor="middle">dikey teğet</text>
+  <text class="sv-s" x="320" y="214" text-anchor="middle">y = ∛x: teğet düşey,</text>
+  <text class="sv-s" x="320" y="232" text-anchor="middle">eğim sonsuz; sürekli, türev yok</text>
+  <line class="sv-c" x1="232" y1="120" x2="408" y2="120" />
+  <line class="sv-cl" x1="320" y1="190" x2="320" y2="44" />
+  <polyline class="sv-cl" points="230.0,164.6 231.0,164.4 232.0,164.2 233.0,164.1 234.0,163.9 235.0,163.7 236.0,163.5 237.0,163.4 238.0,163.2 239.0,163.0 240.0,162.8 241.0,162.7 242.0,162.5 243.0,162.3 244.0,162.1 245.0,161.9 246.0,161.7 247.0,161.5 248.0,161.4 249.0,161.2 250.0,161.0 251.0,160.8 252.0,160.6 253.0,160.4 254.0,160.2 255.0,160.0 256.0,159.8 257.0,159.6 258.0,159.3 259.0,159.1 260.0,158.9 261.0,158.7 262.0,158.5 263.0,158.3 264.0,158.0 265.0,157.8 266.0,157.6 267.0,157.3 268.0,157.1 269.0,156.9 270.0,156.6 271.0,156.4 272.0,156.1 273.0,155.9 274.0,155.6 275.0,155.4 276.0,155.1 277.0,154.8 278.0,154.6 279.0,154.3 280.0,154.0 281.0,153.7 282.0,153.4 283.0,153.1 284.0,152.8 285.0,152.5 286.0,152.2 287.0,151.9 288.0,151.6 289.0,151.2 290.0,150.9 291.0,150.5 292.0,150.2 293.0,149.8 294.0,149.5 295.0,149.1 296.0,148.7 297.0,148.3 298.0,147.9 299.0,147.4 300.0,147.0 301.0,146.5 302.0,146.1 303.0,145.6 304.0,145.1 305.0,144.5 306.0,144.0 307.0,143.4 308.0,142.8 309.0,142.1 310.0,141.4 311.0,140.7 312.0,139.9 313.0,139.0 314.0,138.1 315.0,137.0 316.0,135.8 317.0,134.3 318.0,132.5 319.0,129.9 320.0,120.0 321.0,110.1 322.0,107.5 323.0,105.7 324.0,104.2 325.0,103.0 326.0,101.9 327.0,101.0 328.0,100.1 329.0,99.3 330.0,98.6 331.0,97.9 332.0,97.2 333.0,96.6 334.0,96.0 335.0,95.5 336.0,94.9 337.0,94.4 338.0,93.9 339.0,93.5 340.0,93.0 341.0,92.6 342.0,92.1 343.0,91.7 344.0,91.3 345.0,90.9 346.0,90.5 347.0,90.2 348.0,89.8 349.0,89.5 350.0,89.1 351.0,88.8 352.0,88.4 353.0,88.1 354.0,87.8 355.0,87.5 356.0,87.2 357.0,86.9 358.0,86.6 359.0,86.3 360.0,86.0 361.0,85.7 362.0,85.4 363.0,85.2 364.0,84.9 365.0,84.6 366.0,84.4 367.0,84.1 368.0,83.9 369.0,83.6 370.0,83.4 371.0,83.1 372.0,82.9 373.0,82.7 374.0,82.4 375.0,82.2 376.0,82.0 377.0,81.7 378.0,81.5 379.0,81.3 380.0,81.1 381.0,80.9 382.0,80.7 383.0,80.4 384.0,80.2 385.0,80.0 386.0,79.8 387.0,79.6 388.0,79.4 389.0,79.2 390.0,79.0 391.0,78.8 392.0,78.6 393.0,78.5 394.0,78.3 395.0,78.1 396.0,77.9 397.0,77.7 398.0,77.5 399.0,77.3 400.0,77.2 401.0,77.0 402.0,76.8 403.0,76.6 404.0,76.5 405.0,76.3 406.0,76.1 407.0,75.9 408.0,75.8 409.0,75.6 410.0,75.4" />
+  <circle class="sv-a" cx="320" cy="120" r="4" />
+  <rect class="sv-k" x="434" y="6" width="200" height="238" rx="10" />
+  <text class="sv-b" x="534" y="28" text-anchor="middle">sıçrama</text>
+  <text class="sv-s" x="534" y="214" text-anchor="middle">x = 1'de kopma var: sürekli</text>
+  <text class="sv-s" x="534" y="232" text-anchor="middle">değil, o hâlde türev de yok</text>
+  <line class="sv-c" x1="446" y1="170" x2="622" y2="170" />
+  <line class="sv-c" x1="474" y1="190" x2="474" y2="44" />
+  <line class="sv-cl" x1="450" y1="142" x2="510" y2="112" />
+  <circle class="sv-k" cx="514" cy="110" r="4" />
+  <line class="sv-cl" x1="514" y1="58" x2="610" y2="96" />
+  <circle class="sv-a" cx="514" cy="58" r="4" />
+  <line class="sv-c" x1="514" y1="176" x2="514" y2="164" />
+  <text class="sv-s" x="514" y="190" text-anchor="middle">1</text>
+</svg>
+<figcaption>Türevin olmadığı üç nokta türü. Soldaki ikisinde fonksiyon süreklidir ama tek bir eğim yoktur: köşede sol ve sağ eğim farklı, dikey teğette eğim sınırsız büyür (dikey doğrunun eğimi tanımsızdır). Sağdakinde fonksiyon zaten süreksizdir.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Noktanın türü</th><th>Sürekli mi?</th><th>Türev var mı?</th><th>Neden</th></tr>
+<tr><td>düzgün (yumuşak) nokta, düzgün tepe ya da çukur dahil</td><td>evet</td><td>evet</td><td>sol ve sağ eğim eşit (tepede 0)</td></tr>
+<tr><td>sivri uç, kırılma (köşe)</td><td>evet</td><td>hayır</td><td>sol eğim ≠ sağ eğim</td></tr>
+<tr><td>dikey teğet</td><td>evet</td><td>hayır</td><td>fark bölümü ±∞'a gider</td></tr>
+<tr><td>delik (kaldırılabilir süreksizlik)</td><td>hayır</td><td>hayır</td><td>süreksiz</td></tr>
+<tr><td>sıçrama</td><td>hayır</td><td>hayır</td><td>süreksiz</td></tr>
+<tr><td>sonsuz süreksizlik</td><td>hayır</td><td>hayır</td><td>süreksiz (f(a) bile yok)</td></tr>
+</table></div>
+
+<p>Dikey teğetin hesabı: f(x) = ∛x için (∛h − 0)/h = h<sup>1/3</sup>/h = 1/h<sup>2/3</sup>. h<sup>2/3</sup> = (∛h)<sup>2</sup> her iki yanda pozitif ve sıfıra gider; bölüm +∞'a gider. Limit bir gerçek sayı olmadığı için türev yoktur. Kuvvet kuralı da aynı şeyi söyler: (x<sup>1/3</sup>)′ = (1/3)x<sup>−2/3</sup> ifadesi x = 0'da tanımsızdır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> Aşağıda grafiği verilen f fonksiyonu (−5, 6) aralığında tanımlıdır. (a) f'in türevinin olmadığı kaç nokta vardır? (b) Sürekli olduğu hâlde türevli olmadığı noktalar hangileridir? (c) f′(−3,5) ve f′(1) hakkında ne söylenebilir?</p>
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="(−5, 6) aralığında tanımlı bir fonksiyonun grafiği. x eşittir −3,5 te düzgün bir tepe; x eşittir −2 de sıçrama; x eşittir −1 de delik ve yukarıda ayrı bir nokta; x eşittir 0 da ve 3 te köşe; x eşittir 4 te dikey teğet.">
+  <line class="sv-c" x1="10" y1="170" x2="392" y2="170" />
+  <line class="sv-c" x1="185" y1="280" x2="185" y2="10" />
+  <polyline class="sv-cl" points="35.0,125.0 38.0,119.2 41.0,113.8 44.0,108.8 47.0,104.2 50.0,100.0 53.0,96.2 56.0,92.8 59.0,89.8 62.0,87.2 65.0,85.0 68.0,83.2 71.0,81.8 74.0,80.8 77.0,80.2 80.0,80.0 83.0,80.2 86.0,80.8 89.0,81.8 92.0,83.2 95.0,85.0 98.0,87.2 101.0,89.8 104.0,92.8 107.0,96.2 110.0,100.0 113.0,104.2 116.0,108.8 119.0,113.8" />
+  <circle class="sv-k" cx="35.0" cy="125.0" r="4" />
+  <circle class="sv-k" cx="125.0" cy="125.0" r="4" />
+  <line class="sv-cl" x1="125.0" y1="170.0" x2="152.0" y2="129.5" />
+  <line class="sv-cl" x1="158.0" y1="120.5" x2="185.0" y2="80.0" />
+  <circle class="sv-a" cx="125.0" cy="170.0" r="4" />
+  <circle class="sv-k" cx="155.0" cy="125.0" r="4" />
+  <circle class="sv-a" cx="155.0" cy="35.0" r="4" />
+  <line class="sv-cl" x1="185.0" y1="80.0" x2="275.0" y2="215.0" />
+  <polyline class="sv-cl" points="275.0,215.0 275.8,214.6 276.5,214.2 277.2,213.8 278.0,213.4 278.8,213.0 279.5,212.6 280.2,212.2 281.0,211.8 281.8,211.3 282.5,210.9 283.2,210.4 284.0,210.0 284.8,209.5 285.5,209.0 286.2,208.5 287.0,208.0 287.8,207.4 288.5,206.9 289.2,206.3 290.0,205.7 290.8,205.1 291.5,204.5 292.2,203.8 293.0,203.2 293.8,202.5 294.5,201.7 295.2,200.9 296.0,200.1 296.8,199.3 297.5,198.3 298.2,197.4 299.0,196.3 299.8,195.2 300.5,193.9 301.2,192.5 302.0,190.9 302.8,189.0 303.5,186.6 304.2,183.2 305.0,170.0 305.8,156.8 306.5,153.4 307.2,151.0 308.0,149.1 308.8,147.5 309.5,146.1 310.2,144.8 311.0,143.7 311.8,142.6 312.5,141.7 313.2,140.7 314.0,139.9 314.8,139.1 315.5,138.3 316.2,137.5 317.0,136.8 317.8,136.2 318.5,135.5 319.2,134.9 320.0,134.3 320.8,133.7 321.5,133.1 322.2,132.6 323.0,132.0 323.8,131.5 324.5,131.0 325.2,130.5 326.0,130.0 326.8,129.6 327.5,129.1 328.2,128.7 329.0,128.2 329.8,127.8 330.5,127.4 331.2,127.0 332.0,126.6 332.8,126.2 333.5,125.8 334.2,125.4 335.0,125.0 335.8,124.6 336.5,124.3 337.2,123.9 338.0,123.5 338.8,123.2 339.5,122.9 340.2,122.5 341.0,122.2 341.8,121.9 342.5,121.5 343.2,121.2 344.0,120.9 344.8,120.6 345.5,120.3 346.2,120.0 347.0,119.7 347.8,119.4 348.5,119.1 349.2,118.8 350.0,118.5 350.8,118.2 351.5,117.9 352.2,117.6 353.0,117.4 353.8,117.1 354.5,116.8 355.2,116.6 356.0,116.3 356.8,116.0 357.5,115.8 358.2,115.5 359.0,115.3 359.8,115.0 360.5,114.8 361.2,114.5 362.0,114.3 362.8,114.0 363.5,113.8 364.2,113.5 365.0,113.3" />
+  <circle class="sv-k" cx="365.0" cy="113.3" r="4" />
+  <line class="sv-c" x1="305.0" y1="237.5" x2="305.0" y2="102.5" />
+  <text class="sv-s" x="35" y="186" text-anchor="middle">−5</text>
+  <text class="sv-s" x="65" y="186" text-anchor="middle">−4</text>
+  <text class="sv-s" x="95" y="186" text-anchor="middle">−3</text>
+  <text class="sv-s" x="125" y="186" text-anchor="middle">−2</text>
+  <text class="sv-s" x="155" y="186" text-anchor="middle">−1</text>
+  <text class="sv-s" x="215" y="186" text-anchor="middle">1</text>
+  <text class="sv-s" x="245" y="186" text-anchor="middle">2</text>
+  <text class="sv-s" x="275" y="186" text-anchor="middle">3</text>
+  <text class="sv-s" x="314" y="186" text-anchor="middle">4</text>
+  <text class="sv-s" x="335" y="186" text-anchor="middle">5</text>
+  <text class="sv-s" x="365" y="186" text-anchor="middle">6</text>
+  <text class="sv-s" x="179" y="129" text-anchor="end">1</text>
+  <text class="sv-s" x="179" y="84" text-anchor="end">2</text>
+  <text class="sv-s" x="179" y="39" text-anchor="end">3</text>
+  <text class="sv-s" x="179" y="219" text-anchor="end">−1</text>
+  <text class="sv-s" x="390" y="160" text-anchor="end">x</text>
+  <text class="sv-s" x="191" y="20" text-anchor="start">y</text>
+</svg>
+<figcaption>Dolu yuvarlak fonksiyonun o noktadaki değerini, boş yuvarlak grafiğe ait olmayan noktayı gösterir. x = 4'teki düşey çizgi o noktadaki teğettir.</figcaption>
+</figure>
+<p><strong>Adım 1.</strong> Önce süreksiz noktaları bul. x = −2'de soldan grafik 1'e, sağdan 0'a gidiyor ve f(−2) = 0: sıçrama. x = −1'de doğrunun üstünde bir delik var, değer ise yukarıda: f(−1) = 3 ama limit 1; süreksiz.</p>
+<span class="mat">süreksiz: x = −2, x = −1 <span class="g">(süreksizse türev yok)</span></span>
+<p><strong>Adım 2.</strong> Sürekli olup sivri uç ya da dikey teğet olan noktaları bul. x = 0'da eğim +1'den −1'e birden değişiyor: köşe. x = 3'te eğim −1'den pozitif bir değere birden değişiyor: köşe. x = 4'te teğet düşey.</p>
+<span class="mat">sürekli ama türevsiz: x = 0, x = 3, x = 4 <span class="g">(köşe, köşe, dikey teğet)</span></span>
+<p><strong>Adım 3.</strong> Öbür noktalara bak. x = −3,5'teki tepe yuvarlaktır, sivri değil; teğet yataydır, f′(−3,5) = 0. x = 1'de grafik eğimi −1 olan bir doğru parçasının üzerindedir, f′(1) = −1. x = 2'de grafik x eksenini kesiyor ama orası da aynı doğrunun üstünde; f'in sıfır olması türevin olmamasıyla ilgili değildir.</p>
+<p><strong>Sonuç:</strong> (a) 5 nokta: −2, −1, 0, 3, 4. (b) 0, 3, 4. (c) f′(−3,5) = 0, f′(1) = −1.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Sürekli ise türevlidir" ya da "tepe noktasında türev yoktur" sanmak.</strong> Birincisini |x| çürütür: sürekli ama türevsiz. İkincisi yalnızca sivri tepeler için doğrudur; yuvarlak bir tepede teğet yataydır ve türev vardır, değeri 0'dır. Ölçüt "tepe mi" değil, "sol ve sağ eğim tek bir sayıda buluşuyor mu"dur.</p>
+<p><strong>Grafikte x eksenini kestiği noktaları türevsiz saymak.</strong> f(a) = 0 olması, a'daki eğim hakkında bir şey söylemez. Türevi yok eden şey kopma, köşe ya da dikey teğettir.</p></div>
+
+<p>Bir not: kapalı bir aralıkta tanımlı bir fonksiyonun uç noktalarında yalnızca tek yanlı türev hesaplanabilir. Sınav kaynaklarının çoğu grafik sorularında uç noktaları "türevin olmadığı noktalar" arasında sayar; soru açık aralık verdiyse bu sorun hiç çıkmaz. Kapalı aralıkta soru gelirse uç noktaları ayrıca düşün.</p>
+
+<h2 class="s">8. Parçalı fonksiyonda türevlenebilme ve parametre</h2>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>f(x) = g(x) (x &lt; a iken), f(x) = k(x) (x ≥ a iken) biçimindeki bir fonksiyonun a'da türevlenebilmesi için <strong>iki koşul birlikte</strong> sağlanmalıdır:</p>
+<p><strong>(1) Süreklilik:</strong> lim<sub>x→a<sup>−</sup></sub> g(x) = k(a). <strong>(2) Eğimlerin eşitliği:</strong> g′(a) = k′(a).</p>
+<p><strong>Neden?</strong> (1) zorunludur, çünkü türevlenebilen fonksiyon süreklidir. (2) için: a'nın sağında f, k ile aynıdır, o yüzden sağdan türev k′(a)'dır; süreklilik sağlanmışsa solda da f'in fark bölümü g'ninkiyle aynı olur ve soldan türev g′(a) çıkar. İki koşul iki denklem verir; sorudaki iki bilinmeyeni bulursun.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> f(x) = ax<sup>2</sup> + 1 (x &lt; 1 iken), f(x) = 4x + b (x ≥ 1 iken) fonksiyonu her noktada türevlenebilir olduğuna göre a ve b kaçtır? f′(1) kaçtır?</p>
+<p><strong>Adım 1.</strong> Kritik nokta x = 1. Parçaların içinde (x &lt; 1 ve x &gt; 1) iki ifade de polinom, orada sorun yok. Yalnızca x = 1'i denetle.</p>
+<p><strong>Adım 2.</strong> Süreklilik.</p>
+<span class="mat">a · 1<sup>2</sup> + 1 = 4 · 1 + b ⇒ a + 1 = 4 + b <span class="g">(soldan limit = f(1))</span></span>
+<p><strong>Adım 3.</strong> Eğimlerin eşitliği.</p>
+<span class="mat">(ax<sup>2</sup> + 1)′ = 2ax; (4x + b)′ = 4 <span class="g">(her parçanın türevi)</span></span>
+<span class="mat">2a · 1 = 4 ⇒ a = 2 <span class="g">(x = 1'de eşitle)</span></span>
+<p><strong>Adım 4.</strong> a'yı süreklilik denklemine koy.</p>
+<span class="mat">2 + 1 = 4 + b ⇒ b = −1 <span class="g">(Adım 2'den)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Soldan değer 2 + 1 = 3, f(1) = 4 − 1 = 3: kopma yok. Soldan eğim 2 · 2 · 1 = 4, sağdan eğim 4: köşe yok.</p>
+<p><strong>Sonuç:</strong> a = 2, b = −1 ve f′(1) = 4.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Yalnızca türevleri eşitleyip sürekliliği unutmak.</strong> f(x) = x<sup>2</sup> (x &lt; 1), f(x) = 2x + 3 (x ≥ 1) fonksiyonunda iki parçanın x = 1'deki eğimi de 2'dir. Ama soldan değer 1, f(1) = 5: grafik kopuyor, fonksiyon süreksiz, o hâlde türevsizdir. Tanımdan bakınca da görünür: soldan fark bölümü ((1 + h)<sup>2</sup> − 5)/h olur; h → 0<sup>−</sup> iken pay −4'e, payda 0'a gider ve bölüm +∞'a kaçar. Önce süreklilik, sonra eğim: sıra bu.</p></div>
+
+<h2 class="s">9. Türev alma kuralları ve gerekçeleri</h2>
+
+<p>Her türevi tanımdan hesaplamak uzun sürer. Aşağıdaki kurallar tanımdan bir kez çıkarılır, sonra her yerde kullanılır. Hepsinin kökü aynıdır: türev bir limittir ve Parça 19'daki limit kuralları türeve taşınır.</p>
+
+<p><strong>Sabitin türevi.</strong> f(x) = c ise f(x + h) − f(x) = c − c = 0, fark bölümü her h için 0'dır; türev 0. Grafik yatay bir doğrudur ve eğimi 0'dır: (c)′ = 0.</p>
+
+<p><strong>Kuvvet kuralı.</strong> n bir doğal sayı olsun. (x + h)<sup>n</sup>, n tane (x + h) parantezinin çarpımıdır. Açılımda h'siz terim, her parantezden x seçilerek oluşan x<sup>n</sup>'dir. Tam bir tane h içeren terimler, h'nin n parantezden birinden seçilmesiyle oluşur: n tane x<sup>n−1</sup>h, toplam n · x<sup>n−1</sup>h. Geri kalan bütün terimlerde en az h<sup>2</sup> vardır (n = 3 için 3xh<sup>2</sup> + h<sup>3</sup> gibi; Parça 33'te binom açılımıyla tam hâlini göreceksin).</p>
+<span class="mat">(x + h)<sup>n</sup> − x<sup>n</sup> = n · x<sup>n−1</sup> · h + (h<sup>2</sup> çarpanlı terimler) <span class="g">(x<sup>n</sup> gider)</span></span>
+<span class="mat">h'ye böl: n · x<sup>n−1</sup> + (h çarpanlı terimler) → n · x<sup>n−1</sup> <span class="g">(h → 0)</span></span>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>(x<sup>n</sup>)′ = n · x<sup>n−1</sup></strong>. Kural yalnızca doğal sayı üsler için değil, negatif ve kesirli üsler için de geçerlidir (köklü ve kesirli üslerde x &gt; 0 alınır). Özel durumlar: (x)′ = 1, (c)′ = 0.</p>
+<p><strong>Neden negatif ve kesirli üslerde de?</strong> n = −1 ve n = 1/2 için Örnek 2'de tanımdan kontrol ettin: −x<sup>−2</sup> ve ½x<sup>−1/2</sup>. Negatif tam sayı üsleri birazdan bölüm kuralıyla genel olarak ispatlayacağız; kesirli üslerin genel ispatı bu düzeyin dışındadır, ama her sorulan durumu tanımdan ya da Örnek 2'deki eşlenik yoluyla denetleyebilirsin.</p></div>
+
+<p><strong>Sabit çarpan ve toplam-fark.</strong> (c · f)′ = c · f′, çünkü fark bölümünde c ortak çarpandır ve limitin dışına çıkar. (f ± g)′ = f′ ± g′, çünkü (f + g)'nin fark bölümü f'inkiyle g'ninkinin toplamıdır ve toplamın limiti limitlerin toplamıdır (Parça 19). Bu iki kural birlikte, bir polinomu terim terim türevlemene izin verir.</p>
+
+<p>Köklü ve kesirli ifadelerde ilk iş, her terimi <strong>katsayı · x<sup>üs</sup></strong> biçimine çevirmektir. Ondan sonra kural mekanik çalışır:</p>
+
+<div class="tablo"><table>
+<tr><th>Fonksiyon</th><th>Üslü yazım</th><th>Türev</th><th>Sade yazım</th></tr>
+<tr><td>x<sup>5</sup></td><td>x<sup>5</sup></td><td>5x<sup>4</sup></td><td>5x<sup>4</sup></td></tr>
+<tr><td>1/x<sup>3</sup></td><td>x<sup>−3</sup></td><td>−3x<sup>−4</sup></td><td>−3/x<sup>4</sup></td></tr>
+<tr><td>∛(x<sup>2</sup>)</td><td>x<sup>2/3</sup></td><td>(2/3)x<sup>−1/3</sup></td><td>2/(3∛x)</td></tr>
+<tr><td>1/√x</td><td>x<sup>−1/2</sup></td><td>−½x<sup>−3/2</sup></td><td>−1/(2x√x)</td></tr>
+<tr><td>x√x</td><td>x<sup>3/2</sup></td><td>(3/2)x<sup>1/2</sup></td><td>(3/2)√x</td></tr>
+<tr><td>7x</td><td>7x<sup>1</sup></td><td>7x<sup>0</sup></td><td>7</td></tr>
+<tr><td>−5</td><td>sabit</td><td>0</td><td>0</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (a) f(x) = 2x<sup>4</sup> − 3x<sup>2</sup> + 5x − 7 için f′(1) kaçtır? (b) g(x) = x√x + <span class="kes"><span>8</span><span>√x</span></span> için g′(4) kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Terim terim türev al.</p>
+<span class="mat">f′(x) = 8x<sup>3</sup> − 6x + 5 <span class="g">(2 · 4x<sup>3</sup>, 3 · 2x, 5 · 1, sabit → 0)</span></span>
+<span class="mat">f′(1) = 8 − 6 + 5 = 7 <span class="g">(x = 1 koy)</span></span>
+<p><strong>Adım 2.</strong> (b) Önce üslü yazıma çevir.</p>
+<span class="mat">g(x) = x<sup>3/2</sup> + 8x<sup>−1/2</sup> <span class="g">(x · x<sup>1/2</sup> = x<sup>3/2</sup>; 1/√x = x<sup>−1/2</sup>)</span></span>
+<span class="mat">g′(x) = <span class="kes"><span>3</span><span>2</span></span>x<sup>1/2</sup> − 4x<sup>−3/2</sup> <span class="g">(8 · (−½) = −4; üs −½ − 1 = −3/2)</span></span>
+<p><strong>Adım 3.</strong> x = 4 koy: 4<sup>1/2</sup> = 2, 4<sup>3/2</sup> = 8.</p>
+<span class="mat">g′(4) = <span class="kes"><span>3</span><span>2</span></span> · 2 − <span class="kes"><span>4</span><span>8</span></span> = 3 − <span class="kes"><span>1</span><span>2</span></span> = <span class="kes"><span>5</span><span>2</span></span> <span class="g">(4<sup>−3/2</sup> = 1/8)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> g(4,01) ≈ 12,0250, g(3,99) ≈ 11,9750; fark 0,0500, 0,02'ye bölünce ≈ 2,50.</p>
+<p><strong>Sonuç:</strong> (a) 7. (b) 5/2.</p></div>
+
+<p><strong>Çarpım kuralı.</strong> İki fonksiyonun çarpımının türevi, türevlerin çarpımı <strong>değildir</strong>. Bunu bir dikdörtgenin alanıyla gör: kenarları f ve g olan dikdörtgenin alanı f · g'dir. x, h kadar değişince kenarlar Δf ve Δg kadar uzar.</p>
+
+<figure>
+<svg viewBox="0 0 400 290" role="img" aria-label="Kenarları f ve g olan dikdörtgen. f, Δf kadar; g, Δg kadar artınca alan üç parça kadar büyür: f çarpı Δg, g çarpı Δf ve köşedeki küçük Δf çarpı Δg.">
+  <rect class="sv-l" x="40" y="80" width="240" height="150" />
+  <rect class="sv-m" x="280" y="80" width="70" height="150" />
+  <rect class="sv-m" x="40" y="30" width="240" height="50" />
+  <rect class="sv-a" x="280" y="30" width="70" height="50" />
+  <text class="sv-b" x="160.0" y="160.0" text-anchor="middle">f · g</text>
+  <text class="sv-t" x="315.0" y="151.0" text-anchor="middle">g · Δf</text>
+  <text class="sv-t" x="160.0" y="60.0" text-anchor="middle">f · Δg</text>
+  <text class="sv-s" x="315.0" y="59.0" text-anchor="middle">Δf · Δg</text>
+  <text class="sv-t" x="160.0" y="252" text-anchor="middle">f</text>
+  <text class="sv-t" x="315.0" y="252" text-anchor="middle">Δf</text>
+  <text class="sv-t" x="364" y="160.0" text-anchor="start">g</text>
+  <text class="sv-t" x="364" y="60.0" text-anchor="start">Δg</text>
+  <text class="sv-s" x="200" y="278" text-anchor="middle">Alan artışı = f · Δg + g · Δf + Δf · Δg</text>
+</svg>
+<figcaption>Alan artışı üç parçadan oluşur. h'ye bölüp h → 0 dediğimizde köşedeki küçük parça yok olur, çünkü iki küçük niceliğin çarpımıdır. Geriye f · g′ + g · f′ kalır.</figcaption>
+</figure>
+
+<span class="mat">Δ(f · g) = f · Δg + g · Δf + Δf · Δg <span class="g">(şekildeki üç parça)</span></span>
+<span class="mat"><span class="kes"><span>Δ(f · g)</span><span>h</span></span> = f · <span class="kes"><span>Δg</span><span>h</span></span> + g · <span class="kes"><span>Δf</span><span>h</span></span> + Δf · <span class="kes"><span>Δg</span><span>h</span></span> <span class="g">(h'ye böl)</span></span>
+<span class="mat">→ f · g′ + g · f′ + 0 · g′ <span class="g">(Δf → 0, çünkü türevli olan f süreklidir)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çarpım:</strong> (f · g)′ = f′ · g + f · g′. Sözle: "birincinin türevi çarpı ikinci, artı birinci çarpı ikincinin türevi".</p>
+<p><strong>Bölüm:</strong> g(x) ≠ 0 iken (<span class="kes"><span>f</span><span>g</span></span>)′ = <span class="kes"><span>f′ · g − f · g′</span><span>g<sup>2</sup></span></span>. Sözle: "payın türevi çarpı payda, eksi pay çarpı paydanın türevi, bölü paydanın karesi". Paydaki çıkarmanın sırası önemlidir.</p>
+<p><strong>Bölüm kuralı neden böyle?</strong> q = f/g de; o zaman f = q · g. Çarpım kuralıyla f′ = q′ · g + q · g′. Buradan q′ = (f′ − q · g′)/g; q yerine f/g yazıp pay ve paydayı g ile genişletince (f′g − fg′)/g<sup>2</sup> çıkar.</p></div>
+
+<p>Bölüm kuralı, kuvvet kuralının negatif üslerdeki gerekçesini de verir: (1/x<sup>n</sup>)′ = (0 · x<sup>n</sup> − 1 · nx<sup>n−1</sup>)/x<sup>2n</sup> = −n · x<sup>−n−1</sup>. Bu tam olarak x<sup>−n</sup>'ye kuvvet kuralını uygulamanın sonucudur.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (a) h(x) = (x<sup>2</sup> + 1)(2x − 3) için h′(1) kaçtır? (b) k(x) = <span class="kes"><span>2x + 1</span><span>x − 1</span></span> için k′(2) kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Çarpım kuralı: f = x<sup>2</sup> + 1, f′ = 2x; g = 2x − 3, g′ = 2.</p>
+<span class="mat">h′(x) = 2x(2x − 3) + (x<sup>2</sup> + 1) · 2 <span class="g">(f′g + fg′)</span></span>
+<span class="mat">h′(1) = 2 · (−1) + 2 · 2 = 2 <span class="g">(x = 1 koy)</span></span>
+<p><strong>Adım 2.</strong> (a) için kontrol yolu: çarpımı aç.</p>
+<span class="mat">h(x) = 2x<sup>3</sup> − 3x<sup>2</sup> + 2x − 3 ⇒ h′(x) = 6x<sup>2</sup> − 6x + 2 <span class="g">(terim terim)</span></span>
+<span class="mat">h′(1) = 6 − 6 + 2 = 2 <span class="g">(aynı sonuç)</span></span>
+<p><strong>Adım 3.</strong> (b) Bölüm kuralı: pay 2x + 1, türevi 2; payda x − 1, türevi 1.</p>
+<span class="mat">k′(x) = <span class="kes"><span>2(x − 1) − (2x + 1) · 1</span><span>(x − 1)<sup>2</sup></span></span> = <span class="kes"><span>−3</span><span>(x − 1)<sup>2</sup></span></span> <span class="g">(pay: 2x − 2 − 2x − 1)</span></span>
+<span class="mat">k′(2) = <span class="kes"><span>−3</span><span>1</span></span> = −3 <span class="g">(x = 2 koy)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> k(2,01) ≈ 4,9703, k(1,99) ≈ 5,0303; fark −0,0600, 0,02'ye bölünce ≈ −3,0.</p>
+<p><strong>Sonuç:</strong> (a) 2. (b) −3.</p></div>
+
+<p><strong>Hızlı yol.</strong> Doğrusal bölü doğrusal ifadelerde bölüm kuralını her seferinde açmana gerek yok:</p>
+<span class="mat">(<span class="kes"><span>ax + b</span><span>cx + d</span></span>)′ = <span class="kes"><span>ad − bc</span><span>(cx + d)<sup>2</sup></span></span> <span class="g">(pay: a(cx + d) − (ax + b)c = ad − bc)</span></span>
+<p>Örnek 6 (b)'de a = 2, b = 1, c = 1, d = −1: ad − bc = −2 − 1 = −3. Aynı sonuç, tek satırda. Bir de çarpım mı açmalı, kural mı uygulanmalı sorusu var: çarpanlar kısa polinomlarsa açmak çoğu zaman güvenlidir; bir noktadaki değer isteniyorsa çarpım kuralı daha hızlıdır, çünkü her çarpanı o noktada ayrı ayrı hesaplarsın.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>(f · g)′ = f′ · g′ ve (f/g)′ = f′/g′ yazmak.</strong> f = g = x alırsan (x<sup>2</sup>)′ = 2x olmalı ama f′ · g′ = 1 · 1 = 1 verir; kural açıkça yanlıştır. Bölümde de aynı: (x<sup>2</sup>/x)′ = (x)′ = 1, ama 2x/1 = 2x.</p>
+<p><strong>Bölüm kuralında paydaki çıkarmayı ters sırayla yazmak.</strong> fg′ − f′g yazarsan sonucun işareti ters çıkar (Örnek 6'da +3). Sırayı "önce payın türevi" diye sabitle.</p>
+<p><strong>Köklü ifadeyi üslüye çevirmeden türevlemek.</strong> 8/√x'in türevini "8 bölü √x'in türevi" diye 8 · 2√x yazmak gibi hatalar, ifadeyi baştan 8x<sup>−1/2</sup> yazınca ortadan kalkar.</p></div>
+
+<h2 class="s">10. Limit biçiminde verilmiş türevi tanıma</h2>
+
+<p>Sınav türevi bazen kılık değiştirmiş olarak sorar: bir limit verir ve hesabı yaptırmak yerine onun bir türev olduğunu görmeni bekler. Tanımdaki kalıbı tanıyınca soru bir satıra iner.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>lim<sub>h→0</sub> <span class="kes"><span>f(a + h) − f(a)</span><span>h</span></span> = f′(a) ve lim<sub>x→a</sub> <span class="kes"><span>f(x) − f(a)</span><span>x − a</span></span> = f′(a). Daha genel olarak, m ve n sabitken:</p>
+<span class="mat">lim<sub>h→0</sub> <span class="kes"><span>f(a + mh) − f(a + nh)</span><span>h</span></span> = (m − n) · f′(a)</span>
+<p><strong>Neden?</strong> Paya f(a)'yı bir çıkar bir ekle ve iki kesre ayır: [f(a + mh) − f(a)]/h − [f(a + nh) − f(a)]/h. Birinci kesri m ile çarpıp böl: m · [f(a + mh) − f(a)]/(mh). h → 0 iken mh de 0'a gider, köşeli kısım f′(a)'ya gider; birinci kesir m · f′(a) olur. Aynı yolla ikincisi n · f′(a). Fark (m − n) · f′(a).</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> (a) f(x) = x<sup>3</sup> − 2x için lim<sub>h→0</sub> <span class="kes"><span>f(1 + 3h) − f(1 − h)</span><span>h</span></span> kaçtır? (b) lim<sub>h→0</sub> <span class="kes"><span>(2 + h)<sup>5</sup> − 32</span><span>h</span></span> kaçtır? (c) f(x) = x<sup>3</sup> için lim<sub>x→2</sub> <span class="kes"><span>f(x) − f(2)</span><span>x<sup>2</sup> − 4</span></span> kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Kalıp: a = 1, m = 3, n = −1.</p>
+<span class="mat">m − n = 3 − (−1) = 4 <span class="g">(n'nin işaretine dikkat)</span></span>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 2 ⇒ f′(1) = 1 <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">limit = 4 · 1 = 4</span>
+<p><strong>Adım 2.</strong> (b) 32 = 2<sup>5</sup> olduğunu gör: ifade, f(x) = x<sup>5</sup> için (f(2 + h) − f(2))/h'dir.</p>
+<span class="mat">limit = f′(2) = 5 · 2<sup>4</sup> = 80 <span class="g">((x<sup>5</sup>)′ = 5x<sup>4</sup>)</span></span>
+<p><strong>Adım 3.</strong> (c) Payda x − 2 değil, x<sup>2</sup> − 4. Onu (x − 2)(x + 2) diye ayırıp tanıdık kalıbı ortaya çıkar.</p>
+<span class="mat"><span class="kes"><span>f(x) − f(2)</span><span>x − 2</span></span> · <span class="kes"><span>1</span><span>x + 2</span></span> → f′(2) · <span class="kes"><span>1</span><span>4</span></span> <span class="g">(çarpımın limiti, Parça 19)</span></span>
+<span class="mat">= 12 · <span class="kes"><span>1</span><span>4</span></span> = 3 <span class="g">(f′(2) = 3 · 4 = 12)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (a) h = 0,001: f(1,003) − f(0,999) ≈ −0,99697 − (−1,00100) = 0,00403; 0,001'e bölünce ≈ 4,02. (b) (2,001<sup>5</sup> − 32)/0,001 ≈ 80,08.</p>
+<p><strong>Sonuç:</strong> (a) 4. (b) 80. (c) 3.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Katsayıyı unutmak ya da n'nin işaretini karıştırmak.</strong> Örnek 7 (a)'da cevabı f′(1) = 1 diye vermek katsayıyı unutmaktır. (3 − 1) · f′(1) = 2 yazmak, f(1 − h)'deki −1'i +1 almaktır. Kalıbı her seferinde "birinci içerideki h katsayısı eksi ikinci içerideki h katsayısı" diye oku: 3 − (−1).</p></div>
+
+<h2 class="s">11. Yüksek mertebeden türevler</h2>
+
+<p>f′ de bir fonksiyon olduğuna göre onun da türevi alınabilir. f′'nün türevine <strong>ikinci türev</strong> denir ve f″ ya da y″ ya da <span class="kes"><span>d<sup>2</sup>y</span><span>dx<sup>2</sup></span></span> ile gösterilir. Onun türevi üçüncü türev f‴'tür; dördüncüden başlayarak üs yerine parantez içinde sayı yazılır: f<sup>(4)</sup>, f<sup>(5)</sup>. Parantez, bunun bir kuvvet değil türev sırası olduğunu anlatır. İkinci türevin geometrik anlamı (eğimin değişim hızı, bükeylik) Parça 26'nın konusudur; burada hesabı görüyoruz.</p>
+
+<span class="mat">f(x) = x<sup>4</sup> − 2x<sup>3</sup> + x</span>
+<span class="mat">f′(x) = 4x<sup>3</sup> − 6x<sup>2</sup> + 1 <span class="g">(birinci türev)</span></span>
+<span class="mat">f″(x) = 12x<sup>2</sup> − 12x <span class="g">(f′'nün türevi; sabit 1 gitti)</span></span>
+<span class="mat">f‴(x) = 24x − 12 <span class="g">(üçüncü türev)</span></span>
+<span class="mat">f<sup>(4)</sup>(x) = 24, f<sup>(5)</sup>(x) = 0 <span class="g">(sabit, sonra sıfır)</span></span>
+
+<p>Bu örnek bir genel kuralı gösteriyor: n. dereceden bir polinomun her türevinde derece bir düşer. n. türev bir sabittir (baş katsayı çarpı n · (n − 1) · … · 1, yani n!, burada 4! · 1 = 24) ve (n + 1). türevden başlayarak bütün türevler sıfırdır. "x<sup>7</sup> − 5x<sup>3</sup> polinomunun 8. türevi kaçtır?" sorusunun cevabı hesapsız 0'dır.</p>
+
+<h2 class="s">12. Hareket: konum, hız, ivme</h2>
+
+<p>Yüksek mertebeden türevin en somut anlamı fizikteki hareketten gelir (fizik Parça 2 ve 15). Bir doğru üzerinde hareket eden cismin t anındaki konumu s(t) ise:</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>hız:</strong> v(t) = s′(t), <strong>ivme:</strong> a(t) = v′(t) = s″(t). Konum metre, zaman saniye ise hız m/s, ivme m/s<sup>2</sup> birimindedir.</p>
+<p><strong>Neden?</strong> Hız, konumun anlık değişim hızıdır (Bölüm 5). İvme de aynı biçimde hızın anlık değişim hızıdır. Birimler de bunu doğrular: her türev "bölü saniye" ekler.</p></div>
+
+<p>Hızın işareti yönü gösterir: v &gt; 0 ise cisim pozitif yönde, v &lt; 0 ise negatif yönde gider, v = 0 ise o an durur (çoğu zaman yön değiştirdiği andır). Serbest düşme örneğinde s(t) = 5t<sup>2</sup>, v(t) = 10t, a(t) = 10: ivmenin sabit ve 10 m/s<sup>2</sup> çıkması, sınavlardaki g = 10 m/s<sup>2</sup> kabulünün ta kendisidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Bir doğru üzerinde hareket eden cismin konumu s(t) = t<sup>3</sup> − 6t<sup>2</sup> + 9t metredir (t ≥ 0, saniye). (a) Başlangıç hızı kaç m/s'dir? (b) Cisim hangi anlarda durur, o anlarda nerededir? (c) İvmenin sıfır olduğu anda hız kaç m/s'dir?</p>
+<p><strong>Adım 1.</strong> Hız ve ivme fonksiyonlarını yaz.</p>
+<span class="mat">v(t) = s′(t) = 3t<sup>2</sup> − 12t + 9 <span class="g">(m/s)</span></span>
+<span class="mat">a(t) = v′(t) = 6t − 12 <span class="g">(m/s<sup>2</sup>)</span></span>
+<p><strong>Adım 2.</strong> (a) t = 0 koy.</p>
+<span class="mat">v(0) = 9 m/s</span>
+<p><strong>Adım 3.</strong> (b) Durmak, hızın sıfır olmasıdır.</p>
+<span class="mat">3t<sup>2</sup> − 12t + 9 = 3(t − 1)(t − 3) = 0 ⇒ t = 1 s ya da t = 3 s <span class="g">(3 parantezine al, çarpanlara ayır)</span></span>
+<span class="mat">s(1) = 1 − 6 + 9 = 4 m; s(3) = 27 − 54 + 27 = 0 m <span class="g">(konumu s'den oku, v'den değil)</span></span>
+<p><strong>Adım 4.</strong> (c) İvmeyi sıfırla, o andaki hızı bul.</p>
+<span class="mat">6t − 12 = 0 ⇒ t = 2 s <span class="g">(a(t) = 0)</span></span>
+<span class="mat">v(2) = 12 − 24 + 9 = −3 m/s <span class="g">(negatif: geri yönde 3 m/s)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Birimler: s metre, s′ metre/saniye, s″ metre/saniye<sup>2</sup>. Anlam: t = 1 ile t = 3 arasında v negatif, cisim 4 m'den 0 m'ye geri dönüyor; tam ortada (t = 2) en hızlı geri gidiyor ve o an ivme sıfır. Tablo tutarlı.</p>
+<p><strong>Sonuç:</strong> (a) 9 m/s. (b) t = 1 s'de 4 m'de, t = 3 s'de 0 m'de (başlangıç noktasında). (c) −3 m/s.</p></div>
+
+<h2 class="s">13. Mutlak değerli fonksiyonun türevi</h2>
+
+<p>Mutlak değerli bir fonksiyon, Parça 3'te gördüğün gibi kritik noktalarla parçalı yazılabilir. Türevi de parça parça alınır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>f(x) = |g(x)| için önce g'nin köklerini (kritik noktaları) bul. Kritik nokta dışındaki bir x'te g'nin işaretine bak: g(x) &gt; 0 ise o çevrede f = g ve f′ = g′; g(x) &lt; 0 ise f = −g ve f′ = −g′. Kritik noktada sağdan ve soldan türevi ayrı hesapla: g işaret değiştiriyorsa (tek katlı kök, g′(a) ≠ 0) iki taraf −g′(a) ve +g′(a) olur; eşit olmadıkları için orada <strong>köşe</strong> vardır, türev yoktur.</p>
+<p><strong>Neden?</strong> Bir noktanın çevresinde g'nin işareti sabitse mutlak değer o çevrede ya hiçbir şey yapmaz ya da yalnızca −1 ile çarpar; türev de buna göre g′ ya da −g′ olur. g işaret değiştirdiğinde grafik x ekseninin altındaki kısım yukarı katlanır (Parça 3) ve katlama yerinde sivri uç oluşur.</p></div>
+
+<p>İki istisnayı bil. Çift katlı kökte g işaret değiştirmez: |x<sup>2</sup> − 2x + 1| = (x − 1)<sup>2</sup> her yerde türevlidir. Mutlak değer bir çarpanın içindeyse kırılma kapanabilir: f(x) = x|x| için x = 0'da fark bölümü h|h|/h = |h| → 0 iki yandan da; türev vardır ve 0'dır. Bu yüzden "mutlak değer var, kökte türev yoktur" diye ezberleme; sağdan ve soldan türevi karşılaştır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> f(x) = |x<sup>2</sup> − 4| + 3x için f′(1) ve f′(3) kaçtır? f'in x = 2'de türevi var mıdır?</p>
+<p><strong>Adım 1.</strong> Kritik noktalar: x<sup>2</sup> − 4 = 0 ⇒ x = −2, x = 2. x = 1 bu iki kökün arasında; orada x<sup>2</sup> − 4 negatif.</p>
+<span class="mat">x = 1 çevresinde f(x) = −(x<sup>2</sup> − 4) + 3x = −x<sup>2</sup> + 4 + 3x <span class="g">(mutlak değer −1 ile çarpar)</span></span>
+<span class="mat">f′(x) = −2x + 3 ⇒ f′(1) = 1 <span class="g">(x = 1 koy)</span></span>
+<p><strong>Adım 2.</strong> x = 3, 2'nin sağında; orada x<sup>2</sup> − 4 pozitif.</p>
+<span class="mat">x = 3 çevresinde f(x) = x<sup>2</sup> − 4 + 3x ⇒ f′(x) = 2x + 3 ⇒ f′(3) = 9 <span class="g">(mutlak değer olduğu gibi açılır)</span></span>
+<p><strong>Adım 3.</strong> x = 2'de iki yanın türevini karşılaştır (f sürekli, çünkü iki ifade de x = 2'de 6 veriyor).</p>
+<span class="mat">soldan: −2 · 2 + 3 = −1; sağdan: 2 · 2 + 3 = 7 <span class="g">(eşit değil)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> f(1,01) − f(0,99) = (2,9799 + 3,03) − (3,0199 + 2,97) = 0,02; 0,02'ye bölünce 1. Doğru.</p>
+<p><strong>Sonuç:</strong> f′(1) = 1, f′(3) = 9; x = 2'de köşe var, türev yoktur.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>|g(x)|'in türevini |g′(x)| sanmak.</strong> Örnek 9'da (x<sup>2</sup> − 4)′ = 2x olduğu için x = 1'de |2| + 3 = 5 bulunur; doğrusu 1'dir. Mutlak değerin türevi, önce mutlak değeri işarete göre açıp sonra türev alarak bulunur; türevin mutlak değeri alınmaz.</p></div>
+
+<h2 class="s">Sınavda yol seçimi</h2>
+
+<p>Bir türev sorusu geldiğinde ilk on saniyede şu dört soruyu sırayla sor:</p>
+
+<p><strong>1. Bir limit mi verilmiş?</strong> Payda f(bir şey) − f(bir şey), paydada h ya da x − a varsa karşındaki bir türevdir; kalıbı tanı ve (m − n) · f′(a) ile bitir. Paydada x<sup>2</sup> − a<sup>2</sup> gibi başka bir ifade varsa önce x − a çarpanını ayır (Örnek 7 c).</p>
+
+<p><strong>2. Fonksiyon nasıl yazılmış?</strong> Kök ya da paydada x varsa önce üslü yazıma çevir. Çarpım varsa kısa çarpanları açmak güvenlidir; bir noktadaki değer isteniyorsa çarpım kuralı daha hızlıdır. Doğrusal bölü doğrusal ise (ad − bc)/(cx + d)<sup>2</sup> hızlı yolunu kullan.</p>
+
+<p><strong>3. Parçalı ya da mutlak değerli mi?</strong> Kritik noktayı bul. Kritik nokta dışında işarete göre açıp türev al; kritik noktanın kendisinde önce sürekliliği, sonra soldan ve sağdan eğimi denetle.</p>
+
+<p><strong>4. Grafik mi verilmiş?</strong> Önce kopmaları (delik, sıçrama, sonsuza gitme), sonra köşeleri ve dikey teğetleri işaretle; yuvarlak tepeleri ve x eksenini kestiği noktaları sayma.</p>
+
+<p>Bitirince kontrol yolunu bir kez uygula. (f(a + 0,01) − f(a − 0,01))/0,02 kaba hesabı işaret ve büyüklük hatalarını çoğu zaman tek başına yakalar; seçeneklerden ikisi birbirinin ters işaretlisiyse (Örnek 6'daki −3 ile +3 gibi) hangisinin doğru olduğunu fonksiyonun o noktada artıp azaldığına bakarak da görebilirsin. Hareket sorularında ayrıca birimleri denetle: metre, metre/saniye, metre/saniye<sup>2</sup>.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1'e:</strong> Ortalama değişim hızı (kirişin eğimi) türevin başlangıç noktasıydı; türev, aralık sıfıra giderken onun limitidir.</p>
+<p><strong>Parça 19–21'e:</strong> Türev tanımı bir 0/0 limitidir (Parça 20); soldan ve sağdan türev, soldan ve sağdan limitin uygulamasıdır (Parça 19); "türevli ise sürekli" bağı Parça 21'deki süreklilik tanımına dayanır.</p>
+<p><strong>Parça 23–27'ye:</strong> Bileşke fonksiyonların türevi (zincir kuralı) bu parçadaki kuvvet ve bölüm kurallarının üstüne kurulur; teğet denklemi (Parça 24) f′(a)'yı eğim olarak kullanır; artan-azalan ve ekstremum (Parça 25) türevin işaretine, bükeylik (Parça 26) f″'ye dayanır.</p>
+<p><strong>Parça 28'e:</strong> İntegral, türevin tersidir: türevi f olan fonksiyonu aramak. Kuvvet kuralını tersten okumayı orada öğreneceksin.</p>
+<p><strong>Öbür derslere:</strong> Fizikte hız konumun, ivme hızın türevidir; sabit ivmeli hareket denklemleri (fizik Parça 15) x = v<sub>0</sub>t + ½at<sup>2</sup>'nin iki kez türevlenmesiyle tutarlıdır: x′ = v<sub>0</sub> + at, x″ = a. Kimyada tepkime hızı, derişimin zamana göre değişim hızıdır; grafikteki teğetin eğimiyle okunur.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Türevin limit tanımının iki biçimini yaz. İkisi neden aynı limittir?</summary><p>f′(a) = lim<sub>h→0</sub> (f(a + h) − f(a))/h ve f′(a) = lim<sub>x→a</sub> (f(x) − f(a))/(x − a). İkincisinde x = a + h yazarsan x − a = h olur ve x → a demek h → 0 demektir; iki ifade aynı limitin iki yazılışıdır.</p></details>
+<details><summary>Kirişin eğimi ile teğetin eğimi arasındaki ilişki nedir?</summary><p>Kirişin eğimi ortalama değişim hızıdır, (f(a + h) − f(a))/h. İkinci nokta birinciye yaklaştıkça (h → 0) kirişler teğete yerleşir; teğetin eğimi bu kiriş eğimlerinin limitidir, yani f′(a).</p></details>
+<details><summary>Türevlenebilen bir fonksiyon sürekli midir? Sürekli bir fonksiyon türevlenebilir midir? Birer gerekçe ver.</summary><p>Türevlenebilen fonksiyon süreklidir: f(x) − f(a) = [(f(x) − f(a))/(x − a)] · (x − a) → f′(a) · 0 = 0. Sürekli fonksiyon türevlenebilir olmayabilir: |x| sıfırda süreklidir ama soldan türevi −1, sağdan türevi 1'dir.</p></details>
+<details><summary>Bir grafikte türevin olmadığı nokta türleri nelerdir?</summary><p>Süreksiz noktalar (delik, sıçrama, sonsuz süreksizlik) ile sürekli olduğu hâlde sivri uç (köşe) ve dikey teğet olan noktalar. Yuvarlak bir tepe noktasında türev vardır ve 0'dır.</p></details>
+<details><summary>Parçalı bir fonksiyonun kritik noktada türevlenebilmesi için hangi iki koşul gerekir? Neden sürekliliği ayrıca denetlersin?</summary><p>Süreklilik (soldan limit = fonksiyon değeri) ve iki parçanın o noktadaki türevlerinin eşitliği. Eğimler eşit olsa bile grafik kopuyorsa fonksiyon süreksizdir ve süreksiz fonksiyonun türevi olamaz; tanımdan bakınca fark bölümü sonsuza gider.</p></details>
+<details><summary>lim<sub>h→0</sub> (f(a + mh) − f(a + nh))/h neye eşittir?</summary><p>(m − n) · f′(a). Paya f(a)'yı ekleyip çıkararak iki fark bölümüne ayrılır; birincisi m · f′(a)'ya, ikincisi n · f′(a)'ya gider.</p></details>
+<details><summary>Çarpım kuralını yaz. (f · g)′ = f′ · g′ neden yanlıştır?</summary><p>(f · g)′ = f′ · g + f · g′. f = g = x alınırsa (x<sup>2</sup>)′ = 2x olmalıdır ama f′ · g′ = 1 verir. Dikdörtgen alanında iki kenar birden değişince alan iki şeritle büyür, bu yüzden iki terim vardır.</p></details>
+<details><summary>Konum, hız ve ivme arasındaki ilişki ve birimleri nedir?</summary><p>v(t) = s′(t), a(t) = v′(t) = s″(t). s metre, t saniye ise v m/s, a m/s<sup>2</sup>'dir. v = 0 anlarında cisim durur; v'nin işareti hareketin yönünü gösterir.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Tanım:</strong> f′(a) = lim<sub>h→0</sub> (f(a + h) − f(a))/h = lim<sub>x→a</sub> (f(x) − f(a))/(x − a). Her zaman 0/0 belirsizliği: sadeleştir.</li>
+<li><strong>Anlamı:</strong> teğetin eğimi (kirişlerin limiti) ve anlık değişim hızı. f′ = 0 → yatay teğet.</li>
+<li><strong>Gösterim:</strong> f′(x) = y′ = dy/dx. f″, f‴, f<sup>(4)</sup>.</li>
+<li><strong>Türevlenebilme:</strong> soldan türev = sağdan türev (gerçek sayı). |x| sıfırda: −1 ≠ 1.</li>
+<li><strong>Türevli ⇒ sürekli</strong>; tersi yanlış. Süreksiz noktada türev yok.</li>
+<li><strong>Türevsiz noktalar:</strong> delik, sıçrama, sonsuz süreksizlik, köşe, dikey teğet. Yuvarlak tepe türevlidir (0).</li>
+<li><strong>Parçalı:</strong> (1) süreklilik, (2) eğimler eşit. İki denklem, iki bilinmeyen.</li>
+<li><strong>Kurallar:</strong> (c)′ = 0; (x<sup>n</sup>)′ = nx<sup>n−1</sup> (her üs, köklüleri üsse çevir); (cf)′ = cf′; (f ± g)′ = f′ ± g′.</li>
+<li><strong>Çarpım:</strong> f′g + fg′. <strong>Bölüm:</strong> (f′g − fg′)/g<sup>2</sup>. Hızlı yol: ((ax + b)/(cx + d))′ = (ad − bc)/(cx + d)<sup>2</sup>.</li>
+<li><strong>Limit kılığında türev:</strong> lim (f(a + mh) − f(a + nh))/h = (m − n)f′(a).</li>
+<li><strong>Polinom:</strong> n. dereceden polinomun n. türevi sabit, (n + 1). türevi 0.</li>
+<li><strong>Hareket:</strong> v = s′, a = v′ = s″; m → m/s → m/s<sup>2</sup>.</li>
+<li><strong>|g(x)|:</strong> işarete göre aç, sonra türev al. Tek katlı kökte köşe; çift katlı kökte ve x|x|'te türev var.</li>
+<li><strong>Kontrol yolu:</strong> (f(a + 0,01) − f(a − 0,01))/0,02 ≈ f′(a).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-22">
+<h3>Quiz 22</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">f(x) = x<sup>3</sup> − 4√x + 5 olduğuna göre f′(4) kaçtır?</p>
+<ul class="sec"><li>46</li><li>47</li><li>49</li><li>52</li><li>61</li></ul>
+<div class="coz"><p>√x = x<sup>1/2</sup>, türevi ½x<sup>−1/2</sup> = 1/(2√x). f′(x) = 3x<sup>2</sup> − 4 · 1/(2√x) = 3x<sup>2</sup> − 2/√x. f′(4) = 48 − 2/2 = 47. 46, √x'in türevini 1/√x sanıp ½'yi unutmaktır (48 − 2). 49, eksi işaretini artıya çevirmektir. 52, sabit 5'in türevini 0 yerine 5 almaktır. 61, türev yerine f(4) = 64 − 8 + 5 değeridir.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = x<sup>3</sup> olduğuna göre lim<sub>x→2</sub> <span class="kes"><span>f(x) − 8</span><span>x − 2</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>8</li><li>4</li><li>6</li><li>12</li><li>0</li></ul>
+<div class="coz"><p>8 = f(2) olduğu için ifade lim<sub>x→2</sub> (f(x) − f(2))/(x − 2), yani f′(2)'dir. f′(x) = 3x<sup>2</sup>, f′(2) = 12. (Tanımdan da: x<sup>3</sup> − 8 = (x − 2)(x<sup>2</sup> + 2x + 4), sadeleşince 4 + 4 + 4 = 12.) 8, f(2)'dir; türevi fonksiyon değeriyle karıştırmaktır. 4, x<sup>2</sup>'nin türevini (2x) kullanmaktır. 6, kuvvet kuralında üssü bir azaltmayı unutup 3x yazmaktır. 0, "0/0 = 0" yanılgısıdır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = x<sup>2</sup> + 3x olduğuna göre lim<sub>h→0</sub> <span class="kes"><span>f(1 + 2h) − f(1 − h)</span><span>h</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>15</li><li>5</li><li>10</li><li>12</li><li>3</li></ul>
+<div class="coz"><p>Kalıp: (m − n) · f′(a), burada a = 1, m = 2, n = −1; m − n = 3. f′(x) = 2x + 3, f′(1) = 5. Limit 3 · 5 = 15. 5, katsayıyı unutup yalnızca f′(1) yazmak ya da m − n'yi 2 − 1 = 1 almaktır. 10, yalnızca birinci terimin katsayısını (2) almaktır. 12, türev yerine fonksiyon değerini kullanmaktır: 3 · f(1) = 3 · 4. 3, katsayıyı bulup f′(1) ile çarpmayı unutmaktır.</p></div></li>
+
+<li data-c="E"><p class="q">f(x) = <span class="kes"><span>2x − 1</span><span>x + 1</span></span> olduğuna göre f′(0) kaçtır?</p>
+<ul class="sec"><li>−1</li><li>2</li><li>−3</li><li>1</li><li>3</li></ul>
+<div class="coz"><p>Bölüm kuralı: f′(x) = (2(x + 1) − (2x − 1) · 1)/(x + 1)<sup>2</sup> = 3/(x + 1)<sup>2</sup>; f′(0) = 3. Hızlı yol: ad − bc = 2 · 1 − (−1) · 1 = 3. −1, f(0)'dır. 2, payın türevini paydanın türevine bölmektir (2/1). −3, paydaki çıkarmayı ters sırayla yazmaktır (fg′ − f′g). 1, paydaki işlemi çıkarma yerine toplama yapmaktır: (2 · 1 + (−1) · 1)/1.</p></div></li>
+
+<li data-c="C"><p class="q">I. Bir noktada türevlenebilen fonksiyon o noktada süreklidir.<br>II. Bir noktada sürekli olan fonksiyon o noktada türevlenebilir.<br>III. f(x) = |x − 3| fonksiyonunun x = 3'te türevi yoktur.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız III</li><li>I ve III</li><li>I ve II</li><li>I, II ve III</li></ul>
+<div class="coz"><p>I doğru: f(x) − f(a) = [(f(x) − f(a))/(x − a)] · (x − a) → f′(a) · 0 = 0. II yanlış: III'teki fonksiyon x = 3'te süreklidir ama türevli değildir; bu, II'nin karşı örneğidir. III doğru: x = 3'te soldan türev −1, sağdan türev 1; köşe var. "Yalnız I" III'ü, "Yalnız III" I'i kaçırır. II'yi içeren seçenekler, I'in tersini de doğru sanmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = x<sup>3</sup> + ax (x &lt; 1 iken), f(x) = bx<sup>2</sup> + 2 (x ≥ 1 iken) fonksiyonu her noktada türevlenebilir olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>9</li><li>5</li><li>3</li><li>1</li><li>20</li></ul>
+<div class="coz"><p>Süreklilik: 1 + a = b + 2. Eğim eşitliği: (x<sup>3</sup> + ax)′ = 3x<sup>2</sup> + a, (bx<sup>2</sup> + 2)′ = 2bx; x = 1'de 3 + a = 2b. İkinci denklemden birinciyi çıkar: 2 = b − 2, b = 4; a = 5. a + b = 9. 5, bx<sup>2</sup> + 2'nin türevini 2bx + 2 sanmaktan çıkar (sabit 2'nin türevi 0'dır): b = 2, a = 3. 3, süreklilik denkleminde +2'yi unutmaktan çıkar (1 + a = b): b = 2, a = 1. 1, a − b farkıdır; 20, a · b çarpımıdır.</p></div></li>
+
+<li data-c="E"><p class="q">Bir doğru üzerinde hareket eden cismin t anındaki konumu s(t) = t<sup>3</sup> − 9t<sup>2</sup> + 24t metredir (t saniye). Cismin ivmesinin sıfır olduğu andaki hızı kaç m/s'dir?</p>
+<ul class="sec"><li>0</li><li>3</li><li>18</li><li>24</li><li>−3</li></ul>
+<div class="coz"><p>v(t) = s′(t) = 3t<sup>2</sup> − 18t + 24, a(t) = v′(t) = 6t − 18. a = 0 ⇒ t = 3 s. v(3) = 27 − 54 + 24 = −3 m/s (cisim o an geri yönde 3 m/s hızla gidiyor). 0, "ivme sıfırsa hız da sıfırdır" yanılgısıdır; ivme sıfırken hız en büyük ya da en küçük değerinde olabilir. 3, işareti atmak ya da bulunan t'yi cevap sanmaktır. 18, o andaki konumdur: s(3) = 27 − 81 + 72. 24, başlangıç hızı v(0)'dır.</p></div></li>
+
+<li data-c="B"><p class="q">f(x) = |x<sup>2</sup> − 1| + |x<sup>2</sup> − 6x + 9| + x · |x| fonksiyonunun türevli olmadığı kaç x gerçek sayısı vardır?</p>
+<ul class="sec"><li>3</li><li>2</li><li>4</li><li>1</li><li>0</li></ul>
+<div class="coz"><p>|x<sup>2</sup> − 1|: kökler ±1 tek katlı, x<sup>2</sup> − 1 işaret değiştirir; x = −1'de ve x = 1'de köşe var (x = 1'de soldan −2, sağdan 2). |x<sup>2</sup> − 6x + 9| = |(x − 3)<sup>2</sup>| = (x − 3)<sup>2</sup>; çift katlı kök, işaret değişmez, her yerde türevli. x|x|: x = 0'da fark bölümü |h| → 0, türevli. Öbür terimler o noktalarda türevli olduğu için toplamın türevsiz olduğu noktalar yalnızca ±1: 2 tane. 3, x = 3'ü (çift katlı kök) ya da x = 0'ı köşe saymaktır. 4, her mutlak değer kökünü sayıp (−1, 1, 3, 0) eklemektir. 1, yalnızca pozitif kökü almaktır. 0, "mutlak değerli fonksiyon sürekli, o hâlde türevli" yanılgısıdır.</p></div></li>
+
+<li data-c="C" data-k="ileri-1"><p class="q">f(x) = (a − 1)x<sup>2</sup> + 3x + b − 2 fonksiyonu tek fonksiyon olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>1</li><li>2</li><li>3</li><li>−1</li><li>−3</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x); polinomda yalnızca tek dereceli terimler kalabilir. x<sup>2</sup>'li terim ve sabit terim sıfır olmalı: a − 1 = 0, b − 2 = 0; a = 1, b = 2, a + b = 3. (Denetim: f(0) = 0 olmalı, b − 2 = 0.) 1, sabit terim koşulunu "b = 0" diye yazmaktır. 2, x<sup>2</sup> teriminin yok olması için a = 0 almaktır. −1, b − 2 = 0'ı b = −2 diye çözmektir. −3, iki denklemi de ters işaretle çözmektir.</p></div></li>
+
+<li data-c="D" data-k="ileri-3"><p class="q">|x<sup>2</sup> − 4| = k denkleminin 4 farklı gerçek kökü olmasını sağlayan k tam sayılarının sayısı kaçtır?</p>
+<ul class="sec"><li>4</li><li>5</li><li>1</li><li>3</li><li>7</li></ul>
+<div class="coz"><p>y = |x<sup>2</sup> − 4| grafiği: parabolün x ekseni altındaki kısmı yukarı katlanır, W biçimi oluşur; ±2'de 0'a iner, x = 0'da 4'e çıkar. y = k doğrusu 0 &lt; k &lt; 4 iken grafiği 4 noktada keser; k = 4'te 3, k &gt; 4'te 2, k = 0'da 2 noktada. Tam sayılar 1, 2, 3: 3 tane. 4, k = 4'ü de almaktır (o zaman kök 3'tür). 5, k = 0'ı da eklemektir. 1, ortadaki tepeyi 2 sanmaktır (köklerle karıştırmak). 7, k'nin negatif olamayacağını unutup −3'ten 3'e saymaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-5"><p class="q">f(x) = 2x<sup>2</sup> − 8x + 3 parabolünün tepe noktasının ordinatı kaçtır?</p>
+<ul class="sec"><li>−5</li><li>2</li><li>3</li><li>27</li><li>5</li></ul>
+<div class="coz"><p>r = −b/2a = 8/4 = 2; k = f(2) = 8 − 16 + 3 = −5. 2, tepe noktasının apsisidir. 3, y eksenini kestiği noktanın ordinatıdır (r yerine 0 almak). 27, r'yi −2 almaktır (işaret hatası): 8 + 16 + 3. 5, k = (4ac − b<sup>2</sup>)/4a formülünde payı ters yazmaktır: (64 − 24)/8.</p></div></li>
+
+<li data-c="B" data-k="ileri-7"><p class="q"><span class="kes"><span>x<sup>2</sup> − 9</span><span>x + 1</span></span> ≤ 0 eşitsizliğini sağlayan kaç pozitif tam sayı vardır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>4</li><li>1</li><li>Sonsuz çoklukta</li></ul>
+<div class="coz"><p>Kritik noktalar −3, −1, 3. En sağdan başla: x &gt; 3'te +, (−1, 3)'te −, (−3, −1)'de +, x &lt; −3'te −. ≤ 0 için x ≤ −3 ya da −1 &lt; x ≤ 3; pay kökleri alınır, payda kökü (−1) atılır. Pozitif tam sayılar 1, 2, 3: 3 tane. 2, x = 3'ü (eşitlik) atmaktır. 4, 0'ı pozitif saymaktır. 1, yalnızca eşitlik noktasını (3) almaktır. "Sonsuz çoklukta", işaret tablosuna en sağdan − ile başlamaktır; o zaman [3, ∞) çözüm sanılır.</p></div></li>
+
+<li data-c="E" data-k="ileri-9"><p class="q">sin 150° + cos 300° + tan 225° toplamı kaçtır?</p>
+<ul class="sec"><li>1</li><li>0</li><li><span class="kes"><span>3 + √3</span><span>2</span></span></li><li>−2</li><li>2</li></ul>
+<div class="coz"><p>sin 150° = sin(180° − 30°) = sin 30° = 1/2 (II. bölge, sinüs pozitif). cos 300° = cos(360° − 60°) = cos 60° = 1/2 (IV. bölge, kosinüs pozitif). tan 225° = tan(180° + 45°) = tan 45° = 1 (III. bölge, tanjant pozitif). Toplam 2. 1, cos 300°'yi negatif almaktır. 0, tan 225°'yi negatif almaktır. (3 + √3)/2, cos 300°'yi cos 30° sanmaktır. −2, üçünü de negatif almaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-10"><p class="q">f(x) = sin 2x + cos 3x fonksiyonunun esas periyodu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>π/3</li><li>π</li><li>2π</li><li>2π/3</li><li>2π/5</li></ul>
+<div class="coz"><p>sin 2x'in periyodu 2π/2 = π, cos 3x'in periyodu 2π/3. Toplamın periyodu iki periyodun EKOK'udur: π'nin katları π, 2π, …; 2π/3'ün katları 2π/3, 4π/3, 2π, …; ilk ortak değer 2π. π/3, EKOK yerine EBOB almaktır. π ve 2π/3 terimlerden yalnızca birinin periyodudur. 2π/5, katsayıları toplayıp 2π/(2 + 3) yazmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-12"><p class="q">Bir ABC üçgeninde |AB| = 8 birim, |AC| = 6 birim ve m(BAC) = 30° olduğuna göre üçgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>24</li><li>12√3</li><li>6</li><li>12</li><li>48</li></ul>
+<div class="coz"><p>İki kenar ve aradaki açı verildiğinde alan = ½ · b · c · sin A = ½ · 6 · 8 · sin 30° = ½ · 48 · ½ = 12. 24, ½ katsayısını unutmaktır. 12√3, sin 30° yerine sin 60° (√3/2) kullanmaktır. 6, ½'yi bir kez fazla uygulamaktır. 48, hem ½'yi hem sinüsü unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-14"><p class="q">f(x) = log<sub>2</sub>(x + 3) − 1 olduğuna göre f<sup>−1</sup>(2) kaçtır?</p>
+<ul class="sec"><li>5</li><li>1</li><li>−1</li><li>8</li><li>log<sub>2</sub>5 − 1</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(2) = x demek f(x) = 2 demektir: log<sub>2</sub>(x + 3) − 1 = 2, log<sub>2</sub>(x + 3) = 3, x + 3 = 2<sup>3</sup> = 8, x = 5. 1, −1'i karşıya geçirmeyi unutmaktır (x + 3 = 2<sup>2</sup>). −1, −1'i karşıya yanlış işaretle geçirmektir (log<sub>2</sub>(x + 3) = 1). 8, x + 3'ün değerini x sanmaktır. log<sub>2</sub>5 − 1, f<sup>−1</sup>(2) yerine f(2)'yi hesaplamaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-16"><p class="q">9<sup>x</sup> − 4 · 3<sup>x</sup> + 3 = 0 denkleminin köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>4</li><li>3</li><li>0</li><li>log<sub>3</sub>4</li><li>1</li></ul>
+<div class="coz"><p>3<sup>x</sup> = t (t &gt; 0) dersen 9<sup>x</sup> = t<sup>2</sup>: t<sup>2</sup> − 4t + 3 = 0, (t − 1)(t − 3) = 0, t = 1 ya da t = 3. 3<sup>x</sup> = 1 ⇒ x = 0; 3<sup>x</sup> = 3 ⇒ x = 1. Toplam 1. 4, t'lerin toplamını x'lerin toplamı sanmaktır. 3, t'lerin çarpımıdır. 0, yalnızca bir kökü almaktır. log<sub>3</sub>4, t'lerin toplamının logaritmasını almaktır; logaritma toplamı korumaz, doğru olan log<sub>3</sub>1 + log<sub>3</sub>3'tür.</p></div></li>
+
+<li data-c="B" data-k="ileri-18"><p class="q">İlk terimi 3 ve ortak çarpanı 2 olan geometrik dizinin ilk 6 teriminin toplamı kaçtır?</p>
+<ul class="sec"><li>192</li><li>189</li><li>96</li><li>93</li><li>381</li></ul>
+<div class="coz"><p>S<sub>n</sub> = a<sub>1</sub>(r<sup>n</sup> − 1)/(r − 1) = 3(2<sup>6</sup> − 1)/(2 − 1) = 3 · 63 = 189. (Denetim: 3 + 6 + 12 + 24 + 48 + 96 = 189.) 192, formüldeki −1'i unutmaktır (3 · 64). 96, toplam yerine 6. terimdir. 93, ilk 5 terimin toplamıdır. 381, ilk 7 terimin toplamıdır; üssü bir fazla almak.</p></div></li>
+
+<li data-c="C" data-k="ileri-19"><p class="q">lim<sub>x→−1</sub> <span class="kes"><span>x<sup>3</sup> + 2x<sup>2</sup> − 4</span><span>x − 1</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>−3/2</li><li>−3</li><li>3/2</li><li>1/2</li><li>7/2</li></ul>
+<div class="coz"><p>Payda x = −1'de −2, sıfır değil; yerine koyma yeter. Pay: (−1)<sup>3</sup> + 2(−1)<sup>2</sup> − 4 = −1 + 2 − 4 = −3. Limit −3/(−2) = 3/2. −3/2, paydayı +2 almaktır. −3, paydayı unutmaktır. 1/2, (−1)<sup>3</sup>'ü +1 almaktır. 7/2, 2(−1)<sup>2</sup>'yi −2 almaktır (karenin işaretini korumak).</p></div></li>
+
+<li data-c="D" data-k="ileri-19"><p class="q">f(x) = 2x + a (x &lt; 3 iken), f(x) = x<sup>2</sup> − a (x ≥ 3 iken) fonksiyonunun x = 3'te limiti olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>3</li><li>−3/2</li><li>15/2</li><li>3/2</li><li>0</li></ul>
+<div class="coz"><p>Limitin olması için soldan ve sağdan limitler eşit olmalı: 6 + a = 9 − a, 2a = 3, a = 3/2. 3, 2a = 3'ten sonra 2'ye bölmeyi unutmaktır. −3/2, a'yı karşıya geçirirken işareti karıştırmaktır. 15/2, a yerine limitin değerini (6 + 3/2) vermektir. 0, x<sup>2</sup>'yi 2x sanıp 6 + a = 6 − a yazmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-20"><p class="q">lim<sub>x→1</sub> <span class="kes"><span>x<sup>3</sup> − 1</span><span>x<sup>2</sup> + 2x − 3</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>3/4</li><li>3</li><li>1/4</li><li>0</li><li>3/2</li></ul>
+<div class="coz"><p>Yerine koyunca 0/0. x<sup>3</sup> − 1 = (x − 1)(x<sup>2</sup> + x + 1), x<sup>2</sup> + 2x − 3 = (x − 1)(x + 3). Sadeleşince (x<sup>2</sup> + x + 1)/(x + 3) → 3/4. 3, paydayı sadeleştirdikten sonra unutmaktır. 1/4, küp farkını küp toplamıyla karıştırıp x<sup>2</sup> − x + 1 yazmaktır. 0, 0/0'ı 0 sanmaktır. 3/2, paydayı (x − 1)(x + 1) diye yanlış ayırmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-20"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>2</sup> + ax + 2</span><span>x − 2</span></span> = b olduğuna göre a + b toplamı kaçtır? (b bir gerçek sayıdır.)</p>
+<ul class="sec"><li>−3</li><li>1</li><li>4</li><li>0</li><li>−2</li></ul>
+<div class="coz"><p>Payda x = 2'de sıfır, limit bir gerçek sayı: pay da sıfır olmalı. 4 + 2a + 2 = 0, a = −3. x<sup>2</sup> − 3x + 2 = (x − 1)(x − 2); sadeleşince x − 1, x = 2'de b = 1. a + b = −2. −3 yalnızca a'dır, 1 yalnızca b'dir. 4, a'nın işaretini ters alıp 3 + 1 yazmaktır. 0, b'yi x − 1 yerine x + 1'den 3 bulmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-21"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> − 9</span><span>x − 3</span></span> (x ≠ 3 iken), f(3) = k biçiminde tanımlanan fonksiyon x = 3'te sürekli olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>0</li><li>6</li><li>3</li><li>9</li><li>Hiçbir k değeri için sürekli olamaz</li></ul>
+<div class="coz"><p>Süreklilik için f(3) = lim<sub>x→3</sub> f(x) olmalı. x ≠ 3 için f(x) = x + 3, limit 6; k = 6. Bu, kaldırılabilir süreksizliği (deliği) doldurmaktır. 0, 0/0'ı 0 sanmaktır. 3 ve 9, sadeleşmiş ifade yerine yalnızca x'i ya da x<sup>2</sup>'yi almaktır. "Hiçbir k için", f'in x = 3'te tanımsız olduğunu limitin yokluğu sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-21"><p class="q">f(x) = <span class="kes"><span>x + 2</span><span>x<sup>2</sup> − 5x + 4</span></span> fonksiyonunun süreksiz olduğu x değerlerinin toplamı kaçtır?</p>
+<ul class="sec"><li>3</li><li>−5</li><li>5</li><li>4</li><li>2</li></ul>
+<div class="coz"><p>Rasyonel fonksiyon paydasının sıfır olmadığı her yerde süreklidir; süreksiz olduğu yerler payda kökleridir. x<sup>2</sup> − 5x + 4 = (x − 1)(x − 4): x = 1 ve x = 4, toplam 5. 3, pay kökünü (−2) de eklemektir; pay kökünde fonksiyon tanımlıdır ve süreklidir. −5, kökleri ters işaretle almaktır. 4, yalnızca bir kökü almaktır. 2, toplam yerine nokta sayısını vermektir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-21">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-22">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-23">Sonraki parça: zincir kuralı ve bileşke fonksiyonun türevi</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"türevin tanımı limit teğetin eğimi konu anlatımı AYT"</li>
+  <li>"türevlenebilirlik süreklilik parçalı fonksiyon türev parametre"</li>
+  <li>"türev alma kuralları çarpım bölüm kuralı köklü ifadeler"</li>
+  <li>"limit biçiminde türev soruları f(a+h) konum hız ivme türev"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 22. satıra göre yazıldı; satırdaki her alt başlık (ortalama değişim hızından anlık değişim hızına, iki limit tanımı, tanımla x<sup>2</sup>, x<sup>3</sup>, 1/x, √x türevi, gösterimler, iki yorum, soldan-sağdan türev, türevlenebilme-süreklilik, parçalı fonksiyon ve parametre, grafikten türevsiz noktaları sayma, kurallar ve gerekçeleri, polinom-rasyonel-köklü türev, limit biçiminde türev, yüksek mertebeden türev, konum-hız-ivme, mutlak değerli fonksiyonun türevi) metinde işlendi. Bileşke ve köklü ifadenin içi x'ten farklı olan türevler (√(g(x)) gibi) zincir kuralı gerektirdiği için Parça 23'e bırakıldı; burada köklü fonksiyonlar yalnızca x'in kesirli kuvvetleri olarak türevlendi. 2018 programıyla kazanım kazanım karşılaştırma bu oturumda yapılamadı (kapsam dosyasındaki genel not geçerli).</li>
+  <li>Kesirli üsler için kuvvet kuralının genel ispatı verilmedi; n = 1/2 ve n = −1 tanımdan, negatif tam sayı üsler bölüm kuralından gösterildi. Bu, lise ders kitaplarının yaygın yaklaşımıyla uyumludur ama tam bir ispat değildir.</li>
+  <li>Tartışmalı nokta: kapalı aralıkta tanımlı fonksiyonların uç noktalarında türevin "olmadığı" kabulü. Lise kaynaklarının çoğu grafik sorularında uç noktaları türevsiz sayar; bazı üniversite kitapları tek yanlı türevi uç noktadaki türev olarak kabul eder. Bu yüzden Örnek 3 açık aralıkta kuruldu ve metinde not düşüldü. Okulunun ya da kaynağının farklı bir kabulü varsa onu esas al.</li>
+  <li>Bütün sayısal sonuçlar (dokuz çözümlü örnek, kiriş eğimi tablosu, kontrol yollarındaki yaklaşık değerler ve 24 quiz sorusunun cevabı) Python ile hesaplanarak denetlendi: türevler simetrik fark bölümüyle (h = 10<sup>−6</sup>), sağdan-soldan türevler tek yanlı fark bölümüyle sayısal olarak doğrulandı; çeldiricilerin her birinin metinde anılan hatanın sonucu olduğu ve doğru cevaptan farklı olduğu tek tek kontrol edildi. Ortamda sympy yoktu; cebirsel sadeleştirmeler elle yapılıp sayısal değerle karşılaştırıldı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: y = x<sup>2</sup> parabolü, kirişler ve teğet; y = |x|, y = ∛x; Örnek 3'teki parçalı fonksiyon (2 − (4/9)(x + 3,5)<sup>2</sup>, x + 2, 2 − x, ∛(x − 4) parçaları) noktaları formüllerden hesaplandı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (19, 20, 21) ikişer soru; daha eski 18 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 3, 5, 7, 9, 10, 12, 14, 16, 18). Parça 21'in tekrar soruları kapsam listesindeki 21. satırın konu ve terimleriyle (kaldırılabilir süreksizlik, sürekli yapacak biçimde tanımlama, süreksiz noktaların toplamı) yazıldı; Parça 21 yazım sırasında arşive eklendi ve terimlerin onunla uyumlu olduğu denetlendi, içeriği satır satır karşılaştırılmadı.</li>
+  <li>Fizik bağlantısındaki g = 10 m/s<sup>2</sup>, sınavlardaki yaygın kabuldür.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

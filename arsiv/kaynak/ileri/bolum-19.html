@@ -1,0 +1,588 @@
+<article class="chapter ders" id="c-ileri-19">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 19 · Limit 1</div>
+<h1>Limit 1: limit kavramı, soldan-sağdan limit ve limit kuralları</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>f(x) = <span class="kes"><span>x<sup>2</sup> − 1</span><span>x − 1</span></span> fonksiyonunda x = 1 koyamazsın: pay da payda da 0 olur, f(1) tanımsızdır. Ama x'e 0,99 ya da 1,01 gibi 1'e çok yakın değerler verirsen sonuç 1,99 ve 2,01 çıkar; değerler 2'nin çevresinde toplanır. Fonksiyonun bir noktada "ne olduğu" ile o noktaya yaklaşırken "neye gittiği" neden ayrı sorulardır ve ikincisini nasıl kesin olarak hesaplarsın? Türevin de integralin de temeli bu ikinci sorudur.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 1 (grafikten değer okuma, ortalama değişim hızı), Parça 2 (bileşke fonksiyon), Parça 3 (parçalı ve mutlak değerli fonksiyonların grafiği; dolu-boş yuvarlak; kopma sezgisi), Parça 9–10 (trigonometrik değerler; tan'ın tanımsız olduğu açılar), Parça 14 (üstel ve logaritmik fonksiyonun tanım kümesi), mat Parça 12 (köklü sayılar), mat Parça 16 (çarpanlara ayırma), mat Parça 36 (fonksiyon, tanım kümesi). Kâğıt kalem yanında olsun; her grafikte parmağını x ekseninde soldan ve sağdan kaydırarak oku.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Bu parça, ileri matematiğin son üç büyük ünitesini (limit, türev, integral) açan kapıdır. Türev, ortalama değişim hızının aralık küçülürken yaklaştığı değerdir (Parça 1'deki tablo); belirli integral, dikdörtgen toplamlarının dikdörtgenler inceldikçe yaklaştığı değerdir. İkisinin de içinde "yaklaşır" sözcüğü var. Limit, bu sözcüğü kesin bir hesaba çeviren araçtır.</p>
+
+<p>AYT'de limit soruları üç kalıba toplanır. Birincisi <strong>grafik okuma</strong>: bir grafik verilir, belirli noktalarda soldan limit, sağdan limit, limit ve fonksiyon değeri sorulur ya da "limitin olmadığı kaç nokta vardır" denir. İkincisi <strong>hesap</strong>: polinom, rasyonel, köklü, parçalı, mutlak değerli bir ifadenin limiti istenir; çoğu yerine koyarak, bir kısmı sağ-sol ayrımıyla çözülür. Üçüncüsü <strong>parametre ve bileşke</strong>: "limiti var olduğuna göre a kaçtır" ya da grafiği verilen f için lim f(f(x)) gibi iki adımlı sorular. Bu parçada üçünü de kuracağız. 0/0 gibi belirsizliklerin giderilmesi ve sonsuzla ilgili limitler Parça 20'nin, süreklilik Parça 21'in konusudur; burada yalnızca yerlerini göstereceğiz.</p>
+
+<h2 class="s">1. Limit fikri: bir noktaya yaklaşırken fonksiyon neye gidiyor?</h2>
+
+<p>Sorudaki fonksiyona dönelim. f(1) tanımsız; ama 1'in iki yanından giderek yaklaşan x değerleri için f(x)'i hesaplayabilirsin. Her satırı kendin de dene: x<sup>2</sup> − 1'i hesapla, x − 1'e böl.</p>
+
+<div class="tablo"><table>
+<tr><th>x (soldan)</th><th>f(x)</th><th>x (sağdan)</th><th>f(x)</th></tr>
+<tr><td>0,9</td><td>1,9</td><td>1,1</td><td>2,1</td></tr>
+<tr><td>0,99</td><td>1,99</td><td>1,01</td><td>2,01</td></tr>
+<tr><td>0,999</td><td>1,999</td><td>1,001</td><td>2,001</td></tr>
+<tr><td>↓ 1'e yaklaşıyor</td><td>↓ 2'ye yaklaşıyor</td><td>↓ 1'e yaklaşıyor</td><td>↓ 2'ye yaklaşıyor</td></tr>
+</table></div>
+
+<p>x, 1'e soldan da sağdan da yaklaştıkça f(x) değerleri 2'ye yaklaşıyor. Üstelik ne kadar yaklaşacağını sen seçebiliyorsun: f(x)'in 2'den farkının 0,001'den küçük olmasını istiyorsan x'i 1'e 0,001'den yakın almak yetiyor. Bu "istediğin kadar yaklaştırabilme" durumuna <strong>limit</strong> denir ve şöyle yazılır:</p>
+
+<span class="mat">lim<sub>x→1</sub> <span class="kes"><span>x<sup>2</sup> − 1</span><span>x − 1</span></span> = 2 <span class="g">("x 1'e giderken limit 2'dir" diye okunur)</span></span>
+
+<p>Neden 2 olduğunu cebirle de görebilirsin: x ≠ 1 iken x<sup>2</sup> − 1 = (x − 1)(x + 1) olduğu için f(x) = x + 1'dir. Grafik, y = x + 1 doğrusudur; yalnızca (1, 2) noktasında bir delik vardır. Bu sadeleştirmenin ne zaman ve nasıl yapılacağı, yani 0/0 durumunun giderilmesi, Parça 20'nin konusudur. Bu parçada asıl öğrenmen gereken şu: <strong>limit, fonksiyonun o noktadaki değerini değil, o noktanın çevresindeki davranışını sorar.</strong></p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y eşittir x artı 1 doğrusu, x eşittir 1'de boş nokta. x bire soldan ve sağdan yaklaşırken fonksiyon değerleri ikiye yaklaşıyor.">
+  <line class="sv-c" x1="30" y1="260" x2="390" y2="260" />
+  <line class="sv-c" x1="140" y1="285" x2="140" y2="30" />
+  <line class="sv-c" x1="220" y1="166" x2="220" y2="260" stroke-dasharray="3 4" />
+  <line class="sv-c" x1="140" y1="160" x2="214" y2="160" stroke-dasharray="3 4" />
+  <line class="sv-cl" x1="60" y1="260" x2="348" y2="80" />
+  <circle class="sv-k" cx="220" cy="160" r="5" />
+  <circle class="sv-cl" cx="220" cy="160" r="5" />
+  <line class="sv-c" x1="166" y1="245" x2="206" y2="245" />
+  <polygon class="sv-a" points="214,245 205,240.5 205,249.5" />
+  <line class="sv-c" x1="274" y1="245" x2="234" y2="245" />
+  <polygon class="sv-a" points="226,245 235,240.5 235,249.5" />
+  <line class="sv-c" x1="128" y1="205" x2="128" y2="170" />
+  <polygon class="sv-a" points="128,162 123.5,171 132.5,171" />
+  <line class="sv-c" x1="128" y1="115" x2="128" y2="150" />
+  <polygon class="sv-a" points="128,158 123.5,149 132.5,149" />
+  <text class="sv-s" x="186" y="236" text-anchor="middle">x → 1⁻</text>
+  <text class="sv-s" x="256" y="236" text-anchor="middle">x → 1⁺</text>
+  <text class="sv-s" x="220" y="277" text-anchor="middle">1</text>
+  <text class="sv-s" x="118" y="164" text-anchor="end">2</text>
+  <text class="sv-s" x="118" y="100" text-anchor="end">f(x) → 2</text>
+  <text class="sv-s" x="236" y="192" text-anchor="start">boş nokta: f(1) tanımsız</text>
+  <text class="sv-b" x="160" y="52" text-anchor="start">y = (x² − 1)/(x − 1)</text>
+</svg>
+<figcaption>x eksenindeki oklar x'in 1'e iki yandan yaklaşmasını, y eksenindeki oklar f(x) değerlerinin 2'ye yaklaşmasını gösteriyor. Tam x = 1'de grafik yok (boş yuvarlak), ama limit 2'dir.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>x, a'ya (a'ya eşit olmadan) soldan ve sağdan yeterince yaklaştırıldığında f(x) değerleri bir L sayısına istenildiği kadar yaklaşıyorsa, <strong>f'nin a noktasındaki limiti L'dir</strong> denir ve lim<sub>x→a</sub> f(x) = L yazılır.</p>
+<p><strong>Neden "a'ya eşit olmadan"?</strong> Çünkü limitle cevaplamak istediğimiz soru, tam a'da ne olduğunu bilmediğimiz (ya da önemsemediğimiz) durumlardan doğar: f(a) tanımsız olabilir (yukarıdaki 0/0), ya da f(a) çevresiyle uyumsuz, rastgele bir değer olabilir. x = a anını hesaba katsaydık bu durumlar limit fikrini bozardı.</p></div>
+
+<h3>"Yaklaşmak" ile "eşit olmak" farkı</h3>
+
+<p>Tanımdaki iki ayrıntıyı ayrı ayrı gör. Birincisi: <strong>x hiçbir zaman a olmaz</strong>, yalnızca a'ya yaklaşır. Bu yüzden f(a) tanımsız olsa da limit var olabilir. İkincisi: <strong>f(x) değerlerinin L'ye eşit olması gerekmez</strong>; L'ye istediğin kadar yakın olmaları yeter. Yukarıdaki tabloda hiçbir satırda tam 2 çıkmıyor, yine de limit 2'dir.</p>
+
+<p>Üçüncü bir durum daha var. Şu fonksiyonu düşün: x ≠ 1 iken g(x) = x + 1, ama g(1) = 5. Grafik yine y = x + 1 doğrusudur; (1, 2)'de boş yuvarlak, onun çok yukarısında (1, 5)'te tek başına bir dolu nokta vardır. lim<sub>x→1</sub> g(x) kaçtır? x, 1'e yaklaşırken hep doğrunun üstünde yürür; değerler 2'ye gider. Tam 1'deki 5 değeri limite hiç katılmaz. Yani lim<sub>x→1</sub> g(x) = 2, ama g(1) = 5.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"Limit, fonksiyonun o noktadaki değeridir" sanmak.</strong> Çok sayıda fonksiyonda (polinomlarda, birazdan göreceğin gibi) ikisi gerçekten eşit çıkar ve bu alışkanlık yanlış genellemeye dönüşür. Oysa f(a) tanımsız olabilir ve limit yine vardır (deliği olan grafik); f(a) tanımlı olup limitten farklı olabilir (deliğin dışında tek başına duran dolu nokta). Doğrusu: limiti bulurken grafikte tam x = a'daki noktaya <em>bakma</em>; a'nın hemen solundaki ve hemen sağındaki eğri parçalarının hangi yüksekliğe vardığına bak. f(a) ayrı bir sorudur ve ayrı okunur.</p></div>
+
+<h2 class="s">2. Soldan limit, sağdan limit</h2>
+
+<p>Bir noktaya sayı doğrusu üzerinde iki yoldan yaklaşılabilir: a'dan küçük değerlerle (sol taraftan) ya da a'dan büyük değerlerle (sağ taraftan). İki yolda fonksiyon farklı yerlere gidebilir; Parça 3'te gördüğün parçalı fonksiyonlarda kritik noktada grafiğin "kopması" tam olarak budur. Bu yüzden iki yolu ayrı ayrı adlandırırız.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p><strong>Soldan limit:</strong> x, a'ya yalnızca a'dan küçük değerlerle yaklaşırken f(x)'in yaklaştığı sayı. Gösterim: lim<sub>x→a<sup>−</sup></sub> f(x). Buradaki "a<sup>−</sup>" bir eksi sayı değildir; "a'nın solu" diye okunur.</p>
+<p><strong>Sağdan limit:</strong> x, a'ya yalnızca a'dan büyük değerlerle yaklaşırken f(x)'in yaklaştığı sayı. Gösterim: lim<sub>x→a<sup>+</sup></sub> f(x).</p>
+<p><strong>Neden iki ayrı ad?</strong> Limitin tanımı iki yandan yaklaşmayı birlikte ister. İki yan farklı davranıyorsa hangisinin bozduğunu söyleyebilmek, parçalı ve mutlak değerli fonksiyonları çözmenin tek yoludur.</p></div>
+
+<p>Kısa yol ezberi için şunu düşün: 2<sup>−</sup> demek 1,9; 1,99; 1,999 gibi sayılar demektir; 2<sup>+</sup> demek 2,1; 2,01; 2,001 gibi sayılar. Bir ifadenin soldan limitini ararken, kafanda x yerine 1,999 koyduğunu düşün ve hangi kuralın, hangi işaretin geçerli olduğunu buna göre seç.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>lim<sub>x→a</sub> f(x) = L ⇔ lim<sub>x→a<sup>−</sup></sub> f(x) = lim<sub>x→a<sup>+</sup></sub> f(x) = L.</p>
+<p>Soldan ve sağdan limit eşit değilse ya da bunlardan biri yoksa, f'nin a'da limiti <strong>yoktur</strong>.</p>
+<p><strong>Neden?</strong> Tanım, x hangi yandan gelirse gelsin f(x)'in aynı L'ye yaklaşmasını istiyor. Soldan gelince 1'e, sağdan gelince 3'e gidiyorsa "a'ya yakın x'ler için f(x) şu sayıya yakındır" diye tek bir cümle kuramazsın: a'ya ne kadar yaklaşırsan yaklaş, çevrede hem 1'e yakın hem 3'e yakın değerler bulunur.</p></div>
+
+<p>Bu kuralın arkasında bir ilke yatıyor ve sınavda gizlice kullanılır: <strong>limit, varsa tektir.</strong> Bir fonksiyon aynı noktada iki farklı sayıya birden yaklaşamaz.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>lim<sub>x→a</sub> f(x) = L ve lim<sub>x→a</sub> f(x) = M ise L = M'dir (limitin tekliği).</p>
+<p><strong>Neden?</strong> L ile M farklı olsun, aralarındaki uzaklık d olsun. Limit L ise a'ya yeterince yakın her x için f(x), L'ye d/2'den daha yakındır; limit M ise aynı x'ler için M'ye de d/2'den daha yakındır. Bir sayı, aralarında d uzaklık bulunan iki sayının ikisine birden d/2'den yakın olamaz. Çelişki; o hâlde L = M.</p></div>
+
+<p>Tekliğin pratik sonucu şudur: bir sorunun içinde aynı limiti iki farklı yoldan hesapladığında (örneğin parçalı fonksiyonda soldan ve sağdan) farklı sayılar buluyorsan, ya bir hesap hatası yapmışsındır ya da limit yoktur. "İkisinin ortalaması" gibi bir uzlaşma yoktur. Parametre sorularının hepsi bu tekliği denkleme çevirir (Bölüm 10).</p>
+
+<h2 class="s">3. Grafikten limit okuma</h2>
+
+<p>Grafik sorularında dört tür nokta karşına çıkar: <strong>boş yuvarlak</strong> (fonksiyon orada o değeri almıyor; delik), <strong>dolu yuvarlak</strong> (fonksiyonun o noktadaki değeri), <strong>sıçrama</strong> (iki parça farklı yüksekliklerde bitiyor) ve <strong>uç nokta</strong> (grafik orada başlıyor ya da bitiyor). Her birinde yöntem aynıdır: parmağını x ekseninde a'nın solundan a'ya doğru kaydır, eğrinin vardığı yüksekliği oku (soldan limit); sonra sağdan kaydır (sağdan limit); en son, tam x = a'nın üstündeki <em>dolu</em> noktaya bak (f(a)).</p>
+
+<figure>
+<svg viewBox="0 0 400 310" role="img" aria-label="Eksi iki ile beş arasında tanımlı parçalı bir fonksiyonun grafiği. x eşittir 1'de delik ve ayrı bir dolu nokta, x eşittir 3'te sıçrama, x eşittir 4'te delik, eksi 2 ve 5'te uç noktalar var.">
+  <line class="sv-c" x1="20" y1="270" x2="392" y2="270" />
+  <line class="sv-c" x1="140" y1="275" x2="140" y2="30" />
+  <line class="sv-cl" x1="50" y1="270" x2="185" y2="120" />
+  <line class="sv-cl" x1="185" y1="120" x2="275" y2="220" />
+  <line class="sv-cl" x1="275" y1="170" x2="365" y2="70" />
+  <circle class="sv-t" cx="50" cy="270" r="4.5" />
+  <circle class="sv-k" cx="185" cy="120" r="4.5" />
+  <circle class="sv-cl" cx="185" cy="120" r="4.5" />
+  <circle class="sv-t" cx="185" cy="220" r="4.5" />
+  <circle class="sv-k" cx="275" cy="220" r="4.5" />
+  <circle class="sv-cl" cx="275" cy="220" r="4.5" />
+  <circle class="sv-t" cx="275" cy="170" r="4.5" />
+  <circle class="sv-k" cx="320" cy="120" r="4.5" />
+  <circle class="sv-cl" cx="320" cy="120" r="4.5" />
+  <circle class="sv-t" cx="365" cy="70" r="4.5" />
+  <text class="sv-s" x="46" y="252" text-anchor="end">(−2, 0)</text>
+  <text class="sv-s" x="185" y="108" text-anchor="middle">(1, 3)</text>
+  <text class="sv-s" x="192" y="240" text-anchor="start">(1, 1)</text>
+  <text class="sv-s" x="267" y="160" text-anchor="end">(3, 2)</text>
+  <text class="sv-s" x="283" y="238" text-anchor="start">(3, 1)</text>
+  <text class="sv-s" x="328" y="132" text-anchor="start">(4, 3)</text>
+  <text class="sv-s" x="365" y="58" text-anchor="middle">(5, 4)</text>
+  <text class="sv-s" x="95" y="288" text-anchor="middle">−1</text>
+  <text class="sv-s" x="140" y="288" text-anchor="middle">0</text>
+  <text class="sv-s" x="185" y="288" text-anchor="middle">1</text>
+  <text class="sv-s" x="230" y="288" text-anchor="middle">2</text>
+  <text class="sv-s" x="275" y="288" text-anchor="middle">3</text>
+  <text class="sv-s" x="320" y="288" text-anchor="middle">4</text>
+  <text class="sv-s" x="365" y="288" text-anchor="middle">5</text>
+  <text class="sv-b" x="60" y="60" text-anchor="start">y = f(x)</text>
+</svg>
+<figcaption>Dolu yuvarlak: fonksiyonun değeri. Boş yuvarlak: eğri oraya kadar gelir ama o noktayı almaz. Kurallar: [−2, 1) aralığında x + 2, f(1) = 1, (1, 3) aralığında 4 − x, [3, 5] aralığında (4 hariç) x − 1. Bu grafik bölümün sonuna kadar kullanılacak.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Grafiği yukarıda verilen f için x = 0, 1, 3, 4 noktalarında soldan limiti, sağdan limiti, limiti ve fonksiyon değerini bulunuz.</p>
+<p><strong>Adım 1.</strong> x = 0: Burada grafikte hiçbir olay yok; tek bir düz parça (x + 2) 0'ın iki yanından da geçiyor.</p>
+<span class="mat">lim<sub>x→0<sup>−</sup></sub> f(x) = 2, lim<sub>x→0<sup>+</sup></sub> f(x) = 2 <span class="g">(iki yandan da y = 2 yüksekliğine varılıyor)</span></span>
+<span class="mat">lim<sub>x→0</sub> f(x) = 2 = f(0) <span class="g">(iki yan eşit; dolu nokta da aynı yükseklikte)</span></span>
+<p><strong>Adım 2.</strong> x = 1: Soldan gelen parça (1, 3)'teki boş yuvarlakta bitiyor; sağdan gelen parça da aynı boş yuvarlaktan başlıyor.</p>
+<span class="mat">lim<sub>x→1<sup>−</sup></sub> f(x) = 3, lim<sub>x→1<sup>+</sup></sub> f(x) = 3 <span class="g">(iki parça aynı deliğe varıyor)</span></span>
+<span class="mat">lim<sub>x→1</sub> f(x) = 3 <span class="g">(iki yan eşit)</span></span>
+<span class="mat">f(1) = 1 <span class="g">(x = 1'in üstündeki dolu nokta (1, 1))</span></span>
+<p><strong>Adım 3.</strong> x = 3: Soldan gelen parça (3, 1)'deki boş yuvarlakta bitiyor, sağdaki parça (3, 2)'deki dolu yuvarlaktan başlıyor. Sıçrama var.</p>
+<span class="mat">lim<sub>x→3<sup>−</sup></sub> f(x) = 1, lim<sub>x→3<sup>+</sup></sub> f(x) = 2 <span class="g">(iki yan farklı yükseklik)</span></span>
+<span class="mat">lim<sub>x→3</sub> f(x) yoktur, f(3) = 2 <span class="g">(1 ≠ 2; dolu nokta sağdaki parçada)</span></span>
+<p><strong>Adım 4.</strong> x = 4: Tek parça (x − 1) geçiyor ama (4, 3)'te delik var, altında ya da üstünde dolu nokta yok.</p>
+<span class="mat">lim<sub>x→4<sup>−</sup></sub> f(x) = lim<sub>x→4<sup>+</sup></sub> f(x) = 3 <span class="g">(iki yan aynı deliğe varıyor)</span></span>
+<span class="mat">lim<sub>x→4</sub> f(x) = 3, f(4) tanımsız <span class="g">(x = 4 tanım kümesinde değil)</span></span>
+<p><strong>Sonuç:</strong> Limit 0'da 2, 1'de 3, 4'te 3; 3'te yoktur. Fonksiyon değerleri f(0) = 2, f(1) = 1, f(3) = 2; f(4) tanımsız. Dikkat: limitin var olup olmadığı ile fonksiyonun tanımlı olup olmadığı birbirinden bağımsızdır; dört nokta dört farklı birleşimi gösteriyor.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Nokta</th><th>Soldan limit</th><th>Sağdan limit</th><th>Limit</th><th>f(a)</th><th>Grafikte ne var?</th></tr>
+<tr><td>x = −2</td><td>yok (tanım dışı)</td><td>0</td><td>0 (uç nokta, aşağıya bak)</td><td>0</td><td>uç nokta</td></tr>
+<tr><td>x = 0</td><td>2</td><td>2</td><td>2</td><td>2</td><td>olay yok</td></tr>
+<tr><td>x = 1</td><td>3</td><td>3</td><td>3</td><td>1</td><td>delik + ayrı dolu nokta</td></tr>
+<tr><td>x = 3</td><td>1</td><td>2</td><td>yok</td><td>2</td><td>sıçrama</td></tr>
+<tr><td>x = 4</td><td>3</td><td>3</td><td>3</td><td>tanımsız</td><td>delik</td></tr>
+<tr><td>x = 5</td><td>4</td><td>yok (tanım dışı)</td><td>4 (uç nokta)</td><td>4</td><td>uç nokta</td></tr>
+</table></div>
+
+<h3>Uç noktalarda limit</h3>
+
+<p>Grafik x = −2'de başlıyor, x = 5'te bitiyor. −2'nin solunda fonksiyon tanımlı olmadığı için oraya soldan yaklaşmak anlamsızdır; yalnızca sağdan limit sorulabilir. Türkiye'deki lise ders kitaplarında ve sınav sorularında yerleşik kabul şudur: <strong>tanım aralığının uç noktasında limit, var olan tek yanlı limite eşittir.</strong> Buna göre lim<sub>x→−2</sub> f(x) = 0 (sağdan limit) ve lim<sub>x→5</sub> f(x) = 4 (soldan limit). Bu kabul, limitin yalnızca fonksiyonun tanımlı olduğu x'ler üzerinden alındığı kesin tanımla da uyumludur: tanım dışındaki x'ler hiç hesaba katılmaz. Bazı kaynaklar ise uç noktada "iki yanlı limit yok" der; sınav bu ayrıma dayanan soru sormaktan çoğunlukla kaçınır, sorduğunda da açıkça "sağdan limit" ya da "soldan limit" diye sorar. Sen her durumda tek yanlı limiti doğru okumayı bil.</p>
+
+<p>Uç nokta ile sıçramayı karıştırma: x = 3'te grafik bitmiyor, iki yanında da tanımlı; yalnızca iki parça farklı yüksekliklerde. Orada iki tek yanlı limit de vardır ve farklıdır; limit yoktur.</p>
+
+<h2 class="s">4. Limit kuralları</h2>
+
+<p>Her limiti tabloyla ya da grafikle bulmak zorunda değiliz. Karmaşık bir ifade, basit parçaların toplanması, çarpılması, bölünmesiyle kurulur; limit de bu işlemlerle "uyumlu" davranır. Fikir şudur: f(x) değerleri L'nin çevresinde, g(x) değerleri M'nin çevresinde toplanıyorsa, f(x) + g(x) değerleri de L + M'nin çevresinde toplanır. Biri 2,999, öbürü 5,001 ise toplam 8,000'e çok yakındır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>lim<sub>x→a</sub> f(x) = L ve lim<sub>x→a</sub> g(x) = M (ikisi de gerçek sayı) ise:</p>
+<p>1. lim c = c (c sabit) ve lim<sub>x→a</sub> x = a.</p>
+<p>2. lim [f(x) ± g(x)] = L ± M.</p>
+<p>3. lim [c · f(x)] = c · L.</p>
+<p>4. lim [f(x) · g(x)] = L · M.</p>
+<p>5. lim <span class="kes"><span>f(x)</span><span>g(x)</span></span> = <span class="kes"><span>L</span><span>M</span></span>, <strong>yalnızca M ≠ 0 ise</strong>.</p>
+<p>6. lim [f(x)]<sup>n</sup> = L<sup>n</sup> (n pozitif tam sayı).</p>
+<p>7. lim <sup>n</sup>√f(x) = <sup>n</sup>√L; n çift ise ayrıca L &gt; 0 olmalı (L = 0 durumunda f(x) ≥ 0 olmalı).</p>
+<p><strong>Neden?</strong> 1: sabit fonksiyonun bütün değerleri c'dir; y = x fonksiyonunun değeri x'in kendisidir, x a'ya gidiyorsa değer de a'ya gider. 2–4: değerler L ve M'ye ne kadar yakınsa, toplamları, farkları, çarpımları da L ± M'ye ve LM'ye o kadar yakındır. 5: bölme, payda sıfıra yaklaşmadıkça sonuçları "uçurmaz"; payda 0'a yaklaşırsa küçük bir paydayla bölmek sonucu çok büyütür ve kural bozulur. 6: kuvvet, art arda çarpmadır; 4. kuralı n kez uygula. 7: kök, kuvvetin tersidir; ama çift kökün içi negatif olamaz, o yüzden içi a'nın çevresinde negatif olmamalı.</p></div>
+
+<p>Bu kuralların hepsinde gizli bir koşul var: <strong>parçaların limitleri tek tek var olmalı.</strong> Kural "limitler varsa birleşir" der; "limitler yoksa birleşik ifadenin de limiti yoktur" demez. Örneğin birazdan göreceğin h(x) = |x − 2|/(x − 2) fonksiyonunun 2'de limiti yoktur, ama h(x) + (−h(x)) = 0 olduğu için toplamın limiti 0'dır. Bu yüzden bir parçanın limiti yoksa kuralı uygulayamazsın; ifadeyi bütün olarak, gerekirse sağ-sol ayırarak incelersin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> lim<sub>x→1</sub> f(x) = 3 ve lim<sub>x→1</sub> g(x) = −2 olduğuna göre (a) lim<sub>x→1</sub> <span class="kes"><span>f(x)<sup>2</sup> − 2g(x)</span><span>3 + f(x) · g(x)</span></span> ve (b) lim<sub>x→1</sub> √(f(x) + 6) değerlerini bulunuz.</p>
+<p><strong>Adım 1.</strong> (a) Önce paydanın limitini bul; 0 çıkarsa bölüm kuralı kullanılamaz.</p>
+<span class="mat">lim [3 + f(x) · g(x)] = 3 + 3 · (−2) = −3 <span class="g">(toplam ve çarpım kuralı)</span></span>
+<span class="mat">−3 ≠ 0 <span class="g">(bölüm kuralı kullanılabilir)</span></span>
+<p><strong>Adım 2.</strong> Payın limitini bul.</p>
+<span class="mat">lim [f(x)<sup>2</sup> − 2g(x)] = 3<sup>2</sup> − 2 · (−2) <span class="g">(kuvvet, sabit çarpan, fark kuralı)</span></span>
+<span class="mat">= 9 + 4 = 13 <span class="g">(eksi ile eksinin çarpımı artı)</span></span>
+<p><strong>Adım 3.</strong> Böl.</p>
+<span class="mat">lim <span class="kes"><span>f(x)<sup>2</sup> − 2g(x)</span><span>3 + f(x) · g(x)</span></span> = <span class="kes"><span>13</span><span>−3</span></span> = −<span class="kes"><span>13</span><span>3</span></span> <span class="g">(bölüm kuralı)</span></span>
+<p><strong>Adım 4.</strong> (b) Kökün içinin limiti 3 + 6 = 9 &gt; 0; kök kuralı uygulanır.</p>
+<span class="mat">lim √(f(x) + 6) = √9 = 3 <span class="g">(kök kuralı)</span></span>
+<p><strong>Sonuç:</strong> (a) −13/3, (b) 3. f ve g'nin kuralını bilmeden hesap yaptık: kurallar için yalnızca parçaların limitleri gerekir. Kontrol yolu: işaret tahmini yap; pay pozitif (13), payda negatif (−3), sonuç negatif olmalı ✓.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Kural</th><th>Yazımı</th><th>Koşulu / dikkat</th></tr>
+<tr><td>Toplam, fark</td><td>lim (f ± g) = L ± M</td><td>İki limit de var olmalı</td></tr>
+<tr><td>Sabit çarpan</td><td>lim c · f = c · L</td><td>—</td></tr>
+<tr><td>Çarpım</td><td>lim f · g = L · M</td><td>İki limit de var olmalı</td></tr>
+<tr><td>Bölüm</td><td>lim f/g = L/M</td><td><strong>M ≠ 0</strong>; M = 0 ise Parça 20</td></tr>
+<tr><td>Kuvvet</td><td>lim f<sup>n</sup> = L<sup>n</sup></td><td>—</td></tr>
+<tr><td>Kök</td><td>lim <sup>n</sup>√f = <sup>n</sup>√L</td><td>n çift ise içi negatif olmamalı</td></tr>
+</table></div>
+
+<h2 class="s">5. Polinom ve rasyonel fonksiyonlarda yerine koyma</h2>
+
+<p>Bir polinom, x ile sabitlerin toplanıp çarpılmasıyla kurulur. Örneğin x<sup>3</sup> − 4x + 7 = x · x · x − 4 · x + 7. Limit kuralları her işlemde "limiti al, işlemi yap" dediği için, sonuçta polinomun limiti, polinomda x yerine a yazmakla aynı sayıyı verir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>P bir polinom ise her a gerçek sayısı için lim<sub>x→a</sub> P(x) = P(a).</p>
+<p>P ve Q polinom, Q(a) ≠ 0 ise lim<sub>x→a</sub> <span class="kes"><span>P(x)</span><span>Q(x)</span></span> = <span class="kes"><span>P(a)</span><span>Q(a)</span></span>.</p>
+<p><strong>Neden?</strong> Polinom yalnızca toplama, sabitle çarpma ve x'in kuvvetlerinden oluşur; bunların her birinde limit kuralı "a'yı yerine koy" demektir (lim x = a ile başla, kuvvet ve toplam kuralını uygula). Rasyonel fonksiyon iki polinomun bölümüdür; payda limiti Q(a) sıfır değilse bölüm kuralı geçerlidir.</p></div>
+
+<p>Polinomların grafiği hiç kopmayan, deliksiz eğrilerdir; bu yüzden limit ile değer her yerde aynıdır. Parça 21'de buna "süreklilik" adını vereceğiz. Rasyonel fonksiyonda tek tehlike paydayı sıfır yapan noktalardır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2</sub> (x<sup>3</sup> − 4x + 7), (b) lim<sub>x→−2</sub> <span class="kes"><span>x<sup>2</sup> + 3x − 1</span><span>2x + 7</span></span> limitlerini hesaplayınız. (c) lim<sub>x→3</sub> <span class="kes"><span>x + 1</span><span>x − 3</span></span> için yerine koyma neden işe yaramaz?</p>
+<p><strong>Adım 1.</strong> (a) Polinom: doğrudan yerine koy.</p>
+<span class="mat">2<sup>3</sup> − 4 · 2 + 7 = 8 − 8 + 7 = 7 <span class="g">(P(2))</span></span>
+<p><strong>Adım 2.</strong> (b) Önce paydayı denetle.</p>
+<span class="mat">2 · (−2) + 7 = 3 ≠ 0 <span class="g">(payda sıfır değil; yerine koymak serbest)</span></span>
+<span class="mat">(−2)<sup>2</sup> + 3 · (−2) − 1 = 4 − 6 − 1 = −3 <span class="g">(pay; (−2)<sup>2</sup> = +4)</span></span>
+<span class="mat"><span class="kes"><span>−3</span><span>3</span></span> = −1 <span class="g">(böl)</span></span>
+<p><strong>Adım 3.</strong> Kontrol yolu: (b)'de x = −1,99 gibi bir değer koyarsan pay yaklaşık −2,99, payda yaklaşık 3,02 çıkar; bölüm −1'e çok yakın ✓.</p>
+<p><strong>Adım 4.</strong> (c) Payda: 3 − 3 = 0. Pay: 3 + 1 = 4 ≠ 0. Bölüm kuralı kullanılamaz. x = 3,0001 için ifade yaklaşık 40 000, x = 2,9999 için yaklaşık −40 000: değerler hiçbir sayıya yaklaşmıyor, iki yanda zıt yönlerde büyüyor.</p>
+<p><strong>Sonuç:</strong> (a) 7, (b) −1, (c) "sayı/0" durumu: bu noktada limit (bir gerçek sayı olarak) yoktur. Bu tür davranışın adı ve ±∞ yazımı Parça 20'dedir. Pay da payda da 0 olsaydı (0/0) bu kez limit var olabilirdi; giriş sorusundaki gibi. Onun da yöntemi Parça 20'de.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Payda 0 çıkınca "sonuç 0'dır" ya da "limit yoktur" diye hemen karar vermek.</strong> Yerine koyduğunda payda 0 çıkıyorsa yalnızca bölüm kuralını kullanamazsın; o kadar. Pay sıfırdan farklıysa (4/0 gibi) limit bir gerçek sayı olarak yoktur. Pay da 0 ise (0/0) limit çoğu zaman vardır ve sadeleştirmeyle bulunur. "0/0 = 0", "0/0 = 1" ya da "sayı/0 = 0" yazmak, sınavın en sevdiği çeldiricileri üretir. Doğrusu: önce paydayı denetle; sıfır değilse yerine koy, sıfırsa payın durumuna bak ve hangi duruma düştüğünü söyle.</p></div>
+
+<h2 class="s">6. Köklü, üstel, logaritmik ve trigonometrik fonksiyonlarda limit</h2>
+
+<p>Parça 9–16 arasında tanıdığın fonksiyonların hepsi, <strong>tanım kümelerinin içinde</strong> kopmasız eğrilerdir: √x, 2<sup>x</sup>, log<sub>2</sub> x, sin x, cos x grafiklerini kalemi kaldırmadan çizdin. Bu yüzden tanımlı oldukları bir a noktasının çevresinde de limitleri yerine koyarak bulunur. Tek dikkat edeceğin şey, a'nın çevresinde fonksiyonun gerçekten tanımlı olmasıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>f; köklü, üstel, logaritmik ya da trigonometrik bir ifade (ya da bunların toplam, çarpım, bölüm ve bileşkeleri) ve a, f'nin tanımlı olduğu bir açık aralığın içindeyse lim<sub>x→a</sub> f(x) = f(a).</p>
+<p><strong>Neden?</strong> Bu fonksiyonların grafikleri tanım kümelerinde delik ya da sıçrama içermez (Parça 10 ve 14'teki grafikler). Delik ve sıçrama yoksa eğri a'nın iki yanından f(a) yüksekliğine varır; limit ile değer aynıdır.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Tür</th><th>Yerine koyabilirsin</th><th>Dikkat et</th></tr>
+<tr><td>Çift kök √(g(x))</td><td>g(a) &gt; 0 ise: lim<sub>x→5</sub> √(2x − 1) = √9 = 3</td><td>g(a) &lt; 0 ise a'nın çevresinde tanımsız: lim<sub>x→1</sub> √(x − 3) yok. g(a) = 0 ise uç nokta: lim<sub>x→3</sub> √(x − 3) = 0 (yalnızca sağdan)</td></tr>
+<tr><td>Tek kök ∛(g(x))</td><td>Her a için: lim<sub>x→−8</sub> ∛x = −2</td><td>İçi negatif olabilir</td></tr>
+<tr><td>Üstel a<sup>g(x)</sup></td><td>Her a için: lim<sub>x→3</sub> 2<sup>x − 1</sup> = 4</td><td>Tanım kümesi R; sorun çıkmaz</td></tr>
+<tr><td>Logaritma log<sub>b</sub> g(x)</td><td>g(a) &gt; 0 ise: lim<sub>x→2</sub> log<sub>3</sub>(x<sup>2</sup> + 5) = log<sub>3</sub> 9 = 2</td><td>g(a) ≤ 0 ise yerine koyamazsın (Parça 20)</td></tr>
+<tr><td>sin, cos</td><td>Her a için: lim<sub>x→π/6</sub> sin x = 1/2</td><td>Tanım kümesi R</td></tr>
+<tr><td>tan, cot</td><td>Tanımlı olduğu yerde: lim<sub>x→π/4</sub> tan x = 1</td><td>lim<sub>x→π/2</sub> tan x yok (cos x = 0; Parça 20)</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→3</sub> [2<sup>x − 1</sup> + log<sub>3</sub>(x + 6)], (b) lim<sub>x→π/4</sub> (sin 2x + tan x), (c) lim<sub>x→π</sub> <span class="kes"><span>cos x</span><span>1 + sin<sup>2</sup>x</span></span> limitlerini hesaplayınız.</p>
+<p><strong>Adım 1.</strong> (a) İki terim de x = 3'ün çevresinde tanımlı: üstel her yerde, log<sub>3</sub>(x + 6) ise x + 6 = 9 &gt; 0 olduğu için.</p>
+<span class="mat">2<sup>3 − 1</sup> = 2<sup>2</sup> = 4 <span class="g">(üsse 3 koy)</span></span>
+<span class="mat">log<sub>3</sub>(3 + 6) = log<sub>3</sub> 9 = 2 <span class="g">(3<sup>2</sup> = 9)</span></span>
+<span class="mat">4 + 2 = 6 <span class="g">(toplam kuralı)</span></span>
+<p><strong>Adım 2.</strong> (b) x = π/4'te sin 2x = sin(π/2) ve tan(π/4) tanımlı (cos(π/4) ≠ 0).</p>
+<span class="mat">sin(2 · <span class="kes"><span>π</span><span>4</span></span>) = sin <span class="kes"><span>π</span><span>2</span></span> = 1 <span class="g">(eksen açısı, Parça 9)</span></span>
+<span class="mat">tan <span class="kes"><span>π</span><span>4</span></span> = 1 <span class="g">(45° değeri)</span></span>
+<span class="mat">1 + 1 = 2 <span class="g">(toplam kuralı)</span></span>
+<p><strong>Adım 3.</strong> (c) Payda 1 + sin<sup>2</sup>x her zaman en az 1'dir; asla 0 olmaz.</p>
+<span class="mat">cos π = −1, sin π = 0 <span class="g">(birim çemberde (−1, 0) noktası)</span></span>
+<span class="mat"><span class="kes"><span>−1</span><span>1 + 0</span></span> = −1 <span class="g">(bölüm kuralı; payda 1 ≠ 0)</span></span>
+<p><strong>Sonuç:</strong> (a) 6, (b) 2, (c) −1. Her birinde önce "a'nın çevresinde tanımlı mı?" sorusunu sorduk, sonra yerine koyduk.</p></div>
+
+<h2 class="s">7. Parçalı fonksiyonda limit</h2>
+
+<p>Parça 3'te parçalı fonksiyonu çizdin: her aralıkta ayrı bir kural geçerli, aralıkların birleştiği yerler <strong>kritik noktalar</strong>. Limit açısından iki tür nokta vardır ve yöntemleri farklıdır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Kritik nokta olmayan bir a'da:</strong> a'nın hangi aralıkta olduğuna bak; a'nın çevresinde tek kural geçerlidir, o kurala yerine koy.</p>
+<p><strong>Kritik nokta a'da:</strong> soldan limit için a'nın solundaki kuralı, sağdan limit için sağındaki kuralı kullan; ikisini karşılaştır. Eşitse limit odur, değilse limit yoktur. f(a)'yı ise eşitsizlik işaretinde "=" bulunan kuraldan ayrıca oku.</p>
+<p><strong>Neden?</strong> Soldan limit yalnızca a'dan küçük x'lere bakar; o x'ler için hangi kural yazılmışsa f(x) odur. a'nın kendisinin hangi kurala ait olduğu (≤ mü &lt; mı) limiti etkilemez, çünkü limit x = a anını hiç kullanmaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> f(x) = x<sup>2</sup> − 1 (x &lt; 2); f(x) = 5 − x (2 ≤ x ≤ 4); f(x) = 2x − 6 (x &gt; 4) olarak tanımlanıyor. x = 0, 2, 3 ve 4 noktalarında limiti inceleyiniz ve f(4)'ü bulunuz.</p>
+<p><strong>Adım 1.</strong> x = 0 kritik değil; 0 &lt; 2 olduğu için çevresinde x<sup>2</sup> − 1 geçerli.</p>
+<span class="mat">lim<sub>x→0</sub> f(x) = 0<sup>2</sup> − 1 = −1 <span class="g">(tek kural, yerine koy)</span></span>
+<p><strong>Adım 2.</strong> x = 2 kritik: solda x<sup>2</sup> − 1, sağda 5 − x.</p>
+<span class="mat">lim<sub>x→2<sup>−</sup></sub> f(x) = 2<sup>2</sup> − 1 = 3 <span class="g">(soldaki kural)</span></span>
+<span class="mat">lim<sub>x→2<sup>+</sup></sub> f(x) = 5 − 2 = 3 <span class="g">(sağdaki kural)</span></span>
+<span class="mat">lim<sub>x→2</sub> f(x) = 3 <span class="g">(iki yan eşit)</span></span>
+<p><strong>Adım 3.</strong> x = 3 kritik değil; 2 ≤ 3 ≤ 4, çevresinde 5 − x geçerli.</p>
+<span class="mat">lim<sub>x→3</sub> f(x) = 5 − 3 = 2 <span class="g">(tek kural)</span></span>
+<p><strong>Adım 4.</strong> x = 4 kritik: solda 5 − x, sağda 2x − 6.</p>
+<span class="mat">lim<sub>x→4<sup>−</sup></sub> f(x) = 5 − 4 = 1 <span class="g">(soldaki kural)</span></span>
+<span class="mat">lim<sub>x→4<sup>+</sup></sub> f(x) = 2 · 4 − 6 = 2 <span class="g">(sağdaki kural)</span></span>
+<span class="mat">1 ≠ 2 ⇒ lim<sub>x→4</sub> f(x) yoktur <span class="g">(iki yan farklı)</span></span>
+<span class="mat">f(4) = 5 − 4 = 1 <span class="g">(eşitlik 2 ≤ x ≤ 4 kuralında)</span></span>
+<p><strong>Sonuç:</strong> Limit 0'da −1, 2'de 3, 3'te 2; 4'te yoktur. f(4) = 1 olması, 4'te limitin var olmasını sağlamaz: fonksiyonun tanımlı olması ile limitinin olması ayrı şeylerdir. Kontrol yolu: grafiği kafanda çiz. 4'te soldan gelen doğru 1 yüksekliğinde biter, sağdaki doğru 2 yüksekliğinden başlar: sıçrama.</p></div>
+
+<h2 class="s">8. Mutlak değerli fonksiyonda limit</h2>
+
+<p>Mutlak değer de gizli bir parçalı fonksiyondur: |u| = u (u ≥ 0) ve |u| = −u (u &lt; 0). Parça 3'te |x − a| ifadesinin kritik noktasının iç sıfır olduğu yer (x = a) olduğunu gördün. Limitte iki durum vardır.</p>
+
+<p><strong>İçi a'da sıfır değilse:</strong> mutlak değerin işareti a'nın çevresinde değişmez; kopma yoktur, doğrudan yerine koy. lim<sub>x→1</sub> (|x<sup>2</sup> − 4| + |x|) = |−3| + |1| = 3 + 1 = 4.</p>
+
+<p><strong>İçi a'da sıfırsa:</strong> mutlak değer a'nın solunda ve sağında farklı açılır. Tek başına |x − a| yine sorun çıkarmaz (değeri iki yandan da 0'a gider), ama bir bölmenin içindeyse ya da başka bir ifadeyle çarpılıyorsa iki yanı ayrı incelemen gerekir.</p>
+
+<figure>
+<svg viewBox="0 0 400 220" role="img" aria-label="y eşittir mutlak x eksi 2 bölü x eksi 2 grafiği: x ikiden küçükken y eşittir eksi 1 yatay ışını, x ikiden büyükken y eşittir 1 yatay ışını; x eşittir 2'de iki boş nokta.">
+  <line class="sv-c" x1="20" y1="110" x2="392" y2="110" />
+  <line class="sv-c" x1="40" y1="200" x2="40" y2="20" />
+  <line class="sv-c" x1="150" y1="35" x2="150" y2="185" stroke-dasharray="3 4" />
+  <line class="sv-cl" x1="20" y1="170" x2="145" y2="170" />
+  <line class="sv-cl" x1="155" y1="50" x2="385" y2="50" />
+  <circle class="sv-k" cx="150" cy="170" r="4.5" />
+  <circle class="sv-cl" cx="150" cy="170" r="4.5" />
+  <circle class="sv-k" cx="150" cy="50" r="4.5" />
+  <circle class="sv-cl" cx="150" cy="50" r="4.5" />
+  <text class="sv-s" x="46" y="44" text-anchor="start">1</text>
+  <text class="sv-s" x="46" y="188" text-anchor="start">−1</text>
+  <text class="sv-s" x="157" y="126" text-anchor="start">2</text>
+  <text class="sv-t" x="270" y="80" text-anchor="middle">sağdan limit: 1</text>
+  <text class="sv-s" x="97" y="152" text-anchor="middle">soldan limit: −1</text>
+  <text class="sv-b" x="380" y="36" text-anchor="end">y = |x − 2| / (x − 2)</text>
+</svg>
+<figcaption>2'nin solunda pay ile payda zıt işaretli (bölüm −1), sağında aynı işaretli (bölüm 1). Grafik 2'de bir basamak atlıyor; iki tek yanlı limit var ama farklı, bu yüzden limit yok. x = 2'de fonksiyon tanımsız.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2</sub> <span class="kes"><span>|x − 2|</span><span>x − 2</span></span> ve (b) lim<sub>x→0</sub> <span class="kes"><span>x<sup>2</sup> − 3x</span><span>|x|</span></span> limitlerini inceleyiniz.</p>
+<p><strong>Adım 1.</strong> (a) Sağdan: x &gt; 2 (örneğin 2,001) iken x − 2 pozitif.</p>
+<span class="mat">|x − 2| = x − 2 <span class="g">(içi pozitif, mutlak değer aynen çıkar)</span></span>
+<span class="mat"><span class="kes"><span>x − 2</span><span>x − 2</span></span> = 1 ⇒ sağdan limit 1 <span class="g">(x ≠ 2, sadeleşir)</span></span>
+<p><strong>Adım 2.</strong> Soldan: x &lt; 2 (örneğin 1,999) iken x − 2 negatif.</p>
+<span class="mat">|x − 2| = −(x − 2) <span class="g">(içi negatif, eksiyle çıkar)</span></span>
+<span class="mat"><span class="kes"><span>−(x − 2)</span><span>x − 2</span></span> = −1 ⇒ soldan limit −1 <span class="g">(sadeleşir)</span></span>
+<span class="mat">1 ≠ −1 ⇒ limit yoktur <span class="g">(iki yan farklı)</span></span>
+<p><strong>Adım 3.</strong> (b) Payı çarpanlarına ayır: x<sup>2</sup> − 3x = x(x − 3). Sağdan (x &gt; 0) |x| = x:</p>
+<span class="mat"><span class="kes"><span>x(x − 3)</span><span>x</span></span> = x − 3 → 0 − 3 = −3 <span class="g">(x ≠ 0, sadeleşir; yerine koy)</span></span>
+<p><strong>Adım 4.</strong> Soldan (x &lt; 0) |x| = −x:</p>
+<span class="mat"><span class="kes"><span>x(x − 3)</span><span>−x</span></span> = −(x − 3) = 3 − x → 3 <span class="g">(sadeleşir; yerine koy)</span></span>
+<span class="mat">−3 ≠ 3 ⇒ limit yoktur <span class="g">(iki yan farklı)</span></span>
+<p><strong>Sonuç:</strong> İki limit de yoktur. (a)'da sağdan 1, soldan −1; (b)'de sağdan −3, soldan 3. Kontrol yolu: (b)'de x = 0,01 koy: (0,0001 − 0,03)/0,01 = −2,99 ✓; x = −0,01 koy: (0,0001 + 0,03)/0,01 = 3,01 ✓.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>|x − 2| ile x − 2'yi doğrudan sadeleştirip "limit 1" demek.</strong> Mutlak değer, işaretini "silen" bir işlemdir; |x − 2| ile x − 2 yalnızca x &gt; 2 iken eşittir. x &lt; 2 iken |x − 2| = −(x − 2) olur ve bölüm −1 çıkar. Doğrusu: içi a'da sıfır olan her mutlak değeri, a'nın sağında ve solunda ayrı ayrı aç; hızlı denetim için a'nın biraz solundan ve sağından birer sayı koyup bölümün işaretine bak.</p></div>
+
+<h2 class="s">9. Bileşke fonksiyonun limiti</h2>
+
+<p>lim<sub>x→a</sub> f(g(x)) sorusunda iki fonksiyon iç içe çalışır. Önce içteki g, x'i bir t = g(x) sayısına götürür; sonra dıştaki f, bu t'yi işler. x, a'ya giderken t de bir b sayısına gidiyorsa (b = lim g(x)), soru "t, b'ye giderken f(t) neye gider?" sorusuna dönüşür. Ama burada sınavın en sevdiği tuzak gizli: <strong>t, b'ye hangi yandan geliyor?</strong></p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>1. İçteki limiti bul: b = lim<sub>x→a</sub> g(x).</p>
+<p>2. g(x) değerlerinin b'ye nasıl yaklaştığını belirle: b'den küçük değerlerle mi (t → b<sup>−</sup>), b'den büyük değerlerle mi (t → b<sup>+</sup>), yoksa tam b'ye eşit mi kalıyor (g sabit)?</p>
+<p>3. Dıştakini o yöne göre al: t → b<sup>−</sup> ise lim<sub>t→b<sup>−</sup></sub> f(t), t → b<sup>+</sup> ise lim<sub>t→b<sup>+</sup></sub> f(t), g(x) = b sabitse f(b). x'in soldan ve sağdan yaklaşması farklı yönler veriyorsa ikisini ayrı hesapla ve karşılaştır.</p>
+<p><strong>Neden?</strong> Dıştaki f yalnızca kendisine gelen t değerlerini görür. t değerleri b'nin solundan geliyorsa f'nin b'nin sağında ne yaptığı hiç devreye girmez. f'nin grafiği b'de kopmuyorsa (Parça 3'teki sezgi; biçimsel adı Parça 21'de "süreklilik") yön önemsizdir ve sonuç f(b) olur; kopuyorsa yön her şeyi belirler.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> Grafiği Bölüm 3'te verilen f için (a) lim<sub>x→1</sub> f(f(x)), (b) lim<sub>x→4</sub> f(f(x)) değerlerini bulunuz.</p>
+<p><strong>Adım 1.</strong> (a) İçteki limit: Örnek 1'den lim<sub>x→1</sub> f(x) = 3.</p>
+<p><strong>Adım 2.</strong> Yön: x, 1'e soldan gelirken f(x) = x + 2 değerleri 2,9; 2,99; … yani 3'ten küçük. Sağdan gelirken f(x) = 4 − x değerleri yine 2,9; 2,99; … yani 3'ten küçük. Her iki durumda t → 3<sup>−</sup>.</p>
+<p><strong>Adım 3.</strong> Dıştaki: t, 3'e soldan gelirken f(t) = 4 − t (1 &lt; t &lt; 3 parçası).</p>
+<span class="mat">lim<sub>t→3<sup>−</sup></sub> f(t) = 4 − 3 = 1 <span class="g">(3'ün solundaki kural)</span></span>
+<span class="mat">lim<sub>x→1</sub> f(f(x)) = 1 <span class="g">(iki yandan da aynı sonuç)</span></span>
+<p><strong>Adım 4.</strong> (b) İçteki: lim<sub>x→4</sub> f(x) = 3 (Örnek 1). Yön: 4'ün çevresinde f(x) = x − 1. x → 4<sup>−</sup> iken f(x) → 3<sup>−</sup>; x → 4<sup>+</sup> iken f(x) → 3<sup>+</sup>.</p>
+<span class="mat">x → 4<sup>−</sup>: lim<sub>t→3<sup>−</sup></sub> f(t) = 1 <span class="g">(t, 3'ün solunda: 4 − t)</span></span>
+<span class="mat">x → 4<sup>+</sup>: lim<sub>t→3<sup>+</sup></sub> f(t) = 2 <span class="g">(t, 3'ün sağında: t − 1)</span></span>
+<span class="mat">1 ≠ 2 ⇒ lim<sub>x→4</sub> f(f(x)) yoktur <span class="g">(iki yan farklı)</span></span>
+<p><strong>Sonuç:</strong> (a) 1, (b) limit yok. İkisinde de içteki limit 3 çıktı; farkı, f(x)'in 3'e hangi yandan yaklaştığı yarattı.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Bileşke limit akışı: x bire giderken içteki değer üçe soldan gidiyor, dıştaki fonksiyon üçün solundaki kuralla bire gidiyor; f(3) eşittir 2 yazmak yanlış.">
+  <rect class="sv-l" x="40" y="8" width="320" height="52" rx="12" />
+  <text class="sv-t" x="200" y="30" text-anchor="middle">x → 1 (soldan da sağdan da)</text>
+  <text class="sv-s" x="200" y="49" text-anchor="middle">içteki değer: x + 2 ya da 4 − x</text>
+  <line class="sv-c" x1="200" y1="60" x2="200" y2="80" />
+  <polygon class="sv-a" points="200,88 195.5,79 204.5,79" />
+  <rect class="sv-l" x="40" y="90" width="320" height="52" rx="12" />
+  <text class="sv-t" x="200" y="112" text-anchor="middle">t = f(x) → 3, ama hep 3'ten küçük</text>
+  <text class="sv-s" x="200" y="131" text-anchor="middle">yani t → 3⁻ (soldan)</text>
+  <line class="sv-c" x1="200" y1="142" x2="200" y2="162" />
+  <polygon class="sv-a" points="200,170 195.5,161 204.5,161" />
+  <rect class="sv-m" x="40" y="172" width="320" height="52" rx="12" />
+  <text class="sv-t" x="200" y="194" text-anchor="middle">t &lt; 3 için f(t) = 4 − t → 1</text>
+  <text class="sv-b" x="200" y="214" text-anchor="middle">lim f(f(x)) = 1</text>
+  <rect class="sv-a" x="40" y="240" width="320" height="52" rx="12" />
+  <text class="sv-t" x="200" y="262" text-anchor="middle">Yanlış yol: f(3) = 2 yazmak ya da</text>
+  <text class="sv-t" x="200" y="281" text-anchor="middle">"f'nin 3'te limiti yok" deyip bırakmak</text>
+</svg>
+<figcaption>Bileşke limitte üç durak: içteki limit, içteki değerlerin geliş yönü, dıştakinin o yöndeki limiti. Turuncu kutudaki iki yanlış, yönü sormamaktan doğar.</figcaption>
+</figure>
+
+<p><strong>Sabit içteki fonksiyon tuzağı.</strong> İçteki fonksiyon a'nın çevresinde sabitse, örneğin g(x) = 1 her x için, f(g(x)) = f(1) sabit sayıdır ve limiti de f(1)'dir. Bölüm 3'teki f için lim<sub>x→0</sub> f(g(x)) = f(1) = 1 olur, lim<sub>t→1</sub> f(t) = 3 değil. Çünkü t hiçbir zaman 1'e "yaklaşmaz", hep 1'e eşittir; f'nin 1'deki değeri devreye girer. Grafik sorularında içteki parça yatay bir doğruysa bu durumu ara.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"lim f(g(x)) = f(lim g(x))" kuralını her yerde uygulamak.</strong> Bu eşitlik yalnızca f, b = lim g(x) noktasında kopmuyorsa doğrudur. Örnek 7(a)'da bu kuralla f(3) = 2 bulunur, oysa doğru cevap 1'dir. Ters yöndeki hata da yaygın: "f'nin 3'te limiti yok, o hâlde f(f(x))'in de limiti yok" demek. f'nin 3'te iki yanlı limiti yok, ama içteki değerler yalnızca soldan geldiği için soldan limit yeter. Doğrusu: içteki değerlerin yönünü her zaman yaz (t → b<sup>−</sup> ya da t → b<sup>+</sup>), sonra dıştakinin <em>o yöndeki</em> limitini al.</p></div>
+
+<p>Formülle verilen bileşkelerde de aynı soru sorulur. g(x) = 1 − x<sup>2</sup> için x → 0 iken g(x) → 1, ama 1 − x<sup>2</sup> değerleri x ≠ 0 iken hep 1'den küçüktür; demek ki t → 1<sup>−</sup>. Bu yüzden lim<sub>x→0</sub> f(1 − x<sup>2</sup>), f'nin 1'deki <em>soldan</em> limitine eşittir. İçteki ifade x<sup>2</sup>, |x|, 1 − x<sup>2</sup> gibi hep bir yanda kalan bir ifadeyse yönü onun işaretinden okursun.</p>
+
+<h2 class="s">10. "Limiti var olduğuna göre" parametre soruları</h2>
+
+<p>Limitin tekliğini (Bölüm 2) denkleme çevirmenin en yaygın yolu şudur: parçalı bir fonksiyonun kuralında bilinmeyen bir sayı (a, b, m…) vardır ve kritik noktada limitin var olduğu söylenir. "Limit var" bilgisi tek bir denklem verir: <strong>soldan limit = sağdan limit.</strong></p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> (a) f(x) = ax + 1 (x &lt; 2), f(x) = x<sup>2</sup> + a (x ≥ 2) fonksiyonunun x = 2'de limiti var olduğuna göre a kaçtır ve limit kaçtır? (b) g(x) = x<sup>2</sup> + a (x &lt; 1), g(x) = bx + 1 (1 ≤ x &lt; 3), g(x) = x<sup>2</sup> − a (x ≥ 3) fonksiyonunun hem 1'de hem 3'te limiti var olduğuna göre a + b kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) İki tek yanlı limiti a cinsinden yaz.</p>
+<span class="mat">lim<sub>x→2<sup>−</sup></sub> f(x) = 2a + 1 <span class="g">(soldaki kurala 2 koy)</span></span>
+<span class="mat">lim<sub>x→2<sup>+</sup></sub> f(x) = 4 + a <span class="g">(sağdaki kurala 2 koy)</span></span>
+<p><strong>Adım 2.</strong> Limit var: iki yan eşit.</p>
+<span class="mat">2a + 1 = 4 + a <span class="g">(limitin tekliği)</span></span>
+<span class="mat">a = 3 <span class="g">(a'ları sola, sayıları sağa topla)</span></span>
+<span class="mat">limit = 2 · 3 + 1 = 7 <span class="g">(kontrol: 4 + 3 = 7 ✓)</span></span>
+<p><strong>Adım 3.</strong> (b) İki kritik nokta, iki bilinmeyen: her nokta bir denklem verir.</p>
+<span class="mat">x = 1: 1 + a = b + 1 ⇒ a = b <span class="g">(soldaki x<sup>2</sup> + a, sağdaki bx + 1)</span></span>
+<span class="mat">x = 3: 3b + 1 = 9 − a <span class="g">(soldaki bx + 1, sağdaki x<sup>2</sup> − a)</span></span>
+<p><strong>Adım 4.</strong> Sistemi çöz.</p>
+<span class="mat">3b + 1 = 9 − b <span class="g">(a = b yerine koy)</span></span>
+<span class="mat">4b = 8 ⇒ b = 2, a = 2 <span class="g">(böl)</span></span>
+<span class="mat">a + b = 4 <span class="g">(istenen)</span></span>
+<p><strong>Sonuç:</strong> (a) a = 3, limit 7. (b) a + b = 4. Kontrol yolu: (b)'de 1'de iki yan 1 + 2 = 3 ve 2 + 1 = 3; 3'te 6 + 1 = 7 ve 9 − 2 = 7 ✓. Sorunun "a kaçtır" mı yoksa "limit kaçtır" mı dediğine dikkat et; ikisi de aynı denklemden çıkar ama farklı sayılardır.</p></div>
+
+<p>Bu sorularda f(2)'nin değeri hiçbir rol oynamaz: eşitsizliğin "≥" ya da "&gt;" olması, yalnızca f(2)'yi belirler. Fonksiyon değerinin de limite eşit olması istenirse (yani "süreklilik") bir koşul daha eklenir; o sorular Parça 21'de. Rasyonel ifadelerde "limiti var olduğuna göre" sorusu ise 0/0 durumuna dayanır ("pay da sıfır olmalı") ve Parça 20'nin konusudur.</p>
+
+<h3>Hızlı yol ve kontrol yolu</h3>
+
+<p>Sınavda bir limit sorusuna şu sırayla bak: (1) a, bir kritik nokta mı, mutlak değerin içini sıfırlayan nokta mı, bir paydanın kökü mü? Değilse ve ifade a'nın çevresinde tanımlıysa yerine koy; bitti. (2) Kritik noktaysa iki yanı ayrı yaz. (3) Bileşke ise içteki değerlerin yönünü yaz. Kontrol için a'nın 0,01 solundaki ve sağındaki bir sayıyı kabaca yerine koy; sonuç bulduğun limite yakın mı ve işareti doğru mu, bak. Hesap makinesiz bile bu denetim çoğu zaman bir işaret hatasını yakalar.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 1 ve 3'e:</strong> Parça 1'de ortalama değişim hızının aralık daraldıkça 2'ye yaklaştığını tabloyla gördün; o "yaklaşma" bu parçada limitin ta kendisi oldu. Parça 3'teki dolu-boş yuvarlak ve "kritik noktada kopma var mı" sorusu, soldan-sağdan limitin grafikteki karşılığıdır.</p>
+<p><strong>Parça 20 ve 21'e:</strong> Payda 0 çıktığında yarıda bıraktığımız iki durum (0/0 ve sayı/0) ile x → ±∞ limitleri Parça 20'de. Bu parçada f(a) ile limiti ayrı tuttuk; ikisinin eşit olması koşulu Parça 21'de süreklilik adını alacak.</p>
+<p><strong>Parça 22 ve 30'a:</strong> Türev, f′(a) = lim<sub>h→0</sub> (f(a + h) − f(a))/h olarak tanımlanacak; belirli integral de dikdörtgen toplamlarının limiti olacak. Parçalı fonksiyonda türevlenebilme sorusu, bu parçadaki "soldan = sağdan" fikrinin türev için tekrarıdır.</p>
+<p><strong>Öbür derslere:</strong> Fizikte anlık hız, çok kısa zaman aralığındaki ortalama hızın limitidir; bir cismin bir anda "hızı" ancak limitle tanımlanabilir. Limitin tekliği, her ölçümün tek bir sonuca yakınsadığı varsayımının matematikteki karşılığıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>lim<sub>x→a</sub> f(x) = L yazmak f(a) hakkında ne söyler?</summary><p>Hiçbir şey. Limit, x a'ya eşit olmadan yaklaşırken f(x)'in neye gittiğini söyler. f(a) tanımsız olabilir (delik) ya da L'den farklı bir değer olabilir (ayrı duran dolu nokta). f(a) grafikte x = a'nın üstündeki dolu noktadan ayrıca okunur.</p></details>
+<details><summary>Bir noktada limitin var olması için hangi koşul gerekli ve yeterlidir? Neden?</summary><p>Soldan limit ile sağdan limitin ikisinin de var olması ve eşit olması. Çünkü tanım, x hangi yandan gelirse gelsin f(x)'in aynı sayıya yaklaşmasını ister; limit varsa tektir, iki farklı sayıya birden yaklaşamaz.</p></details>
+<details><summary>Bölüm kuralı hangi koşulda kullanılamaz ve o durumda ne yaparsın?</summary><p>Paydanın limiti 0 ise. O zaman payın limitine bakarım: pay sıfırdan farklıysa (sayı/0) limit gerçek sayı olarak yoktur; pay da 0 ise (0/0) limit var olabilir ve sadeleştirmeyle bulunur (Parça 20).</p></details>
+<details><summary>Parçalı fonksiyonda kritik noktadaki limiti bulurken f(a)'nın hangi kurala ait olduğu neden önemli değildir?</summary><p>Çünkü limit x = a anını kullanmaz. Soldan limit a'dan küçük x'ler için yazılmış kuralla, sağdan limit a'dan büyük x'ler için yazılmış kuralla bulunur. "≤" ya da "&lt;" işareti yalnızca f(a)'yı belirler.</p></details>
+<details><summary>lim<sub>x→2</sub> |x − 2|/(x − 2) neden yoktur?</summary><p>x &gt; 2 iken |x − 2| = x − 2 ve bölüm 1; x &lt; 2 iken |x − 2| = −(x − 2) ve bölüm −1. Sağdan limit 1, soldan limit −1; farklı oldukları için limit yoktur.</p></details>
+<details><summary>lim<sub>x→a</sub> f(g(x)) hesaplarken lim g(x) = b bulduktan sonra hangi soruyu sormalısın?</summary><p>g(x) değerlerinin b'ye hangi yandan yaklaştığını: b'den küçük değerlerle mi, büyük değerlerle mi, yoksa g sabit olup hep b'ye mi eşit? Dıştaki f'nin o yöndeki limitini (ya da g sabitse f(b)'yi) alırım. f b'de kopmuyorsa yön fark etmez.</p></details>
+<details><summary>Tanım aralığı [−2, 5] olan bir fonksiyonda x = 5'teki limit nasıl bulunur?</summary><p>5'in sağında fonksiyon tanımlı olmadığı için yalnızca soldan limit alınabilir. Lise ders kitaplarındaki yerleşik kabule göre uç noktadaki limit bu tek yanlı limite eşittir; sınav çoğunlukla bunu açıkça "soldan limit" diye sorar.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Limit:</strong> x → a (x ≠ a) iken f(x)'in yaklaştığı sayı. f(a)'dan bağımsız: f(a) tanımsız ya da farklı olabilir.</li>
+<li><strong>Soldan / sağdan:</strong> x → a<sup>−</sup> (a'dan küçüklerle), x → a<sup>+</sup> (a'dan büyüklerle).</li>
+<li><strong>Var olma:</strong> soldan = sağdan ⇔ limit var. Limit varsa tektir.</li>
+<li><strong>Grafik:</strong> önce soldan kaydır, sonra sağdan; f(a) için dolu noktaya bak. Delik: limit var, değer yok ya da farklı. Sıçrama: limit yok. Uç nokta: tek yanlı limit.</li>
+<li><strong>Kurallar:</strong> toplam, fark, sabit çarpan, çarpım, kuvvet, kök (çift kökte içi ≥ 0), bölüm (<strong>payda limiti ≠ 0</strong>). Parça limitleri var olmalı.</li>
+<li><strong>Polinom:</strong> lim P(x) = P(a). <strong>Rasyonel:</strong> Q(a) ≠ 0 ise yerine koy. Q(a) = 0: sayı/0 → limit yok (gerçek sayı olarak); 0/0 → Parça 20.</li>
+<li><strong>Kök, üstel, log, trig:</strong> a'nın çevresinde tanımlıysa yerine koy. tan π/2'de, log 0'da, √ negatifte yerine koyma.</li>
+<li><strong>Parçalı:</strong> kritik değilse o aralığın kuralı; kritikse sol kural ve sağ kural ayrı.</li>
+<li><strong>Mutlak değer:</strong> içi a'da ≠ 0 ise yerine koy; = 0 ise sağda ve solda ayrı aç.</li>
+<li><strong>Bileşke:</strong> b = lim g, sonra g'nin yönü (b<sup>−</sup> / b<sup>+</sup> / sabit), sonra f'nin o yöndeki limiti. f(b) yazmak ancak f b'de kopmuyorsa doğru.</li>
+<li><strong>Parametre:</strong> "limit var" ⇒ sol ifade = sağ ifade; iki kritik nokta ⇒ iki denklem.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-19">
+<h3>Quiz 19</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">Bir f fonksiyonu için lim<sub>x→3</sub> f(x) = 5 olduğu biliniyor. Buna göre aşağıdakilerden hangisi <strong>kesinlikle</strong> doğrudur?</p>
+<ul class="sec"><li>f(3) = 5'tir.</li><li>f fonksiyonu x = 3'te tanımlıdır.</li><li>lim<sub>x→3<sup>−</sup></sub> f(x) = lim<sub>x→3<sup>+</sup></sub> f(x) = 5'tir.</li><li>3'e yakın hiçbir x için f(x) = 5 olamaz.</li><li>lim<sub>x→5</sub> f(x) = 3'tür.</li></ul>
+<div class="coz"><p>Limitin var olması, soldan ve sağdan limitin var olup ikisinin de 5'e eşit olması demektir; C tanımın kendisidir. A ve B yanlıştır: limit f(3) hakkında bir şey söylemez, f(3) tanımsız (delik) ya da 5'ten farklı olabilir. D yanlıştır: f(x) değerlerinin 5'e eşit olması yasak değildir; sabit f(x) = 5 fonksiyonunda hepsi 5'tir. E, limitte girdi ile çıktının rolünü karıştırmaktır. Bu soru "limit = fonksiyon değeri" yanılgısını yoklar.</p></div></li>
+
+<li data-c="A"><p class="q">lim<sub>x→−1</sub> <span class="kes"><span>x<sup>3</sup> + 2x<sup>2</sup> − 5</span><span>x<sup>2</sup> + 3</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>−1</li><li>−<span class="kes"><span>1</span><span>2</span></span></li><li>−4</li><li>−<span class="kes"><span>5</span><span>3</span></span></li><li>Limit yoktur.</li></ul>
+<div class="coz"><p>Payda x<sup>2</sup> + 3, x = −1'de 4 ≠ 0; rasyonel fonksiyonda yerine koymak serbesttir. Pay: (−1)<sup>3</sup> + 2 · (−1)<sup>2</sup> − 5 = −1 + 2 − 5 = −4. Sonuç −4/4 = −1. −1/2, (−1)<sup>3</sup>'ü +1 almaktır; −4, (−1)<sup>2</sup>'yi −1 sanmaktır (pay −8, payda 2). −5/3, x yerine 0 koymaktır. "Limit yoktur" ise yerine koymanın yasak olduğunu sanmaktır; payda sıfır olmadıkça yerine koymak limitin kendisini verir.</p></div></li>
+
+<li data-c="D"><p class="q">lim<sub>x→2</sub> f(x) = 4 ve lim<sub>x→2</sub> g(x) = −1 olduğuna göre lim<sub>x→2</sub> <span class="kes"><span>x · f(x) − 3g(x)</span><span>√(f(x)) + g(x)</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>7</li><li><span class="kes"><span>11</span><span>3</span></span></li><li>5</li><li>11</li><li>f ve g bilinmeden hesaplanamaz.</li></ul>
+<div class="coz"><p>Payda: √4 + (−1) = 2 − 1 = 1 ≠ 0, bölüm kuralı kullanılabilir. Pay: 2 · 4 − 3 · (−1) = 8 + 3 = 11 (çarpım kuralında lim x = 2). Sonuç 11/1 = 11. 7, x çarpanını unutup 4 + 3 yazmaktır; 11/3, paydada kökü almayıp 4 − 1 = 3 yazmaktır; 5, −3 · (−1)'i −3 sanmaktır. Son seçenek, limit kurallarının yalnızca parçaların limitlerini istediğini bilmemektir.</p></div></li>
+
+<li data-c="B"><p class="q">lim<sub>x→2</sub> [log<sub>2</sub>(x<sup>2</sup> + 4) + √(3x + 10) − 3<sup>x − 1</sup>] limitinin değeri kaçtır?</p>
+<ul class="sec"><li>5</li><li>4</li><li>−2</li><li>8</li><li>10</li></ul>
+<div class="coz"><p>Üç terim de x = 2'nin çevresinde tanımlı (logaritmanın içi 8 &gt; 0, kökün içi 16 &gt; 0), yerine koyulur: log<sub>2</sub> 8 = 3, √16 = 4, 3<sup>1</sup> = 3; toplam 3 + 4 − 3 = 4. 5, log<sub>2</sub> 8'i 8/2 = 4 sanmaktır; 8, √16'yı 16/2 = 8 sanmaktır. −2, 3<sup>x − 1</sup>'de üssü 2 alıp 9 yazmaktır. 10, son terimin önündeki eksiyi atlamaktır.</p></div></li>
+
+<li data-c="E"><p class="q">f(x) = x<sup>2</sup> + 1 (x &lt; −1), f(−1) = 4, f(x) = 1 − x (x &gt; −1) olarak tanımlanıyor. Buna göre lim<sub>x→−1</sub> f(x) + lim<sub>x→3</sub> f(x) toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>12</li><li>14</li><li>lim<sub>x→−1</sub> f(x) yoktur; toplam tanımsızdır.</li><li>0</li></ul>
+<div class="coz"><p>x = −1 kritik nokta: soldan (−1)<sup>2</sup> + 1 = 2, sağdan 1 − (−1) = 2; limit 2. f(−1) = 4 olması limiti etkilemez. x = 3 kritik değil, x &gt; −1 kuralı geçerli: 1 − 3 = −2. Toplam 2 + (−2) = 0. 2, limit yerine f(−1) = 4 almaktır (4 − 2). 12, 3'te yanlış kuralı (x<sup>2</sup> + 1 = 10) kullanmaktır; 14 iki hatayı birlikte yapmaktır. D, fonksiyon değeri limitten farklı olunca limitin olmadığını sanmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> − 2x</span><span>|x − 2|</span></span> olduğuna göre lim<sub>x→2<sup>−</sup></sub> f(x) kaçtır?</p>
+<ul class="sec"><li>−2</li><li>2</li><li>0</li><li>−1</li><li>Yoktur.</li></ul>
+<div class="coz"><p>x &lt; 2 iken |x − 2| = −(x − 2). f(x) = x(x − 2)/(−(x − 2)) = −x; x → 2<sup>−</sup> iken −2. 2, sağdan limittir (x &gt; 2 iken f(x) = x). 0, payın (x<sup>2</sup> − 2x) 2'de sıfır olmasına bakıp sonucu 0 sanmaktır; oysa payda da sıfırdır. −1, ifadeyi |x − 2|/(x − 2) gibi düşünüp x çarpanını unutmaktır. "Yoktur", iki yanlı limitin olmamasını soldan limitin olmaması sanmaktır; soru yalnızca soldan limiti istiyor.</p></div></li>
+
+<li data-c="C"><p class="q">f(x) = ax + 5 (x &lt; 2), f(x) = x<sup>2</sup> + a (x ≥ 2) fonksiyonunun x = 2'de limiti vardır. Buna göre lim<sub>x→2</sub> f(x) kaçtır?</p>
+<ul class="sec"><li>−1</li><li><span class="kes"><span>11</span><span>3</span></span></li><li>3</li><li>4</li><li>7</li></ul>
+<div class="coz"><p>Soldan 2a + 5, sağdan 4 + a. Limit var: 2a + 5 = 4 + a ⇒ a = −1. Limit 2 · (−1) + 5 = 3; kontrol 4 + (−1) = 3. −1, a'nın değeridir; soru limiti soruyor. 11/3, a'yı sağa geçirirken işaretini değiştirmeyip 3a = −1 bulmaktır. 4, a'yı hiç hesaba katmadan x<sup>2</sup>'ye 2 koymaktır. 7, a = 1 bulup (işaret hatası) soldaki kurala koymaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = 2x (x &lt; 1), f(x) = x + 3 (x ≥ 1) ve g(x) = 1 − x<sup>2</sup> olduğuna göre lim<sub>x→0</sub> f(g(x)) kaçtır?</p>
+<ul class="sec"><li>4</li><li>1</li><li>3</li><li>2</li><li>Yoktur.</li></ul>
+<div class="coz"><p>İçteki: x → 0 iken g(x) = 1 − x<sup>2</sup> → 1. Yön: x ≠ 0 iken x<sup>2</sup> &gt; 0, yani g(x) &lt; 1; içteki değerler 1'e soldan gelir. Dıştaki: t → 1<sup>−</sup> iken f(t) = 2t → 2. 4, f(g(0)) = f(1) = 1 + 3 hesaplamaktır; limit fonksiyon değerini değil yaklaşmayı sorar. 1, içteki limiti cevap sanmaktır. 3, dıştaki kurala içteki değer yerine x'in kendisini koymaktır (0 + 3). "Yoktur", f'nin 1'de sıçrama yapmasına bakıp yönü sormamaktır; içteki değerler yalnızca soldan geldiği için sağdaki kural hiç devreye girmez.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 3x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>6</li><li>2</li><li>−2</li><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>6</span><span>5</span></span></li></ul>
+<div class="coz"><p>f(4) = 16 − 12 = 4, f(1) = 1 − 3 = −2. Ortalama değişim hızı (f(4) − f(1))/(4 − 1) = (4 + 2)/3 = 2. 6, paydaya bölmeyi unutmaktır; −2, çıkarmayı ters sırayla yapıp paydayı düz bırakmaktır. 2/3, f(1)'i +2 almaktır (f(1)'in işaret hatası). 6/5, paydada 4 − 1 yerine 4 + 1 yazmaktır. Ortalama değişim hızı, uçları birleştiren kirişin eğimidir.</p></div></li>
+
+<li data-c="E" data-k="ileri-2"><p class="q">f(2x + 1) = 6x + 5 olduğuna göre f<sup>−1</sup>(11) kaçtır?</p>
+<ul class="sec"><li>1</li><li>35</li><li>71</li><li>9</li><li>3</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(11) = k ise f(k) = 11. 6x + 5 = 11 ⇒ x = 1; bu x için içteki 2x + 1 = 3, yani f(3) = 11 ve f<sup>−1</sup>(11) = 3. İkinci yol: 2x + 1 = u dersen x = (u − 1)/2 ve f(u) = 3u + 2; 3k + 2 = 11 ⇒ k = 3. 1, x'i cevap sanmaktır (f'nin girdisi 2x + 1'dir). 35, f(11)'i hesaplamaktır; 71, 6 · 11 + 5'tir. 9, 3k + 2 = 11'de 3'e bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği (2, 5) noktasından geçmektedir. Buna göre y = f(x − 3) + 1 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(5, 6)</li><li>(−1, 6)</li><li>(5, 4)</li><li>(−1, 4)</li><li>(2, 6)</li></ul>
+<div class="coz"><p>f(x − 3) grafiği f'yi 3 birim sağa, "+1" de 1 birim yukarı taşır: (2, 5) → (5, 6). Denetim: x = 5 için f(5 − 3) + 1 = f(2) + 1 = 6. (−1, 6), yatay ötelemenin yönünü ters almaktır ("x − 3" sağa kaydırır). (5, 4) ve (−1, 4), düşey ötelemeyi aşağı yapmaktır. (2, 6), yatay ötelemeyi tamamen unutmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-5"><p class="q">f(x) = −x<sup>2</sup> + 4x + m parabolünün tepe noktası x ekseni üzerinde olduğuna göre m kaçtır?</p>
+<ul class="sec"><li>4</li><li>2</li><li>−4</li><li>−2</li><li>0</li></ul>
+<div class="coz"><p>Tepe noktasının apsisi r = −b/2a = −4/(−2) = 2. Tepe x ekseni üzerindeyse ordinat k = f(2) = 0: −4 + 8 + m = 0 ⇒ m = −4. Δ = 0 koşuluyla da çıkar: 16 + 4m = 0. 4, işaret hatasıdır (k = 4 + m sanmak). 2, r'yi cevap sanmaktır; −2, r'nin işaretini karıştırmaktır. 0, "x ekseni üzerinde" ile "orijinden geçer" koşulunu (c = 0) karıştırmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-7"><p class="q">Her x gerçek sayısı için x<sup>2</sup> − 2mx + 9 &gt; 0 eşitsizliği sağlandığına göre m'nin alabileceği kaç farklı tam sayı değeri vardır?</p>
+<ul class="sec"><li>7</li><li>2</li><li>4</li><li>5</li><li>Sonsuz çoklukta</li></ul>
+<div class="coz"><p>Başkatsayı 1 &gt; 0; ifadenin her zaman pozitif olması için Δ &lt; 0 gerekir: 4m<sup>2</sup> − 36 &lt; 0 ⇒ m<sup>2</sup> &lt; 9 ⇒ −3 &lt; m &lt; 3. Tam sayılar −2, −1, 0, 1, 2: beş tane. 7, uçları da almaktır (Δ = 0'da ifade bir noktada 0 olur, "&gt; 0" bozulur). 2, yalnızca pozitifleri saymak; 4, 0'ı unutmaktır. "Sonsuz", koşulu Δ &gt; 0 sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-8"><p class="q">210°'lik açının radyan cinsinden ölçüsü aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>7π</span><span>3</span></span></li><li><span class="kes"><span>7π</span><span>6</span></span></li><li><span class="kes"><span>5π</span><span>6</span></span></li><li><span class="kes"><span>6π</span><span>7</span></span></li><li><span class="kes"><span>7π</span><span>12</span></span></li></ul>
+<div class="coz"><p>D/180 = R/π ⇒ R = 210π/180 = 7π/6. 7π/3, 180 yerine 90'a bölmektir; 7π/12, 360'a bölmektir. 6π/7, oranı ters kurmaktır. 5π/6, 150°'nin radyan karşılığıdır; 210 = 180 + 30 ile 180 − 30'u karıştırmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-10"><p class="q">f(x) = 5 cos(<span class="kes"><span>πx</span><span>3</span></span> + 1) − 2 fonksiyonunun esas periyodu kaçtır?</p>
+<ul class="sec"><li>3</li><li>6π</li><li><span class="kes"><span>2π</span><span>5</span></span></li><li><span class="kes"><span>π</span><span>3</span></span></li><li>6</li></ul>
+<div class="coz"><p>y = a cos(bx + c) + d için periyot 2π/|b|. Burada b = π/3: 2π ÷ (π/3) = 6. 3, cos için tan-cot formülünü (π/|b|) kullanmaktır. 6π, b'yi 1/3 alıp π'yi unutmaktır. 2π/5, genliği (a = 5) periyot hesabına sokmaktır; π/3, b'nin kendisini periyot sanmaktır. Genlik, c ve d periyodu değiştirmez.</p></div></li>
+
+<li data-c="A" data-k="ileri-11"><p class="q">sin a = <span class="kes"><span>1</span><span>3</span></span> olduğuna göre cos 2a kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>7</span><span>9</span></span></li><li><span class="kes"><span>8</span><span>9</span></span></li><li><span class="kes"><span>5</span><span>9</span></span></li><li><span class="kes"><span>1</span><span>3</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li></ul>
+<div class="coz"><p>cos 2a = 1 − 2 sin<sup>2</sup>a = 1 − 2 · 1/9 = 7/9. Bu biçim, yalnızca sin a verildiğinde işaret sorunu çıkarmadığı için seçilir. 8/9, cos<sup>2</sup>a = 1 − sin<sup>2</sup>a'dır, cos 2a değil. 5/9, 2 sin<sup>2</sup>a yerine (2 sin a)<sup>2</sup> almaktır. 1/3, sin a'nın karesini almayı unutmaktır (1 − 2/3); 2/3 ise cos 2a'yı 2 sin a sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-13"><p class="q">tan x = √3 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>π</li><li>2π</li><li><span class="kes"><span>5π</span><span>3</span></span></li><li><span class="kes"><span>π</span><span>3</span></span></li><li>4π</li></ul>
+<div class="coz"><p>tan x = a'nın çözüm ailesi x = α + kπ; α = π/3. [0, 2π)'de k = 0 ve k = 1: π/3 ve 4π/3. Toplam 5π/3. π, sinüsün ikinci ailesini (π − α) tanjanta uygulamaktır; 2π, kosinüsün ailesini (2π − α) uygulamaktır. π/3 yalnızca ilk kökü almaktır. 4π, aralık dışındaki 7π/3'ü de saymaktır. Tanjantın periyodu π olduğu için kökler π aralıklıdır.</p></div></li>
+
+<li data-c="D" data-k="ileri-14"><p class="q">f(x) = 3<sup>x + 1</sup> − 2 fonksiyonunun görüntü kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(0, ∞)</li><li>[−2, ∞)</li><li>R</li><li>(−2, ∞)</li><li>(−∞, −2)</li></ul>
+<div class="coz"><p>3<sup>x + 1</sup> her zaman pozitiftir ve 0'a istendiği kadar yaklaşır ama 0 olmaz: görüntüsü (0, ∞). 2 çıkarınca (−2, ∞). Grafikte yatay asimptot y = −2'dir. (0, ∞), "−2" ötelemesini unutmaktır; [−2, ∞), asimptotu kümeye katmaktır. R, üstel fonksiyonu doğrusal sanmaktır; (−∞, −2) ise ötelemenin yönünü ters çevirmektir.</p></div></li>
+
+<li data-c="B" data-k="ileri-16"><p class="q">log<sub>3</sub>(x − 2) &lt; 2 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>9</li><li>8</li><li>10</li><li>Sonsuz çoklukta</li><li>5</li></ul>
+<div class="coz"><p>Tanım koşulu x − 2 &gt; 0 ⇒ x &gt; 2. Taban 3 &gt; 1, yön korunur: x − 2 &lt; 3<sup>2</sup> = 9 ⇒ x &lt; 11. Kesişim 2 &lt; x &lt; 11; tam sayılar 3, 4, …, 10: sekiz tane. 9, 11'i de saymaktır (eşitsizlik kesin). 10, hem 2'yi hem 11'i saymaktır. "Sonsuz", tanım koşulunu kesiştirmeyi unutmaktır. 5, 3<sup>2</sup> yerine 2 · 3 = 6 yazmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-16"><p class="q">Yarı ömrü 5 gün olan radyoaktif bir maddenin kütlesi m(t) = 80 · (<span class="kes"><span>1</span><span>2</span></span>)<sup>t/5</sup> gramdır (t gün). Madde kaç gün sonra 5 grama iner?</p>
+<ul class="sec"><li>15</li><li>25</li><li>16</li><li>80</li><li>20</li></ul>
+<div class="coz"><p>(1/2)<sup>t/5</sup> = 5/80 = 1/16 = (1/2)<sup>4</sup> ⇒ t/5 = 4 ⇒ t = 20 gün. Kontrol: 80 → 40 → 20 → 10 → 5, dört yarılanma, 4 · 5 = 20. 15 ve 25, yarılanmaları bir eksik ya da fazla saymaktır. 16, oranı (80/5) gün sanmaktır; 80, oranı yarı ömürle çarpmaktır (16 · 5). Oran 16 ise yarılanma sayısı log<sub>2</sub> 16 = 4'tür.</p></div></li>
+
+<li data-c="A" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>3</sub> = 7 ve a<sub>8</sub> = 22 olduğuna göre a<sub>20</sub> kaçtır?</p>
+<ul class="sec"><li>58</li><li>61</li><li>55</li><li>60</li><li>64</li></ul>
+<div class="coz"><p>a<sub>8</sub> = a<sub>3</sub> + 5d ⇒ 22 = 7 + 5d ⇒ d = 3. a<sub>20</sub> = a<sub>8</sub> + 12d = 22 + 36 = 58 (ya da a<sub>1</sub> = 1, a<sub>20</sub> = 1 + 19 · 3 = 58). 61, a<sub>1</sub> + 20d yazmaktır (n − 1 yerine n). 55, bir fark eksik almaktır (a<sub>1</sub> + 18d). 60, a<sub>1</sub>'i unutup 20 · d yazmaktır. 64, a<sub>3</sub>'ten başlayıp 19 fark eklemektir; a<sub>3</sub>'ten a<sub>20</sub>'ye 17 fark vardır.</p></div></li>
+
+<li data-c="C" data-k="ileri-17"><p class="q">Bir salonun ilk sırasında 12 koltuk vardır ve her sırada bir öncekinden 2 koltuk fazladır. Salonda 15 sıra olduğuna göre toplam koltuk sayısı kaçtır?</p>
+<ul class="sec"><li>40</li><li>405</li><li>390</li><li>180</li><li>600</li></ul>
+<div class="coz"><p>a<sub>1</sub> = 12, d = 2, n = 15. Son sıra a<sub>15</sub> = 12 + 14 · 2 = 40. S<sub>15</sub> = 15 · (12 + 40)/2 = 15 · 26 = 390. 40, son sıradaki koltuk sayısıdır. 405, (n − 1) yerine n alıp son sırayı 42 bulmaktır. 180, artışı unutup 15 · 12 yazmaktır. 600, 15 · 40 yazıp ilk terimi ve 2'ye bölmeyi atlamaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-18"><p class="q">Bir geometrik dizide a<sub>2</sub> = 6 ve a<sub>5</sub> = 48 olduğuna göre a<sub>7</sub> kaçtır?</p>
+<ul class="sec"><li>96</li><li>192</li><li>384</li><li>76</li><li>128</li></ul>
+<div class="coz"><p>a<sub>5</sub> = a<sub>2</sub> · r<sup>3</sup> ⇒ 48 = 6r<sup>3</sup> ⇒ r<sup>3</sup> = 8 ⇒ r = 2. a<sub>7</sub> = a<sub>5</sub> · r<sup>2</sup> = 48 · 4 = 192. 96, a<sub>6</sub>'dır; 384, a<sub>8</sub>'dir (üssü bir eksik ya da fazla saymak). 76, diziyi aritmetik sanmaktır (d = 14, 48 + 28). 128, a<sub>1</sub> = 3'ü unutup 2<sup>7</sup> yazmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-18"><p class="q">81 m yükseklikten bırakılan bir top, yere her çarpışından sonra bir önceki yüksekliğin <span class="kes"><span>2</span><span>3</span></span>'ü kadar yükseliyor. Top yere 4. kez çarptıktan sonra kaç metre yükselir?</p>
+<ul class="sec"><li>24</li><li>36</li><li>54</li><li>16</li><li><span class="kes"><span>32</span><span>3</span></span></li></ul>
+<div class="coz"><p>n. çarpıştan sonraki yükseklik 81 · (2/3)<sup>n</sup>: 54, 36, 24, 16. Dördüncüden sonra 16 m. 54, 36 ve 24 sırasıyla 1., 2. ve 3. çarpıştan sonraki yüksekliklerdir; üssü n − 1 almak 24 verir. 32/3, beşinci çarpıştan sonraki yüksekliktir. Bırakıldığı yükseklik (81) dizinin "0. terimi" gibidir; bunu a<sub>1</sub> saymak üssü bir kaydırır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-18">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-19">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-20">Sonraki parça: belirsizlikler ve sonsuz içeren limitler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"limit kavramı soldan sağdan limit konu anlatımı AYT"</li>
+  <li>"grafikten limit okuma boş nokta sıçrama"</li>
+  <li>"parçalı ve mutlak değerli fonksiyonda limit"</li>
+  <li>"bileşke fonksiyonun limiti grafik soruları"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 19. satıra göre yazıldı (2018 Ortaöğretim Matematik Öğretim Programı, 12. sınıf limit ünitesi). Bu oturumda bir MEB ders kitabıyla satır satır karşılaştırmadım; kapsam dosyasındaki genel not geçerlidir: programın kazanım metni doğrudan denetlenemedi.</li>
+  <li>Bütün sayısal sonuçlar (giriş tablosu, sekiz çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; tek yanlı limitler a'nın çok yakınındaki değerlerle sayısal olarak da sınandı. sympy kurulu olmadığı için sembolik denetim yapılmadı; hesaplar kesirli sayılarla ve sayısal değerlendirmeyle yapıldı.</li>
+  <li><strong>Uç noktada limit:</strong> Metinde "tanım aralığının uç noktasında limit, var olan tek yanlı limite eşittir" kabulü kullanıldı. Bunun Türkiye'deki lise kitaplarındaki yerleşik kabul olduğunu biliyorum ama bu oturumda bir ders kitabından doğrulayamadım; bazı kaynaklar uç noktada "limit yoktur" der. Bu yüzden quizde bu noktaya dayanan soru konmadı. Kendi kaynağın farklı diyorsa onu esas al.</li>
+  <li>Limit tanımı sezgisel ("istenildiği kadar yaklaşma") biçimde verildi; ε-δ tanımı lise programında yer almadığı için yazılmadı. Limitin tekliğinin gerekçesi bu sezgisel tanıma dayanıyor.</li>
+  <li>Bileşke limit kuralı (içteki değerlerin geliş yönüne göre dıştakinin tek yanlı limitini alma) lise düzeyinde yaygın biçimiyle verildi; içteki fonksiyonun a'nın çevresinde b değerini sonsuz kez alıp almadığı gibi ince durumlar sınav kapsamında olmadığı için ele alınmadı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: koordinatlar fonksiyon kurallarından hesaplandı (Şekil 2'de 1 birim yatayda 45, düşeyde 50 birime karşılık geliyor).</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

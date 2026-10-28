@@ -1,0 +1,704 @@
+<article class="chapter ders" id="c-ileri-33">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 33 · Binom açılımı</div>
+<h1>Binom açılımı ve Pascal üçgeni</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>11<sup>2</sup> = 121, 11<sup>3</sup> = 1331, 11<sup>4</sup> = 14641. Bu rakamlara bak: 1 2 1, 1 3 3 1, 1 4 6 4 1. Bunlar, kombinasyon parçasında gördüğün Pascal üçgeninin satırları. Neden? 11'in kuvvetleri ile "n kişiden r kişi seçme" sayısı arasında ne bağ olabilir? Bu bağı anlarsan (x − 2)<sup>10</sup> gibi bir ifadeyi on kez çarpmadan, istediğin terimini tek satırda yazabilirsin.</p></div>
+<p class="hint">Önce bilmen gerekenler: mat Parça 45 (kombinasyon C(n, r), C(n, r) = C(n, n − r), Pascal kuralı C(n, r) + C(n, r + 1) = C(n + 1, r + 1), satır toplamı 2<sup>n</sup>), mat Parça 15 ((a ± b)<sup>2</sup> ve (a ± b)<sup>3</sup> özdeşlikleri), mat Parça 39 (P(1) katsayılar toplamı, P(0) sabit terim), mat Parça 10 (üs kuralları). Kâğıt kalem yanında olsun; her örnekte genel terimi kendin yaz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>(a + b)<sup>2</sup> = a<sup>2</sup> + 2ab + b<sup>2</sup> özdeşliğini dokuzuncu sınıftan biliyorsun; (a + b)<sup>3</sup>'ü de mat Parça 15'te çarparak bulmuştun. Kuvvet büyüdükçe çarpmak hem uzar hem hata yapmaya açık hâle gelir: (a + b)<sup>8</sup>'i parantez parantez açmak yedi çarpma ve yüzlerce terimin toplanması demektir. <strong>Binom açılımı</strong>, (a + b)<sup>n</sup> ifadesinin bütün terimlerini çarpma yapmadan yazmanın yoludur. "Binom", iki terimli ifade demektir: a + b, x − 2, 2x + 3y, x<sup>2</sup> + 1/x hep birer binomdur.</p>
+
+<p>AYT bu konudan genellikle bir soru sorar ve soru neredeyse hiçbir zaman "açılımı yaz" demez. Şunları sorar: açılımda kaç terim var, baştan ya da sondan şu sıradaki terim ne, ortanca terim ne, katsayılar toplamı kaç, sabit terim (x'ten bağımsız terim) kaç, x<sup>5</sup>'li terimin katsayısı kaç, kaç terim rasyonel sayı, iki binomun çarpımında belirli bir terimin katsayısı kaç. Hepsinin anahtarı tek bir formüldür: <strong>genel terim</strong>. Bu parçanın bütün amacı o formülü nereden geldiğini bilerek kurmak ve her soru tipinde nasıl kullanıldığını görmektir.</p>
+
+<p>Sıramız şöyle: önce (a + b)<sup>3</sup>'te katsayıların neden kombinasyon olduğunu göreceğiz; sonra Pascal üçgenini ve kuralını açılım üzerinden yeniden kuracağız; ardından binom teoremi ve genel terim; terimlerin sırası (baştan, sondan, ortanca); katsayılar toplamı ve sabit terim; belirli bir terimin katsayısı; rasyonel terimler; tek-çift ayrımı; iki binomun çarpımı; son olarak binomla yaklaşık hesap ve son basamak bulma. Kapsam notu: üç terimli ifadelerin açılımı ((a + b + c)<sup>n</sup>, multinom) 2018 programında yoktur, anlatılmaz.</p>
+
+<h2 class="s">1. Katsayılar neden kombinasyon?</h2>
+
+<p>(a + b)<sup>3</sup>, üç tane (a + b) parantezinin çarpımıdır: (a + b)(a + b)(a + b). Dağılma özelliğiyle çarptığında ne olduğuna yakından bak. Her parantezden <strong>tam bir</strong> terim seçiyorsun (ya a ya b) ve seçtiklerini çarpıyorsun. Bütün olası seçimlerin çarpımlarını toplayınca açılım çıkıyor. Üç parantezin her birinde 2 seçenek olduğuna göre, mat Parça 43'teki çarpma kuralıyla 2 · 2 · 2 = 8 seçim vardır.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Üç parantezden seçim ağacı. Tepeden başlayarak her düzeyde a ya da b seçiliyor; sekiz yaprak aaa, aab, aba, abb, baa, bab, bba, bbb. Altlarında çarpımları: a küp, a kare b, a kare b, a b kare, a kare b, a b kare, a b kare, b küp. En altta dört kutu: b sıfır kez seçilirse 1 yol, bir kez 3 yol, iki kez 3 yol, üç kez 1 yol.">
+  <rect class="sv-k" x="165" y="6" width="70" height="26" rx="8" />
+  <text class="sv-s" x="200" y="24" text-anchor="middle">başla</text>
+  <line class="sv-c" x1="190" y1="32" x2="108" y2="50" />
+  <line class="sv-c" x1="210" y1="32" x2="292" y2="50" />
+  <circle class="sv-l" cx="100" cy="60" r="12" />
+  <text class="sv-b" x="100" y="65" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="300" cy="60" r="12" />
+  <text class="sv-b" x="300" y="65" text-anchor="middle">b</text>
+  <line class="sv-c" x1="92" y1="70" x2="58" y2="100" />
+  <line class="sv-c" x1="108" y1="70" x2="142" y2="100" />
+  <line class="sv-c" x1="292" y1="70" x2="258" y2="100" />
+  <line class="sv-c" x1="308" y1="70" x2="342" y2="100" />
+  <circle class="sv-l" cx="50" cy="110" r="12" />
+  <text class="sv-b" x="50" y="115" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="150" cy="110" r="12" />
+  <text class="sv-b" x="150" y="115" text-anchor="middle">b</text>
+  <circle class="sv-l" cx="250" cy="110" r="12" />
+  <text class="sv-b" x="250" y="115" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="350" cy="110" r="12" />
+  <text class="sv-b" x="350" y="115" text-anchor="middle">b</text>
+  <line class="sv-c" x1="44" y1="121" x2="28" y2="148" />
+  <line class="sv-c" x1="56" y1="121" x2="72" y2="148" />
+  <line class="sv-c" x1="144" y1="121" x2="128" y2="148" />
+  <line class="sv-c" x1="156" y1="121" x2="172" y2="148" />
+  <line class="sv-c" x1="244" y1="121" x2="228" y2="148" />
+  <line class="sv-c" x1="256" y1="121" x2="272" y2="148" />
+  <line class="sv-c" x1="344" y1="121" x2="328" y2="148" />
+  <line class="sv-c" x1="356" y1="121" x2="372" y2="148" />
+  <circle class="sv-l" cx="25" cy="158" r="11" />
+  <text class="sv-b" x="25" y="163" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="75" cy="158" r="11" />
+  <text class="sv-b" x="75" y="163" text-anchor="middle">b</text>
+  <circle class="sv-l" cx="125" cy="158" r="11" />
+  <text class="sv-b" x="125" y="163" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="175" cy="158" r="11" />
+  <text class="sv-b" x="175" y="163" text-anchor="middle">b</text>
+  <circle class="sv-l" cx="225" cy="158" r="11" />
+  <text class="sv-b" x="225" y="163" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="275" cy="158" r="11" />
+  <text class="sv-b" x="275" y="163" text-anchor="middle">b</text>
+  <circle class="sv-l" cx="325" cy="158" r="11" />
+  <text class="sv-b" x="325" y="163" text-anchor="middle">a</text>
+  <circle class="sv-a" cx="375" cy="158" r="11" />
+  <text class="sv-b" x="375" y="163" text-anchor="middle">b</text>
+  <text class="sv-t" x="25" y="190" text-anchor="middle">aaa</text>
+  <text class="sv-t" x="75" y="190" text-anchor="middle">aab</text>
+  <text class="sv-t" x="125" y="190" text-anchor="middle">aba</text>
+  <text class="sv-t" x="175" y="190" text-anchor="middle">abb</text>
+  <text class="sv-t" x="225" y="190" text-anchor="middle">baa</text>
+  <text class="sv-t" x="275" y="190" text-anchor="middle">bab</text>
+  <text class="sv-t" x="325" y="190" text-anchor="middle">bba</text>
+  <text class="sv-t" x="375" y="190" text-anchor="middle">bbb</text>
+  <text class="sv-s" x="25" y="208" text-anchor="middle">a³</text>
+  <text class="sv-s" x="75" y="208" text-anchor="middle">a²b</text>
+  <text class="sv-s" x="125" y="208" text-anchor="middle">a²b</text>
+  <text class="sv-s" x="175" y="208" text-anchor="middle">ab²</text>
+  <text class="sv-s" x="225" y="208" text-anchor="middle">a²b</text>
+  <text class="sv-s" x="275" y="208" text-anchor="middle">ab²</text>
+  <text class="sv-s" x="325" y="208" text-anchor="middle">ab²</text>
+  <text class="sv-s" x="375" y="208" text-anchor="middle">b³</text>
+  <rect class="sv-k" x="4" y="224" width="94" height="68" rx="8" />
+  <rect class="sv-m" x="102" y="224" width="94" height="68" rx="8" />
+  <rect class="sv-m" x="200" y="224" width="94" height="68" rx="8" />
+  <rect class="sv-k" x="298" y="224" width="94" height="68" rx="8" />
+  <text class="sv-s" x="51" y="242" text-anchor="middle">b: 0 kez</text>
+  <text class="sv-b" x="51" y="262" text-anchor="middle">1 yol: a³</text>
+  <text class="sv-s" x="51" y="282" text-anchor="middle">C(3, 0) = 1</text>
+  <text class="sv-s" x="149" y="242" text-anchor="middle">b: 1 kez</text>
+  <text class="sv-b" x="149" y="262" text-anchor="middle">3 yol: 3a²b</text>
+  <text class="sv-s" x="149" y="282" text-anchor="middle">C(3, 1) = 3</text>
+  <text class="sv-s" x="247" y="242" text-anchor="middle">b: 2 kez</text>
+  <text class="sv-b" x="247" y="262" text-anchor="middle">3 yol: 3ab²</text>
+  <text class="sv-s" x="247" y="282" text-anchor="middle">C(3, 2) = 3</text>
+  <text class="sv-s" x="345" y="242" text-anchor="middle">b: 3 kez</text>
+  <text class="sv-b" x="345" y="262" text-anchor="middle">1 yol: b³</text>
+  <text class="sv-s" x="345" y="282" text-anchor="middle">C(3, 3) = 1</text>
+</svg>
+<figcaption>(a + b)(a + b)(a + b) çarpımında her parantezden bir harf seçilir: ağacın birinci sırası 1. parantezden, ikinci sırası 2. parantezden, yapraklar 3. parantezden yapılan seçimdir; 8 seçimin her biri bir çarpım verir. Aynı çarpımı veren seçimler birleşir: a<sup>2</sup>b üç kez çıkar, çünkü b'nin üç parantezden hangisinden seçileceği 3 farklı biçimde belirlenebilir. Katsayı, "b'yi hangi parantezlerden aldım?" sorusunun cevap sayısıdır: C(3, r).</figcaption>
+</figure>
+
+<p>Şekildeki sekiz seçimi, içlerindeki b sayısına göre grupla. Hiç b seçmeyen tek bir yol var (aaa), çarpımı a<sup>3</sup>. Tam bir b seçen üç yol var (aab, aba, baa), üçünün de çarpımı a<sup>2</sup>b; toplam 3a<sup>2</sup>b. Tam iki b seçen üç yol var, toplam 3ab<sup>2</sup>. Üç b seçen tek yol var, b<sup>3</sup>. Böylece (a + b)<sup>3</sup> = a<sup>3</sup> + 3a<sup>2</sup>b + 3ab<sup>2</sup> + b<sup>3</sup> çıkar; mat Parça 15'teki özdeşliğin aynısı, ama bu kez çarpmadan, sayarak.</p>
+
+<p>Şimdi asıl soruyu sor: tam bir b içeren yolların sayısı neden 3? Çünkü b'nin hangi parantezden geleceğini seçiyorsun; 3 parantezden 1 tanesini seçmenin sayısı C(3, 1) = 3. Tam iki b içeren yolların sayısı, 3 parantezden 2 tanesini seçme sayısıdır: C(3, 2) = 3. Sıra önemli değildir, çünkü çarpmada a · b · a ile a · a · b aynı sonucu verir; önemli olan yalnızca <strong>hangi</strong> parantezlerden b alındığıdır. Mat Parça 45'teki tanımla: sırasız seçim, kombinasyon.</p>
+
+<p>Bu düşünce n parantezde de aynen işler. (a + b)<sup>n</sup>'de r tane b ve n − r tane a seçen her yol a<sup>n−r</sup>b<sup>r</sup> çarpımını verir. Böyle kaç yol olduğu, n parantezden b'nin geleceği r tanesini seçme sayısıdır: C(n, r). O hâlde a<sup>n−r</sup>b<sup>r</sup> teriminin katsayısı C(n, r)'dir.</p>
+
+<p>Bir de n = 4 ile dene. (a + b)<sup>4</sup>'te a<sup>2</sup>b<sup>2</sup> terimini veren seçimleri tek tek yaz: aabb, abab, abba, baab, baba, bbaa. Altı tane. Her biri, dört parantezden b'nin alınacağı ikisini belirliyor: 1. ve 2. parantez, 1. ve 3., 1. ve 4., 2. ve 3., 2. ve 4., 3. ve 4. Sayı C(4, 2) = 6 ve terim 6a<sup>2</sup>b<sup>2</sup>. Aynı sayıya mat Parça 44'teki tekrarlı permütasyonla da varırsın: iki a ve iki b harfinin farklı dizilişleri 4!/(2! · 2!) = 6'dır. İki sayım aynı şeyi sayıyor; biri "hangi yerlere b koyarım", öbürü "harfleri kaç türlü dizerim" diye soruyor.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Binom teoremi.</strong> n bir doğal sayı olmak üzere</p>
+<span class="mat">(a + b)<sup>n</sup> = C(n, 0)a<sup>n</sup> + C(n, 1)a<sup>n−1</sup>b + C(n, 2)a<sup>n−2</sup>b<sup>2</sup> + … + C(n, n − 1)ab<sup>n−1</sup> + C(n, n)b<sup>n</sup></span>
+<p><strong>Neden?</strong> Açılımdaki her terim, n parantezin her birinden a ya da b seçilip çarpılmasıyla oluşur. a<sup>n−r</sup>b<sup>r</sup> çarpımını veren seçimler, b'nin alınacağı r parantezin seçilmesiyle belirlenir ve bu seçimin sayısı C(n, r)'dir. Kitaplarda C(n, r) yerine n üstte, r altta olmak üzere büyük parantez içinde yazılmış gösterimi de görürsün; ikisi aynı sayıdır.</p></div>
+
+<p>Bu formülün üç doğrudan sonucu var ve sınav üçünü de sorar. <strong>Birincisi, terim sayısı n + 1'dir</strong>: r, 0'dan n'ye kadar n + 1 değer alır ve her değer ayrı bir terim verir. <strong>İkincisi, her terimde a ile b'nin üsleri toplamı n'dir</strong>: (n − r) + r = n. Bu, açılımı yazarken bir denetim aracıdır; üsler toplamı n olmayan terim yanlış yazılmıştır. <strong>Üçüncüsü, a'nın üssü n'den başlayıp birer azalır, b'nin üssü 0'dan başlayıp birer artar</strong>. Terim sayısı uyarısı: a ile b'yi oluşturan ifadelerin kuvvetleri birbiriyle birleşmiyorsa (x ile 2 gibi, x<sup>2</sup> ile 1/x gibi) açılımda n + 1 ayrı terim kalır. Soruların tamamı bu durumdadır.</p>
+
+<div class="tablo"><table>
+<tr><th>n</th><th>(a + b)<sup>n</sup></th><th>Terim sayısı</th><th>Katsayılar toplamı</th></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>1</td><td>a + b</td><td>2</td><td>2</td></tr>
+<tr><td>2</td><td>a<sup>2</sup> + 2ab + b<sup>2</sup></td><td>3</td><td>4</td></tr>
+<tr><td>3</td><td>a<sup>3</sup> + 3a<sup>2</sup>b + 3ab<sup>2</sup> + b<sup>3</sup></td><td>4</td><td>8</td></tr>
+<tr><td>4</td><td>a<sup>4</sup> + 4a<sup>3</sup>b + 6a<sup>2</sup>b<sup>2</sup> + 4ab<sup>3</sup> + b<sup>4</sup></td><td>5</td><td>16</td></tr>
+<tr><td>5</td><td>a<sup>5</sup> + 5a<sup>4</sup>b + 10a<sup>3</sup>b<sup>2</sup> + 10a<sup>2</sup>b<sup>3</sup> + 5ab<sup>4</sup> + b<sup>5</sup></td><td>6</td><td>32</td></tr>
+</table></div>
+
+<h2 class="s">2. Pascal üçgeni: açılımın katsayı tablosu</h2>
+
+<p>Yukarıdaki tablonun katsayılarını alt alta yaz: 1; 1 1; 1 2 1; 1 3 3 1; 1 4 6 4 1; 1 5 10 10 5 1. Bu, mat Parça 45'te kombinasyonun tablosu olarak tanıştığın Pascal üçgenidir. n. satır, C(n, 0), C(n, 1), …, C(n, n) sayılarından oluşur; binom teoremine göre bunlar aynı zamanda (a + b)<sup>n</sup> açılımının katsayılarıdır. Satırları n = 0'dan saymak önemlidir: en üstteki tek 1, (a + b)<sup>0</sup> = 1'in satırıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Pascal üçgeninin n eşittir 0'dan 6'ya kadar satırları. Sağda her satırın toplamı: 1, 2, 4, 8, 16, 32, 64. n eşittir 4 satırı vurgulu; bu satırdaki 4 ve 6 sayılarından altlarındaki 10'a iki çizgi iniyor. En altta a artı b'nin dördüncü kuvvetinin açılımı yazılı.">
+  <text class="sv-s" x="370" y="14" text-anchor="middle">toplam</text>
+  <text class="sv-s" x="22" y="35" text-anchor="middle">n = 0</text>
+  <text class="sv-t" x="180" y="35" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="35" text-anchor="middle">1</text>
+  <text class="sv-s" x="22" y="73" text-anchor="middle">n = 1</text>
+  <text class="sv-t" x="160" y="73" text-anchor="middle">1</text>
+  <text class="sv-t" x="200" y="73" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="73" text-anchor="middle">2</text>
+  <text class="sv-s" x="22" y="111" text-anchor="middle">n = 2</text>
+  <text class="sv-t" x="140" y="111" text-anchor="middle">1</text>
+  <text class="sv-t" x="180" y="111" text-anchor="middle">2</text>
+  <text class="sv-t" x="220" y="111" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="111" text-anchor="middle">4</text>
+  <text class="sv-s" x="22" y="149" text-anchor="middle">n = 3</text>
+  <text class="sv-t" x="120" y="149" text-anchor="middle">1</text>
+  <text class="sv-t" x="160" y="149" text-anchor="middle">3</text>
+  <text class="sv-t" x="200" y="149" text-anchor="middle">3</text>
+  <text class="sv-t" x="240" y="149" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="149" text-anchor="middle">8</text>
+  <rect class="sv-m" x="84" y="168" width="232" height="26" rx="8" />
+  <text class="sv-s" x="22" y="187" text-anchor="middle">n = 4</text>
+  <text class="sv-t" x="100" y="187" text-anchor="middle">1</text>
+  <circle class="sv-a" cx="140" cy="182" r="11" />
+  <text class="sv-b" x="140" y="187" text-anchor="middle">4</text>
+  <circle class="sv-a" cx="180" cy="182" r="11" />
+  <text class="sv-b" x="180" y="187" text-anchor="middle">6</text>
+  <text class="sv-t" x="220" y="187" text-anchor="middle">4</text>
+  <text class="sv-t" x="260" y="187" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="187" text-anchor="middle">16</text>
+  <line class="sv-cl" x1="146" y1="193" x2="155" y2="208" />
+  <line class="sv-cl" x1="174" y1="193" x2="165" y2="208" />
+  <text class="sv-s" x="22" y="225" text-anchor="middle">n = 5</text>
+  <text class="sv-t" x="80" y="225" text-anchor="middle">1</text>
+  <text class="sv-t" x="120" y="225" text-anchor="middle">5</text>
+  <circle class="sv-a" cx="160" cy="220" r="12" />
+  <text class="sv-b" x="160" y="225" text-anchor="middle">10</text>
+  <text class="sv-t" x="200" y="225" text-anchor="middle">10</text>
+  <text class="sv-t" x="240" y="225" text-anchor="middle">5</text>
+  <text class="sv-t" x="280" y="225" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="225" text-anchor="middle">32</text>
+  <text class="sv-s" x="22" y="263" text-anchor="middle">n = 6</text>
+  <text class="sv-t" x="60" y="263" text-anchor="middle">1</text>
+  <text class="sv-t" x="100" y="263" text-anchor="middle">6</text>
+  <text class="sv-t" x="140" y="263" text-anchor="middle">15</text>
+  <text class="sv-t" x="180" y="263" text-anchor="middle">20</text>
+  <text class="sv-t" x="220" y="263" text-anchor="middle">15</text>
+  <text class="sv-t" x="260" y="263" text-anchor="middle">6</text>
+  <text class="sv-t" x="300" y="263" text-anchor="middle">1</text>
+  <text class="sv-b" x="370" y="263" text-anchor="middle">64</text>
+  <line class="sv-c" x1="340" y1="20" x2="340" y2="272" />
+  <text class="sv-s" x="190" y="292" text-anchor="middle">(a + b)⁴ = a⁴ + 4a³b + 6a²b² + 4ab³ + b⁴</text>
+</svg>
+<figcaption>Her satır (a + b)<sup>n</sup>'nin katsayılarıdır; vurgulu satır n = 4. İçerideki her sayı, hemen üstündeki iki sayının toplamıdır: 4 + 6 = 10, yani C(4, 1) + C(4, 2) = C(5, 2). Satırlar simetriktir ve satır toplamı 2<sup>n</sup>'dir.</figcaption>
+</figure>
+
+<h3>Pascal kuralının açılımdan gelen gerekçesi</h3>
+
+<p>Mat Parça 45'te C(n, r) + C(n, r + 1) = C(n + 1, r + 1) kuralını "Ali ekipte var / Ali ekipte yok" diye sayarak kanıtlamıştın. Aynı kuralın açılımdan gelen ikinci bir gerekçesi var ve satır satır üçgeni neden toplayarak kurabildiğini gösteriyor. (a + b)<sup>n+1</sup>'i (a + b)<sup>n</sup> · (a + b) olarak yaz. Sağdaki son parantezden ya a ya b seçilir. Sonuçta a<sup>n−r</sup>b<sup>r+1</sup> terimi iki yoldan oluşur: (a + b)<sup>n</sup>'deki a<sup>n−r</sup>b<sup>r</sup> teriminin (katsayısı C(n, r)) b ile çarpılmasından, ya da a<sup>n−r−1</sup>b<sup>r+1</sup> teriminin (katsayısı C(n, r + 1)) a ile çarpılmasından. İki katkı toplanır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<span class="mat">C(n, r) + C(n, r + 1) = C(n + 1, r + 1)</span>
+<p>Pascal üçgeninde üst satırda yan yana duran iki sayının toplamı, altlarındaki sayıdır; kenarlar her zaman 1'dir (C(n, 0) = C(n, n) = 1). <strong>Neden?</strong> (a + b)<sup>n+1</sup> = (a + b)<sup>n</sup>(a + b) çarpımında her terim, üst satırdaki iki komşu terimden birinin b ile, öbürünün a ile çarpılmasından gelir; katsayılar bu yüzden toplanır. Bu kuralla üçgeni hiç faktöriyel hesaplamadan istediğin satıra kadar yazabilirsin.</p></div>
+
+<p>Üçgenin iki özelliği daha açılımdan okunur. <strong>Simetri:</strong> C(n, r) = C(n, n − r). Açılımda bu, a ile b'nin rolünün değiştirilebilmesidir: (a + b)<sup>n</sup> = (b + a)<sup>n</sup>, o yüzden baştan okunan katsayılarla sondan okunanlar aynıdır. <strong>Satır toplamı 2<sup>n</sup>:</strong> (a + b)<sup>n</sup>'de a = b = 1 koy. Sol yan (1 + 1)<sup>n</sup> = 2<sup>n</sup>, sağ yan C(n, 0) + C(n, 1) + … + C(n, n) olur; çünkü 1'in her kuvveti 1'dir ve terimlerden geriye yalnızca katsayılar kalır. Mat Parça 45'te bu toplamı "alt küme sayısı" olarak bulmuştun; şimdi aynı sonuca açılımdan da vardın.</p>
+
+<p>Parçanın sorusuna dönelim. 11 = 10 + 1 olduğu için 11<sup>n</sup> = (10 + 1)<sup>n</sup>'dir. Açılımda a = 10, b = 1: terimler C(n, r) · 10<sup>n−r</sup>'dir. Yani 11<sup>4</sup> = 1 · 10<sup>4</sup> + 4 · 10<sup>3</sup> + 6 · 10<sup>2</sup> + 4 · 10 + 1 = 14641. Katsayılar 10'un kuvvetleriyle çarpıldığı için basamaklara tek tek yerleşir. 11<sup>5</sup>'te bu bozulur: katsayılardan 10 iki basamaklı olduğu için elde taşınır ve 11<sup>5</sup> = 161051 olur (1 5 10 10 5 1 dizisi eldeyle toplanınca). Örüntü ortadan kalkmaz, yalnızca elde onu gizler.</p>
+
+<p>Üçgeni sınavda hızla yazabilmek işe yarar; en azından n = 7 satırına kadar. n = 6 satırından (1, 6, 15, 20, 15, 6, 1) komşuları toplayarak n = 7 satırı çıkar: 1, 7, 21, 35, 35, 21, 7, 1. Her satırda ikinci sayı n'dir (C(n, 1) = n), üçüncü sayı n(n − 1)/2'dir (C(n, 2)); n = 7'de 7 · 6/2 = 21. Satırın ortasından sonrası simetri yüzünden yazılmadan bilinir. Bir satırı yazınca toplamını 2<sup>n</sup> ile karşılaştırmak, en hızlı denetimdir: 1 + 7 + 21 + 35 + 35 + 21 + 7 + 1 = 128 = 2<sup>7</sup>.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> (x + 2)<sup>4</sup> ifadesini açın.</p>
+<p><strong>Adım 1.</strong> Katsayıları Pascal üçgeninin n = 4 satırından al.</p>
+<span class="mat">1, 4, 6, 4, 1 <span class="g">(C(4, 0), …, C(4, 4))</span></span>
+<p><strong>Adım 2.</strong> a = x'in üssünü 4'ten 0'a azalt, b = 2'nin üssünü 0'dan 4'e artır.</p>
+<span class="mat">1 · x<sup>4</sup> · 2<sup>0</sup> + 4 · x<sup>3</sup> · 2<sup>1</sup> + 6 · x<sup>2</sup> · 2<sup>2</sup> + 4 · x · 2<sup>3</sup> + 1 · 2<sup>4</sup> <span class="g">(her terimde üsler toplamı 4)</span></span>
+<p><strong>Adım 3.</strong> Sayıları çarp.</p>
+<span class="mat">x<sup>4</sup> + 8x<sup>3</sup> + 24x<sup>2</sup> + 32x + 16 <span class="g">(4 · 2 = 8, 6 · 4 = 24, 4 · 8 = 32)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> x = 1 koy: sol yan 3<sup>4</sup> = 81, sağ yan 1 + 8 + 24 + 32 + 16 = 81. Eşit.</p>
+<p><strong>Sonuç:</strong> x<sup>4</sup> + 8x<sup>3</sup> + 24x<sup>2</sup> + 32x + 16. Katsayıların artık 1, 4, 6, 4, 1 olmadığına dikkat et: Pascal sayıları, b'nin kuvvetleriyle (2<sup>r</sup>) çarpılmıştır. "Açılımın katsayıları" ile "Pascal sayıları" yalnızca a ve b'nin katsayıları 1 iken aynıdır.</p></div>
+
+<h2 class="s">3. Genel terim: tek bir terimi yazmak</h2>
+
+<p>Sınav nadiren açılımın tamamını ister; çoğunlukla tek bir terimi ister. Bunun için binom teoremindeki r'li terimi ayrı bir formül olarak yaz. Terimler r = 0'dan başladığı için r'li terim, baştan <strong>(r + 1).</strong> terimdir. Bu "bir kayma", konunun en sık hata yapılan yeridir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">T<sub>r+1</sub> = C(n, r) · a<sup>n−r</sup> · b<sup>r</sup> <span class="g">(baştan (r + 1). terim, r = 0, 1, …, n)</span></span>
+<p><strong>Neden?</strong> Binom teoreminde birinci terim r = 0 (b hiç seçilmemiş), ikinci terim r = 1, …, k. terim r = k − 1'dir. a ile b, binomdaki iki parçanın <strong>tamamıdır</strong>: katsayıları ve işaretleriyle birlikte. (2x − 3y)<sup>n</sup>'de a = 2x, b = −3y alınır; b<sup>r</sup> = (−3y)<sup>r</sup> yazılırken parantez korunur.</p></div>
+
+<p>"Baştan" ve "sondan" sözcüklerinin anlamı, açılımın hangi sırayla yazıldığına bağlıdır. Ders kitaplarında ve sorularda kural şudur: (a + b)<sup>n</sup> açılımı a'nın azalan kuvvetlerine göre yazılır, yani birinci terim a<sup>n</sup>'dir. Soru bunu çoğu zaman "x'in azalan kuvvetlerine göre" diye açıkça söyler. (2 + x)<sup>5</sup> gibi sabit önde yazılmışsa ve sıra belirtilmemişse binomda yazılan sıraya uy: birinci terim 2<sup>5</sup> olur.</p>
+
+<figure>
+<svg viewBox="0 0 400 220" role="img" aria-label="a artı b'nin altıncı kuvvetinin yedi terimi bir sıra hâlinde kutularda. Üstte baştan sıra numaraları 1'den 7'ye, altta sondan sıra numaraları 7'den 1'e, en altta r değerleri 0'dan 6'ya. Ortadaki dördüncü kutu, a küp b küp, ortanca terim olarak vurgulanmış.">
+  <text class="sv-s" x="6" y="22" text-anchor="start">baştan</text>
+  <text class="sv-b" x="34" y="42" text-anchor="middle">1.</text>
+  <text class="sv-b" x="88" y="42" text-anchor="middle">2.</text>
+  <text class="sv-b" x="142" y="42" text-anchor="middle">3.</text>
+  <text class="sv-b" x="196" y="42" text-anchor="middle">4.</text>
+  <text class="sv-b" x="250" y="42" text-anchor="middle">5.</text>
+  <text class="sv-b" x="304" y="42" text-anchor="middle">6.</text>
+  <text class="sv-b" x="358" y="42" text-anchor="middle">7.</text>
+  <rect class="sv-l" x="10" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-l" x="64" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-l" x="118" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-a" x="172" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-l" x="226" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-l" x="280" y="52" width="48" height="40" rx="8" />
+  <rect class="sv-l" x="334" y="52" width="48" height="40" rx="8" />
+  <text class="sv-t" x="34" y="77" text-anchor="middle">a⁶</text>
+  <text class="sv-t" x="88" y="77" text-anchor="middle">a⁵b</text>
+  <text class="sv-t" x="142" y="77" text-anchor="middle">a⁴b²</text>
+  <text class="sv-t" x="196" y="77" text-anchor="middle">a³b³</text>
+  <text class="sv-t" x="250" y="77" text-anchor="middle">a²b⁴</text>
+  <text class="sv-t" x="304" y="77" text-anchor="middle">ab⁵</text>
+  <text class="sv-t" x="358" y="77" text-anchor="middle">b⁶</text>
+  <text class="sv-b" x="34" y="114" text-anchor="middle">7.</text>
+  <text class="sv-b" x="88" y="114" text-anchor="middle">6.</text>
+  <text class="sv-b" x="142" y="114" text-anchor="middle">5.</text>
+  <text class="sv-b" x="196" y="114" text-anchor="middle">4.</text>
+  <text class="sv-b" x="250" y="114" text-anchor="middle">3.</text>
+  <text class="sv-b" x="304" y="114" text-anchor="middle">2.</text>
+  <text class="sv-b" x="358" y="114" text-anchor="middle">1.</text>
+  <text class="sv-s" x="6" y="132" text-anchor="start">sondan</text>
+  <text class="sv-s" x="34" y="156" text-anchor="middle">r = 0</text>
+  <text class="sv-s" x="88" y="156" text-anchor="middle">r = 1</text>
+  <text class="sv-s" x="142" y="156" text-anchor="middle">r = 2</text>
+  <text class="sv-s" x="196" y="156" text-anchor="middle">r = 3</text>
+  <text class="sv-s" x="250" y="156" text-anchor="middle">r = 4</text>
+  <text class="sv-s" x="304" y="156" text-anchor="middle">r = 5</text>
+  <text class="sv-s" x="358" y="156" text-anchor="middle">r = 6</text>
+  <text class="sv-t" x="200" y="186" text-anchor="middle">baştan sıra + sondan sıra = n + 2 = 8</text>
+  <text class="sv-t" x="200" y="208" text-anchor="middle">ortanca: baştan 4. = sondan 4. (r = n/2 = 3)</text>
+</svg>
+<figcaption>(a + b)<sup>6</sup>'nın 7 terimi. Baştan k. terim r = k − 1'e karşılık gelir. Her terimin baştan ve sondan sıra numaralarının toplamı terim sayısından bir fazladır: (n + 1) + 1 = n + 2. Terim sayısı tek olduğunda (n çift) tam ortada tek bir ortanca terim vardır.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Ne soruluyor?</th><th>r kaç?</th><th>Terim</th></tr>
+<tr><td>Baştan k. terim</td><td>r = k − 1</td><td>C(n, k − 1) a<sup>n−k+1</sup> b<sup>k−1</sup></td></tr>
+<tr><td>Sondan k. terim</td><td>r = n − k + 1 (baştan (n + 2 − k). terim)</td><td>C(n, k − 1) a<sup>k−1</sup> b<sup>n−k+1</sup></td></tr>
+<tr><td>Ortanca terim (n çift)</td><td>r = n/2 (baştan (n/2 + 1). terim)</td><td>C(n, n/2) a<sup>n/2</sup> b<sup>n/2</sup></td></tr>
+<tr><td>Ortanca terimler (n tek)</td><td>r = (n − 1)/2 ve r = (n + 1)/2</td><td>iki terim; katsayıları eşit değil, Pascal sayıları eşit</td></tr>
+<tr><td>Son terim</td><td>r = n</td><td>b<sup>n</sup></td></tr>
+</table></div>
+
+<p>Sondan k. terimi bulmanın en temiz yolu, binomu ters çevirip baştan saymaktır: (a + b)<sup>n</sup>'in sondan k. terimi, (b + a)<sup>n</sup>'in baştan k. terimidir. Bu yüzden sondan k. terim C(n, k − 1) b<sup>n−k+1</sup> a<sup>k−1</sup> olur; formül ezberlemeye gerek yok. Ortanca terim yalnızca terim sayısı tekken, yani n çiftken tektir. n tekse ortada iki terim kalır; kapsam ortanca terimi n çift iken sorar.</p>
+
+<p>n tek olduğunda ortadaki iki terimin Pascal sayıları eşittir ama terimlerin kendileri genellikle eşit değildir. (x + 2)<sup>7</sup>'de 4. ve 5. terimler C(7, 3)x<sup>4</sup> · 2<sup>3</sup> = 280x<sup>4</sup> ve C(7, 4)x<sup>3</sup> · 2<sup>4</sup> = 560x<sup>3</sup>'tür: Pascal sayısı ikisinde de 35, ama 2'nin kuvveti farklı. Bu yüzden "ortanca terimin katsayısı" sorusu ancak n çiftken tek bir cevap verir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (x + 2y)<sup>n</sup> açılımında 9 terim olduğuna göre ortanca terim nedir?</p>
+<p><strong>Adım 1.</strong> Terim sayısından n'yi bul.</p>
+<span class="mat">n + 1 = 9 ⇒ n = 8 <span class="g">(terim sayısı n + 1)</span></span>
+<p><strong>Adım 2.</strong> n çift; ortanca terim baştan (8/2 + 1) = 5. terim, r = 4.</p>
+<span class="mat">T<sub>5</sub> = C(8, 4) · x<sup>4</sup> · (2y)<sup>4</sup> <span class="g">(genel terim, r = 4)</span></span>
+<p><strong>Adım 3.</strong> Hesapla.</p>
+<span class="mat">C(8, 4) = <span class="kes"><span>8 · 7 · 6 · 5</span><span>4 · 3 · 2 · 1</span></span> = 70 <span class="g">(üstte 4 çarpan, altta 4!)</span></span>
+<span class="mat">(2y)<sup>4</sup> = 16y<sup>4</sup> <span class="g">(kuvvet parçanın tamamına)</span></span>
+<span class="mat">T<sub>5</sub> = 70 · 16 · x<sup>4</sup>y<sup>4</sup> = 1120x<sup>4</sup>y<sup>4</sup></span>
+<p><strong>Sonuç:</strong> 1120x<sup>4</sup>y<sup>4</sup>. Kontrol yolu: terim baştan 5., sondan da 9 + 1 − 5 = 5. olmalı; üsler toplamı 4 + 4 = 8 = n. Terim sayısını n sanıp n = 9 alan, ortada iki terim bulur ve soruyu tek cevaba bağlayamaz.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (x − <span class="kes"><span>2</span><span>x</span></span>)<sup>6</sup> açılımı x'in azalan kuvvetlerine göre yazıldığında ortanca terim ve sondan 2. terim nedir?</p>
+<p><strong>Adım 1.</strong> Parçaları tanı: a = x, b = −2/x, n = 6. Terim sayısı 7; ortanca terim baştan 4. terim, yani r = 3.</p>
+<span class="mat">T<sub>4</sub> = C(6, 3) · x<sup>3</sup> · (−<span class="kes"><span>2</span><span>x</span></span>)<sup>3</sup> <span class="g">(genel terim, r = 3)</span></span>
+<p><strong>Adım 2.</strong> Hesapla; (−2)<sup>3</sup> = −8 ve x<sup>3</sup> · x<sup>−3</sup> = 1.</p>
+<span class="mat">T<sub>4</sub> = 20 · x<sup>3</sup> · <span class="kes"><span>−8</span><span>x<sup>3</sup></span></span> = −160 <span class="g">(C(6, 3) = 20)</span></span>
+<p><strong>Adım 3.</strong> Sondan 2. terim baştan (6 + 2 − 2) = 6. terimdir: r = 5.</p>
+<span class="mat">T<sub>6</sub> = C(6, 5) · x<sup>1</sup> · (−<span class="kes"><span>2</span><span>x</span></span>)<sup>5</sup> = 6 · x · <span class="kes"><span>−32</span><span>x<sup>5</sup></span></span> = −<span class="kes"><span>192</span><span>x<sup>4</sup></span></span> <span class="g">(C(6, 5) = 6, (−2)<sup>5</sup> = −32)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Sondan 2. terim, (−2/x + x)<sup>6</sup>'nın baştan 2. terimidir: C(6, 1) · (−2/x)<sup>5</sup> · x = 6 · (−32) · x<sup>−4</sup>. Aynı sonuç.</p>
+<p><strong>Sonuç:</strong> Ortanca terim −160, sondan 2. terim −192/x<sup>4</sup>. Ortanca terimin x içermemesi rastlantı değil: bu binomda a ile b'nin x kuvvetleri eşit büyüklükte ve zıt işaretli (x<sup>1</sup> ve x<sup>−1</sup>), o yüzden eşit sayıda alınınca birbirini götürür.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Baştan k. terim için r = k almak.</strong> (x − 2)<sup>6</sup>'nın baştan 3. terimini C(6, 3)x<sup>3</sup>(−2)<sup>3</sup> = −160x<sup>3</sup> diye yazmak, aslında 4. terimi yazmaktır. Doğrusu r = 2: C(6, 2)x<sup>4</sup>(−2)<sup>2</sup> = 60x<sup>4</sup>. Kendini korumanın yolu: birinci terimin r = 0 olduğunu, yani b'nin hiç alınmadığı terim olduğunu hatırla. Denetim olarak birinci terim formülde a<sup>n</sup> çıkmalı.</p>
+<p><strong>Katsayıyı ve işareti üsse almamak.</strong> (2x − 3y)<sup>5</sup>'te b<sup>r</sup> yerine −3y<sup>r</sup> ya da 3y<sup>r</sup> yazmak; a<sup>n−r</sup> yerine 2x<sup>n−r</sup> yazmak. Kuvvet, parçanın tamamına uygulanır: (2x)<sup>2</sup> = 4x<sup>2</sup>, (−3y)<sup>3</sup> = −27y<sup>3</sup>. Negatif parça tek kuvvette eksi, çift kuvvette artı verir; (a − b)<sup>n</sup> açılımında işaretlerin +, −, +, −, … diye dönüşümlü gitmesinin nedeni budur.</p></div>
+
+<h2 class="s">4. (a − b)<sup>n</sup>: işaretlerin sırası</h2>
+
+<p>(a − b)<sup>n</sup>'i ayrı bir formül olarak ezberlemen gerekmez: a + (−b) olarak düşün ve genel terimde b yerine −b yaz. T<sub>r+1</sub> = C(n, r)a<sup>n−r</sup>(−b)<sup>r</sup> = (−1)<sup>r</sup>C(n, r)a<sup>n−r</sup>b<sup>r</sup>. r çiftken terim artı, tekken eksi işaretlidir. Birinci terim (r = 0) her zaman artıdır, sonra işaretler sırayla değişir. Son terim (r = n) n çiftse +b<sup>n</sup>, tekse −b<sup>n</sup>'dir.</p>
+
+<span class="mat">(a − b)<sup>4</sup> = a<sup>4</sup> − 4a<sup>3</sup>b + 6a<sup>2</sup>b<sup>2</sup> − 4ab<sup>3</sup> + b<sup>4</sup> <span class="g">(r = 1 ve r = 3 eksi)</span></span>
+<span class="mat">(a − b)<sup>5</sup> = a<sup>5</sup> − 5a<sup>4</sup>b + 10a<sup>3</sup>b<sup>2</sup> − 10a<sup>2</sup>b<sup>3</sup> + 5ab<sup>4</sup> − b<sup>5</sup> <span class="g">(son terim eksi, n tek)</span></span>
+
+<p>Dikkat: işaret dönüşümü "b'nin önünde eksi var" diye her soruda kendiliğinden doğru çıkmaz. (−x + 2)<sup>5</sup> gibi a'nın eksi olduğu durumda (−x)<sup>n−r</sup> parantezle yazılır ve işaret a'nın üssüne göre belirlenir. En güvenli yol her zaman aynıdır: iki parçayı işaretleriyle birlikte a ve b diye adlandır, genel terimi parantezlerle yaz.</p>
+
+<p>İki küçük örnekle dene. (1 − 2x)<sup>5</sup>'te a = 1, b = −2x: ilk üç terim 1, C(5, 1)(−2x) = −10x ve C(5, 2)(−2x)<sup>2</sup> = 10 · 4x<sup>2</sup> = 40x<sup>2</sup>; işaretler +, −, + diye gidiyor. (−x + 2)<sup>5</sup>'te ise a = −x, b = 2: birinci terim (−x)<sup>5</sup> = −x<sup>5</sup>, ikinci terim C(5, 1)(−x)<sup>4</sup> · 2 = 10x<sup>4</sup>. Burada açılım eksiyle başlıyor, çünkü eksi işaret tek kuvvet alan a'nın içinde. İki ifade aynı sayıları (1, 10, 40, 80, 80, 32) taşıyor ama işaretlerin yeri farklı; ezber bir "işaret sırası" bu yüzden yanıltır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> (2x − 3y)<sup>5</sup> açılımında x<sup>2</sup>y<sup>3</sup>'lü terimin katsayısı kaçtır?</p>
+<p><strong>Adım 1.</strong> Parçaları adlandır: a = 2x, b = −3y, n = 5.</p>
+<p><strong>Adım 2.</strong> y'nin üssü r'dir; y<sup>3</sup> istendiği için r = 3. Denetim: x'in üssü n − r = 2. Uygun.</p>
+<span class="mat">T<sub>4</sub> = C(5, 3) · (2x)<sup>2</sup> · (−3y)<sup>3</sup> <span class="g">(genel terim, r = 3)</span></span>
+<p><strong>Adım 3.</strong> Her çarpanı ayrı hesapla.</p>
+<span class="mat">C(5, 3) = 10, (2x)<sup>2</sup> = 4x<sup>2</sup>, (−3y)<sup>3</sup> = −27y<sup>3</sup> <span class="g">(kuvvet parçanın tamamına)</span></span>
+<p><strong>Adım 4.</strong> Çarp.</p>
+<span class="mat">10 · 4 · (−27) · x<sup>2</sup>y<sup>3</sup> = −1080x<sup>2</sup>y<sup>3</sup></span>
+<p><strong>Sonuç:</strong> Katsayı −1080. Sık görülen yanlış cevaplar: 10 (yalnızca Pascal sayısı), 1080 (işaret kaybı), −540 ((2x)<sup>2</sup> yerine 2x<sup>2</sup> almak: 10 · 2 · (−27)), −120 ((−3y)<sup>3</sup> yerine −3y<sup>3</sup> almak: 10 · 4 · (−3)). Kontrol yolu: terimin üsleri toplamı 2 + 3 = 5 = n.</p></div>
+
+<h2 class="s">5. Katsayılar toplamı ve sabit terim</h2>
+
+<p>Bu iki soru tipi, açılımın hiçbir terimini yazmadan cevaplanır. İkisinin de dayanağı aynıdır: (a + b)<sup>n</sup> bir özdeşliktir, yani değişkenlere hangi sayıyı verirsen ver iki yan eşittir. Açılımı P(x) = c<sub>n</sub>x<sup>n</sup> + … + c<sub>1</sub>x + c<sub>0</sub> diye düşün; mat Parça 39'da P(1)'in katsayılar toplamı, P(0)'ın sabit terim olduğunu görmüştün.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Katsayılar toplamı:</strong> bütün değişkenlere 1 ver. (3x − 2y)<sup>5</sup>'te x = y = 1: (3 − 2)<sup>5</sup> = 1.</p>
+<p><strong>Sabit terim (polinomda):</strong> değişkene 0 ver. (x + 2)<sup>5</sup>'te x = 0: 2<sup>5</sup> = 32.</p>
+<p><strong>Sabit terim (1/x içeren binomda):</strong> genel terimde x'in üssünü yaz ve 0'a eşitle; çıkan r ile terimi hesapla.</p>
+<p><strong>Neden?</strong> x = 1 koyunca her x<sup>k</sup> 1 olur ve terimlerden geriye yalnızca katsayıları kalır; sol yanda da binomun katsayılarının toplamı (3 − 2) çıkar. x = 0 koyunca x içeren bütün terimler sıfırlanır, geriye x'siz terim kalır. 1/x içeren binomda x = 0 konamaz (1/0 tanımsız); orada sabit terim, x'in kuvvetinin sıfır olduğu terimdir ve doğrudan genel terimden aranır.</p></div>
+
+<p>Katsayılar toplamını Pascal satır toplamıyla (2<sup>n</sup>) karıştırma. 2<sup>n</sup>, yalnızca a ve b'nin katsayıları 1 iken (x + y)<sup>n</sup> gibi) katsayılar toplamıdır. (3x − 2y)<sup>5</sup>'in katsayılar toplamı 2<sup>5</sup> = 32 değil, 1'dir. Ters yönden de soru gelir: "(2x + 1)<sup>n</sup> açılımında katsayılar toplamı 243 ise n kaçtır?" x = 1 koyarsın: 3<sup>n</sup> = 243 = 3<sup>5</sup>, n = 5, terim sayısı 6.</p>
+
+<p>Katsayılar toplamı ile terim sayısı da sık karıştırılır. (x + y)<sup>n</sup>'de katsayılar toplamı 2<sup>n</sup>, terim sayısı n + 1'dir; "açılımda 64 sayısı" katsayılar toplamıysa n = 6 ve 7 terim vardır, terim sayısıysa n = 63'tür. Soru kökünde hangisinin verildiğini okumadan işlem yapma. Benzer biçimde, katsayılar toplamı negatif ya da sıfır çıkabilir ((x − 2)<sup>5</sup>'te (1 − 2)<sup>5</sup> = −1, (x − 1)<sup>n</sup>'de 0); bu bir hata işareti değildir, çünkü eksi katsayılar toplamdan düşer.</p>
+
+<p>Aynı fikirle iki özdeşlik daha çıkar. (1 + x)<sup>n</sup> = C(n, 0) + C(n, 1)x + C(n, 2)x<sup>2</sup> + … + C(n, n)x<sup>n</sup> açılımında x = 1 koyarsan C(n, 0) + C(n, 1) + … + C(n, n) = 2<sup>n</sup> (satır toplamı), x = −1 koyarsan</p>
+
+<span class="mat">C(n, 0) − C(n, 1) + C(n, 2) − … + (−1)<sup>n</sup>C(n, n) = (1 − 1)<sup>n</sup> = 0 <span class="g">(n ≥ 1)</span></span>
+
+<p>bulursun. Pascal üçgeninin n = 4 satırında dene: 1 − 4 + 6 − 4 + 1 = 0. Bu ikinci özdeşlik şunu söyler: bir satırdaki tek sıradaki sayıların toplamı ile çift sıradakilerin toplamı eşittir, ikisi de 2<sup>n−1</sup>'dir. n = 5'te 1 + 10 + 5 = 16 = 5 + 10 + 1.</p>
+
+<h3>Sabit terimi genel terimle bulmak</h3>
+
+<p>(x<sup>2</sup> + 1/x)<sup>9</sup> gibi bir binomda her terimde x'in kuvveti farklıdır. Genel terimde x'in üssünü r cinsinden yazarsan, istediğin her kuvvetin hangi r'ye karşılık geldiğini tek bir denklemle bulursun. Aşağıdaki şekil bunun nasıl işlediğini gösteriyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 208" role="img" aria-label="x kare artı 1 bölü x'in dokuzuncu kuvvetinde r'nin 0'dan 9'a kadarki değerleri ve karşılık gelen x üsleri: 18, 15, 12, 9, 6, 3, 0, eksi 3, eksi 6, eksi 9. r eşittir 6 kutusu, üs sıfır, sabit terim olarak vurgulu; r eşittir 5 kutusu, üs 3, ayrıca işaretli.">
+  <text class="sv-s" x="6" y="18" text-anchor="start">r (b'nin üssü)</text>
+  <rect class="sv-k" x="10" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="48" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="86" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="124" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="162" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="200" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="238" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="276" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="314" y="26" width="34" height="28" rx="6" />
+  <rect class="sv-k" x="352" y="26" width="34" height="28" rx="6" />
+  <text class="sv-t" x="27" y="45" text-anchor="middle">0</text>
+  <text class="sv-t" x="65" y="45" text-anchor="middle">1</text>
+  <text class="sv-t" x="103" y="45" text-anchor="middle">2</text>
+  <text class="sv-t" x="141" y="45" text-anchor="middle">3</text>
+  <text class="sv-t" x="179" y="45" text-anchor="middle">4</text>
+  <text class="sv-t" x="217" y="45" text-anchor="middle">5</text>
+  <text class="sv-t" x="255" y="45" text-anchor="middle">6</text>
+  <text class="sv-t" x="293" y="45" text-anchor="middle">7</text>
+  <text class="sv-t" x="331" y="45" text-anchor="middle">8</text>
+  <text class="sv-t" x="369" y="45" text-anchor="middle">9</text>
+  <text class="sv-s" x="6" y="80" text-anchor="start">x'in üssü: 2(9 − r) − r = 18 − 3r</text>
+  <rect class="sv-l" x="10" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="48" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="86" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="124" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="162" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-a" x="200" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-m" x="238" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="276" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="314" y="88" width="34" height="28" rx="6" />
+  <rect class="sv-l" x="352" y="88" width="34" height="28" rx="6" />
+  <text class="sv-t" x="27" y="107" text-anchor="middle">18</text>
+  <text class="sv-t" x="65" y="107" text-anchor="middle">15</text>
+  <text class="sv-t" x="103" y="107" text-anchor="middle">12</text>
+  <text class="sv-t" x="141" y="107" text-anchor="middle">9</text>
+  <text class="sv-t" x="179" y="107" text-anchor="middle">6</text>
+  <text class="sv-b" x="217" y="107" text-anchor="middle">3</text>
+  <text class="sv-b" x="255" y="107" text-anchor="middle">0</text>
+  <text class="sv-t" x="293" y="107" text-anchor="middle">−3</text>
+  <text class="sv-t" x="331" y="107" text-anchor="middle">−6</text>
+  <text class="sv-t" x="369" y="107" text-anchor="middle">−9</text>
+  <line class="sv-cl" x1="255" y1="116" x2="255" y2="134" />
+  <line class="sv-c" x1="217" y1="116" x2="217" y2="130" />
+  <text class="sv-b" x="392" y="150" text-anchor="end">üs 0 ⇒ r = 6 (7. terim)</text>
+  <text class="sv-t" x="392" y="168" text-anchor="end">sabit terim: C(9, 6) = 84</text>
+  <text class="sv-t" x="200" y="150" text-anchor="end">üs 3 ⇒ r = 5</text>
+  <text class="sv-t" x="200" y="168" text-anchor="end">C(9, 5) = 126</text>
+  <text class="sv-s" x="200" y="198" text-anchor="middle">x⁴ hiç yok: 18 − 3r = 4'ün tam sayı çözümü yok</text>
+</svg>
+<figcaption>(x<sup>2</sup> + 1/x)<sup>9</sup> açılımında r bir arttıkça x'in üssü 3 azalır: x<sup>2</sup>'den bir çarpan eksilir (−2), 1/x'ten bir çarpan eklenir (−1). Hangi kuvvet aranıyorsa üs denklemi kurulur; çözüm 0 ile n arasında bir tam sayı değilse o kuvvet açılımda yoktur.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (x<sup>2</sup> + <span class="kes"><span>1</span><span>x</span></span>)<sup>9</sup> açılımında sabit terim kaçtır? x<sup>3</sup>'lü terimin katsayısı kaçtır?</p>
+<p><strong>Adım 1.</strong> Genel terimi yaz: a = x<sup>2</sup>, b = x<sup>−1</sup>.</p>
+<span class="mat">T<sub>r+1</sub> = C(9, r) · (x<sup>2</sup>)<sup>9−r</sup> · (x<sup>−1</sup>)<sup>r</sup> <span class="g">(1/x = x<sup>−1</sup>)</span></span>
+<p><strong>Adım 2.</strong> x'in üssünü topla (üslü sayılarda çarpımda üsler toplanır).</p>
+<span class="mat">x<sup>2(9−r)</sup> · x<sup>−r</sup> = x<sup>18−3r</sup> <span class="g">(18 − 2r − r)</span></span>
+<p><strong>Adım 3.</strong> Sabit terim için üs sıfır olmalı.</p>
+<span class="mat">18 − 3r = 0 ⇒ r = 6 <span class="g">(0 ≤ 6 ≤ 9, uygun)</span></span>
+<span class="mat">T<sub>7</sub> = C(9, 6) = C(9, 3) = <span class="kes"><span>9 · 8 · 7</span><span>3 · 2 · 1</span></span> = 84 <span class="g">(simetri ile kısa hesap)</span></span>
+<p><strong>Adım 4.</strong> x<sup>3</sup> için üs 3 olmalı.</p>
+<span class="mat">18 − 3r = 3 ⇒ r = 5 ⇒ C(9, 5) = C(9, 4) = 126</span>
+<p><strong>Sonuç:</strong> Sabit terim 84 (baştan 7. terim), x<sup>3</sup>'ün katsayısı 126. Bu binomda a ve b'nin katsayıları 1 olduğu için katsayı yalnızca Pascal sayısıdır. Binomda sayı katsayısı olsaydı (x<sup>2</sup> − 2/x gibi) her terimde (−2)<sup>r</sup> çarpanı da eklenirdi.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Sabit terim için her zaman x = 0 koymak.</strong> (x<sup>2</sup> + 1/x)<sup>9</sup>'da x = 0 koymak 1/0 yazmaktır; anlamsızdır. x = 0 koyma yolu yalnızca açılım bir polinomsa (negatif kuvvet yoksa) geçerlidir. Bir başka karışıklık, "sabit terim" ile "katsayılar toplamını" karıştırmaktır: x = 1 koymak bütün katsayıları toplar, sabit terimi vermez.</p>
+<p><strong>Üs denkleminde negatif kuvveti unutmak.</strong> 1/x'i x<sup>1</sup> sayıp üssü 18 − 2r + r = 18 − r yazmak r = 18 gibi açılımda olmayan bir değer verir. r her zaman 0 ile n arasında bir tam sayı olmalıdır; bulduğun r bu aralıkta değilse ya üssü yanlış yazmışsındır ya da istenen terim açılımda yoktur.</p></div>
+
+<h2 class="s">6. Rasyonel ve tam sayı terimler</h2>
+
+<p>Binomun parçaları köklü sayılar olduğunda açılımın bazı terimleri rasyonel çıkar, bazıları köklü kalır. "Açılımda kaç terim rasyoneldir?" sorusunun cevabı yine genel terimden okunur: köklü sayıyı kesirli üs olarak yaz, her köklü çarpanın üssünün tam sayı olmasını iste.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (√2 + ∛3)<sup>10</sup> açılımında kaç terim rasyonel sayıdır?</p>
+<p><strong>Adım 1.</strong> Kökleri üs olarak yaz: √2 = 2<sup>1/2</sup>, ∛3 = 3<sup>1/3</sup>.</p>
+<span class="mat">T<sub>r+1</sub> = C(10, r) · 2<sup>(10−r)/2</sup> · 3<sup>r/3</sup> <span class="g">(genel terim)</span></span>
+<p><strong>Adım 2.</strong> Terim rasyonel olsun diye iki üs de tam sayı olmalı. C(10, r) zaten tam sayıdır.</p>
+<span class="mat">(10 − r)/2 tam sayı ⇒ r çift <span class="g">(10 − r çift)</span></span>
+<span class="mat">r/3 tam sayı ⇒ r, 3'ün katı</span>
+<p><strong>Adım 3.</strong> r ∈ {0, 1, …, 10} içinde hem çift hem 3'ün katı olanlar, yani 6'nın katları.</p>
+<span class="mat">r ∈ {0, 6} <span class="g">(12 aralığın dışında)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> r = 0: 2<sup>5</sup> = 32. r = 6: C(10, 6) · 2<sup>2</sup> · 3<sup>2</sup> = 210 · 36 = 7560. İkisi de tam sayı. r = 3 gibi bir değerde 2<sup>7/2</sup> köklü kalır.</p>
+<p><strong>Sonuç:</strong> 2 terim rasyoneldir (ikisi de tam sayıdır). Yalnızca "r çift" koşulunu alan 6, yalnızca "r 3'ün katı" koşulunu alan 4 bulur; iki koşulun <strong>birlikte</strong> sağlanması gerekir.</p></div>
+
+<p>Bu tipte üslerin negatif olmaması da gerekirse (örneğin bir parça 1/√x ise) ayrıca o koşul eklenir. Rasyonel terim sayısı sorulup tam sayı terim sayısı istenmişse, köklerin içi tam sayıyken iki soru aynı cevabı verir, çünkü tam sayının doğal sayı kuvveti tam sayıdır.</p>
+
+<h2 class="s">7. Tek ve çift kuvvetli terimler</h2>
+
+<p>"x'in çift kuvvetli terimlerinin katsayıları toplamı" ya da "tek sıradaki terimlerin katsayıları toplamı" türü sorular, x = 1 ile x = −1'i birlikte kullanır. Açılımı P(x) diye düşün. x = 1 bütün katsayıları toplar. x = −1 koyunca çift kuvvetler (−1)<sup>çift</sup> = 1 ile aynen kalır, tek kuvvetler (−1)<sup>tek</sup> = −1 ile işaret değiştirir.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<span class="mat">çift kuvvetlilerin katsayıları toplamı = <span class="kes"><span>P(1) + P(−1)</span><span>2</span></span></span>
+<span class="mat">tek kuvvetlilerin katsayıları toplamı = <span class="kes"><span>P(1) − P(−1)</span><span>2</span></span></span>
+<p><strong>Neden?</strong> Ç çift kuvvetlilerin, T tek kuvvetlilerin katsayıları toplamı olsun. P(1) = Ç + T, P(−1) = Ç − T. İki denklemi toplayınca 2Ç, çıkarınca 2T kalır. Bu, mat Parça 39'da polinomlar için gördüğün kuralın aynısıdır.</p></div>
+
+<p>Soru "sıra" ile sorarsa önce sırayı kuvvete çevir. Açılım x'in azalan kuvvetlerine göre yazılmışsa baştan k. terimde x'in üssü n − (k − 1)'dir. n çiftse tek sıradaki terimler (1., 3., 5., …) x'in çift kuvvetlerini taşır; n tekse tersine, tek sıradaki terimler x'in tek kuvvetlerini taşır. Bunu ezberlemek yerine birinci terimin kuvvetine bak: (3x − 1)<sup>5</sup>'te birinci terim x<sup>5</sup>, yani tek sıradakiler tek kuvvetlidir.</p>
+
+<p>Kısa bir örnek: (x − 1)<sup>5</sup> açılımında tek sıradaki terimlerin katsayıları toplamı. Birinci terim x<sup>5</sup>, yani tek sıradakiler (1., 3., 5.) x<sup>5</sup>, x<sup>3</sup>, x<sup>1</sup>'li terimlerdir. P(1) = 0, P(−1) = (−2)<sup>5</sup> = −32; tek kuvvetliler (0 − (−32))/2 = 16. Gerçekten açılım x<sup>5</sup> − 5x<sup>4</sup> + 10x<sup>3</sup> − 10x<sup>2</sup> + 5x − 1 ve 1 + 10 + 5 = 16. Sırayı kuvvete çevirmeden (P(1) + P(−1))/2 formülünü kullanan −16 bulurdu.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> (3x − 1)<sup>5</sup> açılımı için katsayılar toplamını, sabit terimi ve x'in tek kuvvetli terimlerinin katsayıları toplamını bulun.</p>
+<p><strong>Adım 1.</strong> P(x) = (3x − 1)<sup>5</sup>; katsayılar toplamı P(1).</p>
+<span class="mat">P(1) = (3 − 1)<sup>5</sup> = 32</span>
+<p><strong>Adım 2.</strong> Açılım polinom olduğu için sabit terim P(0).</p>
+<span class="mat">P(0) = (−1)<sup>5</sup> = −1 <span class="g">(tek kuvvet, eksi kalır)</span></span>
+<p><strong>Adım 3.</strong> P(−1)'i bul.</p>
+<span class="mat">P(−1) = (−3 − 1)<sup>5</sup> = (−4)<sup>5</sup> = −1024</span>
+<p><strong>Adım 4.</strong> Tek kuvvetlilerin toplamı.</p>
+<span class="mat"><span class="kes"><span>P(1) − P(−1)</span><span>2</span></span> = <span class="kes"><span>32 + 1024</span><span>2</span></span> = 528</span>
+<p><strong>Adım 5 (kontrol yolu).</strong> Açılım 243x<sup>5</sup> − 405x<sup>4</sup> + 270x<sup>3</sup> − 90x<sup>2</sup> + 15x − 1. Tek kuvvetliler 243 + 270 + 15 = 528; çift kuvvetliler −405 − 90 − 1 = −496 = (32 − 1024)/2. Uyuşuyor.</p>
+<p><strong>Sonuç:</strong> 32, −1 ve 528. P(−1)'deki (−4)<sup>5</sup>'in işaretini artı almak bu tipin en sık hatasıdır; tek kuvvet eksiyi korur.</p></div>
+
+<h2 class="s">8. İki binomun çarpımında bir terim</h2>
+
+<p>(x + 3)(x − 2)<sup>4</sup> gibi bir çarpımda belirli bir kuvvetin katsayısı istenir. Bütün açılımı yazıp çarpmak gereksizdir. Mantık, binom teoreminin kendi mantığıyla aynıdır: istenen x<sup>k</sup>, birinci çarpandan seçilen terim ile ikinci çarpandan seçilen terimin çarpımıyla oluşur. Birinci çarpandaki her terim için, ikinci çarpanda "eksik kalan kuvveti" ara ve katkıları topla.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> (x + 3)(x − 2)<sup>4</sup> çarpımında x<sup>2</sup>'li terimin katsayısı kaçtır?</p>
+<p><strong>Adım 1.</strong> x<sup>2</sup> iki yoldan oluşur: birinci çarpandan x seçilip ikinciden x<sup>1</sup>'li terim, ya da birinci çarpandan 3 seçilip ikinciden x<sup>2</sup>'li terim.</p>
+<p><strong>Adım 2.</strong> (x − 2)<sup>4</sup>'te x<sup>k</sup>'nin katsayısı: x'in üssü 4 − r = k ⇒ r = 4 − k; katsayı C(4, r)(−2)<sup>r</sup>.</p>
+<span class="mat">x<sup>1</sup>: r = 3 ⇒ C(4, 3)(−2)<sup>3</sup> = 4 · (−8) = −32</span>
+<span class="mat">x<sup>2</sup>: r = 2 ⇒ C(4, 2)(−2)<sup>2</sup> = 6 · 4 = 24</span>
+<p><strong>Adım 3.</strong> Katkıları topla.</p>
+<span class="mat">1 · (−32) + 3 · 24 = −32 + 72 = 40 <span class="g">(x · x<sup>1</sup> ve 3 · x<sup>2</sup>)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> (x − 2)<sup>4</sup> = x<sup>4</sup> − 8x<sup>3</sup> + 24x<sup>2</sup> − 32x + 16; (x + 3) ile çarpınca x<sup>2</sup>'li terimler x · (−32x) ve 3 · 24x<sup>2</sup>, toplam 40x<sup>2</sup>.</p>
+<p><strong>Sonuç:</strong> 40. Yalnızca 3 · 24 = 72 diyen, birinci çarpandaki x'in de x<sup>2</sup>'ye katkı verdiğini unutmuştur.</p></div>
+
+<p>Aynı mantık 1/x içeren binomlarda da işler; tek fark, ikinci çarpanda negatif kuvvetlerin de bulunabilmesidir. (x<sup>2</sup> + 1)(x − 1/x)<sup>6</sup> çarpımının sabit terimini ara. (x − 1/x)<sup>6</sup>'nın genel terimi C(6, r)(−1)<sup>r</sup>x<sup>6−2r</sup>'dir. Sabit terim iki yoldan gelir: x<sup>2</sup> ile ikinci çarpandaki x<sup>−2</sup>'li terimin çarpımı (6 − 2r = −2, r = 4, katsayı C(6, 4) = 15) ve 1 ile ikinci çarpandaki sabit terimin çarpımı (6 − 2r = 0, r = 3, katsayı −C(6, 3) = −20). Toplam 15 − 20 = −5. Birinci çarpandaki her terim için ikinci çarpanda "tamamlayıcı" kuvveti aramak, bu tipteki bütün soruların yöntemidir; tamamlayıcı kuvvet ikinci çarpanda yoksa o yoldan katkı gelmez.</p>
+
+<h2 class="s">9. Binomla yaklaşık hesap ve son basamaklar</h2>
+
+<p>Binom açılımının sayılarla bir kullanımı daha var. Bir sayıyı "yuvarlak sayı + küçük sayı" diye yazarsan, açılımın ilk birkaç terimi sonucun büyük bölümünü verir ve geri kalan terimler ya çok küçüktür ya da sorulan basamağı etkilemez. Bu bölüm kısa tutulmuştur; sınavda nadiren gelir ama 11<sup>n</sup>, 99<sup>n</sup> türü sorular görülür.</p>
+
+<p><strong>Son iki basamak.</strong> 11<sup>25</sup> = (10 + 1)<sup>25</sup>. Açılımda 10<sup>2</sup> ve daha büyük kuvvetleri içeren bütün terimler 100'ün katıdır; son iki basamağı etkilemez. Geriye son iki terim kalır: C(25, 24) · 10 + 1 = 250 + 1 = 251. 11<sup>25</sup>'in son iki basamağı 51'dir. Genel olarak 11<sup>n</sup>'nin son iki basamağı, 10n + 1 sayısının son iki basamağıdır: 11<sup>30</sup> için 301, yani 01.</p>
+
+<p>99<sup>n</sup> = (100 − 1)<sup>n</sup>'de 100'ün katı olmayan tek terim son terimdir: (−1)<sup>n</sup>. n çiftse 99<sup>n</sup> 100'e bölündüğünde kalan 1'dir, son iki basamak 01; n tekse kalan 100 − 1 = 99'dur, son iki basamak 99. Aynı fikir bölünebilmede de işe yarar: 9<sup>20</sup> = (8 + 1)<sup>20</sup>'de 8'in katı olmayan tek terim 1<sup>20</sup> = 1'dir; 9<sup>20</sup>'nin 8 ile bölümünden kalan 1'dir.</p>
+
+<p>Pascal sayılarının basamaklara ayrı ayrı yerleşmesini görmek istersen 101'in kuvvetlerine bak: 101 = 100 + 1 olduğu için katsayılar iki basamak arayla dizilir. 101<sup>4</sup> = 1 · 10<sup>8</sup> + 4 · 10<sup>6</sup> + 6 · 10<sup>4</sup> + 4 · 10<sup>2</sup> + 1 = 104060401. Elde oluşmadığı için n = 4 satırı (1, 4, 6, 4, 1) sıfırlarla ayrılmış olarak okunur. Parçanın sorusundaki 11<sup>n</sup> örüntüsü, aynı olayın basamaklar arasında hiç boşluk bırakmayan, bu yüzden n = 5'te eldeyle bozulan hâlidir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 9</span>
+<p><strong>Soru:</strong> (1,01)<sup>10</sup> sayısının yaklaşık değerini binom açılımının ilk üç terimiyle bulun.</p>
+<p><strong>Adım 1.</strong> 1,01 = 1 + 0,01 yaz; a = 1, b = 0,01, n = 10.</p>
+<p><strong>Adım 2.</strong> İlk üç terim (r = 0, 1, 2).</p>
+<span class="mat">C(10, 0) · 1 = 1</span>
+<span class="mat">C(10, 1) · 0,01 = 10 · 0,01 = 0,1</span>
+<span class="mat">C(10, 2) · (0,01)<sup>2</sup> = 45 · 0,0001 = 0,0045</span>
+<p><strong>Adım 3.</strong> Topla.</p>
+<span class="mat">1 + 0,1 + 0,0045 = 1,1045</span>
+<p><strong>Sonuç:</strong> (1,01)<sup>10</sup> ≈ 1,1045. Gerçek değer 1,10462…'dir; dördüncü terim C(10, 3) · 10<sup>−6</sup> = 0,00012 kadardır ve sonraki terimler daha da küçülür. Bu hesap, bileşik faizde (Parça 16) yüzde 1 faizin 10 dönemde yaklaşık yüzde 10,46 artış vermesinin nedenidir: basit faizin verdiği 0,1'in üstüne "faizin faizi" eklenir.</p></div>
+
+<p>Azalış için de aynı yol işler: (0,99)<sup>5</sup> = (1 − 0,01)<sup>5</sup> ≈ 1 − 5 · 0,01 + 10 · 0,0001 = 0,951. Gerçek değer 0,95099…'dur. Burada işaretler (a − b)<sup>n</sup> kuralıyla dönüşümlü gider; üçüncü terimi eksi almak 0,949 gibi yanlış bir yaklaşım verir. İlk iki terim (1 − 5 · 0,01 = 0,95) çoğu zaman yeterli bir tahmindir; ne kadar terim alacağını sorudaki basamak sayısı belirler.</p>
+
+<h2 class="s">10. Sınavda hızlı yol ve kontrol yolu</h2>
+
+<div class="tablo"><table>
+<tr><th>Soru</th><th>İlk hamle</th><th>Kontrol</th></tr>
+<tr><td>Terim sayısı</td><td>n + 1</td><td>r = 0, …, n sayısı</td></tr>
+<tr><td>Baştan k. terim</td><td>r = k − 1</td><td>1. terimde r = 0 çıkmalı</td></tr>
+<tr><td>Sondan k. terim</td><td>binomu ters çevir, baştan k.</td><td>baştan + sondan sıra = n + 2</td></tr>
+<tr><td>Katsayılar toplamı</td><td>bütün değişkenlere 1</td><td>2<sup>n</sup> yalnızca katsayılar 1 iken</td></tr>
+<tr><td>Sabit terim</td><td>polinomda x = 0; 1/x varsa üs = 0</td><td>r tam sayı ve 0 ≤ r ≤ n</td></tr>
+<tr><td>x<sup>k</sup>'nin katsayısı</td><td>genel terimde üssü k'ya eşitle</td><td>terimde üsler toplamı tutarlı mı</td></tr>
+<tr><td>Rasyonel terim sayısı</td><td>bütün kesirli üsler tam sayı</td><td>koşulları birlikte uygula</td></tr>
+<tr><td>Çift/tek kuvvetliler</td><td>(P(1) ± P(−1))/2</td><td>iki toplam P(1)'i vermeli</td></tr>
+<tr><td>İki binomun çarpımı</td><td>katkıları ayrı ayrı bul, topla</td><td>her katkıda kuvvetler toplamı k</td></tr>
+</table></div>
+
+<p><strong>Hızlı yol: Pascal kuralı toplamları.</strong> "C(7, 2) + C(7, 3) + C(8, 4) kaçtır?" gibi sorularda hesap yapmadan kuralı zincirle: C(7, 2) + C(7, 3) = C(8, 3), sonra C(8, 3) + C(8, 4) = C(9, 4) = 126. Kural yalnızca üst sayıları aynı ve alt sayıları ardışık iki kombinasyona uygulanır; alt sayı büyük olanınki kadar olur.</p>
+
+<p><strong>Hızlı yol: simetriyle kısa hesap.</strong> C(9, 6) yerine C(9, 3) hesapla; çarpılacak sayı az olur.</p>
+
+<p><strong>Soru kökünü oku: "terim" mi, "katsayı" mı?</strong> "x<sup>3</sup>'lü terim" sorulursa cevap sayı ile değişkenin çarpımıdır (80x<sup>3</sup>); "x<sup>3</sup>'lü terimin katsayısı" sorulursa yalnızca sayıdır (80). Seçeneklerde ikisi birlikte bulunabilir. "Sabit terim" ise zaten bir sayıdır. Benzer biçimde "baştan 3. terim" ile "r = 3 olan terim" aynı şey değildir; soru kökündeki sözcüğü genel terimdeki r'ye çevirdiğin satırı her zaman ayrıca yaz.</p>
+
+<p><strong>Kontrol yolu 1: küçük bir değer koy.</strong> Bulduğun açılımda x = 1 koy ve sol yanla karşılaştır. Tek bir terim bulduysan bu denetim işe yaramaz; o zaman terimdeki üslerin toplamının binomun derecesiyle tutarlı olup olmadığına bak.</p>
+
+<p><strong>Kontrol yolu 2: büyüklük ve işaret.</strong> (a − b)<sup>n</sup>'de r tekse terim eksidir; işareti bu kuralla bir kez daha denetle. Katsayının mutlak değeri C(n, r) · |a'nın katsayısı|<sup>n−r</sup> · |b'nin katsayısı|<sup>r</sup> olmalı; yalnızca Pascal sayısını yazan seçenek, katsayıları unutmanın sonucudur.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>mat Parça 45'e:</strong> C(n, r)'nin "n parantezden r tanesini seçme" anlamı, kombinasyonun "n kişiden r kişilik ekip seçme" anlamının aynısıdır. Pascal kuralının orada "Ali var / Ali yok", burada "son parantezden a ya da b" diye iki gerekçesini gördün.</p>
+<p><strong>mat Parça 15 ve 39'a:</strong> (a ± b)<sup>2</sup> ve (a ± b)<sup>3</sup> özdeşlikleri binom teoreminin n = 2 ve n = 3 durumlarıdır. Katsayılar toplamı için x = 1, sabit terim için x = 0 koyma fikri polinomlar parçasından geliyor.</p>
+<p><strong>Parça 22'ye:</strong> xⁿ'nin türevini bulurken (x + h)<sup>n</sup>'nin açılımında yalnızca ilk iki terimi kullanmıştın: x<sup>n</sup> + n · x<sup>n−1</sup>h + (h<sup>2</sup>'li terimler). İkinci terimin katsayısı C(n, 1) = n'dir; türev kuralındaki n buradan gelir.</p>
+<p><strong>Parça 16'ya ve Parça 29'a:</strong> Bileşik faizdeki (1 + r)<sup>n</sup> bir binomdur; küçük faizde ilk iki-üç terim yaklaşık değeri verir. İntegralde değişken değiştirmeye uymayan (x<sup>2</sup> + 1)<sup>5</sup> gibi çarpımlar binomla açılıp terim terim integrallenir.</p>
+<p><strong>Parça 34'e:</strong> Sonraki parçada olasılığa döneceksin. Bir parayı n kez atınca r tura gelme yollarının sayısının C(n, r) olması, buradaki "n parantezden r tanesinde b seçme" düşüncesinin aynısıdır.</p>
+<p><strong>Öbür derslere:</strong> Fizikte ve kimyada küçük bir değişimin etkisini hesaplarken (1 + x)<sup>n</sup> ≈ 1 + nx yaklaşımı kullanılır; bu, binom açılımının ilk iki terimidir ve x küçükken geçerlidir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>(a + b)<sup>n</sup> açılımında a<sup>n−r</sup>b<sup>r</sup> teriminin katsayısı neden C(n, r)'dir?</summary><p>Açılımdaki her terim, n parantezin her birinden a ya da b seçilip çarpılarak oluşur. a<sup>n−r</sup>b<sup>r</sup> çarpımını veren seçimler, b'nin alınacağı r parantezin seçilmesiyle belirlenir; sıra önemli olmadığı için bu seçimin sayısı C(n, r)'dir.</p></details>
+<details><summary>Genel terim formülü nedir ve baştan k. terim için r kaç alınır?</summary><p>T<sub>r+1</sub> = C(n, r) · a<sup>n−r</sup> · b<sup>r</sup>. Terimler r = 0'dan başladığı için baştan k. terimde r = k − 1 alınır. a ve b, binomdaki parçaların katsayı ve işaretleriyle birlikte tamamıdır.</p></details>
+<details><summary>Sondan k. terimi ve ortanca terimi nasıl bulursun?</summary><p>Sondan k. terim, binom ters çevrilince baştan k. terimdir; baştan sırası n + 2 − k'dir. n çiftken tek bir ortanca terim vardır: baştan (n/2 + 1). terim, r = n/2.</p></details>
+<details><summary>Katsayılar toplamı ile sabit terim nasıl bulunur? Sabit terim için x = 0 koymak ne zaman yanlıştır?</summary><p>Katsayılar toplamı için bütün değişkenlere 1 verilir. Açılım polinomsa sabit terim x = 0 koyarak bulunur. Binomda 1/x gibi negatif kuvvet varsa x = 0 konamaz; genel terimde x'in üssü sıfıra eşitlenip r bulunur.</p></details>
+<details><summary>Pascal kuralı C(n, r) + C(n, r + 1) = C(n + 1, r + 1) açılımdan nasıl gerekçelendirilir?</summary><p>(a + b)<sup>n+1</sup> = (a + b)<sup>n</sup>(a + b) yazılır. a<sup>n−r</sup>b<sup>r+1</sup> terimi, a<sup>n−r</sup>b<sup>r</sup> teriminin b ile ya da a<sup>n−r−1</sup>b<sup>r+1</sup> teriminin a ile çarpılmasından gelir; katsayılar C(n, r) ve C(n, r + 1) toplanır.</p></details>
+<details><summary>C(n, 0) − C(n, 1) + C(n, 2) − … + (−1)<sup>n</sup>C(n, n) neden 0'dır?</summary><p>(1 + x)<sup>n</sup> açılımında x = −1 konur: sol yan (1 − 1)<sup>n</sup> = 0 (n ≥ 1), sağ yan bu dönüşümlü toplamdır.</p></details>
+<details><summary>Çift kuvvetli terimlerin katsayıları toplamı nasıl bulunur?</summary><p>(P(1) + P(−1))/2. P(1) bütün katsayıları toplar; P(−1)'de çift kuvvetliler aynı kalır, tek kuvvetliler işaret değiştirir. Toplayınca tek kuvvetliler birbirini götürür, çift kuvvetlilerin iki katı kalır.</p></details>
+
+<details><summary>Köklü sayılardan oluşan bir binomun açılımında rasyonel terim sayısını nasıl bulursun?</summary><p>Kökleri kesirli üs olarak yazıp genel terimdeki her üssü r cinsinden ifade ederim; bütün üslerin aynı anda tam sayı olduğu r değerlerini 0 ile n arasında sayarım. (√2 + ∛3)<sup>10</sup>'da r hem çift hem 3'ün katı olmalı: r = 0 ve r = 6, iki terim.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Neden kombinasyon:</strong> n parantezden r tanesinde b seçmek C(n, r) yoldur; a<sup>n−r</sup>b<sup>r</sup>'nin katsayısı C(n, r).</li>
+<li><strong>Binom teoremi:</strong> (a + b)<sup>n</sup> = C(n, 0)a<sup>n</sup> + C(n, 1)a<sup>n−1</sup>b + … + C(n, n)b<sup>n</sup>. Terim sayısı n + 1; her terimde üsler toplamı n.</li>
+<li><strong>Genel terim:</strong> T<sub>r+1</sub> = C(n, r)a<sup>n−r</sup>b<sup>r</sup>; baştan k. terim r = k − 1. a ve b işaret ve katsayılarıyla birlikte, parantez içinde.</li>
+<li><strong>Sıra:</strong> sondan k. = baştan (n + 2 − k).; ortanca terim (n çift) r = n/2.</li>
+<li><strong>(a − b)<sup>n</sup>:</strong> (−1)<sup>r</sup> işareti; +, −, +, … dönüşümlü.</li>
+<li><strong>Pascal:</strong> n. satır C(n, 0), …, C(n, n); C(n, r) + C(n, r + 1) = C(n + 1, r + 1); simetri; satır toplamı 2<sup>n</sup>; dönüşümlü toplam 0.</li>
+<li><strong>Katsayılar toplamı:</strong> değişkenlere 1. <strong>Sabit terim:</strong> polinomda x = 0; 1/x varsa üs = 0 denklemi.</li>
+<li><strong>x<sup>k</sup>:</strong> genel terimde x'in üssünü r cinsinden yaz, k'ya eşitle; r tam sayı ve 0 ≤ r ≤ n değilse terim yok.</li>
+<li><strong>Rasyonel terim:</strong> bütün kesirli üsler aynı anda tam sayı.</li>
+<li><strong>Çift/tek kuvvetliler:</strong> (P(1) ± P(−1))/2.</li>
+<li><strong>Çarpım:</strong> (x + 3)(x − 2)<sup>4</sup>'te x<sup>2</sup> = x · [x<sup>1</sup>] + 3 · [x<sup>2</sup>].</li>
+<li><strong>Sayılarla:</strong> 11<sup>n</sup> ≡ 10n + 1 (son iki basamak); 99<sup>n</sup> son iki basamak n çiftse 01, tekse 99; (1 + x)<sup>n</sup> ≈ 1 + nx + C(n, 2)x<sup>2</sup>.</li>
+<li><strong>Kapsam dışı:</strong> üç terimli açılım (multinom).</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-33">
+<h3>Quiz 33</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">(3x − 2y)<sup>5</sup> açılımındaki terimlerin katsayıları toplamı kaçtır?</p>
+<ul class="sec"><li>−1</li><li>1</li><li>32</li><li>243</li><li>3125</li></ul>
+<div class="coz"><p>Katsayılar toplamı için bütün değişkenlere 1 verilir: (3 · 1 − 2 · 1)<sup>5</sup> = 1<sup>5</sup> = 1. −1, değişkenlere 1 yerine −1 vermektir: (−3 + 2)<sup>5</sup> = −1. 32, Pascal satır toplamı 2<sup>5</sup>'i almaktır; bu yalnızca a ve b'nin katsayıları 1 iken katsayılar toplamıdır. 243, yalnızca x'in katsayısını hesaba katıp 3<sup>5</sup> yazmaktır. 3125, katsayıların mutlak değerlerini toplamak, yani (3 + 2)<sup>5</sup> almaktır; eksi işaretli katsayılar toplamdan düşer.</p></div></li>
+
+<li data-c="D"><p class="q">(x − 2)<sup>6</sup> açılımı x'in azalan kuvvetlerine göre yazıldığında baştan 3. terim aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−160x<sup>3</sup></li><li>15x<sup>4</sup></li><li>−60x<sup>4</sup></li><li>60x<sup>4</sup></li><li>240x<sup>2</sup></li></ul>
+<div class="coz"><p>Baştan 3. terim r = 2: C(6, 2) · x<sup>4</sup> · (−2)<sup>2</sup> = 15 · 4 · x<sup>4</sup> = 60x<sup>4</sup>. −160x<sup>3</sup>, r = 3 alıp 4. terimi yazmaktır (sıra ile r arasındaki bir kaymayı unutmak). 15x<sup>4</sup>, (−2)<sup>2</sup> çarpanını unutup yalnızca Pascal sayısını yazmaktır. −60x<sup>4</sup>, eksi işaretini kuvvet almadan terime taşımaktır; r = 2 çift olduğu için terim artıdır. 240x<sup>2</sup>, sondan 3. terimdir (r = 4).</p></div></li>
+
+<li data-c="A"><p class="q">(x<sup>2</sup> − <span class="kes"><span>2</span><span>x</span></span>)<sup>6</sup> açılımında sabit terim kaçtır?</p>
+<ul class="sec"><li>240</li><li>−240</li><li>15</li><li>60</li><li>−160</li></ul>
+<div class="coz"><p>Genel terim C(6, r)(x<sup>2</sup>)<sup>6−r</sup>(−2x<sup>−1</sup>)<sup>r</sup> = C(6, r)(−2)<sup>r</sup>x<sup>12−3r</sup>. Sabit terim için 12 − 3r = 0, r = 4: C(6, 4) · (−2)<sup>4</sup> = 15 · 16 = 240. −240, çift kuvvette (−2)<sup>4</sup>'ü eksi almaktır. 15, (−2)<sup>4</sup> çarpanını unutmaktır. 60, r'yi doğru bulup (−2)'nin üssünü 6 − r = 2 almaktır (üssü yanlış parçaya vermek). −160, ortanca terimin (r = 3) katsayısıdır; bu binomda ortanca terim x<sup>3</sup> içerir, sabit değildir.</p></div></li>
+
+<li data-c="E"><p class="q">C(8, 3) + C(8, 4) + C(9, 5) toplamı aşağıdakilerden hangisine eşittir?</p>
+<ul class="sec"><li>C(10, 4)</li><li>C(9, 5)</li><li>C(11, 5)</li><li>C(17, 7)</li><li>C(10, 5)</li></ul>
+<div class="coz"><p>Pascal kuralını iki kez uygula: C(8, 3) + C(8, 4) = C(9, 4); sonra C(9, 4) + C(9, 5) = C(10, 5) = 252. C(10, 4) = 210, kuralda alt sayıyı küçük olanınki gibi almaktır; alt sayı büyük olanınkidir. C(9, 5), yalnızca ilk adımda durup sonucu yanlış eklemektir. C(11, 5), kuralı fazladan bir kez uygulamaktır. C(17, 7), üst ve alt sayıları ayrı ayrı toplamaktır; kombinasyonlar böyle toplanmaz.</p></div></li>
+
+<li data-c="C"><p class="q">(2x + 1)<sup>n</sup> açılımında katsayılar toplamı 243 olduğuna göre, açılımdaki x<sup>3</sup>'lü terimin katsayısı kaçtır?</p>
+<ul class="sec"><li>10</li><li>40</li><li>80</li><li>160</li><li>32</li></ul>
+<div class="coz"><p>x = 1: 3<sup>n</sup> = 243 = 3<sup>5</sup>, n = 5. x<sup>3</sup>'lü terimde 2x'in üssü 3 olmalı, yani r = 2 (b = 1'in üssü): C(5, 2) · (2x)<sup>3</sup> · 1<sup>2</sup> = 10 · 8 · x<sup>3</sup> = 80x<sup>3</sup>. 10, (2x)<sup>3</sup>'teki 2<sup>3</sup>'ü unutmaktır. 40, x<sup>2</sup>'li terimin katsayısıdır (C(5, 3) · 2<sup>2</sup>). 160, 2'nin üssünü yanlış alıp 10 · 2<sup>4</sup> yazmaktır; aynı sayı n'yi 6 bulanın da cevabıdır. 32, x<sup>5</sup>'li terimin katsayısıdır.</p></div></li>
+
+<li data-c="A"><p class="q">(√2 + ∛5)<sup>12</sup> açılımındaki terimlerden kaç tanesi rasyonel sayıdır?</p>
+<ul class="sec"><li>3</li><li>7</li><li>5</li><li>13</li><li>2</li></ul>
+<div class="coz"><p>Genel terim C(12, r) · 2<sup>(12−r)/2</sup> · 5<sup>r/3</sup>. Rasyonel olması için 12 − r çift (r çift) ve r 3'ün katı olmalı; ikisi birlikte r'nin 6'nın katı olmasıdır: r ∈ {0, 6, 12}, 3 terim. 7, yalnızca "r çift" koşulunu almaktır (0, 2, …, 12). 5, yalnızca "r 3'ün katı" koşulunu almaktır (0, 3, 6, 9, 12). 13, terim sayısıdır. 2, uç değerlerden birini (r = 0 ya da r = 12) unutmaktır; r = 0'da terim 2<sup>6</sup> = 64, r = 12'de 5<sup>4</sup> = 625, ikisi de rasyoneldir.</p></div></li>
+
+<li data-c="E"><p class="q">(x + 2)(x − 1)<sup>5</sup> çarpımının açılımında x<sup>3</sup>'lü terimin katsayısı kaçtır?</p>
+<ul class="sec"><li>20</li><li>−10</li><li>−30</li><li>30</li><li>10</li></ul>
+<div class="coz"><p>(x − 1)<sup>5</sup>'te x<sup>k</sup>'nin katsayısı C(5, 5 − k)(−1)<sup>5−k</sup>: x<sup>2</sup> için C(5, 3)(−1)<sup>3</sup> = −10, x<sup>3</sup> için C(5, 2)(−1)<sup>2</sup> = 10. x<sup>3</sup>, x · (x<sup>2</sup>'li terim) ve 2 · (x<sup>3</sup>'lü terim) yollarından gelir: 1 · (−10) + 2 · 10 = 10. 20, yalnızca 2 · 10 katkısını alıp birinci çarpandaki x'in katkısını unutmaktır. −10, yalnızca x · (−10) katkısını almaktır. 30, iki katkıyı toplarken −10'u +10 almaktır (işaret hatası). −30, x<sup>3</sup>'ün katsayısını da eksi alıp (−10) + 2 · (−10) yazmaktır; r = 2 çift olduğu için o terim artıdır.</p></div></li>
+
+<li data-c="B"><p class="q">(2x − 1)<sup>6</sup> açılımında x'in tek kuvvetli terimlerinin katsayıları toplamı kaçtır?</p>
+<ul class="sec"><li>365</li><li>−364</li><li>364</li><li>−728</li><li>1</li></ul>
+<div class="coz"><p>P(x) = (2x − 1)<sup>6</sup>: P(1) = 1, P(−1) = (−3)<sup>6</sup> = 729. Tek kuvvetliler (P(1) − P(−1))/2 = (1 − 729)/2 = −364. 365, çift kuvvetlilerin toplamıdır ((1 + 729)/2). 364, farkı ters sırayla alıp (P(−1) − P(1))/2 yazmaktır. −728, 2'ye bölmeyi unutmaktır. 1, bütün katsayıların toplamıdır; tek ve çift kuvvetliler ayrılmamıştır.</p></div></li>
+
+<li data-c="D" data-k="ileri-1"><p class="q">f tek fonksiyon, g çift fonksiyon olmak üzere f(2) = 3 ve g(2) = 4'tür. Buna göre f(−2) + g(−2) + f(0) toplamı kaçtır?</p>
+<ul class="sec"><li>7</li><li>−7</li><li>−1</li><li>1</li><li>2</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x): f(−2) = −3. Çift fonksiyonda g(−x) = g(x): g(−2) = 4. Tek fonksiyon 0'da tanımlıysa f(0) = −f(0)'dan f(0) = 0. Toplam −3 + 4 + 0 = 1. 7, iki fonksiyonu da çift gibi kullanmaktır. −7, ikisini de tek gibi kullanmaktır. −1, tek ve çifti yer değiştirmektir (3 − 4). 2, f(0)'ı 1 sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği x eksenini yalnızca x = −2 ve x = 4 noktalarında kesmektedir. Buna göre y = f(2x) fonksiyonunun grafiğinin x eksenini kestiği noktaların apsisleri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−4 ve 8</li><li>0 ve 6</li><li>−1 ve 2</li><li>−2 ve 4</li><li>1 ve −2</li></ul>
+<div class="coz"><p>f(2x) = 0 olması için 2x'in f'nin kökü olması gerekir: 2x = −2 ⇒ x = −1, 2x = 4 ⇒ x = 2. y = f(bx) grafiği yatayda b kat daralır; kökler b'ye bölünür. −4 ve 8, b ile bölmek yerine çarpmaktır (bu, y = f(x/2)'nin kökleridir). 0 ve 6, f(x − 2) gibi 2 birim sağa ötelemektir. −2 ve 4, yatay daralmanın kökleri değiştirmediğini sanmaktır; kökleri değiştirmeyen düşey esnetmedir (y = 2f(x)). 1 ve −2, f(−2x) gibi y eksenine göre yansıtmayı da eklemektir.</p></div></li>
+
+<li data-c="A" data-k="ileri-7"><p class="q">x<sup>2</sup> − x − 6 &lt; 0 eşitsizliğini sağlayan kaç tane tam sayı vardır?</p>
+<ul class="sec"><li>4</li><li>6</li><li>5</li><li>2</li><li>Sonsuz sayıda</li></ul>
+<div class="coz"><p>x<sup>2</sup> − x − 6 = (x − 3)(x + 2); kökler −2 ve 3. a = 1 &gt; 0 olduğundan ifade kökler arasında negatiftir: −2 &lt; x &lt; 3. Tam sayılar −1, 0, 1, 2: 4 tane. 6, eşitsizliği ≤ gibi okuyup −2 ve 3'ü de saymaktır. 5, uç noktalardan yalnız birini saymaktır. 2, yalnızca pozitif tam sayıları saymaktır. "Sonsuz sayıda", işaret kuralını ters uygulayıp çözümü kökler dışında aramaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-10"><p class="q">f(x) = 3 sin(2x − 1) + 4 fonksiyonunun esas periyodu aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>2π</li><li><span class="kes"><span>π</span><span>2</span></span></li><li>4π</li><li><span class="kes"><span>2π</span><span>3</span></span></li><li>π</li></ul>
+<div class="coz"><p>y = a · sin(bx + c) + d biçiminde periyot 2π/|b|'dir; b = 2 olduğundan periyot 2π/2 = π. a (genlik), c (yatay kayma) ve d (düşey kayma) periyodu değiştirmez. 2π, b'nin etkisini unutmaktır. π/2, tan-cot kuralını (π/|b|) sinüse uygulamaktır. 4π, 2π'yi b'ye bölmek yerine b ile çarpmaktır. 2π/3, genlik a = 3'ü periyot katsayısı sanmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-13"><p class="q">[0, 2π) aralığında 2 sin x − 1 = 0 denkleminin çözümlerinin toplamı kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>π</span><span>6</span></span></li><li>π</li><li>2π</li><li>3π</li><li><span class="kes"><span>π</span><span>3</span></span></li></ul>
+<div class="coz"><p>sin x = 1/2. Sinüs birinci ve ikinci bölgede pozitiftir: x = π/6 ve x = π − π/6 = 5π/6. Toplam π. π/6, ikinci çözümü unutmaktır. 2π, kosinüsün ±α kuralını uygulayıp π/6 ile 2π − π/6'yı almaktır. 3π, sin x = −1/2 çözümlerini (7π/6 ve 11π/6) almaktır. π/3, aynı çözümü iki kez saymaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-16"><p class="q">log<sub>2</sub> x + log<sub>2</sub>(x − 2) = 3 denkleminin çözüm kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>{−2, 4}</li><li>{5}</li><li>{3}</li><li>{4}</li><li>{−2}</li></ul>
+<div class="coz"><p>Çarpım kuralıyla log<sub>2</sub>(x(x − 2)) = 3, tanımdan x(x − 2) = 2<sup>3</sup> = 8, x<sup>2</sup> − 2x − 8 = 0, (x − 4)(x + 2) = 0. Tanım koşulu x &gt; 0 ve x − 2 &gt; 0, yani x &gt; 2: −2 yabancı köktür, çözüm kümesi {4}. {−2, 4}, tanım koşulunu denetlememektir. {5}, log x + log y'yi log(x + y) sanıp 2x − 2 = 8 yazmaktır. {3}, tanıma çevirmeyi unutup x(x − 2) = 3 yazmaktır. {−2}, yanlış kökü tutup doğrusunu atmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-19"><p class="q">lim<sub>x→3⁻</sub> <span class="kes"><span>x<sup>2</sup> − 9</span><span>|x − 3|</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>6</li><li>0</li><li>−6</li><li>Limit yoktur.</li><li>−1</li></ul>
+<div class="coz"><p>x → 3⁻ iken x &lt; 3, yani x − 3 &lt; 0 ve |x − 3| = −(x − 3). İfade (x − 3)(x + 3)/(−(x − 3)) = −(x + 3), limit −6. 6, sağdan limittir (|x − 3| = x − 3 almak). 0, payın sıfıra gittiğini görüp paydayı unutmaktır. "Limit yoktur", yalnızca soldan limit sorulduğu hâlde sağ ve sol limitlerin farklı olmasını gerekçe göstermektir; tek yanlı limit vardır. −1, |x − 3|/(x − 3) oranının soldan değerini tek başına cevap sanıp x + 3 çarpanını unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-22"><p class="q">f(x) = { x<sup>2</sup> + ax, x &lt; 1 ise; 3x + b, x ≥ 1 ise } fonksiyonu x = 1'de türevlenebilir olduğuna göre a + b kaçtır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>−1</li><li>2</li><li>3</li></ul>
+<div class="coz"><p>Türevlenebilme için iki koşul: süreklilik ve soldan-sağdan türevlerin eşitliği. Türevler: 2x + a, x = 1'de 2 + a; sağda 3. 2 + a = 3 ⇒ a = 1. Süreklilik: 1 + a = 3 + b ⇒ 2 = 3 + b ⇒ b = −1. a + b = 0. 1, yalnızca a'yı vermektir. −1, yalnızca b'yi vermektir. 2, süreklilik denkleminde işareti çevirip b = 1 bulmaktır. 3, süreklilik koşulunda 3x + b'de x = 1 koymayı unutup 1 + a = b yazmaktır (b = 2).</p></div></li>
+
+<li data-c="E" data-k="ileri-25"><p class="q">f(x) = x<sup>3</sup> + ax<sup>2</sup> + 3x fonksiyonu gerçek sayılarda her yerde artan olduğuna göre a'nın alabileceği değerlerin kümesi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>(−3, 3)</li><li>[−6, 6]</li><li>(−∞, −3] ∪ [3, ∞)</li><li>[0, 3]</li><li>[−3, 3]</li></ul>
+<div class="coz"><p>Her yerde artan olması için f′(x) = 3x<sup>2</sup> + 2ax + 3 ≥ 0 her x için sağlanmalı: baş katsayı 3 &gt; 0 ve Δ = 4a<sup>2</sup> − 36 ≤ 0, yani a<sup>2</sup> ≤ 9, −3 ≤ a ≤ 3. Δ = 0'da f′ tek bir noktada sıfır olur ve fonksiyon yine artandır; bu yüzden uçlar dahil. (−3, 3), Δ = 0 durumunu atmaktır. [−6, 6], Δ'yı a<sup>2</sup> − 36 diye 2a yerine a ile hesaplamaktır. (−∞, −3] ∪ [3, ∞), eşitsizliğin yönünü çevirmektir. [0, 3], negatif değerleri gereksiz yere atmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-28"><p class="q">Bir doğru boyunca hareket eden cismin hızı v(t) = 3t<sup>2</sup> + 2 m/s'dir. Cismin t = 0 anındaki konumu 1 m olduğuna göre t = 2 s anındaki konumu kaç m'dir?</p>
+<ul class="sec"><li>12</li><li>13</li><li>14</li><li>21</li><li>11</li></ul>
+<div class="coz"><p>Konum, hızın ters türevidir: s(t) = t<sup>3</sup> + 2t + C. s(0) = C = 1. s(2) = 8 + 4 + 1 = 13 m. 12, başlangıç koşulunu kullanmayıp C'yi 0 almaktır. 14, konum yerine hızı hesaplamaktır (v(2) = 12 + 2). 21, 3t<sup>2</sup>'nin ters türevini 2t<sup>3</sup> almaktır (üsse bölmek yerine katsayıyı değiştirmek). 11, C'nin işaretini çevirip −1 almaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-30"><p class="q">∫<sub>0</sub><sup>2</sup> f(x) dx = 5 olduğuna göre ∫<sub>0</sub><sup>2</sup> (3f(x) − 2) dx kaçtır?</p>
+<ul class="sec"><li>13</li><li>15</li><li>3</li><li>11</li><li>1</li></ul>
+<div class="coz"><p>Belirli integral toplamı ayırır ve sabit çarpanı dışarı alır: 3∫<sub>0</sub><sup>2</sup> f(x) dx − ∫<sub>0</sub><sup>2</sup> 2 dx = 3 · 5 − 2 · (2 − 0) = 15 − 4 = 11. 13, sabit 2'nin integralini aralık uzunluğuyla çarpmayıp 2 almaktır. 15, −2 terimini unutmaktır. 3, 3 ile çarpmayı da aralık uzunluğunu da unutup 5 − 2 yazmaktır. 1, 3 ile çarpmayı unutup 5 − 4 yazmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-30"><p class="q">∫<sub>−2</sub><sup>2</sup> (x<sup>3</sup> − 4x + 3) dx integralinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>6</li><li>12</li><li>24</li><li>−12</li></ul>
+<div class="coz"><p>x<sup>3</sup> − 4x tek fonksiyondur; simetrik aralıkta [−2, 2] integrali 0'dır. 3 sabiti çift fonksiyondur: ∫<sub>−2</sub><sup>2</sup> 3 dx = 3 · 4 = 12. Toplam 12. Kontrol: ters türev x<sup>4</sup>/4 − 2x<sup>2</sup> + 3x; x = 2'de 4 − 8 + 6 = 2, x = −2'de 4 − 8 − 6 = −10, fark 12. 0, bütün ifadeyi tek fonksiyon sanmaktır. 6, yalnızca [0, 2] aralığını almaktır. 24, çift kısmı 2 ile çarparken aralığı da tam almaktır (2 · 12). −12, üst ve alt sınırı yer değiştirmektir.</p></div></li>
+
+<li data-c="A" data-k="ileri-31"><p class="q">y = x<sup>2</sup> parabolü ile y = 2x doğrusu arasında kalan sınırlı bölgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li><span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>8</span><span>3</span></span></li><li>4</li><li>−<span class="kes"><span>4</span><span>3</span></span></li><li><span class="kes"><span>20</span><span>3</span></span></li></ul>
+<div class="coz"><p>Kesişim: x<sup>2</sup> = 2x ⇒ x = 0 ve x = 2. Bu aralıkta doğru üsttedir (x = 1'de 2 &gt; 1). Alan ∫<sub>0</sub><sup>2</sup> (2x − x<sup>2</sup>) dx = 4 − 8/3 = 4/3. 8/3, yalnızca parabolün altındaki alandır. 4, yalnızca doğrunun altındaki alandır. −4/3, "alttaki eksi üstteki" yazmaktır; alan negatif olamaz. 20/3, iki alanı çıkarmak yerine toplamaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-31"><p class="q">y = x<sup>2</sup> − 4 eğrisi, x ekseni, x = 0 ve x = 3 doğruları arasında kalan bölgelerin alanları toplamı kaç birimkaredir?</p>
+<ul class="sec"><li>−3</li><li>3</li><li><span class="kes"><span>16</span><span>3</span></span></li><li><span class="kes"><span>7</span><span>3</span></span></li><li><span class="kes"><span>23</span><span>3</span></span></li></ul>
+<div class="coz"><p>Eğri x = 2'de x eksenini keser: [0, 2]'de eksenin altında, [2, 3]'te üstünde. Alan = ∫<sub>0</sub><sup>2</sup> (4 − x<sup>2</sup>) dx + ∫<sub>2</sub><sup>3</sup> (x<sup>2</sup> − 4) dx = 16/3 + 7/3 = 23/3. −3, ∫<sub>0</sub><sup>3</sup> (x<sup>2</sup> − 4) dx integral değeridir; köklerde bölmeden alınan integral alan değildir. 3, o değerin mutlak değeridir; yine bölme yapılmamıştır. 16/3 ve 7/3, iki bölgeden yalnızca birinin alanıdır.</p></div></li>
+
+<li data-c="B" data-k="ileri-32"><p class="q">Bir doğru boyunca hareket eden cismin hızı v(t) = 2t − 4 m/s'dir. Cismin [0, 3] zaman aralığında aldığı toplam yol kaç m'dir?</p>
+<ul class="sec"><li>−3</li><li>5</li><li>3</li><li>4</li><li>1</li></ul>
+<div class="coz"><p>v, t = 2'de işaret değiştirir: [0, 2]'de geri, [2, 3]'te ileri gidilir. Toplam yol ∫ |v| dt: ∫<sub>0</sub><sup>2</sup> (4 − 2t) dt = 4 ve ∫<sub>2</sub><sup>3</sup> (2t − 4) dt = 1; toplam 5 m. −3, ∫<sub>0</sub><sup>3</sup> v dt, yani yer değiştirmedir. 3, yer değiştirmenin mutlak değeridir; yol değil. 4 ve 1, iki aralıktan yalnızca birinde alınan yoldur.</p></div></li>
+
+<li data-c="D" data-k="ileri-32"><p class="q">F(x) = ∫<sub>0</sub><sup>x</sup> (t<sup>2</sup> − 4t + 3) dt fonksiyonu x'in hangi değerinde yerel maksimum yapar?</p>
+<ul class="sec"><li>3</li><li><span class="kes"><span>4</span><span>3</span></span></li><li>2</li><li>1</li><li>0</li></ul>
+<div class="coz"><p>Üst sınırı değişken integralin türevi integralin içidir: F′(x) = x<sup>2</sup> − 4x + 3 = (x − 1)(x − 3). F′, x = 1'de + → −, x = 3'te − → + değişir: yerel maksimum x = 1'de. 3, yerel minimum noktasıdır. 4/3, maksimum noktası yerine maksimum değeridir (F(1) = 1/3 − 2 + 3). 2, F′'nün tepe noktasıdır, yani F'nin büküm noktası. 0, integralin alt sınırıdır; F(0) = 0 olması ekstremum demek değildir.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-32">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-33">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-34">Sonraki parça: ileri olasılık</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"binom açılımı konu anlatımı AYT"</li>
+  <li>"binom açılımı sabit terim ve genel terim soru çözümü"</li>
+  <li>"Pascal üçgeni binom katsayıları kombinasyon"</li>
+  <li>"binom açılımı rasyonel terim sayısı katsayılar toplamı"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 33. satıra göre yazıldı; satırdaki her alt başlık işlendi. Üç terimlinin açılımı (multinom), kapsam listesindeki nota uyularak yalnızca "programda yok" bilgisiyle anıldı. Binomla yaklaşık hesap ve son basamak bulma, kapsamdaki "kısa" notuna uyularak tek bölümde verildi.</li>
+  <li>"Baştan k. terim" sayımı, yerleşik kullanıma göre açılımın birinci parçanın (x'li ifadelerde x'in) azalan kuvvetlerine göre yazıldığı varsayımıyla yapıldı. Bazı kaynaklar sırayı her soruda ayrıca belirtir; soru başka bir sıra belirtirse o esas alınmalıdır.</li>
+  <li>Bütün sayısal sonuçlar (dokuz çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları) Python ile denetlendi: bu ortamda sympy olmadığı için açılımlar, üsleri anahtar olarak tutan küçük bir polinom çarpma betiğiyle tam (kesirli) aritmetikle yapıldı; kombinasyonlar math.comb ile, son basamaklar modüler kuvvetle, belirli integraller Simpson yöntemiyle hesaplandı. Yanlış seçeneklerin her birinin gerçekten yanlış olduğu ve adı geçen hatanın sonucu olduğu aynı yolla denetlendi.</li>
+  <li>Şekiller ölçülerek çizildi: Pascal üçgeni ve terim sırası şekillerinde sayılar eşit aralıklı ızgaraya, üs şeridinde değerler 18 − 3r formülünden hesaplanarak yerleştirildi.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (30, 31, 32) ikişer soru; daha eski 29 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 4, 7, 10, 13, 16, 19, 22, 25, 28). Parça 30, 31 ve 32 bu parçanın soruları yazılırken arşivde henüz yoktu; o parçaların tekrar soruları yalnızca kapsam listesindeki konulardan ve oradaki terimlerle yazıldı. Dosyalar sonradan eklendiğinde yalnızca birkaç ifade aranarak kabaca bakıldı (Parça 32'deki bir çözümlü örnek aynı v(t) = t<sup>2</sup> − 4t + 3 ifadesini başka bir soru için kullanıyor); o parçalarda anlatılan yöntem ve gösterimle satır satır karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

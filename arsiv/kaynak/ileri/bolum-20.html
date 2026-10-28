@@ -1,0 +1,592 @@
+<article class="chapter ders" id="c-ileri-20">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 20 · Limit 2</div>
+<h1>Limit 2: belirsizlikler ve sonsuz içeren limitler</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>f(x) = (x<sup>2</sup> − 4)/(x − 2) fonksiyonunda x yerine 2 koyarsan 0/0 çıkar; fonksiyon x = 2'de tanımsızdır. Ama x'e 1,99 ya da 2,01 verirsen sonuç 3,99 ve 4,01 olur; değerler açıkça 4'e yaklaşıyor. "0/0" bir cevap değilse ne demektir, ve bir fonksiyonun tanımsız olduğu noktada limitini nasıl bulursun? Aynı soru bir aracın anlık hızını hesaplarken (türev) de karşına çıkacak: orada da her seferinde 0/0 ile karşılaşacaksın.</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 19 (limit kavramı, soldan-sağdan limit, limit kuralları, yerine koyarak limit), mat Parça 15–16 (özdeşlikler: iki kare farkı, küp farkı ve toplamı; çarpanlara ayırma ve rasyonel ifadeleri sadeleştirme), mat Parça 13 (paydayı rasyonel yapma, eşlenik), mat Parça 40 (çarpan teoremi: P(a) = 0 ise x − a bir çarpandır). Kâğıt kalem yanında olsun; her örnekte sonucu bulduktan sonra "kontrol yolu"nu da kendin yap.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 19'da limiti çoğunlukla <strong>yerine koyarak</strong> buldun: polinomlarda ve paydası sıfır olmayan rasyonel fonksiyonlarda x yerine a yazmak yetiyordu. Bu parça, yerine koymanın <strong>işe yaramadığı</strong> durumlarla ilgili. Yerine koyduğunda üç şeyden biri çıkar: bir sayı (iş biter), "sıfırdan farklı bir sayı bölü sıfır" (değerler sınırsız büyür ya da küçülür) ya da "0/0" (henüz hiçbir şey söylenemez, ifadeyi düzenlemen gerekir). Bu parçanın ana konusu üçüncüsüdür.</p>
+
+<p>AYT'de bu konudan gelen sorular çoğunlukla şu kalıplardadır: bir rasyonel ifadenin 0/0 veren limitini çarpanlara ayırıp sadeleştirerek bulmak; "limit bir gerçek sayıya eşit olduğuna göre a kaçtır" türünden parametre soruları (cevabın anahtarı: pay da sıfır olmak zorundadır); daha az sıklıkla köklü ifadeler (eşlenikle çarpma) ve x sonsuza giderken limit. Sınav hesap makinesiz ve süreli olduğu için her konuda bir <strong>hızlı yol</strong> ve bir <strong>kontrol yolu</strong> göreceksin. Kontrol yolu hep aynı fikre dayanır: limit, "yaklaşınca ne olduğu" demektir; o hâlde a'ya çok yakın bir sayıyı (a + 0,01 gibi) yerine koyup bulduğun sonuca yakın bir şey çıkıp çıkmadığına bakabilirsin.</p>
+
+<p>Bir kapsam notu: 2018 öğretim programı limitte belirsizlik olarak yalnızca polinom ve rasyonel fonksiyonların 0/0 durumunu açıkça sayar. Köklü ifadelerde eşlenikle çarpma, sayı/0'da sonsuza gitme, x → ±∞ için limit, ∞ − ∞ ve ∞/∞ durumlarının sınav kapsamında olup olmadığını doğrulayamadım. Bu kısımları ayrı başlıklarda, kısa tutarak ve <strong>"bu kısım sınav kapsamında olmayabilir"</strong> notuyla veriyorum. Yine de oku: hem türev ve asimptot fikrine zemin hazırlar hem de bazı kaynaklar bunları soruyor.</p>
+
+<h2 class="s">1. Yerine koyunca ne çıkabilir? Üç durum</h2>
+
+<p>Bir limit sorusunda ilk iş her zaman aynıdır: x yerine a'yı koy ve ne çıktığına bak. Çıkan şeyin biçimi, sonra ne yapacağını söyler.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>lim<sub>x→a</sub> f(x)/g(x) sorusunda pay ve paydaya ayrı ayrı a'yı koy:</p>
+<p><strong>(1) sayı / sıfırdan farklı sayı:</strong> limit bu bölümdür. Parça 19'daki bölüm kuralı.</p>
+<p><strong>(2) sıfırdan farklı sayı / 0:</strong> limit bir gerçek sayı değildir; değerler +∞'a ya da −∞'a gider. Hangisi olduğunu sağdan ve soldan paydanın işaretine bakarak bulursun (Bölüm 7).</p>
+<p><strong>(3) 0 / 0:</strong> belirsizlik. Sonuç her şey olabilir; ifadeyi düzenlemeden (sadeleştirme, eşlenik, değişken değiştirme) bir şey söyleyemezsin.</p>
+<p><strong>Neden?</strong> Bölüm kuralı yalnızca paydanın limiti sıfırdan farklıyken geçerlidir (Parça 19). Payda sıfıra gidince kural susar; ne olacağını payın da sıfıra gidip gitmediği belirler.</p></div>
+
+<p>Bir ayrıntıyı baştan netleştir: <strong>0/sayı belirsiz değildir.</strong> lim<sub>x→2</sub> (x − 2)/(x + 3) sorusunda yerine koyunca 0/5 çıkar ve bu düpedüz 0'dır; payda sıfırdan uzak olduğu için bölüm kuralı çalışır. Belirsizlik yalnızca payda da sıfıra gittiğinde doğar. Aynı şekilde "sayı/0" da belirsiz sayılmaz: sonucu her zaman ±∞ ya da "yok"tur, hiçbir zaman bir gerçek sayı değildir. Sınavda "belirsiz" sözcüğünü yalnızca 0/0 için (ve sonsuz içeren ∞/∞, ∞ − ∞ biçimleri için) kullan.</p>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Limit için karar şeması: x yerine a koyulur. Sayı bölü sıfırdan farklı sayı çıkarsa limit o sayıdır. Sıfırdan farklı sayı bölü sıfır çıkarsa sonuç artı ya da eksi sonsuzdur, sağ ve sol işarete bakılır. Sıfır bölü sıfır çıkarsa belirsizdir; çarpanlara ayırma, eşlenik ya da değişken değiştirme ile sadeleştirilip yeniden yerine koyulur.">
+  <rect class="sv-l" x="100" y="10" width="200" height="44" rx="10" />
+  <text class="sv-b" x="200" y="37" text-anchor="middle">x yerine a koy</text>
+  <line class="sv-c" x1="200" y1="54" x2="200" y2="74" />
+  <line class="sv-c" x1="66" y1="74" x2="334" y2="74" />
+  <line class="sv-c" x1="66" y1="74" x2="66" y2="94" />
+  <line class="sv-c" x1="200" y1="74" x2="200" y2="94" />
+  <line class="sv-c" x1="334" y1="74" x2="334" y2="94" />
+  <rect class="sv-k" x="4" y="94" width="124" height="52" rx="10" />
+  <rect class="sv-k" x="138" y="94" width="124" height="52" rx="10" />
+  <rect class="sv-k" x="272" y="94" width="124" height="52" rx="10" />
+  <text class="sv-b" x="66" y="117" text-anchor="middle">sayı / sayı</text>
+  <text class="sv-s" x="66" y="136" text-anchor="middle">(payda ≠ 0)</text>
+  <text class="sv-b" x="200" y="117" text-anchor="middle">sayı / 0</text>
+  <text class="sv-s" x="200" y="136" text-anchor="middle">(pay ≠ 0)</text>
+  <text class="sv-b" x="334" y="117" text-anchor="middle">0 / 0</text>
+  <text class="sv-s" x="334" y="136" text-anchor="middle">(belirsiz)</text>
+  <line class="sv-c" x1="66" y1="146" x2="66" y2="170" />
+  <line class="sv-c" x1="200" y1="146" x2="200" y2="170" />
+  <line class="sv-c" x1="334" y1="146" x2="334" y2="170" />
+  <rect class="sv-m" x="4" y="170" width="124" height="78" rx="10" />
+  <rect class="sv-a" x="138" y="170" width="124" height="78" rx="10" />
+  <rect class="sv-l" x="272" y="170" width="124" height="78" rx="10" />
+  <text class="sv-t" x="66" y="200" text-anchor="middle">limit bu</text>
+  <text class="sv-t" x="66" y="220" text-anchor="middle">sayıdır</text>
+  <text class="sv-t" x="200" y="194" text-anchor="middle">+∞ ya da −∞</text>
+  <text class="sv-s" x="200" y="214" text-anchor="middle">sağda ve solda</text>
+  <text class="sv-s" x="200" y="232" text-anchor="middle">paydanın işareti</text>
+  <text class="sv-s" x="334" y="192" text-anchor="middle">çarpanlara ayır</text>
+  <text class="sv-s" x="334" y="211" text-anchor="middle">eşlenikle çarp</text>
+  <text class="sv-s" x="334" y="230" text-anchor="middle">değişken değiştir</text>
+  <line class="sv-c" x1="334" y1="248" x2="334" y2="266" />
+  <rect class="sv-k" x="4" y="266" width="392" height="56" rx="10" />
+  <text class="sv-t" x="200" y="289" text-anchor="middle">Sadeleştirdikten sonra yeniden yerine koy;</text>
+  <text class="sv-t" x="200" y="309" text-anchor="middle">yine 0/0 çıkarsa bir tur daha sadeleştir.</text>
+</svg>
+<figcaption>Her limit sorusunda bu sırayla ilerle. Ortadaki yol bu parçanın 7. bölümünde, sağdaki yol 2–6. bölümlerde işleniyor. Soldaki yolu Parça 19'da gördün.</figcaption>
+</figure>
+
+<h2 class="s">2. 0/0 belirsizliği: ne demek, neden "tanımsız" ile aynı şey değil?</h2>
+
+<p>Önce iki kavramı birbirinden ayır. <strong>Tanımsız</strong>, bir ifadenin bir noktada değerinin olmamasıdır: f(x) = (x<sup>2</sup> − 4)/(x − 2) için f(2) yazamazsın, çünkü sıfıra bölme yapılamaz. Bu, fonksiyonun <em>o noktadaki değeri</em> hakkında bir bilgidir. <strong>Belirsiz</strong> ise limit hesabının bir aşaması için kullanılan bir sözcüktür: "yerine koyunca 0/0 biçimi çıktı, bu biçime bakarak limit hakkında henüz hiçbir şey söyleyemem" demektir. Limit ise o noktadaki değeri değil, <em>noktanın çevresindeki</em> davranışı sorar (Parça 19). Fonksiyon x = 2'de tanımsız olsa bile x = 2'nin çevresinde gayet düzgün tanımlıdır ve değerlerinin bir şeye yaklaşıp yaklaşmadığını sorabilirsin.</p>
+
+<p>Bunu sayılarla gör. x'i 2'ye iki yandan yaklaştır:</p>
+
+<div class="tablo"><table>
+<tr><th>x</th><th>1,9</th><th>1,99</th><th>1,999</th><th>2</th><th>2,001</th><th>2,01</th><th>2,1</th></tr>
+<tr><td>(x<sup>2</sup> − 4)/(x − 2)</td><td>3,9</td><td>3,99</td><td>3,999</td><td>tanımsız</td><td>4,001</td><td>4,01</td><td>4,1</td></tr>
+</table></div>
+
+<p>Değerler iki yandan da 4'e yaklaşıyor; demek ki lim<sub>x→2</sub> (x<sup>2</sup> − 4)/(x − 2) = 4. Peki neden? Pay çarpanlarına ayrılır: x<sup>2</sup> − 4 = (x − 2)(x + 2). x ≠ 2 olan <strong>her</strong> sayıda x − 2 sıfırdan farklıdır ve pay ile paydadaki x − 2 sadeleşir; geriye x + 2 kalır. Yani f, x = 2 dışında her yerde y = x + 2 doğrusuyla aynıdır. Grafiği bir doğrudur ama x = 2'de bir "delik" vardır.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y eşittir x kare eksi 4 bölü x eksi 2 grafiği: y eşittir x artı 2 doğrusu, x eşittir 2 noktasında boş yuvarlak. Doğru üzerinde iki yandan noktalar deliğe, yani yüksekliği 4 olan noktaya yaklaşıyor.">
+  <line class="sv-c" x1="20" y1="270" x2="390" y2="270" />
+  <line class="sv-c" x1="95" y1="285" x2="95" y2="15" />
+  <line class="sv-cl" x1="40" y1="235" x2="370" y2="25" />
+  <line class="sv-c" x1="205" y1="270" x2="205" y2="136" />
+  <line class="sv-c" x1="95" y1="130" x2="199" y2="130" />
+  <circle class="sv-k" cx="205" cy="130" r="5" />
+  <circle class="sv-m" cx="177.5" cy="147.5" r="4" />
+  <circle class="sv-m" cx="232.5" cy="112.5" r="4" />
+  <text class="sv-s" x="170" y="118" text-anchor="end">x = 1,5 → 3,5</text>
+  <text class="sv-s" x="240" y="128" text-anchor="start">x = 2,5 → 4,5</text>
+  <text class="sv-t" x="215" y="148" text-anchor="start">delik: f(2) tanımsız</text>
+  <text class="sv-s" x="88" y="134" text-anchor="end">4</text>
+  <text class="sv-s" x="88" y="204" text-anchor="end">2</text>
+  <text class="sv-s" x="150" y="286" text-anchor="middle">1</text>
+  <text class="sv-s" x="205" y="286" text-anchor="middle">2</text>
+  <text class="sv-s" x="260" y="286" text-anchor="middle">3</text>
+  <text class="sv-s" x="385" y="286" text-anchor="end">x</text>
+  <text class="sv-s" x="102" y="24" text-anchor="start">y</text>
+  <text class="sv-b" x="380" y="200" text-anchor="end">y = (x² − 4)/(x − 2)</text>
+  <text class="sv-s" x="380" y="220" text-anchor="end">= x + 2, x ≠ 2</text>
+</svg>
+<figcaption>Fonksiyon doğrunun tamamı değil, deliği olan doğrudur. Limit deliğin yüksekliğini sorar (4), deliğin dolu olup olmadığını sormaz. Parça 21'de bu deliğe "kaldırılabilir süreksizlik" diyeceğiz.</figcaption>
+</figure>
+
+<p><strong>Bu neden önemli?</strong> Çünkü matematiğin ve fiziğin en önemli soruları tam olarak bu biçimde gelir. Bir cisim t saniyede s(t) = 5t<sup>2</sup> metre yol alıyor olsun. t = 2 anındaki hızını soruyorsun. Hız "yol bölü zaman"dır ama bir anda ne yol alınır ne zaman geçer: 0/0. Bunun yerine 2 ile 2 + h arasındaki ortalama hıza bak (Parça 1'deki ortalama değişim hızı): (5(2 + h)<sup>2</sup> − 20)/h. h = 0 koyarsan 0/0 çıkar; ama h = 0,1 için 20,5, h = 0,01 için 20,05, h = 0,001 için 20,005 m/s bulursun. Değerler 20'ye yaklaşıyor. Cebirle: 5(4 + 4h + h<sup>2</sup>) − 20 = 20h + 5h<sup>2</sup>, h'ye bölünce 20 + 5h, h → 0 iken 20. Yani "anlık hız 20 m/s" cümlesi, bir 0/0 belirsizliğinin limitidir. Parça 22'de türevin tanımı bunun aynısı olacak; bu parçadaki her sadeleştirme o günün hazırlığıdır.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Yerine koyunca pay da payda da sıfır çıkıyorsa buna <strong>0/0 belirsizliği</strong> denir. "Belirsiz", limitin <strong>var olmadığı</strong> anlamına gelmez; yalnızca bu biçimin limiti tek başına <strong>belirlemediği</strong> anlamına gelir. Limit bir sayı da olabilir, 0 da olabilir, sonsuz da olabilir, hiç olmayabilir de.</p>
+<p><strong>Neden?</strong> "Pay sıfıra gidiyor" ve "payda sıfıra gidiyor" bilgisi, ikisinin <em>hangi hızla</em> sıfıra gittiğini söylemez. Bölümün ne olacağını belirleyen, bu hızların oranıdır.</p></div>
+
+<p>Bu cümlenin ne demek olduğunu dört örnekte gör. Dördünde de x yerine 1 koyunca 0/0 çıkıyor ama sonuçlar tamamen farklı:</p>
+
+<div class="tablo"><table>
+<tr><th>İfade (x → 1)</th><th>Sadeleşmiş hâli (x ≠ 1)</th><th>Limit</th><th>Ne oldu?</th></tr>
+<tr><td>(x<sup>2</sup> − 1)/(x − 1)</td><td>x + 1</td><td>2</td><td>pay ve payda aynı hızla sıfıra gidiyor</td></tr>
+<tr><td>5(x − 1)/(x − 1)</td><td>5</td><td>5</td><td>pay, paydanın 5 katı</td></tr>
+<tr><td>(x − 1)<sup>2</sup>/(x − 1)</td><td>x − 1</td><td>0</td><td>pay daha hızlı sıfıra gidiyor</td></tr>
+<tr><td>(x − 1)/(x − 1)<sup>2</sup></td><td>1/(x − 1)</td><td>yok (sağda +∞, solda −∞)</td><td>payda daha hızlı sıfıra gidiyor</td></tr>
+</table></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>"0/0 = 1" ya da "0/0 = 0" sanmak, ya da "0/0 çıktı, limit yoktur" demek.</strong> Üçü de yanlıştır; tablodaki dört örnek dört farklı sonuç veriyor. 0/0 bir sonuç değil, bir uyarıdır: "ifadeyi düzenle". Bir başka sık hata da "fonksiyon x = a'da tanımsız, o hâlde limit yoktur" demektir. Limit noktadaki değere bakmaz; yukarıdaki delikli doğruda f(2) yoktur ama limit 4'tür.</p></div>
+
+<h2 class="s">3. Birinci yol: çarpanlara ayırıp sadeleştirme</h2>
+
+<p>Polinom bölü polinom biçimindeki 0/0 limitlerinin hepsi bu yolla çözülür ve sınavdaki soruların büyük çoğunluğu bu türdendir. Önce yöntemin neden <strong>meşru</strong> olduğunu kur, çünkü ilk bakışta "sıfır olan bir çarpanı sadeleştirmek" yasak gibi görünür.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>x → a limitinde x, a'ya yaklaşır ama <strong>a'ya hiç eşit olmaz</strong>. Bu yüzden x − a çarpanı limit sürecinde hiçbir zaman sıfır değildir ve pay ile paydadan sadeleştirilebilir. İki fonksiyon a'nın çevresinde (a dışında) aynı değerleri alıyorsa, a'daki limitleri de aynıdır.</p>
+<p><strong>Neden?</strong> Limitin tanımı a noktasındaki değere bakmaz, yalnızca çevresindeki değerlere bakar (Parça 19). (x<sup>2</sup> − 4)/(x − 2) ile x + 2, x = 2 dışında her yerde eşittir; çevreleri aynı olan iki fonksiyonun limiti de aynıdır.</p></div>
+
+<p>Peki payda ve paydaki hangi çarpanı arayacaksın? Cevap çarpan teoreminden gelir (mat Parça 40): P(a) = 0 ise x − a, P(x)'in bir çarpanıdır. Yani <strong>0/0 çıkması, pay ve paydanın ikisinin de x − a çarpanı taşıdığını garanti eder.</strong> Aradığın çarpan hep x − a'dır; bunu biliyor olmak çarpanlara ayırmayı yönlendirir. Elinde şu araçlar olsun:</p>
+
+<div class="tablo"><table>
+<tr><th>Araç</th><th>Özdeşlik</th><th>Örnek</th></tr>
+<tr><td>İki kare farkı</td><td>x<sup>2</sup> − a<sup>2</sup> = (x − a)(x + a)</td><td>x<sup>2</sup> − 9 = (x − 3)(x + 3)</td></tr>
+<tr><td>Küp farkı</td><td>x<sup>3</sup> − a<sup>3</sup> = (x − a)(x<sup>2</sup> + ax + a<sup>2</sup>)</td><td>x<sup>3</sup> − 8 = (x − 2)(x<sup>2</sup> + 2x + 4)</td></tr>
+<tr><td>Küp toplamı</td><td>x<sup>3</sup> + a<sup>3</sup> = (x + a)(x<sup>2</sup> − ax + a<sup>2</sup>)</td><td>x<sup>3</sup> + 1 = (x + 1)(x<sup>2</sup> − x + 1)</td></tr>
+<tr><td>Üç terimli</td><td>x<sup>2</sup> + bx + c = (x − r<sub>1</sub>)(x − r<sub>2</sub>)</td><td>x<sup>2</sup> − x − 6 = (x − 3)(x + 2)</td></tr>
+<tr><td>xⁿ − 1</td><td>(x − 1)(xⁿ<sup>−1</sup> + … + x + 1)</td><td>x<sup>4</sup> − 1 = (x − 1)(x<sup>3</sup> + x<sup>2</sup> + x + 1)</td></tr>
+<tr><td>Bölme (Horner)</td><td>P(x) = (x − a) · Q(x)</td><td>x<sup>3</sup> − 3x + 2 = (x − 1)(x<sup>2</sup> + x − 2)</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> lim<sub>x→3</sub> (x<sup>2</sup> − 9)/(x<sup>2</sup> − x − 6) limitinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Önce yerine koy.</p>
+<span class="mat">pay: 9 − 9 = 0; payda: 9 − 3 − 6 = 0 <span class="g">(0/0: belirsiz)</span></span>
+<p><strong>Adım 2.</strong> İkisinde de x − 3 çarpanı olmak zorunda; ayır.</p>
+<span class="mat">x<sup>2</sup> − 9 = (x − 3)(x + 3) <span class="g">(iki kare farkı)</span></span>
+<span class="mat">x<sup>2</sup> − x − 6 = (x − 3)(x + 2) <span class="g">(çarpımı −6, toplamı −1 olan sayılar −3 ve 2)</span></span>
+<p><strong>Adım 3.</strong> Sadeleştir.</p>
+<span class="mat"><span class="kes"><span>(x − 3)(x + 3)</span><span>(x − 3)(x + 2)</span></span> = <span class="kes"><span>x + 3</span><span>x + 2</span></span> <span class="g">(x ≠ 3 olduğu için x − 3 ≠ 0)</span></span>
+<p><strong>Adım 4.</strong> Yeniden yerine koy.</p>
+<span class="mat">lim<sub>x→3</sub> <span class="kes"><span>x + 3</span><span>x + 2</span></span> = <span class="kes"><span>6</span><span>5</span></span> <span class="g">(payda 5 ≠ 0, bölüm kuralı)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> x = 3,01 koy: x<sup>2</sup> = 9,0601. Pay 0,0601, payda 9,0601 − 3,01 − 6 = 0,0501. Bölüm yaklaşık 1,1996; 6/5 = 1,2'ye çok yakın.</p>
+<p><strong>Sonuç:</strong> 6/5.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2</sub> (x<sup>3</sup> − 8)/(x<sup>2</sup> − 4) kaçtır? (b) lim<sub>x→1</sub> (x<sup>3</sup> − 3x + 2)/(x<sup>2</sup> − 1) ve lim<sub>x→1</sub> (x<sup>3</sup> − 3x + 2)/(x − 1)<sup>2</sup> kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Yerine koy: 8 − 8 = 0, 4 − 4 = 0. Belirsiz. Pay küp farkı, payda iki kare farkı.</p>
+<span class="mat"><span class="kes"><span>(x − 2)(x<sup>2</sup> + 2x + 4)</span><span>(x − 2)(x + 2)</span></span> = <span class="kes"><span>x<sup>2</sup> + 2x + 4</span><span>x + 2</span></span> <span class="g">(x − 2 sadeleşir)</span></span>
+<span class="mat">→ <span class="kes"><span>4 + 4 + 4</span><span>4</span></span> = 3 <span class="g">(x = 2 koy)</span></span>
+<p><strong>Adım 2.</strong> (b) Yerine koy: 1 − 3 + 2 = 0 ve 1 − 1 = 0. Belirsiz. Payı x − 1'e böl (Horner ya da uzun bölme): katsayılar 1, 0, −3, 2.</p>
+<span class="mat">x<sup>3</sup> − 3x + 2 = (x − 1)(x<sup>2</sup> + x − 2) <span class="g">(bölüm 1, 1, −2; kalan 0)</span></span>
+<span class="mat">x<sup>2</sup> + x − 2 = (x − 1)(x + 2) <span class="g">(bölümde x = 1 yine kök)</span></span>
+<span class="mat">x<sup>3</sup> − 3x + 2 = (x − 1)<sup>2</sup>(x + 2) <span class="g">(1 çift katlı kök)</span></span>
+<p><strong>Adım 3.</strong> Birinci limit.</p>
+<span class="mat"><span class="kes"><span>(x − 1)<sup>2</sup>(x + 2)</span><span>(x − 1)(x + 1)</span></span> = <span class="kes"><span>(x − 1)(x + 2)</span><span>x + 1</span></span> → <span class="kes"><span>0 · 3</span><span>2</span></span> = 0 <span class="g">(bir x − 1 sadeleşti, biri kaldı)</span></span>
+<p><strong>Adım 4.</strong> İkinci limit.</p>
+<span class="mat"><span class="kes"><span>(x − 1)<sup>2</sup>(x + 2)</span><span>(x − 1)<sup>2</sup></span></span> = x + 2 → 3 <span class="g">(iki x − 1 de sadeleşti)</span></span>
+<p><strong>Sonuç:</strong> (a) 3. (b) 0 ve 3. Aynı pay, iki farklı payda, iki farklı sonuç: belirsizliğin anlamı tam olarak budur. Payda "bir kat" sıfırlanıyor, pay "iki kat"; pay daha hızlı sıfıra gidince limit 0 çıktı.</p></div>
+
+<p><strong>Çarpanı göremiyorsan böl.</strong> Örnek 2'de x<sup>3</sup> − 3x + 2'nin çarpanları ilk bakışta görünmüyordu. Burada çarpan teoremi yol gösterir: x = 1 kök olduğuna göre x − 1 bir çarpandır; geriye kalan çarpanı bulmak için polinomu x − 1'e bölersin. Horner yönteminde katsayıları eksik derece için 0 koyarak sırayla yazarsın (1, 0, −3, 2). İlk katsayıyı aşağı indir (1). Onu kökle (1) çarp, bir sonraki katsayıya ekle: 0 + 1 = 1. Yine kökle çarp, ekle: −3 + 1 = −2. Bir kez daha: 2 + (−2) = 0. Son sayı kalandır ve sıfır çıkması, 1'in gerçekten kök olduğunun denetimidir; öbür sayılar (1, 1, −2) bölümün katsayılarıdır: x<sup>2</sup> + x − 2. Kalan sıfır çıkmazsa ya hesap hatası yapmışsındır ya da en baştaki "0/0 çıktı" tespitin yanlıştır.</p>
+
+<p><strong>Küp toplamı da aynı mantıkla.</strong> lim<sub>x→−1</sub> (x<sup>3</sup> + 1)/(x<sup>2</sup> − 1) sorusunda yerine koyunca −1 + 1 = 0 ve 1 − 1 = 0 çıkar. Aranan çarpan x − (−1) = x + 1'dir. x<sup>3</sup> + 1 = (x + 1)(x<sup>2</sup> − x + 1), x<sup>2</sup> − 1 = (x + 1)(x − 1). Sadeleşince (x<sup>2</sup> − x + 1)/(x − 1) kalır; x = −1'de (1 + 1 + 1)/(−2) = −3/2. Küp toplamının ikinci çarpanında orta terimin işaretinin <strong>eksi</strong> olduğuna dikkat et; küp farkında artıydı.</p>
+
+<p><strong>Hızlı yol: xⁿ − 1 kalıbı.</strong> lim<sub>x→1</sub> (xⁿ − 1)/(x − 1) = n. Gerekçe: xⁿ − 1 = (x − 1)(xⁿ<sup>−1</sup> + xⁿ<sup>−2</sup> + … + x + 1); sadeleşince parantezde n tane terim kalır ve x = 1'de her biri 1 olur. Örneğin (x<sup>5</sup> − 1)/(x − 1) → 5 ve (x<sup>4</sup> − 1)/(x<sup>2</sup> − 1) için pay ve paydayı x − 1'e bölmüş gibi düşün: 4/2 = 2. Bu son hesabı doğrula: x<sup>4</sup> − 1 = (x<sup>2</sup> − 1)(x<sup>2</sup> + 1), sadeleşince x<sup>2</sup> + 1 → 2.</p>
+
+<h2 class="s">4. İkinci yol: değişken değiştirme</h2>
+
+<p>Bazen ifade çarpanlara ayrılabilir ama ayırma uzun ve karışıktır; ifadenin içinde tekrar eden bir parça vardır. O parçaya yeni bir ad verirsen soru tanıdık bir kalıba döner. Tek dikkat edeceğin şey: <strong>yeni değişkenin neye yaklaştığını da değiştirmek</strong>.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>İfadede tekrar eden bir parçaya t de (t = x − 1, t = x<sup>3</sup>, t = ³√x gibi). x → a iken t'nin yaklaştığı değeri bul (t → b). Limiti tamamen t cinsinden yaz ve t → b için çöz.</p>
+<p><strong>Neden?</strong> t, x'in sürekli bir fonksiyonu olduğu sürece x a'ya yaklaşırken t de b'ye yaklaşır; "x a'ya yaklaşırken" demekle "t b'ye yaklaşırken" demek aynı süreci anlatır. Sınırı değiştirmeyi unutursan yeni ifadede yanlış noktaya bakmış olursun.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2</sub> ((x − 1)<sup>5</sup> − 1)/(x − 2) kaçtır? (b) lim<sub>x→1</sub> (x<sup>6</sup> − 1)/(x<sup>3</sup> − 1) kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Yerine koy: (1)<sup>5</sup> − 1 = 0, 2 − 2 = 0. Belirsiz. (x − 1)<sup>5</sup>'i açmak uzun sürer; tekrar eden parça x − 1.</p>
+<span class="mat">t = x − 1 <span class="g">(yeni değişken)</span></span>
+<span class="mat">x → 2 ⇒ t → 1; x − 2 = t − 1 <span class="g">(sınırı ve paydayı da t ile yaz)</span></span>
+<span class="mat">lim<sub>t→1</sub> <span class="kes"><span>t<sup>5</sup> − 1</span><span>t − 1</span></span> = 5 <span class="g">(xⁿ − 1 kalıbı, n = 5)</span></span>
+<p><strong>Adım 2.</strong> (b) t = x<sup>3</sup> de; x → 1 ⇒ t → 1, x<sup>6</sup> = t<sup>2</sup>.</p>
+<span class="mat">lim<sub>t→1</sub> <span class="kes"><span>t<sup>2</sup> − 1</span><span>t − 1</span></span> = lim<sub>t→1</sub> (t + 1) = 2 <span class="g">(iki kare farkı)</span></span>
+<p><strong>Adım 3 (kontrol yolu).</strong> (a) için x = 2,01: (1,01)<sup>5</sup> ≈ 1,0510, pay ≈ 0,0510, payda 0,01; bölüm ≈ 5,1. Sonuç 5'e yakın.</p>
+<p><strong>Sonuç:</strong> (a) 5. (b) 2.</p></div>
+
+<p>Değişken değiştirme en çok köklü ifadelerde işe yarar: lim<sub>x→8</sub> (³√x − 2)/(x − 8) sorusunda t = ³√x dersen x = t<sup>3</sup>, x → 8 ⇒ t → 2 ve ifade (t − 2)/(t<sup>3</sup> − 8) = 1/(t<sup>2</sup> + 2t + 4) olur; limit 1/12'dir. Köklü belirsizliklerin kapsamı için aşağıdaki nota bak.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Değişkeni değiştirip sınırı değiştirmemek.</strong> Örnek 3 (a)'da t = x − 1 dedikten sonra "t → 2" yazan biri (t<sup>5</sup> − 1)/(t − 1) ifadesinde t = 2 koyar ve 31 bulur. Oysa x 2'ye giderken t = x − 1, 1'e gider. Her değişken değiştirmede üç şeyi birlikte yeniden yaz: ifadenin kendisini, paydadaki ya da paydaki öbür x'leri (x − 2 = t − 1) ve sınırı. Birini unutursan yeni ifade eskisine eşit olmaz.</p></div>
+
+<h2 class="s">5. Üçüncü yol: eşlenikle çarpma (köklü ifadeler)</h2>
+
+<p><strong>Kapsam notu: bu kısım sınav kapsamında olmayabilir.</strong> 2018 programının belirsizlik kazanımında yalnızca polinom ve rasyonel fonksiyonlar açıkça geçiyor; köklü 0/0 limitlerinin kapsamda olup olmadığını doğrulayamadım. Yöntem kısa ve mat Parça 13'teki "paydayı rasyonel yapma"nın aynısı olduğu için yine de veriyorum.</p>
+
+<p>√(x + 9) − 3 gibi bir ifade x = 0'da sıfır olur ama çarpanlara ayrılmaz. Çözüm, iki kare farkı özdeşliğini tersten kullanmaktır: (√A − B)(√A + B) = A − B<sup>2</sup>. Yani kökün <strong>eşleniğiyle</strong> çarparsan kök kaybolur ve gizli x − a çarpanı ortaya çıkar.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> lim<sub>x→0</sub> (√(x + 9) − 3)/x kaçtır?</p>
+<p><strong>Adım 1.</strong> Yerine koy: √9 − 3 = 0, payda 0. Belirsiz.</p>
+<p><strong>Adım 2.</strong> Pay ve paydayı payın eşleniği √(x + 9) + 3 ile çarp (kesrin değeri değişmez, çünkü 1 ile çarpıyorsun).</p>
+<span class="mat"><span class="kes"><span>(√(x + 9) − 3)(√(x + 9) + 3)</span><span>x(√(x + 9) + 3)</span></span> = <span class="kes"><span>(x + 9) − 9</span><span>x(√(x + 9) + 3)</span></span> <span class="g">(iki kare farkı)</span></span>
+<span class="mat">= <span class="kes"><span>x</span><span>x(√(x + 9) + 3)</span></span> = <span class="kes"><span>1</span><span>√(x + 9) + 3</span></span> <span class="g">(x ≠ 0, sadeleşir)</span></span>
+<p><strong>Adım 3.</strong> Yerine koy.</p>
+<span class="mat">→ <span class="kes"><span>1</span><span>3 + 3</span></span> = <span class="kes"><span>1</span><span>6</span></span> <span class="g">(payda artık sıfır değil)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> x = 0,01 koy: √9,01 ≈ 3,00167, pay ≈ 0,00167, bölüm ≈ 0,167. 1/6 ≈ 0,1667.</p>
+<p><strong>Sonuç:</strong> 1/6. Paydayı açma; sadeleşecek çarpan zaten görünüyor. √(x + 9) + 3'ü çarpılmış hâlde bırakmak işi kısaltır.</p></div>
+
+<p><strong>Eşlenik mi, değişken değiştirme mi?</strong> İfadede tek bir karekök ve onun yanında bir sayı varsa (√(x + 9) − 3 gibi) eşlenik en kısa yoldur. Küp kök varsa eşlenik işe yaramaz, çünkü (³√x − 2)(³√x + 2) kökü yok etmez; o zaman t = ³√x de. İki farklı kök birlikte varsa (√x ve ³√x) ikisini de tam kuvvet yapan t'yi seç: t = x<sup>1/6</sup> dersen √x = t<sup>3</sup>, ³√x = t<sup>2</sup> olur.</p>
+
+<p><strong>Hızlı yol.</strong> lim<sub>x→a</sub> (√x − √a)/(x − a) = 1/(2√a). Gerekçe: x − a = (√x − √a)(√x + √a) yazılırsa (x ≥ 0 için) sadeleşince 1/(√x + √a) kalır. Örneğin lim<sub>x→4</sub> (√x − 2)/(x − 4) = 1/4 ve tersi lim<sub>x→4</sub> (x − 4)/(√x − 2) = √4 + 2 = 4.</p>
+
+<h2 class="s">6. 0/0 limiti verilip parametre bulma</h2>
+
+<p>Sınavın en sevdiği kalıplardan biri şudur: "lim<sub>x→2</sub> (x<sup>2</sup> + ax − 10)/(x − 2) = b olduğuna göre a + b kaçtır?" Burada limitin bir gerçek sayı olduğu söyleniyor. Paydanın x = 2'de sıfır olduğu görülüyor. Bu iki bilgi birlikte payı zorlar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>lim<sub>x→a</sub> P(x)/Q(x) bir <strong>gerçek sayıya</strong> eşitse ve Q(a) = 0 ise, P(a) = 0 olmak zorundadır.</p>
+<p><strong>Neden?</strong> Pay sıfırdan farklı bir sayıya giderken payda sıfıra giderse bölüm sınırsız büyür ya da küçülür (Bölüm 7: sayı/0 durumu); limit bir gerçek sayı olamaz. Limitin sayı çıkabilmesinin tek yolu 0/0 belirsizliğidir. Bu yüzden P(a) = 0 denklemini kur; bilinmeyenlerden birini oradan bul, sonra sadeleştirip limiti hesapla.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2</sub> (x<sup>2</sup> + ax − 10)/(x − 2) = b olduğuna göre a + b kaçtır? (b) lim<sub>x→−1</sub> (x<sup>2</sup> + ax + b)/(x + 1) = 4 olduğuna göre a ve b kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Payda x = 2'de sıfır, limit bir sayı: pay da x = 2'de sıfır olmalı.</p>
+<span class="mat">4 + 2a − 10 = 0 <span class="g">(P(2) = 0)</span></span>
+<span class="mat">a = 3 <span class="g">(2a = 6)</span></span>
+<p><strong>Adım 2.</strong> a'yı yerleştir, çarpanlara ayır, limiti al.</p>
+<span class="mat">x<sup>2</sup> + 3x − 10 = (x − 2)(x + 5) <span class="g">(çarpımı −10, toplamı 3: −2 ve 5)</span></span>
+<span class="mat">b = lim<sub>x→2</sub> (x + 5) = 7 <span class="g">(sadeleştir, yerine koy)</span></span>
+<span class="mat">a + b = 10</span>
+<p><strong>Adım 3.</strong> (b) Pay x = −1'de sıfır olmalı: 1 − a + b = 0. Tek denklem iki bilinmeyene yetmez; limit değerini de kullan. Pay x + 1 çarpanını taşıdığına göre başkatsayısı 1 olan pay (x + 1)(x + c) biçimindedir.</p>
+<span class="mat">lim<sub>x→−1</sub> <span class="kes"><span>(x + 1)(x + c)</span><span>x + 1</span></span> = −1 + c = 4 <span class="g">(sadeleştir, x = −1 koy)</span></span>
+<span class="mat">c = 5 ⇒ (x + 1)(x + 5) = x<sup>2</sup> + 6x + 5 <span class="g">(çarpımı aç)</span></span>
+<span class="mat">a = 6, b = 5 <span class="g">(katsayıları eşleştir)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> 1 − 6 + 5 = 0: pay gerçekten x = −1'de sıfır. Sadeleşmiş hâl x + 5, x = −1'de 4 veriyor.</p>
+<p><strong>Sonuç:</strong> (a) a + b = 10. (b) a = 6, b = 5.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Parametre sorusunda b'yi payın değerinden bulmaya çalışmak.</strong> (a)'da a = 3 bulduktan sonra "b = P(2)" deyip b = 0 yazanlar olur. P(2) = 0 zaten kurduğun koşuldur; b ise <em>sadeleştirdikten sonra</em> yerine koyarak bulunan limit değeridir. Bir başka hata da "x + 1 paydada, o hâlde x = 1 koyarım" diye işareti karıştırmaktır: payda x + 1 ise sıfır yapan değer x = −1'dir.</p></div>
+
+<h3>Parametre paydadaysa: kural tersine işlemez</h3>
+
+<p>Kuralın yönüne dikkat et: "payda sıfırsa pay da sıfır olmalı" doğrudur, ama "pay sıfırsa payda da sıfır olmalı" doğru <strong>değildir</strong>. Pay sıfıra, payda sıfırdan farklı bir sayıya giderse limit gayet güzel bir gerçek sayıdır: 0. Şu soruya bak: lim<sub>x→2</sub> (x<sup>2</sup> − 4)/(x<sup>2</sup> − ax + 2) = 4 ise a kaçtır?</p>
+
+<span class="mat">pay: x = 2'de 4 − 4 = 0 <span class="g">(pay her durumda sıfır)</span></span>
+<span class="mat">payda: x = 2'de 6 − 2a <span class="g">(a'ya bağlı)</span></span>
+<span class="mat">6 − 2a ≠ 0 ise limit 0/(6 − 2a) = 0 ≠ 4 <span class="g">(bu durum soruyla çelişir)</span></span>
+<span class="mat">o hâlde 6 − 2a = 0, a = 3 <span class="g">(0/0 olmak zorunda)</span></span>
+<span class="mat"><span class="kes"><span>(x − 2)(x + 2)</span><span>(x − 2)(x − 1)</span></span> → <span class="kes"><span>4</span><span>1</span></span> = 4 <span class="g">(denetim: verilen değer çıktı)</span></span>
+
+<p>Sorunun "limit 4" bilgisini vermesi burada belirleyiciydi. Soru yalnızca "limit bir gerçek sayı ise" deseydi, a = 3 dışındaki her a değeri de (limit 0 olurdu) koşulu sağlardı ve tek bir cevap çıkmazdı. Bu yüzden parametre sorusunda önce <em>hangi bilginin neyi zorladığını</em> sor: paydanın sıfırlığı payı zorlar, limitin sıfırdan farklı bir sayı oluşu da (pay sıfırken) paydayı zorlar.</p>
+
+<h2 class="s">7. Sayı/0: sağdan ve soldan sonsuza gitme</h2>
+
+<p><strong>Kapsam notu: bu kısım sınav kapsamında olmayabilir</strong> (sonsuz limitler programda açıkça sayılmıyor; aşağıdaki "Kaynak ve doğrulama"ya bak). Yine de Bölüm 6'daki kuralın gerekçesi burada, o yüzden fikri bil.</p>
+
+<p>lim<sub>x→2</sub> (x + 1)/(x − 2) sorusunda yerine koyunca 3/0 çıkar. Pay 3'e yakın kalırken payda sıfıra yaklaşıyor. Küçük bir sayıya bölmek büyük sonuç verir: 3/0,1 = 30, 3/0,01 = 300, 3/0,001 = 3000. Payda küçüldükçe bölüm sınırsız büyür. İşaret ise paydanın hangi yönden sıfıra yaklaştığına bağlıdır:</p>
+
+<span class="mat">x → 2<sup>+</sup> (x = 2,01): x − 2 = +0,01 ⇒ bölüm ≈ 3,01 / 0,01 = 301 <span class="g">(büyük pozitif)</span></span>
+<span class="mat">x → 2<sup>−</sup> (x = 1,99): x − 2 = −0,01 ⇒ bölüm ≈ 2,99 / (−0,01) = −299 <span class="g">(büyük negatif)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Yerine koyunca <strong>sıfırdan farklı sayı / 0</strong> çıkıyorsa, değerler sınırsız büyür ya da küçülür. Sağdan ve soldan ayrı ayrı bak: pay ile paydanın işaretleri aynıysa +∞, farklıysa −∞ yazılır. Sağdan ve soldan sonuçlar farklıysa (biri +∞, biri −∞) iki yanlı limit yoktur. Aynıysa (örneğin 3/(x − 1)<sup>2</sup>, payda iki yanda da pozitif) limit +∞ diye yazılır.</p>
+<p><strong>Neden?</strong> Payın mutlak değeri bir sayıya yakın kalırken paydanın mutlak değeri sıfıra yaklaştıkça bölümün mutlak değeri her sınırı aşar; işaret, bölmenin işaret kuralından gelir.</p></div>
+
+<p>Dikkat: "limit +∞" yazmak, limitin bir gerçek sayı olarak <strong>var olmadığını</strong> anlatmanın kısa bir yoludur. ∞ bir sayı değildir; "değerler her sınırı aşıyor" demektir. Grafikte bu, eğrinin x = 2 düşey doğrusuna yaklaştıkça yukarı ya da aşağı sınırsız uzaması demektir. Bu doğruya <strong>düşey asimptot</strong> denir. Asimptot çizimi programda yok (Parça 26'nın kapsam notu); burada yalnızca sezgi olarak, ne olduğunu tanıman için anılıyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y eşittir x artı 1 bölü x eksi 2 grafiği. x eşittir 2 düşey doğrusunun sağında eğri yukarı, solunda aşağı sınırsız uzuyor. x büyüdükçe ve küçüldükçe eğri y eşittir 1 yatay doğrusuna yaklaşıyor.">
+  <line class="sv-c" x1="20" y1="158" x2="390" y2="158" />
+  <line class="sv-c" x1="142" y1="285" x2="142" y2="15" />
+  <line class="sv-c" x1="198" y1="15" x2="198" y2="285" />
+  <line class="sv-c" x1="20" y1="139" x2="390" y2="139" />
+  <polyline class="sv-cl" points="30.0,148.5 37.0,148.9 44.0,149.4 51.0,149.9 58.0,150.4 65.0,151.0 72.0,151.7 79.0,152.4 86.0,153.2 93.0,154.2 100.0,155.3 107.0,156.5 114.0,158.0 121.0,159.7 128.0,161.8 135.0,164.3 142.0,167.5 149.0,171.6 156.0,177.0 163.0,184.6 170.0,196.0 177.0,215.0 184.0,253.0 186.0,271.9" />
+  <polyline class="sv-cl" points="212.0,25.0 213.4,35.4 214.8,44.0 217.6,57.6 220.4,67.7 226.0,82.0 233.0,93.4 240.0,101.0 254.0,110.5 268.0,116.2 282.0,120.0 296.0,122.7 310.0,124.8 324.0,126.3 338.0,127.6 352.0,128.6 366.0,129.5" />
+  <text class="sv-b" x="204" y="292" text-anchor="start">x = 2</text>
+  <text class="sv-s" x="236" y="60" text-anchor="start">x → 2⁺ iken +∞</text>
+  <text class="sv-s" x="178" y="292" text-anchor="end">x → 2⁻ iken −∞</text>
+  <text class="sv-b" x="30" y="132" text-anchor="start">y = 1</text>
+  <text class="sv-s" x="30" y="184" text-anchor="start">x → −∞ iken 1'e</text>
+  <text class="sv-s" x="388" y="196" text-anchor="end">x → +∞ iken 1'e</text>
+  <text class="sv-s" x="388" y="174" text-anchor="end">x</text>
+  <text class="sv-s" x="148" y="24" text-anchor="start">y</text>
+</svg>
+<figcaption>y = (x + 1)/(x − 2). x = 2'de payda sıfırlanır, pay 3'tür: sağda +∞, solda −∞, iki yanlı limit yoktur. x = −1'de ise pay sıfırdır ve eğri x eksenini keser. Uçlarda eğri y = 1'e yaklaşır; bunu Bölüm 8'de göreceğiz.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→2<sup>+</sup></sub> (x + 1)/(x − 2) ve lim<sub>x→2<sup>−</sup></sub> (x + 1)/(x − 2) nedir? (b) lim<sub>x→1</sub> 3/(x − 1)<sup>2</sup> nedir?</p>
+<p><strong>Adım 1.</strong> (a) Yerine koy: pay 3, payda 0. Sayı/0: sağa ve sola ayrı bak.</p>
+<span class="mat">x → 2<sup>+</sup>: pay → 3 (+), payda → 0 ve pozitif (x &gt; 2) ⇒ +∞ <span class="g">(işaretler aynı)</span></span>
+<span class="mat">x → 2<sup>−</sup>: pay → 3 (+), payda → 0 ve negatif (x &lt; 2) ⇒ −∞ <span class="g">(işaretler farklı)</span></span>
+<p><strong>Adım 2.</strong> (b) Pay 3, payda (x − 1)<sup>2</sup> her iki yanda da pozitif (kare).</p>
+<span class="mat">x → 1<sup>+</sup> ve x → 1<sup>−</sup>: +∞ <span class="g">(iki yan aynı)</span></span>
+<p><strong>Sonuç:</strong> (a) Sağdan +∞, soldan −∞; iki yanlı limit yoktur. (b) +∞ (gerçek sayı olarak limit yine yoktur, ama iki yan aynı davrandığı için +∞ yazılır).</p></div>
+
+<p>Payda birden çok çarpanlıysa işareti Parça 7'deki gibi çarpan çarpan bul. lim<sub>x→3<sup>+</sup></sub> (x + 1)/(x<sup>2</sup> − 9) için payda (x − 3)(x + 3): x biraz 3'ten büyükken x − 3 küçük pozitif, x + 3 yaklaşık 6 ve pozitif; payda küçük pozitif, pay 4: sonuç +∞. Soldan x − 3 negatif olur ve sonuç −∞. Sıfıra giden çarpan yalnızca x − 3'tür; öbür çarpanlar yalnızca işarete katkı verir.</p>
+
+<h2 class="s">8. x → ±∞ için limit</h2>
+
+<p><strong>Kapsam notu: bu kısım sınav kapsamında olmayabilir.</strong> Sonsuzdaki limitlerin 2018 programında yer alıp almadığını doğrulayamadım; burayı kısa tutuyorum.</p>
+
+<p>Şimdiye kadar x bir sayıya yaklaşıyordu. Şimdi x'in sınırsız büyüdüğünü (x → +∞) ya da sınırsız küçüldüğünü (x → −∞) düşün ve f(x)'in neye yaklaştığını sor.</p>
+
+<h3>8a. Polinomda baş terim belirler</h3>
+
+<p>3x<sup>2</sup> − 100x polinomuna x = 1000 koy: 3 000 000 − 100 000. İkinci terim birincinin yanında küçük kalıyor; x = 10<sup>6</sup>'da bu fark daha da açılır. Nedeni şu: polinomu baş terim parantezine alırsan 3x<sup>2</sup>(1 − 100/(3x)) olur ve parantezin içi x büyüdükçe 1'e gider. Geriye yalnızca baş terim kalır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>x → ±∞ iken bir polinomun limiti, <strong>baş teriminin</strong> limitidir. a<sub>n</sub>xⁿ terimi x → +∞'da a<sub>n</sub>'nin işaretiyle ∞'a gider; x → −∞'da n çiftse yine a<sub>n</sub>'nin işaretiyle, n tekse ters işaretle gider.</p>
+<p><strong>Neden?</strong> Baş terim parantezine alınca öbür terimler 1/x'in kuvvetleriyle çarpılmış olur; 1/x, x → ±∞ iken 0'a gider. Örnek: lim<sub>x→−∞</sub> (−2x<sup>3</sup> + 100x<sup>2</sup>) = +∞, çünkü −2x<sup>3</sup>'te x negatif ve tek kuvvetli, (−) · (−) = +.</p></div>
+
+<h3>8b. Rasyonel fonksiyonda dereceleri karşılaştır</h3>
+
+<p>Pay ve paydanın ikisi de sonsuza gidiyorsa (∞/∞ biçimi) bu da bir belirsizliktir: ikisinin hangi hızla büyüdüğü önemlidir. Çözüm, pay ve paydayı <strong>paydadaki en büyük x kuvvetine</strong> bölmektir; 1/x, 1/x<sup>2</sup> gibi terimler sıfıra gider ve geriye baş katsayılar kalır.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> lim<sub>x→∞</sub> (3x<sup>2</sup> − x + 5)/(2x<sup>2</sup> + 7), lim<sub>x→∞</sub> (4x + 1)/(x<sup>2</sup> + 3) ve lim<sub>x→−∞</sub> (x<sup>3</sup> + 1)/(2x<sup>2</sup> − x) limitlerini bulunuz.</p>
+<p><strong>Adım 1.</strong> Birincide pay ve paydayı x<sup>2</sup>'ye böl.</p>
+<span class="mat"><span class="kes"><span>3 − 1/x + 5/x<sup>2</sup></span><span>2 + 7/x<sup>2</sup></span></span> → <span class="kes"><span>3 − 0 + 0</span><span>2 + 0</span></span> = <span class="kes"><span>3</span><span>2</span></span> <span class="g">(1/x ve 1/x² sıfıra gider)</span></span>
+<p><strong>Adım 2.</strong> İkincide paydanın derecesi büyük; x<sup>2</sup>'ye böl.</p>
+<span class="mat"><span class="kes"><span>4/x + 1/x<sup>2</sup></span><span>1 + 3/x<sup>2</sup></span></span> → <span class="kes"><span>0</span><span>1</span></span> = 0 <span class="g">(payda daha hızlı büyüyor)</span></span>
+<p><strong>Adım 3.</strong> Üçüncüde payın derecesi büyük. Baş terimlerin oranı: x<sup>3</sup>/(2x<sup>2</sup>) = x/2.</p>
+<span class="mat">x → −∞ ⇒ x/2 → −∞ <span class="g">(baş terimlerin oranının işareti)</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> Birincide x = 1000: (3 000 000 − 1000 + 5)/(2 000 007) ≈ 1,4995. 3/2 = 1,5'e yakın.</p>
+<p><strong>Sonuç:</strong> 3/2, 0 ve −∞.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Durum (x → ±∞)</th><th>Limit</th><th>Grafikteki anlamı</th></tr>
+<tr><td>pay derecesi &lt; payda derecesi</td><td>0</td><td>eğri y = 0'a (x eksenine) yaklaşır</td></tr>
+<tr><td>pay derecesi = payda derecesi</td><td>baş katsayıların oranı</td><td>eğri y = (oran) doğrusuna yaklaşır</td></tr>
+<tr><td>pay derecesi &gt; payda derecesi</td><td>+∞ ya da −∞</td><td>eğri sınırsız büyür ya da küçülür</td></tr>
+</table></div>
+
+<p>Neden paydadaki en büyük kuvvete bölüyoruz? Çünkü bölünce paydada sonlu ve sıfırdan farklı bir sayı (baş katsayı) kalır; payda artık sıfıra ya da sonsuza gitmez ve bölüm kuralı yeniden çalışır. Pay derecesi büyükse payda yine x'in pozitif kuvvetleri kalır ve sonsuza gider; o durumda işareti doğrudan baş terimlerin oranından okumak daha kısadır. x → −∞ iken bu oranda x'in tek kuvveti kaldıysa işaret döner (Örnek 7'deki x/2 gibi); çift kuvveti kaldıysa dönmez.</p>
+
+<p>Eğrinin uçlarda yaklaştığı yatay doğruya <strong>yatay asimptot</strong> denir. Yukarıdaki şekilde y = (x + 1)/(x − 2)'nin dereceleri eşit (1 ve 1), baş katsayılar oranı 1/1 = 1: eğri iki uçta da y = 1'e yaklaşıyor. Bunu da yalnızca sezgi olarak bil; asimptot çizimi programda yok.</p>
+
+<h3>8c. Üstel ifadelerde sonsuzda limit</h3>
+
+<p>Parça 14'ten: a &gt; 1 ise aˣ artandır ve x → +∞'da +∞'a, x → −∞'da 0'a gider (yatay asimptot y = 0). 0 &lt; a &lt; 1 ise tersi: x → +∞'da 0'a, x → −∞'da +∞'a gider. Örneğin (1/2)<sup>10</sup> = 1/1024, (1/2)<sup>−10</sup> = 1024. Kesirli üstel ifadede yine "en hızlı büyüyen terimi" bul ve pay ile paydayı ona böl:</p>
+
+<span class="mat">lim<sub>x→∞</sub> <span class="kes"><span>5 · 3<sup>x</sup> + 2</span><span>3<sup>x</sup> + 1</span></span> = lim <span class="kes"><span>5 + 2/3<sup>x</sup></span><span>1 + 1/3<sup>x</sup></span></span> = 5 <span class="g">(3ˣ'e böl; 1/3ˣ → 0)</span></span>
+<span class="mat">lim<sub>x→−∞</sub> <span class="kes"><span>5 · 3<sup>x</sup> + 2</span><span>3<sup>x</sup> + 1</span></span> = <span class="kes"><span>0 + 2</span><span>0 + 1</span></span> = 2 <span class="g">(x → −∞ iken 3ˣ → 0)</span></span>
+
+<p>Aynı ifadenin iki uçta farklı limitleri var; sonsuzda limit sorusunda yönü (+∞ mı −∞ mı) her zaman kontrol et.</p>
+
+<h2 class="s">9. ∞ − ∞ ve köklü ∞/∞</h2>
+
+<p><strong>Kapsam notu: bu kısım sınav kapsamında olmayabilir</strong> (köklü belirsizlikler ve sonsuzdaki limitler; ikisi de doğrulanamadı). Kısa tutuyorum.</p>
+
+<p>lim<sub>x→∞</sub> (√(x<sup>2</sup> + 6x) − x) ifadesinde iki terim de sonsuza gider. "∞ − ∞ = 0" demek caziptir ama yanlıştır: iki büyük sayının farkı herhangi bir şey olabilir. x = 1000'de √(1 006 000) − 1000 ≈ 2,996. Fark sıfıra değil, 3'e yaklaşıyor gibi. Bunu eşlenikle gösterebilirsin.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> (a) lim<sub>x→∞</sub> (√(x<sup>2</sup> + 6x) − x) kaçtır? (b) lim<sub>x→−∞</sub> √(4x<sup>2</sup> + 1)/(x + 3) kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Eşlenikle çarp ve böl.</p>
+<span class="mat"><span class="kes"><span>(√(x<sup>2</sup> + 6x) − x)(√(x<sup>2</sup> + 6x) + x)</span><span>√(x<sup>2</sup> + 6x) + x</span></span> = <span class="kes"><span>6x</span><span>√(x<sup>2</sup> + 6x) + x</span></span> <span class="g">(x² + 6x − x²)</span></span>
+<p><strong>Adım 2.</strong> Pay ve paydayı x'e böl (x &gt; 0 olduğu için √(x<sup>2</sup>) = x, kökün içine x<sup>2</sup> olarak girer).</p>
+<span class="mat"><span class="kes"><span>6</span><span>√(1 + 6/x) + 1</span></span> → <span class="kes"><span>6</span><span>1 + 1</span></span> = 3 <span class="g">(6/x → 0)</span></span>
+<p><strong>Adım 3.</strong> (b) x → −∞ iken x negatiftir. √(4x<sup>2</sup> + 1) = √(x<sup>2</sup>) · √(4 + 1/x<sup>2</sup>) = |x| · √(4 + 1/x<sup>2</sup>) ve |x| = −x.</p>
+<span class="mat"><span class="kes"><span>−x · √(4 + 1/x<sup>2</sup>)</span><span>x(1 + 3/x)</span></span> = <span class="kes"><span>−√(4 + 1/x<sup>2</sup>)</span><span>1 + 3/x</span></span> → −2 <span class="g">(x sadeleşir, eksi kalır)</span></span>
+<p><strong>Sonuç:</strong> (a) 3. (b) −2. (b)'de x → +∞ olsaydı sonuç +2 olurdu.</p></div>
+
+<p><strong>Hızlı yol.</strong> x → +∞ iken √(x<sup>2</sup> + ax + b) − x → a/2. Gerekçe yukarıdaki işlemin aynısı: eşlenikten sonra pay ax + b, payda yaklaşık 2x olur. Aşağıdaki şekil (a)'daki farkın 0'a değil 3'e yaklaştığını gösteriyor.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="y eşittir karekök x kare artı 6x eksi x grafiği, x sıfırdan 40'a kadar. Eğri sıfırdan başlayıp hızla yükseliyor ve y eşittir 3 yatay doğrusuna alttan yaklaşıyor ama ulaşmıyor.">
+  <line class="sv-c" x1="30" y1="260" x2="390" y2="260" />
+  <line class="sv-c" x1="40" y1="275" x2="40" y2="20" />
+  <line class="sv-c" x1="40" y1="50" x2="385" y2="50" />
+  <polyline class="sv-cl" points="40.0,260.0 42.1,190.0 44.2,168.8 48.5,144.8 52.8,130.2 57.0,120.0 65.5,106.3 74.0,97.3 82.5,90.9 91.0,86.0 108.0,79.2 125.0,74.6 142.0,71.2 167.5,67.6 193.0,65.1 218.5,63.2 252.5,61.3 295.0,59.6 337.5,58.3 380.0,57.3" />
+  <circle class="sv-m" cx="82.5" cy="90.9" r="4" />
+  <circle class="sv-m" cx="125" cy="74.6" r="4" />
+  <circle class="sv-m" cx="380" cy="57.3" r="4" />
+  <text class="sv-s" x="90" y="112" text-anchor="start">x = 5: 2,42</text>
+  <text class="sv-s" x="132" y="96" text-anchor="start">x = 10: 2,65</text>
+  <text class="sv-s" x="378" y="82" text-anchor="end">x = 40: 2,90</text>
+  <text class="sv-b" x="34" y="54" text-anchor="end">3</text>
+  <text class="sv-b" x="380" y="40" text-anchor="end">y = 3</text>
+  <text class="sv-t" x="380" y="200" text-anchor="end">y = √(x² + 6x) − x</text>
+  <text class="sv-s" x="380" y="220" text-anchor="end">∞ − ∞ ama sonuç 0 değil, 3</text>
+  <text class="sv-s" x="125" y="276" text-anchor="middle">10</text>
+  <text class="sv-s" x="210" y="276" text-anchor="middle">20</text>
+  <text class="sv-s" x="295" y="276" text-anchor="middle">30</text>
+  <text class="sv-s" x="380" y="276" text-anchor="middle">40</text>
+</svg>
+<figcaption>İki terim de sonsuza gidiyor ama aralarındaki fark 3'e yerleşiyor. "∞ − ∞" de "0/0" gibi bir uyarıdır, bir sonuç değil.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>x → −∞ iken √(x<sup>2</sup>) = x yazmak.</strong> Karekök hiçbir zaman negatif değildir: √(x<sup>2</sup>) = |x|. x negatifken |x| = −x'tir. Örnek 8 (b)'de bu adımı atlayıp √(x<sup>2</sup>) = x yazan +2 bulur; doğrusu −2'dir. Kontrol yolu: x = −1000 koy; pay yaklaşık 2000 (pozitif), payda yaklaşık −997 (negatif). Bölüm negatif olmalı: ≈ −2,006.</p>
+<p><strong>"∞ − ∞ = 0" ya da "∞/∞ = 1" demek.</strong> İkisi de 0/0 gibi belirsizdir. Hangi terimin daha hızlı büyüdüğünü ortaya çıkarmadan sonuç söylenemez.</p></div>
+
+<h2 class="s">Sınavda yol seçimi: dört soruyla karar</h2>
+
+<p>Süre kısıtlı olduğu için hangi yolu seçeceğini ilk on saniyede bilmelisin. Şu dört soruyu sırayla sor:</p>
+
+<p><strong>1. x neye gidiyor?</strong> Bir sayıya mı, sonsuza mı? Sayıysa yerine koy (karar şeması). Sonsuzsa en hızlı büyüyen terimi bul (polinomda baş terim, üstelde tabanı büyük olan kuvvet).</p>
+
+<p><strong>2. Yerine koyunca ne çıktı?</strong> Sayı/sayı ise bitti. Sayı/0 ise sağ-sol işaretine bak. 0/0 ise devam et.</p>
+
+<p><strong>3. İfadede kök var mı?</strong> Yoksa çarpanlara ayır; çarpan x − a'dır ve gerekirse Horner'la bölersin. Kök varsa eşlenikle çarp ya da kökü yeni değişken yap (t = √x, t = ³√x).</p>
+
+<p><strong>4. Soru bir parametre mi istiyor?</strong> Limit bir sayı ve payda sıfırsa pay da sıfırdır: önce bu denklemi kur, sonra sadeleştir.</p>
+
+<p>Bitirdiğinde kontrol yolunu bir kez uygula: a'ya yakın bir sayıyla (a + 0,01) ya da sonsuz için büyük bir sayıyla (1000) kaba bir hesap yap. Bu hesap seçenekler arasında yanlış olanları çoğu zaman tek başına eler; örneğin bulduğun sonuç pozitifken kaba hesap negatif çıkıyorsa bir işaret hatası yapmışsındır.</p>
+
+<h2 class="s">Kapsam dışı olanlar: sin x / x ve L'Hôpital</h2>
+
+<p>Bazı kaynaklarda lim<sub>x→0</sub> (sin x)/x = 1 gibi trigonometrik belirsizlikler ve "pay ile paydanın ayrı ayrı türevini al" diye bilinen L'Hôpital kuralı geçer. İkisi de 2018 programında yer almıyor (kapsam listesine göre); bu parçada anlatılmıyor. L'Hôpital, türev konusundan sonra (Parça 22 ve sonrası) bulduğun bir sonucu denetlemek için anılabilir; ama sınavda ona güvenme, çünkü 0/0 sorularının hepsi bu parçadaki yollarla, genellikle daha hızlı çözülür.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 19'a:</strong> Yerine koyma, soldan-sağdan limit ve bölüm kuralı burada da temel. Bölüm kuralının "payda limiti sıfır değilken" koşulu bozulduğunda ne olacağını bu parçada gördün. Sayı/0'da sağ-sol ayrımı, oradaki |x − 2|/(x − 2) örneğindeki sağ-sol ayrımıyla aynı mantıktadır.</p>
+<p><strong>Parça 21'e:</strong> Şekildeki "delik" süreklilik konusunda kaldırılabilir süreksizlik olarak geri gelecek. "(x<sup>2</sup> − 4)/(x − 2) fonksiyonunu x = 2'de sürekli yapacak biçimde tanımlayınız" sorusunun cevabı, bu parçada bulduğun limittir: f(2) = 4. Sayı/0'da sonsuza giden noktalar da "sonsuz süreksizlik" olacak.</p>
+<p><strong>Parça 22'ye:</strong> Türevin tanımı lim<sub>h→0</sub> (f(a + h) − f(a))/h her zaman 0/0 belirsizliğidir. Örneğin f(x) = x<sup>2</sup> için a = 3'te ((3 + h)<sup>2</sup> − 9)/h = (6h + h<sup>2</sup>)/h = 6 + h → 6. Bu parçadaki sadeleştirme becerisi türevin kapısıdır.</p>
+<p><strong>Parça 3'e ve Parça 14'e:</strong> Parçalı fonksiyonlarda kritik noktada limit, burada da sağ-sol bakışıyla çözülür; üstel fonksiyonun yatay asimptotu (y = 0) Bölüm 8c'deki sonsuzda limittir.</p>
+<p><strong>Öbür derslere:</strong> Fizikte anlık hız, ortalama hızın zaman aralığı sıfıra giderken limitidir; Δx/Δt'de ikisi de sıfıra gider (0/0). Kimya ve biyolojide "doyma" grafikleri (bir değere yaklaşıp geçmeyen eğriler) yatay asimptot fikrinin örnekleridir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>"Tanımsız" ile "belirsiz" arasındaki fark nedir? Bir örnekle anlat.</summary><p>Tanımsız, ifadenin o noktada değerinin olmamasıdır: (x<sup>2</sup> − 4)/(x − 2) için f(2) yazılamaz. Belirsiz ise limit hesabında yerine koyunca çıkan 0/0 biçiminin limiti tek başına belirlememesidir. Aynı örnekte f(2) tanımsızdır ama limit 4'tür; 0/0 yalnızca "ifadeyi düzenle" uyarısıdır.</p></details>
+<details><summary>Limit hesabında x − a çarpanını sadeleştirmek neden yasak değildir?</summary><p>Çünkü x, a'ya yaklaşır ama a'ya eşit olmaz; bu süreçte x − a hiçbir zaman sıfır değildir. Limit, a'nın kendisine değil çevresine baktığı için a dışında eşit olan iki fonksiyonun limiti de aynıdır.</p></details>
+<details><summary>lim<sub>x→a</sub> P(x)/Q(x) bir gerçek sayı ve Q(a) = 0 ise P(a) hakkında ne söylenebilir? Neden?</summary><p>P(a) = 0 olmak zorundadır. P(a) sıfırdan farklı olsaydı sayı/0 durumu oluşur, değerler sınırsız büyür ya da küçülür ve limit bir gerçek sayı olamazdı.</p></details>
+<details><summary>lim<sub>x→1</sub> (x<sup>7</sup> − 1)/(x − 1) kaçtır? Hızlı yolu ve gerekçesini söyle.</summary><p>7. x<sup>7</sup> − 1 = (x − 1)(x<sup>6</sup> + x<sup>5</sup> + … + x + 1); sadeleşince parantezde yedi terim kalır, x = 1'de her biri 1'dir.</p></details>
+<details><summary>Yerine koyunca 5/0 çıkan bir limitte sonucu nasıl bulursun?</summary><p>Sağdan ve soldan ayrı bakarım: pay 5 (pozitif), payda sıfıra hangi işaretle yaklaşıyorsa ona göre +∞ ya da −∞. İki yan farklıysa iki yanlı limit yoktur; aynıysa (örneğin payda bir kare ise) +∞ ya da −∞ yazılır, ama bu da gerçek sayı olarak limitin olmadığı anlamına gelir.</p></details>
+<details><summary>x → ∞ iken bir rasyonel fonksiyonun limitini derecelere bakarak nasıl bulursun?</summary><p>Pay derecesi küçükse 0, eşitse baş katsayıların oranı, büyükse +∞ ya da −∞ (işaret baş terimlerin oranından). Gerekçe: pay ve paydayı paydadaki en büyük x kuvvetine bölünce öbür terimler sıfıra gider.</p></details>
+<details><summary>x → −∞ iken √(x<sup>2</sup>) neye eşittir ve bu neden önemlidir?</summary><p>|x|'e, yani −x'e eşittir; çünkü karekök negatif olamaz ve x negatiftir. √(x<sup>2</sup>) = x yazarsan sonucun işareti ters çıkar (örnekte −2 yerine +2).</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>İlk adım her zaman:</strong> x yerine a koy. Sayı/sayı (payda ≠ 0) → limit o sayı. Sayı/0 → ±∞, sağ-sol bak. 0/0 → belirsiz, düzenle.</li>
+<li><strong>Tanımsız ≠ belirsiz.</strong> f(a) tanımsız olabilir, limit yine de var olabilir (delikli grafik). 0/0 = 0, 1 ya da "yok" demek değildir.</li>
+<li><strong>Sadeleştirme hakkı:</strong> x → a'da x ≠ a, o yüzden x − a ≠ 0 ve sadeleşir.</li>
+<li><strong>0/0 polinomda:</strong> pay ve payda x − a çarpanı taşır (çarpan teoremi). Araçlar: iki kare farkı, küp farkı/toplamı, üç terimli, Horner.</li>
+<li><strong>Hızlı yol:</strong> lim<sub>x→1</sub> (xⁿ − 1)/(x − 1) = n.</li>
+<li><strong>Değişken değiştirme:</strong> t = tekrar eden parça; <strong>sınırı da değiştir</strong> (x → a ⇒ t → b).</li>
+<li><strong>Eşlenik (kapsamı belirsiz):</strong> (√A − B)(√A + B) = A − B<sup>2</sup>. lim<sub>x→a</sub> (√x − √a)/(x − a) = 1/(2√a).</li>
+<li><strong>Parametre:</strong> limit bir sayı ve payda sıfır → pay da sıfır (P(a) = 0). Sonra sadeleştir, limiti al.</li>
+<li><strong>Sayı/0 (kapsamı belirsiz):</strong> işaretler aynı +∞, farklı −∞. Sağ ≠ sol ise limit yok. Düşey asimptot sezgisi.</li>
+<li><strong>x → ±∞ (kapsamı belirsiz):</strong> polinomda baş terim. Rasyonelde derece: küçük/büyük → 0; eşit → baş katsayılar oranı; büyük/küçük → ±∞. Yatay asimptot sezgisi.</li>
+<li><strong>Üstel:</strong> a &gt; 1 iken aˣ → ∞ (x → ∞), → 0 (x → −∞). En hızlı büyüyen terime böl.</li>
+<li><strong>∞ − ∞ ve köklü ∞/∞ (kapsamı belirsiz):</strong> eşlenikle çarp; √(x<sup>2</sup> + ax) − x → a/2. x → −∞'da √(x<sup>2</sup>) = −x.</li>
+<li><strong>Kontrol yolu:</strong> a'ya çok yakın bir sayı (ya da sonsuz için 1000) koy, sonucun yakınında mı bak.</li>
+<li><strong>Kapsam dışı:</strong> sin x / x, L'Hôpital.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-20">
+<h3>Quiz 20</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">lim<sub>x→3</sub> <span class="kes"><span>x<sup>2</sup> − 9</span><span>x − 3</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>3</li><li>6</li><li>9</li><li>Limit yoktur</li></ul>
+<div class="coz"><p>Yerine koyunca 0/0 çıkar; belirsiz. x<sup>2</sup> − 9 = (x − 3)(x + 3) yazıp x − 3'ü sadeleştir (x ≠ 3 olduğu için sıfır değil): geriye x + 3 kalır, x = 3'te 6. 0, yalnızca payın sıfır olduğuna bakıp paydayı unutmaktır. "Limit yoktur", 0/0'ı sonuç sanmaktır; 0/0 yalnızca "düzenle" uyarısıdır. 3, sadeleştirdikten sonra x + 3 yerine x yazmak; 9 ise x<sup>2</sup>'yi tek başına almaktır.</p></div></li>
+
+<li data-c="A"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>3</sup> − 8</span><span>x<sup>2</sup> − 4</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>3</li><li>1</li><li>12</li><li>2</li><li>0</li></ul>
+<div class="coz"><p>0/0. Pay küp farkı: (x − 2)(x<sup>2</sup> + 2x + 4); payda iki kare farkı: (x − 2)(x + 2). Sadeleşince (x<sup>2</sup> + 2x + 4)/(x + 2) → 12/4 = 3. 1, küp farkını yanlış ayırıp x<sup>2</sup> − 2x + 4 yazmaktan (bu küp toplamının çarpanıdır): 4/4. 12, paydanın x + 2 çarpanını unutup yalnızca x − 2'yi sadeleştirmektir. 2, ortadaki 2x terimini atlayıp x<sup>2</sup> + 4 yazmaktır: 8/4. 0, payın sıfıra gittiğini görüp sonucun 0 olduğunu sanmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> − 1</span><span>x − 1</span></span> fonksiyonu için<br>I. f(1) tanımsızdır.<br>II. lim<sub>x→1</sub> f(x) = 2'dir.<br>III. f(1) tanımsız olduğu için lim<sub>x→1</sub> f(x) yoktur.<br>ifadelerinden hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız II</li><li>Yalnız III</li><li>I ve II</li><li>I ve III</li></ul>
+<div class="coz"><p>I doğru: x = 1'de payda sıfırdır, f(1) hesaplanamaz. II doğru: x ≠ 1 için f(x) = x + 1, limit 2. III yanlış: limit noktadaki değere değil çevresindeki değerlere bakar; tanımsızlık limitin yokluğu demek değildir (grafik deliği olan bir doğrudur). "Yalnız I" ve "I ve III", tanımsızlığı limitin yokluğuyla karıştırmaktır; "Yalnız II", f(1)'in de 2 olduğunu sanmaktır; "Yalnız III" hem tanımsızlığı hem limiti kaçırır.</p></div></li>
+
+<li data-c="B"><p class="q">lim<sub>x→0</sub> <span class="kes"><span>√(x + 4) − 2</span><span>x</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>1/4</li><li>1/2</li><li>4</li><li>Limit yoktur</li></ul>
+<div class="coz"><p>0/0. Pay ve paydayı √(x + 4) + 2 ile çarp: pay (x + 4) − 4 = x olur, x sadeleşir ve 1/(√(x + 4) + 2) kalır; x = 0'da 1/(2 + 2) = 1/4. 1/2, eşlenikteki +2'yi unutup yalnızca √4 = 2 almaktır. 4, sonucu ters çevirmektir (bu, x/(√(x + 4) − 2) limitidir). 0, payın sıfır olduğunu görüp paydayı unutmak; "Limit yoktur" ise 0/0'ı sonuç sanmaktır. Not: köklü belirsizliklerin sınav kapsamında olup olmadığı doğrulanamadı.</p></div></li>
+
+<li data-c="E"><p class="q">lim<sub>x→−2</sub> <span class="kes"><span>x<sup>2</sup> + ax + 6</span><span>x + 2</span></span> = b olduğuna göre a + b toplamı kaçtır? (b bir gerçek sayıdır.)</p>
+<ul class="sec"><li>5</li><li>1</li><li>10</li><li>11</li><li>6</li></ul>
+<div class="coz"><p>Payda x = −2'de sıfır, limit bir gerçek sayı: pay da sıfır olmalı. 4 − 2a + 6 = 0, a = 5. Pay x<sup>2</sup> + 5x + 6 = (x + 2)(x + 3); sadeleşince x + 3, x = −2'de b = 1. a + b = 6. 5 yalnızca a'dır, 1 yalnızca b'dir. 10, b'yi x + 3'e x = +2 koyarak (işareti karıştırıp) 5 bulmaktan çıkar. 11, b'yi limit yerine payın sabit terimi 6 sanmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">lim<sub>x→1<sup>−</sup></sub> <span class="kes"><span>x + 2</span><span>x − 1</span></span> aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>−∞</li><li>+∞</li><li>3</li><li>0</li><li>1</li></ul>
+<div class="coz"><p>Yerine koyunca 3/0: sayı/0. Soldan yaklaşıyoruz, x &lt; 1, yani x − 1 negatif ve sıfıra yakın; pay 3'e yakın ve pozitif. İşaretler farklı: −∞ (x = 0,99'da 2,99/(−0,01) = −299). +∞ sağdan limittir. 3 yalnızca payın değeridir. 0, "sıfıra bölünce sıfır" yanılgısıdır. 1, baş katsayılar oranıdır; o x → ±∞ için geçerlidir, x → 1 için değil. (Sonsuz limitlerin kapsamı doğrulanamadı.)</p></div></li>
+
+<li data-c="C"><p class="q">lim<sub>x→∞</sub> <span class="kes"><span>6x<sup>3</sup> − 2x + 1</span><span>3x<sup>3</sup> + x<sup>2</sup> − 5</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>−1/5</li><li>∞</li><li>2</li><li>0</li><li>6</li></ul>
+<div class="coz"><p>Dereceler eşit (3 ve 3): limit baş katsayıların oranıdır, 6/3 = 2. Gerekçe: pay ve paydayı x<sup>3</sup>'e bölünce (6 − 2/x<sup>2</sup> + 1/x<sup>3</sup>)/(3 + 1/x − 5/x<sup>3</sup>) → 6/3. −1/5, sabit terimlerin oranıdır; o x = 0'daki değerdir. ∞, "pay sonsuza gidiyor" deyip paydayı unutmaktır. 0, ∞/∞'u 0 sanmaktır. 6, yalnızca payın baş katsayısını almaktır. (Sonsuzdaki limitlerin kapsamı doğrulanamadı.)</p></div></li>
+
+<li data-c="B"><p class="q">lim<sub>x→∞</sub> (√(x<sup>2</sup> + 8x) − x) limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>4</li><li>8</li><li>∞</li><li>Limit yoktur</li></ul>
+<div class="coz"><p>∞ − ∞ belirsizliği. Eşlenikle çarp: 8x/(√(x<sup>2</sup> + 8x) + x). Pay ve paydayı x'e böl: 8/(√(1 + 8/x) + 1) → 8/2 = 4. Hızlı yol: a/2 = 8/2. 0, "∞ − ∞ = 0" yanılgısıdır. 8, paydanın 2x'e gittiğini unutup x sanmaktır. ∞ ve "Limit yoktur", belirsizliği sonuç sanmaktır. Kontrol: x = 1000'de √1 008 000 − 1000 ≈ 3,99. (Kapsamı doğrulanamadı.)</p></div></li>
+
+<li data-c="D" data-k="ileri-1"><p class="q">f(x) = x<sup>2</sup> − 2x fonksiyonunun [1, 4] aralığındaki ortalama değişim hızı kaçtır?</p>
+<ul class="sec"><li>9</li><li>7/3</li><li>2</li><li>3</li><li>8/3</li></ul>
+<div class="coz"><p>Ortalama değişim hızı (f(4) − f(1))/(4 − 1). f(4) = 16 − 8 = 8, f(1) = 1 − 2 = −1. (8 − (−1))/3 = 9/3 = 3. 9, aralığın uzunluğuna bölmeyi unutmaktır. 7/3, f(1)'i +1 alıp (8 − 1)/3 yazmaktır. 8/3, f(1)'i hiç hesaba katmamaktır. 2, f(4)/4 hesaplamaktır; bu kirişin değil orijinden geçen doğrunun eğimidir.</p></div></li>
+
+<li data-c="E" data-k="ileri-3"><p class="q">f(x) = |x − 1| + |x + 2| fonksiyonunun alabileceği en küçük değer kaçtır?</p>
+<ul class="sec"><li>0</li><li>1</li><li>−1</li><li>6</li><li>3</li></ul>
+<div class="coz"><p>Kritik noktalar −2 ve 1. −2 ≤ x ≤ 1 aralığında f(x) = (1 − x) + (x + 2) = 3, sabit; dışarıda f büyür (tekne biçimi). En küçük değer 3, yani iki kritik nokta arasındaki uzaklık. 0, iki mutlak değeri aynı anda sıfır yapmaya çalışmaktır; bu mümkün değil. 1 ve −1, kritik noktanın kendisini ya da kritik noktaların toplamını cevap sanmaktır. 6, f(1) + f(−2) = 3 + 3 toplamıdır.</p></div></li>
+
+<li data-c="B" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği (2, 5) noktasından geçmektedir. Buna göre y = f(x − 3) + 1 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(−1, 6)</li><li>(5, 6)</li><li>(5, 4)</li><li>(−1, 4)</li><li>(2, 8)</li></ul>
+<div class="coz"><p>f(x − 3) grafiği 3 birim <strong>sağa</strong> ötelenir: x − 3 = 2 olması için x = 5. +1 grafiği 1 birim yukarı taşır: 5 + 1 = 6. Nokta (5, 6). (−1, 6), yatay ötelemenin yönünü ters almaktır. (5, 4) ve (−1, 4), düşey ötelemeyi aşağı almaktır. (2, 8), 3'ü yanlış yere, y'ye eklemektir.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">Tepe noktası T(1, −4) olan ve (3, 0) noktasından geçen parabolün y eksenini kestiği noktanın ordinatı kaçtır?</p>
+<ul class="sec"><li>−3</li><li>−4</li><li>3</li><li>−5</li><li>1</li></ul>
+<div class="coz"><p>y = a(x − 1)<sup>2</sup> − 4; (3, 0) koy: 0 = 4a − 4, a = 1. y = (x − 1)<sup>2</sup> − 4 = x<sup>2</sup> − 2x − 3; x = 0'da y = −3. −4, tepe noktasının ordinatıdır. 3, işareti kaybetmektir. −5, a'yı −1 bulmaktan çıkar (−1 − 4). 1, (0 − 1)<sup>2</sup>'yi alıp −4'ü unutmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-8"><p class="q">−17π/3 radyanlık açının esas ölçüsü aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>5π/3</li><li>2π/3</li><li>π/3</li><li>−5π/3</li><li>4π/3</li></ul>
+<div class="coz"><p>Esas ölçü [0, 2π) aralığındadır. −17π/3'e 2π'nin katlarını ekle: −17π/3 + 6π = −17π/3 + 18π/3 = π/3. −5π/3, yalnızca 4π ekleyip durmaktır; negatif olduğu için esas ölçü değildir. 5π/3, −5π/3'ün işaretini atmaktır (17π/3'ün esas ölçüsü budur). 2π/3 ve 4π/3, π/3'ü π ile karıştırarak (π − π/3, π + π/3) bulunan değerlerdir.</p></div></li>
+
+<li data-c="E" data-k="ileri-9"><p class="q">π/2 &lt; x &lt; π ve sin x = 3/5 olduğuna göre tan x kaçtır?</p>
+<ul class="sec"><li>3/4</li><li>−4/3</li><li>4/3</li><li>−4/5</li><li>−3/4</li></ul>
+<div class="coz"><p>Dik üçgen: karşı 3, hipotenüs 5, komşu 4. İkinci bölgede kosinüs negatif, sinüs pozitif; tanjant = sin/cos negatif. tan x = −3/4. 3/4, bölgenin işaretini unutmaktır. −4/3 ve 4/3, kotanjantla karıştırmaktır. −4/5, kosinüsün değeridir.</p></div></li>
+
+<li data-c="D" data-k="ileri-11"><p class="q">sin 15° · cos 15° çarpımının değeri kaçtır?</p>
+<ul class="sec"><li>1/2</li><li>√3/4</li><li>1/8</li><li>1/4</li><li>√2/4</li></ul>
+<div class="coz"><p>sin 2a = 2 sin a cos a ⇒ sin a cos a = ½ sin 2a. a = 15°: ½ · sin 30° = ½ · ½ = 1/4. 1/2, ½ katsayısını unutup yalnızca sin 30° yazmaktır. √3/4, açıyı 60° sanmaktır (½ sin 60°). √2/4, ½ sin 45°'tir. 1/8, ½'yi iki kez uygulamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-13"><p class="q">sin x = 1/2 denkleminin [0, 2π) aralığındaki köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>π</li><li>π/3</li><li>2π</li><li>π/6</li><li>7π/6</li></ul>
+<div class="coz"><p>sin x = 1/2'nin iki çözüm ailesi: x = π/6 + 2kπ ve x = π − π/6 + 2kπ = 5π/6 + 2kπ. Aralıktaki kökler π/6 ve 5π/6; toplam π. π/6, ikinci aileyi unutmaktır. π/3, π/6'yı iki kez almaktır. 7π/6, ikinci kökü π + α sanmaktır (o sinüsün −1/2 olduğu açıdır). 2π, kosinüsteki α ve 2π − α ailesiyle karıştırmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-14"><p class="q">f(x) = log<sub>2</sub>(9 − x<sup>2</sup>) fonksiyonunun en geniş tanım kümesinde kaç tam sayı vardır?</p>
+<ul class="sec"><li>7</li><li>5</li><li>6</li><li>4</li><li>3</li></ul>
+<div class="coz"><p>Logaritmanın içi pozitif olmalı: 9 − x<sup>2</sup> &gt; 0 ⇒ −3 &lt; x &lt; 3. Tam sayılar −2, −1, 0, 1, 2: 5 tane. 7, ±3'ü de almaktır (içerinin sıfır olmasına izin vermek; log 0 tanımsızdır). 6 ve 4, sınırlardan yalnızca birini almak ya da 0'ı atmaktır. 3, yalnızca negatif olmayanları saymaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-16"><p class="q">log<sub>2</sub>(x − 1) ≤ 3 eşitsizliğini sağlayan kaç tam sayı vardır?</p>
+<ul class="sec"><li>9</li><li>7</li><li>3</li><li>10</li><li>8</li></ul>
+<div class="coz"><p>Taban 2 &gt; 1: yön korunur, x − 1 ≤ 2<sup>3</sup> = 8, x ≤ 9. Tanım koşulu x − 1 &gt; 0, x &gt; 1. Çözüm 1 &lt; x ≤ 9: x = 2, 3, …, 9, yani 8 tam sayı. 9, x = 1'i de saymaktır (tanım koşulu unutulmuş). 7, eşitliği atmaktır (x &lt; 9). 3, logaritmayı kaldırırken 2<sup>3</sup> yerine 3 yazmaktır (x − 1 ≤ 3). 10, alt sınırı 0 almaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-17"><p class="q">Bir aritmetik dizide a<sub>3</sub> = 7 ve a<sub>8</sub> = 22 olduğuna göre a<sub>20</sub> kaçtır?</p>
+<ul class="sec"><li>61</li><li>55</li><li>58</li><li>64</li><li>60</li></ul>
+<div class="coz"><p>a<sub>8</sub> = a<sub>3</sub> + 5d ⇒ 22 = 7 + 5d, d = 3. a<sub>20</sub> = a<sub>8</sub> + 12d = 22 + 36 = 58. (Ya da a<sub>1</sub> = 7 − 2 · 3 = 1, a<sub>20</sub> = 1 + 19 · 3 = 58.) 61, a<sub>1</sub> + 20d yazmaktır (n − 1 yerine n). 55, a<sub>1</sub> + 18d'dir. 64, a<sub>3</sub>'ten 19 adım saymaktır. 60, 20d'dir; ilk terimi unutmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-17"><p class="q">Bir dizinin ilk n teriminin toplamı S<sub>n</sub> = n<sup>2</sup> + 2n olduğuna göre a<sub>10</sub> kaçtır?</p>
+<ul class="sec"><li>120</li><li>19</li><li>99</li><li>21</li><li>23</li></ul>
+<div class="coz"><p>a<sub>n</sub> = S<sub>n</sub> − S<sub>n−1</sub>. a<sub>10</sub> = S<sub>10</sub> − S<sub>9</sub> = 120 − 99 = 21. (Genel olarak a<sub>n</sub> = 2n + 1; S<sub>n</sub> ikinci dereceden olduğu için dizi aritmetiktir, d = 2.) 120 S<sub>10</sub>'dur, 99 S<sub>9</sub>'dur; toplamı terimle karıştırmak. 19 a<sub>9</sub>'dur, 23 a<sub>11</sub>'dir; indisi bir kaydırmak.</p></div></li>
+
+<li data-c="A" data-k="ileri-18"><p class="q">27 m yükseklikten bırakılan bir top, yere her çarpışından sonra bir önceki yüksekliğinin 2/3'ü kadar yükseliyor. Top yere üçüncü kez çarptıktan sonra kaç metre yükselir?</p>
+<ul class="sec"><li>8</li><li>12</li><li>16/3</li><li>18</li><li>9</li></ul>
+<div class="coz"><p>Çarpıştan sonraki yükseklikler ortak çarpanı 2/3 olan geometrik dizidir: 27 · 2/3 = 18, 18 · 2/3 = 12, 12 · 2/3 = 8. Üçüncü çarpıştan sonra 27 · (2/3)<sup>3</sup> = 8 m. 18 ve 12, birinci ve ikinci çarpıştan sonraki yüksekliklerdir; 16/3 dördüncüdür (üssü bir fazla almak). 9, her çarpışta 1/3'ünün kaldığını sanmaktır (27 · 1/3).</p></div></li>
+
+<li data-c="E" data-k="ileri-18"><p class="q">Bir geometrik dizide a<sub>2</sub> = 6 ve a<sub>5</sub> = 48 olduğuna göre a<sub>7</sub> kaçtır?</p>
+<ul class="sec"><li>96</li><li>384</li><li>76</li><li>128</li><li>192</li></ul>
+<div class="coz"><p>a<sub>5</sub> = a<sub>2</sub> · r<sup>3</sup> ⇒ 48 = 6r<sup>3</sup>, r<sup>3</sup> = 8, r = 2. a<sub>7</sub> = a<sub>5</sub> · r<sup>2</sup> = 48 · 4 = 192. 96 a<sub>6</sub>'dır, 384 a<sub>8</sub>'dir. 76, diziyi aritmetik sanmaktır (d = 14, 48 + 28). 128, 2<sup>7</sup>'dir; ilk terimi (3) unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-19"><p class="q">f(x) = x<sup>2</sup> + 1 (x &lt; 2 iken), f(x) = 3x + a (x ≥ 2 iken) biçiminde tanımlanan fonksiyonun x = 2 noktasında limiti olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>1</li><li>−1</li><li>11</li><li>5</li><li>−6</li></ul>
+<div class="coz"><p>Limitin olması için soldan ve sağdan limit eşit olmalı. Soldan: 2<sup>2</sup> + 1 = 5. Sağdan: 6 + a. 6 + a = 5 ⇒ a = −1. 1, işareti karıştırmaktır. 11, 5 ile 6'yı toplamaktır. 5 limitin kendi değeridir, a değil. −6, sağdan limiti sıfıra eşitlemektir.</p></div></li>
+
+<li data-c="D" data-k="ileri-19"><p class="q">lim<sub>x→3<sup>−</sup></sub> (x<sup>2</sup> + <span class="kes"><span>|x − 3|</span><span>x − 3</span></span>) limitinin değeri kaçtır?</p>
+<ul class="sec"><li>10</li><li>9</li><li>Limit yoktur</li><li>8</li><li>0</li></ul>
+<div class="coz"><p>x → 3<sup>−</sup> iken x &lt; 3, yani x − 3 negatif ve |x − 3| = −(x − 3); kesir −1 olur. x<sup>2</sup> → 9. Toplam 9 − 1 = 8. 10, sağdan limittir (kesir +1). 9, kesri hiç hesaba katmamaktır. "Limit yoktur", iki yanlı limitle (sağ ve sol farklı olduğu için gerçekten yok) tek yanlı limiti karıştırmaktır; soru yalnızca soldan limiti istiyor. 0, kesri 0/0 sanıp sıfır almaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-19">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-20">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-21">Sonraki parça: süreklilik</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"limit 0/0 belirsizliği çarpanlara ayırma konu anlatımı AYT"</li>
+  <li>"limit belirsizlik parametre sorusu pay sıfır olmalı"</li>
+  <li>"sonsuzda limit rasyonel fonksiyon derece karşılaştırma"</li>
+  <li>"limit eşlenikle çarpma köklü ifadeler sonsuz eksi sonsuz"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 20. satıra göre yazıldı. Kapsam dosyasının "Doğrulanamayanlar" notuna uyuldu: 2018 programının belirsizliklerde yalnızca polinom ve rasyonel fonksiyonların 0/0 durumunu açıkça saydığı hatırlanıyor ama programın kazanım metni bu oturumda doğrudan denetlenemedi. Bu yüzden eşlenikle çarpma (Bölüm 5), sayı/0 ve sonsuz limitler (Bölüm 7), x → ±∞ için limit (Bölüm 8), ∞ − ∞ ve köklü ∞/∞ (Bölüm 9) metinde "bu kısım sınav kapsamında olmayabilir" notuyla ve kısa verildi; bunlarla ilgili quiz soruları da (4, 6, 7, 8) çözümlerinde aynı notu taşıyor. Kesin kapsam dışıysa bu bölümler ve sorular silinebilir.</li>
+  <li>sin x / x limiti, trigonometrik belirsizlikler ve L'Hôpital kuralı kapsam listesine göre programda yok; yalnızca bu bilgi verildi, anlatılmadı. Düşey ve yatay asimptot yalnızca sezgi olarak anıldı; asimptot çizimi kapsam listesinde (Parça 26 notu) programda yok diye geçiyor.</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, metindeki ara örnekler ve tablo değerleri, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ve sympy ile hesaplanarak denetlendi. Sympy bu sürümde x → −∞ için bazı üstel limitlerde hatalı sonuç verdi; bu limitler (3ˣ'li kesrin −∞'daki değeri 2, (1/2)ˣ'in davranışı) ve x → −∞ limitleri ayrıca sayısal olarak (x = −1000, −10<sup>6</sup>) denetlendi.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: y = x + 2 doğrusu ve deliği, y = (x + 1)/(x − 2) ve y = √(x<sup>2</sup> + 6x) − x eğrilerinin noktaları formüllerden hesaplandı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (17, 18, 19) ikişer soru; daha eski 16 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (1, 3, 4, 6, 8, 9, 11, 13, 14, 16). Parça 17–19'un tekrar soruları kapsam listesindeki konular ve terimlerle yazıldı; bu parçalar yazım sırasında arşive eklendi ve gösterimin (a<sub>n</sub>, S<sub>n</sub>, tek yanlı limit yazımı) onlarla uyumlu olduğu denetlendi, içerikleri satır satır karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

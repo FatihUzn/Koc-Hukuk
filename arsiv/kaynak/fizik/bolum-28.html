@@ -1,0 +1,686 @@
+<article class="chapter ders" id="c-fizik-28">
+<div class="prose">
+<div class="eyebrow">Fizik · Parça 28 · Alternatif akım ve transformatörler</div>
+<h1>Alternatif akım ve transformatörler</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Evindeki prizden gelen akım saniyede 100 kez yön değiştirir; ortalaması sıfırdır. Öyleyse ütü nasıl ısınıyor, voltmetre neden "230 V" gösteriyor? Santraller neden pildeki gibi tek yönlü akım üretmiyor? Elektrik direğinin tepesindeki gri kutu, binlerce voltu nasıl 230 volta indiriyor ve enerji santralden yüzlerce kilometre yol alıp evine nasıl neredeyse kaybolmadan geliyor?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 8 (akım, gerilim, Ohm yasası, güç P = V·i = i²·R, seri bağlama), Parça 13 (vektör toplama, dik üçgen, 37–53 üçgeni), Parça 21 (açısal hız ω = 2π/T = 2π·f), Parça 23 (sinüs eğrisi, çember–gölge ilişkisi, v<sub>max</sub> = ω·A, rezonans), Parça 25 (sığaç, q = C·V), Parça 27 (manyetik akı, Faraday ve Lenz yasaları, öz indüksiyon, ε = B·v·L, dönen çerçeve). Yanında kâğıt kalem olsun; bu parçada her yeni nicelik bir önceki parçadan türetilecek.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 27'de değişen manyetik akının bir bobinde gerilim doğurduğunu gördük ve bölümü, manyetik alanda dönen bir çerçevenin yönü sürekli değişen bir gerilim ürettiği fikriyle kapattık. Bu parça o fikrin sonuçlarını işler: yönü düzenli olarak değişen akım (alternatif akım) nasıl tanımlanır, nasıl ölçülür, devre elemanları ona nasıl davranır ve gerilim nasıl yükseltilip alçaltılır.</p>
+
+<p>AYT bu konudan şu soru tiplerini çıkarır: (1) en büyük değer ile etkin değer arasındaki çeviri ve güç hesabı; (2) frekans değişince bobin ve sığaçlı kollardaki lambaların parlaklığı, doğru akımla karşılaştırma; (3) transformatörde sarım sayısı, gerilim, akım ve verim; (4) enerji iletiminde hat kaybının gerilimle değişimi. Seri RLC devresinde empedans ve rezonans da kitaplarda yer alır; bunların hesap derinliği belirsizdir, aşağıda yerinde işaretleyeceğim.</p>
+
+<p>Sınav kabulleri: Türkiye'de şebeke frekansı <strong>50 Hz</strong>, şebeke gerilimi etkin değer olarak <strong>230 V</strong>'tur (eski kitaplarda ve birçok soruda 220 V geçer). Soruda belirtilirse <strong>π = 3</strong> ve <strong>√2 ≈ 1,4</strong> alınır. Bobin ve sığaç aksi söylenmedikçe "ideal" kabul edilir: bobinin telinin direnci, sığacın kaçağı yoktur.</p>
+
+<h2 class="s">1. Doğru akım ve alternatif akım</h2>
+
+<p>Parça 8'de pille kurduğun devrelerde akım hep aynı yönde akıyordu; pilin artı ucu hep artı, eksi ucu hep eksi kalıyordu. Böyle akıma <strong>doğru akım</strong> (DC) denir. Şimdi bir üretecin kutuplarının saniyede onlarca kez yer değiştirdiğini düşün: uçlarından biri bir an artı, kısa süre sonra eksi olur. Bu üretecin sürdüğü devrede elektronlar bir ileri bir geri salınır; akım yönü düzenli aralıklarla tersine döner.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>Büyüklüğü ve yönü zamanla periyodik olarak değişen akıma <strong>alternatif akım</strong> (AC) denir. Şebekedeki alternatif akım zamanla <strong>sinüs eğrisi</strong> biçiminde değişir. Bir tam salınımın süresi <strong>periyot</strong> T, bir saniyedeki salınım sayısı <strong>frekans</strong> f'dir; f = 1/T ve açısal frekans ω = 2π·f'dir.</p></div>
+
+<p>Elektronlar geri gidip geldiğine göre "bir yere gitmiyorlarsa enerji nasıl taşınıyor" diye sorabilirsin. Parça 10'daki dalgaları hatırla: dalga da maddeyi taşımaz, enerjiyi taşır. Tel içindeki elektronlar da ileri geri salınırken enerjiyi lambaya, ısıtıcıya, motora aktarır. Ütünün ısınması için elektronların tek yönde akması gerekmez; direnç telinde ileri ya da geri hareket eden her elektron çarpışmalarla ısı üretir.</p>
+
+<div class="tablo"><table>
+<tr><th>Özellik</th><th>Doğru akım (DC)</th><th>Alternatif akım (AC)</th></tr>
+<tr><td>Yön</td><td>Hep aynı</td><td>Periyodik olarak tersine döner</td></tr>
+<tr><td>Kaynak</td><td>Pil, akü, güneş pili, doğrultucu</td><td>Santral jeneratörü (dinamo), şebeke</td></tr>
+<tr><td>Zamanla değişim grafiği</td><td>Yatay doğru</td><td>Sinüs eğrisi</td></tr>
+<tr><td>Bir periyottaki ortalaması</td><td>Kendisi</td><td>Sıfır</td></tr>
+<tr><td>Transformatörle değiştirilebilir mi?</td><td>Hayır</td><td>Evet</td></tr>
+<tr><td>Bobin ve sığacın etkisi</td><td>Bobin düz tel gibi, sığaç (dolunca) açık devre gibi</td><td>İkisi de akıma frekansa bağlı bir karşı koyma gösterir</td></tr>
+</table></div>
+
+<h2 class="s">2. Alternatif akım nasıl üretilir: dönen çerçeve</h2>
+
+<p>Parça 27'de manyetik alanda v hızıyla hareket eden L uzunluğundaki bir çubukta ε = B·v·L kadar gerilim oluştuğunu gördük; bu bağıntı, hız alana dik olduğunda geçerliydi. Hız alanla θ açısı yapıyorsa yalnızca alana dik bileşen (v·sinθ) gerilim doğurur. Şimdi bu bilgiyle jeneratörün içine bakalım.</p>
+
+<p>Düzgün B alanının içinde, kenarları a ve b olan dikdörtgen bir çerçeve, a kenarlarına paralel bir eksen çevresinde sabit ω açısal hızıyla dönsün. Çerçevenin düzlemine dik doğrultuya (normaline) bak ve bu normalin alanla yaptığı açıya θ de; θ = ω·t'dir. Adım adım:</p>
+<p><span class="mat">uzun kenarın hızı: v = ω·(b/2) <span class="g">(dönme eksenine uzaklık b/2; Parça 21'deki v = ω·r)</span></span></p>
+<p><span class="mat">bir uzun kenarın gerilimi: B·a·v·sinθ <span class="g">(yalnız alana dik hız bileşeni)</span></span></p>
+<p><span class="mat">iki uzun kenar: ε = 2·B·a·(ω·b/2)·sinθ = B·(a·b)·ω·sinθ <span class="g">(çerçeve boyunca iki kenarın gerilimleri toplanır)</span></span></p>
+<p><span class="mat">ε = B·A·ω·sin(ω·t) <span class="g">(A = a·b, çerçevenin alanı)</span></span></p>
+<p>Kısa kenarlar katkı vermez, çünkü onlarda oluşan kuvvet telin boyuna değil, tele dik doğrultudadır. Çerçeve N sarımlıysa her sarımın gerilimi toplanır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Dönen çerçevede oluşan gerilim.</strong> N sarımlı, alanı A olan çerçeve B alanında ω açısal hızıyla dönerken:</p>
+<p><span class="mat">ε = ε<sub>max</sub> · sin(ω·t), &nbsp; ε<sub>max</sub> = N·B·A·ω <span class="g">(ω = 2π·f)</span></span></p>
+<p>Gerilim, çerçeve düzlemi alana <strong>paralel</strong> olduğu anlarda en büyük, alana <strong>dik</strong> olduğu (akının en büyük olduğu) anlarda sıfırdır.</p></div>
+
+<p><strong>Akı en büyükken gerilim neden sıfır?</strong> Faraday yasası gerilimi akının kendisine değil, <em>değişme hızına</em> bağlar. Çerçeve alana dik dururken uzun kenarlar alan çizgileri boyunca kayar; akı o an en büyüktür ama değişmez (tepe noktasındaki top gibi: konumu en yüksek, hızı sıfır). Çerçeve alana paralelken akı sıfırdır ama en hızlı değişir. Parça 27'deki "akı büyük diye emk büyük sanmak" hatası burada da tuzaktır.</p>
+
+<p><strong>Frekans ve yön değişimi.</strong> Çerçeve bir tam tur atınca gerilim sinüs eğrisinin bir tam periyodunu çizer: önce artı yönde büyür, sıfıra iner, eksi yönde büyür, yine sıfıra döner. Yani her turda akım <strong>iki kez</strong> yön değiştirir. Şebeke frekansı 50 Hz olduğuna göre periyot T = 1/50 = 0,02 s'dir ve akım saniyede 2·50 = 100 kez yön değiştirir. Jeneratörü iki kat hızlı döndürürsen ω iki katına çıkar; hem frekans hem ε<sub>max</sub> iki katına çıkar.</p>
+
+<h2 class="s">3. Anlık, en büyük ve etkin değer</h2>
+
+<p>Alternatif gerilim her an farklı bir değer alır. Üç ayrı nicelik konuşacağız: <strong>anlık değer</strong> (belli bir t anındaki değer: v, i), <strong>en büyük değer</strong> (sinüs eğrisinin tepesi: V<sub>max</sub>, i<sub>max</sub>) ve <strong>etkin değer</strong> (V<sub>e</sub>, i<sub>e</sub>). Ortalama değer işe yaramaz, çünkü bir periyotta artı ve eksi yarılar birbirini götürür; ortalama sıfırdır. Ama ütü ısınıyor; demek ki sıfır olmayan bir şey enerjiyi taşıyor.</p>
+
+<h3>Etkin değer nereden gelir?</h3>
+
+<p>Direnç telinde harcanan güç P = i²·R'dir (Parça 8). Akımın karesi alınınca işaret kaybolur: eksi yöndeki akım da artı güç verir. Akım i = i<sub>max</sub>·sin(ω·t) ise anlık güç:</p>
+<p><span class="mat">p = i²·R = i<sub>max</sub>²·R·sin²(ω·t) <span class="g">(her an sıfır ya da artı)</span></span></p>
+<p>Şimdi sin² teriminin bir periyottaki ortalamasını bul. sin² ve cos² eğrileri aynı biçimdedir, yalnızca çeyrek periyot kaydırılmışlardır; bu yüzden bir tam periyotta ortalamaları eşittir. Öte yandan her an sin² + cos² = 1'dir, yani ortalamalarının toplamı 1'dir. Eşit iki sayının toplamı 1 ise her biri 1/2'dir:</p>
+<p><span class="mat">ort(sin²) = ort(cos²), &nbsp; ort(sin²) + ort(cos²) = 1 ⇒ ort(sin²) = 1/2 <span class="g">(simetri)</span></span></p>
+<p><span class="mat">P<sub>ort</sub> = ½·i<sub>max</sub>²·R <span class="g">(ortalama güç)</span></span></p>
+<p>Etkin değeri, "aynı dirençte aynı ortalama gücü veren doğru akımın değeri" diye tanımla: i<sub>e</sub>²·R = ½·i<sub>max</sub>²·R. R sadeleşir, karekök alınır:</p>
+<p><span class="mat">i<sub>e</sub> = i<sub>max</sub>/√2 ≈ 0,71·i<sub>max</sub> <span class="g">(aynı akıl yürütme gerilim için de geçerli)</span></span></p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Etkin değer.</strong> Bir alternatif akımın etkin değeri, aynı dirençte aynı ısıyı üreten doğru akımın değeridir:</p>
+<p><span class="mat">i<sub>e</sub> = <span class="kes"><span>i<sub>max</sub></span><span>√2</span></span>, &nbsp; V<sub>e</sub> = <span class="kes"><span>V<sub>max</sub></span><span>√2</span></span>, &nbsp; P<sub>ort</sub> = i<sub>e</sub>²·R = V<sub>e</sub>·i<sub>e</sub> = <span class="kes"><span>V<sub>max</sub>·i<sub>max</sub></span><span>2</span></span> <span class="g">(dirençte)</span></span></p>
+<p>Ampermetre ve voltmetre <strong>etkin değeri</strong> gösterir. Cihaz etiketlerindeki "230 V, 2 A" gibi değerler de etkin değerdir.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="Üstte bir periyotluk sinüs biçimli gerilim eğrisi; en büyük değer Vmax, ondan aşağıda yüzde 71 yükseklikte etkin değer Ve kesikli çizgiyle gösterilmiş. Altta aynı sürede gücün eğrisi: hep artı, iki tümsekli, ortalaması en büyük değerin yarısı">
+  <line class="sv-c" x1="50" y1="120" x2="385" y2="120" />
+  <line class="sv-c" x1="50" y1="30" x2="50" y2="210" />
+  <text class="sv-s" x="388" y="124">t</text>
+  <line class="sv-c" x1="50" y1="40" x2="350" y2="40" stroke-dasharray="4 4" />
+  <line class="sv-c" x1="50" y1="63.4" x2="350" y2="63.4" stroke-dasharray="4 4" />
+  <line class="sv-c" x1="50" y1="200" x2="350" y2="200" stroke-dasharray="4 4" />
+  <polyline class="sv-cl" points="50.0,120.0 56.0,110.0 62.0,100.1 68.0,90.6 74.0,81.5 80.0,73.0 86.0,65.2 92.0,58.4 98.0,52.5 104.0,47.6 110.0,43.9 116.0,41.4 122.0,40.2 128.0,40.2 134.0,41.4 140.0,43.9 146.0,47.6 152.0,52.5 158.0,58.4 164.0,65.2 170.0,73.0 176.0,81.5 182.0,90.6 188.0,100.1 194.0,110.0 200.0,120.0 206.0,130.0 212.0,139.9 218.0,149.4 224.0,158.5 230.0,167.0 236.0,174.8 242.0,181.6 248.0,187.5 254.0,192.4 260.0,196.1 266.0,198.6 272.0,199.8 278.0,199.8 284.0,198.6 290.0,196.1 296.0,192.4 302.0,187.5 308.0,181.6 314.0,174.8 320.0,167.0 326.0,158.5 332.0,149.4 338.0,139.9 344.0,130.0 350.0,120.0" />
+  <text class="sv-s" x="44" y="44" text-anchor="end">Vmax</text>
+  <text class="sv-s" x="44" y="67" text-anchor="end">Ve</text>
+  <text class="sv-s" x="44" y="124" text-anchor="end">0</text>
+  <text class="sv-s" x="44" y="204" text-anchor="end">−Vmax</text>
+  <text class="sv-t" x="58" y="24">v(t) = Vmax·sin(ωt)</text>
+  <text class="sv-s" x="212" y="57">Ve = Vmax/√2 ≈ 0,71·Vmax</text>
+  <line class="sv-c" x1="125" y1="116" x2="125" y2="124" />
+  <line class="sv-c" x1="200" y1="116" x2="200" y2="124" />
+  <line class="sv-c" x1="350" y1="116" x2="350" y2="124" />
+  <text class="sv-s" x="125" y="137" text-anchor="middle">T/4</text>
+  <text class="sv-s" x="214" y="114">T/2</text>
+  <text class="sv-s" x="356" y="114">T</text>
+  <line class="sv-c" x1="50" y1="300" x2="385" y2="300" />
+  <line class="sv-c" x1="50" y1="220" x2="50" y2="300" />
+  <text class="sv-s" x="388" y="304">t</text>
+  <line class="sv-c" x1="50" y1="230" x2="350" y2="230" stroke-dasharray="4 4" />
+  <line class="sv-c" x1="50" y1="265" x2="350" y2="265" stroke-dasharray="4 4" />
+  <polyline class="sv-cl" points="50.0,300.0 56.0,298.9 62.0,295.7 68.0,290.5 74.0,283.8 80.0,275.8 86.0,267.2 92.0,258.4 98.0,250.1 104.0,242.7 110.0,236.7 116.0,232.5 122.0,230.3 128.0,230.3 134.0,232.5 140.0,236.7 146.0,242.7 152.0,250.1 158.0,258.4 164.0,267.2 170.0,275.8 176.0,283.8 182.0,290.5 188.0,295.7 194.0,298.9 200.0,300.0 206.0,298.9 212.0,295.7 218.0,290.5 224.0,283.8 230.0,275.8 236.0,267.2 242.0,258.4 248.0,250.1 254.0,242.7 260.0,236.7 266.0,232.5 272.0,230.3 278.0,230.3 284.0,232.5 290.0,236.7 296.0,242.7 302.0,250.1 308.0,258.4 314.0,267.2 320.0,275.8 326.0,283.8 332.0,290.5 338.0,295.7 344.0,298.9 350.0,300.0" />
+  <text class="sv-s" x="44" y="234" text-anchor="end">Pmax</text>
+  <text class="sv-s" x="44" y="304" text-anchor="end">0</text>
+  <text class="sv-s" x="354" y="269">Pmax/2</text>
+  <text class="sv-s" x="58" y="216">p(t) = i²·R: hep artı, ortalaması Pmax/2</text>
+</svg>
+<figcaption>Üstte gerilim gerçek ölçüyle bir periyot boyunca çizildi: tepe Vmax, etkin değer onun 0,71 katı (kesikli çizgi). Gerilimin ortalaması sıfırdır, çünkü üst ve alt yarılar eşittir. Altta aynı direnç için anlık güç: kare alındığı için hep artı, periyot başına iki tümsek ve ortalaması tepe değerinin tam yarısı. Etkin değer bu yarıdan çıkar.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> Bir kaynağın gerilimi v = 220√2·sin(100π·t) volt bağıntısıyla değişiyor. Kaynağa 55 Ω'luk bir ısıtıcı bağlanıyor. (a) Frekans ve periyot nedir? (b) Voltmetre ve ampermetre ne gösterir? (c) Akımın en büyük değeri ve ortalama güç nedir? (d) t = 1/400 s anında gerilim kaç volttur?</p>
+<p><strong>Adım 1.</strong> Bağıntıyı v = V<sub>max</sub>·sin(ω·t) ile karşılaştır. <span class="mat">V<sub>max</sub> = 220√2 V, ω = 100π rad/s <span class="g">(katsayıları eşle)</span></span></p>
+<p><strong>Adım 2.</strong> Frekansı bul. <span class="mat">f = ω/(2π) = 100π/(2π) = 50 Hz <span class="g">(ω = 2π·f)</span></span></p>
+<p><strong>Adım 3.</strong> Periyodu bul. <span class="mat">T = 1/f = 1/50 = 0,02 s <span class="g">(T = 1/f)</span></span></p>
+<p><strong>Adım 4.</strong> Voltmetrenin göstereceği etkin gerilim. <span class="mat">V<sub>e</sub> = 220√2/√2 = 220 V <span class="g">(V<sub>e</sub> = V<sub>max</sub>/√2)</span></span></p>
+<p><strong>Adım 5.</strong> Ampermetrenin göstereceği etkin akım. <span class="mat">i<sub>e</sub> = V<sub>e</sub>/R = 220/55 = 4 A <span class="g">(Ohm yasası etkin değerlerle)</span></span></p>
+<p><strong>Adım 6.</strong> Akımın en büyük değeri. <span class="mat">i<sub>max</sub> = i<sub>e</sub>·√2 = 4√2 ≈ 5,6 A <span class="g">(√2 ≈ 1,4)</span></span></p>
+<p><strong>Adım 7.</strong> Ortalama güç. <span class="mat">P = i<sub>e</sub>²·R = 4²·55 = 880 W <span class="g">(P = i<sub>e</sub>²·R)</span></span></p>
+<p><strong>Adım 8.</strong> t = 1/400 s'deki açı. <span class="mat">ω·t = 100π/400 = π/4 rad = 45° <span class="g">(açıyı önce bul)</span></span></p>
+<p><strong>Adım 9.</strong> Anlık gerilim. <span class="mat">v = 220√2·sin45° = 220√2·(√2/2) = 220 V <span class="g">(sin45° = √2/2)</span></span></p>
+<p><strong>Sonuç:</strong> f = 50 Hz, T = 0,02 s; voltmetre 220 V, ampermetre 4 A gösterir; i<sub>max</sub> ≈ 5,6 A, ortalama güç 880 W; t = 1/400 s'de (T/8 anında) anlık gerilim 220 V'tur.</p>
+<p><strong>Kontrol yolu:</strong> Gücü tepe değerlerle hesapla: V<sub>max</sub>·i<sub>max</sub>/2 = 220√2·4√2/2 = 880 W, aynı. Tahmin denetimi: 880 W, ev tipi bir ısıtıcı için makul bir değer.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Etkin değer ile en büyük değeri karıştırmak.</strong> "Şebeke 220 V" denince gerilimin hiç 220 V'u aşmadığını sanmak yanlıştır; 220 V etkin değerdir, tepe değeri 220·√2 ≈ 311 V'tur. Bu yüzden 220 V'luk şebekeye bağlanacak bir sığacın ya da yalıtkanın en az 311 V'a dayanması gerekir. Tersine, sorunun verdiği V<sub>max</sub>'ı doğrudan P = V²/R'ye koyarsan gücü iki kat bulursun. Kural: soruda "en büyük", "tepe" ya da sinüs bağıntısındaki katsayı varsa önce √2'ye böl; ölçü aleti, etiket ya da "şebeke gerilimi" varsa değer zaten etkindir.</p></div>
+
+<h2 class="s">4. Neden alternatif akım? Edison–Tesla tartışması</h2>
+
+<p>1880'lerde ilk elektrik şebekeleri kurulurken iki görüş çarpıştı. Thomas Edison, doğru akımla çalışan santraller kurdu ve bu sistemi savundu. Nikola Tesla ise alternatif akımla çalışan motorlar ve çok fazlı bir dağıtım sistemi geliştirdi; bu buluşları George Westinghouse'un şirketi üstlendi. Tarihe "akımların savaşı" diye geçen bu rekabeti alternatif akım kazandı ve 1890'larda büyük alternatif akım santralleri kuruldu.</p>
+
+<p>Kazanmasının nedeni fiziktir, reklam değil. <strong>Birincisi:</strong> alternatif akımın gerilimi transformatörle kolayca yükseltilip alçaltılabilir; doğru akımda bu, o yıllarda pratik olarak mümkün değildi. <strong>İkincisi:</strong> yüksek gerilimle iletim, aşağıda göreceğimiz gibi, hat kayıplarını büyük ölçüde azaltır; doğru akım şebekesi düşük gerilimde kaldığı için santraller tüketicinin birkaç kilometre yakınına kurulmak zorundaydı. <strong>Üçüncüsü:</strong> alternatif akım jeneratörü (Parça 27'deki dinamo) ve alternatif akım motorları yapıca basit ve dayanıklıdır.</p>
+
+<p>Doğru akım tümüyle kaybolmadı. Piller, aküler ve elektronik devreler doğru akımla çalışır; telefonun şarj adaptörü şebekenin alternatif akımını doğru akıma çevirir. Günümüzde güç elektroniği sayesinde çok uzun mesafelerde ve deniz altı kablolarında yüksek gerilimli doğru akımla iletim de kullanılmaktadır. Ama ev şebekesi dünyanın neredeyse her yerinde alternatif akımdır.</p>
+
+<h2 class="s">5. Yalnız dirençli devre</h2>
+
+<p>Alternatif akım kaynağına yalnızca bir direnç (ısıtıcı, akkor lamba) bağla. Ohm yasası her an geçerlidir: i = v/R. Gerilim sıfırken akım sıfır, gerilim tepedeyken akım tepededir. Bu yüzden direnç devresinde akım ile gerilim <strong>aynı fazdadır</strong>: iki sinüs eğrisi aynı anda tepeye çıkar, aynı anda sıfırdan geçer. Hesaplar doğru akımdaki gibidir; tek fark, değerlerin etkin değer olarak alınmasıdır: i<sub>e</sub> = V<sub>e</sub>/R, P = i<sub>e</sub>²·R. Direncin değeri frekansa bağlı değildir.</p>
+
+<p>Bu yüzden 230 V'luk doğru akım kaynağına bağlanan bir ısıtıcı ile etkin değeri 230 V olan alternatif akım kaynağına bağlanan aynı ısıtıcı aynı gücü harcar; lamba olsaydı aynı parlaklıkta yanardı. Ama tepe değeri 230 V olan alternatif akımda güç yarıya iner, çünkü o zaman etkin değer 230/√2 V'tur.</p>
+
+<h2 class="s">6. Yalnız bobinli devre: indüktif reaktans</h2>
+
+<p>Parça 27'de bobinin, içinden geçen akımın değişmesine karşı koyduğunu gördük: akım değişirse bobinde ε = L·Δi/Δt kadar öz indüksiyon gerilimi oluşur ve Lenz yasası gereği bu gerilim değişime karşı yönelir. Doğru akımda akım bir kez kurulunca değişmez; ideal bobin düz bir tel gibi davranır. Alternatif akımda ise akım hiç durmadan değişir; bobin sürekli karşı koyar. Bu karşı koymanın büyüklüğünü bulalım.</p>
+
+<p>İdeal bobinde telin direnci yok; o hâlde kaynağın gerilimi her an bobinin öz indüksiyon gerilimine eşit olmalıdır: v = L·Δi/Δt. Akım i = i<sub>max</sub>·sin(ω·t) olsun. Akımın değişme hızının en büyük değerini bulmak için Parça 23'e dön: konumu x = A·sin(ω·t) olan cismin hızı, yani konumun değişme hızı, en çok ω·A olur ve bu en büyük değere x = 0 iken ulaşır. Burada "konum" yerine akım var:</p>
+<p><span class="mat">(Δi/Δt)<sub>max</sub> = ω·i<sub>max</sub> <span class="g">(Parça 23: v<sub>max</sub> = ω·A, akım sıfırdan geçerken)</span></span></p>
+<p><span class="mat">V<sub>max</sub> = L·ω·i<sub>max</sub> <span class="g">(v = L·Δi/Δt'nin en büyük değeri)</span></span></p>
+<p><span class="mat">V<sub>max</sub>/i<sub>max</sub> = ω·L = 2π·f·L <span class="g">(direnç gibi bir oran; birimi ohm)</span></span></p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>İndüktif reaktans.</strong> İdeal bobinin alternatif akıma gösterdiği karşı koyma:</p>
+<p><span class="mat">X<sub>L</sub> = 2π·f·L = ω·L, &nbsp; i<sub>e</sub> = <span class="kes"><span>V<sub>e</sub></span><span>X<sub>L</sub></span></span> <span class="g">(X<sub>L</sub> ohm, f hertz, L henry)</span></span></p>
+<p>X<sub>L</sub> frekansla <strong>doğru orantılıdır</strong>. Bobinde akım, gerilimden <strong>çeyrek periyot (90°) geridedir</strong>. İdeal bobin ortalamada enerji harcamaz.</p></div>
+
+<p><strong>Neden frekansla artar?</strong> Frekans büyüdükçe akım aynı tepe değerine daha kısa sürede çıkıp inmek zorundadır; değişme hızı artar, öz indüksiyon gerilimi artar, bobin daha çok karşı koyar. f = 0 (doğru akım) için X<sub>L</sub> = 0'dır: ideal bobin doğru akıma hiç karşı koymaz.</p>
+
+<p><strong>Akım neden geride?</strong> Bobindeki gerilim akımın kendisiyle değil, değişme hızıyla orantılıdır. Değişme hızı en büyükken (akım sıfırdan geçerken) gerilim tepededir; akım kendi tepesine ancak çeyrek periyot sonra varır. Lenz yasasıyla söylersek: bobin akımın büyümesini geciktirir, akım gerilimin peşinden gelir. Parça 23'teki BHH'de hız, konumdan çeyrek periyot öndeydi; burada gerilim değişme hızının rolünü oynar, akım konumun.</p>
+
+<p><strong>Neden enerji harcamaz?</strong> Akım büyürken bobin kaynaktan enerji alıp manyetik alanında depolar; akım küçülürken bu enerjiyi kaynağa geri verir. Her çeyrek periyotta alınan, sonraki çeyrekte geri verilir; ortalama güç sıfırdır. Bobin ısınmaz (telinin direnci yoksa).</p>
+
+<h2 class="s">7. Yalnız sığaçlı devre: kapasitif reaktans</h2>
+
+<p>Parça 25'te sığacın levhaları arasındaki yalıtkandan yük geçmediğini, sığacın üretece bağlanınca kısa bir süre dolup sonra akımı kestiğini gördük. Alternatif akımda ise kaynak sığacı bir yönde doldurur, boşaltır, ters yönde doldurur, yine boşaltır. Levhalar arasından yük geçmez ama teller boyunca yük sürekli gidip gelir; devrede alternatif akım dolaşır.</p>
+
+<p>Sığaçta q = C·v'dir (Parça 25). Akım, yükün değişme hızıdır: i = Δq/Δt = C·Δv/Δt. Gerilim v = V<sub>max</sub>·sin(ω·t) ise yine Parça 23'ün aynı fikriyle:</p>
+<p><span class="mat">(Δv/Δt)<sub>max</sub> = ω·V<sub>max</sub> <span class="g">(gerilim sıfırdan geçerken)</span></span></p>
+<p><span class="mat">i<sub>max</sub> = C·ω·V<sub>max</sub> <span class="g">(i = C·Δv/Δt'nin en büyük değeri)</span></span></p>
+<p><span class="mat">V<sub>max</sub>/i<sub>max</sub> = 1/(ω·C) = 1/(2π·f·C) <span class="g">(birimi yine ohm)</span></span></p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Kapasitif reaktans.</strong> Sığacın alternatif akıma gösterdiği karşı koyma:</p>
+<p><span class="mat">X<sub>C</sub> = <span class="kes"><span>1</span><span>2π·f·C</span></span> = <span class="kes"><span>1</span><span>ω·C</span></span>, &nbsp; i<sub>e</sub> = <span class="kes"><span>V<sub>e</sub></span><span>X<sub>C</sub></span></span> <span class="g">(C farad)</span></span></p>
+<p>X<sub>C</sub> frekansla <strong>ters orantılıdır</strong>. Sığaçta akım, gerilimden <strong>çeyrek periyot (90°) öndedir</strong>. İdeal sığaç ortalamada enerji harcamaz.</p></div>
+
+<p><strong>Neden frekans artınca azalır?</strong> Frekans büyükse sığaç her yarım periyotta dolup boşalmaya daha az zaman bulur; yine de aynı tepe gerilimine ulaşması gerektiğinden yükler daha hızlı taşınmak zorundadır, yani akım büyür. Frekans küçüldükçe sığaç "doluda" daha uzun bekler ve akım azalır. f = 0'da (doğru akım) X<sub>C</sub> sonsuz olur: dolmuş sığaç akımı tümüyle keser, devre açık devre gibidir.</p>
+
+<p><strong>Akım neden önde?</strong> Sığacın uçlarında gerilim oluşması için önce yükün taşınması gerekir. Akım en büyükken (gerilim sıfırdan geçerken) yük en hızlı birikir; gerilim tepesine çeyrek periyot sonra varır. Bobinin tam tersi: bobinde akım geride, sığaçta önde. Sığaç da bobin gibi bir çeyrek periyotta enerjiyi elektrik alanında depolar, sonraki çeyrekte geri verir.</p>
+
+<figure>
+<svg viewBox="0 0 400 340" role="img" aria-label="Üç panel: dirençte gerilim ve akım eğrileri aynı anda tepeye çıkıyor; bobinde akım eğrisi gerilimden çeyrek periyot sonra tepeye çıkıyor; sığaçta akım eğrisi gerilimden çeyrek periyot önce tepeye çıkıyor">
+  <line class="sv-cl" x1="70" y1="10" x2="100" y2="10" />
+  <text class="sv-s" x="106" y="14">gerilim v</text>
+  <line class="sv-c" x1="190" y1="10" x2="220" y2="10" stroke-dasharray="5 4" />
+  <text class="sv-s" x="226" y="14">akım i</text>
+  <line class="sv-c" x1="132" y1="26" x2="132" y2="334" stroke-dasharray="2 4" />
+  <line class="sv-c" x1="70" y1="70" x2="385" y2="70" />
+  <polyline class="sv-cl" points="70.0,70.0 76.0,64.2 82.0,58.6 88.0,53.3 94.0,48.3 100.0,43.8 106.0,40.0 112.0,36.8 118.0,34.4 124.0,32.8 130.0,32.0 136.0,32.2 142.0,33.2 148.0,35.1 154.0,37.8 160.0,41.2 166.0,45.2 172.0,49.9 178.0,55.0 184.0,60.5 190.0,66.2 196.0,71.9 202.0,77.6 208.0,83.2 214.0,88.4 220.0,93.3 226.0,97.5 232.0,101.2 238.0,104.1 244.0,106.3 250.0,107.6 256.0,108.0 262.0,107.6 268.0,106.3 274.0,104.1 280.0,101.2 286.0,97.5 292.0,93.3 298.0,88.4 304.0,83.2 310.0,77.6 316.0,71.9 322.0,66.2 328.0,60.5 334.0,55.0 340.0,49.9 346.0,45.2 352.0,41.2 358.0,37.8 364.0,35.1 370.0,33.2 376.0,32.2" />
+  <polyline class="sv-c" stroke-dasharray="5 4" points="70.0,70.0 76.0,66.4 82.0,62.8 88.0,59.4 94.0,56.3 100.0,53.5 106.0,51.0 112.0,49.0 118.0,47.5 124.0,46.5 130.0,46.0 136.0,46.1 142.0,46.8 148.0,47.9 154.0,49.6 160.0,51.8 166.0,54.4 172.0,57.3 178.0,60.5 184.0,64.0 190.0,67.6 196.0,71.2 202.0,74.8 208.0,78.3 214.0,81.6 220.0,84.7 226.0,87.4 232.0,89.7 238.0,91.5 244.0,92.9 250.0,93.7 256.0,94.0 262.0,93.7 268.0,92.9 274.0,91.5 280.0,89.7 286.0,87.4 292.0,84.7 298.0,81.6 304.0,78.3 310.0,74.8 316.0,71.2 322.0,67.6 328.0,64.0 334.0,60.5 340.0,57.3 346.0,54.4 352.0,51.8 358.0,49.6 364.0,47.9 370.0,46.8 376.0,46.1" />
+  <text class="sv-b" x="4" y="66">Direnç</text>
+  <text class="sv-s" x="4" y="82">aynı faz</text>
+  <line class="sv-c" x1="70" y1="180" x2="385" y2="180" />
+  <polyline class="sv-cl" points="70.0,180.0 76.0,174.2 82.0,168.6 88.0,163.3 94.0,158.3 100.0,153.8 106.0,150.0 112.0,146.8 118.0,144.4 124.0,142.8 130.0,142.0 136.0,142.2 142.0,143.2 148.0,145.1 154.0,147.8 160.0,151.2 166.0,155.2 172.0,159.9 178.0,165.0 184.0,170.5 190.0,176.2 196.0,181.9 202.0,187.6 208.0,193.2 214.0,198.4 220.0,203.3 226.0,207.5 232.0,211.2 238.0,214.1 244.0,216.3 250.0,217.6 256.0,218.0 262.0,217.6 268.0,216.3 274.0,214.1 280.0,211.2 286.0,207.5 292.0,203.3 298.0,198.4 304.0,193.2 310.0,187.6 316.0,181.9 322.0,176.2 328.0,170.5 334.0,165.0 340.0,159.9 346.0,155.2 352.0,151.2 358.0,147.8 364.0,145.1 370.0,143.2 376.0,142.2" />
+  <polyline class="sv-c" stroke-dasharray="5 4" points="70.0,204.0 76.0,203.7 82.0,202.9 88.0,201.5 94.0,199.7 100.0,197.4 106.0,194.7 112.0,191.6 118.0,188.3 124.0,184.8 130.0,181.2 136.0,177.6 142.0,174.0 148.0,170.5 154.0,167.3 160.0,164.4 166.0,161.8 172.0,159.6 178.0,157.9 184.0,156.8 190.0,156.1 196.0,156.0 202.0,156.5 208.0,157.5 214.0,159.0 220.0,161.0 226.0,163.5 232.0,166.3 238.0,169.4 244.0,172.8 250.0,176.4 256.0,180.0 262.0,183.6 268.0,187.2 274.0,190.6 280.0,193.7 286.0,196.5 292.0,199.0 298.0,201.0 304.0,202.5 310.0,203.5 316.0,204.0 322.0,203.9 328.0,203.2 334.0,202.1 340.0,200.4 346.0,198.2 352.0,195.6 358.0,192.7 364.0,189.5 370.0,186.0 376.0,182.4" />
+  <text class="sv-b" x="4" y="176">Bobin</text>
+  <text class="sv-s" x="4" y="192">i geride</text>
+  <line class="sv-c" x1="70" y1="290" x2="385" y2="290" />
+  <polyline class="sv-cl" points="70.0,290.0 76.0,284.2 82.0,278.6 88.0,273.3 94.0,268.3 100.0,263.8 106.0,260.0 112.0,256.8 118.0,254.4 124.0,252.8 130.0,252.0 136.0,252.2 142.0,253.2 148.0,255.1 154.0,257.8 160.0,261.2 166.0,265.2 172.0,269.9 178.0,275.0 184.0,280.5 190.0,286.2 196.0,291.9 202.0,297.6 208.0,303.2 214.0,308.4 220.0,313.3 226.0,317.5 232.0,321.2 238.0,324.1 244.0,326.3 250.0,327.6 256.0,328.0 262.0,327.6 268.0,326.3 274.0,324.1 280.0,321.2 286.0,317.5 292.0,313.3 298.0,308.4 304.0,303.2 310.0,297.6 316.0,291.9 322.0,286.2 328.0,280.5 334.0,275.0 340.0,269.9 346.0,265.2 352.0,261.2 358.0,257.8 364.0,255.1 370.0,253.2 376.0,252.2" />
+  <polyline class="sv-c" stroke-dasharray="5 4" points="70.0,266.0 76.0,266.3 82.0,267.1 88.0,268.5 94.0,270.3 100.0,272.6 106.0,275.3 112.0,278.4 118.0,281.7 124.0,285.2 130.0,288.8 136.0,292.4 142.0,296.0 148.0,299.5 154.0,302.7 160.0,305.6 166.0,308.2 172.0,310.4 178.0,312.1 184.0,313.2 190.0,313.9 196.0,314.0 202.0,313.5 208.0,312.5 214.0,311.0 220.0,309.0 226.0,306.5 232.0,303.7 238.0,300.6 244.0,297.2 250.0,293.6 256.0,290.0 262.0,286.4 268.0,282.8 274.0,279.4 280.0,276.3 286.0,273.5 292.0,271.0 298.0,269.0 304.0,267.5 310.0,266.5 316.0,266.0 322.0,266.1 328.0,266.8 334.0,267.9 340.0,269.6 346.0,271.8 352.0,274.4 358.0,277.3 364.0,280.5 370.0,284.0 376.0,287.6" />
+  <text class="sv-b" x="4" y="286">Sığaç</text>
+  <text class="sv-s" x="4" y="302">i önde</text>
+</svg>
+<figcaption>Üç eleman aynı sinüs gerilimine bağlı; eğriler gerçek sinüs değerleriyle çizildi. Dikey noktalı çizgi gerilimin tepe anıdır (T/4). Dirençte akım da o an tepededir. Bobinde akım o an sıfırdır ve tepesine çeyrek periyot sonra varır (geride). Sığaçta akım tepesini çeyrek periyot önce, t = 0'da yaşamıştır (önde).</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>Eleman</th><th>Karşı koyma</th><th>Frekans artınca</th><th>Doğru akımda</th><th>Akım–gerilim fazı</th><th>Ortalama güç</th></tr>
+<tr><td>Direnç</td><td>R</td><td>Değişmez</td><td>Aynı (R)</td><td>Aynı fazda</td><td>i<sub>e</sub>²·R</td></tr>
+<tr><td>İdeal bobin</td><td>X<sub>L</sub> = 2π·f·L</td><td>Artar (∝ f)</td><td>0, düz tel gibi</td><td>Akım 90° geride</td><td>Sıfır</td></tr>
+<tr><td>İdeal sığaç</td><td>X<sub>C</sub> = 1/(2π·f·C)</td><td>Azalır (∝ 1/f)</td><td>Sonsuz, açık devre</td><td>Akım 90° önde</td><td>Sıfır</td></tr>
+</table></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> Etkin gerilimi 60 V, frekansı 50 Hz olan bir kaynağa önce 0,1 H'lik ideal bir bobin, sonra (bobin çıkarılıp) 100 μF'lık bir sığaç bağlanıyor. Her durumda ampermetre ne gösterir? Kaynağın frekansı 100 Hz'e çıkarılırsa bu değerler ne olur? (π = 3 alınız.)</p>
+<p><strong>Adım 1.</strong> Bobinin reaktansı. <span class="mat">X<sub>L</sub> = 2·3·50·0,1 = 30 Ω <span class="g">(X<sub>L</sub> = 2π·f·L)</span></span></p>
+<p><strong>Adım 2.</strong> Bobindeki etkin akım. <span class="mat">i<sub>e</sub> = 60/30 = 2 A <span class="g">(i<sub>e</sub> = V<sub>e</sub>/X<sub>L</sub>)</span></span></p>
+<p><strong>Adım 3.</strong> Sığaç için 2π·f·C çarpımı. <span class="mat">2·3·50·100×10<sup>−6</sup> = 0,03 Ω<sup>−1</sup> <span class="g">(μF = 10<sup>−6</sup> F)</span></span></p>
+<p><strong>Adım 4.</strong> Sığaçtaki etkin akım. <span class="mat">i<sub>e</sub> = V<sub>e</sub>/X<sub>C</sub> = V<sub>e</sub>·2π·f·C = 60·0,03 = 1,8 A <span class="g">(X<sub>C</sub> = 1/(2π·f·C) ≈ 33 Ω)</span></span></p>
+<p><strong>Adım 5.</strong> Frekans iki katına çıkınca bobin. <span class="mat">X<sub>L</sub> = 60 Ω ⇒ i<sub>e</sub> = 60/60 = 1 A <span class="g">(X<sub>L</sub> ∝ f)</span></span></p>
+<p><strong>Adım 6.</strong> Frekans iki katına çıkınca sığaç. <span class="mat">i<sub>e</sub> = 60·0,06 = 3,6 A <span class="g">(X<sub>C</sub> ∝ 1/f, yarıya iner)</span></span></p>
+<p><strong>Sonuç:</strong> 50 Hz'de bobinde 2 A, sığaçta 1,8 A; 100 Hz'de bobinde 1 A, sığaçta 3,6 A. Frekans artınca bobinin akımı yarıya iner, sığacınki iki katına çıkar.</p>
+<p><strong>Kontrol yolu:</strong> Birim denetimi: H·(1/s) = (V·s/A)·(1/s) = V/A = Ω; 1/(F·(1/s)) = s/F = s/(C/V) = V/A = Ω. Hızlı yol: reaktansı yeniden hesaplamadan oran kur; f iki kat ⇒ bobin akımı ½ kat, sığaç akımı 2 kat.</p></div>
+
+<h2 class="s">8. Frekans, doğru akım ve lamba parlaklığı</h2>
+
+<p>Sınavın en sevdiği nitel soru şudur: bir lamba direnç, bobin ya da sığaçla seri bağlanır; kaynak doğru akımdan alternatif akıma çevrilir ya da frekans değiştirilir; lambaların parlaklığı sorulur. Parlaklık lambanın gücüyle, güç de lambadan geçen etkin akımın karesiyle artar (P = i<sub>e</sub>²·R). Yani her durumda tek bir şeyi sor: <strong>bu değişiklik devrenin toplam karşı koymasını artırdı mı, azalttı mı?</strong></p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Parlaklık soruları.</strong> 1) Her kolda lambanın yanındaki elemanı bul. 2) Değişikliğin o elemanın karşı koymasını nasıl etkilediğini yaz: bobinde X<sub>L</sub> ∝ f·L, sığaçta X<sub>C</sub> ∝ 1/(f·C), dirençte etkisiz. 3) Karşı koyma artarsa akım azalır, lamba söner yönde değişir; azalırsa parlar. 4) Doğru akımda bobini düz tel, sığacı kopuk tel say.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Lambanın yanındaki eleman</th><th>Frekans artarsa</th><th>Doğru akıma geçilirse (aynı etkin gerilim)</th><th>Elemanın kendisi büyütülürse</th></tr>
+<tr><td>Yalnız lamba (direnç)</td><td>Değişmez</td><td>Değişmez</td><td>—</td></tr>
+<tr><td>Bobin</td><td>Söner yönde (X<sub>L</sub> artar)</td><td>Daha parlak (X<sub>L</sub> = 0)</td><td>Bobine demir çekirdek sokulursa L artar, AC'de söner yönde</td></tr>
+<tr><td>Sığaç</td><td>Parlar (X<sub>C</sub> azalır)</td><td>Söner (sığaç dolunca akım kesilir)</td><td>C artarsa (levhalar yaklaşırsa) AC'de parlar</td></tr>
+</table></div>
+
+<p>Bir ayrıntıya dikkat: bobine demir çekirdek sokmak doğru akımda lambayı kalıcı olarak etkilemez, çünkü kararlı doğru akımda bobinin karşı koyması zaten sıfırdır; ancak alternatif akımda L büyüdüğü için X<sub>L</sub> artar ve lamba söner yönde değişir. Bu, sorularda doğru akım ile alternatif akımı ayırt etmeni sınayan klasik bir ayrıntıdır.</p>
+
+<h2 class="s">9. Seri RLC devresi: empedans</h2>
+
+<p><strong>Bu kısım sınav kapsamında olmayabilir:</strong> öğretim programının empedans ve faz açısını sayısal olarak mı yoksa yalnızca nitel olarak mı istediğini doğrulayamadım. Fikri kur, formülü tanı; ağırlığı nitel sonuçlara ver.</p>
+
+<p>Direnç, bobin ve sığaç seri bağlansın. Seri devrede akım her elemandan aynıdır: i = i<sub>max</sub>·sin(ω·t). Ama elemanların uçlarındaki gerilimler aynı anda tepeye çıkmaz: dirençteki gerilim akımla aynı fazda, bobindeki 90° önde, sığaçtaki 90° geridedir. Bu yüzden etkin gerilimleri sayı gibi toplayamazsın; tepe anları farklı olan şeylerin tepe değerleri toplanmaz.</p>
+
+<p>Çözüm, Parça 23'teki çember–gölge fikridir. Her sinüs niceliğini, ω ile dönen bir okun (döner vektör, "fazör") bir eksen üzerindeki izdüşümü olarak düşün. Faz farkı, oklar arasındaki açıdır. Okları Parça 13'teki gibi vektör olarak toplarsın, toplamın izdüşümü toplam gerilimi verir. Akımı yatay eksene koy: V<sub>R</sub> yatay, V<sub>L</sub> yukarı, V<sub>C</sub> aşağı. V<sub>L</sub> ile V<sub>C</sub> zıt yönlüdür, farkları alınır; bu fark V<sub>R</sub>'ye diktir ve Pisagor uygulanır:</p>
+<p><span class="mat">V² = V<sub>R</sub>² + (V<sub>L</sub> − V<sub>C</sub>)² <span class="g">(dik bileşenler)</span></span></p>
+<p><span class="mat">(i·Z)² = (i·R)² + (i·X<sub>L</sub> − i·X<sub>C</sub>)² <span class="g">(her gerilim akım × karşı koyma)</span></span></p>
+<p><span class="mat">Z = √(R² + (X<sub>L</sub> − X<sub>C</sub>)²) <span class="g">(i² sadeleşir)</span></span></p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Empedans ve güç çarpanı.</strong> Seri RLC devresinin alternatif akıma toplam karşı koyması (empedans) ve faz açısı φ:</p>
+<p><span class="mat">Z = √(R² + (X<sub>L</sub> − X<sub>C</sub>)²), &nbsp; i<sub>e</sub> = V<sub>e</sub>/Z, &nbsp; cosφ = R/Z <span class="g">(φ: akım ile kaynak gerilimi arasındaki açı)</span></span></p>
+<p>Ortalama gücü <strong>yalnız direnç</strong> harcar: P = i<sub>e</sub>²·R = V<sub>e</sub>·i<sub>e</sub>·cosφ. cosφ'ye <strong>güç çarpanı</strong> denir. X<sub>L</sub> &gt; X<sub>C</sub> ise devre bobin baskın (akım geride), X<sub>L</sub> &lt; X<sub>C</sub> ise sığaç baskındır (akım önde).</p></div>
+
+<figure>
+<svg viewBox="0 0 400 270" role="img" aria-label="Solda bobinin 60 ohmluk reaktansı yukarı, sığacın 40 ohmluk reaktansı aşağı ok olarak çizilmiş; farkları 20 ohm yukarı. Sağda empedans üçgeni: yatay kenar R eşittir 15 ohm, dik kenar 20 ohm, hipotenüs Z eşittir 25 ohm, R ile Z arasındaki açı fi">
+  <line class="sv-c" x1="40" y1="150" x2="150" y2="150" />
+  <line class="sv-cl" x1="70" y1="150" x2="70" y2="40" />
+  <polygon class="sv-l" points="70,30 65,41 75,41" />
+  <line class="sv-cl" x1="70" y1="150" x2="70" y2="220" />
+  <polygon class="sv-l" points="70,230 65,219 75,219" />
+  <line class="sv-cl" x1="118" y1="150" x2="118" y2="120" />
+  <polygon class="sv-l" points="118,110 113,121 123,121" />
+  <text class="sv-t" x="80" y="44">XL = 60 Ω</text>
+  <text class="sv-t" x="80" y="232">XC = 40 Ω</text>
+  <text class="sv-s" x="128" y="124">fark</text>
+  <text class="sv-s" x="128" y="138">20 Ω</text>
+  <text class="sv-s" x="14" y="258">zıt yönlüler: çıkarılır</text>
+  <polygon class="sv-l" points="190,230 295,230 295,90" />
+  <path class="sv-c" d="M285 230V220H295" />
+  <path class="sv-c" d="M220 230A30 30 0 0 0 208 206" />
+  <text class="sv-t" x="224" y="222">φ</text>
+  <text class="sv-t" x="242" y="250" text-anchor="middle">R = 15 Ω</text>
+  <text class="sv-t" x="303" y="156">XL − XC</text>
+  <text class="sv-t" x="303" y="174">= 20 Ω</text>
+  <text class="sv-b" x="236" y="150" text-anchor="end">Z = 25 Ω</text>
+  <text class="sv-s" x="190" y="40">cosφ = R/Z = 15/25 = 0,6</text>
+  <text class="sv-s" x="190" y="58">(37–53 üçgeni: φ = 53°)</text>
+</svg>
+<figcaption>Çözümlü örnek 3'ün sayılarıyla, ölçekli çizim. Solda bobin ve sığacın reaktansları zıt yönlü oklardır; net etki farklarıdır (20 Ω). Sağda bu fark ile direnç dik kenarlar, empedans hipotenüstür: 15–20–25, yani Parça 13'teki 3–4–5 üçgeninin 5 katı. Aynı üçgen gerilimler için de geçerlidir (her kenar akımla çarpılır).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> R = 15 Ω'luk direnç, L = 0,06 H'lik ideal bobin ve C = 25 μF'lık sığaç seri bağlanıp açısal frekansı ω = 1000 rad/s, etkin gerilimi 100 V olan kaynağa bağlanıyor. Empedansı, etkin akımı, güç çarpanını, ortalama gücü ve her elemanın uçlarındaki etkin gerilimi bulun.</p>
+<p><strong>Adım 1.</strong> İndüktif reaktans. <span class="mat">X<sub>L</sub> = ω·L = 1000·0,06 = 60 Ω <span class="g">(X<sub>L</sub> = ω·L)</span></span></p>
+<p><strong>Adım 2.</strong> Kapasitif reaktans. <span class="mat">X<sub>C</sub> = 1/(1000·25×10<sup>−6</sup>) = 1/0,025 = 40 Ω <span class="g">(X<sub>C</sub> = 1/(ω·C))</span></span></p>
+<p><strong>Adım 3.</strong> Reaktans farkı. <span class="mat">X<sub>L</sub> − X<sub>C</sub> = 60 − 40 = 20 Ω <span class="g">(zıt yönlüler çıkarılır)</span></span></p>
+<p><strong>Adım 4.</strong> Empedans. <span class="mat">Z = √(15² + 20²) = √625 = 25 Ω <span class="g">(15–20–25 üçgeni)</span></span></p>
+<p><strong>Adım 5.</strong> Etkin akım. <span class="mat">i<sub>e</sub> = 100/25 = 4 A <span class="g">(i<sub>e</sub> = V<sub>e</sub>/Z)</span></span></p>
+<p><strong>Adım 6.</strong> Güç çarpanı. <span class="mat">cosφ = 15/25 = 0,6 <span class="g">(cosφ = R/Z; φ = 53°)</span></span></p>
+<p><strong>Adım 7.</strong> Ortalama güç. <span class="mat">P = 4²·15 = 240 W <span class="g">(yalnız direnç harcar)</span></span></p>
+<p><strong>Adım 8.</strong> Eleman gerilimleri. <span class="mat">V<sub>R</sub> = 4·15 = 60 V; V<sub>L</sub> = 4·60 = 240 V; V<sub>C</sub> = 4·40 = 160 V <span class="g">(V = i·X)</span></span></p>
+<p><strong>Sonuç:</strong> Z = 25 Ω, i<sub>e</sub> = 4 A, cosφ = 0,6, P = 240 W; V<sub>R</sub> = 60 V, V<sub>L</sub> = 240 V, V<sub>C</sub> = 160 V. Devre bobin baskındır (X<sub>L</sub> &gt; X<sub>C</sub>), akım kaynak geriliminden 53° geridedir.</p>
+<p><strong>Kontrol yolu:</strong> Gerilimler Pisagor ile kaynak gerilimini vermeli: √(60² + (240 − 160)²) = √(3600 + 6400) = 100 V. Doğru. Güç ikinci yoldan: V<sub>e</sub>·i<sub>e</sub>·cosφ = 100·4·0,6 = 240 W. Bobinin geriliminin (240 V) kaynağınkinden (100 V) büyük olması hata değildir; bobin ve sığaç gerilimleri her an zıt işaretli olduğundan birbirini büyük ölçüde götürür.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Eleman gerilimlerini ya da karşı koymaları sayı gibi toplamak.</strong> Yukarıdaki örnekte 60 + 240 + 160 = 460 V bulup kaynağın 100 V olmasına şaşırmak, ya da Z = R + X<sub>L</sub> + X<sub>C</sub> = 115 Ω yazmak yanlıştır. Doğru akımdaki seri devre kuralı (gerilimler toplanır) yalnızca <em>anlık</em> değerler için geçerlidir; etkin değerler farklı anlarda tepeye çıktığı için vektör gibi toplanır. Bobin ile sığacın reaktansları birbirine eklenmez, birbirinden çıkarılır.</p></div>
+
+<h2 class="s">10. Rezonans</h2>
+
+<p>Empedans formülüne bak: X<sub>L</sub> frekansla artıyor, X<sub>C</sub> azalıyor. Öyleyse ikisinin eşit olduğu bir frekans vardır. O frekansta parantez sıfır olur, Z = R'ye iner; empedans alabileceği en küçük değeri alır, akım en büyük olur. Rezonans frekansını eşitlikten çıkar:</p>
+<p><span class="mat">2π·f·L = 1/(2π·f·C) <span class="g">(X<sub>L</sub> = X<sub>C</sub>)</span></span></p>
+<p><span class="mat">f² = 1/(4π²·L·C) <span class="g">(iki yanı 2π·f'ye böl, f'leri bir yana topla)</span></span></p>
+<p><span class="mat">f<sub>0</sub> = 1/(2π·√(L·C)) <span class="g">(karekök al)</span></span></p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Rezonans koşulu.</strong> Seri RLC devresinde X<sub>L</sub> = X<sub>C</sub> olduğunda devre rezonanstadır:</p>
+<p><span class="mat">f<sub>0</sub> = <span class="kes"><span>1</span><span>2π·√(L·C)</span></span> <span class="g">(ω<sub>0</sub> = 1/√(L·C))</span></span></p>
+<p>Rezonansta Z = R (en küçük), akım en büyük (i<sub>e</sub> = V<sub>e</sub>/R), akım ile kaynak gerilimi aynı fazda (cosφ = 1), bobin ve sığacın etkin gerilimleri eşittir. Frekans f<sub>0</sub>'dan hangi yöne uzaklaşırsa uzaklaşsın akım azalır.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 275" role="img" aria-label="Yatay eksende frekans, düşey eksende ohm. İndüktif reaktans orijinden geçen artan bir doğru, kapasitif reaktans azalan bir eğri; kesiştikleri frekans f0. Empedans eğrisi f0'da en küçük değerine, R'ye iner; iki yana doğru yükselir">
+  <line class="sv-c" x1="50" y1="240" x2="385" y2="240" />
+  <line class="sv-c" x1="50" y1="240" x2="50" y2="24" />
+  <text class="sv-s" x="56" y="20">X, Z (Ω)</text>
+  <text class="sv-s" x="388" y="244">f</text>
+  <line class="sv-c" x1="50" y1="220" x2="354" y2="220" stroke-dasharray="4 4" />
+  <line class="sv-c" x1="50" y1="240" x2="354" y2="50" />
+  <polyline class="sv-c" points="101.2,40.0 104.4,51.8 107.6,62.2 110.8,71.6 114.0,80.0 117.2,87.6 120.4,94.5 123.6,100.9 126.8,106.7 130.0,112.0 133.2,116.9 136.4,121.5 139.6,125.7 142.8,129.7 146.0,133.3 149.2,136.8 152.4,140.0 155.6,143.0 158.8,145.9 162.0,148.6 165.2,151.1 168.4,153.5 171.6,155.8 174.8,157.9 178.0,160.0 181.2,162.0 184.4,163.8 187.6,165.6 190.8,167.3 194.0,168.9 197.2,170.4 200.4,171.9 203.6,173.3 206.8,174.7 210.0,176.0 213.2,177.3 216.4,178.5 219.6,179.6 222.8,180.7 226.0,181.8 229.2,182.9 232.4,183.9 235.6,184.8 238.8,185.8 242.0,186.7 245.2,187.5 248.4,188.4 251.6,189.2 254.8,190.0 258.0,190.8 261.2,191.5 264.4,192.2 267.6,192.9 270.8,193.6 274.0,194.3 277.2,194.9 280.4,195.6 283.6,196.2 286.8,196.8 290.0,197.3 293.2,197.9 296.4,198.4 299.6,199.0 302.8,199.5 306.0,200.0 309.2,200.5 312.4,201.0 315.6,201.4 318.8,201.9 322.0,202.4 325.2,202.8 328.4,203.2 331.6,203.6 334.8,204.0 338.0,204.4 341.2,204.8 344.4,205.2 347.6,205.6 350.8,206.0 354.0,206.3" />
+  <polyline class="sv-cl" points="101.2,70.8 104.4,84.5 107.6,96.8 110.8,108.1 114.0,118.3 117.2,127.8 120.4,136.6 123.6,144.7 126.8,152.4 130.0,159.5 133.2,166.2 136.4,172.5 139.6,178.4 142.8,184.0 146.0,189.2 149.2,194.2 152.4,198.8 155.6,203.1 158.8,207.1 162.0,210.7 165.2,213.8 168.4,216.4 171.6,218.4 174.8,219.6 178.0,220.0 181.2,219.6 184.4,218.5 187.6,216.9 190.8,214.8 194.0,212.5 197.2,209.9 200.4,207.3 203.6,204.5 206.8,201.7 210.0,198.8 213.2,195.9 216.4,193.1 219.6,190.2 222.8,187.3 226.0,184.5 229.2,181.6 232.4,178.8 235.6,176.0 238.8,173.2 242.0,170.4 245.2,167.6 248.4,164.9 251.6,162.2 254.8,159.5 258.0,156.8 261.2,154.1 264.4,151.5 267.6,148.8 270.8,146.2 274.0,143.6 277.2,141.0 280.4,138.5 283.6,135.9 286.8,133.4 290.0,130.8 293.2,128.3 296.4,125.8 299.6,123.3 302.8,120.8 306.0,118.3 309.2,115.9 312.4,113.4 315.6,111.0 318.8,108.6 322.0,106.1 325.2,103.7 328.4,101.3 331.6,98.9 334.8,96.6 338.0,94.2 341.2,91.8 344.4,89.4 347.6,87.1 350.8,84.7 354.0,82.4" />
+  <line class="sv-c" x1="178" y1="240" x2="178" y2="160" stroke-dasharray="2 4" />
+  <circle class="sv-l" cx="178" cy="160" r="4" />
+  <circle class="sv-m" cx="178" cy="220" r="4" />
+  <text class="sv-t" x="360" y="54">XL</text>
+  <text class="sv-b" x="360" y="87">Z</text>
+  <text class="sv-t" x="360" y="206">XC</text>
+  <text class="sv-t" x="360" y="226">R</text>
+  <text class="sv-s" x="178" y="255" text-anchor="middle">f0</text>
+  <text class="sv-s" x="114" y="270" text-anchor="middle">XC &gt; XL</text>
+  <text class="sv-s" x="266" y="270" text-anchor="middle">XL &gt; XC</text>
+</svg>
+<figcaption>Reaktansların frekansla değişimi hesaplanan değerlerle çizildi. XL bir doğru (∝ f), XC bir hiperbol (∝ 1/f). Kesişme noktası rezonans frekansı f0'dır; orada empedans eğrisi (kalın) en küçük değerine, R'ye iner, yani akım en büyüktür. f0'ın solunda sığaç, sağında bobin baskındır.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> L = 0,1 H'lik bobin, C = 10 μF'lık sığaç ve R = 20 Ω'luk direnç seri bağlanıp etkin gerilimi 10 V olan, frekansı ayarlanabilen bir kaynağa bağlanıyor. Rezonans frekansı kaç hertzdir? Rezonansta akım kaç amperdir? Bobinin ve sığacın uçlarındaki etkin gerilim kaç volttur?</p>
+<p><strong>Adım 1.</strong> L·C çarpımı. <span class="mat">L·C = 0,1·10×10<sup>−6</sup> = 10<sup>−6</sup> s² <span class="g">(H·F = s²)</span></span></p>
+<p><strong>Adım 2.</strong> Karekökü. <span class="mat">√(L·C) = 10<sup>−3</sup> s <span class="g">(karekök)</span></span></p>
+<p><strong>Adım 3.</strong> Rezonans frekansı. <span class="mat">f<sub>0</sub> = 1/(2π·10<sup>−3</sup>) = 500/π Hz ≈ 159 Hz <span class="g">(π = 3 alınırsa ≈ 167 Hz)</span></span></p>
+<p><strong>Adım 4.</strong> Rezonansta empedans ve akım. <span class="mat">Z = R = 20 Ω ⇒ i<sub>e</sub> = 10/20 = 0,5 A <span class="g">(X<sub>L</sub> − X<sub>C</sub> = 0)</span></span></p>
+<p><strong>Adım 5.</strong> Rezonansta reaktans. <span class="mat">X<sub>L</sub> = 2π·(500/π)·0,1 = 100 Ω <span class="g">(X<sub>C</sub> de 100 Ω)</span></span></p>
+<p><strong>Adım 6.</strong> Bobin ve sığaç gerilimleri. <span class="mat">V<sub>L</sub> = V<sub>C</sub> = 0,5·100 = 50 V <span class="g">(V = i·X)</span></span></p>
+<p><strong>Sonuç:</strong> f<sub>0</sub> = 500/π Hz ≈ 159 Hz, akım 0,5 A, bobin ve sığacın her birinin uçlarında 50 V vardır; ikisi her an zıt işaretli olduğu için toplamları sıfırdır ve kaynağın 10 V'u tümüyle dirençte görünür.</p>
+<p><strong>Kontrol yolu:</strong> X<sub>C</sub> = 1/(2π·(500/π)·10<sup>−5</sup>) = 1/0,01 = 100 Ω, X<sub>L</sub> ile eşit; rezonans doğrulandı.</p></div>
+
+<p><strong>Rezonans nerede işe yarar?</strong> Parça 23'te rezonansı, bir sistemin doğal frekansıyla sürülünce genliğinin büyümesi olarak tanımladık ve radyo ayarını Parça 28'e bıraktık. Radyonun anteni aynı anda yüzlerce istasyonun sinyalini alır; her biri farklı frekanstadır. Alıcıdaki bobin–sığaç devresinin rezonans frekansı, ayar düğmesiyle (çoğu zaman sığacın C değeri değiştirilerek) istenen istasyonun frekansına getirilir. O frekanstaki sinyal en büyük akımı doğurur, öbürleri zayıf kalır. Parça 23'teki salıncak ile buradaki devre aynı fikrin iki örneğidir: doğal frekansta sürülen sistem en büyük tepkiyi verir.</p>
+
+<h2 class="s">11. Transformatör</h2>
+
+<p>Şimdi parçanın ikinci büyük konusuna geçiyoruz: gerilimi değiştiren aygıt. Transformatör, ortak bir <strong>demir çekirdek</strong> üzerine sarılmış iki bobinden oluşur. Kaynağa bağlanan bobine <strong>birincil (primer)</strong>, yüke bağlanan bobine <strong>ikincil (sekonder)</strong> bobin denir. İki bobin arasında elektriksel bağlantı yoktur; enerji, çekirdekteki değişen manyetik akı üzerinden aktarılır. Bu, Parça 27'de tanım düzeyinde gördüğün karşılıklı indüksiyonun en önemli uygulamasıdır.</p>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Kare biçimli demir çekirdeğin sol kolunda az sarımlı birincil bobin, sağ kolunda çok sarımlı ikincil bobin. Birincil bobin alternatif akım kaynağına, ikincil bobin bir lambaya bağlı. Çekirdeğin alt kolunda değişen akının yönünü gösteren ok">
+  <rect class="sv-a" x="120" y="40" width="160" height="180" />
+  <rect class="sv-k" x="160" y="80" width="80" height="100" />
+  <text class="sv-s" x="200" y="64" text-anchor="middle">demir çekirdek</text>
+  <line class="sv-cl" x1="112" y1="96" x2="168" y2="88" />
+  <line class="sv-cl" x1="112" y1="108" x2="168" y2="100" />
+  <line class="sv-cl" x1="112" y1="120" x2="168" y2="112" />
+  <line class="sv-cl" x1="112" y1="132" x2="168" y2="124" />
+  <line class="sv-cl" x1="112" y1="144" x2="168" y2="136" />
+  <line class="sv-cl" x1="112" y1="156" x2="168" y2="148" />
+  <line class="sv-cl" x1="112" y1="168" x2="168" y2="160" />
+  <line class="sv-cl" x1="232" y1="92" x2="288" y2="86" />
+  <line class="sv-cl" x1="232" y1="99" x2="288" y2="93" />
+  <line class="sv-cl" x1="232" y1="106" x2="288" y2="100" />
+  <line class="sv-cl" x1="232" y1="113" x2="288" y2="107" />
+  <line class="sv-cl" x1="232" y1="120" x2="288" y2="114" />
+  <line class="sv-cl" x1="232" y1="127" x2="288" y2="121" />
+  <line class="sv-cl" x1="232" y1="134" x2="288" y2="128" />
+  <line class="sv-cl" x1="232" y1="141" x2="288" y2="135" />
+  <line class="sv-cl" x1="232" y1="148" x2="288" y2="142" />
+  <line class="sv-cl" x1="232" y1="155" x2="288" y2="149" />
+  <line class="sv-cl" x1="232" y1="162" x2="288" y2="156" />
+  <line class="sv-cl" x1="232" y1="169" x2="288" y2="163" />
+  <line class="sv-cl" x1="232" y1="176" x2="288" y2="170" />
+  <path class="sv-c" d="M112 96H60V112" />
+  <path class="sv-c" d="M112 168H60V144" />
+  <circle class="sv-k" cx="60" cy="128" r="16" />
+  <path class="sv-c" d="M50 128Q55 116 60 128T70 128" />
+  <text class="sv-t" x="38" y="133" text-anchor="end">Vp</text>
+  <path class="sv-c" d="M288 86H340V114" />
+  <path class="sv-c" d="M288 170H340V142" />
+  <circle class="sv-m" cx="340" cy="128" r="14" />
+  <line class="sv-c" x1="330" y1="118" x2="350" y2="138" />
+  <line class="sv-c" x1="350" y1="118" x2="330" y2="138" />
+  <text class="sv-t" x="360" y="133">Vs</text>
+  <line class="sv-cl" x1="176" y1="198" x2="216" y2="198" />
+  <polygon class="sv-l" points="226,198 215,193 215,203" />
+  <text class="sv-s" x="200" y="214" text-anchor="middle">değişen akı Φ</text>
+  <text class="sv-t" x="120" y="242" text-anchor="middle">birincil</text>
+  <text class="sv-s" x="120" y="257" text-anchor="middle">Np sarım (az)</text>
+  <text class="sv-t" x="282" y="242" text-anchor="middle">ikincil</text>
+  <text class="sv-s" x="282" y="257" text-anchor="middle">Ns sarım (çok)</text>
+</svg>
+<figcaption>Yükseltici transformatörün şeması: birincilde 7, ikincilde 13 sarım çizildi (gerçek transformatörlerde yüzlerce, binlerce sarım vardır). Birincildeki alternatif akım, çekirdekte yönü ve büyüklüğü sürekli değişen bir akı oluşturur; demir çekirdek bu akının neredeyse tamamını ikincilin içinden geçirir. İkincilde Faraday yasasıyla gerilim doğar. İki bobin arasında tel bağlantısı yoktur.</figcaption>
+</figure>
+
+<h3>Sarım oranı nereden gelir?</h3>
+
+<p>Birincildeki akım değiştikçe çekirdekteki akı Φ değişir. Çekirdek kapalı bir demir halka olduğu için bu akının neredeyse tamamı ikincil bobinin her sarımından da geçer. Yani iki bobinin <strong>her bir sarımı</strong> aynı ΔΦ/Δt'yi görür. Faraday yasasına göre (Parça 27) N sarımlı bobinde gerilim N·ΔΦ/Δt'dir:</p>
+<p><span class="mat">V<sub>s</sub> = N<sub>s</sub>·ΔΦ/Δt <span class="g">(ikincilde indüklenen gerilim)</span></span></p>
+<p><span class="mat">V<sub>p</sub> = N<sub>p</sub>·ΔΦ/Δt <span class="g">(ideal birincilde kaynak gerilimi öz indüksiyonla dengelenir)</span></span></p>
+<p><span class="mat">V<sub>p</sub>/V<sub>s</sub> = N<sub>p</sub>/N<sub>s</sub> <span class="g">(taraf tarafa böl, ΔΦ/Δt sadeleşir)</span></span></p>
+<p>Demek ki <strong>sarım başına gerilim</strong> iki bobinde aynıdır. Çok sarımlı taraf yüksek, az sarımlı taraf alçak gerilimlidir.</p>
+
+<p><strong>Akımlar nasıl paylaşılır?</strong> İdeal transformatörde hiçbir enerji kaybolmaz; birincilin kaynaktan çektiği güç, ikincilin yüke verdiği güce eşittir. Enerji korunumundan:</p>
+<p><span class="mat">V<sub>p</sub>·i<sub>p</sub> = V<sub>s</sub>·i<sub>s</sub> <span class="g">(P<sub>giren</sub> = P<sub>çıkan</sub>)</span></span></p>
+<p><span class="mat">i<sub>p</sub>/i<sub>s</sub> = V<sub>s</sub>/V<sub>p</sub> = N<sub>s</sub>/N<sub>p</sub> <span class="g">(akımlar sarımlarla ters orantılı)</span></span></p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>İdeal transformatör.</strong></p>
+<p><span class="mat"><span class="kes"><span>V<sub>p</sub></span><span>V<sub>s</sub></span></span> = <span class="kes"><span>N<sub>p</sub></span><span>N<sub>s</sub></span></span> = <span class="kes"><span>i<sub>s</sub></span><span>i<sub>p</sub></span></span>, &nbsp; V<sub>p</sub>·i<sub>p</sub> = V<sub>s</sub>·i<sub>s</sub> <span class="g">(etkin değerlerle)</span></span></p>
+<p>N<sub>s</sub> &gt; N<sub>p</sub> ise <strong>yükseltici</strong> (gerilim artar, akım azalır), N<sub>s</sub> &lt; N<sub>p</sub> ise <strong>alçaltıcı</strong> (gerilim azalır, akım artar). Transformatör frekansı değiştirmez, gücü artıramaz ve <strong>yalnız alternatif akımda</strong> çalışır.</p></div>
+
+<p><strong>Neden doğru akımda çalışmaz?</strong> Birincile doğru akım verirsen akım sabittir, çekirdekteki akı sabittir; ΔΦ/Δt = 0 olduğu için ikincilde gerilim doğmaz. Üstelik iş bununla bitmez: alternatif akımda birincilin akımını sınırlayan şey öz indüksiyonuydu (X<sub>L</sub>). Doğru akımda X<sub>L</sub> = 0 olur ve birincilin akımını yalnızca telin küçük direnci sınırlar; büyük bir akım geçer, bobin ısınır, yanabilir. Anahtar kapandığı ya da açıldığı anda akım kısa süre değiştiği için ikincilde ancak anlık bir gerilim sıçraması görülür.</p>
+
+<p><strong>Birincil akımı neye bağlıdır?</strong> Transformatörün ikincili boştaysa (yük yoksa) i<sub>s</sub> = 0'dır ve ideal transformatör kaynaktan neredeyse hiç güç çekmez. İkinciline yük bağladıkça i<sub>s</sub> büyür, birincilin çektiği akım da onunla birlikte büyür. Akımı belirleyen yüktür; transformatör yalnızca gerilimi ve akımı ters oranda dönüştürür.</p>
+
+<div class="tablo"><table>
+<tr><th>Nicelik</th><th>Yükseltici (N<sub>s</sub> &gt; N<sub>p</sub>)</th><th>Alçaltıcı (N<sub>s</sub> &lt; N<sub>p</sub>)</th></tr>
+<tr><td>Gerilim</td><td>V<sub>s</sub> &gt; V<sub>p</sub></td><td>V<sub>s</sub> &lt; V<sub>p</sub></td></tr>
+<tr><td>Akım</td><td>i<sub>s</sub> &lt; i<sub>p</sub></td><td>i<sub>s</sub> &gt; i<sub>p</sub></td></tr>
+<tr><td>Güç (ideal)</td><td>Eşit</td><td>Eşit</td></tr>
+<tr><td>Frekans</td><td>Aynı</td><td>Aynı</td></tr>
+<tr><td>İkincil telin kalınlığı</td><td>İnce (akım küçük)</td><td>Kalın (akım büyük)</td></tr>
+<tr><td>Kullanım</td><td>Santral çıkışı, iletim hattı başı, tüplü eski televizyon, X ışını tüpü beslemesi</td><td>Şehir girişindeki trafo merkezi, sokak trafosu, kapı zili, eski tip adaptör, kaynak makinesi</td></tr>
+</table></div>
+
+<h3>Gerçek transformatör: verim</h3>
+
+<p>Gerçek transformatörde bir miktar enerji ısıya döner. Kayıpların kaynakları şunlardır: bobin tellerinin direncinde ısınma (i²·R), çekirdekte oluşan girdap (Foucault) akımları (Parça 27), demirin her periyotta yeniden mıknatıslanması sırasında harcanan enerji ve akının bir kısmının çekirdek dışına kaçması. Girdap akımlarını azaltmak için çekirdek tek parça demirden değil, birbirinden yalıtılmış ince demir saclardan yapılır.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p><strong>Transformatörün verimi.</strong></p>
+<p><span class="mat">η = <span class="kes"><span>P<sub>s</sub></span><span>P<sub>p</sub></span></span> = <span class="kes"><span>V<sub>s</sub>·i<sub>s</sub></span><span>V<sub>p</sub>·i<sub>p</sub></span></span> <span class="g">(η &lt; 1; yüzde olarak da yazılır)</span></span></p>
+<p>Gerilim oranı V<sub>p</sub>/V<sub>s</sub> = N<sub>p</sub>/N<sub>s</sub> sınav sorularında verimli transformatörde de kullanılır; verim kaybı akımlara (güce) yansıtılır.</p></div>
+
+<p><strong>Art arda bağlı transformatörler.</strong> Birinci transformatörün ikincili ikinci transformatörün birincilini besliyorsa oranlar çarpılır. Örneğin 220 V önce 1 : 10 oranlı bir yükselticiden geçip 2200 V olsun, sonra 25 : 1 oranlı bir alçaltıcıdan geçsin: 2200/25 = 88 V. Kısaca V<sub>çıkış</sub> = 220·(10/1)·(1/25) = 88 V. Verimler de çarpılır: %90 ve %80 verimli iki transformatörün birlikte verimi 0,9·0,8 = 0,72'dir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> Birincilinde 1100, ikincilinde 55 sarım bulunan bir transformatörün birincili 220 V'luk şebekeye bağlıdır. İkincile 22 W'lık bir lamba bağlanınca lamba normal parlaklıkta yanıyor. (a) İkincil gerilim ve akım kaçtır? (b) Transformatör idealse birincil akım kaçtır? (c) Verim %80 ise birincil akım kaçtır?</p>
+<p><strong>Adım 1.</strong> İkincil gerilim. <span class="mat">V<sub>s</sub> = 220·55/1100 = 11 V <span class="g">(V<sub>s</sub> = V<sub>p</sub>·N<sub>s</sub>/N<sub>p</sub>)</span></span></p>
+<p><strong>Adım 2.</strong> İkincil akım. <span class="mat">i<sub>s</sub> = 22/11 = 2 A <span class="g">(P = V·i)</span></span></p>
+<p><strong>Adım 3.</strong> İdeal durumda birincil güç. <span class="mat">P<sub>p</sub> = P<sub>s</sub> = 22 W <span class="g">(kayıp yok)</span></span></p>
+<p><strong>Adım 4.</strong> İdeal durumda birincil akım. <span class="mat">i<sub>p</sub> = 22/220 = 0,1 A <span class="g">(P<sub>p</sub> = V<sub>p</sub>·i<sub>p</sub>)</span></span></p>
+<p><strong>Adım 5.</strong> %80 verimde birincil güç. <span class="mat">P<sub>p</sub> = P<sub>s</sub>/η = 22/0,8 = 27,5 W <span class="g">(η = P<sub>s</sub>/P<sub>p</sub>)</span></span></p>
+<p><strong>Adım 6.</strong> %80 verimde birincil akım. <span class="mat">i<sub>p</sub> = 27,5/220 = 0,125 A <span class="g">(P<sub>p</sub> = V<sub>p</sub>·i<sub>p</sub>)</span></span></p>
+<p><strong>Sonuç:</strong> V<sub>s</sub> = 11 V, i<sub>s</sub> = 2 A; ideal transformatörde i<sub>p</sub> = 0,1 A, %80 verimde i<sub>p</sub> = 0,125 A. Aradaki 5,5 W çekirdekte ve tellerde ısıya döner.</p>
+<p><strong>Kontrol yolu:</strong> İdeal durumda akım oranı sarım oranının tersi olmalı: i<sub>s</sub>/i<sub>p</sub> = 2/0,1 = 20 = 1100/55. Doğru. Verimli durumda birincil akım ideal değerden büyük olmalı; 0,125 &gt; 0,1, doğru yönde.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Transformatörün gücü artırdığını sanmak.</strong> Yükseltici transformatör gerilimi artırır ama akımı aynı oranda azaltır; güç en iyi durumda (ideal) aynı kalır, gerçekte biraz azalır. "Gerilim 10 katına çıktı, güç de 10 katına çıktı" diyen bir transformatör enerjiyi yoktan var etmiş olurdu.</p>
+<p><strong>Transformatörün doğru akımda çalıştığını sanmak.</strong> Pile bağlanan transformatörün ikincilinde (anahtarın açılıp kapandığı anlar dışında) gerilim yoktur; çünkü sabit akım sabit akı demektir, akı değişmezse indüksiyon olmaz.</p>
+<p><strong>Akım oranını sarım oranıyla aynı yönde kurmak.</strong> Gerilim sarım sayısıyla doğru orantılıdır, akım ters orantılıdır. Çok sarımlı tarafta gerilim büyük, akım küçüktür.</p></div>
+
+<h2 class="s">12. Enerjinin yüksek gerilimle iletilmesi</h2>
+
+<p>Santral belli bir P gücünü bir şehre göndermek istiyor. İletim hattının telleri ne kadar kalın olursa olsun bir R<sub>hat</sub> direnci vardır ve içinden geçen akım bu dirençte ısı üretir. Hattaki kayıp güç, hattın direncinde harcanan güçtür: P<sub>kayıp</sub> = i²·R<sub>hat</sub>. Şimdi i'yi gönderilen güç ve iletim gerilimi cinsinden yaz:</p>
+<p><span class="mat">i = P/V <span class="g">(gönderilen güç P = V·i)</span></span></p>
+<p><span class="mat">P<sub>kayıp</sub> = (P/V)²·R<sub>hat</sub> = P²·R<sub>hat</sub>/V² <span class="g">(i'yi yerine koy)</span></span></p>
+<p>Aynı gücü gönderirken iletim gerilimini n katına çıkarırsan akım 1/n'e iner ve kayıp <strong>1/n² katına</strong> iner. Gerilimi 10 katına çıkarmak kaybı 100'de 1'e düşürür. Kalın tel kullanmak da R<sub>hat</sub>'ı azaltır ama bakırın ağırlığı ve maliyeti hızla artar; gerilimi yükseltmek çok daha ucuzdur. İşte alternatif akımın kazanmasının asıl nedeni budur: yüksek gerilim transformatörle elde edilir.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Hat kaybı.</strong> Aynı güç iletilirken hatta ısıya dönen güç iletim geriliminin karesiyle ters orantılıdır:</p>
+<p><span class="mat">P<sub>kayıp</sub> = i²·R<sub>hat</sub> = <span class="kes"><span>P²·R<sub>hat</sub></span><span>V²</span></span> <span class="g">(V: iletim gerilimi)</span></span></p>
+<p>Bu yüzden santral çıkışında gerilim yükseltici transformatörle çok yükseltilir, şehre yaklaşınca alçaltıcı transformatörlerle kademe kademe düşürülür.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 262" role="img" aria-label="Enerji iletim zinciri: santral, yükseltici transformatör, yüksek gerilim hattı, alçaltıcı transformatör merkezi, dağıtım transformatörü ve ev. Altta aynı gücün düşük ve yüksek gerilimle iletilmesinde hat kayıplarını karşılaştıran iki çubuk">
+  <rect class="sv-k" x="8" y="20" width="110" height="50" rx="8" />
+  <text class="sv-t" x="63" y="41" text-anchor="middle">Santral</text>
+  <text class="sv-s" x="63" y="59" text-anchor="middle">10–20 kV</text>
+  <rect class="sv-l" x="145" y="20" width="110" height="50" rx="8" />
+  <text class="sv-t" x="200" y="41" text-anchor="middle">Yükseltici</text>
+  <text class="sv-s" x="200" y="59" text-anchor="middle">transformatör</text>
+  <rect class="sv-a" x="282" y="20" width="110" height="50" rx="8" />
+  <text class="sv-t" x="337" y="41" text-anchor="middle">İletim hattı</text>
+  <text class="sv-s" x="337" y="59" text-anchor="middle">154–380 kV</text>
+  <line class="sv-c" x1="118" y1="45" x2="137" y2="45" />
+  <polygon class="sv-l" points="145,45 136,40 136,50" />
+  <line class="sv-c" x1="255" y1="45" x2="274" y2="45" />
+  <polygon class="sv-l" points="282,45 273,40 273,50" />
+  <line class="sv-c" x1="337" y1="70" x2="337" y2="111" />
+  <polygon class="sv-l" points="337,120 332,111 342,111" />
+  <rect class="sv-l" x="282" y="120" width="110" height="50" rx="8" />
+  <text class="sv-t" x="337" y="141" text-anchor="middle">Alçaltıcı</text>
+  <text class="sv-s" x="337" y="159" text-anchor="middle">merkez · 34,5 kV</text>
+  <rect class="sv-l" x="145" y="120" width="110" height="50" rx="8" />
+  <text class="sv-t" x="200" y="141" text-anchor="middle">Sokak trafosu</text>
+  <text class="sv-s" x="200" y="159" text-anchor="middle">400 V / 230 V</text>
+  <rect class="sv-m" x="8" y="120" width="110" height="50" rx="8" />
+  <text class="sv-t" x="63" y="141" text-anchor="middle">Ev</text>
+  <text class="sv-s" x="63" y="159" text-anchor="middle">230 V, 50 Hz</text>
+  <line class="sv-c" x1="282" y1="145" x2="263" y2="145" />
+  <polygon class="sv-l" points="255,145 264,140 264,150" />
+  <line class="sv-c" x1="145" y1="145" x2="126" y2="145" />
+  <polygon class="sv-l" points="118,145 127,140 127,150" />
+  <text class="sv-s" x="8" y="200">Aynı 100 kW, direnci 5 Ω olan hattan gönderiliyor:</text>
+  <rect class="sv-a" x="8" y="210" width="250" height="16" />
+  <text class="sv-s" x="266" y="223">1 kV: kayıp 50 kW</text>
+  <rect class="sv-m" x="8" y="238" width="3" height="16" />
+  <text class="sv-s" x="18" y="251">10 kV: kayıp 0,5 kW (100'de 1'i)</text>
+</svg>
+<figcaption>Üstte iletim zinciri; gerilim değerleri Türkiye şebekesi için tipik örneklerdir. Gerilim santralden çıkınca yükseltilir, şehre yaklaşınca kademe kademe düşürülür. Altta aşağıdaki Çözümlü örnek 6'nın sonuçları ölçekli çubuklarla: gerilim 10 katına çıkınca kayıp 100 kat azalır.</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> Bir santral 100 kW'lık gücü, toplam direnci 5 Ω olan bir hat üzerinden gönderiyor. (a) İletim gerilimi 1 kV ise hatta kaybolan güç ve gönderilen gücün yüzde kaçı olduğu nedir? (b) Gerilim bir yükseltici transformatörle 10 kV'a çıkarılırsa kayıp ne olur?</p>
+<p><strong>Adım 1.</strong> 1 kV'ta hat akımı. <span class="mat">i = 100 000/1000 = 100 A <span class="g">(i = P/V)</span></span></p>
+<p><strong>Adım 2.</strong> 1 kV'ta kayıp. <span class="mat">P<sub>kayıp</sub> = 100²·5 = 50 000 W = 50 kW <span class="g">(i²·R<sub>hat</sub>)</span></span></p>
+<p><strong>Adım 3.</strong> Oranı. <span class="mat">50/100 = %50 <span class="g">(gücün yarısı yolda ısıya dönüyor)</span></span></p>
+<p><strong>Adım 4.</strong> 10 kV'ta hat akımı. <span class="mat">i = 100 000/10 000 = 10 A <span class="g">(gerilim 10 kat, akım 1/10)</span></span></p>
+<p><strong>Adım 5.</strong> 10 kV'ta kayıp. <span class="mat">P<sub>kayıp</sub> = 10²·5 = 500 W = 0,5 kW <span class="g">(%0,5)</span></span></p>
+<p><strong>Sonuç:</strong> 1 kV'ta kayıp 50 kW (%50), 10 kV'ta 0,5 kW (%0,5). Gerilim 10 katına çıkınca kayıp 100 kat azaldı.</p>
+<p><strong>Kontrol yolu:</strong> Oranla: (1/10)² = 1/100; 50 kW/100 = 0,5 kW. Doğru.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Hat kaybını P = V²/R ile, iletim gerilimini kullanarak hesaplamak.</strong> Bu yolla "gerilim artınca kayıp artar" gibi saçma bir sonuca varılır: 10 kV için 10 000²/5 = 20 MW! Yanlışın kaynağı şudur: iletim gerilimi hattın direncinin uçları arasındaki gerilim değildir; santral ile şehir (yük) arasındadır. Hattın direncinin uçlarındaki gerilim yalnızca i·R<sub>hat</sub> kadardır (örnekte 10 kV'ta 10·5 = 50 V). Hat kaybını her zaman akım üzerinden, i²·R<sub>hat</sub> ile hesapla.</p></div>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 27'ye:</strong> Dönen çerçevenin ürettiği sinüs gerilimi, bobinin öz indüksiyonu (X<sub>L</sub>) ve transformatördeki karşılıklı indüksiyon, oradaki Faraday ve Lenz yasalarının doğrudan sonuçlarıdır. Transformatör çekirdeğinin ince saclardan yapılması girdap akımlarıyla ilgilidir.</p>
+<p><strong>Parça 23 ve 21'e:</strong> Sinüs eğrisi, çember–gölge ilişkisi ve "en büyük değişme hızı = ω × genlik" fikri reaktansları türetmemizi sağladı; döner vektör (fazör) çembersel hareketin izdüşümüdür. Rezonans, oradaki mekanik rezonansın elektriksel karşılığıdır.</p>
+<p><strong>Parça 8 ve 25'e:</strong> Güç P = i²·R etkin değerin tanımında, sığacın q = C·V bağıntısı kapasitif reaktansta kullanıldı. Hat kaybı P = i²·R, Parça 8'in ısınma bağıntısıdır.</p>
+<p><strong>Parça 29'a:</strong> Bobin–sığaç devresinde enerji elektrik alan ile manyetik alan arasında gidip gelir. Değişen elektrik ve manyetik alanların birbirini doğurması, elektromanyetik dalgaların temelidir; radyo vericisindeki salınım devresi bu dalgaları yayar.</p>
+<p><strong>Öbür derslere:</strong> Matematikte trigonometri (sinüs eğrisi, sin² + cos² = 1, özel açılar) ve dik üçgen; kimyada elektroliz için doğru akım gerektiğini (alternatif akımda elektrotlar sürekli yer değiştirir) hatırla.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Dönen çerçevede akı en büyükken gerilim neden sıfırdır?</summary><p>Faraday yasası gerilimi akının kendisine değil değişme hızına bağlar. Çerçeve alana dikken akı en büyüktür ama o an değişmez (uzun kenarlar alan çizgileri boyunca kayar); değişme hızı sıfır olduğu için gerilim de sıfırdır. Çerçeve alana paralelken akı sıfırdır ama en hızlı değişir, gerilim en büyüktür.</p></details>
+<details><summary>Etkin değer neden en büyük değerin √2'de biridir?</summary><p>Dirençteki anlık güç i²·R = i<sub>max</sub>²·R·sin²(ωt)'dir ve sin²'nin bir periyottaki ortalaması 1/2'dir (sin² ile cos²'nin ortalamaları eşit, toplamları 1). Ortalama güç ½·i<sub>max</sub>²·R olur. Aynı gücü veren doğru akım i<sub>e</sub> için i<sub>e</sub>² = i<sub>max</sub>²/2, yani i<sub>e</sub> = i<sub>max</sub>/√2.</p></details>
+<details><summary>Frekans artınca bobinin ve sığacın karşı koyması nasıl değişir? Neden?</summary><p>Bobininki artar (X<sub>L</sub> = 2π·f·L): akım daha hızlı değişir, öz indüksiyon gerilimi büyür. Sığacınki azalır (X<sub>C</sub> = 1/(2π·f·C)): sığaç aynı gerilime daha kısa sürede dolup boşalmak zorunda kalır, yükler daha hızlı taşınır, akım büyür. Doğru akımda (f = 0) ideal bobin düz tel, dolmuş sığaç kopuk tel gibidir.</p></details>
+<details><summary>Seri RLC devresinde rezonans koşulu nedir ve rezonansta ne olur?</summary><p>Koşul X<sub>L</sub> = X<sub>C</sub>, yani f<sub>0</sub> = 1/(2π√(L·C)). Rezonansta empedans en küçük değerine (R'ye) iner, akım en büyük olur, akım ile kaynak gerilimi aynı fazdadır ve bobin ile sığacın etkin gerilimleri eşittir.</p></details>
+<details><summary>Transformatör neden doğru akımda çalışmaz?</summary><p>Doğru akım sabittir; çekirdekteki akı da sabit kalır. Akı değişmeyince ikincilde indüksiyon gerilimi oluşmaz. Ayrıca birincilin akımını sınırlayan indüktif reaktans doğru akımda sıfır olduğu için birincilden büyük akım geçer ve bobin ısınır.</p></details>
+<details><summary>Enerji neden yüksek gerilimle iletilir? Gerilim 5 katına çıkarsa hat kaybı ne olur?</summary><p>Aynı güç için akım i = P/V'dir ve hat kaybı i²·R<sub>hat</sub> = P²·R<sub>hat</sub>/V²'dir. Gerilim büyüdükçe akım, dolayısıyla kayıp azalır. Gerilim 5 katına çıkarsa akım 1/5'e, kayıp 1/25'e iner.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>AC:</strong> yönü periyodik değişen akım; sinüs eğrisi. f = 1/T, ω = 2π·f. 50 Hz'de akım saniyede 100 kez yön değiştirir.</li>
+<li><strong>Üretim:</strong> ε = N·B·A·ω·sin(ωt); ε<sub>max</sub> = N·B·A·ω. Akı en büyükken gerilim sıfır.</li>
+<li><strong>Etkin değer:</strong> V<sub>e</sub> = V<sub>max</sub>/√2, i<sub>e</sub> = i<sub>max</sub>/√2. Ölçü aletleri ve etiketler etkin değeri verir. P = i<sub>e</sub>²·R = V<sub>max</sub>·i<sub>max</sub>/2.</li>
+<li><strong>Direnç:</strong> aynı faz, frekanstan bağımsız.</li>
+<li><strong>Bobin:</strong> X<sub>L</sub> = 2π·f·L (∝ f); akım 90° geride; DC'de düz tel; ortalama güç sıfır.</li>
+<li><strong>Sığaç:</strong> X<sub>C</sub> = 1/(2π·f·C) (∝ 1/f); akım 90° önde; DC'de açık devre; ortalama güç sıfır.</li>
+<li><strong>Parlaklık:</strong> f artınca bobinli lamba söner yönde, sığaçlı lamba parlar, yalnız lamba değişmez.</li>
+<li><strong>RLC (kapsam belirsiz):</strong> Z = √(R² + (X<sub>L</sub> − X<sub>C</sub>)²), cosφ = R/Z, gücü yalnız R harcar: P = i<sub>e</sub>²·R = V<sub>e</sub>·i<sub>e</sub>·cosφ.</li>
+<li><strong>Rezonans:</strong> X<sub>L</sub> = X<sub>C</sub>, f<sub>0</sub> = 1/(2π√(L·C)); Z = R, akım en büyük. Radyo ayarı.</li>
+<li><strong>Transformatör:</strong> V<sub>p</sub>/V<sub>s</sub> = N<sub>p</sub>/N<sub>s</sub> = i<sub>s</sub>/i<sub>p</sub>; ideal: V<sub>p</sub>·i<sub>p</sub> = V<sub>s</sub>·i<sub>s</sub>; verim η = P<sub>s</sub>/P<sub>p</sub>. Yalnız AC; gücü artırmaz; frekansı değiştirmez. Art arda bağlıda oranlar çarpılır.</li>
+<li><strong>İletim:</strong> P<sub>kayıp</sub> = i²·R<sub>hat</sub> = P²·R<sub>hat</sub>/V²; gerilim n kat ⇒ kayıp 1/n². Kaybı asla V²/R ile iletim gerilimiyle hesaplama.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="fizik-28">
+<h3>Quiz 28</h3>
+<p class="qa">Sekiz yeni soru, ardından önceki parçalardan on altı tekrar sorusu. Aksi söylenmedikçe g = 10 m/s², π = 3 al; bobin ve sığaçlar idealdir. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="B"><p class="q">Bir prizin gerilimi v = 220√2·sin(100π·t) volt bağıntısıyla değişmektedir. Bu prize bağlanan voltmetrenin gösterdiği değer kaç volttur?</p>
+<ul class="sec"><li>220√2</li><li>220</li><li>110√2</li><li>440</li><li>0</li></ul>
+<div class="coz"><p>Voltmetre etkin değeri gösterir: V<sub>e</sub> = V<sub>max</sub>/√2 = 220√2/√2 = 220 V. "220√2", bağıntıdaki katsayıyı (en büyük değeri) doğrudan okumaktır. "110√2", en büyük değeri √2 yerine 2'ye bölmektir. "440", en büyük değeri √2'ye bölmek yerine √2 ile çarpmaktır (220√2·√2 = 440); etkin değer en büyük değerden her zaman küçüktür. "0" ise bir periyottaki ortalamadır; ortalama sıfırdır ama ölçü aletleri ortalamayı değil, ısıtma etkisini veren etkin değeri gösterir.</p></div></li>
+
+<li data-c="D"><p class="q">Frekansı 50 Hz olan bir alternatif akım şebekesinde akımın yönü 1 saniyede kaç kez değişir?</p>
+<ul class="sec"><li>50</li><li>25</li><li>200</li><li>100</li><li>0,02</li></ul>
+<div class="coz"><p>50 Hz, saniyede 50 tam periyot demektir. Bir periyotta akım bir kez artıdan eksiye, bir kez eksiden artıya geçer; yani periyot başına iki yön değişimi vardır: 2·50 = 100. "50", her periyotta yalnız bir değişim saymaktır. "25", periyodu iki değişim arasındaki süre sanıp ters yönde yanılmaktır. "200", periyotta dört değişim (dört çeyreği) saymaktır; sinüs eğrisinin tepeleri yön değişimi değildir, sıfırdan geçişler yön değişimidir. "0,02" ise periyodun saniye cinsinden değeridir (T = 1/50), sorulan sayı değildir.</p></div></li>
+
+<li data-c="A"><p class="q">50 Ω'luk bir dirençten geçen alternatif akımın en büyük değeri 4 A'dir. Dirençte harcanan ortalama güç kaç watttır?</p>
+<ul class="sec"><li>400</li><li>800</li><li>200</li><li>400√2</li><li>100√2</li></ul>
+<div class="coz"><p>Etkin akım i<sub>e</sub> = 4/√2 = 2√2 A; P = i<sub>e</sub>²·R = 8·50 = 400 W (ya da doğrudan P = i<sub>max</sub>²·R/2 = 16·50/2). "800", en büyük değeri P = i²·R'ye doğrudan koymaktır. "200", etkin değeri i<sub>max</sub>/2 = 2 A sanmaktır. "400√2", güçte bir yere en büyük, bir yere etkin akımı koymaktır (i<sub>max</sub>·i<sub>e</sub>·R). "100√2" ise bir güç değil, direncin uçlarındaki etkin gerilimdir (i<sub>e</sub>·R = 2√2·50).</p></div></li>
+
+<li data-c="C"><p class="q">Özdeş K, L ve M lambaları bir alternatif akım kaynağına paralel kollar hâlinde bağlanmıştır: K tek başına, L ideal bir bobinle seri, M bir sığaçla seri bağlıdır. Kaynağın etkin gerilimi değişmeden frekansı artırılırsa K, L ve M lambalarının parlaklığı için ne söylenebilir?</p>
+<ul class="sec"><li>K değişmez, L artar, M azalır.</li><li>K artar, L azalır, M artar.</li><li>K değişmez, L azalır, M artar.</li><li>K değişmez, L azalır, M azalır.</li><li>K azalır, L azalır, M artar.</li></ul>
+<div class="coz"><p>Paralel kollarda her kolun gerilimi kaynağın gerilimidir ve değişmez. K'nin kolunda yalnız direnç var; direnç frekanstan bağımsız olduğu için K'nin parlaklığı değişmez. L'nin kolunda X<sub>L</sub> = 2π·f·L frekansla artar, akım azalır, L söner yönde değişir. M'nin kolunda X<sub>C</sub> = 1/(2π·f·C) azalır, akım artar, M parlar. "L artar, M azalır" seçeneği iki reaktansın frekans bağımlılığını ters ezberlemekten; K'yi değişiyor sayan seçenekler de lambanın direncini frekansa bağlamaktan gelir. Son seçenek de M'nin sığaçlı olduğunu unutup iki reaktansı aynı sanmaktır.</p></div></li>
+
+<li data-c="E"><p class="q">R = 30 Ω'luk direnç, L = 0,08 H'lik bobin ve C = 25 μF'lık sığaç seri bağlanarak açısal frekansı 1000 rad/s, etkin gerilimi 100 V olan bir kaynağa bağlanıyor. Devreden geçen etkin akım kaç amperdir?</p>
+<ul class="sec"><li>2/3</li><li>10/3</li><li>10/7</li><li>yaklaşık 0,8</li><li>2</li></ul>
+<div class="coz"><p>X<sub>L</sub> = ω·L = 80 Ω, X<sub>C</sub> = 1/(ω·C) = 1/(1000·25×10<sup>−6</sup>) = 40 Ω. Z = √(30² + (80 − 40)²) = √2500 = 50 Ω; i<sub>e</sub> = 100/50 = 2 A (30–40–50 üçgeni). "2/3", Z'yi R + X<sub>L</sub> + X<sub>C</sub> = 150 Ω diye sayı gibi toplamaktır. "10/7", reaktans farkını alıp dirence vektörel değil düz eklemektir (30 + 40 = 70). "Yaklaşık 0,8", bobin ile sığacın reaktanslarını çıkarmak yerine toplayıp Pisagor uygulamaktır. "10/3", bobin ve sığacı yok sayıp yalnız R'yi almaktır; bu ancak rezonansta doğru olurdu. Not: bu konunun sayısal düzeyi sınav kapsamında olmayabilir.</p></div></li>
+
+<li data-c="B"><p class="q">Seri bağlı bir RLC devresi, kaynağın frekansı rezonans frekansına eşitken çalışmaktadır. Buna göre<br>I. Devrenin empedansı direncin değerine eşittir.<br>II. Bobin ile sığacın uçları arasındaki etkin gerilimler eşittir.<br>III. Kaynağın frekansı biraz artırılırsa devreden geçen akım artar.<br>yargılarından hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>I ve II</li><li>I ve III</li><li>II ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>Rezonansta X<sub>L</sub> = X<sub>C</sub> olduğundan Z = √(R² + 0) = R'dir (I doğru). Aynı akım eşit reaktanslardan geçtiği için V<sub>L</sub> = i·X<sub>L</sub> = i·X<sub>C</sub> = V<sub>C</sub>'dir (II doğru). Rezonansta empedans en küçük, akım en büyüktür; frekans hangi yöne değişirse değişsin X<sub>L</sub> ile X<sub>C</sub> farklılaşır, empedans artar, akım azalır (III yanlış). III'ü doğru sayan seçenekler "frekans artınca akım artar" diye sığacın tek başına davranışını bütün devreye genellemekten gelir. "Yalnız I" ise eşit reaktanstan geçen aynı akımın eşit gerilim doğurduğunu görmemektir.</p></div></li>
+
+<li data-c="A"><p class="q">Birincil sarım sayısı 400, ikincil sarım sayısı 2000 olan bir transformatörün birincili 220 V'luk alternatif gerilime bağlıdır. İkincilden 0,2 A akım çekilmektedir. Transformatörün verimi %80 olduğuna göre birincilden geçen akım kaç amperdir?</p>
+<ul class="sec"><li>1,25</li><li>1</li><li>0,8</li><li>0,04</li><li>0,05</li></ul>
+<div class="coz"><p>V<sub>s</sub> = 220·2000/400 = 1100 V; P<sub>s</sub> = 1100·0,2 = 220 W. Verim η = P<sub>s</sub>/P<sub>p</sub> ⇒ P<sub>p</sub> = 220/0,8 = 275 W; i<sub>p</sub> = 275/220 = 1,25 A. "1", verimi hesaba katmayıp ideal transformatör gibi çözmektir. "0,8", verimi bölmek yerine çarpmaktır (gerçek transformatör ideale göre <em>daha çok</em> güç çeker). "0,04", akım oranını sarım oranıyla aynı yönde kurmaktır (0,2·400/2000); "0,05" ise bu hatanın üstüne verime bölmektir. Yükselticide birincil akım ikincilinkinden büyük olmalıdır.</p></div></li>
+
+<li data-c="D"><p class="q">Bir santral sabit bir gücü, direnci 4 Ω olan bir hat üzerinden 2 kV gerilimle iletirken hatta 40 kW güç kaybolmaktadır. Aynı güç bir yükseltici transformatör kullanılarak 20 kV ile iletilirse hatta kaybolan güç kaç watt olur?</p>
+<ul class="sec"><li>4000</li><li>40 000</li><li>4 000 000</li><li>400</li><li>0</li></ul>
+<div class="coz"><p>Aynı güçte akım gerilimle ters orantılıdır: gerilim 10 kat ⇒ akım 1/10 kat. Kayıp i²·R<sub>hat</sub> olduğundan 1/100 katına iner: 40 000/100 = 400 W (sayılarla: 2 kV'ta i = 100 A, kayıp 100²·4 = 40 kW; 20 kV'ta i = 10 A, kayıp 10²·4 = 400 W). "4000", kaybı akımla doğru orantılı sanmaktır (kare unutulmuş). "40 000", transformatörün kaybı etkilemediğini sanmaktır. "4 000 000", kaybı iletim gerilimiyle V²/R üzerinden hesaplayıp gerilimin karesiyle artırmaktır; iletim gerilimi hattın direncinin uçlarındaki gerilim değildir. "0", yüksek gerilimde hiç kayıp olmadığını sanmaktır; kayıp azalır ama hattın direnci durdukça sıfır olmaz.</p></div></li>
+
+<li data-c="C" data-k="fizik-1"><p class="q">Özkütleleri 2 g/cm³ ve 3 g/cm³ olan, birbirine karışabilen iki sıvıdan <strong>eşit kütlelerde</strong> alınarak bir karışım hazırlanıyor. Karışımın özkütlesi kaç g/cm³'tür? (Karışınca hacim değişmiyor.)</p>
+<ul class="sec"><li>2,5</li><li>5</li><li>2,4</li><li>1,2</li><li>6</li></ul>
+<div class="coz"><p>Her sıvıdan m kütle alınsın. Hacimler m/2 ve m/3, toplam hacim 5m/6; toplam kütle 2m. d = 2m/(5m/6) = 12/5 = 2,4 g/cm³ (genel kalıp: eşit kütlede d = 2·d<sub>1</sub>·d<sub>2</sub>/(d<sub>1</sub> + d<sub>2</sub>)). "2,5", eşit <em>hacim</em> karışımının formülüdür (aritmetik ortalama). "5", özkütleleri toplamaktır. "1,2", eşit kütle formülündeki 2 çarpanını unutmaktır. "6", özkütleleri çarpmaktır. Ayrıca sonuç 2 ile 3 arasında, eşit kütlede daha yoğun sıvının hacmi küçük olduğu için de 2,5'ten az olmalıdır.</p></div></li>
+
+<li data-c="E" data-k="fizik-3"><p class="q">Yatay bir yüzeyde duran 4 kg kütleli cisme yatay doğrultuda 20 N'luk kuvvet uygulanıyor. Cisim ile yüzey arasındaki kinetik sürtünme katsayısı 0,25'tir. Cismin ivmesi kaç m/s²'dir? (g = 10 m/s²)</p>
+<ul class="sec"><li>5</li><li>7,5</li><li>0</li><li>4,75</li><li>2,5</li></ul>
+<div class="coz"><p>Normal kuvvet N = m·g = 40 N; sürtünme F<sub>s</sub> = k·N = 0,25·40 = 10 N. Net kuvvet 20 − 10 = 10 N; a = 10/4 = 2,5 m/s². "5", sürtünmeyi unutup 20/4 yapmaktır. "7,5", sürtünmeyi kuvvete eklemektir; sürtünme harekete karşı yöneldiği için çıkarılır. "0", sürtünme kuvvetinin her zaman uygulanan kuvvete eşit olduğunu sanmaktır; bu yalnızca statik sürtünmede, cisim kımıldamazken geçerlidir. "4,75", sürtünmeyi k·N yerine k·m (1 N) almaktır.</p></div></li>
+
+<li data-c="A" data-k="fizik-6"><p class="q">Bir su cenderesinde küçük pistonun yarıçapı 2 cm, büyük pistonun yarıçapı 10 cm'dir. Büyük pistonun üstündeki 5000 N ağırlıklı yükü dengelemek için küçük pistona uygulanması gereken kuvvet kaç N'dur? (Pistonların ağırlığı önemsiz, pistonlar aynı düzeyde.)</p>
+<ul class="sec"><li>200</li><li>1000</li><li>5000</li><li>25 000</li><li>125 000</li></ul>
+<div class="coz"><p>Pascal ilkesi: F<sub>1</sub>/A<sub>1</sub> = F<sub>2</sub>/A<sub>2</sub>. Alan yarıçapın karesiyle orantılı: A<sub>1</sub>/A<sub>2</sub> = (2/10)² = 1/25. F<sub>1</sub> = 5000/25 = 200 N. "1000", yarıçap oranını alan oranı sanıp karesini almamaktır. "5000", cenderenin kuvvet kazancı sağlamadığını sanmaktır. "25 000" ve "125 000", oranı ters kurmaktır (sırasıyla karesiz ve kareli); küçük pistona büyük kuvvet gerekseydi cendere işe yaramazdı.</p></div></li>
+
+<li data-c="B" data-k="fizik-8"><p class="q">6 Ω ve 12 Ω'luk dirençler birbirine paralel bağlanmış, bu ikili 2 Ω'luk dirençle seri bağlanarak iç direnci önemsiz 18 V'luk üretece bağlanmıştır. 6 Ω'luk dirençten geçen akım kaç amperdir?</p>
+<ul class="sec"><li>3</li><li>2</li><li>1</li><li>1,5</li><li>0,9</li></ul>
+<div class="coz"><p>Paralel eşdeğer: 6·12/(6 + 12) = 4 Ω; toplam 4 + 2 = 6 Ω; ana kol akımı 18/6 = 3 A. Paralel kısmın gerilimi 3·4 = 12 V; 6 Ω'tan geçen akım 12/6 = 2 A. "3", ana kol akımını sorulan kolun akımı sanmaktır. "1", 12 Ω'luk koldaki akımdır. "1,5", akımın kollara eşit bölündüğünü sanmaktır; akım küçük dirençli koldan daha çok geçer. "0,9", bütün dirençleri seri sayıp 18/20 yapmaktır.</p></div></li>
+
+<li data-c="D" data-k="fizik-11"><p class="q">Aralarında 45° açı bulunan iki düzlem aynanın arasına konan bir cismin aynalarda oluşan görüntü sayısı kaçtır?</p>
+<ul class="sec"><li>8</li><li>4</li><li>3</li><li>7</li><li>2</li></ul>
+<div class="coz"><p>Kesişen iki düzlem aynada görüntü sayısı n = 360/α − 1 = 360/45 − 1 = 7. "8", formüldeki 1'i çıkarmayı unutmaktır; 360/α cismin kendisini de sayar. "4", 360 yerine 180 kullanmaktır. "3", 90°'lik aynalar için doğru olan sayıdır. "2", her aynada yalnız bir görüntü oluştuğunu sanmaktır; görüntülerin görüntüsü de oluşur.</p></div></li>
+
+<li data-c="E" data-k="fizik-13"><p class="q">Büyüklükleri 6 N ve 8 N olan iki kuvvetin bileşkesinin büyüklüğü, kuvvetler arasındaki açıya göre aşağıdakilerden hangisi <strong>olamaz</strong>?</p>
+<ul class="sec"><li>2 N</li><li>7 N</li><li>10 N</li><li>14 N</li><li>1 N</li></ul>
+<div class="coz"><p>İki vektörün bileşkesi en çok aynı yönlüyken (6 + 8 = 14 N), en az zıt yönlüyken (8 − 6 = 2 N) olur; arada her değeri alabilir. 1 N bu aralığın dışındadır. 2 N (zıt yönlü), 14 N (aynı yönlü), 10 N (dik: 6–8–10 üçgeni) ve 7 N (2 ile 14 arasındaki bir açıda) mümkündür. Bu soru, bileşkenin yalnız birkaç özel değer alabildiğini sanmayı yoklar.</p></div></li>
+
+<li data-c="C" data-k="fizik-15"><p class="q">Yerden 30 m/s hızla düşey yukarı atılan bir cismin çıkabileceği en büyük yükseklik kaç metredir? (g = 10 m/s², hava direnci önemsiz)</p>
+<ul class="sec"><li>90</li><li>3</li><li>45</li><li>135</li><li>180</li></ul>
+<div class="coz"><p>Tepe noktasında hız sıfırdır: h = v<sub>0</sub>²/(2g) = 900/20 = 45 m (ya da t = v<sub>0</sub>/g = 3 s, ortalama hız 15 m/s, 15·3 = 45 m). "90", formüldeki 2'yi unutmak ya da yavaşlamayı yok sayıp v<sub>0</sub>·t yazmaktır. "3", çıkış süresini (saniye) yükseklik sanmaktır. "135", x = v<sub>0</sub>·t + ½·g·t²'de ivmenin işaretini artı almaktır (cisim yavaşlarken hızlanıyormuş gibi). "180", toplam uçuş süresini (6 s) ½·g·t²'ye koymaktır.</p></div></li>
+
+<li data-c="A" data-k="fizik-18"><p class="q">Sürtünmesiz yatay düzlemde 6 m/s hızla giden 2 kg kütleli bir cisim, durmakta olan 1 kg kütleli cisme çarpıp yapışıyor. Çarpışmada kaybolan kinetik enerji kaç J'dür?</p>
+<ul class="sec"><li>12</li><li>0</li><li>24</li><li>36</li><li>18</li></ul>
+<div class="coz"><p>Momentum korunur: 2·6 = 3·v ⇒ v = 4 m/s. İlk kinetik enerji ½·2·6² = 36 J, son ½·3·4² = 24 J; kayıp 36 − 24 = 12 J. "0", yapışmalı (esnek olmayan) çarpışmada kinetik enerjiyi korunmuş saymaktır; korunan momentumdur. "24" son kinetik enerji, "36" ilk kinetik enerjidir; sorulan farklarıdır. "18", ilk enerjinin yarısının kaybolduğunu varsaymaktır; kayıp oranı kütlelere bağlıdır (burada 1/3).</p></div></li>
+
+<li data-c="B" data-k="fizik-20"><p class="q">Birbirine dişli olarak geçmiş iki çarktan birincisinin yarıçapı 10 cm, ikincisinin yarıçapı 30 cm'dir. Birinci çark saat yönünde 6 tur döndüğünde ikinci çark kaç tur ve hangi yönde döner?</p>
+<ul class="sec"><li>2 tur, saat yönünde</li><li>2 tur, saat yönünün tersine</li><li>18 tur, saat yönünün tersine</li><li>18 tur, saat yönünde</li><li>6 tur, saat yönünün tersine</li></ul>
+<div class="coz"><p>Birbirine geçen dişlilerde değme noktasında alınan yol eşittir: n<sub>1</sub>·r<sub>1</sub> = n<sub>2</sub>·r<sub>2</sub> ⇒ 6·10 = n<sub>2</sub>·30 ⇒ n<sub>2</sub> = 2 tur. Birbirine geçen iki dişli zıt yönde döner. "Saat yönünde" seçenekleri, dişliyi düz kayış gibi düşünmektir (düz kayışta yönler aynıdır). "18 tur", devir sayısını yarıçapla doğru orantılı sanmaktır; büyük çark daha az döner. "6 tur", eşit tur sayısını varsaymaktır; bu yalnızca aynı mile takılı (eş merkezli) çarklarda doğrudur.</p></div></li>
+
+<li data-c="E" data-k="fizik-23"><p class="q">Bir basit sarkacın ip uzunluğu 4 katına, ucundaki cismin kütlesi 2 katına çıkarılıyor. Küçük açılarla salınan sarkacın periyodu ilk periyodunun kaç katı olur?</p>
+<ul class="sec"><li>4</li><li>2√2</li><li>8</li><li>1</li><li>2</li></ul>
+<div class="coz"><p>T = 2π√(L/g); periyot kütleden bağımsızdır. L 4 katına çıkınca T, √4 = 2 katına çıkar. "4", karekökü unutmaktır. "2√2", periyodu kütleye de bağlayıp √(4·2) almaktır; bu yay sarkacının T = 2π√(m/k) formülüyle karıştırmaktır. "8", hem karekökü unutup hem kütleyi katmaktır. "1", uzunluğun da etkisiz olduğunu sanmaktır.</p></div></li>
+
+<li data-c="D" data-k="fizik-25"><p class="q">Paralel levhalı bir sığaç bir üretece bağlıyken levhalar arasındaki uzaklık 2 katına çıkarılıyor. Buna göre<br>I. Sığacın sığası yarıya iner.<br>II. Levhalar arasındaki potansiyel farkı yarıya iner.<br>III. Sığaçta depolanan enerji yarıya iner.<br>yargılarından hangileri doğrudur?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız III</li><li>I ve II</li><li>I ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>C = ε·A/d olduğundan d iki katına çıkınca C yarıya iner (I doğru). Sığaç üretece bağlı olduğu için gerilim üretecin gerilimine eşit kalır (II yanlış). Enerji ½·C·V²'dir; V sabit, C yarıya inince enerji de yarıya iner (III doğru). II'yi doğru sayan seçenekler, sığaç üreteçten ayrılmış gibi düşünüp yükü sabit saymaktan ya da E = V/d'deki alanın yarıya inmesini gerilimle karıştırmaktan gelir. "Yalnız I", enerjinin değişmediğini sanmaktır.</p></div></li>
+
+<li data-c="C" data-k="fizik-25"><p class="q">Durgun hâldeki bir elektron 500 V'luk potansiyel farkında hızlandırılıyor. Elektronun kazandığı kinetik enerji kaç J'dür? (e = 1,6×10<sup>−19</sup> C)</p>
+<ul class="sec"><li>500</li><li>4×10<sup>−17</sup></li><li>8×10<sup>−17</sup></li><li>3,2×10<sup>−22</sup></li><li>1,6×10<sup>−19</sup></li></ul>
+<div class="coz"><p>Alanın yaptığı iş kinetik enerjiye dönüşür: E<sub>k</sub> = q·V = 1,6×10<sup>−19</sup>·500 = 8×10<sup>−17</sup> J (500 eV). "500", sonucu elektron-volt cinsinden doğru bulup birimi joule sanmaktır. "4×10<sup>−17</sup>", q·V = ½·m·v² eşitliğindeki ½'yi yanlış tarafa taşımaktır. "3,2×10<sup>−22</sup>", yükü gerilimle çarpmak yerine bölmektir. "1,6×10<sup>−19</sup>", 1 eV'luk enerjidir; gerilimle çarpmayı unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="fizik-26"><p class="q">Üzerinden 10 A akım geçen uzun düz bir telden 10 cm uzaklıktaki noktada telin oluşturduğu manyetik alanın büyüklüğü kaç tesladır? (k = 10<sup>−7</sup> N/A²)</p>
+<ul class="sec"><li>2×10<sup>−5</sup></li><li>10<sup>−5</sup></li><li>2×10<sup>−7</sup></li><li>2×10<sup>−4</sup></li><li>2π×10<sup>−5</sup></li></ul>
+<div class="coz"><p>B = 2k·i/d = 2·10<sup>−7</sup>·10/0,1 = 2×10<sup>−5</sup> T. "10<sup>−5</sup>", formüldeki 2'yi unutmaktır. "2×10<sup>−7</sup>", uzaklığı metreye çevirmeyip d = 10 almaktır. "2×10<sup>−4</sup>", uzaklığın karesini almaktır; düz telin alanı 1/d ile azalır, 1/d² ile değil. "2π×10<sup>−5</sup>", düz tel yerine çembersel halkanın merkezindeki alan formülünü (2π·k·i/r) kullanmaktır.</p></div></li>
+
+<li data-c="E" data-k="fizik-26"><p class="q">Düzgün bir manyetik alana, alana dik doğrultuda giren yüklü bir parçacık çembersel yörüngede dolanmaktadır. Parçacık aynı alana iki kat hızla dik girseydi<br>I. Yörünge yarıçapı 2 katına çıkardı.<br>II. Dolanım periyodu değişmezdi.<br>III. Manyetik kuvvet parçacığın hızının büyüklüğünü değiştirmezdi.<br>yargılarından hangileri doğru olurdu?</p>
+<ul class="sec"><li>Yalnız I</li><li>Yalnız III</li><li>I ve II</li><li>I ve III</li><li>I, II ve III</li></ul>
+<div class="coz"><p>r = m·v/(q·B): v iki kat ⇒ r iki kat (I doğru). T = 2π·m/(q·B) hızdan bağımsızdır; hız iki kat ama çevre de iki kat, süre aynı (II doğru). Manyetik kuvvet her an hıza diktir, iş yapmaz; hızın yalnız yönünü değiştirir (III doğru). II'yi dışarıda bırakan seçenekler periyodun hızla değiştiğini, III'ü dışarıda bırakanlar manyetik kuvvetin enerji kazandırdığını sanmaktan gelir.</p></div></li>
+
+<li data-c="B" data-k="fizik-27"><p class="q">Uçları bir dirence bağlı bir bobine, bir çubuk mıknatısın N kutbu yaklaştırılıyor. Bobinin mıknatısa bakan ucunda hangi kutup oluşur ve bobin mıknatısa nasıl bir kuvvet uygular?</p>
+<ul class="sec"><li>S kutbu; çeker</li><li>N kutbu; iter</li><li>N kutbu; çeker</li><li>S kutbu; iter</li><li>Kutup oluşmaz; kuvvet uygulamaz</li></ul>
+<div class="coz"><p>Lenz yasası: indüksiyon akımı, kendisini doğuran akı değişimine karşı koyar. Mıknatıs yaklaşınca bobindeki akı artar; bobin bu artışa karşı koymak için mıknatısa bakan ucunda N kutbu oluşturur ve mıknatısı iter (yaklaşmayı zorlaştırır). "S kutbu; çeker", karşı koyma yerine değişimi destekleyen kutbu seçmektir; öyle olsaydı mıknatıs kendiliğinden hızlanır, enerji yoktan doğardı. "N; çeker" ve "S; iter" kutup ile kuvvet yönünü birbiriyle tutarsız eşlemektir. "Kutup oluşmaz", devre kapalı olduğu hâlde indüksiyon akımını yok saymaktır.</p></div></li>
+
+<li data-c="D" data-k="fizik-27"><p class="q">Büyüklüğü 0,5 T olan düzgün manyetik alana dik raylar üzerinde 0,2 m uzunluğundaki iletken çubuk, alana ve kendine dik doğrultuda 4 m/s sabit hızla kaydırılıyor. Rayların uçları 2 Ω'luk dirençle birleştirilmiştir. Devreden geçen akım kaç amperdir? (Çubuk ve rayların direnci önemsiz.)</p>
+<ul class="sec"><li>0,4</li><li>0,8</li><li>1</li><li>0,2</li><li>0,1</li></ul>
+<div class="coz"><p>Çubukta oluşan gerilim ε = B·v·L = 0,5·4·0,2 = 0,4 V; akım i = ε/R = 0,4/2 = 0,2 A. "0,4", gerilimi akım sanmaktır (dirence bölmeyi unutmak). "0,8", dirence bölmek yerine çarpmaktır. "1", çubuğun uzunluğunu unutup B·v/R yazmaktır. "0,1", ucu etrafında dönen çubuğun ε = ½·B·ω·L² formülündeki ½'yi kayan çubuğa taşımaktır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#fizik-27">← Önceki parça</a>
+  <button class="btn ok" data-done="fizik-28">Bu bölümü okudum</button>
+  <a class="btn" href="#fizik-29">Sonraki parça: dalga mekaniği ve elektromanyetik dalgalar</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"alternatif akım etkin değer maksimum değer AYT fizik konu anlatımı"</li>
+  <li>"indüktif reaktans kapasitif reaktans frekans lamba parlaklığı"</li>
+  <li>"RLC devresi empedans rezonans frekansı"</li>
+  <li>"transformatör sarım sayısı verim enerji iletimi hat kaybı"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Tanımlar, formüller ve türetmeler lise fiziğinin yerleşik anlatımına göre bellekten yazıldı; 2018 MEB Fizik Dersi Öğretim Programı'nın kazanım metniyle ya da bir ders kitabıyla bu oturumda satır satır karşılaştırmadım.</li>
+  <li>Kapsam notuna uyularak seri RLC devresinde empedans ve faz açısı hesabı "sınav kapsamında olmayabilir" diye işaretlendi; quizde bu konudan bir sayısal soru (5. soru) ve bir nitel rezonans sorusu (6. soru) var.</li>
+  <li>Türetmeler kalkülüs kullanılmadan, sezgisel yoldan verildi: sin²'nin ortalamasının 1/2 olması simetriyle, reaktanslar "değişme hızının en büyük değeri ω × genlik" fikriyle (Parça 23) gerekçelendirildi. Dönen çerçevede kısa kenarların gerilime katkı vermediği yalnızca söylendi, ayrıntısıyla gösterilmedi. Fazör (döner vektör) gösterimi tanıtım düzeyinde kullanıldı.</li>
+  <li>Transformatörde "ideal birincilde kaynak gerilimi öz indüksiyon gerilimiyle dengelenir" yaklaşımı ve "çekirdekteki akının tamamı ikincilden geçer" varsayımı kullanıldı. Verimli transformatörde sarım–gerilim oranının aynen kullanılması sınav sorularındaki yaygın kabuldür; gerçekte yük altında ikincil gerilimi bir miktar düşer.</li>
+  <li>Şebeke değerleri: Türkiye'de 50 Hz ve 230 V (eski kaynaklarda 220 V). İletim zincirindeki 10–20 kV, 154–380 kV, 34,5 kV ve 400/230 V değerleri tipik örnek olarak verildi; santralden santrale ve bölgeden bölgeye değişebilir.</li>
+  <li>Edison–Tesla tartışması yalnızca genel hatlarıyla ve on yıl düzeyinde tarihlerle (1880'ler, 1890'lar) anlatıldı; kesin olay tarihleri bilerek verilmedi. Yüksek gerilimli doğru akımla iletimin günümüzde kullanıldığı bilgisi genel düzeydedir.</li>
+  <li>Bütün çözümlü örneklerin ve quiz cevaplarının sayısal sonuçları ile her çeldiricinin hangi hatadan çıktığı Python ile hesaplanarak doğrulandı (örneğin Örnek 3'te Z = 25 Ω, P = 240 W; Örnek 4'te f<sub>0</sub> = 500/π ≈ 159,15 Hz; quiz 7'de i<sub>p</sub> = 1,25 A). Şekillerdeki sinüs, güç, reaktans ve empedans eğrileri hesaplanan koordinatlarla çizildi; transformatör şemasındaki sarım sayıları ve iletim şemasındaki kutular ölçekli değildir, kayıp çubukları ölçeklidir.</li>
+  <li>Tekrar soruları kapsam listesindeki satırlara göre yazıldı: son üç parçadan (25, 26, 27) 2'şer soru, Parça 1–24 arasından eşit aralıkla seçilen on parçadan (1, 3, 6, 8, 11, 13, 15, 18, 20, 23) 1'er soru. Parça 26 ve 27'nin metinleri bu parça yazılırken depoda yoktu; o parçalardan gelen sorulardaki gösterimler (B = 2k·i/d, k = 10<sup>−7</sup> N/A², r = m·v/(q·B), ε = B·v·L) kapsam satırından alındı ve o metinlerle karşılaştırılmadı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

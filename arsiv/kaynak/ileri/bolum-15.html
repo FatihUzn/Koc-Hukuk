@@ -1,0 +1,599 @@
+<article class="chapter ders" id="c-ileri-15">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 15 · Üstel ve logaritmik fonksiyonlar 2</div>
+<h1>Üstel ve logaritmik fonksiyonlar 2: logaritma kuralları ve hesap</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>log 2 ≈ 0,301 olduğunu biliyorsun. 2<sup>100</sup> sayısı kaç basamaklıdır? Bu sayıyı yazmak için 2'yi yüz kez kendisiyle çarpman gerekir; sınavda hesap makinesi de yok. Oysa cevap tek satırlık bir logaritma hesabıyla bulunuyor: 31. Bunu mümkün kılan şey, üs kurallarının logaritmada kendine özgü kurallara dönüşmesi. Bu kurallar nedir, nereden gelir ve hangi işi kolaylaştırır?</p></div>
+<p class="hint">Önce bilmen gerekenler: mat Parça 10 (üs kuralları: a<sup>m</sup> · a<sup>n</sup> = a<sup>m+n</sup>, a<sup>m</sup> / a<sup>n</sup> = a<sup>m−n</sup>, (a<sup>m</sup>)<sup>n</sup> = a<sup>mn</sup>, a<sup>0</sup> = 1), mat Parça 12 (kök ile kesirli üs: √a = a<sup>1/2</sup>), Parça 14 (logaritmanın tanımı a<sup>x</sup> = b ⇔ x = log<sub>a</sub> b, taban ve içeri koşulları, log<sub>a</sub> 1 = 0, log<sub>a</sub> a = 1, a<sup>log<sub>a</sub> b</sup> = b, onluk ve doğal logaritma, logaritma fonksiyonunun artan ya da azalan oluşu). Kâğıt kalem yanında olsun; her kuralın iki satırlık çıkarılışını bir kez kendin yaz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 14'te logaritmayı tanıdın: log<sub>a</sub> b, a'yı kaçıncı kuvvete yükseltirsen b'yi elde edeceğini söyleyen sayıdır. Tanım tek başına log<sub>2</sub> 8 = 3 gibi hesapları yaptırır; ama log<sub>2</sub> 12 ya da log<sub>3</sub> 20 gibi, içerisi tabanın tam kuvveti olmayan bir logaritmayla karşılaşınca eli kolu bağlı kalır. Bu parçada logaritmayla <strong>hesap yapmayı</strong> sağlayan kuralları kuracağız.</p>
+
+<p>Kuralların hepsi tek bir kaynaktan gelir: mat Parça 10'daki üs kuralları. Logaritma bir üs olduğu için üslerin uyduğu her kural logaritmada bir karşılık bulur. Bu yüzden hiçbir kuralı ezberlemeye çalışma; her birini üs kuralından iki üç satırda çıkarmayı öğren. Sınavda unuttuğun bir kuralı otuz saniyede yeniden üretebilirsin; yanlış hatırladığın bir kuralı ise hiçbir şey düzeltmez.</p>
+
+<p>AYT'de bu konu birkaç kalıpla gelir. Birincisi doğrudan hesaptır: log<sub>3</sub> 54 − log<sub>3</sub> 2 ya da log<sub>2</sub> 5 · log<sub>5</sub> 8 gibi bir ifade verilir, kurallarla sadeleştirip bir sayıya ulaşırsın. İkincisi verilen değerler cinsinden yazmadır: "log 2 = a, log 3 = b ise log 15'in a ve b türünden eşiti nedir?" Üçüncüsü sıralamadır: farklı taban ve içerili logaritmaları büyükten küçüğe dizmek ya da bir logaritmanın hangi iki tam sayı arasında olduğunu bulmak. Dördüncüsü basamak sayısıdır: 2<sup>100</sup> gibi dev bir sayının kaç basamaklı olduğu. Beşincisi de terimlerin birbirini götürdüğü toplamlardır. Parça 16'daki denklem ve eşitsizlikler bu kuralları hazır alet olarak kullanır; burada ne kadar sağlam kurarsan orada o kadar hızlı olursun.</p>
+
+<h2 class="s">Başlamadan: logaritma bir üstür</h2>
+
+<p>Parça 14'ün özünü tek satıra sığdıralım, çünkü bu parçadaki her çıkarım bu satırı ileri geri okumaktan ibaret:</p>
+
+<span class="mat">a<sup>x</sup> = b ⇔ x = log<sub>a</sub> b <span class="g">(a &gt; 0, a ≠ 1, b &gt; 0)</span></span>
+
+<p>Soldan sağa okuyunca bir üslü eşitliği logaritmaya çevirirsin, sağdan sola okuyunca logaritmayı üslü eşitliğe. Buradan dört temel değer çıkmıştı: log<sub>a</sub> 1 = 0 (çünkü a<sup>0</sup> = 1), log<sub>a</sub> a = 1, log<sub>a</sub> a<sup>n</sup> = n ve a<sup>log<sub>a</sub> b</sup> = b. Yazımı da hatırla: tabanı yazılmayan "log" onluk logaritmadır (taban 10), "ln" doğal logaritmadır (taban e ≈ 2,718).</p>
+
+<p>Aşağıdaki bütün kurallarda taban ve içeri koşullarının sağlandığını varsayıyoruz: taban pozitif ve 1'den farklı, içeri pozitif. Bu koşullar süs değil; bir kuralın neden işlediğini açıklayan ispat, ancak bu sayılar gerçekten birer üslü ifade olarak yazılabildiğinde çalışır. Koşulun bozulduğu yeri her kuralın sonunda ayrıca göstereceğiz.</p>
+
+<h2 class="s">1. Çarpımın logaritması: çarpma toplamaya döner</h2>
+
+<p>Önce bir deneme yap. log<sub>2</sub> 4 = 2, log<sub>2</sub> 8 = 3. Bu iki sayının çarpımı 32 ve log<sub>2</sub> 32 = 5. Beş, iki ile üçün toplamı. Rastlantı değil: 4 = 2<sup>2</sup>, 8 = 2<sup>3</sup> ve mat Parça 10'dan biliyorsun ki aynı tabanlı kuvvetler çarpılırken üsler toplanır: 2<sup>2</sup> · 2<sup>3</sup> = 2<sup>5</sup>. Logaritma üssün kendisi olduğuna göre, çarpılan sayıların logaritmaları da toplanmak zorundadır. Şimdi bunu her sayı için gösterelim.</p>
+
+<span class="mat">log<sub>a</sub> x = m ve log<sub>a</sub> y = n olsun <span class="g">(iki logaritmaya ad ver)</span></span>
+<span class="mat">x = a<sup>m</sup> ve y = a<sup>n</sup> <span class="g">(tanım: logaritma bir üstür)</span></span>
+<span class="mat">x · y = a<sup>m</sup> · a<sup>n</sup> = a<sup>m+n</sup> <span class="g">(aynı tabanda çarparken üsler toplanır)</span></span>
+<span class="mat">log<sub>a</sub>(x · y) = m + n <span class="g">(tanımı geri oku)</span></span>
+<span class="mat">log<sub>a</sub>(x · y) = log<sub>a</sub> x + log<sub>a</sub> y <span class="g">(m ve n'nin yerine koy)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Çarpımın logaritması:</strong> x &gt; 0 ve y &gt; 0 için log<sub>a</sub>(x · y) = log<sub>a</sub> x + log<sub>a</sub> y. Sözle: <strong>çarpımın logaritması, logaritmaların toplamıdır.</strong> Nedeni: aynı tabanlı kuvvetler çarpılırken üsler toplanır ve logaritma o üstür. Kural ikiden çok çarpana da uzar: log<sub>a</sub>(x · y · z) = log<sub>a</sub> x + log<sub>a</sub> y + log<sub>a</sub> z.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 215" role="img" aria-label="İki paralel sayı doğrusu. Üstteki doğruda 1, 2, 4, 8, 16, 32, 64 eşit aralıklarla, alttakinde bunların 2 tabanında logaritmaları 0'dan 6'ya kadar. Üstte 1'den 4'e çarpı 4, 4'ten 32'ye çarpı 8; altta 0'dan 2'ye artı 2, 2'den 5'e artı 3.">
+  <line class="sv-c" x1="65" y1="80" x2="392" y2="80" />
+  <line class="sv-c" x1="65" y1="150" x2="392" y2="150" />
+  <line class="sv-c" x1="75" y1="74" x2="75" y2="86" /><line class="sv-c" x1="125" y1="74" x2="125" y2="86" /><line class="sv-c" x1="175" y1="74" x2="175" y2="86" /><line class="sv-c" x1="225" y1="74" x2="225" y2="86" /><line class="sv-c" x1="275" y1="74" x2="275" y2="86" /><line class="sv-c" x1="325" y1="74" x2="325" y2="86" /><line class="sv-c" x1="375" y1="74" x2="375" y2="86" />
+  <line class="sv-c" x1="75" y1="144" x2="75" y2="156" /><line class="sv-c" x1="125" y1="144" x2="125" y2="156" /><line class="sv-c" x1="175" y1="144" x2="175" y2="156" /><line class="sv-c" x1="225" y1="144" x2="225" y2="156" /><line class="sv-c" x1="275" y1="144" x2="275" y2="156" /><line class="sv-c" x1="325" y1="144" x2="325" y2="156" /><line class="sv-c" x1="375" y1="144" x2="375" y2="156" />
+  <line class="sv-c" x1="75" y1="92" x2="75" y2="138" /><line class="sv-c" x1="175" y1="92" x2="175" y2="138" /><line class="sv-c" x1="325" y1="92" x2="325" y2="138" />
+  <text class="sv-b" x="8" y="85">x</text>
+  <text class="sv-b" x="8" y="155">log₂ x</text>
+  <text class="sv-t" x="75" y="68" text-anchor="middle">1</text><text class="sv-t" x="125" y="68" text-anchor="middle">2</text><text class="sv-t" x="175" y="68" text-anchor="middle">4</text><text class="sv-t" x="225" y="68" text-anchor="middle">8</text><text class="sv-t" x="275" y="68" text-anchor="middle">16</text><text class="sv-t" x="325" y="68" text-anchor="middle">32</text><text class="sv-t" x="375" y="68" text-anchor="middle">64</text>
+  <text class="sv-t" x="75" y="173" text-anchor="middle">0</text><text class="sv-t" x="125" y="173" text-anchor="middle">1</text><text class="sv-t" x="175" y="173" text-anchor="middle">2</text><text class="sv-t" x="225" y="173" text-anchor="middle">3</text><text class="sv-t" x="275" y="173" text-anchor="middle">4</text><text class="sv-t" x="325" y="173" text-anchor="middle">5</text><text class="sv-t" x="375" y="173" text-anchor="middle">6</text>
+  <path class="sv-cl" d="M75 50 V42 H175 V50" />
+  <path class="sv-cl" d="M175 50 V42 H325 V50" />
+  <text class="sv-b" x="125" y="34" text-anchor="middle">× 4</text>
+  <text class="sv-b" x="250" y="34" text-anchor="middle">× 8</text>
+  <path class="sv-cl" d="M75 180 V188 H175 V180" />
+  <path class="sv-cl" d="M175 180 V188 H325 V180" />
+  <text class="sv-b" x="125" y="205" text-anchor="middle">+ 2</text>
+  <text class="sv-b" x="250" y="205" text-anchor="middle">+ 3</text>
+</svg>
+<figcaption>Üstteki doğruda her adım 2 ile çarpmak, alttakinde 1 eklemek. 1'den 4 ile, sonra 8 ile çarparak 32'ye varmak, alt doğruda 0'dan 2, sonra 3 ekleyerek 5'e varmaktır: log₂(4 · 8) = log₂ 4 + log₂ 8. Logaritma, çarpma dünyasını toplama dünyasına taşıyan bir sözlüktür.</figcaption>
+</figure>
+
+<p>Logaritmanın icat edilme nedeni tam da budur. 17. yüzyılın başında gökbilimciler ve denizciler sekiz-dokuz basamaklı sayıları elle çarpmak zorundaydı. Logaritma tablosu, iki sayının logaritmasını tablodan okuyup <strong>toplamayı</strong>, sonra toplamın hangi sayının logaritması olduğunu tablodan geri okumayı sağladı. Çarpma, toplamaya göre çok daha zahmetli ve hataya açık bir işlemdir; logaritma ağır işlemi hafif işleme çevirir. Sınavda bu kuralı çoğunlukla <strong>tersinden</strong> kullanacaksın: toplanan logaritmaları tek logaritmaya birleştirip içeride güzel bir sayı elde etmek. log 2 + log 5 = log 10 = 1, log<sub>6</sub> 4 + log<sub>6</sub> 9 = log<sub>6</sub> 36 = 2 gibi.</p>
+
+<p>Kuraldaki "x &gt; 0 ve y &gt; 0" koşulunun neden yazıldığına da bak. x = −2 ve y = −3 al: çarpım 6 pozitif olduğu için log 6 tanımlıdır, ama sağ yandaki log(−2) ve log(−3) tanımsızdır. Eşitliğin sol yanı var, sağ yanı yok. İspatımız x'i ve y'yi ayrı ayrı a<sup>m</sup> ve a<sup>n</sup> diye yazmaya dayanıyordu; negatif bir sayı hiçbir pozitif tabanın kuvveti olamaz. Bu yüzden içerisi değişken olan ifadelerde kuralı uygularken tanım kümesinin değişebileceğini unutma: xy &gt; 0 iken doğru yazım log(xy) = log|x| + log|y| olur. Parça 16'da log x + log(x − 3) = 1 gibi denklemleri çözerken bu ayrım, bulunan bir kökü atmanı gerektirecek.</p>
+
+<h2 class="s">2. Bölümün logaritması: bölme çıkarmaya döner</h2>
+
+<p>Aynı yolu bölmede yürü. Tek fark, aynı tabanlı kuvvetler bölünürken üslerin çıkarılmasıdır.</p>
+
+<span class="mat">x = a<sup>m</sup> ve y = a<sup>n</sup> <span class="g">(m = log<sub>a</sub> x, n = log<sub>a</sub> y)</span></span>
+<span class="mat"><span class="kes"><span>x</span><span>y</span></span> = <span class="kes"><span>a<sup>m</sup></span><span>a<sup>n</sup></span></span> = a<sup>m−n</sup> <span class="g">(aynı tabanda bölerken üsler çıkarılır)</span></span>
+<span class="mat">log<sub>a</sub> <span class="kes"><span>x</span><span>y</span></span> = m − n = log<sub>a</sub> x − log<sub>a</sub> y <span class="g">(tanımı geri oku)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Bölümün logaritması:</strong> x &gt; 0 ve y &gt; 0 için log<sub>a</sub>(x / y) = log<sub>a</sub> x − log<sub>a</sub> y. Sözle: <strong>bölümün logaritması, payın logaritmasından paydanınkinin çıkarılmasıdır.</strong> Özel durum: x = 1 alınırsa log<sub>a</sub> 1 = 0 olduğundan log<sub>a</sub>(1 / y) = −log<sub>a</sub> y. Bir sayının tersinin logaritması, logaritmasının ters işaretlisidir.</p></div>
+
+<p>Bu özel durum sık işe yarar: log<sub>2</sub>(1/8) = −log<sub>2</sub> 8 = −3, log 0,01 = log(1/100) = −2. Kontrol etmek kolay: 2<sup>−3</sup> = 1/8 ve 10<sup>−2</sup> = 0,01. Negatif üs, mat Parça 10'da "tersini al" demekti; logaritmada da ters, eksi işaretine dönüşür.</p>
+
+<h2 class="s">3. Kuvvetin logaritması: üs öne iner</h2>
+
+<p>Üçüncü üs kuralı, kuvvetin kuvvetidir: (a<sup>m</sup>)<sup>n</sup> = a<sup>mn</sup>. Bunun logaritmadaki karşılığını çıkaralım.</p>
+
+<span class="mat">x = a<sup>m</sup> <span class="g">(m = log<sub>a</sub> x)</span></span>
+<span class="mat">x<sup>n</sup> = (a<sup>m</sup>)<sup>n</sup> = a<sup>m · n</sup> <span class="g">(kuvvetin kuvvetinde üsler çarpılır)</span></span>
+<span class="mat">log<sub>a</sub> x<sup>n</sup> = n · m = n · log<sub>a</sub> x <span class="g">(tanımı geri oku, m'yi yerine koy)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Kuvvetin logaritması:</strong> x &gt; 0 ve her gerçek sayı n için log<sub>a</sub> x<sup>n</sup> = n · log<sub>a</sub> x. Sözle: <strong>içerideki üs, logaritmanın önüne katsayı olarak iner.</strong> Ters yönde de kullanılır: logaritmanın önündeki katsayı, içerinin üssüne çıkabilir. n kesir de olabilir: log √x = log x<sup>1/2</sup> = ½ log x; log <sup>3</sup>√(x<sup>2</sup>) = <span class="kes"><span>2</span><span>3</span></span> log x.</p></div>
+
+<p>Kuralın en sık kullanımı bir sayıyı asal çarpanlarına ayırdıktan sonra gelir: log 8 = log 2<sup>3</sup> = 3 log 2, log<sub>3</sub> 25 = 2 log<sub>3</sub> 5. Üç kuralı yan yana koyunca aralarındaki bağ açıkça görünür:</p>
+
+<div class="tablo"><table>
+<tr><th>Üs kuralı (mat Parça 10)</th><th>Logaritmadaki karşılığı</th><th>Kısaca</th></tr>
+<tr><td>a<sup>m</sup> · a<sup>n</sup> = a<sup>m+n</sup></td><td>log<sub>a</sub>(xy) = log<sub>a</sub> x + log<sub>a</sub> y</td><td>çarpım → toplam</td></tr>
+<tr><td>a<sup>m</sup> / a<sup>n</sup> = a<sup>m−n</sup></td><td>log<sub>a</sub>(x/y) = log<sub>a</sub> x − log<sub>a</sub> y</td><td>bölüm → fark</td></tr>
+<tr><td>(a<sup>m</sup>)<sup>n</sup> = a<sup>mn</sup></td><td>log<sub>a</sub> x<sup>n</sup> = n log<sub>a</sub> x</td><td>kuvvet → katsayı</td></tr>
+<tr><td>a<sup>0</sup> = 1</td><td>log<sub>a</sub> 1 = 0</td><td>1'in logaritması sıfır</td></tr>
+<tr><td>a<sup>1</sup> = a</td><td>log<sub>a</sub> a = 1</td><td>tabanın logaritması bir</td></tr>
+<tr><td>a<sup>−n</sup> = 1 / a<sup>n</sup></td><td>log<sub>a</sub>(1/y) = −log<sub>a</sub> y</td><td>ters → eksi</td></tr>
+</table></div>
+
+<p>Tablonun her satırında aynı şey oluyor: üs dünyasındaki işlem bir basamak aşağı iniyor. Çarpma toplamaya, bölme çıkarmaya, kuvvet alma çarpmaya dönüşüyor. Logaritmanın bütün gücü bu "bir basamak indirme"dir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>log(x + y) = log x + log y sanmak.</strong> Toplamın logaritması için hiçbir kural yoktur. Karşı örnek: log(10 + 10) = log 20 ≈ 1,30; oysa log 10 + log 10 = 2. Tablodaki kurallar çarpım, bölüm ve kuvvet için; içeride toplam ya da fark görürsen önce çarpanlara ayır: log(x<sup>2</sup> + x) = log(x(x + 1)) = log x + log(x + 1).</p>
+<p><strong>(log x)<sup>2</sup> ile log x<sup>2</sup>'yi karıştırmak.</strong> Birincisi logaritmanın karesi, ikincisi karenin logaritmasıdır. x = 1000 için (log 1000)<sup>2</sup> = 3<sup>2</sup> = 9, oysa log 1000<sup>2</sup> = log 10<sup>6</sup> = 6. Kuvvet kuralı yalnızca <strong>içerideki</strong> üssü öne indirir. log<sup>2</sup> x yazımı (log x)<sup>2</sup> demektir.</p>
+<p><strong>Logaritmaların bölümünü ya da çarpımını, bölümün ya da çarpımın logaritması sanmak.</strong> <span class="kes"><span>log 100</span><span>log 10</span></span> = <span class="kes"><span>2</span><span>1</span></span> = 2, oysa log(100/10) = 1. log x · log y de log(xy) değildir. Logaritmaların bölümü, aşağıda göreceğin taban değiştirmedir: <span class="kes"><span>log 100</span><span>log 10</span></span> = log<sub>10</sub> 100.</p>
+<p><strong>Kuvvet kuralını negatif içerili ifadede körü körüne uygulamak.</strong> log x<sup>2</sup>, x = −3 için tanımlıdır (log 9), ama 2 log x tanımsızdır (log(−3) yok). Doğrusu log x<sup>2</sup> = 2 log |x|. İçerisi negatif olabilecek bir ifadeyi kuvvet kuralıyla açarken mutlak değeri koru; Parça 16'daki denklemlerde bu ayrım kök kaybına ya da yabancı köke yol açar.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> log<sub>2</sub> 12 + log<sub>2</sub> 6 − 2 log<sub>2</sub> 3 ifadesinin değeri kaçtır?</p>
+<p><strong>Adım 1.</strong> Katsayıyı içerinin üssüne çıkar; böylece bütün terimler katsayısız logaritma olur.</p>
+<span class="mat">2 log<sub>2</sub> 3 = log<sub>2</sub> 3<sup>2</sup> = log<sub>2</sub> 9 <span class="g">(kuvvet kuralı, ters yönde)</span></span>
+<p><strong>Adım 2.</strong> Toplananları tek logaritmada çarpıma çevir.</p>
+<span class="mat">log<sub>2</sub> 12 + log<sub>2</sub> 6 = log<sub>2</sub>(12 · 6) = log<sub>2</sub> 72 <span class="g">(çarpım kuralı, ters yönde)</span></span>
+<p><strong>Adım 3.</strong> Çıkarılanı bölüme çevir.</p>
+<span class="mat">log<sub>2</sub> 72 − log<sub>2</sub> 9 = log<sub>2</sub> <span class="kes"><span>72</span><span>9</span></span> = log<sub>2</sub> 8 <span class="g">(bölüm kuralı, ters yönde)</span></span>
+<p><strong>Adım 4.</strong> İçerisi tabanın tam kuvveti oldu.</p>
+<span class="mat">log<sub>2</sub> 8 = log<sub>2</sub> 2<sup>3</sup> = 3 <span class="g">(log<sub>a</sub> a<sup>n</sup> = n)</span></span>
+<p><strong>Sonuç:</strong> 3. <strong>Hızlı yol:</strong> "tek logaritmaya indir" stratejisi: önce katsayıları üsse çıkar, sonra artıları paya, eksileri paydaya yaz: log<sub>2</sub>(12 · 6 / 9). <strong>Kontrol yolu:</strong> her içeriyi asal çarpanlarına ayırıp açarak da gidebilirsin. log<sub>2</sub> 12 = log<sub>2</sub>(2<sup>2</sup> · 3) = 2 + log<sub>2</sub> 3 ve log<sub>2</sub> 6 = 1 + log<sub>2</sub> 3. Toplam 3 + 2 log<sub>2</sub> 3; bundan 2 log<sub>2</sub> 3 çıkınca 3 kalır. İki yol aynı sonucu veriyor.</p></div>
+
+<h2 class="s">4. Tabanın ve içerinin üssü</h2>
+
+<p>log<sub>8</sub> 32 kaçtır? 32, 8'in tam kuvveti değil; ama ikisi de 2'nin kuvveti: 8 = 2<sup>3</sup>, 32 = 2<sup>5</sup>. Tanıma dön: log<sub>8</sub> 32 = t dersen 8<sup>t</sup> = 32, yani 2<sup>3t</sup> = 2<sup>5</sup> ve t = 5/3. Bu küçük hesabı genelleştirelim; çünkü tabanın kendisi bir kuvvet olunca ne olacağını bize söylüyor.</p>
+
+<span class="mat">log<sub>a<sup>m</sup></sub> b<sup>n</sup> = t olsun <span class="g">(m ≠ 0; aranan sayıya ad ver)</span></span>
+<span class="mat">(a<sup>m</sup>)<sup>t</sup> = b<sup>n</sup> <span class="g">(tanım)</span></span>
+<span class="mat">a<sup>m t</sup> = b<sup>n</sup> <span class="g">(kuvvetin kuvveti)</span></span>
+<span class="mat">m t = log<sub>a</sub> b<sup>n</sup> = n log<sub>a</sub> b <span class="g">(tanım, sonra kuvvet kuralı)</span></span>
+<span class="mat">t = <span class="kes"><span>n</span><span>m</span></span> log<sub>a</sub> b <span class="g">(iki yanı m'ye böl)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Tabanın ve içerinin üssü:</strong> log<sub>a<sup>m</sup></sub> b<sup>n</sup> = <span class="kes"><span>n</span><span>m</span></span> · log<sub>a</sub> b. Sözle: <strong>içerinin üssü paya, tabanın üssü paydaya iner.</strong> Nedeni: tabandaki üs, aranan üsle çarpılarak işe girer; onu geri almak için bölmek gerekir. Üç özel durum: aynı üs sadeleşir (log<sub>4</sub> 9 = log<sub>2<sup>2</sup></sub> 3<sup>2</sup> = log<sub>2</sub> 3); taban 1/a ise m = −1 olur ve log<sub>1/a</sub> x = −log<sub>a</sub> x; taban √a ise m = ½ olur ve log<sub>√a</sub> x = 2 log<sub>a</sub> x.</p></div>
+
+<p>Kuralın sezgisi şöyle: taban büyüdükçe hedefe daha az adımda ulaşırsın. 2'yi beşinci kuvvete yükselterek 32'ye varıyorsun; 8 ise 2'nin üç adımını tek seferde attığı için 8 ile gereken adım sayısı 5'in üçte biri, yani 5/3 olur. Tabanın üssü "bir adımın büyüklüğü", içerinin üssü "gidilecek toplam yol"dur; adım sayısı yol bölü adım büyüklüğüdür. Bu benzetme, payla paydayı karıştırdığında seni uyarır: taban büyüyorsa logaritma küçülmeli.</p>
+
+<p>Birkaç uygulama: log<sub>√3</sub> 9 = log<sub>3<sup>1/2</sup></sub> 3<sup>2</sup> = <span class="kes"><span>2</span><span>1/2</span></span> = 4. Kontrol: (√3)<sup>4</sup> = 9. log<sub>1/2</sub> 8 = log<sub>2<sup>−1</sup></sub> 2<sup>3</sup> = −3. Kontrol: (1/2)<sup>−3</sup> = 8. log<sub>27</sub> 9 = log<sub>3<sup>3</sup></sub> 3<sup>2</sup> = 2/3. Kontrol: 27<sup>2/3</sup> = (<sup>3</sup>√27)<sup>2</sup> = 9. Her sonucu tanıma geri koyarak denetlemek, payı paydayla karıştırma hatasını hemen yakalar: yanlışlıkla 3/2 bulsaydın 27<sup>3/2</sup> ≈ 140 çıkardı, 9 değil.</p>
+
+<h2 class="s">5. Taban değiştirme</h2>
+
+<h3>Neden gerekli, nereden geliyor?</h3>
+
+<p>İki durumda tabanı değiştirmek zorunda kalırsın. Birincisi hesap aletleri: hesap makinelerinde yalnızca log ve ln tuşları vardır; log<sub>7</sub> 20'yi doğrudan hesaplayamazlar. İkincisi ve sınav için asıl önemlisi: bir ifadede farklı tabanlı logaritmalar bir araya geldiğinde, ilk üç kural işlemez, çünkü onların hepsi <strong>aynı tabandaki</strong> logaritmalar için çıkarıldı. log<sub>2</sub> 3 · log<sub>3</sub> 8 gibi bir çarpımı sadeleştirmek için hepsini ortak bir tabana taşımak gerekir.</p>
+
+<span class="mat">log<sub>a</sub> b = t olsun <span class="g">(aranan sayıya ad ver)</span></span>
+<span class="mat">a<sup>t</sup> = b <span class="g">(tanım)</span></span>
+<span class="mat">log<sub>c</sub> a<sup>t</sup> = log<sub>c</sub> b <span class="g">(eşit iki pozitif sayının c tabanında logaritmaları da eşittir)</span></span>
+<span class="mat">t · log<sub>c</sub> a = log<sub>c</sub> b <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">t = <span class="kes"><span>log<sub>c</sub> b</span><span>log<sub>c</sub> a</span></span> <span class="g">(log<sub>c</sub> a ≠ 0 çünkü a ≠ 1; iki yanı ona böl)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Taban değiştirme:</strong> c &gt; 0, c ≠ 1 olan her c için log<sub>a</sub> b = <span class="kes"><span>log<sub>c</sub> b</span><span>log<sub>c</sub> a</span></span>. Sözle: <strong>yeni tabanda içerinin logaritması bölü eski tabanın logaritması.</strong> Eski içeri payda kalır, eski taban paydaya iner. Nedeni: a<sup>t</sup> = b eşitliğinin iki yanının istediğin tabanda logaritmasını alabilirsin; üs öne iner ve t yalnız kalır. Uygulamada c'yi en uygun ortak taban olarak seçersin: 10, e ya da sorudaki sayıların ortak asal çarpanı.</p></div>
+
+<p>Kural ters yönde de okunur ve sınavda en az düz yön kadar işe yarar: <strong>aynı tabanlı iki logaritmanın bölümü tek bir logaritmadır.</strong> <span class="kes"><span>log 8</span><span>log 2</span></span> = log<sub>2</sub> 8 = 3; <span class="kes"><span>ln 25</span><span>ln 5</span></span> = log<sub>5</sub> 25 = 2. Ayrıca az önceki "tabanın ve içerinin üssü" kuralını taban değiştirmeyle de çıkarabilirsin: log<sub>a<sup>m</sup></sub> b<sup>n</sup> = <span class="kes"><span>n log b</span><span>m log a</span></span> = <span class="kes"><span>n</span><span>m</span></span> log<sub>a</sub> b. İki farklı yoldan aynı sonuca varmak, kuralların birbiriyle tutarlı olduğunu gösterir.</p>
+
+<h3>İki sonuç: ters logaritma ve zincir kuralı</h3>
+
+<p>Taban değiştirmede c yerine b'yi seç: pay log<sub>b</sub> b = 1 olur.</p>
+
+<span class="mat">log<sub>a</sub> b = <span class="kes"><span>log<sub>b</sub> b</span><span>log<sub>b</sub> a</span></span> = <span class="kes"><span>1</span><span>log<sub>b</sub> a</span></span> <span class="g">(c = b alındı; log<sub>b</sub> b = 1)</span></span>
+
+<p>Yani taban ile içeri yer değiştirince logaritma tersine döner. Denetle: log<sub>2</sub> 8 = 3 ve log<sub>8</sub> 2 = 1/3, çünkü 8<sup>1/3</sup> = 2. Buradan hemen log<sub>a</sub> b · log<sub>b</sub> a = 1 çıkar. Bu kural b ≠ 1 gerektirir; b = 1 ise log<sub>1</sub> a tanımsızdır.</p>
+
+<p>Şimdi iki logaritmayı çarp; ortadaki sayı birinin içerisi, öbürünün tabanı olsun. Hepsini ortak bir tabana (örneğin 10'a) çevir:</p>
+
+<span class="mat">log<sub>a</sub> b · log<sub>b</sub> c = <span class="kes"><span>log b</span><span>log a</span></span> · <span class="kes"><span>log c</span><span>log b</span></span> <span class="g">(ikisini de 10 tabanına çevir)</span></span>
+<span class="mat">= <span class="kes"><span>log c</span><span>log a</span></span> = log<sub>a</sub> c <span class="g">(log b sadeleşir; taban değiştirmeyi geri oku)</span></span>
+
+<figure>
+<svg viewBox="0 0 400 200" role="img" aria-label="Üç daire: 2, 8 ve 64. 2'den 8'e ok, üstünde log₂ 8 eşittir 3. 8'den 64'e ok, üstünde log₈ 64 eşittir 2. 2'den 64'e üstten kavisli ok, log₂ 64 eşittir 6 eşittir 3 çarpı 2. Alttaki geri oklarda log₈ 2 eşittir 1 bölü 3 ve log₆₄ 8 eşittir 1 bölü 2.">
+  <circle class="sv-l" cx="70" cy="120" r="26" />
+  <circle class="sv-l" cx="200" cy="120" r="26" />
+  <circle class="sv-l" cx="330" cy="120" r="26" />
+  <text class="sv-b" x="70" y="125" text-anchor="middle">2</text>
+  <text class="sv-b" x="200" y="125" text-anchor="middle">8</text>
+  <text class="sv-b" x="330" y="125" text-anchor="middle">64</text>
+  <line class="sv-cl" x1="96" y1="114" x2="172" y2="114" /><polygon class="sv-a" points="174,114 165,109.5 165,118.5" />
+  <line class="sv-cl" x1="226" y1="114" x2="302" y2="114" /><polygon class="sv-a" points="304,114 295,109.5 295,118.5" />
+  <line class="sv-c" x1="176" y1="128" x2="98" y2="128" /><polygon class="sv-k" points="96,128 105,123.5 105,132.5" />
+  <line class="sv-c" x1="306" y1="128" x2="228" y2="128" /><polygon class="sv-k" points="226,128 235,123.5 235,132.5" />
+  <path class="sv-cl" d="M88 100 Q200 10 312 100" /><polygon class="sv-a" points="312,100 302.2,97.9 307.8,90.9" />
+  <text class="sv-t" x="135" y="104" text-anchor="middle">log₂ 8 = 3</text>
+  <text class="sv-t" x="265" y="104" text-anchor="middle">log₈ 64 = 2</text>
+  <text class="sv-s" x="135" y="150" text-anchor="middle">log₈ 2 = 1/3</text>
+  <text class="sv-s" x="265" y="150" text-anchor="middle">log₆₄ 8 = 1/2</text>
+  <text class="sv-b" x="200" y="44" text-anchor="middle">log₂ 64 = 6 = 3 · 2</text>
+  <text class="sv-t" x="200" y="186" text-anchor="middle">log₂ 8 · log₈ 64 = log₂ 64</text>
+</svg>
+<figcaption>Zincir kuralı: 2'den 8'e "3. kuvvet", 8'den 64'e "2. kuvvet" ile gidilir; ikisini art arda uygulamak 2'den 64'e "6. kuvvet" ile gitmektir. İleri oklarda logaritmalar çarpılır; geri oklarda (taban ile içeri yer değiştirince) logaritma tersine döner.</figcaption>
+</figure>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Ters logaritma ve zincir kuralı:</strong> log<sub>a</sub> b = <span class="kes"><span>1</span><span>log<sub>b</sub> a</span></span> ve log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c. Sözle: <strong>taban ile içeri yer değiştirince logaritma ters olur; bir logaritmanın içerisi sonrakinin tabanıysa, çarpımda ortadaki halka düşer.</strong> Zincir istediğin kadar uzayabilir: log<sub>2</sub> 3 · log<sub>3</sub> 4 · log<sub>4</sub> 5 · … · log<sub>15</sub> 16 = log<sub>2</sub> 16 = 4. Nedeni: taban değiştirince her kesrin payı bir sonrakinin paydasıyla sadeleşir.</p></div>
+
+<p>Zincir kuralını kullanmadan önce sırayı denetle: halkalar "içeri = sonraki taban" biçiminde dizilmemişse çarpımın sırasını değiştirebilirsin (çarpma değişmelidir). log<sub>5</sub> 8 · log<sub>2</sub> 5 ifadesini log<sub>2</sub> 5 · log<sub>5</sub> 8 diye yazınca log<sub>2</sub> 8 = 3 olur. Halka tam oturmuyorsa önce kuvvet kurallarıyla oturt: log<sub>2</sub> 9 · log<sub>3</sub> 4 = 2 log<sub>2</sub> 3 · 2 log<sub>3</sub> 2 = 4 · (log<sub>2</sub> 3 · log<sub>3</sub> 2) = 4 · 1 = 4.</p>
+
+<h2 class="s">6. Üste çıkan logaritma: a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup></h2>
+
+<p>Parça 14'te a<sup>log<sub>a</sub> b</sup> = b olduğunu gördün: taban ile logaritmanın tabanı aynıyken üs "kendini götürür". Peki taban ile logaritmanın tabanı farklıysa? 8<sup>log<sub>4</sub> 3</sup> gibi bir sayıyı nasıl hesaplarsın? Burada taban ile içeriyi yer değiştirebileceğini gösteren bir kural var. İspatı için iki sayının eşit olduğunu, logaritmalarının eşit olduğunu göstererek kanıtlayacağız; logaritma fonksiyonu bire bir olduğu için (Parça 14) bu yeterlidir.</p>
+
+<span class="mat">log<sub>b</sub>(a<sup>log<sub>b</sub> c</sup>) = log<sub>b</sub> c · log<sub>b</sub> a <span class="g">(sol yanın b tabanında logaritması; üs öne iner)</span></span>
+<span class="mat">log<sub>b</sub>(c<sup>log<sub>b</sub> a</sup>) = log<sub>b</sub> a · log<sub>b</sub> c <span class="g">(sağ yanın b tabanında logaritması; üs öne iner)</span></span>
+<span class="mat">iki sonuç aynı çarpım ⇒ a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup> <span class="g">(logaritmaları eşit olan pozitif sayılar eşittir)</span></span>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Üsteki logaritmada yer değiştirme:</strong> a, c &gt; 0 ve b &gt; 0, b ≠ 1 için a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup>. Sözle: <strong>üste logaritma varken alttaki taban ile logaritmanın içerisi yer değiştirebilir; logaritmanın tabanı yerinde kalır.</strong> Nedeni: iki yanın logaritması aynı iki sayının çarpımıdır. a<sup>log<sub>a</sub> b</sup> = b kuralı bunun özel durumudur: b<sup>log<sub>a</sub> a</sup> = b<sup>1</sup> = b.</p></div>
+
+<p>Kuralın amacı, hesaplanamayan bir üssü hesaplanabilir bir üsse çevirmektir. 8<sup>log<sub>4</sub> 3</sup> ifadesinde log<sub>4</sub> 3 hoş bir sayı değil. Yer değiştir: 3<sup>log<sub>4</sub> 8</sup>. Şimdi üs hesaplanır: log<sub>4</sub> 8 = log<sub>2<sup>2</sup></sub> 2<sup>3</sup> = 3/2. Sonuç 3<sup>3/2</sup> = √27 = 3√3.</p>
+
+<p>Aynı işi kural kullanmadan, tabanı logaritmanın tabanına benzeterek de yapabilirsin; bu yol hem kontrol yolu hem de kuralı unuttuğunda kurtarıcıdır: 8 = 4<sup>3/2</sup> olduğundan 8<sup>log<sub>4</sub> 3</sup> = (4<sup>3/2</sup>)<sup>log<sub>4</sub> 3</sup> = (4<sup>log<sub>4</sub> 3</sup>)<sup>3/2</sup> = 3<sup>3/2</sup>. Daha basit bir örnek: 4<sup>log<sub>2</sub> 5</sup> = (2<sup>2</sup>)<sup>log<sub>2</sub> 5</sup> = (2<sup>log<sub>2</sub> 5</sup>)<sup>2</sup> = 5<sup>2</sup> = 25. Fikir hep aynı: tabanı, logaritmanın tabanının bir kuvveti olarak yaz; üslerin yerini değiştir; a<sup>log<sub>a</sub> b</sup> = b ile kurtul.</p>
+
+<h3>Bütün kurallar bir arada</h3>
+
+<div class="tablo"><table>
+<tr><th>Kural</th><th>Nereden gelir</th><th>Dikkat</th></tr>
+<tr><td>log<sub>a</sub>(xy) = log<sub>a</sub> x + log<sub>a</sub> y</td><td>a<sup>m</sup> · a<sup>n</sup> = a<sup>m+n</sup></td><td>x, y &gt; 0; toplamın logaritması için kural yok</td></tr>
+<tr><td>log<sub>a</sub>(x/y) = log<sub>a</sub> x − log<sub>a</sub> y</td><td>a<sup>m</sup> / a<sup>n</sup> = a<sup>m−n</sup></td><td>log<sub>a</sub>(1/y) = −log<sub>a</sub> y</td></tr>
+<tr><td>log<sub>a</sub> x<sup>n</sup> = n log<sub>a</sub> x</td><td>(a<sup>m</sup>)<sup>n</sup> = a<sup>mn</sup></td><td>x &lt; 0 ve n çift ise 2 log<sub>a</sub>|x| biçimi</td></tr>
+<tr><td>log<sub>a<sup>m</sup></sub> b<sup>n</sup> = (n/m) log<sub>a</sub> b</td><td>(a<sup>m</sup>)<sup>t</sup> = b<sup>n</sup></td><td>içerinin üssü paya, tabanınki paydaya</td></tr>
+<tr><td>log<sub>a</sub> b = log<sub>c</sub> b / log<sub>c</sub> a</td><td>a<sup>t</sup> = b'nin iki yanının log<sub>c</sub>'si</td><td>eski taban paydaya iner</td></tr>
+<tr><td>log<sub>a</sub> b = 1 / log<sub>b</sub> a</td><td>taban değiştirmede c = b</td><td>b ≠ 1</td></tr>
+<tr><td>log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c</td><td>taban değiştirme, sadeleşme</td><td>halkaları sıraya diz</td></tr>
+<tr><td>a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup></td><td>iki yanın log<sub>b</sub>'si</td><td>logaritmanın tabanı yerinde kalır</td></tr>
+</table></div>
+
+<h3>Hangi kural ne zaman? İfadedeki işaretler</h3>
+
+<p>Kuralları tek tek bilmek yetmez; bir ifadeye bakınca hangisini çekeceğini görmen gerekir. Bunun için ifadenin <strong>neresinde</strong> hangi işlemin durduğuna bak. Logaritmanın <strong>içinde</strong> çarpım, bölüm ya da kuvvet görürsen ilk üç kuralla açarsın. Logaritmanın <strong>içinde</strong> toplam ya da fark görürsen hiçbir kural doğrudan işlemez; önce çarpanlarına ayırırsın. Logaritmaların <strong>dışında</strong> toplam ya da fark varsa ve tabanlar aynıysa, ilk üç kuralı ters yönde kullanıp tek logaritmada birleştirirsin. Dışarıda iki logaritmanın <strong>çarpımı</strong> varsa zincir kuralının ya da ters logaritma kuralının işe yarayıp yaramayacağını yoklarsın: birinin içerisi öbürünün tabanı mı? Dışarıda iki logaritmanın <strong>bölümü</strong> varsa ve tabanları aynıysa, taban değiştirmeyi tersten okuyup tek logaritma yaparsın. Tabanlar <strong>farklıysa</strong> hepsini ortak bir tabana taşırsın. Logaritma bir <strong>üsse</strong> çıkmışsa ya tabanı logaritmanın tabanının kuvveti olarak yazarsın ya da taban ile içeriyi yer değiştirirsin.</p>
+
+<p>Bu listeyi ezberlemen gerekmez; her maddenin gerekçesi, ilgili kuralın neyi neye çevirdiğidir. Çarpım içeride toplama dönüşür, dışarıdaki toplam içeride çarpıma dönüşür. Kural hangi yöne doğru okunursa ifade sadeleşiyorsa o yöne oku.</p>
+
+<h2 class="s">7. Bir logaritmayı verilen değerler cinsinden yazmak</h2>
+
+<p>Sınavın en sevdiği kalıplardan biri budur ve fikri basittir: istenen sayıyı, logaritması bilinen sayıların çarpımı, bölümü ve kuvvetleri olarak yaz; sonra kuralları uygula. log 2 = a ve log 3 = b verildiğinde elinde aslında üç veri vardır: 2, 3 ve kimsenin söylemediği 10. Onluk logaritmada log 10 = 1 bedavadır ve bu gizli veri olmadan 5'e ulaşamazsın.</p>
+
+<p>Birkaç örnekle alışalım. log 12 = log(2<sup>2</sup> · 3) = 2a + b. log 5 = log(10/2) = 1 − a; 5'i 2 ile 3'ün çarpımı ya da bölümü olarak yazamazsın ama 10'u 2'ye bölerek elde edersin. log 1,5 = log(3/2) = b − a. log 0,6 = log(6/10) = a + b − 1. Hepsinde ilk iş aynıdır: sayıyı 2, 3 ve 10 cinsinden yazmak.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> log 2 = a ve log 3 = b olduğuna göre log<sub>6</sub> 15 ifadesinin a ve b türünden eşiti nedir?</p>
+<p><strong>Adım 1.</strong> Verilenler onluk logaritma, istenen 6 tabanında. Önce 10 tabanına geç.</p>
+<span class="mat">log<sub>6</sub> 15 = <span class="kes"><span>log 15</span><span>log 6</span></span> <span class="g">(taban değiştirme, c = 10)</span></span>
+<p><strong>Adım 2.</strong> Payı çarpanlarına ayır.</p>
+<span class="mat">log 15 = log(3 · 5) = log 3 + log 5 <span class="g">(çarpım kuralı)</span></span>
+<p><strong>Adım 3.</strong> log 5'i verilenlerle yaz.</p>
+<span class="mat">log 5 = log <span class="kes"><span>10</span><span>2</span></span> = log 10 − log 2 = 1 − a <span class="g">(bölüm kuralı; log 10 = 1)</span></span>
+<span class="mat">log 15 = b + 1 − a <span class="g">(Adım 2'de yerine koy)</span></span>
+<p><strong>Adım 4.</strong> Paydayı yaz.</p>
+<span class="mat">log 6 = log(2 · 3) = a + b <span class="g">(çarpım kuralı)</span></span>
+<p><strong>Adım 5.</strong> Birleştir.</p>
+<span class="mat">log<sub>6</sub> 15 = <span class="kes"><span>1 − a + b</span><span>a + b</span></span> <span class="g">(pay bölü payda)</span></span>
+<p><strong>Sonuç:</strong> (1 − a + b) / (a + b). <strong>Kontrol yolu:</strong> a ≈ 0,301 ve b ≈ 0,477 koy: (1 − 0,301 + 0,477) / 0,778 ≈ 1,176 / 0,778 ≈ 1,51. Gerçekten 6<sup>1,5</sup> = 6√6 ≈ 14,7 ve 15 ondan biraz büyük; üs 1,5'ten biraz büyük olmalı. Tutuyor. Seçenekli bir soruda bu sayısal denetim, payla paydayı ters yazan seçeneği hemen eler: (a + b) / (1 − a + b) ≈ 0,66 olurdu ve 6<sup>0,66</sup> 15'e yakın bile değildir.</p></div>
+
+<p>Veri onluk logaritma değil de başka bir tabanda verilirse aynı fikri o tabanda uygula. log<sub>2</sub> 3 = a ise log<sub>6</sub> 24 = <span class="kes"><span>log<sub>2</sub> 24</span><span>log<sub>2</sub> 6</span></span> = <span class="kes"><span>log<sub>2</sub>(2<sup>3</sup> · 3)</span><span>log<sub>2</sub>(2 · 3)</span></span> = <span class="kes"><span>3 + a</span><span>1 + a</span></span>. Burada 2 tabanını seçtik, çünkü verilen logaritma o tabanda ve log<sub>2</sub> 2 = 1 bu sefer bedava veridir.</p>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>log 5'i 2 ve 3'ten yazmaya çalışıp takılmak ya da log 10 = 1'i unutmak.</strong> 5, 2'nin ve 3'ün çarpımlarından elde edilemez; tek yol 5 = 10/2'dir. Benzer biçimde log 25 = 2 log 5 = 2 − 2a, log 0,2 = log(2/10) = a − 1.</p>
+<p><strong>Çarpımın logaritmasını logaritmaların çarpımı yazmak.</strong> log 15 = log 3 · log 5 = b(1 − a) yazmak, kuralların en temel yanılgısıdır. Çarpım içerideyse dışarıda toplama döner; dışarıda çarpım görürsen ya zincir kuralı ya da taban değiştirme vardır.</p></div>
+
+<h2 class="s">8. Doğal logaritma ile işlemler</h2>
+
+<p>ln x = log<sub>e</sub> x ve e ≈ 2,718 (Parça 14). Bu parçadaki kuralların hiçbiri tabanın 10 olmasına dayanmadı; hepsi her taban için çıkarıldı. Bu yüzden ln için de aynen geçerlidir. Sınavda ln çoğunlukla e'nin kuvvetleriyle birlikte gelir ve iş, tanımı doğru okumaktır:</p>
+
+<span class="mat">ln e = 1, ln 1 = 0, ln e<sup>n</sup> = n <span class="g">(log<sub>a</sub> a = 1, log<sub>a</sub> 1 = 0, log<sub>a</sub> a<sup>n</sup> = n; a = e)</span></span>
+<span class="mat">e<sup>ln x</sup> = x <span class="g">(a<sup>log<sub>a</sub> x</sup> = x; x &gt; 0)</span></span>
+<span class="mat">ln(xy) = ln x + ln y, ln x<sup>n</sup> = n ln x, log<sub>a</sub> x = <span class="kes"><span>ln x</span><span>ln a</span></span> <span class="g">(aynı kurallar, taban e)</span></span>
+
+<p>Örnekler: ln e<sup>3</sup> + e<sup>ln 2</sup> = 3 + 2 = 5. ln(e<sup>2</sup> · √e) = ln e<sup>2</sup> + ln e<sup>1/2</sup> = 2 + ½ = 2,5. e<sup>2 ln 3</sup> ise dikkat ister: önce katsayıyı içeriye taşı, 2 ln 3 = ln 9; sonra e<sup>ln 9</sup> = 9. "e ile ln birbirini götürür" diye 2 · 3 = 6 yazmak yanlıştır; e<sup>ln x</sup> = x kuralı yalnızca üsteki ifade <strong>tam olarak</strong> ln x iken çalışır, önünde katsayı varken çalışmaz.</p>
+
+<h2 class="s">9. Sayı değeri hesaplama ve sadeleştirme</h2>
+
+<p>Karışık bir logaritmik ifadeyle karşılaştığında şu sırayı izle; sıranın nedeni, her adımın bir sonrakini mümkün kılmasıdır:</p>
+
+<p><strong>1)</strong> Tabanları ve içerileri asal çarpanlarına ayır; ortak asal varsa görünür hâle gelir. <strong>2)</strong> Tabanlar farklıysa ya kuvvet kuralıyla eşitle (log<sub>4</sub> → log<sub>2</sub>) ya da taban değiştirmeyle ortak tabana geç. <strong>3)</strong> Katsayıları üsse çıkar, toplamları ve farkları tek logaritmada birleştir. <strong>4)</strong> İçeride tabanın tam kuvvetini elde et ve log<sub>a</sub> a<sup>n</sup> = n ile bitir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> (a) log<sub>3</sub> 25 · log<sub>5</sub> 27 çarpımı kaçtır? (b) log<sub>2</sub>(log<sub>3</sub> 81) + log<sub>9</sub> 27 toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) İçerileri asal kuvvet olarak yaz ve üsleri öne indir.</p>
+<span class="mat">log<sub>3</sub> 25 = log<sub>3</sub> 5<sup>2</sup> = 2 log<sub>3</sub> 5 <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">log<sub>5</sub> 27 = log<sub>5</sub> 3<sup>3</sup> = 3 log<sub>5</sub> 3 <span class="g">(kuvvet kuralı)</span></span>
+<p><strong>Adım 2.</strong> Çarpımı düzenle.</p>
+<span class="mat">2 log<sub>3</sub> 5 · 3 log<sub>5</sub> 3 = 6 · (log<sub>3</sub> 5 · log<sub>5</sub> 3) <span class="g">(sayıları öne topla)</span></span>
+<p><strong>Adım 3.</strong> Parantezdeki iki logaritma birbirinin tersidir.</p>
+<span class="mat">log<sub>3</sub> 5 · log<sub>5</sub> 3 = 1 <span class="g">(log<sub>a</sub> b = 1 / log<sub>b</sub> a)</span></span>
+<span class="mat">sonuç: 6 · 1 = 6 <span class="g">(çarp)</span></span>
+<p><strong>Adım 4.</strong> (b) İçteki logaritmayı önce hesapla.</p>
+<span class="mat">log<sub>3</sub> 81 = log<sub>3</sub> 3<sup>4</sup> = 4 <span class="g">(81 = 3<sup>4</sup>)</span></span>
+<span class="mat">log<sub>2</sub>(log<sub>3</sub> 81) = log<sub>2</sub> 4 = 2 <span class="g">(4 = 2<sup>2</sup>)</span></span>
+<p><strong>Adım 5.</strong> İkinci terimde tabanın ve içerinin üssünü kullan.</p>
+<span class="mat">log<sub>9</sub> 27 = log<sub>3<sup>2</sup></sub> 3<sup>3</sup> = <span class="kes"><span>3</span><span>2</span></span> <span class="g">(içerinin üssü paya, tabanınki paydaya)</span></span>
+<span class="mat">2 + <span class="kes"><span>3</span><span>2</span></span> = <span class="kes"><span>7</span><span>2</span></span> <span class="g">(topla)</span></span>
+<p><strong>Sonuç:</strong> (a) 6, (b) 7/2. <strong>Kontrol yolu:</strong> (a)'da yaklaşık değerler: 3<sup>2</sup> = 9 ile 3<sup>3</sup> = 27 arasında kalan 25 için log<sub>3</sub> 25 ≈ 2,9; 5<sup>2</sup> = 25'ten biraz büyük 27 için log<sub>5</sub> 27 ≈ 2,05. Çarpım ≈ 5,9; 6'ya yakın. (b)'de 9<sup>3/2</sup> = 27 tanımla doğrulanır.</p></div>
+
+<h2 class="s">10. Logaritmaları sıralamak ve iki tam sayı arasına yerleştirmek</h2>
+
+<h3>Aynı taban: fonksiyonun artan ya da azalan oluşu</h3>
+
+<p>Parça 14'ten biliyorsun: taban 1'den büyükse y = log<sub>a</sub> x artandır, taban 0 ile 1 arasındaysa azalandır. Sıralamanın bütün mantığı buna dayanır. Aynı tabanda taban &gt; 1 ise içerisi büyük olanın logaritması büyüktür: log<sub>2</sub> 7 &gt; log<sub>2</sub> 5. Taban &lt; 1 ise yön döner: log<sub>1/3</sub> 7 &lt; log<sub>1/3</sub> 5.</p>
+
+<p>İşaret için kısa bir kural da buradan çıkar: taban ve içeri 1'in <strong>aynı tarafındaysa</strong> logaritma pozitif, <strong>farklı taraflarındaysa</strong> negatiftir. log<sub>3</sub> 7 &gt; 0 (ikisi de 1'den büyük), log<sub>0,5</sub> 0,2 &gt; 0 (ikisi de 1'den küçük), log<sub>3</sub> 0,5 &lt; 0 ve log<sub>0,5</sub> 3 &lt; 0 (farklı taraflarda). Nedeni: x = 1'de her logaritma 0'dır; artan bir fonksiyon 1'in sağında pozitif, solunda negatif olur; azalan fonksiyonda tersi.</p>
+
+<h3>Hangi iki tam sayı arasında?</h3>
+
+<p>log<sub>2</sub> 10'u hesaplayamazsın ama yerini bulabilirsin. 10'u tabanın ardışık iki kuvveti arasına sıkıştır: 2<sup>3</sup> = 8 &lt; 10 &lt; 16 = 2<sup>4</sup>. log<sub>2</sub> artan olduğu için sıra korunur: log<sub>2</sub> 8 &lt; log<sub>2</sub> 10 &lt; log<sub>2</sub> 16, yani 3 &lt; log<sub>2</sub> 10 &lt; 4.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p><strong>Bir logaritmayı iki tam sayı arasına yerleştirmek:</strong> İçeriyi tabanın ardışık iki tam kuvveti arasına sıkıştır: a<sup>k</sup> &lt; x &lt; a<sup>k+1</sup>. Taban 1'den büyükse k &lt; log<sub>a</sub> x &lt; k + 1 olur. Taban 1'den küçükse fonksiyon azalan olduğu için sıra döner; bunu en güvenli biçimde log<sub>1/a</sub> x = −log<sub>a</sub> x yazıp tabanı 1'den büyük yaparak hallet. Nedeni: artan bir fonksiyon eşitsizliğin yönünü korur.</p></div>
+
+<h3>Aynı içeri, farklı tabanlar</h3>
+
+<p>log<sub>2</sub> 5, log<sub>3</sub> 5 ve log<sub>4</sub> 5'i karşılaştır. Ters logaritma kuralıyla her birini log<sub>a</sub> 5 = 1 / log<sub>5</sub> a yaz. log<sub>5</sub> a, a büyüdükçe büyür; tersi ise küçülür. Demek ki içeri 1'den büyükken <strong>taban büyüdükçe logaritma küçülür</strong>: log<sub>2</sub> 5 &gt; log<sub>3</sub> 5 &gt; log<sub>4</sub> 5. Sezgisi de açık: 5'e ulaşmak için küçük tabanı daha büyük bir kuvvete yükseltmen gerekir.</p>
+
+<figure>
+<svg viewBox="0 0 400 300" role="img" aria-label="Koordinat düzleminde y eşittir log₂ x, y eşittir log₄ x ve y eşittir log yarım x eğrileri. Üçü de (1, 0) noktasından geçiyor. x eşittir 5 düşey doğrusu eğrileri a yaklaşık 2,32, b yaklaşık 1,16 ve c yaklaşık eksi 2,32 yüksekliklerinde kesiyor.">
+  <line class="sv-c" x1="30" y1="150" x2="392" y2="150" />
+  <line class="sv-c" x1="40" y1="290" x2="40" y2="14" />
+  <line class="sv-c" x1="36" y1="36" x2="44" y2="36" /><line class="sv-c" x1="36" y1="264" x2="44" y2="264" />
+  <line class="sv-c" x1="380" y1="146" x2="380" y2="154" />
+  <text class="sv-s" x="32" y="40" text-anchor="end">3</text>
+  <text class="sv-s" x="32" y="268" text-anchor="end">−3</text>
+  <text class="sv-s" x="380" y="168" text-anchor="middle">8</text>
+  <text class="sv-s" x="394" y="142" text-anchor="end">x</text>
+  <text class="sv-s" x="46" y="22">y</text>
+  <line class="sv-c" x1="252.5" y1="30" x2="252.5" y2="276" />
+  <text class="sv-s" x="252.5" y="24" text-anchor="middle">x = 5</text>
+  <polyline class="sv-cl" points="47.6,244.0 50.6,226.0 54.9,207.6 61.2,188.0 69.8,169.6 82.5,150.0 99.5,131.6 125.0,112.0 159.0,93.6 188.8,81.3 210.0,74.0 252.5,61.8 295.0,51.8 337.5,43.3 380.0,36.0" />
+  <polyline class="sv-c" points="43.8,216.0 45.1,208.1 47.6,197.0 50.6,188.0 54.9,178.8 61.2,169.0 69.8,159.8 82.5,150.0 99.5,140.8 125.0,131.0 159.0,121.8 188.8,115.7 210.0,112.0 252.5,105.9 295.0,100.9 337.5,96.7 380.0,93.0" />
+  <polyline class="sv-cl" points="47.6,56.0 50.6,74.0 54.9,92.4 61.2,112.0 69.8,130.4 82.5,150.0 99.5,168.4 125.0,188.0 159.0,206.4 188.8,218.7 210.0,226.0 252.5,238.2 295.0,248.2 337.5,256.7 380.0,264.0" />
+  <circle class="sv-a" cx="82.5" cy="150" r="4" />
+  <circle class="sv-a" cx="252.5" cy="61.8" r="4" />
+  <circle class="sv-a" cx="252.5" cy="105.9" r="4" />
+  <circle class="sv-a" cx="252.5" cy="238.2" r="4" />
+  <text class="sv-b" x="259" y="50">a</text>
+  <text class="sv-b" x="259" y="98">b</text>
+  <text class="sv-b" x="259" y="230">c</text>
+  <text class="sv-t" x="300" y="72">y = log₂ x</text>
+  <text class="sv-t" x="300" y="124">y = log₄ x</text>
+  <text class="sv-t" x="300" y="236">y = log½ x</text>
+</svg>
+<figcaption>Üç eğri de (1, 0) noktasından geçer, çünkü her tabanda log 1 = 0. x = 5 doğrusu üzerinde a = log₂ 5 ≈ 2,32, b = log₄ 5 ≈ 1,16 (tam a'nın yarısı, çünkü log₄ 5 = ½ log₂ 5) ve c = log½ 5 ≈ −2,32 (a'nın ters işaretlisi, çünkü log½ 5 = −log₂ 5). x &gt; 1 bölgesinde taban büyüdükçe eğri yatıklaşır; tabanı 1'den küçük eğri x ekseninin altına iner. Ölçekli çizim.</figcaption>
+</figure>
+
+<p>İçeri 0 ile 1 arasındaysa sıra tersine döner: log<sub>2</sub> 0,5 = −1, log<sub>4</sub> 0,5 = −½; taban büyüyünce logaritma sıfıra yaklaşır, yani büyür. Şekilde x &lt; 1 bölgesine bakarsan log<sub>4</sub> eğrisinin log<sub>2</sub> eğrisinin üstünde kaldığını görürsün.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> a = log<sub>2</sub> 9, b = log<sub>3</sub> 20, c = log<sub>4</sub> 5, d = log<sub>0,5</sub> 3 sayılarını küçükten büyüğe sıralayınız.</p>
+<p><strong>Adım 1.</strong> a'yı iki tam sayı arasına yerleştir.</p>
+<span class="mat">2<sup>3</sup> = 8 &lt; 9 &lt; 16 = 2<sup>4</sup> ⇒ 3 &lt; a &lt; 4 <span class="g">(taban 2 &gt; 1, sıra korunur)</span></span>
+<p><strong>Adım 2.</strong> b için aynı iş.</p>
+<span class="mat">3<sup>2</sup> = 9 &lt; 20 &lt; 27 = 3<sup>3</sup> ⇒ 2 &lt; b &lt; 3 <span class="g">(taban 3 &gt; 1)</span></span>
+<p><strong>Adım 3.</strong> c için.</p>
+<span class="mat">4<sup>1</sup> = 4 &lt; 5 &lt; 16 = 4<sup>2</sup> ⇒ 1 &lt; c &lt; 2 <span class="g">(taban 4 &gt; 1)</span></span>
+<p><strong>Adım 4.</strong> d'nin tabanı 1'den küçük; önce tabanı 1'den büyük yap.</p>
+<span class="mat">d = log<sub>2<sup>−1</sup></sub> 3 = −log<sub>2</sub> 3 <span class="g">(0,5 = 2<sup>−1</sup>; tabanın üssü paydaya)</span></span>
+<span class="mat">2 &lt; 3 &lt; 4 ⇒ 1 &lt; log<sub>2</sub> 3 &lt; 2 ⇒ −2 &lt; d &lt; −1 <span class="g">(eksiyle çarpınca yön döner)</span></span>
+<p><strong>Sonuç:</strong> d &lt; c &lt; b &lt; a. Tam sayı aralıkları çakışmadığı için daha ince hesaba gerek kalmadı. <strong>Kontrol yolu:</strong> d'nin işaretini kısa kuralla da gör: taban 0,5 ile içeri 3, 1'in farklı taraflarında; logaritma negatif olmalı. Öbür üçünde taban ve içeri 1'in aynı tarafında; hepsi pozitif.</p></div>
+
+<p><strong>Tam sayılar ayırmıyorsa ara değer seç.</strong> log<sub>2</sub> 3 ile log<sub>3</sub> 5'in ikisi de 1 ile 2 arasındadır. Ortadaki 3/2'yi dene: 2<sup>3/2</sup> = 2√2 ≈ 2,83 &lt; 3 olduğundan log<sub>2</sub> 3 &gt; 3/2; 3<sup>3/2</sup> = 3√3 ≈ 5,20 &gt; 5 olduğundan log<sub>3</sub> 5 &lt; 3/2. Demek ki log<sub>2</sub> 3 &gt; log<sub>3</sub> 5. Ara değeri, kuvvetini kolay hesaplayabileceğin bir kesir olarak seç (1/2, 3/2 gibi).</p>
+
+<h2 class="s">11. Bir sayının basamak sayısı</h2>
+
+<p>Girişteki soruya dönelim. Önce basamak sayısı ile 10'un kuvvetleri arasındaki bağı kur. En küçük iki basamaklı sayı 10 = 10<sup>1</sup>, en küçük üç basamaklı sayı 100 = 10<sup>2</sup>, en küçük dört basamaklı sayı 1000 = 10<sup>3</sup>. Genel olarak 10<sup>k</sup>, (k + 1) basamaklı sayıların en küçüğüdür; 10<sup>k+1</sup> ise bir sonraki basamak sayısının ilk sayısıdır. Demek ki:</p>
+
+<span class="mat">N, (k + 1) basamaklı ⇔ 10<sup>k</sup> ≤ N &lt; 10<sup>k+1</sup> <span class="g">(basamak sayısının tanımı)</span></span>
+<span class="mat">⇔ k ≤ log N &lt; k + 1 <span class="g">(log artan; sıra korunur; log 10<sup>k</sup> = k)</span></span>
+
+<p>Yani log N'nin tam kısmı k ise N'nin (k + 1) basamağı vardır. Eski kitaplarda logaritmanın tam kısmına <strong>karakteristik</strong>, ondalık kısmına mantis denir; terimleri bilmen gerekmez ama karşına çıkarsa ne olduğunu tanı.</p>
+
+<figure>
+<svg viewBox="0 0 400 140" role="img" aria-label="Sayı doğrusu üzerinde eşit aralıklarla 1, 10, 100, 1000, 10000. Altlarında logaritmaları 0, 1, 2, 3, 4. Aralıklar 1, 2, 3 ve 4 basamaklı sayılar olarak işaretli. 2024 sayısı 1000 ile 10000 arasında, logaritması yaklaşık 3,31.">
+  <line class="sv-c" x1="30" y1="70" x2="385" y2="70" />
+  <line class="sv-c" x1="40" y1="64" x2="40" y2="76" /><line class="sv-c" x1="120" y1="64" x2="120" y2="76" /><line class="sv-c" x1="200" y1="64" x2="200" y2="76" /><line class="sv-c" x1="280" y1="64" x2="280" y2="76" /><line class="sv-c" x1="360" y1="64" x2="360" y2="76" />
+  <text class="sv-t" x="40" y="58" text-anchor="middle">1</text><text class="sv-t" x="120" y="58" text-anchor="middle">10</text><text class="sv-t" x="200" y="58" text-anchor="middle">100</text><text class="sv-t" x="280" y="58" text-anchor="middle">1000</text><text class="sv-t" x="360" y="58" text-anchor="middle">10000</text>
+  <text class="sv-s" x="40" y="90" text-anchor="middle">log 0</text><text class="sv-s" x="120" y="90" text-anchor="middle">1</text><text class="sv-s" x="200" y="90" text-anchor="middle">2</text><text class="sv-s" x="280" y="90" text-anchor="middle">3</text><text class="sv-s" x="360" y="90" text-anchor="middle">4</text>
+  <rect class="sv-k" x="44" y="102" width="72" height="26" rx="6" /><rect class="sv-k" x="124" y="102" width="72" height="26" rx="6" /><rect class="sv-k" x="204" y="102" width="72" height="26" rx="6" /><rect class="sv-m" x="284" y="102" width="72" height="26" rx="6" />
+  <text class="sv-s" x="80" y="120" text-anchor="middle">1 basamak</text><text class="sv-s" x="160" y="120" text-anchor="middle">2 basamak</text><text class="sv-s" x="240" y="120" text-anchor="middle">3 basamak</text><text class="sv-s" x="320" y="120" text-anchor="middle">4 basamak</text>
+  <circle class="sv-a" cx="304.5" cy="70" r="5" />
+  <text class="sv-b" x="304.5" y="36" text-anchor="middle">2024 (log ≈ 3,31)</text>
+</svg>
+<figcaption>Logaritmik ölçekte 10'un ardışık kuvvetleri eşit aralıklıdır ve her aralık bir basamak sayısına karşılık gelir. 2024'ün logaritması 3 ile 4 arasında: tam kısmı 3, basamak sayısı 3 + 1 = 4.</figcaption>
+</figure>
+
+<div class="tablo"><table>
+<tr><th>N'nin aralığı</th><th>log N'nin aralığı</th><th>Tam kısım</th><th>Basamak sayısı</th></tr>
+<tr><td>1 ≤ N &lt; 10</td><td>0 ≤ log N &lt; 1</td><td>0</td><td>1</td></tr>
+<tr><td>10 ≤ N &lt; 100</td><td>1 ≤ log N &lt; 2</td><td>1</td><td>2</td></tr>
+<tr><td>100 ≤ N &lt; 1000</td><td>2 ≤ log N &lt; 3</td><td>2</td><td>3</td></tr>
+<tr><td>10<sup>k</sup> ≤ N &lt; 10<sup>k+1</sup></td><td>k ≤ log N &lt; k + 1</td><td>k</td><td>k + 1</td></tr>
+</table></div>
+
+<div class="kural"><span class="et">Kural</span>
+<p><strong>Basamak sayısı:</strong> N ≥ 1 bir tam sayı ise <strong>basamak sayısı = (log N'nin tam kısmı) + 1</strong>. Nedeni: 10<sup>k</sup> en küçük (k + 1) basamaklı sayıdır ve log artan olduğu için N'yi 10'un ardışık kuvvetleri arasına sıkıştırmak, log N'yi ardışık tam sayılar arasına sıkıştırmakla aynıdır. Kuvvet biçimindeki sayılarda log N'yi kuvvet kuralıyla hesaplarsın: log 2<sup>100</sup> = 100 log 2.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> log 2 ≈ 0,30103 ve log 3 ≈ 0,477 alınırsa (a) 2<sup>100</sup>, (b) 3<sup>40</sup> sayısı kaç basamaklıdır? (c) 4<sup>15</sup> · 5<sup>32</sup> kaç basamaklıdır?</p>
+<p><strong>Adım 1.</strong> (a) Logaritmayı kuvvet kuralıyla hesapla.</p>
+<span class="mat">log 2<sup>100</sup> = 100 · log 2 ≈ 100 · 0,30103 = 30,103 <span class="g">(üs öne iner)</span></span>
+<p><strong>Adım 2.</strong> Tam kısmı oku ve 1 ekle.</p>
+<span class="mat">30 ≤ 30,103 &lt; 31 ⇒ 10<sup>30</sup> ≤ 2<sup>100</sup> &lt; 10<sup>31</sup> <span class="g">(tam kısım 30)</span></span>
+<span class="mat">basamak sayısı = 30 + 1 = 31 <span class="g">(kural)</span></span>
+<p><strong>Adım 3.</strong> (b) Aynı yol.</p>
+<span class="mat">log 3<sup>40</sup> = 40 · 0,477 = 19,08 ⇒ tam kısım 19 ⇒ 20 basamak <span class="g">(kuvvet kuralı, kural)</span></span>
+<p><strong>Adım 4.</strong> (c) Burada logaritmaya gerek yok; 2 ile 5'i eşleyip 10 oluştur.</p>
+<span class="mat">4<sup>15</sup> · 5<sup>32</sup> = 2<sup>30</sup> · 5<sup>32</sup> = (2 · 5)<sup>30</sup> · 5<sup>2</sup> <span class="g">(4 = 2<sup>2</sup>; eşit üslü 2 ile 5'i birleştir)</span></span>
+<span class="mat">= 25 · 10<sup>30</sup> <span class="g">(25'in arkasına 30 sıfır)</span></span>
+<span class="mat">basamak sayısı = 2 + 30 = 32 <span class="g">(25'in iki basamağı + 30 sıfır)</span></span>
+<p><strong>Sonuç:</strong> (a) 31, (b) 20, (c) 32. <strong>Kontrol yolu</strong> (a) için: 2<sup>10</sup> = 1024 ≈ 10<sup>3</sup> olduğundan 2<sup>100</sup> = (2<sup>10</sup>)<sup>10</sup> ≈ 10<sup>30</sup>; gerçek değer bundan biraz büyük (1,024<sup>10</sup> ≈ 1,27 katı), yani 1,27 · 10<sup>30</sup> civarında: 31 basamak. <strong>Hızlı yol</strong> (c) için: içinde 2 ve 5 kuvvetleri olan çarpımlarda önce 10 oluştur; geriye kalanın basamaklarını say, sıfırları ekle.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>1 eklemeyi unutmak.</strong> log N ≈ 30,1 görünce "30 basamak" demek. Denetimi en küçük örnekle yap: log 100 = 2 ama 100 üç basamaklıdır. Logaritma kaç basamak olduğunu değil, 1'in arkasına kaç sıfır geldiğini sayar.</p>
+<p><strong>Tabanı asallarına ayırmadan hesaplamak.</strong> 8<sup>20</sup> için log 8 yerine log 2 kullanıp 20 · 0,301 = 6,02 bulmak. Önce 8<sup>20</sup> = 2<sup>60</sup> yaz: 60 · 0,301 = 18,06, yani 19 basamak.</p></div>
+
+<p>Yaklaşık değerle çalıştığın için bir uyarı: logaritmanın ondalık kısmı 0'a ya da 1'e çok yakın çıkarsa (ör. 29,9999), verilen yaklaşık değerin hassasiyeti kararı değiştirebilir. Sınav soruları bu duruma düşmeyecek biçimde kurulur; yine de ondalık kısım 0,01'den küçükse verilen değerin kaç basamak doğru olduğuna bir göz at.</p>
+
+<h2 class="s">12. Toplamı çarpıma çevirmek: teleskopik toplam</h2>
+
+<p>Logaritmanın en güçlü yanı, toplamı çarpıma çevirmesidir: log x<sub>1</sub> + log x<sub>2</sub> + … + log x<sub>n</sub> = log(x<sub>1</sub> · x<sub>2</sub> · … · x<sub>n</sub>). Bunun neden işe yaradığını görmek için şunu düşün: toplamda terimler birbirini kendiliğinden götürmez; ama çarpımda kesirler zincirleme sadeleşebilir. Her terimin payı bir sonrakinin paydasıyla gidiyorsa, uzun bir çarpımdan geriye yalnızca ilk payda ile son pay kalır. Bu sadeleşmeye, iç içe geçip kısalan dürbün borularına benzetilerek <strong>teleskopik</strong> denir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> log(1 + <span class="kes"><span>1</span><span>1</span></span>) + log(1 + <span class="kes"><span>1</span><span>2</span></span>) + log(1 + <span class="kes"><span>1</span><span>3</span></span>) + … + log(1 + <span class="kes"><span>1</span><span>99</span></span>) toplamı kaçtır?</p>
+<p><strong>Adım 1.</strong> Genel terimi tek kesir yap.</p>
+<span class="mat">1 + <span class="kes"><span>1</span><span>n</span></span> = <span class="kes"><span>n + 1</span><span>n</span></span> <span class="g">(paydaları eşitle)</span></span>
+<p><strong>Adım 2.</strong> Terimleri açık yaz.</p>
+<span class="mat">log <span class="kes"><span>2</span><span>1</span></span> + log <span class="kes"><span>3</span><span>2</span></span> + log <span class="kes"><span>4</span><span>3</span></span> + … + log <span class="kes"><span>100</span><span>99</span></span> <span class="g">(n = 1'den 99'a)</span></span>
+<p><strong>Adım 3.</strong> Toplamı tek logaritmada çarpıma çevir.</p>
+<span class="mat">= log(<span class="kes"><span>2</span><span>1</span></span> · <span class="kes"><span>3</span><span>2</span></span> · <span class="kes"><span>4</span><span>3</span></span> · … · <span class="kes"><span>100</span><span>99</span></span>) <span class="g">(çarpım kuralı, ters yönde)</span></span>
+<p><strong>Adım 4.</strong> Her pay bir sonraki paydayla sadeleşir; ilk payda 1 ve son pay 100 kalır.</p>
+<span class="mat">= log <span class="kes"><span>100</span><span>1</span></span> = log 100 <span class="g">(teleskopik sadeleşme)</span></span>
+<span class="mat">= 2 <span class="g">(100 = 10<sup>2</sup>)</span></span>
+<p><strong>Sonuç:</strong> 2. <strong>İkinci bakış (kontrol yolu):</strong> her terimi bölüm kuralıyla açabilirsin: log((n + 1)/n) = log(n + 1) − log n. Toplam (log 2 − log 1) + (log 3 − log 2) + … + (log 100 − log 99) olur; her artı bir sonraki eksiyle gider ve log 100 − log 1 = 2 − 0 = 2 kalır. Bir de büyüklük denetimi: 99 terimin ilki log 2 ≈ 0,3, sonuncusu çok küçük (≈ 0,004); toplamın 2 gibi ılımlı bir sayı çıkması makul.</p></div>
+
+<p>Bu kalıp sınavda farklı kılıklarda gelir: log<sub>3</sub>(1 + 1/1) + … + log<sub>3</sub>(1 + 1/80) = log<sub>3</sub> 81 = 4 ya da log(1 − 1/4) + log(1 − 1/9) + … gibi. Her seferinde aynı iki adım: genel terimi tek kesre çevir, toplamı çarpım yapıp sadeleşmeyi izle. Kapsam notu: toplam sembolü (Σ) 2018 programında yer almadığı için toplamları burada açık yazdık; bazı kaynaklarda aynı soruyu Σ ile görebilirsin.</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 14'e:</strong> Bütün kurallar tanımın (a<sup>x</sup> = b ⇔ x = log<sub>a</sub> b) ve tanım koşullarının üzerine kuruldu; sıralamada kullandığımız artan-azalan bilgisi de oradan geldi.</p>
+<p><strong>Parça 16'ya:</strong> Logaritmik denklemlerde "kurallarla tek logaritmaya indirme", üstel denklemlerde "iki yanın logaritmasını alma" bu parçanın kurallarıyla yapılır. Kuvvet kuralının log x<sup>2</sup> = 2 log|x| inceliği orada kök kaybı ve yabancı kök biçiminde karşına çıkacak. Bileşik faiz, yarı ömür, Richter ölçeği gibi modellerde bilinmeyen süreyi bulmak da taban değiştirmeye dayanır.</p>
+<p><strong>Parça 18'e:</strong> Geometrik dizinin terimlerinin logaritması aritmetik dizi oluşturur (2, 4, 8, 16 → 1, 2, 3, 4), çünkü çarpımla ilerleyen dizi logaritmada toplamla ilerler. Bu parçanın ilk kuralının dizilerdeki görüntüsüdür.</p>
+<p><strong>Mat Parça 10'a:</strong> Her kural bir üs kuralının ters yüzüdür; üs kuralı tablosunu bilen, logaritma tablosunu yeniden kurabilir.</p>
+<p><strong>Öbür derslere:</strong> Kimya Parça 20'de pH = −log[H<sup>+</sup>] tanımıyla çalışacaksın ve orada da log 2 ≈ 0,3 gibi verilen değerlerle hesap yapılır. [H<sup>+</sup>] = 2 · 10<sup>−3</sup> M ise pH = −(log 2 + log 10<sup>−3</sup>) = −(0,3 − 3) ≈ 2,7: çarpım kuralı ve kuvvet kuralı birlikte. Derişim 10 kat artınca pH'nin tam 1 azalması da log(10x) = 1 + log x kuralıdır.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç. Bu sorular ileriki günlerde "günlük soru" ekranında da karşına çıkacak.</p>
+
+<details><summary>log<sub>a</sub>(xy) = log<sub>a</sub> x + log<sub>a</sub> y kuralını nasıl çıkarırsın?</summary><p>log<sub>a</sub> x = m ve log<sub>a</sub> y = n dersem tanımdan x = a<sup>m</sup> ve y = a<sup>n</sup> olur. Çarpımları a<sup>m</sup> · a<sup>n</sup> = a<sup>m+n</sup>'dir; tanımı geri okuyunca log<sub>a</sub>(xy) = m + n çıkar. Yani kural, aynı tabanlı kuvvetler çarpılırken üslerin toplanmasından gelir.</p></details>
+<details><summary>log(x + y) için bir kural var mı? log x<sup>2</sup> ile (log x)<sup>2</sup> aynı şey mi?</summary><p>Toplamın logaritması için kural yoktur; içerideki toplamı ancak çarpanlarına ayırıp çarpıma çevirerek açabilirim. log x<sup>2</sup> = 2 log x (x &gt; 0 iken) karenin logaritmasıdır; (log x)<sup>2</sup> ise logaritmanın karesidir. x = 1000 için biri 6, öbürü 9 eder.</p></details>
+<details><summary>Taban değiştirme kuralı nereden gelir ve hangi iki sonucu verir?</summary><p>log<sub>a</sub> b = t ise a<sup>t</sup> = b; iki yanın c tabanında logaritmasını alınca t · log<sub>c</sub> a = log<sub>c</sub> b, yani t = log<sub>c</sub> b / log<sub>c</sub> a. c = b alınca log<sub>a</sub> b = 1 / log<sub>b</sub> a çıkar; iki logaritmayı ortak tabana çevirip çarpınca da log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c zincir kuralı çıkar.</p></details>
+<details><summary>log<sub>8</sub> 32 kaçtır ve hangi kuralla bulunur?</summary><p>8 = 2<sup>3</sup> ve 32 = 2<sup>5</sup>; tabanın ve içerinin üssü kuralıyla log<sub>2<sup>3</sup></sub> 2<sup>5</sup> = 5/3. İçerinin üssü paya, tabanınki paydaya iner. Denetim: 8<sup>5/3</sup> = (<sup>3</sup>√8)<sup>5</sup> = 2<sup>5</sup> = 32.</p></details>
+<details><summary>Bir sayının kaç basamaklı olduğunu logaritmayla nasıl bulursun? Neden 1 eklenir?</summary><p>log N'yi hesaplar, tam kısmını alır ve 1 eklerim. 10<sup>k</sup> en küçük (k + 1) basamaklı sayıdır: log 100 = 2 ama 100 üç basamaklıdır. Logaritma 1'in arkasındaki sıfır sayısını verir, basamak sayısı ondan bir fazladır.</p></details>
+<details><summary>log<sub>2</sub> 5, log<sub>4</sub> 5 ve log<sub>1/2</sub> 5 nasıl sıralanır? Gerekçesi nedir?</summary><p>log<sub>1/2</sub> 5 &lt; log<sub>4</sub> 5 &lt; log<sub>2</sub> 5. log<sub>4</sub> 5 = ½ log<sub>2</sub> 5 (tabanın üssü paydaya) ve log<sub>1/2</sub> 5 = −log<sub>2</sub> 5 (taban 1'den küçük, içeri 1'den büyük: negatif). İçeri 1'den büyükken taban büyüdükçe logaritma küçülür.</p></details>
+<details><summary>e<sup>2 ln 3</sup> kaçtır? Neden 6 değildir?</summary><p>Önce katsayıyı içeriye taşırım: 2 ln 3 = ln 9; sonra e<sup>ln 9</sup> = 9. e<sup>ln x</sup> = x kuralı yalnızca üs tam olarak ln x iken çalışır; önünde katsayı varken e ile ln "birbirini götürmez".</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Kaynak:</strong> her logaritma kuralı bir üs kuralının ters yüzüdür. Unutursan: logaritmaya ad ver, üslü yaz, üs kuralını uygula, geri oku.</li>
+<li><strong>Üç temel kural:</strong> log<sub>a</sub>(xy) = log<sub>a</sub> x + log<sub>a</sub> y; log<sub>a</sub>(x/y) = log<sub>a</sub> x − log<sub>a</sub> y; log<sub>a</sub> x<sup>n</sup> = n log<sub>a</sub> x. Tersi: log<sub>a</sub>(1/y) = −log<sub>a</sub> y.</li>
+<li><strong>Yok olan kurallar:</strong> log(x + y), (log x)<sup>2</sup> = log x<sup>2</sup>, log x · log y = log(xy), log x / log y = log(x/y) yanlıştır. log x<sup>2</sup> = 2 log|x|.</li>
+<li><strong>Taban ve içerinin üssü:</strong> log<sub>a<sup>m</sup></sub> b<sup>n</sup> = (n/m) log<sub>a</sub> b. log<sub>1/a</sub> x = −log<sub>a</sub> x; log<sub>√a</sub> x = 2 log<sub>a</sub> x.</li>
+<li><strong>Taban değiştirme:</strong> log<sub>a</sub> b = log<sub>c</sub> b / log<sub>c</sub> a. Ters: log<sub>a</sub> b = 1 / log<sub>b</sub> a. Zincir: log<sub>a</sub> b · log<sub>b</sub> c = log<sub>a</sub> c.</li>
+<li><strong>Üste çıkan logaritma:</strong> a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup>; a<sup>log<sub>a</sub> b</sup> = b; e<sup>ln x</sup> = x (katsayıyı önce içeri al).</li>
+<li><strong>Verilen değerler cinsinden:</strong> sayıyı 2, 3 ve 10 cinsinden yaz; log 5 = 1 − log 2. Farklı tabanı önce verilen tabana çevir.</li>
+<li><strong>Sadeleştirme sırası:</strong> asallara ayır → tabanları eşitle → katsayıları üsse, toplamları tek logaritmaya → log<sub>a</sub> a<sup>n</sup> = n.</li>
+<li><strong>Sıralama:</strong> taban &gt; 1 artan, 0 &lt; taban &lt; 1 azalan. İçeriyi tabanın ardışık kuvvetleri arasına sıkıştır. İçeri &gt; 1 iken taban büyüdükçe logaritma küçülür. İşaret: taban ve içeri 1'in aynı tarafında ise pozitif.</li>
+<li><strong>Basamak sayısı:</strong> (log N'nin tam kısmı) + 1. 2 ile 5 kuvvetlerinde önce 10 oluştur.</li>
+<li><strong>Teleskopik:</strong> logaritmaların toplamı = çarpımın logaritması; log((n + 1)/n) terimleri sadeleşir, ilk payda ile son pay kalır.</li>
+<li><strong>Kontrol:</strong> sonucu tanıma geri koy (8<sup>5/3</sup> = 32 mi?), yaklaşık değerlerle büyüklük denetimi yap.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-15">
+<h3>Quiz 15</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">log<sub>2</sub> 24 − log<sub>2</sub> 3 + log<sub>2</sub> 4 ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li>1</li><li>7</li><li>5</li><li>32</li><li>log<sub>2</sub> 25</li></ul>
+<div class="coz"><p>Soldan sağa: log<sub>2</sub> 24 − log<sub>2</sub> 3 = log<sub>2</sub> 8 = 3, üstüne log<sub>2</sub> 4 = 2 eklenince 5. Tek logaritmaya indirerek de olur: log<sub>2</sub>(24 · 4 / 3) = log<sub>2</sub> 32 = 5. 1, eksiyi sonraki bütün terimlere yaymaktır: log<sub>2</sub>(24 / (3 · 4)) = log<sub>2</sub> 2; oysa yalnızca 3 paydaya gider. 7, log<sub>2</sub> 4 yerine 4 yazmaktır. 32, içeriyi bulup logaritmayı almayı unutmaktır. log<sub>2</sub> 25 ise logaritmanın içinde toplama-çıkarma yapmaktır (24 − 3 + 4); toplamın logaritması için kural yoktur.</p></div></li>
+
+<li data-c="A"><p class="q">log 2 = a ve log 3 = b olduğuna göre log 45 ifadesinin a ve b türünden eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>2b − a + 1</li><li>2b(1 − a)</li><li>b<sup>2</sup> − a + 1</li><li>2b + a + 1</li><li>2b − a</li></ul>
+<div class="coz"><p>45 = 9 · 5 = 3<sup>2</sup> · (10/2). Kurallarla: log 45 = 2 log 3 + log 10 − log 2 = 2b + 1 − a. B, çarpımın logaritmasını logaritmaların çarpımı sanmaktır (log 9 · log 5). C, log 9'u (log 3)<sup>2</sup> sanmaktır; kuvvet kuralı üssü öne katsayı olarak indirir. D, log(10/2)'yi log 10 + log 2 diye bölümü toplama çevirmektir. E ise log 10 = 1 terimini unutup log 5 = −log 2 yazmaktır.</p></div></li>
+
+<li data-c="D"><p class="q">log<sub>√2</sub> 8 ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>3</span><span>2</span></span></li><li>3</li><li>4</li><li>6</li><li><span class="kes"><span>1</span><span>6</span></span></li></ul>
+<div class="coz"><p>√2 = 2<sup>1/2</sup> ve 8 = 2<sup>3</sup>. Tabanın ve içerinin üssü kuralı: log<sub>2<sup>1/2</sup></sub> 2<sup>3</sup> = 3 / (1/2) = 6. Denetim: (√2)<sup>6</sup> = 2<sup>3</sup> = 8. 3/2, tabanın üssünü paydaya değil paya koymaktır (3 · ½). 3, kökü görmezden gelip log<sub>2</sub> 8 hesaplamaktır. 4, (√2)<sup>4</sup> = 4 değerini 8 sanmaktır. 1/6 ise oranı tamamen ters kurmaktır.</p></div></li>
+
+<li data-c="B"><p class="q">log<sub>2</sub> 3 · log<sub>3</sub> 5 · log<sub>5</sub> 16 çarpımının değeri kaçtır?</p>
+<ul class="sec"><li>16</li><li>4</li><li>2</li><li>8</li><li>1</li></ul>
+<div class="coz"><p>Her logaritmanın içerisi bir sonrakinin tabanı: zincir kuralı uygulanır ve ortadaki halkalar düşer, log<sub>2</sub> 16 kalır. 16 = 2<sup>4</sup> olduğu için sonuç 4. Ortak tabana çevirerek de görülür: (log 3 / log 2)(log 5 / log 3)(log 16 / log 5) = log 16 / log 2. 16, son içeriyi bulup logaritmayı almayı unutmaktır. 1, "hepsi birbirini götürür" diye düşünmektir; giden yalnızca ortadaki sayılardır. 8 ve 2, son adımda log<sub>2</sub> 16'yı yanlış hesaplamaktan çıkar: 8, 16'yı 2'ye bölmek; 2 ise tabanı 4 sanıp log<sub>4</sub> 16 hesaplamaktır.</p></div></li>
+
+<li data-c="E"><p class="q">3<sup>log<sub>9</sub> 16</sup> ifadesinin değeri kaçtır?</p>
+<ul class="sec"><li>16</li><li>8</li><li>2</li><li>256</li><li>4</li></ul>
+<div class="coz"><p>Taban ile içeriyi yer değiştir: 3<sup>log<sub>9</sub> 16</sup> = 16<sup>log<sub>9</sub> 3</sup>; log<sub>9</sub> 3 = ½ olduğundan 16<sup>1/2</sup> = 4. Başka yol: 3 = 9<sup>1/2</sup> yazınca (9<sup>log<sub>9</sub> 16</sup>)<sup>1/2</sup> = 16<sup>1/2</sup> = 4. 16, 3 ile 9'u aynı taban sanıp a<sup>log<sub>a</sub> b</sup> = b kuralını uygulamaktır. 256, 3'ü 9<sup>1/2</sup> yerine 9<sup>2</sup> gibi düşünüp kare almaktır. 8, ½ üssünü çarpan sanıp 16'yı ikiye bölmektir. 2 ise ½ üssünü iki kez uygulamaktır (16<sup>1/4</sup>).</p></div></li>
+
+<li data-c="A"><p class="q">a = log<sub>2</sub> 5, b = log<sub>4</sub> 5, c = log<sub>1/2</sub> 5 olduğuna göre aşağıdaki sıralamalardan hangisi doğrudur?</p>
+<ul class="sec"><li>c &lt; b &lt; a</li><li>c &lt; a &lt; b</li><li>a &lt; b &lt; c</li><li>b &lt; c &lt; a</li><li>b &lt; a &lt; c</li></ul>
+<div class="coz"><p>Hepsini 2 tabanına çevir: b = log<sub>2<sup>2</sup></sub> 5 = ½ log<sub>2</sub> 5 = a/2 ve c = log<sub>2<sup>−1</sup></sub> 5 = −log<sub>2</sub> 5 = −a. 4 &lt; 5 &lt; 8 olduğundan 2 &lt; a &lt; 3; demek ki b pozitif ve a'dan küçük, c negatif: c &lt; b &lt; a. B, "taban büyüdükçe logaritma büyür" sanmaktır; içeri 1'den büyükken tersi doğrudur. C sıralamayı tamamen ters kurmaktır. D ve E, c'nin işaretini kaçırmaktır: taban 1/2 ile içeri 5, 1'in farklı taraflarında olduğundan c negatiftir.</p></div></li>
+
+<li data-c="C"><p class="q">log 2 ≈ 0,301 alındığına göre 8<sup>20</sup> sayısı kaç basamaklıdır?</p>
+<ul class="sec"><li>18</li><li>20</li><li>19</li><li>60</li><li>7</li></ul>
+<div class="coz"><p>8<sup>20</sup> = 2<sup>60</sup>; log 2<sup>60</sup> = 60 · 0,301 = 18,06. Tam kısım 18, basamak sayısı 18 + 1 = 19. 18, 1 eklemeyi unutmaktır; denetim için log 100 = 2 ama 100'ün üç basamaklı olduğunu hatırla. 20, 18,06'yı önce yukarı yuvarlayıp sonra bir de 1 eklemektir. 60 üssü basamak sayısı sanmaktır. 7 ise 8 = 2<sup>3</sup> dönüşümünü unutup log 8 yerine log 2 kullanmaktır (20 · 0,301 = 6,02).</p></div></li>
+
+<li data-c="D"><p class="q">log<sub>2</sub> 3 = a olduğuna göre log<sub>12</sub> 18 ifadesinin a türünden eşiti aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>2 + a</span><span>1 + 2a</span></span></li><li><span class="kes"><span>1 + a</span><span>2 + a</span></span></li><li>a − 1</li><li><span class="kes"><span>1 + 2a</span><span>2 + a</span></span></li><li><span class="kes"><span>1 + 2a</span><span>2a</span></span></li></ul>
+<div class="coz"><p>Verilen 2 tabanında olduğu için 2 tabanına geç: log<sub>12</sub> 18 = log<sub>2</sub> 18 / log<sub>2</sub> 12. 18 = 2 · 3<sup>2</sup> ⇒ log<sub>2</sub> 18 = 1 + 2a; 12 = 2<sup>2</sup> · 3 ⇒ log<sub>2</sub> 12 = 2 + a. Sonuç (1 + 2a)/(2 + a); a ≈ 1,585 için ≈ 1,16 ve 12<sup>1,16</sup> ≈ 18, tutuyor. A, taban değiştirmede eski tabanı paya koymaktır. B, log<sub>2</sub> 9'u 2a yerine a almaktır. C, logaritmaların bölümünü bölümün logaritması sanmaktır: log<sub>2</sub>(18/12) = log<sub>2</sub>(3/2) = a − 1. E ise log<sub>2</sub> 12'yi log<sub>2</sub> 4 · log<sub>2</sub> 3 = 2a diye çarpım yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-1"><p class="q">f(x) = (a − 2)x<sup>2</sup> + 3x + b − 1 fonksiyonu tek fonksiyon olduğuna göre a + b toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>3</li><li>1</li><li>−1</li><li>−3</li></ul>
+<div class="coz"><p>Tek fonksiyonda f(−x) = −f(x) her x için sağlanmalıdır; bu, polinomda yalnızca tek dereceli terimler kalmasıyla mümkündür. Çift dereceli terimler (x<sup>2</sup>'li terim ve sabit terim) sıfır olmalı: a − 2 = 0 ve b − 1 = 0, yani a = 2, b = 1 ve a + b = 3. Kısa denetim: tek fonksiyonda f(0) = 0 olur, buradan b − 1 = 0. 2, sabit terimi b sanıp b = 0 almaktır. 1, b − 1 = 0'ı b = −1 diye çözmek; −1, a − 2 = 0'ı a = −2 diye çözmek; −3 ise iki işaret hatasının birleşimidir.</p></div></li>
+
+<li data-c="E" data-k="ileri-2"><p class="q">f(x) = 2x − 1 ve g(x) = 3x + k fonksiyonları için f∘g = g∘f olduğuna göre k kaçtır?</p>
+<ul class="sec"><li>2</li><li>0</li><li>−4</li><li>1</li><li>−2</li></ul>
+<div class="coz"><p>(f∘g)(x) = f(3x + k) = 2(3x + k) − 1 = 6x + 2k − 1. (g∘f)(x) = g(2x − 1) = 3(2x − 1) + k = 6x − 3 + k. Eşitlik için sabit terimler eşit olmalı: 2k − 1 = k − 3, yani k = −2. 2, son adımda işaret hatasıdır. 0, g(f(x))'te −1'i 3 ile çarpmayı unutmaktır (6x − 1 + k). 1, −3'ü tamamen kaybetmektir (6x + k). −4 ise −1'i karşıya geçirirken işaretini değiştirmemektir.</p></div></li>
+
+<li data-c="A" data-k="ileri-3"><p class="q">|x| + |y| = 3 eşitliğini sağlayan (x, y) noktalarının analitik düzlemde oluşturduğu kapalı şeklin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>18</li><li>9</li><li>36</li><li>12</li><li>6</li></ul>
+<div class="coz"><p>Her bölgede mutlak değer açılınca bir doğru parçası çıkar; köşeler (3, 0), (0, 3), (−3, 0), (0, −3). Şekil köşegenleri eksenler üzerinde olan bir karedir; köşegenler 6 birimdir ve kare alanı köşegenler çarpımının yarısıdır: 6 · 6 / 2 = 18 (ya da kenar 3√2, alan 18). 9, kenarı 3 sanmaktır. 36, köşegeni kenar sanmaktır. 12, kenarı 3 sanıp çevreyi hesaplamaktır. 6 ise köşegen uzunluğudur, alan değil.</p></div></li>
+
+<li data-c="C" data-k="ileri-4"><p class="q">y = f(x) fonksiyonunun grafiği (4, −3) noktasından geçmektedir. Buna göre y = 2f(x + 1) − 1 fonksiyonunun grafiği aşağıdaki noktalardan hangisinden kesinlikle geçer?</p>
+<ul class="sec"><li>(5, −7)</li><li>(3, −8)</li><li>(3, −7)</li><li>(5, −8)</li><li>(4, −7)</li></ul>
+<div class="coz"><p>f(x + 1) grafiği 1 birim sola kayar: x = 3 için içeri 3 + 1 = 4 olur. Bu noktada y = 2f(4) − 1 = 2 · (−3) − 1 = −7. Nokta (3, −7). (5, −7), yatay ötelemenin yönünü ters almaktır; "x + 1" eski değeri yakalamak için x'in 1 küçük olmasını ister. (3, −8), düşey işlemlerin sırasını ters uygulamaktır: önce 1 çıkarıp sonra 2 ile çarpmak, 2(−3 − 1). (5, −8) iki hatanın birleşimi, (4, −7) ise yatay ötelemeyi unutmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-5"><p class="q">f(x) = x<sup>2</sup> − 4x + 1 fonksiyonunun [3, 5] aralığındaki en küçük değeri kaçtır?</p>
+<ul class="sec"><li>−3</li><li>1</li><li>6</li><li>−4</li><li>−2</li></ul>
+<div class="coz"><p>Tepe noktasının apsisi r = −b/2a = 2; bu değer [3, 5] aralığının dışında, solunda. Kollar yukarı olduğundan parabol x = 2'nin sağında artandır; aralıkta en küçük değer sol uçta: f(3) = 9 − 12 + 1 = −2. −3, tepe değeri f(2)'dir; tepe aralıkta olmadığı için alınamaz. 6, f(5), yani en büyük değerdir. 1, sabit terimdir. −4 ise f(2)'yi hesaplarken +1'i unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-7"><p class="q">Her x gerçek sayısı için x<sup>2</sup> − 2x + m &gt; 0 eşitsizliği sağlandığına göre m'nin değer aralığı aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>m &lt; 1</li><li>m &gt; 1</li><li>m ≥ 1</li><li>m &gt; −1</li><li>0 &lt; m &lt; 1</li></ul>
+<div class="coz"><p>İkinci dereceden ifadenin her x için pozitif olması için a &gt; 0 ve Δ &lt; 0 gerekir: parabol yukarı açık ve x eksenini hiç kesmiyor. a = 1 &gt; 0; Δ = 4 − 4m &lt; 0 ⇒ m &gt; 1. C'deki m = 1 durumunda ifade (x − 1)<sup>2</sup> olur ve x = 1'de sıfırdır; "&gt; 0" sağlanmaz, eşitlik dahil edilemez. A, Δ &gt; 0 koşulunu yazmaktır (iki kök, ifade bir aralıkta negatif). D, Δ'yı b<sup>2</sup> + 4ac diye yanlış yazmaktan çıkar. E ise iki yanlış koşulun karışımıdır.</p></div></li>
+
+<li data-c="D" data-k="ileri-8"><p class="q"><span class="kes"><span>47π</span><span>6</span></span> radyan ölçülü açının esas ölçüsü aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>5π</span><span>6</span></span></li><li><span class="kes"><span>23π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>6</span></span></li><li><span class="kes"><span>11π</span><span>6</span></span></li><li><span class="kes"><span>7π</span><span>6</span></span></li></ul>
+<div class="coz"><p>Esas ölçü [0, 2π) aralığındadır ve 2π = 12π/6. 47'yi 12'ye böl: 47 = 3 · 12 + 11, kalan 11. Yani 47π/6 − 3 · 2π = 11π/6. 5π/6, 2π'nin değil π'nin katlarını atmaktır (47π/6 − 7π); π kadar dönme açıyı karşı noktaya götürür. 23π/6, yalnızca bir kez 4π çıkarıp durmaktır; 23π/6 hâlâ 2π'den büyüktür. π/6, 11π/6 açısının −π/6 ile aynı noktaya düştüğünü görüp eksi işaretini atmaktır; −π/6 ile π/6 x eksenine göre simetrik iki farklı noktadır. 7π/6 ise 12'nin katı olmayan 40'ı çıkarmaktan (47 − 40) doğan hesap kaymasıdır.</p></div></li>
+
+<li data-c="A" data-k="ileri-9"><p class="q">sin x + cos x = <span class="kes"><span>1</span><span>2</span></span> olduğuna göre sin x · cos x çarpımı kaçtır?</p>
+<ul class="sec"><li>−<span class="kes"><span>3</span><span>8</span></span></li><li><span class="kes"><span>3</span><span>8</span></span></li><li>−<span class="kes"><span>3</span><span>4</span></span></li><li><span class="kes"><span>1</span><span>8</span></span></li><li>−<span class="kes"><span>1</span><span>4</span></span></li></ul>
+<div class="coz"><p>İki yanın karesini al: sin<sup>2</sup>x + 2 sin x cos x + cos<sup>2</sup>x = 1/4. sin<sup>2</sup>x + cos<sup>2</sup>x = 1 olduğundan 1 + 2 sin x cos x = 1/4, buradan 2 sin x cos x = −3/4 ve sin x cos x = −3/8. 3/8, işaret hatasıdır. −3/4, 2'ye bölmeyi unutmaktır. 1/8, açılımdaki 1'i (sin<sup>2</sup> + cos<sup>2</sup>) unutup 1/4'ü 2'ye bölmektir. −1/4 ise karesini almadan 1 + 2 sin x cos x = 1/2 yazmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-10"><p class="q">arcsin(sin <span class="kes"><span>5π</span><span>6</span></span>) ifadesinin değeri aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li><span class="kes"><span>5π</span><span>6</span></span></li><li>−<span class="kes"><span>π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>6</span></span></li><li><span class="kes"><span>7π</span><span>6</span></span></li><li><span class="kes"><span>π</span><span>3</span></span></li></ul>
+<div class="coz"><p>Önce içeriyi hesapla: sin(5π/6) = sin(π − π/6) = 1/2. arcsin(1/2), görüntü kümesi [−π/2, π/2] olan ve sinüsü 1/2 olan açıdır: π/6. 5π/6, arcsin ile sin'i "birbirini götürür" diye sadeleştirmektir; bu yalnızca açı [−π/2, π/2] içindeyken doğrudur ve 5π/6 bu aralıkta değildir. −π/6, sin(5π/6)'nın işaretini negatif sanmaktır. 7π/6, sinüsü −1/2 olan açıdır. π/3 ise sinüsü değil kosinüsü 1/2 olan açıdır.</p></div></li>
+
+<li data-c="E" data-k="ileri-11"><p class="q">cos a = <span class="kes"><span>1</span><span>3</span></span> olduğuna göre cos 2a kaçtır?</p>
+<ul class="sec"><li><span class="kes"><span>7</span><span>9</span></span></li><li><span class="kes"><span>2</span><span>3</span></span></li><li><span class="kes"><span>1</span><span>9</span></span></li><li><span class="kes"><span>2</span><span>9</span></span></li><li>−<span class="kes"><span>7</span><span>9</span></span></li></ul>
+<div class="coz"><p>Kosinüs verildiği için cos 2a = 2cos<sup>2</sup>a − 1 biçimini seç: 2 · 1/9 − 1 = 2/9 − 1 = −7/9. 7/9, 1 − 2sin<sup>2</sup>a biçimine sin yerine cos koymaktır (1 − 2/9). 2/3, cos 2a'yı 2 cos a sanmaktır; iki kat açının kosinüsü kosinüsün iki katı değildir. 1/9 cos<sup>2</sup>a'nın kendisi, 2/9 ise formüldeki −1'i unutmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-12"><p class="q">Kenar uzunlukları 3, 5 ve 7 birim olan bir üçgenin en büyük açısı kaç derecedir?</p>
+<ul class="sec"><li>90</li><li>120</li><li>150</li><li>84</li><li>135</li></ul>
+<div class="coz"><p>En büyük açı en uzun kenarın (7) karşısındadır. Kosinüs teoremi: cos θ = (3<sup>2</sup> + 5<sup>2</sup> − 7<sup>2</sup>) / (2 · 3 · 5) = (9 + 25 − 49) / 30 = −15/30 = −1/2, θ = 120°. 90, türü denetlemeden dik açı sanmaktır; 49 &gt; 34 olduğu için açı geniştir. 84, 180°'yi kenarlar oranında (7/15) paylaştırmaktır; açılar kenarlarla orantılı değildir. 150 kosinüsü −√3/2, 135 ise −√2/2 olan açıdır.</p></div></li>
+
+<li data-c="D" data-k="ileri-12"><p class="q">ABC üçgeninde |AB| = 6 birim, |AC| = 8 birim ve m(BAC) = 30° olduğuna göre ABC üçgeninin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>24</li><li>12√3</li><li>48</li><li>12</li><li>24√3</li></ul>
+<div class="coz"><p>İki kenar ve aralarındaki açı verildiğinde alan = ½ · |AB| · |AC| · sin A = ½ · 6 · 8 · sin 30° = 24 · ½ = 12. 24, baştaki ½'yi unutmaktır. 12√3, sin 30° yerine cos 30° = √3/2 kullanmaktır. 48 kenarların çarpımıdır; 24√3 ise iki hatanın birleşimidir (½'yi unutmak ve cos 30° kullanmak).</p></div></li>
+
+<li data-c="A" data-k="ileri-13"><p class="q">[0, 2π) aralığında 2 sin x − 1 = 0 denklemini sağlayan x değerlerinin toplamı kaçtır?</p>
+<ul class="sec"><li>π</li><li><span class="kes"><span>π</span><span>6</span></span></li><li>2π</li><li><span class="kes"><span>4π</span><span>3</span></span></li><li><span class="kes"><span>5π</span><span>6</span></span></li></ul>
+<div class="coz"><p>sin x = 1/2. Sinüs, birim çemberde y koordinatıdır; y = 1/2 doğrusu çemberi birinci ve ikinci bölgede iki noktada keser: x = π/6 ve x = π − π/6 = 5π/6. Toplam π. π/6 ve 5π/6, kökleri tek tek vermektir. 2π, ikinci kökü kosinüsteki gibi −α + 2π = 11π/6 almaktır; sinüste ikinci aile π − α'dır. 4π/3 ise ikinci kökü π + α = 7π/6 sanmaktır; o açının sinüsü −1/2'dir.</p></div></li>
+
+<li data-c="E" data-k="ileri-13"><p class="q">[0, 2π) aralığında 2cos<sup>2</sup>x − cos x − 1 = 0 denkleminin kaç farklı çözümü vardır?</p>
+<ul class="sec"><li>2</li><li>4</li><li>1</li><li>5</li><li>3</li></ul>
+<div class="coz"><p>cos x = t dersen 2t<sup>2</sup> − t − 1 = 0, yani (2t + 1)(t − 1) = 0: t = 1 ya da t = −1/2. cos x = 1 ⇒ x = 0; cos x = −1/2 ⇒ x = 2π/3 ve 4π/3. Toplam üç çözüm. 2, t için bulunan iki değeri çözüm sayısı sanmaktır; her t değeri birden çok açı verebilir. 4, cos x = 1 için hem 0'ı hem 2π'yi saymaktır; 2π aralığa dahil değildir. 1 ve 5 sayım hatalarıdır.</p></div></li>
+
+<li data-c="B" data-k="ileri-14"><p class="q">f(x) = log<sub>3</sub>(x + 2) fonksiyonunun tersi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>f<sup>−1</sup>(x) = 3<sup>x</sup> + 2</li><li>f<sup>−1</sup>(x) = 3<sup>x</sup> − 2</li><li>f<sup>−1</sup>(x) = 3<sup>x − 2</sup></li><li>f<sup>−1</sup>(x) = x<sup>3</sup> − 2</li><li>f<sup>−1</sup>(x) = 3<sup>x + 2</sup></li></ul>
+<div class="coz"><p>y = log<sub>3</sub>(x + 2) yaz ve x'i yalnız bırak: tanımdan x + 2 = 3<sup>y</sup>, buradan x = 3<sup>y</sup> − 2. Değişkenlerin adını değiştirince f<sup>−1</sup>(x) = 3<sup>x</sup> − 2. Denetim: f(f<sup>−1</sup>(x)) = log<sub>3</sub>(3<sup>x</sup> − 2 + 2) = x. A, 2'yi karşıya geçirirken işaretini değiştirmemektir. C ve E, 2'yi üssün içine taşımaktır; 2 logaritmanın içindeydi, üslü yazınca üssün dışında kalır. D ise taban ile üssü karıştırmaktır (x<sup>3</sup> üstel değil kuvvet fonksiyonudur).</p></div></li>
+
+<li data-c="C" data-k="ileri-14"><p class="q">f(x) = log<sub>(x − 1)</sub>(5 − x) fonksiyonunun en geniş tanım kümesinde kaç tane tam sayı vardır?</p>
+<ul class="sec"><li>3</li><li>4</li><li>2</li><li>1</li><li>5</li></ul>
+<div class="coz"><p>Üç koşul birlikte: taban pozitif (x − 1 &gt; 0 ⇒ x &gt; 1), taban 1'den farklı (x − 1 ≠ 1 ⇒ x ≠ 2), içeri pozitif (5 − x &gt; 0 ⇒ x &lt; 5). Tanım kümesi (1, 5) − {2}; tam sayılar 3 ve 4, yani 2 tane. 3, x ≠ 2 koşulunu unutmaktır (2, 3, 4); x = 2'de taban 1 olur ve 1'in hiçbir kuvveti 3'e eşit olamaz. 4, aralığın uçlarını dahil etmektir (1, 3, 4, 5); x = 1'de taban 0, x = 5'te içeri 0 olur, ikisi de yasak. 1 ve 5 sayım hatalarıdır.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-14">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-15">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-16">Sonraki parça: üstel ve logaritmik denklemler</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"logaritma kuralları ispatı konu anlatımı AYT"</li>
+  <li>"logaritma taban değiştirme zincir kuralı soru çözümü"</li>
+  <li>"log 2 = a log 3 = b türünden yazma soruları"</li>
+  <li>"logaritma basamak sayısı ve sıralama soruları"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 15. satıra göre yazıldı (2018 Ortaöğretim Matematik Öğretim Programı, 12. sınıf üstel ve logaritmik fonksiyonlar ünitesi). Bu oturumda bir MEB ders kitabıyla satır satır karşılaştırmadım; kapsam dosyasındaki genel not geçerlidir: programın kazanım metni doğrudan denetlenemedi.</li>
+  <li>Bütün sayısal sonuçlar (altı çözümlü örnek, metindeki ara örnekler, 24 quiz sorusunun cevapları ve çeldiricilerin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; basamak sayıları 2<sup>100</sup>, 3<sup>40</sup>, 8<sup>20</sup> ve 4<sup>15</sup> · 5<sup>32</sup> sayılarının tam değerleri yazdırılarak sayıldı. Sıralama şekli (log₂, log₄, log½ eğrileri) hesaplanan noktalarla ölçekli çizildi.</li>
+  <li>a<sup>log<sub>b</sub> c</sup> = c<sup>log<sub>b</sub> a</sup> kuralı, kapsam listesinde açıkça yer aldığı için ayrı başlık olarak verildi; bazı ders kitaplarında ayrı kural olarak değil, alıştırma içinde geçebilir.</li>
+  <li>Logaritmanın 17. yüzyıl başında hesap kolaylığı için ortaya çıktığına dair tarihî not genel bilgidir; tarih ve kişi adı vermedim. "Karakteristik" ve "mantis" terimleri eski kaynaklarda kullanılır; güncel programda bu adların istendiğinden emin değilim, yalnızca tanıtıldı.</li>
+  <li>Tekrar sorularında Parça 13 ve 14 için, bu parçalar yazılırken metinleri henüz arşivde bulunmadığından, kapsam listesindeki satırlar esas alındı.</li>
+  <li>Kimya bağlantısındaki pH örneği yalnızca logaritma kurallarını göstermek içindir; pH kavramının ayrıntısı kimya Parça 20'nin konusudur.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>

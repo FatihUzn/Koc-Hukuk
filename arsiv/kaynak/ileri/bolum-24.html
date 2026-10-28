@@ -1,0 +1,673 @@
+<article class="chapter ders" id="c-ileri-24">
+<div class="prose">
+<div class="eyebrow">Matematik · Parça 24 · Türev 3</div>
+<h1>Türev 3: teğet ve normal doğruları</h1>
+<p class="time">Okuma ve çözme yaklaşık 60 dakika · Yazım 28 Ekim 2026</p>
+
+<div class="ask"><div class="t">Bu parçanın sorusu</div><p>Parça 6'da y = x<sup>2</sup> − 3x + 5 parabolüne teğet olan doğruyu bulmak için iki denklemi eşitleyip Δ = 0 yazdın. Şimdi aynı soruyu y = x<sup>3</sup> − 3x eğrisi ya da y = 6/x eğrisi için sor: eşitleyince üçüncü dereceden ya da kesirli bir denklem çıkar ve Δ diye bir şey yoktur. Üstelik y = x<sup>3</sup> − 3x eğrisinin x = 1'deki teğeti eğriyi başka bir noktada keser bile; "tek noktada değen doğru" tanımı da çöker. O hâlde bir eğrinin bir noktadaki teğeti tam olarak nedir ve denklemini her eğri için işleyen tek bir yolla nasıl yazarsın?</p></div>
+<p class="hint">Önce bilmen gerekenler: Parça 22 (türevin limit tanımı, f′(a)'nın teğetin eğimi olarak yorumu, türev alma kuralları), Parça 23 (zincir kuralı; (f · g)′(a) ve (f∘g)′(a) hesabı), Parça 6 (doğru ile parabolün ortak çözüm denklemi ve Δ), geo Parça 18–19 (eğim, m = tan α, y − y<sub>1</sub> = m(x − x<sub>1</sub>), paralel ve dik doğruların eğimleri). Kâğıt kalem yanında olsun; her örnekte önce değme noktasını yaz.</p>
+
+<h2 class="s">Önce büyük resim: sınav bu konudan ne ister?</h2>
+
+<p>Parça 22'de türevi iki biçimde yorumladın: anlık değişim hızı ve teğetin eğimi. Bu parça ikinci yorumun parçasıdır. Fikir tek cümlelik: <strong>bir doğruyu yazmak için bir nokta ve bir eğim yeter; teğette nokta eğrinin üzerindeki (a, f(a)), eğim de f′(a)'dır.</strong> Sınavın bu konudan sorduğu her şey bu iki bilginin bir kısmı verilip öbürünün istenmesidir.</p>
+
+<p>AYT'de teğet soruları şu kalıplarda gelir: bir noktadaki teğetin ya da normalin denklemi; teğetin yatay olduğu noktalar; belirli bir doğruya paralel ya da dik teğetin değme noktası; teğetin x ekseniyle yaptığı açı; teğetin eksenlerle oluşturduğu üçgenin alanı; "y = mx + n doğrusu eğriye teğet ise n kaçtır" türü parametre soruları; eğrinin dışındaki bir noktadan çizilen teğetler; iki eğrinin bir noktada teğet olması; grafiğe çizilmiş bir teğetten f(a) ve f′(a)'yı okuyup çarpım ya da zincir kuralıyla bir türev hesaplamak. Hepsinin çözüm iskeleti aynıdır: <strong>değme noktasını adlandır, iki koşulu yaz (nokta eğri üzerinde, eğim türeve eşit), bilinmeyenleri çöz.</strong></p>
+
+<p>Bu parçanın sonunda iki bağlantı daha kuracağız: parabol için Parça 6'daki Δ yöntemiyle türev yönteminin karşılaştırması ve teğetin "eğriye en iyi uyan doğru" olmasından doğan doğrusal yaklaşım fikri. Teğetin yatay olduğu noktalar ise bir sonraki parçada (Parça 25) fonksiyonun tepe ve çukur noktalarının adayları olacak.</p>
+
+<h2 class="s">1. Teğet doğrusu: kirişin son durumu</h2>
+
+<p>Geometride çembere teğet "çembere tek noktada değen doğru" diye tanımlanır (geo Parça 20). Bu tanım çember için doğrudur ama genel bir eğri için iki yönden yanlış çıkar. Birincisi, x = 4 gibi düşey bir doğru her parabolü tek bir noktada keser ama teğet değildir; Parça 6'da bunu gördün. İkincisi, bir eğrinin teğeti eğriyi başka bir yerde kesebilir: y = x<sup>3</sup> − 3x eğrisinin (1, −2) noktasındaki teğeti y = −2 doğrusudur ve bu doğru eğriyi x = −2'de bir daha keser (x<sup>3</sup> − 3x = −2 denklemi (x − 1)<sup>2</sup>(x + 2) = 0 biçimine ayrılır). Demek ki "kaç noktada buluştuğu" teğetliğin ölçütü olamaz.</p>
+
+<p>Doğru ölçüt Parça 22'deki resimdir. Eğri üzerinde P(a, f(a)) noktasını ve yakınında bir Q(a + h, f(a + h)) noktasını al. PQ kirişinin eğimi <span class="kes"><span>f(a + h) − f(a)</span><span>h</span></span>'dir (Parça 1'deki ortalama değişim hızı). Q eğri üzerinde P'ye yaklaştıkça kiriş P etrafında döner ve bir son duruma yerleşir. Bu son durumdaki doğru teğettir; eğimi de kiriş eğimlerinin limiti, yani f′(a)'dır. Teğet, eğrinin P'nin hemen yakınındaki "yönünü" gösteren doğrudur: P'ye yeterince yaklaşıp büyüteçle baktığında eğri ile teğet birbirinden ayırt edilemez hâle gelir.</p>
+
+<div class="kural"><span class="et">Tanım</span>
+<p>f, x = a'da türevlenebilir olsun. Eğrinin P(a, f(a)) noktasındaki <strong>teğeti</strong>, P'den geçen ve eğimi f′(a) olan doğrudur. P'ye <strong>değme noktası</strong> denir.</p>
+<p><strong>Neden böyle?</strong> P'den geçen kirişlerin eğimleri, ikinci nokta P'ye yaklaştıkça f′(a)'ya yaklaşır; teğet bu kirişlerin son durumudur. Teğetliği "kaç noktada kesiştiği" değil, P'nin hemen yakınında eğriyle aynı yönde gitmesi belirler.</p></div>
+
+<p>Bu tanımdan iki sonuç hemen çıkar. f, x = a'da türevlenebilir değilse (Parça 22'deki sivri uç, kırılma noktası) orada tek bir teğet yoktur: soldan ve sağdan kirişler farklı doğrulara yerleşir. Eğimin sonsuza gittiği yerde ise (y = ³√x eğrisinin orijini gibi) kirişler düşey bir doğruya yerleşir; bu <strong>dikey teğettir</strong>, denklemi x = a biçimindedir ve eğimi tanımsızdır. AYT soruları neredeyse her zaman türevin var olduğu noktalarda kurulur; dikey teğet yalnızca normal doğrusunda bir özel durum olarak karşına çıkacak.</p>
+
+<h2 class="s">2. Teğet denkleminin yazılışı</h2>
+
+<p>Eğimi m olan ve (x<sub>1</sub>, y<sub>1</sub>) noktasından geçen doğrunun denklemini geo Parça 18'de kurdun: doğru üzerindeki başka her (x, y) noktası için (y − y<sub>1</sub>)/(x − x<sub>1</sub>) = m olmalı, paydayı karşıya atınca y − y<sub>1</sub> = m(x − x<sub>1</sub>). Teğette nokta (a, f(a)), eğim f′(a) olduğuna göre:</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">y − f(a) = f′(a) · (x − a)</span>
+<p>Kullanım sırası her zaman aynıdır: (1) değme noktasının apsisi a'yı belirle, (2) ordinatı f(a)'yı hesapla, (3) f′(x)'i bul ve f′(a)'yı hesapla, (4) formüle koy ve istenen biçime düzenle (y = mx + n ya da ax + by + c = 0).</p>
+<p><strong>Neden?</strong> Doğrunun nokta-eğim denkleminde nokta yerine değme noktası, eğim yerine türev yazılmıştır; başka hiçbir şey yoktur.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 1</span>
+<p><strong>Soru:</strong> f(x) = x<sup>2</sup> − 4x + 5 eğrisinin x = 3 apsisli noktasındaki teğetinin ve normalinin denklemlerini yazın.</p>
+<p><strong>Adım 1.</strong> Değme noktasının ordinatını bul.</p>
+<span class="mat">f(3) = 9 − 12 + 5 = 2 <span class="g">(değme noktası P(3, 2))</span></span>
+<p><strong>Adım 2.</strong> Türevi al ve a = 3'te hesapla.</p>
+<span class="mat">f′(x) = 2x − 4 <span class="g">(polinomun türevi)</span></span>
+<span class="mat">f′(3) = 6 − 4 = 2 <span class="g">(teğetin eğimi)</span></span>
+<p><strong>Adım 3.</strong> Teğet denklemi.</p>
+<span class="mat">y − 2 = 2(x − 3) <span class="g">(nokta-eğim biçimi)</span></span>
+<span class="mat">y = 2x − 4 <span class="g">(parantezi aç, 2'yi karşıya at)</span></span>
+<p><strong>Adım 4.</strong> Normalin eğimi, teğetin eğiminin ters işaretlisinin çarpmaya göre tersidir (Bölüm 3'te gerekçesi).</p>
+<span class="mat">m<sub>N</sub> = −<span class="kes"><span>1</span><span>2</span></span> <span class="g">(2 · (−1/2) = −1)</span></span>
+<span class="mat">y − 2 = −<span class="kes"><span>1</span><span>2</span></span>(x − 3) <span class="g">(aynı noktadan geçer)</span></span>
+<span class="mat">2y − 4 = −x + 3 <span class="g">(iki yanı 2 ile çarp)</span></span>
+<span class="mat">x + 2y − 7 = 0 <span class="g">(hepsini bir yana topla)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> İki doğru da P'den geçmeli: 2 · 3 − 4 = 2 ve 3 + 2 · 2 − 7 = 0. Teğet eğriye yakın değerler vermeli: x = 3,1'de eğri 9,61 − 12,4 + 5 = 2,21, teğet 2 · 3,1 − 4 = 2,2. Fark yalnızca 0,01.</p>
+<p><strong>Sonuç:</strong> Teğet y = 2x − 4, normal x + 2y − 7 = 0.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 340" role="img" aria-label="y eşittir x kare eksi 4x artı 5 parabolü, P(3, 2) noktasındaki teğeti ve normali. Teğet y eşittir 2x eksi 4 doğrusudur ve x eksenini x eşittir 2'de, eğim açısı alfa ile keser. Normal, P noktasında teğete dik olan x artı 2y eksi 7 eşittir 0 doğrusudur.">
+  <line class="sv-c" x1="15" y1="290" x2="402" y2="290" />
+  <line class="sv-c" x1="60" y1="330.5" x2="60" y2="6.5" />
+  <line class="sv-c" x1="105" y1="287" x2="105" y2="293" />
+  <line class="sv-c" x1="150" y1="287" x2="150" y2="293" />
+  <line class="sv-c" x1="195" y1="287" x2="195" y2="293" />
+  <line class="sv-c" x1="240" y1="287" x2="240" y2="293" />
+  <line class="sv-c" x1="285" y1="287" x2="285" y2="293" />
+  <line class="sv-c" x1="330" y1="287" x2="330" y2="293" />
+  <line class="sv-c" x1="375" y1="287" x2="375" y2="293" />
+  <line class="sv-c" x1="57" y1="245" x2="63" y2="245" />
+  <line class="sv-c" x1="57" y1="200" x2="63" y2="200" />
+  <line class="sv-c" x1="57" y1="155" x2="63" y2="155" />
+  <line class="sv-c" x1="57" y1="110" x2="63" y2="110" />
+  <line class="sv-c" x1="57" y1="65" x2="63" y2="65" />
+  <line class="sv-c" x1="57" y1="20" x2="63" y2="20" />
+  <text class="sv-s" x="105" y="306" text-anchor="middle">1</text>
+  <text class="sv-s" x="150" y="306" text-anchor="middle">2</text>
+  <text class="sv-s" x="195" y="306" text-anchor="middle">3</text>
+  <text class="sv-s" x="240" y="306" text-anchor="middle">4</text>
+  <text class="sv-s" x="285" y="306" text-anchor="middle">5</text>
+  <text class="sv-s" x="330" y="306" text-anchor="middle">6</text>
+  <text class="sv-s" x="375" y="306" text-anchor="middle">7</text>
+  <text class="sv-s" x="54" y="249" text-anchor="end">1</text>
+  <text class="sv-s" x="54" y="204" text-anchor="end">2</text>
+  <text class="sv-s" x="54" y="159" text-anchor="end">3</text>
+  <text class="sv-s" x="54" y="114" text-anchor="end">4</text>
+  <text class="sv-s" x="54" y="69" text-anchor="end">5</text>
+  <text class="sv-s" x="54" y="24" text-anchor="end">6</text>
+  <text class="sv-s" x="400" y="284" text-anchor="end">x</text>
+  <text class="sv-s" x="66" y="16.5" text-anchor="start">y</text>
+  <polyline class="sv-cl" points="46.5,6.9 49.1,18.8 51.7,30.3 54.3,41.5 56.9,52.4 59.5,63 62.1,73.3 64.7,83.3 67.3,93 69.9,102.4 72.5,111.5 75.1,120.3 77.7,128.8 80.3,137 82.9,144.9 85.5,152.5 88.1,159.8 90.7,166.8 93.3,173.5 95.9,179.9 98.5,186 101.1,191.8 103.7,197.3 106.3,202.5 108.9,207.4 111.5,212 114.1,216.3 116.7,220.3 119.3,224 121.9,227.4 124.5,230.5 127.1,233.3 129.7,235.8 132.3,238 134.9,239.9 137.5,241.5 140.1,242.8 142.7,243.8 145.3,244.5 147.9,244.9 150.5,245 153,244.8 155.6,244.3 158.2,243.5 160.8,242.4 163.4,241 166,239.3 168.6,237.3 171.2,235 173.8,232.4 176.4,229.5 179,226.3 181.6,222.8 184.2,219 186.8,214.9 189.4,210.4 192,205.7 194.6,200.7 197.2,195.4 199.8,189.8 202.4,183.9 205,177.7 207.6,171.2 210.2,164.4 212.8,157.3 215.4,149.9 218,142.2 220.6,134.2 223.2,125.9 225.8,117.3 228.4,108.4 231,99.2 233.6,89.7 236.2,79.8 238.8,69.7 241.4,59.3 244,48.6 246.6,37.6 249.2,26.3 251.8,14.7" />
+  <line class="sv-c" x1="132" y1="326" x2="291.8" y2="6.5" />
+  <line class="sv-c" x1="39.8" y1="122.4" x2="399.8" y2="302.4" />
+  <polyline class="sv-c" points="199.9,190.2 190.1,185.2 185.2,195.1" />
+  <path class="sv-c" d="M170 290 A20 20 0 0 0 158.9 272.1" />
+  <text class="sv-b" x="174" y="282" text-anchor="start">α</text>
+  <circle class="sv-a" cx="195" cy="200" r="4.5" />
+  <circle class="sv-m" cx="150" cy="245" r="3.5" />
+  <text class="sv-b" x="207" y="216" text-anchor="start">P(3, 2)</text>
+  <text class="sv-s" x="142" y="261" text-anchor="end">T(2, 1)</text>
+  <text class="sv-t" x="150" y="51.5" text-anchor="middle">y = x² − 4x + 5</text>
+  <text class="sv-b" x="296.2" y="33.5" text-anchor="start">teğet</text>
+  <text class="sv-s" x="296.2" y="50.5" text-anchor="start">y = 2x − 4</text>
+  <text class="sv-b" x="271.5" y="213.5" text-anchor="start">normal</text>
+  <text class="sv-s" x="271.5" y="229.5" text-anchor="start">x + 2y − 7 = 0</text>
+</svg>
+<figcaption>Örnek 1 gerçek ölçüyle (iki eksende birim uzunluk eşit, bu yüzden dik açı dik görünür). Teğet P(3, 2)'de eğriye yaslanır ve x eksenini x = 2'de keser; orada x ekseniyle yaptığı açı α için tan α = 2 = f′(3). Normal, P'de teğete diktir. Tepe noktası T(2, 1)'de teğet yatay olurdu, çünkü f′(2) = 0.</figcaption>
+</figure>
+
+<h2 class="s">3. Normal doğrusu</h2>
+
+<p>Eğrinin bir noktasındaki normali, o noktada teğete dik olan doğrudur. Fizikte bir yüzeye çarpan ışığın yansıma açısı normale göre ölçülür; bir eğri üzerinde hareket eden cisme etki eden "yola dik" kuvvet normal doğrultusundadır. Matematikte normali yazmak için tek yeni bilgi, dik doğruların eğimleri arasındaki bağıntıdır.</p>
+
+<p>Bu bağıntının nedeni şöyle görülür. Eğimi m olan bir doğru boyunca 1 birim sağa gidince m birim yukarı çıkarsın; doğrunun yönünü (1, m) adımı gösterir. Bu adımı 90° döndürürsen (−m, 1) adımı elde edersin: sağa 1 yerine sola m, yukarı m yerine yukarı 1. Dönmüş doğrunun eğimi düşey adım bölü yatay adım, yani 1/(−m) = −1/m olur. Eğimler çarpımı m · (−1/m) = −1. Bu, geo Parça 19'daki "dik doğruların eğimleri çarpımı −1" kuralının kendisidir.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<p>f′(a) ≠ 0 ise eğrinin (a, f(a)) noktasındaki normali:</p>
+<span class="mat">y − f(a) = −<span class="kes"><span>1</span><span>f′(a)</span></span> · (x − a)</span>
+<p><strong>Özel durumlar:</strong> f′(a) = 0 ise teğet yatay (y = f(a)), normal düşeydir: <strong>x = a</strong>. Teğet düşeyse (dikey teğet) normal yataydır: y = f(a).</p>
+<p><strong>Neden?</strong> Normal teğetle aynı noktadan geçer ve ona diktir; dik doğruların eğimleri çarpımı −1 olduğundan normalin eğimi −1/f′(a)'dır. Yatay doğruya dik olan doğrunun eğimi tanımsızdır, yani düşeydir; bu yüzden f′(a) = 0'da formül değil özel durum kullanılır.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Normalin eğimini −f′(a) ya da 1/f′(a) almak.</strong> Örnek 1'de −2 alan biri 2x + y − 8 = 0, 1/2 alan biri x − 2y + 1 = 0 bulur; ikisi de P'den geçer ama teğete dik değildir. Denetim kolaydır: iki eğimin çarpımı −1 mi? 2 · (−2) = −4, 2 · ½ = 1; ikisi de değil. Doğrusu iki işlemin birlikte yapılmasıdır: hem ters çevir hem işaret değiştir.</p>
+<p><strong>Normali yazarken noktayı değiştirmek.</strong> Normal de teğet gibi değme noktasından geçer; yeni bir nokta aranmaz. Normal eğriyi başka bir yerde de kesebilir (Örnek 1'de x + 2y − 7 = 0 parabolü sol kolda bir kez daha keser), ama "normalin denklemi" sorusunda kullanılan nokta yalnızca değme noktasıdır.</p></div>
+
+<h2 class="s">4. Teğetin x ekseniyle yaptığı açı</h2>
+
+<p>geo Parça 18'de bir doğrunun eğim açısını tanımladın: x ekseninin pozitif yönünden doğruya, saat yönünün tersine ölçülen açı α (0° ≤ α &lt; 180°) ve m = tan α. Teğet de bir doğru olduğuna göre, eğim açısı türevle doğrudan bağlıdır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Eğrinin (a, f(a)) noktasındaki teğeti x ekseninin pozitif yönüyle α açısı yapıyorsa <strong>tan α = f′(a)</strong>'dır. f′(a) &gt; 0 ise α dar açı (teğet sağa doğru yükselir), f′(a) &lt; 0 ise α geniş açı (teğet sağa doğru alçalır), f′(a) = 0 ise α = 0° (yatay teğet).</p>
+<p><strong>Neden?</strong> Teğetin eğimi f′(a)'dır ve her doğrunun eğimi eğim açısının tanjantıdır. Geniş açıda tanjantın negatif oluşu (tan(180° − θ) = −tan θ, Parça 9'daki indirgeme) azalan doğruyu açıklar.</p></div>
+
+<div class="tablo"><table>
+<tr><th>Eğim açısı α</th><th>0°</th><th>30°</th><th>45°</th><th>60°</th><th>90°</th><th>120°</th><th>135°</th><th>150°</th></tr>
+<tr><td>f′(a) = tan α</td><td>0</td><td>√3/3</td><td>1</td><td>√3</td><td>tanımsız (dikey teğet)</td><td>−√3</td><td>−1</td><td>−√3/3</td></tr>
+</table></div>
+
+<p>Sınav bu bilgiyi iki yönde kullanır. Birinci yön: nokta verilir, açı istenir. f(x) = x<sup>2</sup> − 3x için f′(x) = 2x − 3, x = 1'de f′(1) = −1; tan α = −1 olan açı 135°'dir. İkinci yön: açı verilir, nokta istenir. "y = x<sup>2</sup> eğrisinin hangi noktasındaki teğeti x ekseniyle 45° açı yapar?" tan 45° = 1 olduğundan 2x = 1, x = ½ ve nokta (½, ¼). İkinci yönün aslında bir sonraki bölümün konusu olan "eğimi verilen teğet" sorusu olduğuna dikkat et: açı yalnızca eğimin başka bir dille söylenişidir. Bir uyarı: açıyı x ekseniyle teğetin "arasındaki dar açı" olarak sorarsa (bazı sorular böyle der) 135° yerine 45° yazılır; soru kökündeki "pozitif yönle" ifadesine bak.</p>
+
+<h2 class="s">5. Yatay teğet</h2>
+
+<p>Teğetin yatay olması eğiminin sıfır olması demektir: <strong>f′(a) = 0</strong>. Yatay teğetli noktaları bulmak için türevi sıfıra eşitleyip çözer, bulduğun apsisleri f'de yerine koyarak ordinatları hesaplarsın. Yatay teğetin denklemi y = f(a) biçimindedir.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 2</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> − 3x<sup>2</sup> − 9x + 2 eğrisinin teğetinin yatay olduğu noktaları ve bu noktalardaki teğetlerin denklemlerini bulun.</p>
+<p><strong>Adım 1.</strong> Türevi al.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 6x − 9 <span class="g">(terim terim türev)</span></span>
+<p><strong>Adım 2.</strong> Türevi sıfıra eşitle ve çarpanlarına ayır.</p>
+<span class="mat">3x<sup>2</sup> − 6x − 9 = 0 <span class="g">(yatay teğet koşulu)</span></span>
+<span class="mat">3(x<sup>2</sup> − 2x − 3) = 0 <span class="g">(3 ortak çarpan)</span></span>
+<span class="mat">3(x − 3)(x + 1) = 0 ⇒ x = 3 ya da x = −1 <span class="g">(çarpımı −3, toplamı 2 olan sayılar)</span></span>
+<p><strong>Adım 3.</strong> Ordinatları hesapla.</p>
+<span class="mat">f(−1) = −1 − 3 + 9 + 2 = 7 <span class="g">(x = −1)</span></span>
+<span class="mat">f(3) = 27 − 27 − 27 + 2 = −25 <span class="g">(x = 3)</span></span>
+<p><strong>Adım 4.</strong> Yatay teğetlerin denklemleri.</p>
+<span class="mat">y = 7 ve y = −25 <span class="g">(eğim 0, y = f(a))</span></span>
+<p><strong>Sonuç:</strong> Teğetin yatay olduğu noktalar (−1, 7) ve (3, −25); teğetler y = 7 ve y = −25. Bu noktalardaki normaller ise x = −1 ve x = 3 düşey doğrularıdır.</p></div>
+
+<p>Bu iki noktanın birinde eğri bir tepeye çıkıp iner, öbüründe bir çukura inip çıkar. Parça 25'te bunlara yerel maksimum ve yerel minimum diyeceğiz. Ama her yatay teğet bir tepe ya da çukur değildir: y = x<sup>3</sup> eğrisinin orijindeki teğeti y = 0'dır (f′(0) = 0), yine de eğri orada hiç durmadan yükselmeye devam eder ve teğetini keserek geçer. Hangi yatay teğetin tepe, hangisinin çukur, hangisinin ikisi de olmadığını ayırmak Parça 25'in işidir; bu parçada yalnızca noktaları bulup teğeti yazıyoruz.</p>
+
+<h2 class="s">6. Eğimi verilen teğet: paralel ve dik teğetler</h2>
+
+<p>Yatay teğet, eğimi 0 olarak verilmiş teğetin özel bir durumuydu. Genel durumda eğim herhangi bir m sayısı olarak verilir, çoğu zaman da doğrudan değil, bir doğruya paralellik ya da diklikle saklanarak.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>Eğimi m olan teğetin değme noktalarının apsisleri <strong>f′(x) = m</strong> denkleminin kökleridir.</p>
+<p>Teğet, eğimi k olan bir doğruya <strong>paralelse</strong> m = k; <strong>dikse</strong> m · k = −1, yani m = −1/k. Doğru ax + by + c = 0 biçiminde verilmişse eğimi k = −a/b'dir (geo Parça 18).</p>
+<p><strong>Neden?</strong> Paralel doğrular aynı yöne gider, yani eğimleri eşittir; dik doğruların eğimleri çarpımı −1'dir (Bölüm 3). Türev her noktada teğetin eğimini verdiğine göre, istenen eğimi veren noktalar f′'nün o değeri aldığı noktalardır. f′(x) = m denkleminin kaç kökü varsa o eğimde o kadar teğet vardır.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 3</span>
+<p><strong>Soru:</strong> f(x) = x<sup>3</sup> − 3x eğrisinin y = 9x + 4 doğrusuna paralel olan teğetlerinin denklemlerini bulun.</p>
+<p><strong>Adım 1.</strong> Verilen doğrunun eğimini oku: y = 9x + 4'te eğim 9. Paralel teğetin eğimi de 9.</p>
+<p><strong>Adım 2.</strong> f′(x) = 9 denklemini çöz.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 3 <span class="g">(türev)</span></span>
+<span class="mat">3x<sup>2</sup> − 3 = 9 ⇒ x<sup>2</sup> = 4 <span class="g">(eğimi eşitle, 3'e böl)</span></span>
+<span class="mat">x = 2 ya da x = −2 <span class="g">(iki değme noktası)</span></span>
+<p><strong>Adım 3.</strong> Ordinatları bul.</p>
+<span class="mat">f(2) = 8 − 6 = 2 , f(−2) = −8 + 6 = −2 <span class="g">(değme noktaları (2, 2) ve (−2, −2))</span></span>
+<p><strong>Adım 4.</strong> Her nokta için teğeti yaz.</p>
+<span class="mat">y − 2 = 9(x − 2) ⇒ y = 9x − 16 <span class="g">(birinci teğet)</span></span>
+<span class="mat">y + 2 = 9(x + 2) ⇒ y = 9x + 16 <span class="g">(ikinci teğet)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> İkisinin de eğimi 9 ve ikisi de y = 9x + 4'ten farklı (sabit terimler −16 ve 16); yani gerçekten paralel ve çakışık değil. f tek fonksiyon olduğu için (Parça 1) değme noktaları orijine göre simetrik çıktı; teğetler de birbirinin orijine göre simetriği.</p>
+<p><strong>Sonuç:</strong> y = 9x − 16 ve y = 9x + 16.</p></div>
+
+<p><strong>Dik teğet örneği.</strong> f(x) = x<sup>2</sup> + x eğrisinin x + 3y − 6 = 0 doğrusuna dik olan teğetini bul. Doğrunun eğimi −1/3 (a = 1, b = 3, eğim −a/b). Dik teğetin eğimi m için m · (−1/3) = −1, yani m = 3. f′(x) = 2x + 1 = 3, x = 1; f(1) = 2. Teğet: y − 2 = 3(x − 1), y = 3x − 1. Burada f′(x) = m birinci dereceden bir denklem olduğu için tek teğet çıktı; parabolde her eğimden tam bir teğet vardır, çünkü türevi doğrusal bir fonksiyondur ve her değeri bir kez alır.</p>
+
+<h2 class="s">7. Teğetin eksenlerle oluşturduğu üçgen</h2>
+
+<p>Bir teğet iki ekseni de kesiyorsa, eksenlerle birlikte bir dik üçgen sınırlar. Dik kenarlar, teğetin eksenleri kestiği noktaların orijine uzaklıklarıdır. Yöntem üç adımdır: teğet denklemini yaz; x = 0 koyup y eksenini kestiği noktayı, y = 0 koyup x eksenini kestiği noktayı bul; alan = ½ · |x kesimi| · |y kesimi|. Mutlak değer şarttır, çünkü kesim noktası negatif tarafta olabilir ama uzunluk negatif olmaz.</p>
+
+<div class="orn"><span class="et">Çözümlü örnek 4</span>
+<p><strong>Soru:</strong> f(x) = 6/x eğrisinin x = 2 apsisli noktasındaki teğetinin koordinat eksenleriyle oluşturduğu üçgenin alanı kaç birimkaredir?</p>
+<p><strong>Adım 1.</strong> Değme noktası.</p>
+<span class="mat">f(2) = <span class="kes"><span>6</span><span>2</span></span> = 3 <span class="g">(nokta (2, 3))</span></span>
+<p><strong>Adım 2.</strong> Türev ve eğim. 6/x = 6x<sup>−1</sup> yaz (Parça 22, negatif üs).</p>
+<span class="mat">f′(x) = −6x<sup>−2</sup> = −<span class="kes"><span>6</span><span>x<sup>2</sup></span></span> <span class="g">(kuvvet kuralı)</span></span>
+<span class="mat">f′(2) = −<span class="kes"><span>6</span><span>4</span></span> = −<span class="kes"><span>3</span><span>2</span></span> <span class="g">(eğim)</span></span>
+<p><strong>Adım 3.</strong> Teğet denklemi.</p>
+<span class="mat">y − 3 = −<span class="kes"><span>3</span><span>2</span></span>(x − 2) <span class="g">(nokta-eğim)</span></span>
+<span class="mat">y = −<span class="kes"><span>3</span><span>2</span></span>x + 6 <span class="g">(−3/2 · (−2) = 3, 3 + 3 = 6)</span></span>
+<p><strong>Adım 4.</strong> Eksenleri kestiği noktalar.</p>
+<span class="mat">x = 0 ⇒ y = 6 <span class="g">(y kesimi (0, 6))</span></span>
+<span class="mat">y = 0 ⇒ <span class="kes"><span>3</span><span>2</span></span>x = 6 ⇒ x = 4 <span class="g">(x kesimi (4, 0))</span></span>
+<p><strong>Adım 5.</strong> Alan.</p>
+<span class="mat">A = <span class="kes"><span>1</span><span>2</span></span> · 4 · 6 = 12 <span class="g">(dik kenarlar 4 ve 6)</span></span>
+<p><strong>Sonuç:</strong> 12 birimkare.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="y eşittir 6 bölü x eğrisinin (2, 3) noktasındaki teğeti y eşittir eksi 1,5x artı 6. Teğet x eksenini (4, 0), y eksenini (0, 6) noktasında keser ve eksenlerle alanı 12 olan bir dik üçgen oluşturur.">
+  <line class="sv-c" x1="26" y1="300" x2="386" y2="300" />
+  <line class="sv-c" x1="50" y1="324" x2="50" y2="12" />
+  <line class="sv-c" x1="90" y1="297" x2="90" y2="303" />
+  <line class="sv-c" x1="130" y1="297" x2="130" y2="303" />
+  <line class="sv-c" x1="170" y1="297" x2="170" y2="303" />
+  <line class="sv-c" x1="210" y1="297" x2="210" y2="303" />
+  <line class="sv-c" x1="250" y1="297" x2="250" y2="303" />
+  <line class="sv-c" x1="290" y1="297" x2="290" y2="303" />
+  <line class="sv-c" x1="330" y1="297" x2="330" y2="303" />
+  <line class="sv-c" x1="370" y1="297" x2="370" y2="303" />
+  <line class="sv-c" x1="47" y1="260" x2="53" y2="260" />
+  <line class="sv-c" x1="47" y1="220" x2="53" y2="220" />
+  <line class="sv-c" x1="47" y1="180" x2="53" y2="180" />
+  <line class="sv-c" x1="47" y1="140" x2="53" y2="140" />
+  <line class="sv-c" x1="47" y1="100" x2="53" y2="100" />
+  <line class="sv-c" x1="47" y1="60" x2="53" y2="60" />
+  <line class="sv-c" x1="47" y1="20" x2="53" y2="20" />
+  <text class="sv-s" x="90" y="316" text-anchor="middle">1</text>
+  <text class="sv-s" x="130" y="316" text-anchor="middle">2</text>
+  <text class="sv-s" x="170" y="316" text-anchor="middle">3</text>
+  <text class="sv-s" x="210" y="316" text-anchor="middle">4</text>
+  <text class="sv-s" x="250" y="316" text-anchor="middle">5</text>
+  <text class="sv-s" x="290" y="316" text-anchor="middle">6</text>
+  <text class="sv-s" x="330" y="316" text-anchor="middle">7</text>
+  <text class="sv-s" x="370" y="316" text-anchor="middle">8</text>
+  <text class="sv-s" x="44" y="264" text-anchor="end">1</text>
+  <text class="sv-s" x="44" y="224" text-anchor="end">2</text>
+  <text class="sv-s" x="44" y="184" text-anchor="end">3</text>
+  <text class="sv-s" x="44" y="144" text-anchor="end">4</text>
+  <text class="sv-s" x="44" y="104" text-anchor="end">5</text>
+  <text class="sv-s" x="44" y="64" text-anchor="end">6</text>
+  <text class="sv-s" x="44" y="24" text-anchor="end">7</text>
+  <text class="sv-s" x="384" y="294" text-anchor="end">x</text>
+  <text class="sv-s" x="56" y="22" text-anchor="start">y</text>
+  <polygon class="sv-m" points="50,300 210,300 50,60" />
+  <polyline class="sv-cl" points="84.4,20.9 87.7,45.4 91,65.9 94.3,83.4 97.6,98.4 100.9,111.5 104.2,123 107.5,133.2 110.9,142.2 114.2,150.4 117.5,157.7 120.8,164.4 124.1,170.4 127.4,175.9 130.7,181 134,185.7 137.3,190 140.6,194.1 143.9,197.8 147.2,201.3 150.5,204.5 153.8,207.6 157.1,210.4 160.5,213.1 163.8,215.6 167.1,218 170.4,220.2 173.7,222.4 177,224.4 180.3,226.3 183.6,228.1 186.9,229.9 190.2,231.5 193.5,233.1 196.8,234.6 200.1,236.1 203.4,237.4 206.7,238.8 210.1,240 213.4,241.2 216.7,242.4 220,243.5 223.3,244.6 226.6,245.6 229.9,246.6 233.2,247.6 236.5,248.5 239.8,249.4 243.1,250.3 246.4,251.1 249.7,251.9 253,252.7 256.3,253.5 259.7,254.2 263,254.9 266.3,255.6 269.6,256.3 272.9,256.9 276.2,257.6 279.5,258.2 282.8,258.8 286.1,259.3 289.4,259.9 292.7,260.4 296,261 299.3,261.5 302.6,262 305.9,262.5 309.3,263 312.6,263.4 315.9,263.9 319.2,264.3 322.5,264.8 325.8,265.2 329.1,265.6 332.4,266 335.7,266.4 339,266.8 342.3,267.2 345.6,267.5 348.9,267.9 352.2,268.2 355.5,268.6 358.9,268.9 362.2,269.2 365.5,269.6 368.8,269.9 372.1,270.2 375.4,270.5 378.7,270.8 382,271.1" />
+  <line class="sv-c" x1="38" y1="42" x2="234" y2="336" />
+  <circle class="sv-a" cx="130" cy="180" r="4.5" />
+  <circle class="sv-l" cx="210" cy="300" r="3.5" />
+  <circle class="sv-l" cx="50" cy="60" r="3.5" />
+  <text class="sv-b" x="140" y="174" text-anchor="start">(2, 3)</text>
+  <text class="sv-t" x="218" y="292" text-anchor="start">(4, 0)</text>
+  <text class="sv-t" x="60" y="56" text-anchor="start">(0, 6)</text>
+  <text class="sv-b" x="98" y="256" text-anchor="middle">alan 12</text>
+  <text class="sv-t" x="250" y="216" text-anchor="start">y = 6/x</text>
+  <text class="sv-s" x="190" y="116" text-anchor="start">teğet: y = −1,5x + 6</text>
+</svg>
+<figcaption>Örnek 4 gerçek ölçüyle. Teğet, eğriye (2, 3)'te değer ve eksenleri (4, 0) ile (0, 6)'da keser. Değme noktası, hipotenüsün tam orta noktasıdır: ((4 + 0)/2, (0 + 6)/2) = (2, 3).</figcaption>
+</figure>
+
+<p>Şekildeki gözlem rastlantı değildir ve bir kısa yol verir. y = k/x eğrisinin herhangi bir (a, k/a) noktasındaki teğeti için eğim −k/a<sup>2</sup>'dir; teğet y = −(k/a<sup>2</sup>)x + 2k/a olur. Kesimler x = 2a ve y = 2k/a; alan ½ · 2a · 2k/a = <strong>2k</strong>. Yani y = k/x eğrisinin hangi noktasından teğet çizersen çiz, eksenlerle oluşan üçgenin alanı hep 2k'dır ve değme noktası hep hipotenüsün orta noktasıdır. Örnek 4'te k = 6, alan 12. Bu kısa yolu sınavda kullanabilirsin ama nereden geldiğini bil: yalnızca y = k/x için geçerlidir; başka bir eğride yöntemin üç adımını uygularsın.</p>
+
+<h2 class="s">8. "y = mx + n doğrusu eğriye teğet ise": iki koşul</h2>
+
+<p>Bu parçanın en çok soru üreten kalıbı budur. Bir doğru ile eğri verilir, içlerinde bir ya da iki bilinmeyen vardır ve "teğet ise" denir. Teğetliği iki ayrı koşula bölmek, bilinmeyen sayısı kadar denklem kurmayı sağlar.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>y = mx + n doğrusu y = f(x) eğrisine x = a apsisli noktada teğettir ancak ve ancak</p>
+<span class="mat">(1) f(a) = m · a + n <span class="g">(ortak nokta: değme noktası doğrunun üzerinde)</span></span>
+<span class="mat">(2) f′(a) = m <span class="g">(eşit eğim: doğrunun eğimi teğetin eğimi)</span></span>
+<p><strong>Neden?</strong> Teğet, (a, f(a))'dan geçen ve eğimi f′(a) olan tek doğrudur. Bir doğrunun bu doğruyla çakışması için hem o noktadan geçmesi hem de aynı eğime sahip olması gerekir ve yeter. Koşullardan biri eksik kalırsa doğru ya o noktadan geçen başka bir kesen ya da teğete paralel ama ondan ayrı bir doğru olabilir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 5</span>
+<p><strong>Soru:</strong> (a) y = 2x + n doğrusu f(x) = x<sup>3</sup> − x + 1 eğrisine teğet olduğuna göre n'nin alabileceği değerleri bulun. (b) f(x) = x<sup>2</sup> + bx + c parabolü y = 3x − 1 doğrusuna x = 2 apsisli noktada teğet olduğuna göre b ve c kaçtır?</p>
+<p><strong>Adım 1.</strong> (a) Değme noktası bilinmiyor; önce eşit eğim koşulundan bul.</p>
+<span class="mat">f′(x) = 3x<sup>2</sup> − 1 = 2 <span class="g">(koşul 2: eğim eşit)</span></span>
+<span class="mat">x<sup>2</sup> = 1 ⇒ x = 1 ya da x = −1 <span class="g">(iki olası değme noktası)</span></span>
+<p><strong>Adım 2.</strong> Her değme noktası için ortak nokta koşulundan n'yi bul.</p>
+<span class="mat">f(1) = 1 − 1 + 1 = 1 ⇒ 1 = 2 · 1 + n ⇒ n = −1 <span class="g">(koşul 1, x = 1)</span></span>
+<span class="mat">f(−1) = −1 + 1 + 1 = 1 ⇒ 1 = 2 · (−1) + n ⇒ n = 3 <span class="g">(koşul 1, x = −1)</span></span>
+<p><strong>Adım 3.</strong> (b) Bu kez değme noktası belli (a = 2), bilinmeyenler eğride. Eşit eğim:</p>
+<span class="mat">f′(x) = 2x + b ⇒ f′(2) = 4 + b = 3 ⇒ b = −1 <span class="g">(koşul 2)</span></span>
+<p><strong>Adım 4.</strong> Ortak nokta: doğru x = 2'de 3 · 2 − 1 = 5 değerini alır; eğri de aynı değeri almalı.</p>
+<span class="mat">f(2) = 4 + 2b + c = 5 <span class="g">(koşul 1)</span></span>
+<span class="mat">4 − 2 + c = 5 ⇒ c = 3 <span class="g">(b = −1 yerine kondu)</span></span>
+<p><strong>Adım 5 (kontrol yolu).</strong> (b)'de f(x) = x<sup>2</sup> − x + 3 ile y = 3x − 1'i eşitle: x<sup>2</sup> − 4x + 4 = (x − 2)<sup>2</sup> = 0, çift kök x = 2. Parça 6'daki Δ = 0 koşulu da aynı sonucu veriyor.</p>
+<p><strong>Sonuç:</strong> (a) n = −1 ya da n = 3 (iki ayrı teğet). (b) b = −1, c = 3.</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Koşullardan yalnızca birini kullanmak.</strong> (a)'da "eğimler eşit" deyip 3x<sup>2</sup> − 1 = 2'yi çözen ve orada duran biri x = ±1 bulur ama n'yi bulamaz; ya da yanlışlıkla x'in değerini n sanar. Tersine, yalnızca f(x) = 2x + n eşitliğini yazan biri, iki bilinmeyenli (x ve n) tek bir denklemle kalır. Kural basit: <strong>bilinmeyenleri say, o kadar denklem yaz.</strong> Değme apsisi de bir bilinmeyendir. (a)'da bilinmeyenler a ve n: iki koşul. (b)'de bilinmeyenler b ve c (a = 2 verilmiş): yine iki koşul.</p>
+<p><strong>Eğimi doğru denkleminden yanlış okumak.</strong> 2x − y + 5 = 0 doğrusunun eğimi 2'dir (y = 2x + 5), −2 değil; 4x + 2y = 1 doğrusunun eğimi −2'dir, 4 değil. Teğet sorusuna başlamadan önce doğruyu y = mx + n biçimine getir.</p></div>
+
+<h2 class="s">9. Eğrinin dışındaki bir noktadan çizilen teğetler</h2>
+
+<p>Şimdiye kadar değme noktası ya verildi ya da eğimden bulundu. Bir başka kalıpta yalnızca teğetin geçtiği bir nokta verilir ve bu nokta eğrinin üzerinde değildir. O noktada türev almanın bir anlamı yoktur: türev, eğri üzerindeki noktaların eğimini verir. Çare, değme noktasını bilinmeyen olarak almaktır.</p>
+
+<div class="kural"><span class="et">Yöntem</span>
+<p>(1) Değme noktasını (a, f(a)) diye adlandır. (2) Bu noktadaki teğeti a cinsinden yaz: y − f(a) = f′(a)(x − a). (3) Verilen P(x<sub>0</sub>, y<sub>0</sub>) noktası bu teğetin üzerinde olmalı: x = x<sub>0</sub>, y = y<sub>0</sub> koy. (4) Çıkan denklemi a için çöz. Her kök bir değme noktası, dolayısıyla bir teğettir.</p>
+<p><strong>Neden?</strong> P'den geçen teğet, eğrinin bilmediğimiz bir noktasındaki teğettir. Her noktanın teğeti formülle yazılabildiği için, "bu teğetler arasından P'den geçenleri seç" demek, a'ya bir denklem yazmak demektir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 6</span>
+<p><strong>Soru:</strong> P(1, −2) noktasından f(x) = x<sup>2</sup> + 1 eğrisine çizilen teğetlerin denklemlerini bulun.</p>
+<p><strong>Adım 1.</strong> P eğri üzerinde mi? f(1) = 2 ≠ −2. Değil; eğrinin altında.</p>
+<p><strong>Adım 2.</strong> Değme noktası (a, a<sup>2</sup> + 1), eğim f′(a) = 2a. Teğet:</p>
+<span class="mat">y − (a<sup>2</sup> + 1) = 2a(x − a) <span class="g">(a cinsinden teğet)</span></span>
+<p><strong>Adım 3.</strong> P(1, −2)'yi koy.</p>
+<span class="mat">−2 − a<sup>2</sup> − 1 = 2a(1 − a) <span class="g">(x = 1, y = −2)</span></span>
+<span class="mat">−a<sup>2</sup> − 3 = 2a − 2a<sup>2</sup> <span class="g">(iki yanı aç)</span></span>
+<span class="mat">a<sup>2</sup> − 2a − 3 = 0 <span class="g">(hepsini bir yana topla)</span></span>
+<span class="mat">(a − 3)(a + 1) = 0 ⇒ a = 3 ya da a = −1 <span class="g">(iki değme noktası)</span></span>
+<p><strong>Adım 4.</strong> Her a için teğeti yaz.</p>
+<span class="mat">a = 3: nokta (3, 10), eğim 6 ⇒ y − 10 = 6(x − 3) ⇒ y = 6x − 8</span>
+<span class="mat">a = −1: nokta (−1, 2), eğim −2 ⇒ y − 2 = −2(x + 1) ⇒ y = −2x</span>
+<p><strong>Adım 5 (kontrol yolu).</strong> İki doğru da P'den geçmeli: 6 · 1 − 8 = −2 ✓, −2 · 1 = −2 ✓.</p>
+<p><strong>Sonuç:</strong> y = 6x − 8 ve y = −2x. Eğimlerin çarpımı −12, toplamı 4.</p></div>
+
+<figure>
+<svg viewBox="0 0 400 330" role="img" aria-label="y eşittir x kare artı 1 parabolü ve parabolün altındaki P(1, eksi 2) noktasından çizilen iki teğet. Biri parabole (3, 10) noktasında değen y eşittir 6x eksi 8, öbürü (eksi 1, 2) noktasında değen y eşittir eksi 2x doğrusudur.">
+  <line class="sv-c" x1="10" y1="250" x2="390" y2="250" />
+  <line class="sv-c" x1="160" y1="322" x2="160" y2="18" />
+  <line class="sv-c" x1="60" y1="247" x2="60" y2="253" />
+  <line class="sv-c" x1="110" y1="247" x2="110" y2="253" />
+  <line class="sv-c" x1="160" y1="247" x2="160" y2="253" />
+  <line class="sv-c" x1="210" y1="247" x2="210" y2="253" />
+  <line class="sv-c" x1="260" y1="247" x2="260" y2="253" />
+  <line class="sv-c" x1="310" y1="247" x2="310" y2="253" />
+  <line class="sv-c" x1="360" y1="247" x2="360" y2="253" />
+  <line class="sv-c" x1="157" y1="290" x2="163" y2="290" />
+  <line class="sv-c" x1="157" y1="250" x2="163" y2="250" />
+  <line class="sv-c" x1="157" y1="210" x2="163" y2="210" />
+  <line class="sv-c" x1="157" y1="170" x2="163" y2="170" />
+  <line class="sv-c" x1="157" y1="130" x2="163" y2="130" />
+  <line class="sv-c" x1="157" y1="90" x2="163" y2="90" />
+  <line class="sv-c" x1="157" y1="50" x2="163" y2="50" />
+  <text class="sv-s" x="60" y="266" text-anchor="middle">−2</text>
+  <text class="sv-s" x="110" y="266" text-anchor="middle">−1</text>
+  <text class="sv-s" x="210" y="266" text-anchor="middle">1</text>
+  <text class="sv-s" x="260" y="266" text-anchor="middle">2</text>
+  <text class="sv-s" x="310" y="266" text-anchor="middle">3</text>
+  <text class="sv-s" x="360" y="266" text-anchor="middle">4</text>
+  <text class="sv-s" x="154" y="214" text-anchor="end">2</text>
+  <text class="sv-s" x="154" y="174" text-anchor="end">4</text>
+  <text class="sv-s" x="154" y="134" text-anchor="end">6</text>
+  <text class="sv-s" x="154" y="94" text-anchor="end">8</text>
+  <text class="sv-s" x="154" y="54" text-anchor="end">10</text>
+  <text class="sv-s" x="388" y="244" text-anchor="end">x</text>
+  <text class="sv-s" x="166" y="28" text-anchor="start">y</text>
+  <polyline class="sv-cl" points="10,50 13.9,59.3 17.8,68.3 21.7,77 25.6,85.5 29.5,93.8 33.4,101.9 37.3,109.6 41.2,117.2 45.2,124.5 49.1,131.5 53,138.4 56.9,144.9 60.8,151.2 64.7,157.3 68.6,163.2 72.5,168.8 76.4,174.1 80.3,179.2 84.2,184.1 88.1,188.7 92,193 95.9,197.2 99.8,201 103.8,204.7 107.7,208.1 111.6,211.2 115.5,214.1 119.4,216.8 123.3,219.2 127.2,221.4 131.1,223.3 135,225 138.9,226.4 142.8,227.6 146.7,228.6 150.6,229.3 154.5,229.8 158.4,230 162.3,230 166.2,229.7 170.2,229.2 174.1,228.4 178,227.4 181.9,226.2 185.8,224.7 189.7,222.9 193.6,221 197.5,218.8 201.4,216.3 205.3,213.6 209.2,210.6 213.1,207.4 217,204 220.9,200.3 224.8,196.4 228.8,192.2 232.7,187.8 236.6,183.1 240.5,178.2 244.4,173 248.3,167.7 252.2,162 256.1,156.1 260,150 263.9,143.6 267.8,137 271.7,130.2 275.6,123 279.5,115.7 283.4,108.1 287.3,100.3 291.2,92.2 295.2,83.9 299.1,75.3 303,66.5 306.9,57.4 310.8,48.1 314.7,38.6 318.6,28.8" />
+  <line class="sv-c" x1="205" y1="302" x2="325" y2="14" />
+  <line class="sv-c" x1="20" y1="138" x2="230" y2="306" />
+  <circle class="sv-l" cx="210" cy="290" r="5" />
+  <circle class="sv-a" cx="310" cy="50" r="4.5" />
+  <circle class="sv-a" cx="110" cy="210" r="4.5" />
+  <text class="sv-b" x="220" y="295" text-anchor="start">P(1, −2)</text>
+  <text class="sv-t" x="300" y="54" text-anchor="end">(3, 10)</text>
+  <text class="sv-t" x="100" y="214" text-anchor="end">(−1, 2)</text>
+  <text class="sv-s" x="331" y="38" text-anchor="start">y = 6x − 8</text>
+  <text class="sv-s" x="15" y="200" text-anchor="start">y = −2x</text>
+  <text class="sv-t" x="15" y="30" text-anchor="start">y = x² + 1</text>
+</svg>
+<figcaption>Örnek 6. Parabolün altındaki (dışındaki) P noktasından iki teğet çizilebilir; değme noktaları (3, 10) ve (−1, 2). P parabolün içinde (kolların arasında, üstte) olsaydı a için çıkan denklemin gerçek kökü olmazdı ve hiç teğet çizilemezdi; P parabolün üzerinde olsaydı tek teğet olurdu.</figcaption>
+</figure>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Türevi dış noktada hesaplamak.</strong> Örnek 6'da f′(1) = 2 bulup y + 2 = 2(x − 1) yazan biri y = 2x − 4 doğrusunu bulur. Bu doğru P'den geçer ama eğriye teğet değildir: x<sup>2</sup> + 1 = 2x − 4 denkleminin Δ'sı 4 − 20 &lt; 0, eğriye hiç değmez. f′(1), eğrinin (1, 2) noktasındaki eğimidir; P o nokta değildir. Dış nokta yalnızca "teğet buradan geçmeli" koşulunu verir.</p></div>
+
+<p><strong>Polinom eğrilerde de aynı yöntem.</strong> P(2, 0) noktasından y = x<sup>3</sup> eğrisine çizilen teğetleri bul. Değme noktası (a, a<sup>3</sup>), eğim 3a<sup>2</sup>; teğet y − a<sup>3</sup> = 3a<sup>2</sup>(x − a). P'yi koy: −a<sup>3</sup> = 3a<sup>2</sup>(2 − a), yani −a<sup>3</sup> = 6a<sup>2</sup> − 3a<sup>3</sup>, düzenleyince 2a<sup>3</sup> − 6a<sup>2</sup> = 2a<sup>2</sup>(a − 3) = 0. Kökler a = 0 ve a = 3. a = 0'da teğet y = 0 (x ekseni; eğriye orijinde değer ve onu keserek geçer), a = 3'te teğet y = 27x − 54. Burada Δ yöntemi hiç kullanılamazdı, çünkü doğru ile eğrinin ortak denklemi üçüncü derecedendir.</p>
+
+<p><strong>Nokta eğrinin üzerindeyse dikkat.</strong> Soru "(1, 1) noktasındaki teğet" diyorsa değme noktası (1, 1)'dir ve tek teğet vardır. Ama "(1, 1) noktasından geçen teğetler" diyorsa ve eğri y = x<sup>3</sup> ise, aynı yöntem 1 − a<sup>3</sup> = 3a<sup>2</sup>(1 − a), yani 2a<sup>3</sup> − 3a<sup>2</sup> + 1 = (a − 1)<sup>2</sup>(2a + 1) = 0 verir: a = 1 (noktanın kendi teğeti, y = 3x − 2) ve a = −½ (eğriye (−½, −⅛)'de değen, (1, 1)'den de geçen ikinci bir doğru, y = ¾x + ¼). "Noktasındaki" ile "noktasından geçen" ayrımı bu yüzden önemlidir.</p>
+
+<h2 class="s">10. Parabolde teğet: türev yöntemi ile Δ yöntemi</h2>
+
+<p>Parça 6'da doğru ile parabolün teğetliğini ortak çözüm denkleminin Δ'sıyla buldun. Şimdi aynı soruyu türevle çöz ve iki yolu karşılaştır. Parça 6'daki örnek: y = x<sup>2</sup> − 3x + 5 parabolü ile y = x + m doğrusu teğet ise m kaçtır?</p>
+
+<p><strong>Δ yolu.</strong> Eşitle: x<sup>2</sup> − 4x + 5 − m = 0. Teğetlikte Δ = 16 − 4(5 − m) = 4m − 4 = 0, m = 1. Değme apsisi çift kök: x = 4/2 = 2; ordinat 2 + 1 = 3.</p>
+
+<p><strong>Türev yolu.</strong> Eşit eğim: f′(x) = 2x − 3 = 1, x = 2. Ortak nokta: f(2) = 4 − 6 + 5 = 3 ve 3 = 2 + m, m = 1. Değme noktası (2, 3) ilk adımda kendiliğinden çıktı.</p>
+
+<div class="tablo"><table>
+<tr><th></th><th>Δ yöntemi (Parça 6)</th><th>Türev yöntemi (bu parça)</th></tr>
+<tr><td>Dayandığı fikir</td><td>Teğette ortak çözüm denkleminin iki kökü çakışır</td><td>Teğette ortak nokta + eşit eğim</td></tr>
+<tr><td>Kurulan denklem</td><td>Tek denklem: Δ = 0</td><td>İki denklem: f(a) = ma + n, f′(a) = m</td></tr>
+<tr><td>Değme noktası</td><td>Ayrıca bulunur (çift kök −B/2A)</td><td>Çoğu zaman ilk adımda çıkar</td></tr>
+<tr><td>Hangi eğrilerde?</td><td>Yalnızca ortak denklem ikinci dereceden ise (doğru-parabol, parabol-parabol)</td><td>Türevlenebilen her eğride (kübik, 1/x, √x …)</td></tr>
+<tr><td>Dış noktadan teğet</td><td>Eğimi m bilinmeyen alıp Δ = 0'dan m için denklem</td><td>Değme apsisini a bilinmeyen alıp a için denklem</td></tr>
+<tr><td>Ne zaman tercih edilir?</td><td>Parabol sorusunda parametre ortak denklemin içinde kalıyorsa</td><td>Eğim ya da değme noktası soruluyorsa; parabol dışındaki her durumda</td></tr>
+</table></div>
+
+<p>Örnek 6'yı Δ ile de çözebilirsin: P(1, −2)'den geçen eğimi m olan doğru y = m(x − 1) − 2. Parabolle eşitle: x<sup>2</sup> − mx + m + 3 = 0. Teğetlikte Δ = m<sup>2</sup> − 4(m + 3) = m<sup>2</sup> − 4m − 12 = 0, (m − 6)(m + 2) = 0, m = 6 ya da m = −2. Türevle bulduğun eğimlerin aynısı. Parabolde iki yol da çalışır; hangisi daha az işlemle sonuca götürüyorsa onu seç, öbürünü kontrol yolu olarak kullan.</p>
+
+<h2 class="s">11. İki eğrinin teğet olması ve dik kesişmesi</h2>
+
+<p>"Teğet" sözcüğü iki eğri arasında da kullanılır. İki eğri bir noktada buluşur ve o noktada aynı teğete sahipse birbirine teğettir: o noktanın hemen yakınında aynı yöne giderler, birbirine "yaslanırlar". Bölüm 8'deki iki koşul burada da aynen geçerlidir; yalnızca doğrunun yerinde ikinci bir eğri vardır.</p>
+
+<div class="kural"><span class="et">Kural</span>
+<p>y = f(x) ve y = g(x) eğrileri x = a apsisli noktada <strong>teğettir</strong> ⇔ f(a) = g(a) ve f′(a) = g′(a).</p>
+<p>Bu eğriler x = a apsisli noktada <strong>dik kesişir</strong> ⇔ f(a) = g(a) ve f′(a) · g′(a) = −1.</p>
+<p><strong>Neden?</strong> İki eğrinin bir noktadaki "yönleri", o noktadaki teğetleridir. Teğetler çakışıyorsa (aynı nokta, aynı eğim) eğriler teğettir; teğetler dikse eğrilerin kesişme açısı 90°'dir. Teğetlerin dikliği Bölüm 3'teki eğim çarpımı kuralıyla denetlenir.</p></div>
+
+<div class="orn"><span class="et">Çözümlü örnek 7</span>
+<p><strong>Soru:</strong> f(x) = ax<sup>2</sup> + b ve g(x) = x<sup>3</sup> + 1 eğrileri x = 1 apsisli noktada birbirine teğet olduğuna göre a ve b kaçtır?</p>
+<p><strong>Adım 1.</strong> g'nin x = 1'deki değeri ve eğimi.</p>
+<span class="mat">g(1) = 1 + 1 = 2 <span class="g">(ortak nokta (1, 2))</span></span>
+<span class="mat">g′(x) = 3x<sup>2</sup> ⇒ g′(1) = 3 <span class="g">(ortak eğim)</span></span>
+<p><strong>Adım 2.</strong> Eşit eğim koşulu.</p>
+<span class="mat">f′(x) = 2ax ⇒ f′(1) = 2a = 3 ⇒ a = <span class="kes"><span>3</span><span>2</span></span> <span class="g">(f′(1) = g′(1))</span></span>
+<p><strong>Adım 3.</strong> Ortak nokta koşulu.</p>
+<span class="mat">f(1) = a + b = 2 ⇒ b = 2 − <span class="kes"><span>3</span><span>2</span></span> = <span class="kes"><span>1</span><span>2</span></span> <span class="g">(f(1) = g(1))</span></span>
+<p><strong>Adım 4 (kontrol yolu).</strong> f(x) = 1,5x<sup>2</sup> + 0,5 için f(1) = 2 ✓, f′(1) = 3 ✓. x = 1,1'de f = 2,315, g = 2,331: değerler hâlâ çok yakın, eğriler yaslanarak ayrılıyor.</p>
+<p><strong>Sonuç:</strong> a = 3/2, b = 1/2. Ortak teğet de y − 2 = 3(x − 1), yani y = 3x − 1'dir.</p></div>
+
+<p><strong>Dik kesişme örneği.</strong> y = x<sup>2</sup> ve y = 1/√x eğrileri (1, 1) noktasında kesişir (1<sup>2</sup> = 1 ve 1/√1 = 1). Eğimler: (x<sup>2</sup>)′ = 2x, x = 1'de 2; (x<sup>−1/2</sup>)′ = −½x<sup>−3/2</sup>, x = 1'de −½. Çarpım 2 · (−½) = −1: eğriler (1, 1)'de dik kesişir. Yani birinin o noktadaki teğeti, öbürünün normalidir.</p>
+
+<h2 class="s">12. Grafikte çizilmiş teğetten f(a) ve f′(a) okumak</h2>
+
+<p>AYT'nin sevdiği bir kalıp: f'nin kuralı verilmez, yalnızca grafiği ve bir noktasına çizilmiş teğet doğrusu verilir. Bu şekilden iki sayı okunur. <strong>f(a)</strong>, değme noktasının ordinatıdır. <strong>f′(a)</strong>, çizilen teğet doğrusunun eğimidir; bunu teğet üzerindeki iki belirgin noktadan (çoğu zaman değme noktası ve eksen kesimi) dikey değişim / yatay değişim diye hesaplarsın. Bu iki sayı elinde olunca Parça 22–23'teki çarpım, bölüm ve zincir kurallarıyla başka fonksiyonların türevleri hesaplanır.</p>
+
+<figure>
+<svg viewBox="0 0 400 320" role="img" aria-label="Bir f fonksiyonunun grafiği ve x eşittir 2 noktasındaki teğeti. Değme noktası (2, 4). Teğet y eksenini (0, eksi 2) noktasında keser; bu iki nokta arasında 2 birim sağa gidince 6 birim yukarı çıkılır, eğim 3.">
+  <line class="sv-c" x1="10" y1="230" x2="390" y2="230" />
+  <line class="sv-c" x1="150" y1="305" x2="150" y2="10" />
+  <line class="sv-c" x1="50" y1="227" x2="50" y2="233" />
+  <line class="sv-c" x1="100" y1="227" x2="100" y2="233" />
+  <line class="sv-c" x1="150" y1="227" x2="150" y2="233" />
+  <line class="sv-c" x1="200" y1="227" x2="200" y2="233" />
+  <line class="sv-c" x1="250" y1="227" x2="250" y2="233" />
+  <line class="sv-c" x1="300" y1="227" x2="300" y2="233" />
+  <line class="sv-c" x1="350" y1="227" x2="350" y2="233" />
+  <line class="sv-c" x1="147" y1="280" x2="153" y2="280" />
+  <line class="sv-c" x1="147" y1="230" x2="153" y2="230" />
+  <line class="sv-c" x1="147" y1="180" x2="153" y2="180" />
+  <line class="sv-c" x1="147" y1="130" x2="153" y2="130" />
+  <line class="sv-c" x1="147" y1="80" x2="153" y2="80" />
+  <line class="sv-c" x1="147" y1="30" x2="153" y2="30" />
+  <text class="sv-s" x="50" y="246" text-anchor="middle">−2</text>
+  <text class="sv-s" x="100" y="246" text-anchor="middle">−1</text>
+  <text class="sv-s" x="200" y="246" text-anchor="middle">1</text>
+  <text class="sv-s" x="250" y="246" text-anchor="middle">2</text>
+  <text class="sv-s" x="300" y="246" text-anchor="middle">3</text>
+  <text class="sv-s" x="350" y="246" text-anchor="middle">4</text>
+  <text class="sv-s" x="144" y="284" text-anchor="end">−2</text>
+  <text class="sv-s" x="144" y="184" text-anchor="end">2</text>
+  <text class="sv-s" x="144" y="134" text-anchor="end">4</text>
+  <text class="sv-s" x="144" y="84" text-anchor="end">6</text>
+  <text class="sv-s" x="144" y="34" text-anchor="end">8</text>
+  <text class="sv-s" x="388" y="224" text-anchor="end">x</text>
+  <text class="sv-s" x="156" y="20" text-anchor="start">y</text>
+  <polyline class="sv-cl" points="15,206.4 18.6,209.3 22.1,212.2 25.7,214.9 29.2,217.5 32.8,219.9 36.4,222.3 39.9,224.5 43.5,226.5 47.1,228.5 50.6,230.3 54.2,232 57.7,233.6 61.3,235 64.9,236.3 68.4,237.5 72,238.6 75.6,239.5 79.1,240.3 82.7,241 86.2,241.6 89.8,242 93.4,242.3 96.9,242.5 100.5,242.5 104.1,242.4 107.6,242.2 111.2,241.9 114.7,241.4 118.3,240.8 121.9,240.1 125.4,239.3 129,238.3 132.6,237.2 136.1,236 139.7,234.6 143.2,233.1 146.8,231.5 150.4,229.8 153.9,228 157.5,226 161.1,223.9 164.6,221.6 168.2,219.3 171.8,216.8 175.3,214.1 178.9,211.4 182.4,208.5 186,205.5 189.6,202.4 193.1,199.1 196.7,195.8 200.2,192.2 203.8,188.6 207.4,184.9 210.9,181 214.5,176.9 218.1,172.8 221.6,168.5 225.2,164.1 228.8,159.6 232.3,155 235.9,150.2 239.4,145.3 243,140.3 246.6,135.1 250.1,129.8 253.7,124.4 257.2,118.9 260.8,113.2 264.4,107.4 267.9,101.5 271.5,95.4 275.1,89.3 278.6,83 282.2,76.5 285.8,70 289.3,63.3 292.9,56.5 296.4,49.6 300,42.5" />
+  <line class="sv-c" x1="133.5" y1="305" x2="330" y2="10" />
+  <circle class="sv-a" cx="250" cy="130" r="4.5" />
+  <circle class="sv-l" cx="150" cy="280" r="3.5" />
+  <polyline class="sv-c" points="150,280 250,280 250,130" />
+  <text class="sv-s" x="200" y="296" text-anchor="middle">2 birim</text>
+  <text class="sv-s" x="258" y="209" text-anchor="start">6 birim</text>
+  <text class="sv-b" x="240" y="126" text-anchor="end">(2, 4)</text>
+  <text class="sv-t" x="158" y="274" text-anchor="start">(0, −2)</text>
+  <text class="sv-b" x="15" y="40" text-anchor="start">y = f(x)</text>
+  <text class="sv-s" x="331" y="22.5" text-anchor="start">teğet</text>
+</svg>
+<figcaption>Örnek 8'in şekli. Teğet, (2, 4) değme noktasından ve y eksenindeki (0, −2) noktasından geçiyor. Bu iki nokta arasında yatay değişim 2, dikey değişim 6; eğim 6/2 = 3 = f′(2).</figcaption>
+</figure>
+
+<div class="orn"><span class="et">Çözümlü örnek 8</span>
+<p><strong>Soru:</strong> Şekilde y = f(x) fonksiyonunun grafiği ve grafiğe x = 2 apsisli noktada çizilen teğet verilmiştir. Teğet y eksenini (0, −2) noktasında kesmektedir. g(x) = x<sup>2</sup> · f(x) ve h(x) = f(x<sup>2</sup> − 2) olduğuna göre g′(2) ve h′(2) kaçtır?</p>
+<p><strong>Adım 1.</strong> Şekilden f(2) ve f′(2)'yi oku.</p>
+<span class="mat">f(2) = 4 <span class="g">(değme noktası (2, 4))</span></span>
+<span class="mat">f′(2) = <span class="kes"><span>4 − (−2)</span><span>2 − 0</span></span> = 3 <span class="g">(teğetin iki noktasından eğim)</span></span>
+<p><strong>Adım 2.</strong> g bir çarpımdır: çarpım kuralı (Parça 22).</p>
+<span class="mat">g′(x) = 2x · f(x) + x<sup>2</sup> · f′(x) <span class="g">(birincinin türevi × ikinci + birinci × ikincinin türevi)</span></span>
+<span class="mat">g′(2) = 2 · 2 · 4 + 4 · 3 = 16 + 12 = 28 <span class="g">(x = 2)</span></span>
+<p><strong>Adım 3.</strong> h bir bileşkedir: zincir kuralı (Parça 23). İç fonksiyon x<sup>2</sup> − 2.</p>
+<span class="mat">h′(x) = f′(x<sup>2</sup> − 2) · 2x <span class="g">(dıştakinin türevi × içtekinin türevi)</span></span>
+<span class="mat">x = 2 ⇒ x<sup>2</sup> − 2 = 2 <span class="g">(iç değer)</span></span>
+<span class="mat">h′(2) = f′(2) · 4 = 3 · 4 = 12 <span class="g">(f′ iç değerde, yani 2'de okunur)</span></span>
+<p><strong>Sonuç:</strong> g′(2) = 28, h′(2) = 12. h(x) = f(f(x)) sorulsaydı h′(2) = f′(f(2)) · f′(2) = f′(4) · 3 gerekirdi; f′(4) şekilde verilmediği için bu hesaplanamazdı. Sınav bazen tam olarak bunu sorar: "hangisi hesaplanamaz?"</p></div>
+
+<div class="hata"><span class="et">Sık yapılan hata</span>
+<p><strong>Teğetin eğimi yerine değme noktasını orijinle birleştiren doğrunun eğimini almak.</strong> Örnek 8'de 4/2 = 2 hesaplayan biri, orijinden (2, 4)'e giden doğrunun eğimini bulur; bu doğru teğet değildir, çizilmiş de değildir. Eğimi yalnızca <strong>çizilen teğet doğrusunun</strong> üzerindeki iki noktadan hesapla. Teğetin geçtiği ikinci nokta genellikle bir eksen üzerinde verilir ya da ızgaranın bir köşesine oturtulur; onu bul.</p></div>
+
+<h2 class="s">13. Doğrusal yaklaşım: teğetle yaklaşık değer (kısa)</h2>
+
+<p>Teğet, değme noktasının yakınında eğriye en iyi uyan doğrudur (Bölüm 1'deki büyüteç resmi). Bunun pratik bir sonucu vardır: a'nın yakınındaki bir x için f(x)'i hesaplamak zorsa, onun yerine teğetin o x'teki değerini hesaplarsın.</p>
+
+<div class="kural"><span class="et">Formül</span>
+<span class="mat">f(x) ≈ f(a) + f′(a) · (x − a) <span class="g">(x, a'ya yakınken)</span></span>
+<p><strong>Neden?</strong> Sağ yan, (a, f(a))'daki teğetin x'teki değeridir (teğet denkleminde y'yi yalnız bıraktık). x a'ya yaklaştıkça eğri ile teğet arasındaki fark, x − a'dan da hızlı küçülür; bu yüzden yakınlarda yaklaşım çok iyidir.</p></div>
+
+<p><strong>Örnek.</strong> √26 kaçtır, yaklaşık? f(x) = √x, a = 25 seç (karekökünü bildiğin en yakın sayı). f(25) = 5, f′(x) = 1/(2√x), f′(25) = 1/10. Yaklaşım: √26 ≈ 5 + (1/10)(26 − 25) = 5,1. Gerçek değer 5,0990…; hata binde birden az. Bir başka örnek: (2,01)<sup>3</sup> için f(x) = x<sup>3</sup>, a = 2: 8 + 12 · 0,01 = 8,12; gerçek değer 8,120601.</p>
+
+<p>Yaklaşımın biraz büyük mü küçük mü çıktığı, eğrinin teğetin altında mı üstünde mi kaldığına bağlıdır: √x eğrisi teğetinin altında kaldığı için 5,1 gerçek değerden biraz büyük çıktı; x<sup>3</sup> eğrisi x = 2 yakınında teğetinin üstünde kaldığı için 8,12 biraz küçük çıktı. Bu "eğri teğetin altında mı üstünde mi" sorusu Parça 26'da bükeylik adını alacak. AYT bu konuyu genellikle doğrudan sormaz; ama hesap makinesiz bir sınavda bir sonucun makul olup olmadığını denetlemek için kullanışlı bir kontrol yoludur.</p>
+
+<h2 class="s">Sınavda hızlı yol ve kontrol yolu</h2>
+
+<p>Bu parçadaki bütün soru tiplerinin hangi denklemleri istediğini tek tabloda topla. Soruyu okuyunca önce satırını bul, sonra o satırdaki denklemleri yaz.</p>
+
+<div class="tablo"><table>
+<tr><th>Soruda verilen</th><th>Bilinmeyen</th><th>Kurulacak denklem(ler)</th></tr>
+<tr><td>Değme apsisi a</td><td>Teğet ya da normal</td><td>f(a), f′(a) hesapla; y − f(a) = f′(a)(x − a); normalde eğim −1/f′(a)</td></tr>
+<tr><td>"Teğet yatay"</td><td>Değme noktaları</td><td>f′(x) = 0</td></tr>
+<tr><td>Eğim, açı, paralel ya da dik doğru</td><td>Değme noktaları</td><td>f′(x) = m (m = tan α; paralelde m = k, dikte m = −1/k)</td></tr>
+<tr><td>y = mx + n doğrusu teğet, a bilinmiyor</td><td>a ve n</td><td>f′(a) = m ve f(a) = ma + n</td></tr>
+<tr><td>Eğri dışındaki P(x<sub>0</sub>, y<sub>0</sub>)</td><td>Değme noktaları</td><td>y<sub>0</sub> − f(a) = f′(a)(x<sub>0</sub> − a), a için çöz</td></tr>
+<tr><td>İki eğri x = a'da teğet</td><td>Parametreler</td><td>f(a) = g(a) ve f′(a) = g′(a)</td></tr>
+<tr><td>İki eğri x = a'da dik kesişir</td><td>Parametreler</td><td>f(a) = g(a) ve f′(a) · g′(a) = −1</td></tr>
+<tr><td>Grafikte çizilmiş teğet</td><td>f(a), f′(a)</td><td>Değme noktasının ordinatı; teğetin iki noktasından eğim</td></tr>
+</table></div>
+
+<p><strong>Hızlı yol.</strong> (1) Teğet sorusunda ilk iş değme noktasının apsisini adlandırmak; verilmemişse a de. (2) Değer istenen sorularda teğet denklemini y = mx + n biçimine sokmadan önce sorunun neyi istediğine bak: yalnızca y eksenini kestiği nokta isteniyorsa x = 0 koymak yeter (n = f(a) − a · f′(a)). (3) y = k/x eğrisinde teğetin eksenlerle oluşturduğu üçgenin alanı hep 2k'dır. (4) Parabolde doğru ile teğetlikte, parametre ortak denklemin içinde kalıyorsa Δ = 0 daha kısa olabilir.</p>
+
+<p><strong>Kontrol yolu.</strong> (1) Bulduğun teğet değme noktasından geçiyor mu? x = a koy, f(a) çıkmalı. (2) Eğimi f′(a) mı? (3) Normalde eğimler çarpımı −1 mi? (4) Teğet a'nın yakınında eğriye çok yakın değer vermeli: a + 0,1'de eğriyi ve teğeti hesapla, fark küçük olmalı (Örnek 1). (5) Parabolde türevle bulduğun sonucu ortak denklemin çift kökü olup olmadığıyla denetle (Örnek 5, Adım 5).</p>
+
+<div class="bag"><span class="et">Bu parça nereye bağlanıyor?</span>
+<p><strong>Parça 22–23'e:</strong> Teğetin eğimi olarak f′(a), türevin limit tanımından gelir; eğimi hesaplarken kuvvet, çarpım, bölüm ve zincir kurallarının hepsini kullandın. Grafikten okunan f(a), f′(a) değerleriyle (f · g)′ ve (f∘g)′ hesabı, Parça 23'teki tablo sorularının grafik biçimidir.</p>
+<p><strong>Parça 6'ya:</strong> Doğru-parabol teğetliğinde Δ = 0 yöntemi bu parçadaki iki koşulun parabole özel bir kısaltmasıdır; ikisi aynı sonucu verir.</p>
+<p><strong>Parça 25–27'ye:</strong> Yatay teğetli noktalar (f′ = 0) yerel ekstremum adaylarıdır; türevin işareti teğetin sağa doğru yükselip alçaldığını, yani fonksiyonun artıp azaldığını söyler. Eğrinin teğetinin altında ya da üstünde kalması bükeyliktir (Parça 26). Bir noktanın eğriye en kısa uzaklığı sorusunda en yakın noktadaki normal, verilen noktadan geçer (Parça 27).</p>
+<p><strong>Öbür derslere:</strong> geo Parça 18–19'daki doğru denklemi, eğim açısı, paralel-dik doğrular bu parçanın aracıdır; geo Parça 20'deki çember teğetinde "teğet yarıçapa diktir" kuralı, burada normalin teğete dik olmasının özel hâlidir (çemberde normal merkezden geçer). Fizikte konum-zaman grafiğinin bir noktadaki teğetinin eğimi o anki hızdır; hız-zaman grafiğinde teğetin eğimi ivmedir.</p></div>
+
+<h2 class="s">Kendini dene: hatırlama soruları</h2>
+<p>Bunları sesli ya da yazarak cevapla, sonra aç.</p>
+
+<details><summary>Bir eğrinin bir noktadaki teğetini "eğriye tek noktada değen doğru" diye tanımlamak neden yanlıştır? Doğru tanım nedir?</summary><p>Çünkü düşey bir doğru parabolü tek noktada keser ama teğet değildir; bir teğet de eğriyi başka bir noktada kesebilir (y = x<sup>3</sup> − 3x'in x = 1'deki teğeti y = −2, eğriyi x = −2'de bir daha keser). Doğru tanım: (a, f(a))'dan geçen ve eğimi f′(a) olan doğru, yani P'den geçen kirişlerin son durumu.</p></details>
+<details><summary>Teğet ve normal denklemlerini yaz. f′(a) = 0 iken normal nedir?</summary><p>Teğet: y − f(a) = f′(a)(x − a). Normal: y − f(a) = −(1/f′(a))(x − a). f′(a) = 0 ise teğet yatay y = f(a), normal düşey x = a doğrusudur.</p></details>
+<details><summary>"y = mx + n doğrusu eğriye teğet ise" türü sorularda hangi iki koşulu yazarsın?</summary><p>Değme apsisi a için f′(a) = m (eşit eğim) ve f(a) = m · a + n (ortak nokta). Bilinmeyen sayısı kadar denklem gerekir; değme apsisi de bir bilinmeyendir.</p></details>
+<details><summary>Eğri üzerinde olmayan bir noktadan çizilen teğetleri nasıl bulursun? Türevi o noktada almak neden yanlıştır?</summary><p>Değme noktasını (a, f(a)) diye adlandırır, teğeti a cinsinden yazar, verilen noktayı yerine koyup a'yı çözerim; her kök bir teğettir. Türev yalnızca eğri üzerindeki noktaların eğimini verir; dış noktadaki f′ değeri başka bir noktanın eğimidir ve o eğimle çizilen doğru eğriye teğet olmaz.</p></details>
+<details><summary>Teğetin x ekseniyle pozitif yönde yaptığı açı ile türev arasında hangi bağıntı var? f′(a) &lt; 0 ise açı nasıldır?</summary><p>tan α = f′(a). f′(a) &lt; 0 ise α geniş açıdır (teğet sağa doğru alçalır); örneğin f′(a) = −1 ise α = 135°.</p></details>
+<details><summary>Grafiğe çizilmiş bir teğetten f(a) ve f′(a)'yı nasıl okursun?</summary><p>f(a), değme noktasının ordinatıdır. f′(a), çizilen teğet doğrusu üzerindeki iki noktadan (dikey değişim)/(yatay değişim) diye hesaplanan eğimdir. Değme noktasını orijinle birleştirip eğim almak yanlıştır.</p></details>
+
+<div class="ozet"><span class="et">Deftere geçir: tek sayfalık özet</span>
+<ul>
+<li><strong>Teğet:</strong> (a, f(a))'dan geçen, eğimi f′(a) olan doğru; kirişlerin son durumu. Eğriyi başka yerde kesebilir.</li>
+<li><strong>Teğet denklemi:</strong> y − f(a) = f′(a)(x − a). Sıra: a → f(a) → f′(a) → denklem.</li>
+<li><strong>Normal:</strong> eğim −1/f′(a); aynı noktadan geçer. f′(a) = 0 ise normal x = a.</li>
+<li><strong>Açı:</strong> tan α = f′(a); f′ &gt; 0 dar, f′ &lt; 0 geniş, f′ = 0 yatay.</li>
+<li><strong>Yatay teğet:</strong> f′(x) = 0. Ekstremum adayları (Parça 25).</li>
+<li><strong>Eğimi m olan teğet:</strong> f′(x) = m. Paralel: aynı eğim; dik: eğimler çarpımı −1. ax + by + c = 0'ın eğimi −a/b.</li>
+<li><strong>Eksenlerle üçgen:</strong> x = 0 ve y = 0 koy, alan ½|x kesimi||y kesimi|. y = k/x'te hep 2k.</li>
+<li><strong>y = mx + n teğet:</strong> f′(a) = m ve f(a) = ma + n. Bilinmeyen kadar denklem.</li>
+<li><strong>Dış noktadan teğet:</strong> değme noktası (a, f(a)), teğeti a cinsinden yaz, noktayı koy, a'yı çöz. Türevi dış noktada alma.</li>
+<li><strong>İki eğri:</strong> teğet ⇔ f(a) = g(a), f′(a) = g′(a); dik kesişme ⇔ f(a) = g(a), f′(a)g′(a) = −1.</li>
+<li><strong>Grafikten:</strong> f(a) = değme ordinatı, f′(a) = çizilen teğetin eğimi; sonra çarpım/zincir kuralı.</li>
+<li><strong>Parabolde:</strong> Δ = 0 da çalışır; türev her eğride çalışır.</li>
+<li><strong>Doğrusal yaklaşım:</strong> f(x) ≈ f(a) + f′(a)(x − a); √26 ≈ 5,1.</li>
+</ul></div>
+
+<section class="quiz" data-quiz="ileri-24">
+<h3>Quiz 24</h3>
+<p class="qa">8 yeni soru ve önceki parçalardan 16 tekrar sorusu. Önce kâğıtta çöz, sonra seçeneğe dokun; çözüm açılır.</p>
+<ol class="qs">
+
+<li data-c="C"><p class="q">f(x) = x<sup>3</sup> − 2x<sup>2</sup> + 3 eğrisinin x = 2 apsisli noktasındaki teğetinin denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>y = 4x + 3</li><li>y = 3x − 3</li><li>y = 4x − 5</li><li>y = −x/4 + 7/2</li><li>y = 4x − 8</li></ul>
+<div class="coz"><p>Değme noktası: f(2) = 8 − 8 + 3 = 3, yani (2, 3). Eğim: f′(x) = 3x<sup>2</sup> − 4x, f′(2) = 12 − 8 = 4. Teğet: y − 3 = 4(x − 2), y = 4x − 5. y = 4x + 3, sabit terimi f(2) sanmaktır (teğetin y eksenini f(a)'da kestiğini düşünmek). y = 3x − 3, eğim yerine f(2) = 3 değerini kullanmaktır. y = −x/4 + 7/2 normaldir, teğet değil. y = 4x − 8, nokta-eğim biçiminde sol yandaki "− f(a)"yı unutup y = 4(x − 2) yazmaktır.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = x<sup>2</sup> + 1 eğrisinin x = 1 apsisli noktasındaki normal doğrusunun denklemi aşağıdakilerden hangisidir?</p>
+<ul class="sec"><li>x + 2y − 5 = 0</li><li>2x − y = 0</li><li>x − 2y + 3 = 0</li><li>2x + y − 4 = 0</li><li>x + 2y − 3 = 0</li></ul>
+<div class="coz"><p>Değme noktası (1, 2), teğetin eğimi f′(1) = 2. Normalin eğimi −1/2: y − 2 = −½(x − 1), iki yanı 2 ile çarpınca 2y − 4 = −x + 1, yani x + 2y − 5 = 0. 2x − y = 0 teğetin kendisidir (y = 2x). x − 2y + 3 = 0'ın eğimi +½: ters çevirip işaret değiştirmeyi unutmak. 2x + y − 4 = 0'ın eğimi −2: işaret değiştirip ters çevirmeyi unutmak. x + 2y − 3 = 0'ın eğimi doğru ama (1, 1)'den geçer; f(1)'i 1 sanmaktır. Denetim: normalin eğimi ile teğetin eğiminin çarpımı −1 olmalı ve doğru değme noktasından geçmeli.</p></div></li>
+
+<li data-c="D"><p class="q">f(x) = x<sup>3</sup> − 6x<sup>2</sup> + 9x + 1 eğrisinin teğetinin yatay olduğu noktaların ordinatları toplamı kaçtır?</p>
+<ul class="sec"><li>4</li><li>3</li><li>5</li><li>6</li><li>1</li></ul>
+<div class="coz"><p>Yatay teğet: f′(x) = 3x<sup>2</sup> − 12x + 9 = 3(x − 1)(x − 3) = 0, x = 1 ya da x = 3. Ordinatlar: f(1) = 1 − 6 + 9 + 1 = 5, f(3) = 27 − 54 + 27 + 1 = 1. Toplam 6. 4, apsislerin toplamıdır (soru ordinatı istiyor). 3, apsislerin çarpımıdır. 5 ve 1 yalnızca birer noktanın ordinatıdır; kökün birini unutmak. Önce f′ = 0'dan apsisleri, sonra f'den ordinatları bul; ikisini karıştırma.</p></div></li>
+
+<li data-c="B"><p class="q">f(x) = x<sup>2</sup> − 3x + 2 eğrisinin hangi noktasındaki teğeti x ekseninin pozitif yönüyle 135°'lik açı yapar?</p>
+<ul class="sec"><li>(2, 0)</li><li>(1, 0)</li><li>(3/2, −1/4)</li><li>(0, 1)</li><li>(1, −1)</li></ul>
+<div class="coz"><p>tan 135° = −1, o hâlde teğetin eğimi −1: f′(x) = 2x − 3 = −1, x = 1, f(1) = 1 − 3 + 2 = 0. Nokta (1, 0). (2, 0), tan 135°'yi +1 alıp 2x − 3 = 1 çözmektir (geniş açının tanjantı negatiftir). (3/2, −1/4) tepe noktasıdır; orada teğet yatay, açı 0°. (0, 1), bulunan teğetin (y = −x + 1) y eksenini kestiği noktadır; eğrinin noktası değildir. (1, −1), ordinat yerine eğimi yazmaktır.</p></div></li>
+
+<li data-c="E"><p class="q">P(2, 3) noktasından y = x<sup>2</sup> eğrisine çizilen teğetlerin eğimlerinin çarpımı kaçtır?</p>
+<ul class="sec"><li>4</li><li>8</li><li>3</li><li>6</li><li>12</li></ul>
+<div class="coz"><p>P eğri üzerinde değil (2<sup>2</sup> = 4 ≠ 3). Değme noktası (a, a<sup>2</sup>), eğim 2a; teğet y − a<sup>2</sup> = 2a(x − a), yani y = 2ax − a<sup>2</sup>. P'yi koy: 3 = 4a − a<sup>2</sup>, a<sup>2</sup> − 4a + 3 = 0, a = 1 ya da a = 3. Eğimler 2 ve 6, çarpım 12. 4, türevi dış noktada alıp f′(2) = 4 yazmaktır; o doğru teğet değildir. 8 eğimlerin toplamıdır. 3, değme apsislerinin çarpımıdır (eğim değil). 6 yalnızca bir teğetin eğimidir.</p></div></li>
+
+<li data-c="A"><p class="q">f(x) = 8/x eğrisinin x = 2 apsisli noktasındaki teğetinin koordinat eksenleriyle oluşturduğu üçgenin alanı kaç birimkaredir?</p>
+<ul class="sec"><li>16</li><li>32</li><li>9</li><li>18</li><li>8</li></ul>
+<div class="coz"><p>Değme noktası (2, 4). f′(x) = −8/x<sup>2</sup>, f′(2) = −2. Teğet y − 4 = −2(x − 2), y = −2x + 8; eksenleri (4, 0) ve (0, 8)'de keser. Alan ½ · 4 · 8 = 16 (y = k/x için hep 2k = 16). 32, ½ çarpanını unutmaktır. 9, normal doğrusunun (y = x/2 + 3) oluşturduğu üçgenin alanıdır. 18, türevi −8/x alıp eğimi −4 bulmaktır (üssün düşmesini unutmak): y = −4x + 12, kesimler 3 ve 12. 8, x kesimini değme apsisi 2 sanıp ½ · 2 · 8 hesaplamaktır.</p></div></li>
+
+<li data-c="C"><p class="q">y = 9x + n doğrusu f(x) = x<sup>3</sup> − 3x<sup>2</sup> + 2 eğrisine teğet olduğuna göre n'nin alabileceği değerlerin toplamı kaçtır?</p>
+<ul class="sec"><li>7</li><li>−25</li><li>−18</li><li>0</li><li>2</li></ul>
+<div class="coz"><p>Eşit eğim: f′(x) = 3x<sup>2</sup> − 6x = 9, x<sup>2</sup> − 2x − 3 = 0, x = 3 ya da x = −1. Ortak nokta: f(3) = 27 − 27 + 2 = 2 = 27 + n, n = −25; f(−1) = −1 − 3 + 2 = −2 = −9 + n, n = 7. Toplam −18. 7 ve −25, iki değme noktasından yalnızca birini almaktır. 0, n yerine değme noktalarının ordinatlarını (2 ve −2) toplamaktır; ortak nokta koşulunu yazmayı unutmak. 2, değme apsislerinin toplamıdır. İki koşul, iki bilinmeyen (a ve n).</p></div></li>
+
+<li data-c="D"><p class="q">f fonksiyonunun grafiğine x = 3 apsisli noktada çizilen teğet doğrusu (0, 1) ve (3, 7) noktalarından geçmektedir. g(x) = x · f(x) olduğuna göre g′(3) kaçtır?</p>
+<ul class="sec"><li>14</li><li>21</li><li>6</li><li>13</li><li>7</li></ul>
+<div class="coz"><p>Teğet değme noktasından geçtiğine göre (3, 7) değme noktasıdır: f(3) = 7. Teğetin eğimi (7 − 1)/(3 − 0) = 2 = f′(3). Çarpım kuralı: g′(x) = f(x) + x · f′(x), g′(3) = 7 + 3 · 2 = 13. 14, eğimi değme noktasını orijinle birleştirerek 7/3 almaktır: 7 + 3 · 7/3. 21, türev yerine g(3) = 3 · 7 değeridir. 6 ve 7, çarpım kuralının yalnızca bir terimidir (3f′(3) ya da f(3)).</p></div></li>
+
+<li data-c="B" data-k="ileri-2"><p class="q">f(2x + 1) = 6x − 1 olduğuna göre f<sup>−1</sup>(5) kaçtır?</p>
+<ul class="sec"><li>1</li><li>3</li><li>11</li><li>2</li><li>9</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(5) = t demek f(t) = 5 demektir. 6x − 1 = 5 ⇒ x = 1; o zaman f'nin girdisi 2 · 1 + 1 = 3, yani f(3) = 5 ve f<sup>−1</sup>(5) = 3. Kontrol: t = 2x + 1 ile f(t) = 3t − 4, f(3) = 5. 1, x'in değerini cevap sanmaktır (f'nin girdisi x değil 2x + 1'dir). 11, ters yerine f(5) = 3 · 5 − 4 değerini hesaplamaktır. 2, 5'i f'nin girdisi sanıp 2x + 1 = 5'ten x = 2 bulup durmaktır. 9, f(t) = 3t − 4 = 5 denkleminde 3'e bölmeyi unutmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-4"><p class="q">y = f(x) grafiği üzerindeki (2, 3) noktası, y = 2f(x − 1) + 1 fonksiyonunun grafiğinde hangi noktaya karşılık gelir?</p>
+<ul class="sec"><li>(1, 7)</li><li>(3, 8)</li><li>(1, 8)</li><li>(3, 4)</li><li>(3, 7)</li></ul>
+<div class="coz"><p>x − 1 = 2 olmalı ki f'ye 2 girsin: x = 3. Bu x'te y = 2 · f(2) + 1 = 2 · 3 + 1 = 7. Nokta (3, 7): yatayda 1 birim sağa, düşeyde önce 2 kat esnetme sonra 1 birim yukarı. (1, 7), f(x − 1)'i sola öteleme sanmaktır (yön "ters" görünür, Parça 4). (3, 8), sırayı karıştırıp 2(3 + 1) hesaplamaktır. (1, 8) iki hatayı birlikte yapmaktır. (3, 4), 2 ile çarpmayı unutmaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-6"><p class="q">x eksenini x = −1 ve x = 3 noktalarında kesen bir parabol (0, −6) noktasından geçmektedir. Bu parabolün tepe noktasının ordinatı kaçtır?</p>
+<ul class="sec"><li>−8</li><li>−6</li><li>1</li><li>−4</li><li>8</li></ul>
+<div class="coz"><p>Kökler verildiği için y = a(x + 1)(x − 3). (0, −6): a · 1 · (−3) = −6, a = 2. Tepe apsisi köklerin ortası: (−1 + 3)/2 = 1. Ordinat: 2 · 2 · (−2) = −8. −6, y eksenini kestiği noktanın ordinatıdır. 1, tepe noktasının apsisidir. −4, a'yı 1 alıp (fazladan noktayı kullanmadan) hesaplamaktır. 8, işaret hatasıdır; a &gt; 0 ve kökler arasında parabol x ekseninin altındadır.</p></div></li>
+
+<li data-c="D" data-k="ileri-8"><p class="q">−1290° ölçülü açının esas ölçüsü kaç derecedir?</p>
+<ul class="sec"><li>210</li><li>30</li><li>330</li><li>150</li><li>−210</li></ul>
+<div class="coz"><p>Negatif açıya 360°'nin katlarını ekleyerek [0°, 360°) aralığına getir: −1290° + 4 · 360° = −1290° + 1440° = 150°. 210, işareti görmezden gelip 1290'ın 360'a bölümünden kalanı (210) almaktır; negatif açıda kalan 360'tan çıkarılır. 30, 360 yerine 180'e bölüp kalanı almaktır (1290 = 7 · 180 + 30). 330, bu yanlış kalanı negatif açı diye 360'tan çıkarmaktır. −210, yalnızca 3 · 360 ekleyip durmaktır; esas ölçü negatif olamaz, bir tur daha eklenir.</p></div></li>
+
+<li data-c="B" data-k="ileri-10"><p class="q">arccos(−1/2) + arcsin(−1/2) toplamı kaçtır?</p>
+<ul class="sec"><li>π/6</li><li>π/2</li><li>5π/6</li><li>−π/2</li><li>11π/6</li></ul>
+<div class="coz"><p>arccos'un görüntü kümesi [0, π]: arccos(−1/2) = 2π/3. arcsin'in görüntü kümesi [−π/2, π/2]: arcsin(−1/2) = −π/6. Toplam 2π/3 − π/6 = π/2. π/6, arccos(−1/2)'yi π/3 almaktır (eksi işareti arccos'ta açıyı ikinci bölgeye taşır). 5π/6, arcsin(−1/2)'yi +π/6 almaktır. −π/2, arccos(−1/2)'yi −π/3 almaktır; arccos hiçbir zaman negatif değildir. 11π/6, arcsin(−1/2)'yi görüntü kümesi dışındaki 7π/6 almaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-12"><p class="q">Kenar uzunlukları a = 7, b = 5 ve c = 3 birim olan ABC üçgeninde A açısının ölçüsü kaç derecedir?</p>
+<ul class="sec"><li>60</li><li>150</li><li>120</li><li>135</li><li>90</li></ul>
+<div class="coz"><p>Kosinüs teoremi: a<sup>2</sup> = b<sup>2</sup> + c<sup>2</sup> − 2bc cos A, yani 49 = 25 + 9 − 30 cos A, cos A = (34 − 49)/30 = −1/2. A = 120°. 60, cos A'nın işaretini kaybetmektir (−1/2 yerine 1/2). 90, a<sup>2</sup> = b<sup>2</sup> + c<sup>2</sup> sanmaktır; oysa 49 &gt; 34 olduğu için açı geniştir. 135 ve 150, cos A'yı −√2/2 ya da −√3/2 ile karıştırmaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-14"><p class="q">f(x) = log<sub>3</sub>(x − 1) + 2 olduğuna göre f<sup>−1</sup>(4) kaçtır?</p>
+<ul class="sec"><li>3</li><li>9</li><li>28</li><li>82</li><li>10</li></ul>
+<div class="coz"><p>f<sup>−1</sup>(4) = t ⇔ f(t) = 4: log<sub>3</sub>(t − 1) + 2 = 4, log<sub>3</sub>(t − 1) = 2, t − 1 = 3<sup>2</sup> = 9, t = 10. 3, ters yerine f(4) = log<sub>3</sub>3 + 2 değerini hesaplamaktır. 9, son adımda 1'i eklemeyi unutmaktır. 28 = 3<sup>3</sup> + 1, 2'yi çıkarmak yerine 1 çıkarmaktır. 82 = 3<sup>4</sup> + 1, "+ 2"yi hiç dikkate almamaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-16"><p class="q">4<sup>x</sup> − 6 · 2<sup>x</sup> + 8 = 0 denkleminin köklerinin toplamı kaçtır?</p>
+<ul class="sec"><li>3</li><li>6</li><li>8</li><li>2</li><li>4</li></ul>
+<div class="coz"><p>4<sup>x</sup> = (2<sup>x</sup>)<sup>2</sup>; 2<sup>x</sup> = t (t &gt; 0) de: t<sup>2</sup> − 6t + 8 = 0, t = 2 ya da t = 4. 2<sup>x</sup> = 2 ⇒ x = 1; 2<sup>x</sup> = 4 ⇒ x = 2. Toplam 3. 6, t'lerin toplamıdır; 8, t'lerin çarpımıdır; değişkene geri dönmeyi unutmak. 2, x'lerin çarpımıdır. 4, yalnızca t = 4'ü alıp x yerine t yazmaktır.</p></div></li>
+
+<li data-c="B" data-k="ileri-18"><p class="q">Bir geometrik dizide a<sub>2</sub> = 6 ve a<sub>5</sub> = 48 olduğuna göre a<sub>7</sub> kaçtır?</p>
+<ul class="sec"><li>96</li><li>192</li><li>76</li><li>384</li><li>144</li></ul>
+<div class="coz"><p>a<sub>5</sub> = a<sub>2</sub> · r<sup>3</sup>: 48 = 6r<sup>3</sup>, r<sup>3</sup> = 8, r = 2. a<sub>7</sub> = a<sub>5</sub> · r<sup>2</sup> = 48 · 4 = 192. 96, a<sub>6</sub>'dır (bir adım eksik). 76, diziyi aritmetik sanmaktır: d = 14, a<sub>7</sub> = 48 + 28. 384, a<sub>8</sub>'dir. 144, r'yi 3 sanıp a<sub>5</sub> · 3 hesaplamaktır.</p></div></li>
+
+<li data-c="E" data-k="ileri-20"><p class="q">lim<sub>x→2</sub> <span class="kes"><span>x<sup>3</sup> − 8</span><span>x<sup>2</sup> − 4</span></span> limitinin değeri kaçtır?</p>
+<ul class="sec"><li>0</li><li>12</li><li>2</li><li>Limit yoktur</li><li>3</li></ul>
+<div class="coz"><p>Yerine koyunca 0/0. Küp farkı: x<sup>3</sup> − 8 = (x − 2)(x<sup>2</sup> + 2x + 4); kare farkı: x<sup>2</sup> − 4 = (x − 2)(x + 2). x − 2 sadeleşir: (x<sup>2</sup> + 2x + 4)/(x + 2) → 12/4 = 3. 0, yalnızca payın sıfır olduğuna bakmaktır. 12, paydanın kalan çarpanını unutmaktır. 2, x'in yaklaştığı değeri cevap sanmaktır. "Limit yoktur", 0/0'ı sonuç sanmaktır; 0/0 bir belirsizliktir.</p></div></li>
+
+<li data-c="C" data-k="ileri-21"><p class="q">f(x) = ax + 1 (x &lt; 2 iken), f(x) = x<sup>2</sup> + a (x ≥ 2 iken) biçiminde tanımlanan f fonksiyonu x = 2'de sürekli olduğuna göre a kaçtır?</p>
+<ul class="sec"><li>1</li><li>5</li><li>3</li><li>2</li><li>7</li></ul>
+<div class="coz"><p>Süreklilik için soldan limit, sağdan limit ve f(2) eşit olmalı. Soldan: 2a + 1. Sağdan ve f(2): 4 + a. 2a + 1 = 4 + a ⇒ a = 3. 7, a yerine x = 2'deki ortak değeri (2 · 3 + 1) vermektir. 1, x<sup>2</sup>'de kare almayı unutup 2a + 1 = 2 + a yazmaktır. 5, 1'i karşıya geçirirken işareti karıştırıp 2a − 1 = 4 + a yazmaktır. 2, kritik noktanın apsisini cevap sanmaktır.</p></div></li>
+
+<li data-c="D" data-k="ileri-21"><p class="q">f(x) = <span class="kes"><span>x<sup>2</sup> − 1</span><span>x<sup>2</sup> − 3x + 2</span></span> fonksiyonunun süreksiz olduğu noktaların apsisleri toplamı kaçtır?</p>
+<ul class="sec"><li>2</li><li>1</li><li>0</li><li>3</li><li>−3</li></ul>
+<div class="coz"><p>Rasyonel fonksiyon paydanın sıfır olduğu yerde tanımsızdır, dolayısıyla süreksizdir: x<sup>2</sup> − 3x + 2 = (x − 1)(x − 2) = 0, x = 1 ve x = 2. Toplam 3. x = 1'de pay da sıfırdır ve sadeleşme olur ama bu süreksizliği kaldırmaz; yalnızca türünü belirler (kaldırılabilir süreksizlik, delik). 2, sadeleştirince x = 1'i atmaktır; f(1) tanımsız olduğu için orada sürekli olamaz. 1 yalnızca kaldırılabilir noktadır. 0, payın köklerini (±1) toplamaktır. −3, paydanın köklerini −1 ve −2 diye işaretleri ters almaktır.</p></div></li>
+
+<li data-c="A" data-k="ileri-22"><p class="q">f(x) = x<sup>2</sup> (x &lt; 1 iken), f(x) = ax + b (x ≥ 1 iken) biçiminde tanımlanan f fonksiyonu her gerçek sayıda türevlenebilir olduğuna göre a · b çarpımı kaçtır?</p>
+<ul class="sec"><li>−2</li><li>2</li><li>0</li><li>−1</li><li>1</li></ul>
+<div class="coz"><p>Türevlenebilme için iki koşul: süreklilik ve soldan-sağdan türevlerin eşitliği. Süreklilik: 1<sup>2</sup> = a + b. Türev: soldan 2x → 2, sağdan a; a = 2. O hâlde b = −1 ve a · b = −2. 2, b'nin işaretini kaybetmektir. 0, yalnızca süreklilik koşuluyla a = 1, b = 0 seçmektir; tek koşul iki bilinmeyeni belirlemez. −1 yalnızca b'dir. 1, türev koşulunu soldan türevi 1<sup>2</sup> = 1 alarak yazmaktır (değeri türev sanmak).</p></div></li>
+
+<li data-c="B" data-k="ileri-22"><p class="q">Doğrusal bir yolda hareket eden bir cismin konumu s(t) = t<sup>3</sup> − 6t<sup>2</sup> + 9t metre (t saniye) ile veriliyor. t = 4 saniye anında cismin ivmesi kaç m/s<sup>2</sup>'dir?</p>
+<ul class="sec"><li>9</li><li>12</li><li>4</li><li>24</li><li>0</li></ul>
+<div class="coz"><p>Hız konumun türevi: v(t) = s′(t) = 3t<sup>2</sup> − 12t + 9. İvme hızın türevi: a(t) = s″(t) = 6t − 12. t = 4: 24 − 12 = 12 m/s<sup>2</sup>. 9, t = 4'teki hızdır (48 − 48 + 9). 4, t = 4'teki konumdur (64 − 96 + 36). 24, ikinci türevdeki −12'yi unutmaktır. 0, ivmeyi t = 2'de (6t − 12 = 0) hesaplamaktır. Birim denetimi: konum m, hız m/s, ivme m/s<sup>2</sup>.</p></div></li>
+
+<li data-c="E" data-k="ileri-23"><p class="q">f(x) = (x<sup>2</sup> − 3)<sup>5</sup> olduğuna göre f′(2) kaçtır?</p>
+<ul class="sec"><li>5</li><li>1</li><li>10</li><li>4</li><li>20</li></ul>
+<div class="coz"><p>Kuvvet zinciri: f′(x) = 5(x<sup>2</sup> − 3)<sup>4</sup> · 2x. x = 2'de iç değer 1: f′(2) = 5 · 1 · 4 = 20. 5, iç türevi (2x = 4) unutmaktır. 1, türev yerine f(2) değeridir. 10, iç türevi 2x yerine 2 almaktır. 4, dış türevi unutup yalnızca iç türevi (2x = 4) yazmaktır.</p></div></li>
+
+<li data-c="C" data-k="ileri-23"><p class="q">f(x<sup>3</sup> + 1) = 2x<sup>2</sup> + x olduğuna göre f′(2) kaçtır?</p>
+<ul class="sec"><li>5</li><li>3/4</li><li>5/3</li><li>3/5</li><li>1</li></ul>
+<div class="coz"><p>İki yanın türevi (solda zincir kuralı): f′(x<sup>3</sup> + 1) · 3x<sup>2</sup> = 4x + 1. f′(2) için iç ifade 2 olmalı: x<sup>3</sup> + 1 = 2, x = 1. Yerine koy: f′(2) · 3 = 5, f′(2) = 5/3. 5, iç türevi (3x<sup>2</sup>) unutmaktır. 3/4, "f′(2)" görüp x = 2 koymaktır: f′ · 12 = 9. 3/5, son bölmeyi ters yapmaktır. 1, sağ yanın türevini almayıp x = 1'deki değerini (2 + 1 = 3) kullanmaktır: 3f′(2) = 3.</p></div></li>
+
+</ol>
+</section>
+
+<div class="nav">
+  <a class="btn ghost" href="#ileri-23">← Önceki parça</a>
+  <button class="btn ok" data-done="ileri-24">Bu bölümü okudum</button>
+  <a class="btn" href="#ileri-25">Sonraki parça: artan-azalan fonksiyonlar ve ekstremum noktaları</a>
+</div>
+
+<div class="fine">
+<h4>Video için arama sözcükleri</h4>
+<ul>
+  <li>"türevin geometrik anlamı teğet ve normal denklemi konu anlatımı AYT"</li>
+  <li>"eğri dışındaki noktadan çizilen teğet türev soru çözümü"</li>
+  <li>"y = mx + n doğrusu eğriye teğet ise parametre soruları"</li>
+  <li>"grafikte çizilmiş teğetten türev okuma AYT"</li>
+</ul>
+<h4>Kaynak ve doğrulama</h4>
+<ul>
+  <li>Kapsam, bu arşivin "Matematik: ileri" kapsam listesindeki 24. satıra göre yazıldı; satırdaki bütün alt başlıklar (türevin geometrik anlamı, teğet ve normal denklemi, yatay teğet, eğimi verilen teğet, paralel ve dik teğet, eğri dışındaki noktadan teğet, eğim açısı, eksenlerle üçgen, iki eğrinin teğetliği ve dik kesişmesi, y = mx + n parametre soruları, grafikteki teğetten okuma, parabolde Δ yöntemiyle karşılaştırma, doğrusal yaklaşım) işlendi. Kapsam dosyasının "Doğrulanamayanlar" bölümünde bu parçaya özgü bir not yok; örneklerde yalnızca polinom, rasyonel ve köklü fonksiyonlar kullanıldı, üstel-logaritmik-trigonometrik fonksiyonların teğetine girilmedi.</li>
+  <li>Doğrusal yaklaşım kapsam satırında "kısa" diye geçtiği için kısa tutuldu; 2018 programında ayrı bir kazanım olup olmadığını doğrulayamadım. Dikey teğet ve "noktasından geçen" ile "noktasındaki" teğet ayrımı ek açıklama olarak verildi; dikey teğetten quizde soru yok.</li>
+  <li>"Eğim açısı" için x ekseninin pozitif yönünden saat yönünün tersine ölçülen açı (0° ≤ α &lt; 180°) kullanıldı (geo Parça 18 ile aynı). Bazı kaynaklar "teğetin x ekseniyle yaptığı dar açı" der; o zaman 135° yerine 45° yazılır. Metinde bu ayrım belirtildi.</li>
+  <li>Bütün sayısal sonuçlar (sekiz çözümlü örnek, metindeki ara örnekler, şekillerdeki noktalar, 24 quiz sorusunun cevapları ve her çeldiricinin hangi hatadan çıktığı) Python ile hesaplanarak denetlendi; bu ortamda sympy olmadığı için türevler hem elle kurulan formülle hem merkezî farkla sayısal türev alınarak karşılaştırıldı, kesirli sonuçlar Fraction ile tam hesaplandı.</li>
+  <li>Şekiller gerçek ölçüyle çizildi: eğri noktaları ve teğet-normal doğruları formüllerden hesaplandı; Şekil 1 ve Şekil 3'te iki eksende birim uzunluk eşittir (dik açı ve üçgen orantılı görünür), Şekil 2 ve Şekil 4'te y ekseni okunabilirlik için sıkıştırıldı.</li>
+  <li>Tekrar soruları kılavuzdaki sayı kuralına göre seçildi: son üç parçadan (21, 22, 23) ikişer soru; daha eski 20 parçadan toplam 16 sınırına sığması için eşit aralıklarla 10 parça (2, 4, 6, 8, 10, 12, 14, 16, 18, 20). Parça 22 bu parça yazılırken arşivde yoktu; onun tekrar soruları yalnızca kapsam listesindeki konular ve terimlerle (parçalı fonksiyonda türevlenebilme, konum-hız-ivme) yazıldı.</li>
+  <li>Sorular bu parça için yazıldı; çıkmış sınav sorusu değildir.</li>
+</ul>
+</div>
+</div>
+</article>
